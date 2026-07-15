@@ -35,16 +35,19 @@ value on **every tick**. That's what a **supplier** is for.
 
 ## 2. Lambdas and suppliers
 
-You already used a lambda in Lesson 1 without us naming it:
+You already used lambdas in Lesson 1 without us naming them:
 
 ```java
-return run(() -> m_driveMotor.set(fraction));
-//           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this is a lambda
+return startEnd(() -> m_driveMotor.set(fraction), () -> m_driveMotor.set(0));
+//              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^
+//              this is a lambda                  and so is this
 ```
 
 A **lambda** is a tiny anonymous function written inline. `() -> doSomething()`
-means "a function that takes no arguments and runs `doSomething()`." The scheduler
-calls it every tick.
+means "a function that takes no arguments and runs `doSomething()`." `startEnd`
+called the first one at start and the second at end. In this lesson we'll use
+`run(...)`, which calls its lambda **every tick** — perfect for reading a stick
+that keeps changing.
 
 A **`DoubleSupplier`** is a lambda that *returns a double* each time it's called:
 `() -> m_driverController.getLeftY()`. Every tick, ask it for a value and you get

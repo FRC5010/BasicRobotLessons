@@ -62,8 +62,12 @@ m_steerSim.setRawRotorPosition(m_steerModel.getAngularPositionRotations());
 m_steerSim.setRotorVelocity(m_steerModel.getAngularVelocityRPM() / 60.0);
 ```
 
-We'll read the steering **angle in degrees**. For now assume the sensor turns 1:1
-with the wheel (we'll handle gear ratios properly in Lesson 6):
+We'll read the steering **angle in degrees**. A real steering module has a big
+reduction between the motor and the wheel (an SDS MK4, for example, uses about
+`12.8 : 1`); to keep this lesson focused on P control rather than unit conversion,
+we'll pretend the sensor turns **1:1** with the wheel. In Lesson 6 you'll see the
+gear-ratio pattern applied to the drive motor — the same shape applies here if
+you want to make it realistic later.
 
 ```java
 /** Current steering angle in degrees. */
@@ -86,14 +90,19 @@ import frc.robot.Constants.SteerConstants; // we'll create this constant below
 /** Turns the steering motor toward 'targetDegrees' and holds it there. */
 public Command steerToAngle(double targetDegrees) {
   return run(() -> {
-    double measurement = getSteerAngleDegrees();      // where we are
-    double error = targetDegrees - measurement;       // how far off (degrees)
+        double measurement = getSteerAngleDegrees();      // where we are
+        double error = targetDegrees - measurement;       // how far off (degrees)
 
-    double output = SteerConstants.kP * error;        // push proportional to error
-    output = clamp(output, -1.0, 1.0);                // never exceed full power
+        double output = SteerConstants.kP * error;        // push proportional to error
+        output = clamp(output, -1.0, 1.0);                // never exceed full power
 
-    m_steerMotor.set(output);
-  });
+        m_steerMotor.set(output);
+      })
+      // Same lesson as Lesson 1: motors HOLD the last value you set. When this
+      // command is interrupted, its per-tick math stops running — so unless we
+      // command 0 in cleanup, the motor keeps applying whatever fraction it was
+      // last given and the wheel drifts.
+      .finallyDo(() -> m_steerMotor.set(0));
 }
 
 /** Keeps 'value' between 'min' and 'max'. */

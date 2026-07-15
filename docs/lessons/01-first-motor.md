@@ -84,8 +84,11 @@ public class DriveModule extends SubsystemBase {
 
   /** Spins the drive motor at the given fraction of full power (-1.0 to 1.0). */
   public Command driveAtSpeed(double fraction) {
-    // 'run(...)' builds a command that repeats the action every tick while scheduled.
-    return run(() -> m_driveMotor.set(fraction));
+    // 'startEnd(start, end)' runs the first lambda once when the command is
+    // scheduled, and the second lambda once when it ends (finished or cancelled).
+    // Why two? Because motors HOLD whatever value you last set — the scheduler
+    // cancelling a command doesn't reset the motor. We have to command 0 ourselves.
+    return startEnd(() -> m_driveMotor.set(fraction), () -> m_driveMotor.set(0));
   }
 
   @Override
@@ -108,6 +111,10 @@ public class DriveModule extends SubsystemBase {
 - **`driveAtSpeed(double fraction)`** — a **command factory method**. It doesn't
   spin the motor *now*; it *returns a Command* describing how to. The scheduler runs
   it later. `m_driveMotor.set(0.5)` means "50% power."
+- **`startEnd(...)`** — one of several factory helpers on `SubsystemBase` (others
+  are `run`, `runOnce`, `runEnd`). This one is perfect when you want a motor on
+  while some condition holds and off when it doesn't: no per-tick work, just a
+  clean *start* action and a matching *cleanup*.
 
 > **Why return commands instead of just spinning the motor?** Because the scheduler
 > guarantees only one command controls a subsystem at a time. If two things try to
@@ -139,9 +146,18 @@ m_driverController.a().whileTrue(m_module.driveAtSpeed(0.3));
 ```
 
 **What this says:** while the A button is held (`whileTrue`), schedule the command
-from `driveAtSpeed(0.3)`. When you let go, the scheduler cancels it and the motor
-stops (an unscheduled command's motor goes back to its default — nothing — so it
-coasts to a stop).
+from `driveAtSpeed(0.3)`. When you let go, the scheduler cancels it — and because
+`driveAtSpeed` was built with `startEnd`, the cleanup lambda fires and sets the
+motor back to `0`.
+
+> **Watch out — a common misconception:** motors do **not** stop on their own when
+> a command ends. `set(0.3)` writes a value that the motor keeps applying until
+> something overwrites it. If we had written `return run(() -> m_driveMotor.set(0.3));`
+> the wheel would keep spinning after you released the button — the scheduler
+> would just stop *ticking* the command, not touch the motor. Explicit stop, every
+> time. (In Lesson 2 you'll meet **default commands**, which give a subsystem
+> something to do when no other command is scheduled — that's the *other* way to
+> make sure the motor is always being told what to do.)
 
 ---
 
@@ -178,5 +194,8 @@ settings to map a key to the A button, or drag the joystick sliders.
 - **`import`** borrows classes from other packages; vendordeps add hardware classes.
 - Subsystems expose behavior as **command factory methods** that *return* commands,
   so the scheduler can manage who controls the hardware.
+- Motors **hold the last value** you set — cancelling a command doesn't reset
+  them. `startEnd(start, end)` gives you a *start* and a *cleanup* lambda so the
+  motor actually stops when the command does.
 
 Next: [Lesson 2 — Joystick control](02-joystick-control.md).

@@ -57,7 +57,53 @@ modules, you change *one line* and everything downstream is correct. Publish
 
 ---
 
-## 2. Commands that finish
+## 2. Line up the sim with the real gearing
+
+Back in Lesson 4 we built the sim with `gearing = 1.0` — a rotor spinning against
+a tiny inertia, no gearbox. Now that a real `6.75 : 1` reduction exists in the
+distance math, we should teach the sim about it too so "one wheel turn" in sim
+represents the same physical motion as on the real robot.
+
+Update the `DCMotorSim` field in `DriveModule`:
+
+```java
+private final DCMotorSim m_driveModel =
+    new DCMotorSim(
+        LinearSystemId.createDCMotorSystem(
+            DCMotor.getKrakenX60(1), 0.025, DriveConstants.kDriveGearRatio),
+        DCMotor.getKrakenX60(1));
+```
+
+Two things changed from Lesson 4:
+
+- **Inertia** grew from `0.001` to `0.025` (kg·m² at the wheel). A bare rotor
+  spins up nearly instantly; a rotor pulling a wheel through a gearbox has more
+  to move. `0.025` gives a visible ramp without dragging.
+- **Gearing** is now `DriveConstants.kDriveGearRatio` (`6.75`) instead of `1.0`.
+
+Because `DCMotorSim` now models a gearbox, `getAngularPositionRotations()` /
+`getAngularVelocityRPM()` report the **wheel** (output) motion, not the rotor.
+The TalonFX's fake encoder still lives on the *rotor*, so `simulationPeriodic()`
+has to convert wheel-side back to rotor-side by *multiplying* by the ratio:
+
+```java
+m_driveSim.setRawRotorPosition(
+    m_driveModel.getAngularPositionRotations() * DriveConstants.kDriveGearRatio);
+m_driveSim.setRotorVelocity(
+    m_driveModel.getAngularVelocityRPM() * DriveConstants.kDriveGearRatio / 60.0);
+```
+
+Now the whole chain is honest: applied volts spin the *rotor*, the *wheel* moves
+`1/6.75` as fast, `getDistanceMeters()` divides `getPosition()` by that same
+ratio, and the number of meters on the plot matches what the real robot would
+roll.
+
+> Don't forget the `import frc.robot.Constants.DriveConstants;` at the top of
+> `DriveModule` — added earlier in section 1.
+
+---
+
+## 3. Commands that finish
 
 Every command you've written so far runs until *something else* cancels it (button
 release, a new command). A `driveDistance` command must decide **for itself** when
@@ -92,7 +138,7 @@ bricks. Almost every robot behavior is small commands snapped together like this
 
 ---
 
-## 3. A turn-in-place hint
+## 4. A turn-in-place hint
 
 You now have the two ingredients for turning the *robot*: point the wheel
 (`steerToAngle` from Lesson 5) and roll it forward (`driveDistance`). A real swerve
@@ -103,7 +149,7 @@ want to experiment now, compose `steerToAngle(...).andThen(driveDistance(...))`.
 
 ---
 
-## 4. Bind and test
+## 5. Bind and test
 
 ```java
 m_driverController.povUp().onTrue(m_module.driveDistance(1.0, 0.4)); // drive 1 meter
