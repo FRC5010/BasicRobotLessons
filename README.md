@@ -51,8 +51,11 @@ let you see everything working on your laptop. Device IDs in the examples
 | 4 | [Simulation](docs/lessons/04-simulation.md) | Make it move on your laptop | `simulationPeriodic`, physics models |
 | 5 | [Steering with P control](docs/lessons/05-steering-p-control.md) | Point the module to an angle | `if`, arithmetic, error, setpoints |
 | 6 | [Distance & commands](docs/lessons/06-distance-and-commands.md) | Drive an exact distance | Unit conversion, commands that finish |
-| 7 | [Gyro & heading](docs/lessons/07-gyro-heading.md) | Turn to a compass heading | Reusing patterns, another sensor |
-| 8 | [Autonomous](docs/lessons/08-autonomous.md) | Combine everything into an auto | Command composition, groups |
+| 7 | [Four modules](docs/lessons/07-four-modules.md) | Assemble a 4-module chassis you can translate and rotate | Arrays, `for` loops, helper classes |
+| 8 | [Gyro & heading](docs/lessons/08-gyro-heading.md) | Turn the chassis to a compass heading | Reusing patterns, extracting helpers |
+| 9 | [Autonomous](docs/lessons/09-autonomous.md) | Compose a drive-turn-drive auto | Command composition, sequences & groups |
+| 10 | [Full swerve — kinematics](docs/lessons/10-kinematics.md) | Drive-and-rotate at once with `SwerveDriveKinematics` | Data-carrier types, indexed loops |
+| 11 | [Odometry & Field2d](docs/lessons/11-odometry-field.md) | Track and draw the robot on a virtual field | Building arrays in loops, small bundle types |
 
 ## A mental model to carry through the whole course
 

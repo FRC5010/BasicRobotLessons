@@ -144,8 +144,9 @@ You now have the two ingredients for turning the *robot*: point the wheel
 (`steerToAngle` from Lesson 5) and roll it forward (`driveDistance`). A real swerve
 robot turns in place by angling all wheels tangent to a circle and driving them. For
 one module, you can approximate "turn the robot" as "steer to an angle, then drive
-an arc length." We'll do the clean version with the gyro in Lesson 7 — but if you
-want to experiment now, compose `steerToAngle(...).andThen(driveDistance(...))`.
+an arc length." Lesson 7 builds the four-module chassis this turns into, and
+Lesson 8 does the clean version with a gyro — but if you want to experiment
+now, compose `steerToAngle(...).andThen(driveDistance(...))`.
 
 ---
 
@@ -186,4 +187,4 @@ done* — exactly what autonomous routines are made of.
 - Small commands **compose** into bigger behaviors — the core of the command-based
   framework.
 
-Next: [Lesson 7 — Gyro & heading](07-gyro-heading.md).
+Next: [Lesson 7 — Four modules](07-four-modules.md).

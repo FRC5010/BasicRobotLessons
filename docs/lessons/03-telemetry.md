@@ -11,7 +11,7 @@
 **New robot concepts**
 - The TalonFX **integrated encoder** (position & velocity for free)
 - **NetworkTables / SmartDashboard** — the pipe that carries data off the robot
-- **Plotting** in SimGUI / Glass
+- **Plotting** in SimGUI, and viewing the same data in **AdvantageScope**
 - **Units:** rotations and rotations-per-second
 
 ---
@@ -90,11 +90,14 @@ public void periodic() {
 `./gradlew simulateJava` → **Teleoperated**.
 
 In **SimGUI**: menu **NetworkTables → SmartDashboard**, and you'll see your two
-values ticking. To *plot* them over time, use **Glass** (the richer dashboard):
+values ticking. SimGUI is built on the same widget library as WPILib's standalone
+**Glass** tool, so plotting is already right there in the sim window — you don't
+need to launch anything extra:
 
-1. Run the sim, then launch Glass (WPILib command palette → **Start Tool** → Glass),
-   or in SimGUI drag a value into a **Plot** widget.
-2. Add "Drive Velocity (rps)" to a plot. Drive with the stick and watch the trace
+1. In the **SmartDashboard** panel, find "Drive Velocity (rps)".
+2. Right-click the value → **Plot** (or drag it onto an existing plot). A live
+   plot appears.
+3. Drive with the stick (or slide the joystick in SimGUI) and watch the trace
    rise and fall.
 
 Right now position barely moves and velocity is near zero even at full stick —
@@ -104,6 +107,28 @@ carry.
 
 > On a **real robot**, these plots already work — spin the wheel by hand and watch
 > position climb.
+
+### A richer viewer: AdvantageScope
+
+SimGUI's built-in plot is great for a quick look at one or two signals. Once you
+want to overlay a *commanded* value against a *measured* one, scrub back through
+what happened five seconds ago, or see the robot on a virtual field,
+[**AdvantageScope**](https://docs.advantagescope.org/) is the tool teams reach
+for. It's made by Team 6328 and ships in the WPILib installer, so you already
+have it.
+
+Launch it from the WPILib command palette → **Start Tool** → **AdvantageScope**,
+then in AdvantageScope:
+
+1. **File → Connect to Simulator** (or "Connect to Robot" and enter team number
+   5010 on a real robot).
+2. Drag "Drive Velocity (rps)" from the sidebar onto the **📈 Line Graph** tab.
+3. Drag "Drive Position (rot)" onto the same graph, on the *right axis*. Two
+   signals, one time axis.
+
+You'll come back to AdvantageScope often — for tuning P control in Lesson 5,
+comparing commanded vs. actual speed, and eventually watching the robot pose on
+the field.
 
 ---
 
@@ -129,7 +154,7 @@ carry.
 - Methods can **return values** you use, not just perform actions.
 - **NetworkTables**, via **`SmartDashboard.putNumber`**, carries data to the
   dashboard; publishing in **`periodic()`** keeps it live.
-- SimGUI/Glass **plot** those values over time — your window into what the robot is
-  actually doing.
+- **SimGUI's built-in plot** gives you a live view; **AdvantageScope** is the
+  richer tool for comparing signals, scrubbing history, and field/robot views.
 
 Next: [Lesson 4 — Simulation](04-simulation.md).

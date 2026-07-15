@@ -192,6 +192,6 @@ short path. Try writing that in the challenge; it's a great `if` exercise.
   easing in as error shrinks.
 - **`if / else if / else`** expresses multi-way decisions (you used it to `clamp`).
 - **Tuning `kP`** against a live plot is a core robotics skill, and the same pattern
-  works for *any* quantity you want to control — including heading (Lesson 7).
+  works for *any* quantity you want to control — including heading (Lesson 8).
 
 Next: [Lesson 6 — Distance & commands](06-distance-and-commands.md).
