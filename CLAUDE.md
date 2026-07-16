@@ -56,6 +56,8 @@ Prose conventions used consistently across lessons:
 - Code style in examples: private fields prefixed `m_` (e.g. `m_driveMotor`), constants under nested `public static class XxxConstants` inside [Constants.java](../src/main/java/frc/robot/Constants.java) (student's file), CAN IDs as placeholder integers with an inline `// change to yours` comment.
 - Commands (WPILib `Command`) are produced by factory methods on the subsystem (e.g. `run(() -> …).finallyDo(…)`), not by subclassing `CommandBase`.
 - PowerShell is the assumed shell (`./gradlew simulateJava`), matching a Windows dev environment.
+- When a walkthrough adds code to an **existing** file, never hand the student a bare snippet. Show it inside its surroundings (the enclosing method or class line, with `// ...` anchor comments standing in for neighboring code) and say in prose where it goes **and why it belongs there** — students don't yet know Java file anatomy, and placement reasoning ("fields hold data the object keeps for life, so they go at the top of the class") is part of the lesson. When a lesson introduces a whole new file with several new concepts, build it in labeled pieces top-to-bottom rather than presenting one large block, then show the assembled file for checking.
+- Blockquote callouts and code comments render gray, but they are still teaching text: write them **to the student**, never about the lesson from the outside. "Watch out: motors don't stop on their own" — not "this is the misconception of the lesson" or other narration about the material.
 
 ## Rewriting lessons in a teacher's voice
 
