@@ -18,8 +18,10 @@
 
 ## 1. Motors that know where they are
 
-A TalonFX has a built-in **encoder** — a sensor that counts how far the motor's
-rotor has turned. That means the motor can tell you two things for free:
+So far the conversation with the motor has been one-way: you talk, it spins.
+Time to make it talk back. A TalonFX has a built-in **encoder** — a sensor
+that counts how far the motor's rotor has turned. That means the motor can
+tell you two things for free:
 
 - **Position** — how many rotations it has turned since boot.
 - **Velocity** — how fast it's turning right now, in rotations per second (rps).
@@ -31,57 +33,80 @@ double rotations = m_driveMotor.getPosition().getValueAsDouble();
 double rps       = m_driveMotor.getVelocity().getValueAsDouble();
 ```
 
-**Reading the chain left to right:**
-- `m_driveMotor.getPosition()` returns a *signal object* (Phoenix's wrapper that
-  carries the value plus its units and a timestamp).
-- `.getValueAsDouble()` pulls the plain number out of it — rotations for position,
-  rps for velocity.
+Two dots, two method calls in one expression — that's called **chaining**, and
+it reads left to right like a little assembly line. `m_driveMotor.getPosition()`
+doesn't return a plain number; it returns a *signal object*, Phoenix's wrapper
+that carries the value together with its units and a timestamp. Then
+`.getValueAsDouble()` is called on *that result* to pull the plain number out —
+rotations for position, rps for velocity. That's the general rule chaining runs
+on: whatever a method returns, you can immediately call methods on it, without
+parking it in a variable first.
 
-This is the first time you're using a method for its **return value**. `set(...)`
-was a command ("do this"); `getPosition()` is a question ("what is this?"). Most of
-programming is asking questions and acting on the answers.
+Which is a good moment to name a pattern you've been using without a name.
+You've already caught values that methods handed back — `getLeftY()` gave you
+the stick position, and your own `applyDeadband` handed back a cleaned-up
+number. Here's the pattern: methods come in two flavors. Some are *actions* —
+`set(0.3)` means "do this," and nothing comes back. Some are *questions* —
+`getPosition()` means "what is this?", and the answer comes back as a
+**return value** for you to catch in a variable and act on. Most of
+programming is asking questions and acting on the answers, and from this
+lesson on, the question-methods start doing the heavy lifting.
 
 ---
 
 ## 2. Getting data off the robot: NetworkTables
 
-Your code runs on the robot; you're looking at a laptop. **NetworkTables** is the
-shared bulletin board between them: the robot posts numbers, the dashboard reads
-them. The easiest door into it is **`SmartDashboard`**:
+Now the plumbing problem: your code runs on the robot, and you're looking at a
+laptop. **NetworkTables** is the shared bulletin board between them — the
+robot posts numbers under a name, and anything on the network can look them up
+by that name. The board is already running; you don't write any connection
+code. The easiest door into it is **`SmartDashboard`**. Add the import to
+`DriveModule.java`, up top with the others:
 
 ```java
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 ```
+
+And publishing looks like this:
 
 ```java
 SmartDashboard.putNumber("Drive Position (rot)", rotations);
 SmartDashboard.putNumber("Drive Velocity (rps)", rps);
 ```
 
-`putNumber("name", value)` publishes a number under a label. Publish it **every
-tick** and the dashboard can plot it over time.
+`putNumber("name", value)` posts a number under a label — the label is the
+address on the bulletin board, and the dashboard finds the value by it.
+Publish it **every tick** and the dashboard can plot it over time. Which
+raises the real question: *where* do these lines go so they run every tick?
 
 ---
 
 ## 3. Where to put it: `periodic()`
 
-`periodic()` runs every tick regardless of what commands are scheduled — perfect for
-telemetry, which you always want fresh. Update `DriveModule`:
+Remember the empty `periodic()` that's been sitting at the bottom of
+`DriveModule` since Lesson 1? The scheduler calls it about 50 times a second
+no matter what commands are running — it's been waiting for exactly this job.
+Telemetry wants to be fresh *always*, not just while some command happens to
+be active, so it goes in the method that always runs. Fill in the body:
 
 ```java
-@Override
-public void periodic() {
-  double rotations = m_driveMotor.getPosition().getValueAsDouble();
-  double rps       = m_driveMotor.getVelocity().getValueAsDouble();
+public class DriveModule extends SubsystemBase {
+  // ...fields, constructor, and command factories stay as they are...
 
-  SmartDashboard.putNumber("Drive Position (rot)", rotations);
-  SmartDashboard.putNumber("Drive Velocity (rps)", rps);
+  @Override
+  public void periodic() {
+    double rotations = m_driveMotor.getPosition().getValueAsDouble();
+    double rps       = m_driveMotor.getVelocity().getValueAsDouble();
+
+    SmartDashboard.putNumber("Drive Position (rot)", rotations);
+    SmartDashboard.putNumber("Drive Velocity (rps)", rps);
+  }
 }
 ```
 
-> **Design note:** telemetry belongs in `periodic()`, *not* inside your command
-> lambdas. Commands come and go; `periodic()` is always running, so your plots never
-> go blank just because a command ended.
+> **Make it a habit:** telemetry goes in `periodic()`, *not* inside your
+> command lambdas. Commands come and go; `periodic()` is always running, so
+> your plots never go blank just because a command ended.
 
 ---
 
@@ -100,13 +125,13 @@ need to launch anything extra:
 3. Drive with the stick (or slide the joystick in SimGUI) and watch the trace
    rise and fall.
 
-Right now position barely moves and velocity is near zero even at full stick —
-because in simulation the motor isn't actually turning yet. **That's exactly what
-Lesson 4 fixes.** For now you've built the *pipe*; next we give it something real to
-carry.
+Don't be discouraged when the traces sit nearly flat even at full stick —
+in simulation the motor isn't actually turning yet, so there's nothing for
+the encoder to count. **That's exactly what Lesson 4 fixes.** What you built
+today is the *pipe*; next lesson gives it something real to carry.
 
-> On a **real robot**, these plots already work — spin the wheel by hand and watch
-> position climb.
+> On a **real robot**, these plots already work — spin the wheel by hand and
+> watch position climb.
 
 ### A richer viewer: AdvantageScope
 
@@ -148,13 +173,17 @@ the field.
 
 ## What you learned
 
-- The TalonFX's **integrated encoder** gives **position** (rotations) and
-  **velocity** (rps) for free — you *read* them with `getPosition()` /
-  `getVelocity()` and `.getValueAsDouble()`.
-- Methods can **return values** you use, not just perform actions.
-- **NetworkTables**, via **`SmartDashboard.putNumber`**, carries data to the
-  dashboard; publishing in **`periodic()`** keeps it live.
-- **SimGUI's built-in plot** gives you a live view; **AdvantageScope** is the
-  richer tool for comparing signals, scrubbing history, and field/robot views.
+The theme of this lesson is asking instead of telling. Methods split into
+actions and questions: `set(...)` tells the motor what to do, while
+`getPosition()` and `getVelocity()` ask the TalonFX's **integrated encoder**
+what actually happened — position in rotations, velocity in rps — with
+`.getValueAsDouble()` **chained** on to unwrap the plain number from the
+signal object. **NetworkTables** is the bulletin board that carries those
+answers off the robot: publish with `SmartDashboard.putNumber` from
+`periodic()` so the data never goes stale, plot it in SimGUI for a quick
+look, and reach for **AdvantageScope** when you want to compare signals or
+scrub back through time. The pipe looks unimpressive while the sim motor
+stands still — but Lesson 4 turns the physics on, and these same plots come
+alive.
 
 Next: [Lesson 4 — Simulation](04-simulation.md).

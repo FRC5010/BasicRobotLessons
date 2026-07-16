@@ -84,8 +84,11 @@ reviews each pass and steers the intensity.
 - The imperative voice in *instructions* — "Open `Robot.java`", "Run
   `./gradlew build`". Teachers give clear directions. Don't soften commands
   into suggestions.
-- Roughly the same total length. If a section grew by more than ~20%,
-  something is fluff.
+- Length follows clarity, not a quota. A section may grow substantially when
+  it is genuinely unpacking a new concept — placement reasoning, a short
+  worked example, a wrong-model-vs-right-model contrast all earn their space.
+  What to cut is fluff: cheerleading, repeated teacher beats, and prose that
+  restates what the code already says.
 
 ### The moves that make it work
 
