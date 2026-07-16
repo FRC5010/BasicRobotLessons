@@ -117,10 +117,8 @@ import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
 ```java
   public Robot() {
-    Logger.addDataReceiver(new NT4Publisher());    // stream values live over the network
-    if (isReal()) {
-      Logger.addDataReceiver(new WPILOGWriter());  // on a real robot, also save a log file
-    }
+    Logger.addDataReceiver(new NT4Publisher());   // stream values live over the network
+    Logger.addDataReceiver(new WPILOGWriter());   // and save every value to a .wpilog file
     Logger.start();
 
     // ...the constructor's existing code stays below...
@@ -130,12 +128,12 @@ import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 A **data receiver** is a destination for logged values, and you can have
 several at once. `NT4Publisher` streams every value live over the network —
 that's how your laptop will see them. `WPILOGWriter` writes every value to a
-`.wpilog` file on the robot: a flight recorder, so after a match you can open
-the file and scrub through everything that happened. And `isReal()` is a
-question-method — there's section 1's pattern already at work — that answers
-whether this code is running on a real roboRIO or on your laptop. In sim
-there's no point writing a log file of a motor that isn't real, so the file
-writer only runs on hardware.
+`.wpilog` file: a flight recorder. On a real robot the file lands on the
+roboRIO (or a USB stick plugged into it); in sim it lands in a `logs/` folder
+inside your project. Recording sim sessions might sound like overkill — it
+isn't. A session you can scrub through afterward is how you answer "wait,
+what just happened?" without having to make it happen again, and that same
+log file unlocks bigger tricks later in the course.
 
 ---
 
@@ -209,9 +207,12 @@ the encoder to count. **That's exactly what Lesson 4 fixes.** What you built
 today is the pipe; next lesson gives it something real to carry.
 
 > On a **real robot**, these plots already work — spin the wheel by hand and
-> watch position climb. And because of `WPILOGWriter`, the same values are
-> being saved to a `.wpilog` file: open it later in AdvantageScope with
-> **File → Open Log(s)** and replay the whole session.
+> watch position climb.
+
+And sim or real, `WPILOGWriter` has been saving every value to a `.wpilog`
+file this whole time — after a sim run, look for the `logs/` folder in your
+project. Open a log with **File → Open Log(s)** in AdvantageScope and you can
+scrub back through the entire session.
 
 You'll come back to AdvantageScope constantly — tuning P control in Lesson 5,
 comparing commanded vs. actual speed, and eventually watching the robot drive
