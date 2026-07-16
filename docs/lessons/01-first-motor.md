@@ -170,16 +170,22 @@ method**. Calling it does *not* spin the motor. It *returns a Command* — a
 little recipe the scheduler will run later — which is why the return type is
 `Command` and the body starts with `return`.
 
-Inside the recipe, `startEnd(...)` is one of several helpers we inherited
-from `SubsystemBase` (others are `run`, `runOnce`, `runEnd`; you'll meet them
-as you need them). It takes two `() -> ...` chunks — read each one as "a
-piece of code to run later"; Lesson 2 gives them their proper name. The first
-runs once when the command starts: set the motor to `fraction`
-(`m_driveMotor.set(0.5)` means "50% power"). The second runs once when the
-command ends, whether it finished or got cancelled: set the motor back to
-`0`. Why insist on that second one? Because motors **hold** whatever value
-you last set. Nothing stops the wheel unless some code commands `0`, and
-`startEnd` makes that cleanup impossible to forget.
+Inside the recipe, that `() ->` arrow is brand-new syntax, so slow down for
+it. On its own, `m_driveMotor.set(fraction)` would set the motor *right now*.
+Putting `() ->` in front changes the meaning to: "don't run this yet — hold
+onto it, and run it when the time comes." That's exactly what a command
+needs: not actions happening now, but actions saved up for the scheduler to
+fire at the right moments. (These saved-up pieces of code have a name, and a
+lot more uses — Lesson 2 introduces them.)
+
+`startEnd(...)` — one of several helpers inherited from `SubsystemBase`,
+alongside `run`, `runOnce`, and `runEnd` — takes two of them, one for each
+moment that matters. The first runs once when the command starts: set the
+motor to `fraction` (`m_driveMotor.set(0.5)` means "50% power"). The second
+runs once when the command ends, whether it finished or got cancelled: set
+the motor back to `0`. Why insist on that second one? Because motors **hold**
+whatever value you last set. Nothing stops the wheel unless some code
+commands `0`, and `startEnd` makes that cleanup impossible to forget.
 
 Then `periodic()` — the scheduler calls it on every tick, about 50 times a
 second. It's empty today, but it's part of what being a subsystem means, so

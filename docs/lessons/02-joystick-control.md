@@ -20,16 +20,19 @@ doesn't creep when the stick is centered.
 ## 1. A joystick axis is just a number
 
 A controller axis reports a `double` — a number with a decimal point — from `-1.0`
-to `1.0`. Centered is `0.0` (ish — see deadband below). WPILib gives it to you like
-this:
+to `1.0`. Centered is `0.0` (ish — section 3 deals with the "ish"). WPILib hands
+it to you like this:
 
 ```java
 double y = m_driverController.getLeftY();
 ```
 
-We want that number to become the motor's speed. The catch: it changes every
-moment, so we can't grab it once. We need something that fetches the *current*
-value on **every tick**. That's what a **supplier** is for.
+We want that number to become the motor's speed, and the obvious plan is to read
+it once and pass it along — the way `driveAtSpeed(0.3)` took a number in Lesson 1.
+But that plan has a hole in it: the stick changes every moment, and a `double`
+you grabbed is frozen — a snapshot of where the stick *was*, not where it is.
+What we actually need is something the command can ask for the *current* value
+on **every tick**. That's what a **supplier** is for.
 
 ---
 
@@ -43,35 +46,52 @@ return startEnd(() -> m_driveMotor.set(fraction), () -> m_driveMotor.set(0));
 //              this is a lambda                  and so is this
 ```
 
-A **lambda** is a tiny anonymous function written inline. `() -> doSomething()`
-means "a function that takes no arguments and runs `doSomething()`." `startEnd`
-called the first one at start and the second at end. In this lesson we'll use
-`run(...)`, which calls its lambda **every tick** — perfect for reading a stick
-that keeps changing.
+A **lambda** is a tiny function written inline, with no name — it doesn't need
+one, because you hand it directly to whoever's going to run it. `() ->
+doSomething()` means "a function that takes no arguments and runs
+`doSomething()`." In Lesson 1, `startEnd` ran the first one at start and the
+second at end. This lesson leans on `run(...)`, which calls its lambda **every
+tick** — perfect for reading a stick that keeps changing.
 
 A **`DoubleSupplier`** is a lambda that *returns a double* each time it's called:
-`() -> m_driverController.getLeftY()`. Every tick, ask it for a value and you get
-the stick's current position. That's exactly what we need.
+`() -> m_driverController.getLeftY()`. Ask it every tick, get the stick's
+position every tick. That's exactly the fetch-it-fresh behavior section 1 said
+we needed.
 
-Update `DriveModule` with a method that takes a supplier:
+Time to put it to work. Open `DriveModule.java` and add a second command factory
+directly below `driveAtSpeed` — it's the same kind of method, so they belong
+side by side:
+
+```java
+public class DriveModule extends SubsystemBase {
+  // ...field, constructor, and driveAtSpeed(...) stay as they are...
+
+  /** Drives continuously using a live speed source (e.g. a joystick axis). */
+  public Command driveWithJoystick(DoubleSupplier speedSupplier) {
+    return run(() -> {
+      double raw = speedSupplier.getAsDouble();   // fetch fresh value this tick
+      double speed = applyDeadband(raw, 0.1);     // clean it up (next section)
+      m_driveMotor.set(speed);
+    });
+  }
+```
+
+`DoubleSupplier` is a class from another package, so the file needs an import —
+up top with the others, below the `package` line (or click the red underline and
+let `Ctrl+.` add it):
 
 ```java
 import java.util.function.DoubleSupplier;
 ```
 
-```java
-/** Drives continuously using a live speed source (e.g. a joystick axis). */
-public Command driveWithJoystick(DoubleSupplier speedSupplier) {
-  return run(() -> {
-    double raw = speedSupplier.getAsDouble();   // fetch fresh value this tick
-    double speed = applyDeadband(raw, 0.1);     // clean it up (next section)
-    m_driveMotor.set(speed);
-  });
-}
-```
+Notice the package name: `java.util.function` is Java itself, not WPILib —
+suppliers are a plain Java idea that robot code leans on heavily.
 
-Notice the `{ }` braces: when a lambda body has more than one statement, wrap it in
-braces, just like a method body.
+Two more things about the new method. The `{ }` braces after the arrow: when a
+lambda body has more than one statement, wrap it in braces, just like a method
+body. And your file won't compile right now — `applyDeadband` doesn't exist
+yet. On purpose: writing the call first lets the code you *wish* you had tell
+you what to build next.
 
 ---
 
@@ -79,7 +99,11 @@ braces, just like a method body.
 
 Real joysticks don't rest at exactly `0.0` — a centered stick might read `0.03`.
 Left alone, the motor would hum and creep forever. A **deadband** treats anything
-close to center as zero. Add this helper method to `DriveModule`:
+close to center as zero.
+
+Add the helper to `DriveModule`, right below `driveWithJoystick`. Make it
+`private`: this is internal cleanup plumbing, and nothing outside the class has
+any business calling it — so nothing outside gets to.
 
 ```java
 /** Returns 0 when |value| is within 'band', otherwise passes the value through. */
@@ -91,43 +115,53 @@ private double applyDeadband(double value, double band) {
 }
 ```
 
-**New pieces:**
-- **`if (condition) { ... }`** runs the block only when the condition is true. Your
-  first conditional! We'll lean on these hard in Lesson 5.
-- **`Math.abs(value)`** returns the absolute value (drops the sign), so the band
-  works for both forward and reverse.
-- **`return`** immediately hands a value back to whoever called the method and
-  stops running it.
+Three small pieces of Java arrived in those six lines. **`if (condition) {
+... }`** runs its block only when the condition is true — your first
+conditional, and Lesson 5 leans on these hard. **`Math.abs(value)`** returns
+the absolute value (drops the sign), so one comparison covers both forward and
+reverse. And **`return`** hands a value back to whoever called the method and
+stops the method on the spot — which is why the second `return value;` only
+happens when the `if` didn't fire. Trace it with `value = 0.03`, then with
+`value = 0.8`, and convince yourself each one takes the path you expect.
 
-> WPILib actually ships `MathUtil.applyDeadband(value, band)` that does this (and
-> rescales smoothly). We wrote our own so you see what it does. Feel free to swap in
-> `MathUtil.applyDeadband` later — knowing what a library call does beats trusting
-> it blindly.
+> WPILib actually ships `MathUtil.applyDeadband(value, band)` that does this
+> (and rescales smoothly). You wrote your own so you'd know exactly what's
+> inside it. Feel free to swap in `MathUtil.applyDeadband` later — knowing
+> what a library call does beats trusting it blindly.
 
 ---
 
 ## 4. Default commands: control when nothing else asks
 
-We don't want to hold a button to drive — driving is the *normal* thing this module
-does. A **default command** runs automatically whenever no other command is using
-the subsystem. Set it in `RobotContainer`'s constructor (or `configureBindings`):
+We don't want to hold a button to drive — driving is the *normal* thing this
+module does, the thing it should fall back to whenever nothing more important
+is happening. WPILib has a name for exactly that: a **default command** runs
+automatically whenever no other command is using the subsystem.
+
+Back in `RobotContainer.java`, inside `configureBindings()` with the rest of
+the wiring:
 
 ```java
-m_module.setDefaultCommand(
-    m_module.driveWithJoystick(() -> -m_driverController.getLeftY()));
+  private void configureBindings() {
+    // ...the A-button binding from Lesson 1 can stay...
+
+    m_module.setDefaultCommand(
+        m_module.driveWithJoystick(() -> -m_driverController.getLeftY()));
+  }
 ```
 
-Two things to notice:
+Read the new statement inside-out. `() -> -m_driverController.getLeftY()` is a
+`DoubleSupplier` lambda — re-asked every tick, so it always reflects where the
+stick is *right now*. And that **minus sign** is doing real work: on Xbox
+sticks, pushing *forward* reads *negative*. Negating makes "push forward" =
+"positive speed" = "drive forward." Small detail, endless confusion if you
+forget it — someday a robot will lurch backward off the starting line, and the
+first thing to check will be a sign.
 
-- `() -> -m_driverController.getLeftY()` is a `DoubleSupplier` lambda. It's re-asked
-  every tick, so it always reflects the current stick position.
-- The **minus sign**: on Xbox sticks, pushing *forward* reads *negative*. Negating
-  makes "push forward" = "positive speed" = "drive forward." Small detail, endless
-  confusion if you forget it.
-
-Now the stick always drives the module — unless some other command (like a future
-"drive to distance") temporarily takes over. When that command finishes, the
-default automatically resumes. That hand-off is free.
+Now the stick always drives the module — unless some other command (like a
+future "drive to distance") temporarily takes over. When that command
+finishes, the default resumes on its own. You never write that hand-off; the
+scheduler does it. That's the quiet payoff of making everything a command.
 
 ---
 
@@ -135,11 +169,16 @@ default automatically resumes. That hand-off is free.
 
 `./gradlew simulateJava` → **Teleoperated**. Push the left stick (or SimGUI's
 joystick slider). The motor output should track the stick, snap to zero near
-center, and reverse when you pull back.
+center, and reverse when you pull back. If it creeps at rest instead, your
+deadband isn't in the path — check that `driveWithJoystick` really calls
+`applyDeadband`.
 
 ---
 
 ## Try it
+
+The first two are the kind of feature request real drivers make of their
+programmers every season.
 
 1. **Slow mode:** make a method `driveWithJoystick(DoubleSupplier speed, double
    scale)` that multiplies the speed by `scale`. Bind the right bumper so that while
@@ -154,11 +193,16 @@ center, and reverse when you pull back.
 
 ## What you learned
 
-- A **`double`** is a decimal number; joystick axes and motor speeds are doubles.
-- A **lambda** `() -> ...` is an inline function; a **`DoubleSupplier`** is one that
-  returns a fresh double each tick — perfect for live inputs.
-- **`if`**, **`Math.abs`**, and **`return`** let you clean up input (**deadband**).
-- A **default command** is what a subsystem does when nothing else claims it, and
-  the scheduler hands control back to it automatically.
+The through-line of this lesson is *live* data. A joystick axis is just a
+**`double`**, but it's a double that changes constantly — so instead of
+passing a number, you passed a **lambda**, shaped as a **`DoubleSupplier`**
+the command re-asks every tick. Around that you picked up your first **`if`**,
+plus `Math.abs` and `return`, and used all three to build a **deadband** so a
+resting stick means a resting motor. The robot-side idea to carry forward is
+the **default command**: what a subsystem does when nothing else claims it,
+with the scheduler handing control back automatically. If lambdas still feel
+like strange syntax, that's normal — you'll write so many `() ->`s over the
+coming lessons that the arrow will stop registering as weird. Next, we make
+the robot's numbers visible, because plots beat print statements.
 
 Next: [Lesson 3 — Telemetry & plots](03-telemetry.md).
