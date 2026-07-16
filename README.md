@@ -57,6 +57,13 @@ let you see everything working on your laptop. Device IDs in the examples
 | 10 | [Full swerve — kinematics](docs/lessons/10-kinematics.md) | Drive-and-rotate at once with `SwerveDriveKinematics` | Data-carrier types, indexed loops |
 | 11 | [Odometry & Field2d](docs/lessons/11-odometry-field.md) | Track and draw the robot on a virtual field | Building arrays in loops, small bundle types |
 
+### Asides (out of order — read when you need them)
+
+- [Debugging in VSCode and reading stack traces](docs/lessons/aside-debugger.md) —
+  breakpoints, stepping, watches, conditional breakpoints, and how to read the
+  error trail Java prints when something crashes. Useful from Lesson 1 onward;
+  the worked example uses Lesson 5's P control.
+
 ## A mental model to carry through the whole course
 
 - **`Robot`** is a metronome. ~50 times a second it ticks the scheduler. You almost
