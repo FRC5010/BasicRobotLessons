@@ -6,8 +6,10 @@ error trail Java prints when the program crashes.
 
 This isn't part of the numbered sequence. Reach for it any time you're stuck —
 "the number should be 90 but the wheel isn't moving," or "sim just exploded and
-printed 40 lines of red." The debugger and stack traces are how you find the
-answer without adding print statements everywhere.
+printed 40 lines of red." Everyone's first instinct in those moments is to
+sprinkle print statements everywhere and squint at the output. The debugger and
+stack traces are the faster way to the answer, and they're much less scary than
+they look.
 
 **New concepts**
 - **Breakpoints**, **stepping** (over / into / out), and the **Variables**,
@@ -70,8 +72,12 @@ VSCode shows you:
   - **Step Out** (`Shift+F11`) — run until the current method returns.
   - **Stop** — kill the debug session.
 
-One thing to internalize: **while paused, nothing on the robot is running.**
-The scheduler isn't ticking, sensors aren't updating, timers aren't
+That's a lot of panels at once — don't try to memorize them. The worked
+example below touches each one, and after a session or two your hands will
+know where everything is.
+
+One thing to internalize now, though: **while paused, nothing on the robot is
+running.** The scheduler isn't ticking, sensors aren't updating, timers aren't
 advancing. In sim that's harmless — sim time stops with everything else. On a
 real robot, motors keep applying their last command until you continue, which
 is exactly why debugging in sim is almost always safer.
@@ -126,9 +132,11 @@ staring at a plot for hours.
 
 ## 4. Reading a stack trace
 
-When something throws, Java prints a **stack trace** — a receipt of every
-method call that was open at the moment of the crash. Here's a typical one from
-forgetting to construct a motor:
+When something throws, Java prints a **stack trace**, and the first time you
+see one it reads like the program yelling at you in a foreign language. It
+isn't. It's a receipt — a list of every method call that was open at the
+moment of the crash. Here's a typical one from forgetting to construct a
+motor:
 
 ```
 Unhandled exception: java.lang.NullPointerException: Cannot invoke
@@ -190,6 +198,10 @@ the topmost `frc.robot.*` frame.
 
 ## Try it
 
+Three exercises — and yes, the first one is "break your robot on purpose."
+Crashing a program you *meant* to crash is the best way to take the fear out
+of the real thing.
+
 1. **Force an NPE on purpose.** In a subsystem you have, add a new field:
    `private TalonFX m_bogus;` — don't initialize it. Then call
    `m_bogus.set(0.1)` inside `periodic()`. Run sim, read the trace, note the
@@ -209,15 +221,14 @@ the topmost `frc.robot.*` frame.
 
 ## What you learned
 
-- **Breakpoints** freeze the whole 50 Hz loop. While paused, the **Variables**,
-  **Watch**, and **Call Stack** panels show you what the robot was thinking one
-  tick at a time — much stronger than `System.out.println` sprinkled through
-  the code.
-- **Step Over / Into / Out** walk you through a method line by line, letting
-  you decide when to dive into called methods and when to skip past them.
-- **Conditional breakpoints** are how you catch rare bugs without pounding
-  Continue.
-- **Stack traces** are receipts, not gibberish. The first line says *what*
-  broke; the first `frc.robot.*` frame says *where*. Ctrl+click the `file:line`
-  and you're there.
-- Reach for the debugger *before* you spend twenty minutes staring at code.
+You now have two tools that beat `System.out.println` sprinkled through the
+code. The first is the **breakpoint**: it freezes the whole 50 Hz loop, and
+while everything's paused the **Variables**, **Watch**, and **Call Stack**
+panels show you what the robot was thinking, one tick at a time — with **Step
+Over / Into / Out** to walk forward line by line, and **conditional
+breakpoints** to catch the rare bad tick without pounding Continue. The second
+is the **stack trace**, which is a receipt, not gibberish: the first line says
+*what* broke, the first `frc.robot.*` frame says *where*, and Ctrl+clicking
+the `file:line` takes you straight there. Next time something goes sideways,
+reach for these *before* you spend twenty minutes staring at code — that's the
+whole reason this aside exists.
