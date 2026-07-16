@@ -57,6 +57,94 @@ Prose conventions used consistently across lessons:
 - Commands (WPILib `Command`) are produced by factory methods on the subsystem (e.g. `run(() -> …).finallyDo(…)`), not by subclassing `CommandBase`.
 - PowerShell is the assumed shell (`./gradlew simulateJava`), matching a Windows dev environment.
 
+## Rewriting lessons in a teacher's voice
+
+The lessons started in a slightly "AI voice" — clinical, evenly-weighted, with
+lots of "X is Y — Z" glossary definitions. There's an in-progress pass to
+rewrite them so they read more like a teacher talking to a student.
+**[Lesson 0](docs/lessons/00-orientation.md) is the calibration reference —
+read it before rewriting any other lesson to lock in the target level.**
+Every other numbered lesson and the two asides are still in the original
+voice as of this note.
+
+Do lessons **one at a time** when the user explicitly asks. Do not bulk-rewrite
+and do not preemptively touch a lesson the user hasn't picked. The user
+reviews each pass and steers the intensity.
+
+### What to preserve exactly
+
+- Every technical claim: code snippets, WPILib method names, numbers,
+  constant values, CAN ID conventions.
+- The structural template: `Goal` / `New concepts` / numbered walkthrough
+  sections / `Try it` / `What you learned` / `Next:` link (or `Ready to
+  start?` for asides).
+- Section headers.
+- The imperative voice in *instructions* — "Open `Robot.java`", "Run
+  `./gradlew build`". Teachers give clear directions. Don't soften commands
+  into suggestions.
+- Roughly the same total length. If a section grew by more than ~20%,
+  something is fluff.
+
+### The moves that make it work
+
+These are the specific things the Lesson 0 rewrite does. Reach for them —
+but don't force every one into every lesson.
+
+1. **Anticipate student anxiety.** "That's totally normal." "You don't need
+   to memorize anything yet." "If half of this still feels fuzzy, that's
+   fine — it'll click in Lesson N."
+2. **Name what matters.** "If you take one thing from this lesson, take
+   that picture." "That last idea is worth stopping to internalize." Every
+   lesson has priorities; make them visible.
+3. **Pair the right mental model with the wrong one the student is
+   bringing in.** For the biggest conceptual shifts, don't just state the
+   correct picture — call out the wrong one too. Example from Lesson 0:
+   "You're not writing a program that runs top-to-bottom. You're filling in
+   blanks that the framework will visit on its own schedule."
+4. **Point to rhythms the student will notice.** "That's the pattern for
+   basically every file you'll open in this course." Connect the current
+   lesson to the shape of what's coming.
+5. **Swap abstract examples for vivid concrete ones.** "If two vendors both
+   shipped a `Timer` class…" beats "if two libraries had a class with the
+   same name…".
+6. **Small honest asides.** "Well, not move, but boot." "Grab a drink."
+   Only observations that are actually true; never forced humor.
+7. **State concrete rules-of-thumb boldly.** "**The package at the top of
+   a file has to match its folder path.**" Students remember bolded rules.
+8. **Softer transitions.** "Alright —", "Which brings us to…", "Peek at
+   any…". Beats "In this section we will…" or "Every .java file…".
+9. **State a pedagogical belief plainly when it's earned.** From Lesson 0's
+   Try it: "Most of the actual learning happens when you have to think,
+   not when you're copying code out of the walkthrough."
+10. **Dissolve glossary bullet lists into prose** when the bullets are just
+    definitions strung together. Bullets belong on parallel action steps or
+    reference material, not on teaching-by-defining.
+11. **Rewrite `What you learned` as a warm sign-off**, not a clinical
+    bullet recap. Acknowledge pace ("If X still feels fuzzy…"), name what
+    mattered most, close with a beat ("That's plenty for one sitting.").
+
+### What to avoid
+
+- **No "I".** Stay in "you" and "we". A first-person narrator changes the
+  voice more than the improvement is worth.
+- **No forced humor and no cheerleading.** "You've got this!" is worse
+  than saying nothing. If a joke isn't actually funny, cut it.
+- **No apologizing** for the pace or content ("Sorry this is dry, but…").
+  Just teach it.
+- **No repetitive teacher-tics.** Don't reach for the same move ("worth
+  naming X", "worth pausing on Y") more than a couple of times per lesson.
+- **Don't over-caveat.** "You might want to consider…" is bad; "Do this"
+  is good. Warmth doesn't mean hedging.
+- **Don't invent new metaphors** where the original already has a good one
+  — the goal is to warm up the delivery, not to redesign the pedagogy.
+
+### Calibration
+
+The rhythm in the current [Lesson 0](docs/lessons/00-orientation.md) is
+roughly one moment of teacher voice every 10–15 lines — noticeable, not
+overwhelming. If you count more than one warm beat per short paragraph,
+dial back. If a whole section reads as pure imperative, dial up.
+
 ## When adding or editing a lesson
 
 - Update the lessons table in [README.md](README.md) if the number, title, or "You'll build" summary changes.
