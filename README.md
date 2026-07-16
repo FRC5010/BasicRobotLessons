@@ -59,6 +59,10 @@ let you see everything working on your laptop. Device IDs in the examples
 
 ### Asides (out of order — read when you need them)
 
+- [Setting up the project and connecting it to GitHub](docs/lessons/aside-setup.md) —
+  installing WPILib, Git, and the GitHub CLI; creating the project from the
+  template; the daily `add`/`commit`/`push` loop. **Start here before Lesson 0
+  if you're new to any of it.**
 - [Debugging in VSCode and reading stack traces](docs/lessons/aside-debugger.md) —
   breakpoints, stepping, watches, conditional breakpoints, and how to read the
   error trail Java prints when something crashes. Useful from Lesson 1 onward;
