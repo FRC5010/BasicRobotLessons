@@ -77,13 +77,13 @@ hood the values still travel over **NetworkTables**, the network pipe between
 robot and laptop — but you'll never have to touch it directly; the logger
 does.)
 
-Install it the same way you installed Phoenix 6 in Lesson 1:
-
-1. Command palette (Ctrl+Shift+P) → **WPILib: Manage Vendor Libraries** →
-   **Install new libraries (online)**.
-2. Paste the AdvantageKit vendordep URL:
-   `https://github.com/Mechanical-Advantage/AdvantageKit/releases/latest/download/AdvantageKit.json`
-3. Rebuild: `./gradlew build`.
+Install it the same way you installed the Phoenix libraries in Lesson 1:
+open the vendor dependency manager (the WPILib icon in the sidebar, or
+Ctrl+Shift+P → **WPILib: Manage Vendor Libraries**), find **AdvantageKit** in
+the list of available dependencies, and install it. Then rebuild:
+`./gradlew build`. (If your manager's list doesn't include it, AdvantageKit
+also publishes its vendordep as a URL you can install online:
+`https://github.com/Mechanical-Advantage/AdvantageKit/releases/latest/download/AdvantageKit.json`.)
 
 ---
 

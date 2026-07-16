@@ -38,6 +38,11 @@ what `SwerveDriveKinematics` handles, and it's the whole point of Lesson 10. For
 now we build the two simple cases so Lesson 8's gyro has a robot that actually
 turns.
 
+Fair warning: this is the biggest refactor of the course. Nothing in it is
+*hard*, but you'll touch three files and the project will spend a while
+mid-surgery, full of red squiggles. That's what refactoring feels like —
+keep going and it all compiles again by section 6.
+
 ---
 
 ## 2. Rename and parameterize the module
@@ -45,14 +50,16 @@ turns.
 `DriveModule` hard-codes CAN IDs `1` and `2` and knows nothing about where it
 sits on the robot. Four modules need four unique ID pairs, and the rotation math
 needs each module's position. Rename the class to **`SwerveModule`** (in VS Code:
-right-click the class name → **Refactor → Rename**), and change two things about
-it:
+right-click the class name → **Refactor → Rename** — it updates the filename and
+every reference in the project for you), and change two things about it:
 
 1. **Drop `extends SubsystemBase`.** A single wheel isn't what the scheduler
    needs to lock — the *whole chassis* is. From now on, the only subsystem for
    driving is `Drivetrain`; each `SwerveModule` is a plain helper it owns.
 2. **Parameterize the constructor** so the corner and its CAN IDs come in from
    outside.
+
+Here's the new top of the class:
 
 ```java
 public class SwerveModule {
@@ -74,16 +81,36 @@ public class SwerveModule {
   }
 ```
 
-**What's new:**
-- **`Translation2d`** is WPILib's `(x, y)` pair — perfect for a corner position.
-- **Constructor parameters** let each of the four modules get different values.
-  `this.location = location` copies the argument into the field of the same name
-  (`this.` distinguishes the field from the parameter).
+This is a new *shape* of field, so look closely: the fields have **no
+initializers** — no `= new TalonFX(1)` on the declaration line. They can't be
+initialized up top anymore, because the CAN IDs aren't known until someone
+calls the constructor with real values. So the declaration says "this field
+will exist," and the constructor fills it in. `final` still holds — a `final`
+field must be assigned exactly once, and an assignment in the constructor
+counts. (The Lesson 4 ordering rule follows the assignments into the
+constructor, too: `m_driveSim` is created by asking `m_driveMotor`, so the
+motor lines come first.)
 
-Because the module is no longer a subsystem, its **command factory methods**
-(`driveAtSpeed`, `steerToAngle`, `driveDistance`) don't fit — commands are for
-subsystems. Replace them with **direct methods** that just update a target, and
-a `periodic()` that drives the motor toward that target every tick:
+**Constructor parameters** are what make one class serve four corners: each
+`new SwerveModule(...)` call hands in different IDs and a different position.
+And in `this.location = location`, the parameter and the field share a name —
+`this.` means "the field on this object," which is how Java tells them apart.
+
+One more thing that should bother you: `location` is a **`public` field**,
+after all that encapsulation talk in Lesson 1. It's a deliberate exception:
+the field is `final`, and a **`Translation2d`** — WPILib's `(x, y)` pair — is
+a value that never changes once built. Sharing a read-only fact is safe;
+hiding it behind a getter would add ceremony without adding protection.
+Hardware like `m_driveMotor` stays `private`, same as always.
+
+Now the methods. Because the module no longer extends `SubsystemBase`, the
+command factories are literally gone — `run`, `startEnd`, and friends were
+*inherited* from `SubsystemBase`, so `driveAtSpeed`, `steerToAngle`, and
+`driveDistance` don't compile anymore. That's fine: commands belong to
+subsystems, and this class isn't one. Replace them (and the module's old
+logging in `periodic()` — telemetry moves up to the `Drivetrain` in the next
+section) with a pair of plain methods — one to *set* a target, one to *chase*
+it every tick:
 
 ```java
 private double m_targetSteerDegrees = 0.0;
@@ -109,18 +136,34 @@ public void periodic() {
 }
 ```
 
+Read the division of labor: `setDesiredState` just *remembers* what's wanted
+(two fields as the module's tiny memory), and `periodic()` does one tick of
+work toward it — the same P control you wrote in Lesson 5, wrap trick
+included. Also notice `periodic()` lost its `@Override`: there's nothing to
+override anymore. It's just a method with a familiar name now, and nothing
+will call it until we write the code that does.
+
 > **`MathUtil.clamp(value, min, max)`** is WPILib's one-liner for the `if/else`
 > clamp you wrote in Lesson 5. Delete yours; use the library. Learning to
-> recognize when you're rewriting a standard helper is its own skill.
+> recognize when you're rewriting a standard helper is its own skill. (Let
+> `Ctrl+.` add the import — it's `edu.wpi.first.math.MathUtil`. Same for
+> `Translation2d`: `edu.wpi.first.math.geometry.Translation2d`.)
 
 Keep `getSteerAngleDegrees()`, `getDistanceMeters()`, and `simulationPeriodic()`
 unchanged from Lessons 4–6 — reading methods and sim setup stay the same shape.
+And expect `RobotContainer` to be lit up red right now: it still binds buttons
+to command factories that no longer exist. Leave it red — section 6 rebuilds
+that wiring around the Drivetrain. A refactor isn't done until every file that
+*touched* the old shape learns the new one, and the compiler's job is to keep
+that list for you.
 
-Now add the four corners to `Constants.java`:
+Now add the four corners to `Constants.java`, inside the `DriveConstants`
+class you started in Lesson 6:
 
 ```java
 public static class DriveConstants {
-  // ... existing constants ...
+  // ...the gear ratio and wheel constants from Lesson 6 stay...
+
   public static final double kHalfLength = 0.3;  // meters, wheelbase / 2
   public static final double kHalfWidth  = 0.3;  // meters, track width / 2
 
@@ -131,7 +174,10 @@ public static class DriveConstants {
 }
 ```
 
-WPILib's convention (memorize it): **+X is forward, +Y is left, yaw is CCW-positive.**
+Those signs follow WPILib's convention, and it's one to memorize now because
+every WPILib class assumes it: **+X is forward, +Y is left, yaw is
+CCW-positive.** Front-left is "forward and left," so both coordinates are
+positive; back-right flips both signs.
 
 ---
 
@@ -145,6 +191,8 @@ package frc.robot.subsystems;
 
 import java.util.function.DoubleSupplier;
 
+import org.littletonrobotics.junction.Logger;
+
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriveConstants;
@@ -152,7 +200,7 @@ import frc.robot.Constants.DriveConstants;
 public class Drivetrain extends SubsystemBase {
   // Corner order: FL, FR, BL, BR. Pick a convention and stick to it.
   private final SwerveModule[] m_modules = new SwerveModule[] {
-      new SwerveModule(1, 2, DriveConstants.kFrontLeft),
+      new SwerveModule(1, 2, DriveConstants.kFrontLeft),   // CAN IDs — change to yours
       new SwerveModule(3, 4, DriveConstants.kFrontRight),
       new SwerveModule(5, 6, DriveConstants.kBackLeft),
       new SwerveModule(7, 8, DriveConstants.kBackRight)
@@ -160,8 +208,12 @@ public class Drivetrain extends SubsystemBase {
 
   @Override
   public void periodic() {
+    int index = 0;
     for (SwerveModule module : m_modules) {
       module.periodic();
+      Logger.recordOutput("Drivetrain/Module" + index + "/SteerAngleDegrees",
+          module.getSteerAngleDegrees());
+      index++;
     }
   }
 
@@ -174,17 +226,28 @@ public class Drivetrain extends SubsystemBase {
 }
 ```
 
-**New Java pieces:**
-- **`SwerveModule[]`** — an **array**, a fixed-size ordered container of
-  `SwerveModule`s. `new SwerveModule[] { a, b, c, d }` builds one with four
-  elements.
-- **`for (SwerveModule module : m_modules)`** — the **enhanced `for` loop** (or
-  "for-each"). Runs the body once per element, binding `module` to each in turn.
-  That's how a single line inside ticks all four modules.
+Two new pieces of Java carry this file. **`SwerveModule[]`** is an **array**:
+a fixed-size, ordered container where every slot holds the same type.
+`new SwerveModule[] { a, b, c, d }` builds one with four elements — and here
+each element is itself a `new SwerveModule(...)` call with its own IDs and
+corner, which is constructor parameters doing exactly the job section 2
+promised.
 
-Notice how the Drivetrain's `periodic()` calls each module's `periodic()`
-explicitly. The scheduler ticks the **Drivetrain**; the Drivetrain ticks the
-modules. That's the whole point of dropping `SubsystemBase` from `SwerveModule`.
+Then **`for (SwerveModule module : m_modules)`** — the **enhanced `for`
+loop**. Read it as "for each module in m_modules": the body runs once per
+element with `module` standing for each in turn, which is how a few lines
+tick, log, and step all four corners. One wrinkle: a for-each loop doesn't
+number its elements, and the log keys need numbers — so a plain `int index`
+counter rides along, and `"Drivetrain/Module" + index + "/..."` glues the
+number into the key (`+` between a String and a number pulls the number into
+the text). Keys `Module0`–`Module3` follow the FL, FR, BL, BR order of the
+array.
+
+Step back and look at the architecture, because this is the lesson's real
+idea: the scheduler ticks the **Drivetrain**; the Drivetrain ticks the
+modules. The modules never talk to the scheduler at all. That's the whole
+point of dropping `SubsystemBase` from `SwerveModule` — one subsystem, one
+lock, four workers under it.
 
 ---
 
@@ -192,7 +255,7 @@ modules. That's the whole point of dropping `SubsystemBase` from `SwerveModule`.
 
 To drive in a direction, aim every wheel the same way and drive at the same
 speed. The direction is the angle of the `(vx, vy)` vector; the speed is its
-length:
+length. Add to `Drivetrain`:
 
 ```java
 /** Drive the whole chassis at fractional velocity (vx, vy). */
@@ -209,13 +272,16 @@ public Command translate(DoubleSupplier vxSupplier, DoubleSupplier vySupplier) {
 }
 ```
 
-**The math one line at a time:**
-- **`Math.hypot(vx, vy)`** returns `sqrt(vx² + vy²)` — the length of the vector.
-  Cleaner (and numerically safer) than writing the formula by hand.
-- **`Math.atan2(vy, vx)`** is the angle of the vector, in **radians**. It's the
-  four-quadrant version of `atan`, so it correctly handles negative components.
-  `Math.toDegrees` converts to what our steering code expects.
-- Every module gets the *same* target → the chassis slides as one.
+The shape should feel familiar — it's Lesson 2's `driveWithJoystick` grown up:
+a command factory (they're back, because `Drivetrain` *is* a subsystem) taking
+suppliers so the sticks get re-read every tick. The two `Math` calls are the
+new part. `Math.hypot(vx, vy)` returns `sqrt(vx² + vy²)` — the length of the
+vector, cleaner and numerically safer than writing the formula by hand.
+`Math.atan2(vy, vx)` is the vector's angle, in **radians** — it's the
+four-quadrant version of `atan`, meaning it gets the direction right even
+when `vx` or `vy` goes negative — and `Math.toDegrees` converts to what our
+steering code expects. Then every module gets the *same* target, and the
+chassis slides as one.
 
 ---
 
@@ -241,6 +307,11 @@ public Command rotate(double omega) {
 }
 ```
 
+This is where each module's `location` earns its keep: unlike `translate`,
+every corner gets a *different* angle, computed from where that corner sits.
+(And notice `rotate` takes a plain `double`, not a supplier — the bumper spin
+rate is a fixed number, so there's nothing to re-read each tick.)
+
 For a square chassis (`kHalfLength == kHalfWidth`):
 
 | Corner | Steers to | (the wheel points toward…) |
@@ -265,35 +336,52 @@ robot spins CCW. Neat, isn't it?
 
 ## 6. Wire it up
 
-In `RobotContainer` — left stick translates by default, bumpers spin:
+Time to fix the red. In `RobotContainer`, **delete the old wiring**: the
+`m_module` field and every binding that used it (the A/B buttons from
+Lesson 1, X/Y steering from Lesson 5, and the D-pad `driveDistance` from
+Lesson 6). Those commands lived on a class that's now a helper; the
+Drivetrain replaces them all.
+
+In their place, a Drivetrain field up top with the other fields:
 
 ```java
-private final Drivetrain m_drivetrain = new Drivetrain();
+public class RobotContainer {
+  // ...m_driverController stays...
+
+  private final Drivetrain m_drivetrain = new Drivetrain();
 ```
+
+And in `configureBindings()` — left stick translates by default, bumpers spin:
 
 ```java
-m_drivetrain.setDefaultCommand(
-    m_drivetrain.translate(
-        () -> -m_driverController.getLeftY(),   // forward = +X
-        () -> -m_driverController.getLeftX())); // left    = +Y
+  private void configureBindings() {
+    m_drivetrain.setDefaultCommand(
+        m_drivetrain.translate(
+            () -> -m_driverController.getLeftY(),   // forward = +X
+            () -> -m_driverController.getLeftX())); // left    = +Y
 
-m_driverController.leftBumper().whileTrue(m_drivetrain.rotate( 0.3));
-m_driverController.rightBumper().whileTrue(m_drivetrain.rotate(-0.3));
+    m_driverController.leftBumper().whileTrue(m_drivetrain.rotate( 0.3));
+    m_driverController.rightBumper().whileTrue(m_drivetrain.rotate(-0.3));
+  }
 ```
 
-Because both bumper commands and the default translate require the Drivetrain,
-holding a bumper cancels the default (as expected); releasing it hands control
-back automatically — the same pattern from Lesson 2.
+The minus signs are Lesson 2's stick-inversion lesson meeting section 2's
+coordinate convention: pushing the stick forward reads negative but means +X;
+pushing it left reads negative but means +Y. And because both bumper commands
+and the default translate require the Drivetrain, holding a bumper cancels
+the default (as expected); releasing it hands control back automatically —
+the same pattern from Lesson 2, now moving eight motors' worth of robot. The
+project should compile clean again.
 
 ---
 
 ## 7. Run it
 
-`./gradlew simulateJava` → **Teleoperated**. In AdvantageScope, connect to the
-sim and plot the four `getSteerAngleDegrees` values from
-`SmartDashboard.putNumber(...)` in `Drivetrain.periodic()`. Push the stick — all
-four angles should snap to the same value. Hold left bumper — they should split
-into the four rotate-in-place angles above.
+`./gradlew simulateJava` → **Teleoperated**. In AdvantageScope, connect to
+the sim and plot all four `Drivetrain/Module0..3/SteerAngleDegrees` values on
+one graph. Push the stick — all four traces should snap to the same value.
+Hold the left bumper — they should split into the four rotate-in-place angles
+from the table above.
 
 The **gyro** still reports zero — the chassis isn't yet closing the loop from
 "commanded rotation" to "reported heading." That's exactly what Lesson 8 wires
@@ -303,8 +391,10 @@ up.
 
 ## Try it
 
-1. Publish all four `getSteerAngleDegrees` on distinct dashboard keys and confirm
-   the four angles match the table above when you press the left bumper.
+1. Hold the left bumper and check the four plotted angles against the table in
+   section 5, corner by corner. If one module disagrees, its position in
+   `Constants.java` or its slot in the array is wrong — and the plot just told
+   you which one.
 2. Change `kHalfLength` to `0.4` and `kHalfWidth` to `0.2`. What do the four
    rotate angles become? (You now understand why chassis geometry matters.)
 3. Add a `driveForwardMeters(double meters)` method to `Drivetrain` — read
@@ -316,14 +406,22 @@ up.
 
 ## What you learned
 
-- **Arrays** hold a fixed number of same-typed things; the **enhanced `for`**
-  runs code against each one.
-- **Constructor parameters** let one class describe many objects that differ by
-  a few values (CAN IDs, position).
-- Not every class has to be a subsystem — a `SwerveModule` is a helper the
-  `Drivetrain` owns, and only the Drivetrain talks to the scheduler.
-- The two "shapes" of chassis motion — **translate** and **rotate in place** —
-  are both just "point every wheel a certain way, drive at a certain speed."
-  Combining them is the job of `SwerveDriveKinematics` (Lesson 10).
+The Java half of this lesson was about *many of the same thing*: an **array**
+holds four same-typed modules, the **enhanced `for` loop** does the same work
+to each, and **constructor parameters** let one class describe four corners
+that differ only in their numbers. The robot half was an architecture
+decision worth remembering the reasoning for: not every class should be a
+subsystem. `SwerveModule` became a plain **helper class** — the Drivetrain
+owns the array, holds the scheduler's one lock, and ticks its workers by
+hand — and the module's job shrank to "remember a target, chase it each
+tick." With that structure, whole-chassis behavior got almost easy:
+**translate** is one angle for everyone; **rotate** is one angle *per
+corner*, courtesy of each module knowing its `location`. If the refactor felt
+long, that's because it was the real thing — a rename, deletions, red files,
+and the compiler walking you through every place the old design used to
+live. Combining translate and rotate into one motion is the last missing
+piece of real swerve, and that's Lesson 10's `SwerveDriveKinematics`. First,
+though, the robot needs to know which way it's facing — Lesson 8 gives it a
+gyro.
 
 Next: [Lesson 8 — Gyro & heading](08-gyro-heading.md).
