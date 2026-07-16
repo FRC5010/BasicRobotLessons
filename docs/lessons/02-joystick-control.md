@@ -46,11 +46,11 @@ return startEnd(() -> m_driveMotor.set(fraction), () -> m_driveMotor.set(0));
 //              this is a lambda                  and so is this
 ```
 
-A **lambda** is a tiny function written inline, with no name — it doesn't need
-one, because you hand it directly to whoever's going to run it. `() ->
-doSomething()` means "a function that takes no arguments and runs
-`doSomething()`." In Lesson 1, `startEnd` ran the first one at start and the
-second at end. This lesson leans on `run(...)`, which calls its lambda **every
+A **lambda** is the inline version of a method: the same idea — a block of
+code that runs when called — but with no name, because instead of naming it
+you hand it directly to whoever's going to run it. `() -> doSomething()`
+means "a method that takes no arguments and runs `doSomething()`." In
+Lesson 1, `startEnd` ran the first one at start and the second at end. This lesson leans on `run(...)`, which calls its lambda **every
 tick** — perfect for reading a stick that keeps changing.
 
 A **`DoubleSupplier`** is a lambda that *returns a double* each time it's called:

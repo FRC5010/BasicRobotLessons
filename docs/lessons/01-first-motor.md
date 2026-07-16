@@ -171,12 +171,15 @@ little recipe the scheduler will run later — which is why the return type is
 `Command` and the body starts with `return`.
 
 Inside the recipe, that `() ->` arrow is brand-new syntax, so slow down for
-it. On its own, `m_driveMotor.set(fraction)` would set the motor *right now*.
-Putting `() ->` in front changes the meaning to: "don't run this yet — hold
-onto it, and run it when the time comes." That's exactly what a command
-needs: not actions happening now, but actions saved up for the scheduler to
-fire at the right moments. (These saved-up pieces of code have a name, and a
-lot more uses — Lesson 2 introduces them.)
+it. You know methods — named blocks of code that run when something calls
+them. `() -> m_driveMotor.set(fraction)` is like a tiny method with no name:
+instead of calling it, you hand it over, and whoever you handed it to calls
+it when the time comes. That's the whole difference the arrow makes — on its
+own, `m_driveMotor.set(fraction)` would set the motor *right now*; behind
+the arrow, it's saved for later. And saved-for-later is exactly what a
+command needs: not actions happening now, but actions the scheduler can fire
+at the right moments. (These nameless little methods do have a name of their
+own, and many more uses — Lesson 2 introduces them properly.)
 
 `startEnd(...)` — one of several helpers inherited from `SubsystemBase`,
 alongside `run`, `runOnce`, and `runEnd` — takes two of them, one for each
