@@ -53,14 +53,30 @@ means "a method that takes no arguments and runs `doSomething()`." In
 Lesson 1, `startEnd` ran the first one at start and the second at end. This lesson leans on `run(...)`, which calls its lambda **every
 tick** — perfect for reading a stick that keeps changing.
 
-A **`DoubleSupplier`** is a lambda that *returns a double* each time it's called:
-`() -> m_driverController.getLeftY()`. Ask it every tick, get the stick's
-position every tick. That's exactly the fetch-it-fresh behavior section 1 said
-we needed.
+Now the twist that makes lambdas genuinely powerful: a lambda is a *value*,
+just like `3.7` or a `TalonFX` object. You can store it in a variable, pass it
+into a method, and run it later. Code, stored as data. And like every value in
+Java, it needs a type. **`DoubleSupplier`** is the type for a lambda that
+takes no arguments and *returns a double*:
+
+```java
+DoubleSupplier stickReader = () -> m_driverController.getLeftY();
+double position = stickReader.getAsDouble();  // runs the stored code right now
+```
+
+Read that first line the same way you read `TalonFX driveMotor = new
+TalonFX(1)` in Lesson 1 — type, name, value — except this time the value is a
+piece of code. Nothing runs when the variable is assigned; the code just sits
+there, stored. Calling `stickReader.getAsDouble()` is what runs it, and it
+hands back whatever the code returned. Call it every tick, get the stick's
+position every tick — exactly the fetch-it-fresh behavior section 1 said we
+needed.
 
 Time to put it to work. Open `DriveModule.java` and add a second command factory
 directly below `driveAtSpeed` — it's the same kind of method, so they belong
-side by side:
+side by side. Look at its parameter: `speedSupplier` is a variable of type
+`DoubleSupplier`, which means whoever calls this method hands in *the code for
+reading the speed*, and the command runs that code every tick:
 
 ```java
 public class DriveModule extends SubsystemBase {
@@ -195,8 +211,8 @@ programmers every season.
 
 The through-line of this lesson is *live* data. A joystick axis is just a
 **`double`**, but it's a double that changes constantly — so instead of
-passing a number, you passed a **lambda**, shaped as a **`DoubleSupplier`**
-the command re-asks every tick. Around that you picked up your first **`if`**,
+passing a number, you passed a **lambda**: code stored as data, in a
+**`DoubleSupplier`** variable the command re-asks every tick. Around that you picked up your first **`if`**,
 plus `Math.abs` and `return`, and used all three to build a **deadband** so a
 resting stick means a resting motor. The robot-side idea to carry forward is
 the **default command**: what a subsystem does when nothing else claims it,
