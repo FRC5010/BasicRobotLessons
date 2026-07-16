@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A **documentation-only** teaching repo. There is no Java source, no `build.gradle`, no test suite — the entire product is the ordered markdown lessons under [docs/lessons/](docs/lessons/). Students apply the lessons to a separate WPILib Command Robot project of their own. The `./gradlew` commands in [README.md](README.md) run in the student's project, not here — do not try to run them from this repo.
 
-Target platform (assumed by every lesson): **WPILib 2026**, **Phoenix 6**, **TalonFX** drive/steer motors, **Pigeon 2** gyro, Xbox controller.
+Target platform (assumed by every lesson): **WPILib 2026**, **Phoenix 6**, **TalonFX** drive/steer motors, **Pigeon 2** gyro, Xbox controller, **AdvantageKit** logging (from Lesson 3 on).
 
 ## Lessons are strictly sequential
 
@@ -21,6 +21,7 @@ Consequences when editing:
 - Do not forward-reference a concept that hasn't been introduced yet. If a lesson needs `MathUtil.clamp`, `Translation2d`, kinematics, etc., check the lesson where it's first taught (see the table in [README.md](README.md)) and stay within what the student has seen.
 - The `SwerveModule` / `Drivetrain` refactor happens in [Lesson 7](docs/lessons/07-four-modules.md) — before that the single-module class is called `DriveModule` and is itself a subsystem. Match whichever name the current lesson is at.
 - Simulation is introduced in [Lesson 4](docs/lessons/04-simulation.md); lessons 1–3 must not depend on sim plumbing.
+- Telemetry is AdvantageKit-style logging, introduced in [Lesson 3](docs/lessons/03-telemetry.md): every value goes through `Logger.recordOutput("SubsystemName/ValueName", value)` from the subsystem's `periodic()` — never bare `SmartDashboard.putNumber`. Lessons 4+ still contain pre-migration SmartDashboard calls; convert them to this style whenever a lesson gets its rewrite pass (note: Lesson 9's `SmartDashboard.putData` for the auto chooser has no direct `recordOutput` equivalent and needs its own treatment when migrated).
 
 ## Asides (out-of-sequence lessons)
 

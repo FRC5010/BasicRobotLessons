@@ -47,7 +47,7 @@ let you see everything working on your laptop. Device IDs in the examples
 | 0 | [Orientation](docs/lessons/00-orientation.md) | Run the template, print a message | Classes, packages, methods, the loop |
 | 1 | [Your first motor](docs/lessons/01-first-motor.md) | Spin a drive motor with a button | Objects, fields, constructors, `import` |
 | 2 | [Joystick control](docs/lessons/02-joystick-control.md) | Drive the motor with a joystick | Methods, parameters, `double`, lambdas |
-| 3 | [Telemetry & plots](docs/lessons/03-telemetry.md) | Plot position & velocity live | Return values, sensors, NetworkTables |
+| 3 | [Telemetry & plots](docs/lessons/03-telemetry.md) | Plot position & velocity live | Return values, sensors, AdvantageKit logging |
 | 4 | [Simulation](docs/lessons/04-simulation.md) | Make it move on your laptop | `simulationPeriodic`, physics models |
 | 5 | [Steering with P control](docs/lessons/05-steering-p-control.md) | Point the module to an angle | `if`, arithmetic, error, setpoints |
 | 6 | [Distance & commands](docs/lessons/06-distance-and-commands.md) | Drive an exact distance | Unit conversion, commands that finish |
