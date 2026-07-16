@@ -17,12 +17,14 @@ its own, using the simplest possible feedback control: *error × a gain*.
 
 ## 1. The problem with "just go to the angle"
 
-A swerve module's steering motor has to *point the wheel* at a commanded angle. You
-might think: "if I want 90°, just set the motor to 90°." But a motor takes a
-**speed/voltage**, not a destination. You have to *drive it there yourself*: look at
-where it is, compare to where you want it, and move in the right direction until
-they match. That's **feedback control**, and the simplest useful form is **P
-control**.
+A swerve module's steering motor has to *point the wheel* at a commanded
+angle. The model you're probably bringing in: "if I want 90°, I'll set the
+motor to 90°." Reasonable — and not how motors work. A motor takes an
+**effort** — a speed, a voltage — not a destination. There is no "go to 90°"
+knob. You have to *drive it there yourself*: look at where it is, compare to
+where you want it, push in the right direction, and keep re-checking until
+they match. That's **feedback control**, and the simplest useful form is
+**P control**.
 
 Three words to learn — they'll follow you your whole robotics career:
 
@@ -30,36 +32,51 @@ Three words to learn — they'll follow you your whole robotics career:
 - **Measurement** — where you *are* (sensor says 20°).
 - **Error** — setpoint minus measurement (90 − 20 = 70°).
 
-The bigger the error, the harder you push. When error hits zero, you stop. That's
-the whole idea.
+The bigger the error, the harder you push. When error hits zero, you stop.
+That's the whole idea, and everything else in this lesson is just writing it
+down in Java.
 
 ---
 
 ## 2. Add the steering motor (and its sim)
 
-In `DriveModule`, add a second TalonFX and, so it works in simulation, a second
-model just like Lesson 4:
+The steering motor is a second TalonFX, and it needs the same sim plumbing
+the drive motor got in Lesson 4. All of it goes in `DriveModule`'s fields,
+right below the drive motor's block — and the ordering rule from Lesson 4
+applies again: `m_steerSim` is built by asking `m_steerMotor` for its sim
+state, so the motor comes first. No new imports needed; everything here
+arrived in Lesson 4.
 
 ```java
-private final TalonFX m_steerMotor = new TalonFX(2); // CAN ID 2 — change to yours
+public class DriveModule extends SubsystemBase {
+  // ...the drive motor and its sim fields from Lessons 1 and 4 stay put...
 
-// Sim plumbing for the steering motor (same pattern as the drive motor).
-private final TalonFXSimState m_steerSim = m_steerMotor.getSimState();
-private final DCMotorSim m_steerModel =
-    new DCMotorSim(
-        LinearSystemId.createDCMotorSystem(DCMotor.getKrakenX60(1), 0.004, 1.0),
-        DCMotor.getKrakenX60(1));
+  private final TalonFX m_steerMotor = new TalonFX(2); // CAN ID 2 — change to yours
+
+  // Sim plumbing for the steering motor (same pattern as the drive motor).
+  private final TalonFXSimState m_steerSim = m_steerMotor.getSimState();
+  private final DCMotorSim m_steerModel =
+      new DCMotorSim(
+          LinearSystemId.createDCMotorSystem(DCMotor.getKrakenX60(1), 0.004, 1.0),
+          DCMotor.getKrakenX60(1));
+
+  // ...constructor and methods below...
 ```
 
-And in `simulationPeriodic()`, step it too (copy the four steps, using the steer
-objects):
+Then step the steer physics in `simulationPeriodic()`, right after the drive
+motor's four steps — same loop, second motor:
 
 ```java
-m_steerSim.setSupplyVoltage(RobotController.getBatteryVoltage());
-m_steerModel.setInputVoltage(m_steerSim.getMotorVoltage());
-m_steerModel.update(0.020);
-m_steerSim.setRawRotorPosition(m_steerModel.getAngularPositionRotations());
-m_steerSim.setRotorVelocity(m_steerModel.getAngularVelocityRPM() / 60.0);
+  @Override
+  public void simulationPeriodic() {
+    // ...the drive motor's four steps stay here...
+
+    m_steerSim.setSupplyVoltage(RobotController.getBatteryVoltage());
+    m_steerModel.setInputVoltage(m_steerSim.getMotorVoltage());
+    m_steerModel.update(0.020);
+    m_steerSim.setRawRotorPosition(m_steerModel.getAngularPositionRotations());
+    m_steerSim.setRotorVelocity(m_steerModel.getAngularVelocityRPM() / 60.0);
+  }
 ```
 
 We'll read the steering **angle in degrees**. A real steering module has a big
@@ -68,6 +85,10 @@ reduction between the motor and the wheel (an SDS MK4, for example, uses about
 we'll pretend the sensor turns **1:1** with the wheel. In Lesson 6 you'll see the
 gear-ratio pattern applied to the drive motor — the same shape applies here if
 you want to make it realistic later.
+
+Add the reading method with your other public methods — it's a
+question-method, Lesson 3 style: ask the motor for rotations, hand back
+degrees:
 
 ```java
 /** Current steering angle in degrees. */
@@ -80,7 +101,9 @@ public double getSteerAngleDegrees() {
 
 ## 3. Write proportional control
 
-Here's the heart of the lesson. Add this command factory to `DriveModule`:
+Here's the heart of the lesson — read it slowly, because this little method
+is the seed of every controller you'll ever write. Add the import up top,
+then the command factory below your other ones:
 
 ```java
 import frc.robot.Constants.SteerConstants; // we'll create this constant below
@@ -124,30 +147,95 @@ private double clamp(double value, double min, double max) {
 4. Near 90°, error ≈ 0, output ≈ 0 — it eases in and holds. That gentle slow-down is
    what "proportional" buys you: no slamming into the target.
 
-**The `clamp` method** shows off `if / else if / else` — a decision with three
-branches. Without it, a huge error could compute an output like `5.0`, which the
-motor can't do; clamping keeps commands sane.
+And notice the math handles direction for free: overshoot past 90° and
+`error` goes negative, so `output` goes negative and the motor pushes back.
+The *sign* of the error carries which way to go; the *size* carries how hard.
 
-Add the gain to `Constants.java`:
+Three smaller things in that code deserve a look.
+
+**`run(...).finallyDo(...)`** — that's chaining again, Lesson 3 style, but on
+a *command*: `run(...)` builds a command, and `.finallyDo(...)` is called on
+that result, handing back an upgraded command with a cleanup step bolted on.
+It's `startEnd`'s flexible cousin: where `startEnd` takes exactly one start
+action and one end action, `finallyDo` lets you attach cleanup to any command
+— here, one that does per-tick work.
+
+**The lambda remembers `targetDegrees`.** Look closely: `targetDegrees` is a
+parameter of `steerToAngle`, but the lambda uses it tick after tick, long
+after the method returned. Lambdas hold onto the variables around them when
+they were created — that's the "tiny bit of state" this lesson promised, and
+it's why one factory method can produce a go-to-90 command *and* a go-to-0
+command that each remember their own target.
+
+**The `clamp` helper** shows off `if / else if / else` — one decision, three
+branches, exactly one of which runs. Without it, a large error could compute
+an output like `5.0`, which the motor can't do; clamping keeps commands sane.
+It's `private`, like `applyDeadband` was: internal plumbing, placed right
+below the method that uses it.
+
+Last piece: `kP` itself. It's a **tuning constant** — a number you'll adjust
+over and over — and numbers like that live in `Constants.java`, in a nested
+class named for the subsystem area they belong to. Open `Constants.java` and
+add the class inside it:
 
 ```java
-public static class SteerConstants {
-  public static final double kP = 0.01; // output per degree of error — tune this
+public final class Constants {
+  // ...anything already in here stays...
+
+  public static class SteerConstants {
+    public static final double kP = 0.01; // output per degree of error — tune this
+  }
 }
 ```
+
+`public static final` reads as: anyone can see it, there's exactly one of it
+(no object needed — you write `SteerConstants.kP`, just like `Math.abs`), and
+it can never be reassigned. One named number, one home, every place that
+needs it points here. That's the whole philosophy of `Constants.java`.
 
 ---
 
 ## 4. Bind it and tune `kP`
 
-In `RobotContainer.configureBindings()`:
+In `RobotContainer.configureBindings()`, with the rest of the wiring:
 
 ```java
-m_driverController.x().onTrue(m_module.steerToAngle(90));
-m_driverController.y().onTrue(m_module.steerToAngle(0));
+  private void configureBindings() {
+    // ...bindings from earlier lessons stay...
+
+    m_driverController.x().onTrue(m_module.steerToAngle(90));
+    m_driverController.y().onTrue(m_module.steerToAngle(0));
+  }
 ```
 
-Run in sim, plot `getSteerAngleDegrees()` (publish it in `periodic()`), and press X:
+New word: **`onTrue`**, where Lesson 1 used `whileTrue`. `whileTrue` runs a
+command while you hold the button; `onTrue` schedules it once when the button
+is *pressed* and then walks away. Since `steerToAngle` is built on `run(...)`,
+it never finishes on its own — so a single tap of X sends the module to 90°
+*and holds it there*, no need to keep the button down. Tap Y and the
+scheduler swaps commands: one command per subsystem, so scheduling the go-to-0
+command cancels the go-to-90 one (firing its `finallyDo` on the way out).
+
+> **Watch out:** while a steering command owns the module, your joystick stops
+> driving the wheel — the default command from Lesson 2 only runs when *no
+> other command* is using the subsystem, and `steerToAngle` never lets go.
+> That's the one-command-per-subsystem rule doing exactly what it promised.
+> It's fine for this lesson — we're steering, not driving — and the module
+> learns to do both at once when it grows up in Lesson 7.
+
+To watch the controller work, log the steering angle from `periodic()`, next
+to the two values from Lesson 3:
+
+```java
+  @Override
+  public void periodic() {
+    // ...the drive position and velocity logs from Lesson 3 stay...
+
+    Logger.recordOutput("DriveModule/SteerAngleDegrees", getSteerAngleDegrees());
+  }
+```
+
+Run in sim, plot `DriveModule/SteerAngleDegrees` in AdvantageScope, and press X:
 
 - **`kP` too small:** it crawls to 90° and takes forever (or never gets there).
 - **`kP` too big:** it overshoots and oscillates back and forth around 90°.
@@ -177,8 +265,11 @@ short path. Try writing that in the challenge; it's a great `if` exercise.
    ```
    Test the 350°→0° case again. It should now move +10°. (This is your first
    `while` loop — it repeats until the condition is false.)
-2. Publish `error` to the dashboard and plot it. Watch it decay toward zero — that
-   curve is the signature of P control working.
+2. Log the error: add
+   `Logger.recordOutput("DriveModule/SteerErrorDegrees", error);` right after
+   `error` is computed — a value that only exists inside a command gets logged
+   where it's computed, Lesson 3's refinement. Plot it and watch it decay
+   toward zero. That curve is the signature of P control working.
 3. What happens with `kP = 0`? With a *negative* `kP`? Predict first, then try it,
    and explain what you saw.
 
@@ -186,12 +277,17 @@ short path. Try writing that in the challenge; it's a great `if` exercise.
 
 ## What you learned
 
-- Motors take **effort**, not destinations, so you reach a target with **feedback
-  control**.
-- **Setpoint − measurement = error**; **P control** sets output = `kP × error`,
-  easing in as error shrinks.
-- **`if / else if / else`** expresses multi-way decisions (you used it to `clamp`).
-- **Tuning `kP`** against a live plot is a core robotics skill, and the same pattern
-  works for *any* quantity you want to control — including heading (Lesson 8).
+P control earns its billing as the most important idea in robotics, so here
+it is one more time: motors take **effort**, not destinations, so you close
+the gap yourself — **setpoint − measurement = error**, output = `kP × error`,
+and the shrinking error eases you into the target while its sign steers the
+direction. Tuning `kP` against a live plot — double it until it oscillates,
+back off — is a ritual you'll repeat for years. Around that core you picked
+up `if / else if / else` for multi-way decisions, `finallyDo` for chaining
+cleanup onto a command, a lambda quietly remembering its target, and a new
+nested-class home for tuning constants in `Constants.java`. Hold onto the
+shape of `steerToAngle`: measure, subtract, multiply, clamp, command. The
+same five moves point a whole chassis at a compass heading in Lesson 8 — only
+the sensor changes. That's a sign you've learned something real.
 
 Next: [Lesson 6 — Distance & commands](06-distance-and-commands.md).

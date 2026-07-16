@@ -16,9 +16,12 @@ and know how to push commits, skip straight to Lesson 0.
 - One-time setup before starting the course. You'll come back to section 7
   ("the everyday loop") after every lesson.
 
-The instructions below assume Windows + PowerShell because that's what the
-[README](../../README.md) targets. macOS/Linux flows are similar; the paths
-and installer files differ.
+Fair warning: this is the least exciting part of the whole course — a chain of
+installers and terminal commands with nothing robot-shaped at the end. It's
+also the part where a wrong turn costs you hours later, so take it slow and
+don't skip the sanity checks. The instructions assume Windows + PowerShell
+because that's what the [README](../../README.md) targets. macOS/Linux flows
+are similar; the paths and installer files differ.
 
 ---
 
@@ -27,8 +30,10 @@ and installer files differ.
 The WPILib installer bundles a **separate VSCode installation** with the WPILib
 extension pre-loaded, the exact JDK the robot code needs, Gradle templates,
 and simulation tools. You do **not** need to install VSCode, Java, or Gradle
-separately — do it *only* through the WPILib installer or your versions will
-drift from what the robot code expects.
+separately — in fact, don't. **Install those pieces only through the WPILib
+installer, or your versions will drift from what the robot code expects.**
+Version drift is the classic "works on my laptop, breaks on yours" story, and
+it's miserable to untangle.
 
 Grab the **WPILib 2026** installer from the WPILib GitHub releases page. On
 Windows the download is an `.iso`; mount it and run `WPILibInstaller.exe`.
@@ -46,7 +51,8 @@ Sanity check:
 ```
 
 should print a version. If it doesn't, the install went sideways — re-run
-the installer before continuing.
+the installer before continuing. (Better to find out now than three lessons
+in.)
 
 ---
 
@@ -93,8 +99,8 @@ Open the newly created folder in VSCode. Verify it builds:
 ./gradlew build
 ```
 
-The first build downloads dependencies and takes a few minutes. When it
-finishes with `BUILD SUCCESSFUL`, you're ready for
+The first build downloads dependencies and takes a few minutes — that's
+normal, not broken. When it finishes with `BUILD SUCCESSFUL`, you're ready for
 [Lesson 0](00-orientation.md) — after we back it up to GitHub.
 
 ---
@@ -128,7 +134,7 @@ git commit -m "Initial commit from WPILib template"
 
 That's your first snapshot. If your laptop caught fire right now, you could
 recover the project from this commit — assuming it lives somewhere other than
-this laptop. Which is section 5.
+this laptop. Which brings us to section 5.
 
 ---
 
@@ -176,6 +182,8 @@ gh repo view --web
 ```
 
 opens the repo in your browser. You should see every file from your project.
+Take a second to actually look — that's your code, living somewhere your
+laptop can't take it down with it.
 
 Prefer to do it in two steps? Create the repo on github.com first (**+** menu
 → **New repository**, **Private**, do **not** add a README or `.gitignore` on
@@ -193,8 +201,9 @@ this branch, this is where you send it."
 
 ## 7. The everyday loop
 
-Once a day, or every time you finish a lesson, or every time something works
-that didn't work before — snapshot it:
+Everything above was one-time setup. This section is the part you'll actually
+live in. Once a day, or every time you finish a lesson, or every time
+something works that didn't work before — snapshot it:
 
 ```powershell
 git status                             # see what changed
@@ -219,11 +228,16 @@ push complains about **merge conflicts**, someone (usually past-you)
 edited the same lines in two places. Don't panic — Git marks the conflicting
 lines with `<<<<<<<`, `=======`, and `>>>>>>>` inside the file. Open it,
 decide which version wins, delete the markers, then `git add` and
-`git commit` to finish the merge.
+`git commit` to finish the merge. Everyone hits their first merge conflict
+eventually; it's a rite of passage, not a disaster.
 
 ---
 
 ## Try it
+
+These three aren't busywork — each one proves a piece of your safety net
+actually works, which is exactly the thing you don't want to discover
+mid-season.
 
 1. **Prove the round trip.** Add a line to `README.md` (create one at the
    project root if the template didn't ship one), then `add` → `commit` →
@@ -245,16 +259,17 @@ decide which version wins, delete the markers, then `git add` and
 
 ## What you learned
 
-- **WPILib installer** delivers VSCode, JDK, extension, and sim tools in one
-  bundle. Don't install those pieces separately or the versions will drift.
-- **Git** tracks snapshots locally with `add` and `commit`. The `.gitignore`
-  that ships with the WPILib template keeps build outputs out of history.
-- **GitHub** is your remote backup: `git push` sends commits up, `git pull`
-  brings them down.
-- **GitHub CLI** (`gh auth login`) handles authentication once so `push` and
-  `pull` never bug you again.
-- The daily rhythm is **pull → edit → add → commit → push** — one loop that
-  keeps your work safe, shareable, and recoverable.
+Your machine is now set up the way it'll stay for the whole course: the
+**WPILib installer** delivered VSCode, the JDK, the extension, and sim tools
+in one bundle (and you know not to install those pieces separately), and
+**Git** is tracking snapshots locally with `add` and `commit` while the
+template's `.gitignore` keeps build outputs out of history. **GitHub** holds
+the remote copy — `git push` sends commits up, `git pull` brings them down —
+and thanks to `gh auth login`, neither will ever bug you for a password. The
+one thing to carry forward is the daily rhythm: **pull → edit → add → commit
+→ push**. Run that loop after every lesson and your work stays safe,
+shareable, and recoverable no matter what happens to the laptop. The boring
+part is over.
 
 ---
 

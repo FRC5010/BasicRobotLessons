@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A **documentation-only** teaching repo. There is no Java source, no `build.gradle`, no test suite — the entire product is the ordered markdown lessons under [docs/lessons/](docs/lessons/). Students apply the lessons to a separate WPILib Command Robot project of their own. The `./gradlew` commands in [README.md](README.md) run in the student's project, not here — do not try to run them from this repo.
 
-Target platform (assumed by every lesson): **WPILib 2026**, **Phoenix 6**, **TalonFX** drive/steer motors, **Pigeon 2** gyro, Xbox controller.
+Target platform (assumed by every lesson): **WPILib 2026**, **Phoenix 6**, **TalonFX** drive/steer motors, **Pigeon 2** gyro, Xbox controller, **AdvantageKit** logging (from Lesson 3 on).
 
 ## Lessons are strictly sequential
 
@@ -21,6 +21,7 @@ Consequences when editing:
 - Do not forward-reference a concept that hasn't been introduced yet. If a lesson needs `MathUtil.clamp`, `Translation2d`, kinematics, etc., check the lesson where it's first taught (see the table in [README.md](README.md)) and stay within what the student has seen.
 - The `SwerveModule` / `Drivetrain` refactor happens in [Lesson 7](docs/lessons/07-four-modules.md) — before that the single-module class is called `DriveModule` and is itself a subsystem. Match whichever name the current lesson is at.
 - Simulation is introduced in [Lesson 4](docs/lessons/04-simulation.md); lessons 1–3 must not depend on sim plumbing.
+- Telemetry is AdvantageKit-style logging, introduced in [Lesson 3](docs/lessons/03-telemetry.md): every value goes through `Logger.recordOutput("SubsystemName/ValueName", value)` from the subsystem's `periodic()` — never bare `SmartDashboard.putNumber`. Lessons 4+ still contain pre-migration SmartDashboard calls; convert them to this style whenever a lesson gets its rewrite pass (note: Lesson 9's `SmartDashboard.putData` for the auto chooser has no direct `recordOutput` equivalent and needs its own treatment when migrated).
 
 ## Asides (out-of-sequence lessons)
 
@@ -56,6 +57,8 @@ Prose conventions used consistently across lessons:
 - Code style in examples: private fields prefixed `m_` (e.g. `m_driveMotor`), constants under nested `public static class XxxConstants` inside [Constants.java](../src/main/java/frc/robot/Constants.java) (student's file), CAN IDs as placeholder integers with an inline `// change to yours` comment.
 - Commands (WPILib `Command`) are produced by factory methods on the subsystem (e.g. `run(() -> …).finallyDo(…)`), not by subclassing `CommandBase`.
 - PowerShell is the assumed shell (`./gradlew simulateJava`), matching a Windows dev environment.
+- When a walkthrough adds code to an **existing** file, never hand the student a bare snippet. Show it inside its surroundings (the enclosing method or class line, with `// ...` anchor comments standing in for neighboring code) and say in prose where it goes **and why it belongs there** — students don't yet know Java file anatomy, and placement reasoning ("fields hold data the object keeps for life, so they go at the top of the class") is part of the lesson. When a lesson introduces a whole new file with several new concepts, build it in labeled pieces top-to-bottom rather than presenting one large block, then show the assembled file for checking.
+- Blockquote callouts and code comments render gray, but they are still teaching text: write them **to the student**, never about the lesson from the outside. "Watch out: motors don't stop on their own" — not "this is the misconception of the lesson" or other narration about the material.
 
 ## Rewriting lessons in a teacher's voice
 
@@ -82,8 +85,11 @@ reviews each pass and steers the intensity.
 - The imperative voice in *instructions* — "Open `Robot.java`", "Run
   `./gradlew build`". Teachers give clear directions. Don't soften commands
   into suggestions.
-- Roughly the same total length. If a section grew by more than ~20%,
-  something is fluff.
+- Length follows clarity, not a quota. A section may grow substantially when
+  it is genuinely unpacking a new concept — placement reasoning, a short
+  worked example, a wrong-model-vs-right-model contrast all earn their space.
+  What to cut is fluff: cheerleading, repeated teacher beats, and prose that
+  restates what the code already says.
 
 ### The moves that make it work
 
