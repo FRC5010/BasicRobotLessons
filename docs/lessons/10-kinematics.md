@@ -93,7 +93,7 @@ in Lesson 7 — now it's a named constant instead of a guess.)
 `SwerveModule.setDesiredState` currently takes a `speedFraction` (`-1..1`).
 Kinematics speaks meters per second. Update the module to accept a full
 `SwerveModuleState` and do the conversion in one place. In `SwerveModule`,
-two imports (`Rotation2d` is already there):
+two new imports:
 
 ```java
 import edu.wpi.first.math.kinematics.SwerveModuleState;

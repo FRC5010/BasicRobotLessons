@@ -21,7 +21,7 @@ Consequences when editing:
 - Do not forward-reference a concept that hasn't been introduced yet. If a lesson needs `MathUtil.clamp`, `Translation2d`, kinematics, etc., check the lesson where it's first taught (see the table in [README.md](README.md)) and stay within what the student has seen.
 - The `SwerveModule` / `Drivetrain` refactor happens in [Lesson 7](docs/lessons/07-four-modules.md) — before that the single-module class is called `DriveModule` and is itself a subsystem. Match whichever name the current lesson is at.
 - Simulation is introduced in [Lesson 4](docs/lessons/04-simulation.md); lessons 1–3 must not depend on sim plumbing.
-- Telemetry is AdvantageKit-style logging, introduced in [Lesson 3](docs/lessons/03-telemetry.md): every value goes through `Logger.recordOutput("SubsystemName/ValueName", value)` from the subsystem's `periodic()` — never bare `SmartDashboard.putNumber`. Lessons 4+ still contain pre-migration SmartDashboard calls; convert them to this style whenever a lesson gets its rewrite pass (note: Lesson 9's `SmartDashboard.putData` for the auto chooser has no direct `recordOutput` equivalent and needs its own treatment when migrated).
+- Telemetry is AdvantageKit-style logging, introduced in [Lesson 3](docs/lessons/03-telemetry.md): every value goes through `Logger.recordOutput("SubsystemName/ValueName", value)` from the subsystem's `periodic()` — never bare `SmartDashboard.putNumber`. All numbered lessons now follow this style; the auto chooser in [Lesson 9](docs/lessons/09-autonomous.md) uses AdvantageKit's `LoggedDashboardChooser`, and [Lesson 11](docs/lessons/11-odometry-field.md) draws the robot by logging a `Pose2d` to AdvantageScope's Odometry tab (no `Field2d`).
 
 ## Asides (out-of-sequence lessons)
 
