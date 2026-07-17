@@ -19,18 +19,21 @@ steps in parallel.
 
 ## 1. What autonomous actually is
 
-For the first 15 seconds of an FRC match, the robot runs with no driver. WPILib
-asks `RobotContainer.getAutonomousCommand()` for **one command**, schedules it
-when auto starts, and cancels it when auto ends. That's the whole mechanism.
+For the first 15 seconds of an FRC match, the robot runs with no driver. The
+mechanism behind it is smaller than you'd guess: WPILib asks
+`RobotContainer.getAutonomousCommand()` for **one command**, schedules it when
+auto starts, and cancels it when auto ends. That's it. No special auto mode
+API, no separate programming model — one command.
 
-The trick: that "one command" can be many commands glued together. `turnToHeading`
-from Lesson 8 already finishes on its own — that's *exactly* what makes it
-composable. A command that never ends can't be step 1 of 3. Now you see why
-"commands that finish" mattered.
+The trick, of course, is that "one command" can be many commands glued
+together. And here's where a promise gets kept: `turnToHeading` from Lesson 8
+finishes on its own, and that's *exactly* what makes it composable. A command
+that never ends can't be step 1 of 3 — nothing after it would ever run. When
+Lesson 6 made a fuss about commands that finish, this lesson was the reason.
 
-For distance we need to introduce one more finish-on-its-own command — this
-time at the *chassis* level, since we work with a whole robot now, not a
-single-module `driveDistance` from Lesson 6.
+For distance we need one more finish-on-its-own command — this time at the
+*chassis* level, since we work with a whole robot now, not the single-module
+`driveDistance` from Lesson 6.
 
 ---
 
@@ -38,7 +41,8 @@ single-module `driveDistance` from Lesson 6.
 
 Lesson 6 had a per-module `driveDistance`. The same shape works for the chassis
 — reset one wheel's odometer, drive all four forward at a fixed speed, stop when
-the wheel has covered the distance. Add to `Drivetrain`:
+the wheel has covered the distance. Add it to `Drivetrain`, with the other
+command factories:
 
 ```java
 /** Drive straight forward 'meters' at 40% power. Finishes on its own. */
@@ -59,8 +63,12 @@ public Command driveDistance(double meters) {
 }
 ```
 
-And expose a tiny reset on the module (Lesson 6 called `setPosition(0)` directly
-on the TalonFX; now we wrap it in a named method):
+One piece is missing: the reset. Lesson 6 called `setPosition(0)` directly on
+the TalonFX — but that was *inside* `DriveModule`, where the motor is visible.
+The Drivetrain can't do that: `m_driveMotor` is `private` to the module, and
+that's encapsulation doing its job — outsiders don't get to poke a module's
+hardware. What the module can do is offer a named, intention-revealing method.
+Add to `SwerveModule`, with its other public methods:
 
 ```java
 /** Zero the drive encoder — start measuring distance from *here*. */
@@ -69,18 +77,21 @@ public void resetDrivePosition() {
 }
 ```
 
-**Same four Lego bricks as Lesson 6** (`runOnce`, `andThen`, `until`,
-`finallyDo`), just applied one level up: we ask *every module* to point forward
-and roll, and we watch *one wheel* to know when we've gone far enough. It works
-for straight-forward driving because — with all four wheels aimed the same
-direction and at the same speed — they all cover the same distance.
+Now read `driveDistance` top to bottom: it's the **same four Lego bricks as
+Lesson 6** — `runOnce`, `andThen`, `until`, `finallyDo` — applied one level
+up. We ask *every module* to point forward and roll, and we watch *one wheel*
+to know when we've gone far enough. Watching one wheel works for
+straight-ahead driving because, with all four wheels aimed the same direction
+at the same speed, they all cover the same distance. If that composition
+pattern is starting to feel routine, good — routine is the point.
 
 ---
 
 ## 3. Build the routine
 
-`commands/Autos.java` is the home for auto factories. Replace the example with
-one that takes your subsystem and returns a sequence:
+Now the fun part: writing the plan. `commands/Autos.java` is the home for auto
+factories — the template shipped one with an example in it. Replace the example
+with a routine that takes your subsystem and returns a sequence:
 
 ```java
 package frc.robot.commands;
@@ -107,6 +118,13 @@ at a time, in order**. Step 2 doesn't start until step 1 reports finished; step
 3 waits for step 2. Because each block finishes itself, the sequence flows step
 to step and then ends — at which point auto is over.
 
+Two smaller things about this file's shape. `driveTurnDrive` is **`static`** —
+called on the class itself (`Autos.driveTurnDrive(...)`), no object needed,
+the same way you call `Math.abs(...)`. That fits, because `Autos` has no data
+of its own; it's a cookbook, not a machine. And `private Autos() {}` is a
+constructor nobody can call — the idiom for "don't bother making instances of
+this class; just use its static methods."
+
 Read the method like a sentence: *drive a meter, turn to ninety, drive a meter.*
 Good auto code reads like the plan you'd say out loud.
 
@@ -118,24 +136,28 @@ Good auto code reads like the plan you'd say out loud.
 
 ## 4. Hand it to the robot
 
-In `RobotContainer.getAutonomousCommand()`:
+`RobotContainer` already has a `getAutonomousCommand()` method — it's been
+sitting in the template since Lesson 0, waiting. Replace its body:
 
 ```java
-public Command getAutonomousCommand() {
-  return Autos.driveTurnDrive(m_drivetrain);
-}
+  public Command getAutonomousCommand() {
+    return Autos.driveTurnDrive(m_drivetrain);
+  }
 ```
 
 Note we **pass the subsystem in** rather than letting `Autos` create its own.
 There is only *one* real drivetrain; every command must share the same object,
-or the scheduler can't keep them from conflicting. Passing shared objects into a
-factory is called **dependency injection** — a fancy name for "hand it what it
-needs instead of letting it make its own."
+or the scheduler can't keep them from conflicting. (Imagine `Autos` calling
+`new Drivetrain()` — eight brand-new motor objects fighting the real ones over
+the same CAN IDs.) Passing shared objects into a factory is called
+**dependency injection** — a fancy name for "hand it what it needs instead of
+letting it make its own."
 
 Run it: `./gradlew simulateJava`, set state to **Autonomous**, and watch your
-plots. `getDistanceMeters()` from module 0 climbs to 1.0 and stops, heading
-sweeps to 90° and settles, distance climbs again from a new zero. The robot ran
-your plan untouched.
+plots and the Swerve tab. `Drivetrain/Module0/SteerAngleDegrees` holds 0 while
+distance climbs to 1.0, the heading sweeps to 90° and settles, distance climbs
+again from a new zero. The robot ran your plan untouched — nobody's hands on
+the controller. That one is worth savoring for a second.
 
 ---
 
@@ -166,23 +188,43 @@ subsystem is Lesson 10's `SwerveDriveKinematics`.
 
 ## 6. Bonus: an auto chooser
 
-Real robots pick from several autos on the dashboard. WPILib's `SendableChooser`
-makes that a few lines — a great next step once you have two or three routines:
+Real robots pick from several autos on the dashboard before a match. Which
+auto got picked is an *input* to the robot — and inputs are exactly the kind
+of thing you've been logging since Lesson 3. AdvantageKit's
+**`LoggedDashboardChooser`** does both jobs at once: it publishes a drop-down
+the dashboard can set, and it records the selection in the log, so you can
+always tell from a log file which auto ran. Add to `RobotContainer`:
 
 ```java
-// import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-// import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-
-private final SendableChooser<Command> m_autoChooser = new SendableChooser<>();
-
-// in the constructor:
-m_autoChooser.setDefaultOption("Drive-Turn-Drive", Autos.driveTurnDrive(m_drivetrain));
-m_autoChooser.addOption("Do Nothing", Commands.none());
-SmartDashboard.putData("Auto Choice", m_autoChooser);
-
-// getAutonomousCommand():
-return m_autoChooser.getSelected();
+// imports:
+import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 ```
+
+```java
+public class RobotContainer {
+  // ...with the other fields:
+  private final LoggedDashboardChooser<Command> m_autoChooser =
+      new LoggedDashboardChooser<>("Auto Choice");
+```
+
+```java
+  // in the constructor:
+  m_autoChooser.addDefaultOption("Drive-Turn-Drive", Autos.driveTurnDrive(m_drivetrain));
+  m_autoChooser.addOption("Do Nothing", Commands.none());
+```
+
+```java
+  public Command getAutonomousCommand() {
+    return m_autoChooser.get();
+  }
+```
+
+The `<Command>` in angle brackets says what *kind* of thing the chooser holds
+— its options are commands, and `get()` hands back whichever one is currently
+selected. To actually pick: in SimGUI, open **NetworkTables → SmartDashboard**
+and "Auto Choice" appears as a drop-down. Choose "Do Nothing," start
+Autonomous, and enjoy the robot pointedly ignoring you. Then pick your routine
+back.
 
 ---
 
@@ -201,17 +243,17 @@ return m_autoChooser.getSelected();
 
 ## What you learned — and where to go next
 
-- Autonomous is just **one command**, and that command can be **many small
-  commands composed** together.
-- **`Commands.sequence`** runs steps in order; **`Commands.parallel`** /
-  **`Commands.deadline`** run them at once (never sharing a subsystem).
-- Passing shared subsystems into an auto **factory** keeps everyone using the
-  same hardware — the scheduler depends on it.
-- Because every block you built **finishes itself**, they snap together like
-  Lego.
-
-You now understand the whole spine of a command-based robot: subsystems own
-hardware, commands describe work, the scheduler runs it, and simulation lets
-you prove it all before the robot is even built.
+Autonomous turned out to be the least mysterious thing in robot programming:
+**one command**, built by composing the small finishing commands you already
+had. **`Commands.sequence`** runs steps in order; **`parallel`** and
+**`deadline`** run them at once, as long as no two share a subsystem; and an
+auto factory that takes the drivetrain as a parameter — **dependency
+injection** — keeps every command pointed at the one real robot. The
+`LoggedDashboardChooser` closes the loop the AdvantageKit way: the pre-match
+choice is itself an input, published and logged. Step back and look at the
+whole spine you've built: subsystems own hardware, commands describe work, the
+scheduler runs it, telemetry records it, and simulation proves it before the
+robot exists. Everything from here on is refinement — starting with Lesson 10,
+where the chassis finally learns to drive and spin at the same time.
 
 Next: [Lesson 10 — Full swerve with kinematics](10-kinematics.md).
