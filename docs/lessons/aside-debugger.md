@@ -24,7 +24,9 @@ they look.
   because that's where per-tick variables (`measurement`, `error`, `output`)
   first get interesting. If you haven't finished Lesson 5, the *shape* of the
   walkthrough still applies to whatever code you have — the numbers change, the
-  moves don't.
+  moves don't. (And if you're past [Lesson 12](12-model-based-control.md),
+  that P-control code has moved into the motor firmware — set your breakpoints
+  in `setDesiredState` or the cosine math in `periodic()` instead.)
 
 ---
 
