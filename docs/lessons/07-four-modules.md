@@ -18,6 +18,8 @@ what the gyro lesson needs to make sense.
   the whole `Drivetrain` becomes the subsystem
 - **Translate** (all wheels same direction/speed) vs. **rotate in place** (all
   wheels tangent to a circle)
+- Real steering gearing (`25 : 1`) — Lesson 5's IOU paid off
+- Logging **module states** so AdvantageScope's Swerve tab can draw the chassis
 - Why the *combined* case needs `SwerveDriveKinematics` (preview of Lesson 10)
 
 ---
@@ -70,7 +72,7 @@ public class SwerveModule {
   private final TalonFX m_steerMotor;
   private final TalonFXSimState m_driveSim;
   private final TalonFXSimState m_steerSim;
-  // (m_driveModel / m_steerModel: same DCMotorSim setup as Lessons 4 & 5.)
+  // (m_driveModel: same as Lesson 6. m_steerModel: updated below — real gearing at last.)
 
   public SwerveModule(int driveId, int steerId, Translation2d location) {
     this.location = location;
@@ -149,13 +151,80 @@ will call it until we write the code that does.
 > `Ctrl+.` add the import — it's `edu.wpi.first.math.MathUtil`. Same for
 > `Translation2d`: `edu.wpi.first.math.geometry.Translation2d`.)
 
-Keep `getSteerAngleDegrees()`, `getDistanceMeters()`, and `simulationPeriodic()`
-unchanged from Lessons 4–6 — reading methods and sim setup stay the same shape.
-And expect `RobotContainer` to be lit up red right now: it still binds buttons
-to command factories that no longer exist. Leave it red — section 6 rebuilds
-that wiring around the Drivetrain. A refactor isn't done until every file that
-*touched* the old shape learns the new one, and the compiler's job is to keep
-that list for you.
+### Pay off Lesson 5's IOU: real steering gearing
+
+Lesson 5 pretended the steering sensor turned 1:1 with the wheel and promised
+the real gearing later. The module is growing up today, so the debt comes due:
+our steering turns through a **`25 : 1`** reduction — the rotor spins 25 times
+per steering rotation. The fix is the same two moves you made for the drive
+motor in Lesson 6: *divide* on the way in (sensor → angle), *multiply* on the
+way back (sim model → fake rotor).
+
+The constant goes in `SteerConstants`, next to the gain:
+
+```java
+public static class SteerConstants {
+  public static final double kP = 0.01;               // from Lesson 5
+  public static final double kSteerGearRatio = 25.0;  // rotor : steering
+}
+```
+
+Divide in `getSteerAngleDegrees()`:
+
+```java
+/** Current steering angle in degrees. */
+public double getSteerAngleDegrees() {
+  double steerRotations =
+      m_steerMotor.getPosition().getValueAsDouble() / SteerConstants.kSteerGearRatio;
+  return steerRotations * 360.0;
+}
+```
+
+Teach the steer sim model about the gearbox (this is the `m_steerModel` field
+from the top of the class):
+
+```java
+private final DCMotorSim m_steerModel =
+    new DCMotorSim(
+        LinearSystemId.createDCMotorSystem(
+            DCMotor.getKrakenX60(1), 0.004, SteerConstants.kSteerGearRatio),
+        DCMotor.getKrakenX60(1));
+```
+
+And multiply back to rotor-side in the steer half of `simulationPeriodic()`,
+exactly like the drive motor in Lesson 6:
+
+```java
+m_steerSim.setRawRotorPosition(
+    m_steerModel.getAngularPositionRotations() * SteerConstants.kSteerGearRatio);
+m_steerSim.setRotorVelocity(
+    m_steerModel.getAngularVelocityRPM() * SteerConstants.kSteerGearRatio / 60.0);
+```
+
+Heads up: the steering now turns at a believable speed instead of a bare
+rotor's instant snap, so if your Lesson 5 `kP` suddenly feels sluggish or
+jumpy, that's not a bug — the thing being controlled changed. Retune it; you
+know the ritual.
+
+One more small question-method while we're in here — the visualization in
+section 3 needs wheel *speed*, and it's `getDistanceMeters()`'s pipeline from
+Lesson 6 applied to velocity instead of position:
+
+```java
+/** Current wheel speed in meters per second. */
+public double getDriveVelocityMetersPerSec() {
+  double wheelRps =
+      m_driveMotor.getVelocity().getValueAsDouble() / DriveConstants.kDriveGearRatio;
+  return wheelRps * DriveConstants.kWheelCircumferenceMeters;
+}
+```
+
+`getDistanceMeters()` itself stays unchanged from Lesson 6. And expect
+`RobotContainer` to be lit up red right now: it still binds buttons to command
+factories that no longer exist. Leave it red — section 6 rebuilds that wiring
+around the Drivetrain. A refactor isn't done until every file that *touched*
+the old shape learns the new one, and the compiler's job is to keep that list
+for you.
 
 Now add the four corners to `Constants.java`, inside the `DriveConstants`
 class you started in Lesson 6:
@@ -193,6 +262,8 @@ import java.util.function.DoubleSupplier;
 
 import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriveConstants;
@@ -208,13 +279,18 @@ public class Drivetrain extends SubsystemBase {
 
   @Override
   public void periodic() {
+    SwerveModuleState[] states = new SwerveModuleState[4];
     int index = 0;
     for (SwerveModule module : m_modules) {
       module.periodic();
       Logger.recordOutput("Drivetrain/Module" + index + "/SteerAngleDegrees",
           module.getSteerAngleDegrees());
+      states[index] = new SwerveModuleState(
+          module.getDriveVelocityMetersPerSec(),
+          Rotation2d.fromDegrees(module.getSteerAngleDegrees()));
       index++;
     }
+    Logger.recordOutput("Drivetrain/ModuleStates", states);
   }
 
   @Override
@@ -242,6 +318,18 @@ counter rides along, and `"Drivetrain/Module" + index + "/..."` glues the
 number into the key (`+` between a String and a number pulls the number into
 the text). Keys `Module0`–`Module3` follow the FL, FR, BL, BR order of the
 array.
+
+The `states` business is the second use of that counter, and it's there for a
+payoff you'll see in section 7. **`SwerveModuleState`** is a WPILib
+data-carrier: one wheel's speed (in m/s — which is why you wrote
+`getDriveVelocityMetersPerSec`) bundled with its angle as a **`Rotation2d`**,
+WPILib's angle type (`Rotation2d.fromDegrees(...)` builds one). The line
+`new SwerveModuleState[4]` makes an array with four *empty* slots, and
+`states[index] = ...` fills slot number `index` — arrays are numbered from
+zero, so the slots are 0 through 3. Logging the whole array in one call is an
+AdvantageKit trick worth knowing: structured values like these aren't just
+numbers on a plot; tools can *draw* them. (These two types become the language
+of real swerve math in Lesson 10 — consider this a first handshake.)
 
 Step back and look at the architecture, because this is the lesson's real
 idea: the scheduler ticks the **Drivetrain**; the Drivetrain ticks the
@@ -383,6 +471,16 @@ one graph. Push the stick — all four traces should snap to the same value.
 Hold the left bumper — they should split into the four rotate-in-place angles
 from the table above.
 
+Now the payoff for logging `ModuleStates`: open AdvantageScope's **Swerve**
+tab and drag `Drivetrain/ModuleStates` into its **States** slot (set the
+tab's *Max Speed* to about `5` — that's roughly what a Kraken-driven wheel
+tops out at in m/s). You get a live diagram of the chassis: one arrow per
+module, direction showing steer angle, length showing wheel speed. Push the
+stick and all four arrows swing together and grow with speed; hold the left
+bumper and they snap into the pinwheel — the table above, drawn for you,
+sixty times a second. This diagram is about to become your main debugging
+view for everything swerve.
+
 The **gyro** still reports zero — the chassis isn't yet closing the loop from
 "commanded rotation" to "reported heading." That's exactly what Lesson 8 wires
 up.
@@ -416,7 +514,9 @@ owns the array, holds the scheduler's one lock, and ticks its workers by
 hand — and the module's job shrank to "remember a target, chase it each
 tick." With that structure, whole-chassis behavior got almost easy:
 **translate** is one angle for everyone; **rotate** is one angle *per
-corner*, courtesy of each module knowing its `location`. If the refactor felt
+corner*, courtesy of each module knowing its `location` — and with module
+states logged, AdvantageScope draws it all live, which will catch a miswired
+corner faster than any plot. If the refactor felt
 long, that's because it was the real thing — a rename, deletions, red files,
 and the compiler walking you through every place the old design used to
 live. Combining translate and rotate into one motion is the last missing

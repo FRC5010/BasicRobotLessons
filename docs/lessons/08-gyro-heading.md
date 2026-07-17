@@ -61,7 +61,8 @@ Reading yaw has the same shape as reading motor position: `getYaw()` returns a
 signal, `.getValueAsDouble()` pulls the number out. Sensors all feel alike once
 you've read one.
 
-Finally, log it — in `periodic()`, alongside the module telemetry:
+Finally, log it — in `periodic()`, alongside the module telemetry. Two lines,
+two audiences:
 
 ```java
   @Override
@@ -69,8 +70,15 @@ Finally, log it — in `periodic()`, alongside the module telemetry:
     // ...the module loop from Lesson 7 stays...
 
     Logger.recordOutput("Drivetrain/HeadingDegrees", getHeadingDegrees());
+    Logger.recordOutput("Drivetrain/Heading",
+        Rotation2d.fromDegrees(getHeadingDegrees()));
   }
 ```
+
+The plain number is for line graphs. The `Rotation2d` version is the
+structured type AdvantageScope's Swerve tab wants in its **Rotation** slot —
+same fact, packaged for a tool that draws instead of plots. (`Rotation2d` is
+already imported from Lesson 7's module-states logging.)
 
 ---
 
@@ -244,6 +252,14 @@ simulation of the *actual* modules pushing the chassis around.
 approaches, settles inside the ±2° band, and the command ends. Press B — it
 comes back to `0°`. That's P control on a whole-robot quantity, closing the
 loop through a real chassis rotation command.
+
+Then watch the same thing as a picture: open the **Swerve** tab from Lesson 7
+(with `Drivetrain/ModuleStates` in its **States** slot) and drop
+`Drivetrain/Heading` into the **Rotation** slot. Press A again — the four
+wheels snap into the pinwheel, and the whole chassis diagram rotates to 90°
+as the fake gyro integrates, easing in exactly like the plot does. One
+glance now tells you what the wheels are doing *and* which way the robot
+thinks it's facing.
 
 Tune `kP` the same way as Lesson 5 — the symptoms haven't changed, only the
 thing that's oscillating:
