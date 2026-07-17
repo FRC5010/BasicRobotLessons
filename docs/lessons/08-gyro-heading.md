@@ -22,16 +22,21 @@ control from Lesson 5 to make the chassis **turn to a target heading and stop**
 An encoder tells you how far a *motor* turned. A **gyro** tells you how far the
 *whole robot* has rotated. The Pigeon 2 reports **yaw** — rotation about the
 vertical axis, i.e. heading — in degrees. `0°` is wherever the robot was pointing
-when the gyro zeroed; positive is CCW.
+when the gyro zeroed, and positive is CCW (the convention from Lesson 7, holding
+as promised).
 
-Heading is a *chassis* concern, so it goes on `Drivetrain` — not a new
-subsystem. Open `Drivetrain.java` and add:
+Where should it live? Heading is a *chassis* fact — no single module knows it,
+and no single module needs it alone — so the gyro goes on `Drivetrain`, not in
+`SwerveModule` and not in some new subsystem. Open `Drivetrain.java`. Two new
+imports up top (`Logger` is already there from Lesson 7):
 
 ```java
 import com.ctre.phoenix6.hardware.Pigeon2;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.HeadingConstants;
 ```
+
+Then three fields, below the modules array — the gyro is hardware, and the two
+doubles are sim bookkeeping whose job becomes clear in section 5:
 
 ```java
 private final Pigeon2 m_gyro = new Pigeon2(0); // CAN ID 0 — change to yours
@@ -39,31 +44,44 @@ private final Pigeon2 m_gyro = new Pigeon2(0); // CAN ID 0 — change to yours
 // Remembered for the sim: what rotation rate did we just command?
 private double m_lastCommandedOmega = 0.0;
 private double m_simHeadingDegrees  = 0.0;
+```
 
+Notice those two aren't `final` — they're *memory*, reassigned as the robot
+runs, exactly like the module's `m_targetSteerDegrees` in Lesson 7. Then a
+reading method, with the other public methods:
+
+```java
 /** Robot heading in degrees (CCW positive). */
 public double getHeadingDegrees() {
   return m_gyro.getYaw().getValueAsDouble();
 }
 ```
 
-And in `periodic()`, publish it:
-
-```java
-SmartDashboard.putNumber("Heading (deg)", getHeadingDegrees());
-```
-
 Reading yaw has the same shape as reading motor position: `getYaw()` returns a
 signal, `.getValueAsDouble()` pulls the number out. Sensors all feel alike once
 you've read one.
+
+Finally, log it — in `periodic()`, alongside the module telemetry:
+
+```java
+  @Override
+  public void periodic() {
+    // ...the module loop from Lesson 7 stays...
+
+    Logger.recordOutput("Drivetrain/HeadingDegrees", getHeadingDegrees());
+  }
+```
 
 ---
 
 ## 2. Extract a `commandRotation` helper
 
 The `rotate(omega)` command from Lesson 7 does the actual module-steering math
-for pure rotation. `turnToHeading` needs the *same* math with a different `omega`
-each tick, and we'd like the sim to know what `omega` we just asked for. Pull the
-body into a private helper so both callers share it:
+for pure rotation. `turnToHeading` is about to need the *same* math with a
+different `omega` each tick — and the sim needs to know what `omega` was just
+asked for. You could copy the tangent-angle loop into the new command. Don't.
+Copied code is a bug with a delay on it: fix the original and the copy stays
+wrong. Instead, pull the body into a private helper so both callers share it:
 
 ```java
 private void commandRotation(double omega) {
@@ -81,8 +99,14 @@ public Command rotate(double omega) {
 }
 ```
 
-Also update `translate(...)` from Lesson 7 to reset the commanded omega — pure
-translation shouldn't leave a stale rotation rate lying around:
+Look at what happened to `rotate`: its whole body became one line that says
+*what* it wants, and the helper holds the *how*. That's the move — when two
+commands need the same math, promote it to a helper, and every caller gets the
+`m_lastCommandedOmega` bookkeeping for free.
+
+One loose end: `translate(...)` from Lesson 7 needs a single new line — pure
+translation shouldn't leave a stale rotation rate lying around for the sim to
+integrate:
 
 ```java
 public Command translate(DoubleSupplier vxSupplier, DoubleSupplier vySupplier) {
@@ -99,20 +123,18 @@ public Command translate(DoubleSupplier vxSupplier, DoubleSupplier vySupplier) {
 }
 ```
 
-When two commands need the same math, promote it to a helper. That way each
-caller stays focused on *what* it wants, not *how* to do it — and the sim gets
-the same `omega` bookkeeping for free.
-
 ---
 
 ## 3. Turn to a heading — the same P control, again
 
-Setpoint − measurement = error, output = `kP × error`, stop when the error is
-small. Two things are different from Lesson 5's `steerToAngle`: which sensor we
-read, and that headings **wrap** around a circle (so `-170°` to `170°` should
-turn `20°`, not `340°`).
+Lesson 5 promised its five moves would come back — measure, subtract, multiply,
+clamp, command — and here they are, pointed at the whole robot. Two things
+differ from `steerToAngle`: which sensor gets measured, and that headings
+**wrap** around a circle, so the subtract step needs the wrap trick baked in
+(`-170°` to `170°` should turn `20°`, not `340°`).
 
-Add to `Drivetrain`:
+Add to `Drivetrain` — the wrap logic goes in its own little question-method,
+because the finish condition is about to need it too:
 
 ```java
 /** Signed error to 'target' in degrees, wrapped to (-180, 180]. */
@@ -136,33 +158,48 @@ public Command turnToHeading(double targetDegrees) {
 }
 ```
 
-Add the gain to `Constants.java`:
+The bricks are all ones you own: `run` does the per-tick P control, `until`
+adds the finish condition (Lesson 6's move — this command *ends* when the job
+is done), and `finallyDo` guarantees the wheels get a stop order no matter how
+the command exits. The clamp is tighter than Lesson 5's `±1.0` on purpose:
+full-power spins are violent, and a heading turn never needs more than half
+throttle. And because the finish condition calls the *same* `headingError`,
+"done" means "within 2° by the shortest path" — the wrap logic can't disagree
+with itself.
+
+The gain goes in `Constants.java`, in its own nested class next to the others:
 
 ```java
-public static class HeadingConstants {
-  public static final double kP = 0.02; // turn power per degree of heading error
+public final class Constants {
+  // ...SteerConstants and DriveConstants stay...
+
+  public static class HeadingConstants {
+    public static final double kP = 0.02; // turn power per degree of heading error
+  }
 }
 ```
-
-The finish condition uses the *same* `headingError`, so "done" means "within 2°
-by the shortest path." And notice the pattern that keeps coming back: reuse
-`commandRotation` — no new module math, no fresh chance to typo the tangent
-formula.
 
 ---
 
 ## 4. Wire it up
 
-In `RobotContainer.configureBindings()`:
+In `RobotContainer.configureBindings()`, two taps — the A and B buttons are
+free again since Lesson 7's cleanup:
 
 ```java
-m_driverController.a().onTrue(m_drivetrain.turnToHeading(90));
-m_driverController.b().onTrue(m_drivetrain.turnToHeading(0));
+  private void configureBindings() {
+    // ...the default translate and bumper bindings from Lesson 7 stay...
+
+    m_driverController.a().onTrue(m_drivetrain.turnToHeading(90));
+    m_driverController.b().onTrue(m_drivetrain.turnToHeading(0));
+  }
 ```
 
 Because `turnToHeading` requires the Drivetrain, pressing A cancels the default
 translate command; when it finishes (or is interrupted by B), the default
-resumes automatically.
+resumes automatically. Unlike Lesson 5's `steerToAngle`, this command
+*finishes* — so the stick comes back to life on its own the moment the robot
+faces 90°.
 
 ---
 
@@ -172,7 +209,7 @@ On a real robot, `commandRotation(omega)` spins the four wheels tangent to the
 circle, the chassis rotates, and the gyro reads the result. In sim, our modules
 don't actually push the chassis around — we haven't built that physics. So we
 close the loop **ourselves**: pretend the robot rotates at the rate we just
-commanded, and inject that back into the fake gyro. Add to `Drivetrain`:
+commanded, and inject that back into the fake gyro. Update `simulationPeriodic()`:
 
 ```java
 @Override
@@ -189,23 +226,27 @@ public void simulationPeriodic() {
 }
 ```
 
-This is the same **command → model → fake sensor → your reads** loop as Lesson
-4, just for chassis rotation. It's an honest stand-in that lets you develop
-`turnToHeading` on your laptop today; when Lesson 10 adds `SwerveDriveKinematics`
-we can replace it with a physics-driven simulation of the *actual* modules
-pushing the chassis around.
+That `+=` line is doing something with a fancy name — **integrating** — and a
+plain meaning: every tick, add "rate × time" to a running total. Rotating at
+180°/s for one 20 ms tick adds 3.6°; do that fifty times a second and the
+total *is* the heading. This is the same **command → model → fake sensor →
+your reads** loop as Lesson 4, with a one-line model. It's an honest stand-in
+that lets you develop `turnToHeading` on your laptop today; when Lesson 10
+adds `SwerveDriveKinematics`, we can replace it with a physics-driven
+simulation of the *actual* modules pushing the chassis around.
 
 ---
 
 ## 6. Run it
 
 `./gradlew simulateJava` → **Teleoperated**. In AdvantageScope, plot
-`Heading (deg)`. Press A — heading sweeps toward `90°`, slows as it approaches,
-settles inside the ±2° band, and the command ends. Press B — it comes back to
-`0°`. That's P control on a whole-robot quantity, closing the loop through a
-real chassis rotation command.
+`Drivetrain/HeadingDegrees`. Press A — heading sweeps toward `90°`, slows as it
+approaches, settles inside the ±2° band, and the command ends. Press B — it
+comes back to `0°`. That's P control on a whole-robot quantity, closing the
+loop through a real chassis rotation command.
 
-Tune `kP` the same way as Lesson 5:
+Tune `kP` the same way as Lesson 5 — the symptoms haven't changed, only the
+thing that's oscillating:
 
 - **too small:** it crawls in and takes forever;
 - **too big:** it overshoots and oscillates;
@@ -229,13 +270,17 @@ Tune `kP` the same way as Lesson 5:
 
 ## What you learned
 
-- A **gyro** measures the *robot's* rotation (**yaw** = heading); reading it has
-  the same shape as reading a motor's position signal.
-- Turning to a heading is **the same P control** as steering a wheel — the
-  pattern transfers cleanly; only the sensor and the wrap-around change.
-- Extracting a shared **helper method** (`commandRotation`) keeps `rotate`,
-  `turnToHeading`, and the sim bookkeeping consistent — one place to fix bugs.
-- You can **fake a sensor in sim** by integrating the commanded rate, closing
-  a control loop before the physics exists.
+The most important thing in this lesson is what *didn't* change: turning a
+five-hundred-newton robot to face 90° is the same five moves as pointing one
+wheel — measure, subtract, multiply, clamp, command — with a **gyro** as the
+sensor and the wrap trick promoted into a `headingError` helper that the
+finish condition shares, so "done" and "which way" can never disagree. Around
+that came two habits worth keeping: when a second caller needs the same math,
+extract a **helper method** (`commandRotation`) instead of copying — copied
+code is a bug with a delay on it — and when the physics doesn't exist yet,
+**fake the sensor** by integrating the commanded rate, which is just "add
+rate × time every tick." A robot that knows its heading and can command its
+own motion is most of what an autonomous routine needs. Lesson 9 takes the
+driver out of the loop entirely.
 
 Next: [Lesson 9 — Autonomous](09-autonomous.md).
