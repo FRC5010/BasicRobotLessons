@@ -207,6 +207,11 @@ awful and burns time. With it, they nudge a few degrees and reverse — as swerv
 robots should. Note what it needs to decide: the wheel's *current* angle.
 That's why the measurement gets passed in.
 
+It's also best friends with Lesson 9's cosine trick: `optimize` keeps every
+steering move under 90°, which means the cosine scale in the module's
+`periodic()` never goes negative — the two together give you wheels that take
+the short path *and* hold their push until they're pointed right.
+
 ---
 
 ## 6. Wire up the joysticks

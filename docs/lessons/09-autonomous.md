@@ -13,6 +13,7 @@ steps in parallel.
 - `getAutonomousCommand()` and how auto starts
 - **`Commands.sequence`**, **`Commands.parallel`**, **`Commands.deadline`**
 - A whole-chassis **`driveDistance`** built from the Drivetrain primitives
+- **Cosine compensation** — don't drive hard until the wheel points the right way
 - Designing an auto as a *sentence* of small commands
 
 ---
@@ -159,9 +160,63 @@ distance climbs to 1.0, the heading sweeps to 90° and settles, distance climbs
 again from a new zero. The robot ran your plan untouched — nobody's hands on
 the controller. That one is worth savoring for a second.
 
+Then watch the Swerve tab closely at the *moment* each step changes — right
+when the turn begins, and right when step 3 starts. There's a little ugliness
+hiding in those transitions, and fixing it is next.
+
 ---
 
-## 5. Doing things at once: parallel
+## 5. A polish: don't drive while pointed wrong
+
+Here's the ugliness. When step 2 begins, every wheel's *steering target*
+snaps from 0° to its pinwheel angle — but steering takes real time (that
+25:1 gearbox from Lesson 7 doesn't teleport). For a fraction of a second the
+drive motors are pushing at full command through wheels pointed somewhere
+*between* the old direction and the new one. The chassis scrubs sideways,
+the tires drag, and the odometer counts distance the robot didn't cleanly
+travel. In teleop you'd never notice; in an auto that's supposed to end in a
+precise spot, these little smears add up.
+
+The fix is one line of trigonometry, and it's a trick every good swerve
+robot uses. Ask: *how much of this wheel's rolling actually points where we
+want to go?* That's exactly what cosine measures. Pointed perfectly
+(`error = 0°`), `cos = 1` — drive full speed. Pointed 60° off, `cos = 0.5` —
+half of the rolling would be useful, so drive at half. Pointed sideways
+(`90°`), `cos = 0` — nothing you drive goes the right way, so don't drive at
+all. Update the drive line in `SwerveModule.periodic()`:
+
+```java
+public void periodic() {
+  // Steering P control (same math as Lesson 5, with the wrap trick).
+  double error = m_targetSteerDegrees - getSteerAngleDegrees();
+  while (error > 180)  { error -= 360; }
+  while (error < -180) { error += 360; }
+  double steerOutput = MathUtil.clamp(SteerConstants.kP * error, -1.0, 1.0);
+  m_steerMotor.set(steerOutput);
+
+  // Drive only as much as the wheel is pointed the right way:
+  // cos(0°) = 1 → full speed; cos(90°) = 0 → don't drive while sideways.
+  double alignment = Math.cos(Math.toRadians(error));
+  m_driveMotor.set(m_targetDriveSpeed * alignment);
+}
+```
+
+(`Math.cos` works in radians, hence the `Math.toRadians` — same family as the
+`Math.toDegrees` you used in Lesson 7, opposite direction.) One subtlety: past
+90° of error, cosine goes *negative*, so the wheel briefly drives backward.
+That's not a bug — it's the honest answer to "how much of my rolling points
+the right way": at 180° off, rolling backward *is* rolling the right way.
+WPILib ships this exact idea as `SwerveModuleState.cosineScale`, which you'll
+be able to swap in once Lesson 10 has the module speaking in states.
+
+Re-run the auto and watch the transitions again: the wheels now settle onto
+their new angles *before* the drive effort ramps in, the scrub is gone, and
+the distance the odometer counts is distance the robot actually traveled in
+the right direction. One line, visibly better auto.
+
+---
+
+## 6. Doing things at once: parallel
 
 Sequences do one thing at a time. Sometimes you want *simultaneous* actions —
 say, running a mechanism (once you have one) alongside a drive step. Two tools:
@@ -186,7 +241,7 @@ subsystem is Lesson 10's `SwerveDriveKinematics`.
 
 ---
 
-## 6. Bonus: an auto chooser
+## 7. Bonus: an auto chooser
 
 Real robots pick from several autos on the dashboard before a match. Which
 auto got picked is an *input* to the robot — and inputs are exactly the kind
@@ -248,7 +303,11 @@ Autonomous turned out to be the least mysterious thing in robot programming:
 had. **`Commands.sequence`** runs steps in order; **`parallel`** and
 **`deadline`** run them at once, as long as no two share a subsystem; and an
 auto factory that takes the drivetrain as a parameter — **dependency
-injection** — keeps every command pointed at the one real robot. The
+injection** — keeps every command pointed at the one real robot. Running a
+plan with nobody's hands on the sticks also exposed a flaw teleop had been
+hiding, and **cosine compensation** fixed it with one line: scale the drive
+by `cos(steer error)`, so a wheel doesn't push hard until it's pointing the
+right way. The
 `LoggedDashboardChooser` closes the loop the AdvantageKit way: the pre-match
 choice is itself an input, published and logged. Step back and look at the
 whole spine you've built: subsystems own hardware, commands describe work, the

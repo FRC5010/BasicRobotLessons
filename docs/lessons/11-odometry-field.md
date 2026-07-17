@@ -17,6 +17,7 @@ that pose and watch the robot drive around a real field in AdvantageScope's
 - **`SwerveDriveOdometry`** — the accumulator that turns those reports into a
   pose
 - Logging a **`Pose2d`** so AdvantageScope can draw the robot on a field
+- **`Field2d`** — the same pose drawn inside SimGUI, no extra tool needed
 - Why the same setup upgrades cleanly to **`SwerveDrivePoseEstimator`** when
   you add vision
 
@@ -156,6 +157,42 @@ If everything is wired right, driving forward moves the robot along +X,
 strafing slides it along +Y, and spinning rotates it — the coordinate
 convention you memorized in Lesson 7, now visible as motion on a map. Driving
 in the sim officially looks like a game. Take a lap.
+
+### The same view inside SimGUI: `Field2d`
+
+AdvantageScope is the full-featured viewer, but sometimes you just want the
+field right inside the sim window — no second tool. WPILib's **`Field2d`** is
+a dashboard *widget* that does exactly that. It's the one place this course
+touches the `SmartDashboard` class, and the distinction matters: `putData`
+publishes a **widget** (a thing dashboards know how to draw), which is a
+different job from the per-value `putNumber` spam we swore off in Lesson 3.
+Add to `Drivetrain`:
+
+```java
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+```
+
+```java
+private final Field2d m_field = new Field2d();
+
+// Drivetrain never needed a constructor before — one-time setup finally earns it one.
+public Drivetrain() {
+  SmartDashboard.putData("Field", m_field);
+}
+```
+
+And one more line in `periodic()`, next to the pose log:
+
+```java
+    m_field.setRobotPose(getPose());
+```
+
+Now in **SimGUI**: menu **NetworkTables → SmartDashboard → Field**, and a
+top-down field pane opens right in the sim window, robot moving as you drive.
+Same pose, two viewers: `Field2d` for the quick glance while sim is already
+open, the logged `Pose2d` for AdvantageScope's field images, replays, and
+everything else.
 
 ---
 
