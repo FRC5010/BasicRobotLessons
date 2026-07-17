@@ -10,7 +10,7 @@ Target platform (assumed by every lesson): **WPILib 2026**, **Phoenix 6**, **Tal
 
 ## Lessons are strictly sequential
 
-Lessons 0–11 form a single build. Each one:
+Lessons 0–14 form a single build. Each one:
 - Introduces the **smallest possible** set of new Java and robot concepts.
 - Ends with a runnable result the student can see (sim, plots, or hardware).
 - Assumes every earlier lesson has already been done.
@@ -22,6 +22,7 @@ Consequences when editing:
 - The `SwerveModule` / `Drivetrain` refactor happens in [Lesson 7](docs/lessons/07-four-modules.md) — before that the single-module class is called `DriveModule` and is itself a subsystem. Match whichever name the current lesson is at.
 - Simulation is introduced in [Lesson 4](docs/lessons/04-simulation.md); lessons 1–3 must not depend on sim plumbing.
 - Telemetry is AdvantageKit-style logging, introduced in [Lesson 3](docs/lessons/03-telemetry.md): every value goes through `Logger.recordOutput("SubsystemName/ValueName", value)` from the subsystem's `periodic()` — never bare `SmartDashboard.putNumber`. All numbered lessons now follow this style; the auto chooser in [Lesson 9](docs/lessons/09-autonomous.md) uses AdvantageKit's `LoggedDashboardChooser`, and [Lesson 11](docs/lessons/11-odometry-field.md) draws the robot by logging a `Pose2d` to AdvantageScope's Odometry tab, plus a `Field2d` widget for viewing inside SimGUI (`SmartDashboard.putData` for a widget is the one sanctioned SmartDashboard use; per-value `putNumber` is not).
+- The advanced arc changes earlier conventions in ways later edits must respect: from [Lesson 12](docs/lessons/12-model-based-control.md) on, modules use Phoenix onboard closed loop (`PositionVoltage`/`VelocityVoltage`, `SensorToMechanismRatio` replaces manual gear-ratio division, `ContinuousWrap` replaces the wrap loops, and the old software `SteerConstants.kP` is retired). From [Lesson 13](docs/lessons/13-io-replay.md) on, hardware lives behind `ModuleIO`/`GyroIO` (sensor values are *inputs* via `Logger.processInputs`; computed values remain *outputs* via `recordOutput`), a `Constants.Mode` enum (`REAL`/`SIM`/`REPLAY`) picks implementations, and all sim plumbing lives inside the IO classes — `simulationPeriodic` is gone. [Lesson 14](docs/lessons/14-pose-estimator.md) replaces `SwerveDriveOdometry` with `SwerveDrivePoseEstimator`.
 
 ## Asides (out-of-sequence lessons)
 

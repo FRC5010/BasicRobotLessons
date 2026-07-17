@@ -269,7 +269,7 @@ other tuning number.)
 
 ---
 
-## What you learned — and where to go next
+## What you learned
 
 Odometry closed the last gap between "the robot can move" and "the robot
 knows where it is": each module reports a **`SwerveModulePosition`**,
@@ -280,21 +280,13 @@ into a live map. The Java pattern to keep is **building an array in a loop**
 one you spotted in `driveToPose`: everything in this course has been
 measure-subtract-multiply-clamp-command wearing different sensors.
 
-That's the course. You have a full command-based swerve robot that can be
-driven, plotted, simulated, tuned, auto'd, and located on a field — and every
-piece of it is something you typed yourself and can explain. Where to go
-next, in rough order of payoff:
+The *robot* is now complete — but the *programming* has one more act. Your
+control loops are still 50 Hz software P, your log files can only be
+watched, and the pose you just built drifts (Try it #2 made you watch it
+happen). The last three lessons fix all three, and they're where your code
+starts looking like what the top teams run: Lesson 12 moves control into
+the motor controllers themselves, Lesson 13 restructures the code so a log
+file can *drive* it, and Lesson 14 upgrades odometry into an estimator that
+accepts corrections from the outside world.
 
-- **AprilTags + PhotonVision:** feed vision poses into
-  `SwerveDrivePoseEstimator.addVisionMeasurement(...)`. Suddenly you know
-  where you are absolutely, not just relatively.
-- **Trajectory following:** `PathPlanner` or `Choreo` turn a drawn path into a
-  time-parameterized trajectory your `driveToPose` pattern can chase.
-- **Real Phoenix control:** replace hand-rolled P steering with a
-  `PositionVoltage` / `MotionMagicVoltage` on-motor closed loop. The
-  bookkeeping stays; the tuning gets much better.
-- **A second mechanism:** the `Subsystem` + `Command` + `startEnd`/`run` +
-  `finallyDo` toolkit you built here is the same for a shooter, an elevator,
-  or an intake. Same shape, different actuator.
-
-Wherever you go next, you're not starting over — you're reusing the spine.
+Next: [Lesson 12 — Model-based control](12-model-based-control.md).
