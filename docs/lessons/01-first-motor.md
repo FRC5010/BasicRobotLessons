@@ -345,8 +345,9 @@ the course.
 2. Change `m_driveMotor`'s CAN ID and rebuild. Nothing breaks in sim — IDs only
    matter on the real robot, but get in the habit of setting them deliberately.
 3. Move the CAN ID out of the code and into `Constants.java` as a named constant
-   (e.g. `public static final int kDriveMotorId = 1;`) and use it in the subsystem.
-   This is where robot numbers *should* live.
+   in a nested `DriveConstants` class (`public static final int kDriveMotorPort = 1;`)
+   and use it in the subsystem as `Constants.DriveConstants.kDriveMotorPort`. This
+   is where robot numbers *should* live.
 
 ---
 
