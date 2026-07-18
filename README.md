@@ -1,13 +1,18 @@
-# Team 5010 — Learn Java + Robot Programming
+# Learn Java + Robot Programming
 
-A hands-on course that teaches Java **while** building working swerve-drive robot
-code. You start from the WPILib Command Robot template in this repo and, lesson by
+This is a hands-on course that teaches Java **while** building working swerve-drive robot
+code. You start from the WPILib Command Robot template and, lesson by
 lesson, grow it into a robot you can drive with a joystick, watch on live plots,
 run in simulation, steer to angles, drive exact distances, turn to a compass
 heading, and finally string it all together into an autonomous routine.
 
 Each lesson introduces **as few new ideas as possible** and ends with a real,
 runnable result. Do them in order — every lesson builds on the previous one.
+Read the lessons carefully, not all code changes are in code sections and try out
+your own ideas within the lessons as well as the exercises. Take time in between
+each lesson to get to understand the code you've added.
+**The concepts introduced are not explored at the same level as a real programming course.**
+**It would be to your benefit to pair this with an actual course in Java before or during.**
 
 ## Hardware assumed
 

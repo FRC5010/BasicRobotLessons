@@ -28,7 +28,7 @@ these — all clicking, no downloads, no URLs:
    the vendor dependency manager.
 2. In the list of available dependencies, find the two CTRE entries —
    **Phoenix 6** and **Phoenix 5** — and install both.
-3. Rebuild: `./gradlew build`.
+3. Rebuild: `./gradlew build`. (Ctrl-Shift-P **WPILib: Build Robot Code**)
 
 Why both? This course only uses Phoenix 6, but CTRE's older devices (the
 Talon SRX / Victor SPX generation) speak Phoenix 5, and real robots usually

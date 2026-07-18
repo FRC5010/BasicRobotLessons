@@ -26,11 +26,12 @@ work:
 ```
 frc/robot/
 ├── Main.java             ← JVM entry point. Never touch it.
-├── Robot.java            ← The heartbeat. You'll rarely touch it.
+├── Robot.java            ← The heartbeat. You'll occasionally touch it.
 ├── RobotContainer.java   ← The wiring diagram. You edit this a lot.
 ├── Constants.java        ← Numbers with names. You edit this a lot.
+|
 ├── subsystems/           ← Hardware lives here (motors, gyro).
-└── commands/             ← Actions live here.
+└── commands/             ← High-level actions live here.
 ```
 
 Read those comments once and let them sit. You don't need to memorize anything
@@ -116,17 +117,24 @@ take that picture.
 
 ## 3. Run it
 
-Alright — time to actually see it. Well, not move, but boot. From the project
-folder in PowerShell:
+Alright — time to actually see it. Well, not move, but boot. Either:
+1. Click the **WPILib icon** in VS Code's left sidebar (or open the command
+   palette with Ctrl+Shift+P → **WPILib: Simulate Robot Code**) to use the 
+   WPILib Command Pallet menu or... 
+2. From the project folder in PowerShell:
 
 ```powershell
 ./gradlew simulateJava
 ```
 
 The very first run has to download a pile of dependencies and might take
-several minutes. Grab a drink. When the **SimGUI** window finally opens:
+several minutes. Grab an energy drink. 
 
-- Find the **Robot State** panel and drag it from *Disabled* to *Teleoperated*.
+When the build finishes, you'll see a prompt at the top of VSCode asking if you 
+want Sin GUI and/or Real Driverstation. Just **Sim GUI** is correct for now.
+When the **SimGUI** window finally opens:
+
+- Find the **Robot State** panel and change it from *Disabled* to *Teleoperated*.
 - Congratulations — you're "driving" a simulated robot. Nothing moves,
   because we haven't added any motors yet. That's Lesson 1.
 
@@ -160,6 +168,11 @@ message now than be surprised by it later.
 Run `./gradlew simulateJava` again, drag to **Teleoperated**, and glance at
 the terminal. Your message should be sitting right there. You just changed
 what the robot does.
+
+From now on, if you see `./gradlew simulateJava` and you'd prefer to use the
+VSCode Command Pallet, just substitute that instead. Usually, there's a way to
+do everything on the command line from the pallet, but it's good to know how
+to do both.
 
 ---
 
