@@ -58,7 +58,7 @@ let you see everything working on your laptop. Device IDs in the examples
 | 11 | [Odometry & the field view](docs/lessons/11-odometry-field.md) | Track and draw the robot on a virtual field | Building arrays in loops, small bundle types |
 | 12 | [Model-based control](docs/lessons/12-model-based-control.md) | Onboard 1 kHz closed loop with feedforward | Config objects, control requests |
 | 13 | [IO layers & replay](docs/lessons/13-io-replay.md) | Re-run a logged session through changed code | Interfaces, enums, annotations |
-| 14 | [The pose estimator](docs/lessons/14-pose-estimator.md) | Vision corrections for a drifting pose | Type swaps, timestamps |
+| 14 | [Pose estimator & localizer](docs/lessons/14-pose-estimator.md) | A localization subsystem fused from pluggable pose providers | Interfaces, registries, timestamps |
 
 ### Asides (out of order — read when you need them)
 
