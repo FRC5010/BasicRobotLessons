@@ -48,13 +48,16 @@ every tick, and answers `getPoseMeters()` any time you ask.
 
 Odometry needs a `SwerveModulePosition` per corner: the wheel's accumulated
 distance and its current steer angle. Both halves are question-methods you
-already have — this just bundles them. Add to `SwerveModule`, with the other
-public methods:
+already have — this just bundles them.
+
+**Add to `SwerveModule.java`'s imports:**
 
 ```java
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 ```
+
+**Add to `SwerveModule`, with the other public methods:**
 
 ```java
 /** How far this wheel has rolled and where it's pointing — for odometry. */
@@ -78,15 +81,19 @@ and let you swap them silently.
 ## 3. Add odometry to the Drivetrain
 
 Odometry needs the kinematics you built in Lesson 10, the current heading, and
-the initial wheel positions. Add to `Drivetrain` — and note the field goes
-*below* both `m_modules` and `m_kinematics`, because its construction reads
-both. Same ordering rule as always: dependencies first.
+the initial wheel positions. The field goes *below* both `m_modules` and
+`m_kinematics`, because its construction reads both — same ordering rule as
+always: dependencies first.
+
+**Add to `Drivetrain.java`'s imports:**
 
 ```java
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 ```
+
+**Add to `Drivetrain`, below `m_kinematics`:**
 
 ```java
 private final SwerveDriveOdometry m_odometry = new SwerveDriveOdometry(
@@ -116,7 +123,7 @@ this shape any time a library wants an array whose contents change every
 tick. (Sizing it with `m_modules.length` instead of a literal `4` means one
 less place to fix if the module count ever changes.)
 
-Then in `periodic()`, feed odometry the newest sample every tick:
+**Add to `Drivetrain.periodic()`** — feed odometry the newest sample every tick:
 
 ```java
   @Override
@@ -137,8 +144,9 @@ the change since the last call → `getPose()` gives you the running total.
 ## 4. Draw the robot: log the pose
 
 Here's where the logging discipline you've kept since Lesson 3 pays off in
-full. Drawing the robot on a field takes exactly one more line in
-`periodic()`, right after the update:
+full. Drawing the robot on a field takes exactly one more line.
+
+**Add to `Drivetrain.periodic()`, right after the odometry update:**
 
 ```java
     Logger.recordOutput("Drivetrain/Pose", getPose());
@@ -166,12 +174,15 @@ a dashboard *widget* that does exactly that. It's the one place this course
 touches the `SmartDashboard` class, and the distinction matters: `putData`
 publishes a **widget** (a thing dashboards know how to draw), which is a
 different job from the per-value `putNumber` spam we swore off in Lesson 3.
-Add to `Drivetrain`:
+
+**Add to `Drivetrain.java`'s imports:**
 
 ```java
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 ```
+
+**Add to `Drivetrain`** — the field, and a constructor to publish the widget once:
 
 ```java
 private final Field2d m_field = new Field2d();
@@ -182,7 +193,7 @@ public Drivetrain() {
 }
 ```
 
-And one more line in `periodic()`, next to the pose log:
+**Add to `Drivetrain.periodic()`, next to the pose log:**
 
 ```java
     m_field.setRobotPose(getPose());
@@ -198,7 +209,9 @@ everything else.
 
 ## 5. Reset and starting pose
 
-Autos usually start from a known place. Add:
+Autos usually start from a known place.
+
+**Add to `Drivetrain`:**
 
 ```java
 public void resetPose(Pose2d pose) {
@@ -217,18 +230,21 @@ then on is anchored to that origin.
 
 ## 6. Field-relative auto with a real pose
 
-Once odometry works, auto routines can talk in field coordinates. A minimal
-sketch — drive toward a target pose using P control on the position error, with
-`applyChassisSpeeds` from Lesson 10 doing the actuation:
+Once odometry works, auto routines can talk in field coordinates.
+
+**Add to `Drivetrain`** a minimal `driveToPose` — drive toward a target pose
+using P control on the position error, with `applyChassisSpeeds` from Lesson 10
+doing the actuation:
 
 ```java
 public Command driveToPose(Pose2d target) {
+  double maxMps = DriveConstants.kMaxSpeed.in(MetersPerSecond); // convert once, reuse
   return run(() -> {
     Pose2d current = getPose();
     double dx = target.getX() - current.getX();
     double dy = target.getY() - current.getY();
-    double vx = MathUtil.clamp(1.5 * dx, -DriveConstants.kMaxSpeedMps, DriveConstants.kMaxSpeedMps);
-    double vy = MathUtil.clamp(1.5 * dy, -DriveConstants.kMaxSpeedMps, DriveConstants.kMaxSpeedMps);
+    double vx = MathUtil.clamp(1.5 * dx, -maxMps, maxMps);
+    double vy = MathUtil.clamp(1.5 * dy, -maxMps, maxMps);
     double omega = MathUtil.clamp(
         3.0 * target.getRotation().minus(current.getRotation()).getRadians(),
         -Math.PI, Math.PI);
@@ -241,10 +257,13 @@ public Command driveToPose(Pose2d target) {
 Squint at it and you'll see three copies of Lesson 5 stacked up — one P
 controller for x, one for y, one for heading, each doing measure-subtract-
 multiply-clamp, with `applyChassisSpeeds` as the shared "command" step.
-Robotics really is one idea reused with different sensors. (The `1.5` and
-`3.0` gains are inlined here because this is a sketch — if this command
-graduates into your real robot, they belong in `Constants.java` like every
-other tuning number.)
+Robotics really is one idea reused with different sensors. (Two details worth
+naming: `kMaxSpeed` is the typed `LinearVelocity` from Lesson 10, unpacked to a
+`double` **once** with `.in(MetersPerSecond)` before the lambda — same
+convert-once habit as the joystick bindings. And the `1.5`/`3.0` gains are
+inlined because this is a sketch; if it graduates into your real robot they
+belong in `Constants.java` like every other tuning number. The heading term
+needs no wrap helper — `Rotation2d.minus` already returns the shortest angle.)
 
 > **When you outgrow odometry:** wheels slip, wheels drift, and after a minute
 > of driving the pose can be meters off from reality. **`SwerveDrivePoseEstimator`**
