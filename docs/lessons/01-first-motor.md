@@ -20,23 +20,29 @@ spin at a fixed speed while you hold a button.
 ## 1. Add the Phoenix 6 vendor library
 
 TalonFX motors are made by CTRE, and their code lives in a **vendor library**
-that isn't in the template yet. Adding one is a one-time chore — all clicking,
-no coding. In VS Code:
+that isn't in the template yet. WPILib's VS Code has a built-in manager for
+these — all clicking, no downloads, no URLs:
 
-1. Open the command palette (Ctrl+Shift+P) → **WPILib: Manage Vendor Libraries**.
-2. Choose **Install new libraries (online)**.
-3. Paste the Phoenix 6 URL from
-   [CTRE's install page](https://v6.docs.ctr-electronics.com/en/stable/docs/installation/installation-frc.html)
-   (looks like `https://maven.ctr-electronics.com/.../Phoenix6-frc2026-latest.json`).
-4. Rebuild: `./gradlew build`.
+1. Click the **WPILib icon** in VS Code's left sidebar (or open the command
+   palette with Ctrl+Shift+P → **WPILib: Manage Vendor Libraries**) to open
+   the vendor dependency manager.
+2. In the list of available dependencies, find the two CTRE entries —
+   **Phoenix 6** and **Phoenix 5** — and install both.
+3. Rebuild: `./gradlew build`.
 
-A new file appears under `vendordeps/`. GradleRIO finds it automatically — you
-never edit `build.gradle` for this.
+Why both? This course only uses Phoenix 6, but CTRE's older devices (the
+Talon SRX / Victor SPX generation) speak Phoenix 5, and real robots usually
+carry a mix of hardware generations. Installing both now means whatever CTRE
+device you plug in later, the code for it is already on board.
+
+Two new files appear under `vendordeps/`. GradleRIO finds them automatically —
+you never edit `build.gradle` for this.
 
 > **Why isn't this just part of WPILib?** WPILib ships the core robot
 > framework. Hardware makers (CTRE, REV, etc.) ship *their* code separately so
-> they can update on their own schedule. The vendordep you just installed is
-> nothing more than a JSON file telling Gradle where to download CTRE's code.
+> they can update on their own schedule. The vendordep files you just
+> installed are nothing more than JSON files telling Gradle where to download
+> CTRE's code.
 
 ---
 

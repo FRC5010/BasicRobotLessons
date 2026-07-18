@@ -80,11 +80,11 @@ motor's four steps — same loop, second motor:
 ```
 
 We'll read the steering **angle in degrees**. A real steering module has a big
-reduction between the motor and the wheel (an SDS MK4, for example, uses about
-`12.8 : 1`); to keep this lesson focused on P control rather than unit conversion,
-we'll pretend the sensor turns **1:1** with the wheel. In Lesson 6 you'll see the
-gear-ratio pattern applied to the drive motor — the same shape applies here if
-you want to make it realistic later.
+reduction between the motor and the wheel — ours steers through `25 : 1` — but
+to keep this lesson focused on P control rather than unit conversion, we'll
+pretend the sensor turns **1:1** with the wheel for now. In Lesson 6 you'll
+see the gear-ratio pattern applied to the drive motor, and in Lesson 7 the
+steering gets its real `25 : 1` as part of growing up.
 
 Add the reading method with your other public methods — it's a
 question-method, Lesson 3 style: ask the motor for rotations, hand back
