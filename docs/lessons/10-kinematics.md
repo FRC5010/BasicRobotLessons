@@ -103,16 +103,27 @@ import frc.robot.Constants.DriveConstants;
 And replace the two-argument `setDesiredState` with:
 
 ```java
+/** One tick of control: chase the given state. */
 public void setDesiredState(SwerveModuleState state) {
-  m_targetSteerDegrees = state.angle.getDegrees();
-  m_targetDriveSpeed   = state.speedMetersPerSecond / DriveConstants.kMaxSpeedMps;
+  // Steering: the same P control, target unpacked from the state.
+  double error = state.angle.getDegrees() - getSteerAngleDegrees();
+  while (error > 180)  { error -= 360; }
+  while (error < -180) { error += 360; }
+  m_steerMotor.set(MathUtil.clamp(SteerConstants.kP * error, -1.0, 1.0));
+
+  // Drive: meters per second → fraction of max, with the cosine scale.
+  double alignment = Math.cos(Math.toRadians(error));
+  double fraction = state.speedMetersPerSecond / DriveConstants.kMaxSpeedMps;
+  m_driveMotor.set(fraction * alignment);
 }
 ```
 
 Delete the old two-argument version — callers switch over in the next section.
-`SwerveModuleState` bundles the two numbers together with clear units and lets
-`optimize` do useful work on the pair (section 5). One method, one type; less
-to hold in your head.
+The control body carried over intact; only the doorway changed: the target
+arrives as a state, and the speed arrives in meters per second and gets
+converted to a motor fraction in this one place. `SwerveModuleState` bundles
+the two numbers together with clear units and lets `optimize` do useful work
+on the pair (section 5). One method, one type; less to hold in your head.
 
 > The one place that still needs updating by hand is `Drivetrain.driveDistance`
 > from Lesson 9 (it commands `angleDegrees=0`, `speedFraction=0.4`). Update its

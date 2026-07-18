@@ -110,40 +110,31 @@ command factories are literally gone — `run`, `startEnd`, and friends were
 *inherited* from `SubsystemBase`, so `driveAtSpeed`, `steerToAngle`, and
 `driveDistance` don't compile anymore. That's fine: commands belong to
 subsystems, and this class isn't one. Replace them (and the module's old
-logging in `periodic()` — telemetry moves up to the `Drivetrain` in the next
-section) with a pair of plain methods — one to *set* a target, one to *chase*
-it every tick:
+`periodic()` — its logging moves up to the `Drivetrain` in the next section)
+with one plain method that does a single tick of control, on demand:
 
 ```java
-private double m_targetSteerDegrees = 0.0;
-private double m_targetDriveSpeed   = 0.0;
-
-/** Set what this module should be doing. Called by Drivetrain each tick. */
+/** One tick of control: steer toward 'angleDegrees', drive at 'speedFraction'. */
 public void setDesiredState(double angleDegrees, double speedFraction) {
-  m_targetSteerDegrees = angleDegrees;
-  m_targetDriveSpeed   = speedFraction;
-}
-
-/** One tick of control. NOT called by the scheduler — the Drivetrain calls this. */
-public void periodic() {
   // Steering P control (same math as Lesson 5, with the wrap trick).
-  double error = m_targetSteerDegrees - getSteerAngleDegrees();
+  double error = angleDegrees - getSteerAngleDegrees();
   while (error > 180)  { error -= 360; }
   while (error < -180) { error += 360; }
   double steerOutput = MathUtil.clamp(SteerConstants.kP * error, -1.0, 1.0);
   m_steerMotor.set(steerOutput);
 
-  // Drive: pass the target speed straight through.
-  m_driveMotor.set(m_targetDriveSpeed);
+  // Drive: pass the commanded speed straight through.
+  m_driveMotor.set(speedFraction);
 }
 ```
 
-Read the division of labor: `setDesiredState` just *remembers* what's wanted
-(two fields as the module's tiny memory), and `periodic()` does one tick of
-work toward it — the same P control you wrote in Lesson 5, wrap trick
-included. Also notice `periodic()` lost its `@Override`: there's nothing to
-override anymore. It's just a method with a familiar name now, and nothing
-will call it until we write the code that does.
+It's Lesson 5's `steerToAngle` math wearing a new home: one call means one
+tick of control toward the given goal. Who calls it, and how often? The
+Drivetrain's *commands* will, every tick they run — the same per-tick rhythm
+`run(...)` has had since Lesson 2. That keeps a tidy rule intact: motors
+move only when a command asks, and commands only run while the robot is
+enabled. The module doesn't keep a `periodic()` at all — there's nothing it
+needs to do on its own schedule.
 
 > **`MathUtil.clamp(value, min, max)`** is WPILib's one-liner for the `if/else`
 > clamp you wrote in Lesson 5. Delete yours; use the library. Learning to
@@ -252,8 +243,9 @@ positive; back-right flips both signs.
 
 ## 3. Build the Drivetrain with an array
 
-The `Drivetrain` owns four `SwerveModule`s in an **array** and ticks them from
-its own `periodic()`. Create `src/main/java/frc/robot/subsystems/Drivetrain.java`:
+The `Drivetrain` owns four `SwerveModule`s in an **array**, logs them from its
+own `periodic()`, and commands them from its command factories. Create
+`src/main/java/frc/robot/subsystems/Drivetrain.java`:
 
 ```java
 package frc.robot.subsystems;
@@ -282,7 +274,6 @@ public class Drivetrain extends SubsystemBase {
     SwerveModuleState[] states = new SwerveModuleState[4];
     int index = 0;
     for (SwerveModule module : m_modules) {
-      module.periodic();
       Logger.recordOutput("Drivetrain/Module" + index + "/SteerAngleDegrees",
           module.getSteerAngleDegrees());
       states[index] = new SwerveModuleState(
@@ -312,7 +303,7 @@ promised.
 Then **`for (SwerveModule module : m_modules)`** — the **enhanced `for`
 loop**. Read it as "for each module in m_modules": the body runs once per
 element with `module` standing for each in turn, which is how a few lines
-tick, log, and step all four corners. One wrinkle: a for-each loop doesn't
+report on all four corners. One wrinkle: a for-each loop doesn't
 number its elements, and the log keys need numbers — so a plain `int index`
 counter rides along, and `"Drivetrain/Module" + index + "/..."` glues the
 number into the key (`+` between a String and a number pulls the number into
@@ -331,11 +322,15 @@ AdvantageKit trick worth knowing: structured values like these aren't just
 numbers on a plot; tools can *draw* them. (These two types become the language
 of real swerve math in Lesson 10 — consider this a first handshake.)
 
-Step back and look at the architecture, because this is the lesson's real
-idea: the scheduler ticks the **Drivetrain**; the Drivetrain ticks the
-modules. The modules never talk to the scheduler at all. That's the whole
-point of dropping `SubsystemBase` from `SwerveModule` — one subsystem, one
-lock, four workers under it.
+Step back and look at the division of labor, because this is the lesson's
+real idea. `periodic()` runs rain or shine — every tick, even while the
+robot is disabled — so it holds the *watching*: reading and logging what the
+four corners are doing. The *acting* lives in commands, which the next two
+sections build: each one calls `setDesiredState` on every module, every tick
+it runs, and commands only run while the robot is enabled. The modules
+themselves never talk to the scheduler at all. That's the whole point of
+dropping `SubsystemBase` from `SwerveModule` — one subsystem, one lock, four
+workers commanded together.
 
 ---
 
@@ -510,9 +505,9 @@ to each, and **constructor parameters** let one class describe four corners
 that differ only in their numbers. The robot half was an architecture
 decision worth remembering the reasoning for: not every class should be a
 subsystem. `SwerveModule` became a plain **helper class** — the Drivetrain
-owns the array, holds the scheduler's one lock, and ticks its workers by
-hand — and the module's job shrank to "remember a target, chase it each
-tick." With that structure, whole-chassis behavior got almost easy:
+owns the array and holds the scheduler's one lock — and the module's job
+shrank to one method: a single tick of control toward whatever it's told,
+whenever a command asks. With that structure, whole-chassis behavior got almost easy:
 **translate** is one angle for everyone; **rotate** is one angle *per
 corner*, courtesy of each module knowing its `location` — and with module
 states logged, AdvantageScope draws it all live, which will catch a miswired

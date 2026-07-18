@@ -46,9 +46,10 @@ private double m_lastCommandedOmega = 0.0;
 private double m_simHeadingDegrees  = 0.0;
 ```
 
-Notice those two aren't `final` — they're *memory*, reassigned as the robot
-runs, exactly like the module's `m_targetSteerDegrees` in Lesson 7. Then a
-reading method, with the other public methods:
+Notice those two aren't `final` — they're *memory*, a running total the sim
+rewrites every tick, which is why they're plain mutable `double`s and not
+`final` like the hardware fields around them. Then a reading method, with the
+other public methods:
 
 ```java
 /** Robot heading in degrees (CCW positive). */

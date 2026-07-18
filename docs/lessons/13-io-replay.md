@@ -247,31 +247,27 @@ public class SwerveModule {
   private final ModuleIOInputsAutoLogged m_inputs = new ModuleIOInputsAutoLogged();
   private final String m_logKey; // e.g. "Drivetrain/Module0"
 
-  private double m_targetSteerDegrees = 0.0;
-  private double m_targetSpeedMps     = 0.0;
-
   public SwerveModule(ModuleIO io, String logKey, Translation2d location) {
     m_io = io;
     m_logKey = logKey;
     this.location = location;
   }
 
-  public void setDesiredState(SwerveModuleState state) {
-    m_targetSteerDegrees = state.angle.getDegrees();
-    m_targetSpeedMps     = state.speedMetersPerSecond;
-  }
-
-  /** One tick: read inputs, log them, chase the targets. */
+  /** One tick of sensing: read the hardware into the bundle and log it. */
   public void periodic() {
     m_io.updateInputs(m_inputs);
     Logger.processInputs(m_logKey, m_inputs);
+  }
 
-    m_io.setSteerAngleDegrees(m_targetSteerDegrees);
+  /** One tick of control: hand the IO its targets. Called by a command each tick. */
+  public void setDesiredState(SwerveModuleState state) {
+    double targetDegrees = state.angle.getDegrees();
+    m_io.setSteerAngleDegrees(targetDegrees);
 
     // Cosine compensation (Lesson 9) — a decision, so it stays in our code.
-    double error = m_targetSteerDegrees - m_inputs.steerAngleDegrees;
+    double error = targetDegrees - m_inputs.steerAngleDegrees;
     double alignment = Math.cos(Math.toRadians(error));
-    m_io.setDriveVelocityMetersPerSec(m_targetSpeedMps * alignment);
+    m_io.setDriveVelocityMetersPerSec(state.speedMetersPerSecond * alignment);
   }
 
   public double getSteerAngleDegrees()        { return m_inputs.steerAngleDegrees; }
@@ -290,19 +286,38 @@ public class SwerveModule {
 }
 ```
 
-Three things to sit with. First, the tick order in `periodic()` is a rule,
-not a style choice: **inputs first, then logic** — `updateInputs` fills the
-bundle, `processInputs` logs it, and only then does anything read it. That
-ordering is what makes a tick reproducible. Second,
-**`Logger.processInputs`** is the two-faced door at the heart of replay:
-live, it *writes* the inputs to the log; in replay, the same call *reads*
-them back out of the log and overwrites the bundle — your logic can't tell
-the difference, which is the entire point. (It also logs each field under
-the key you gave it — `Drivetrain/Module0/SteerAngleDegrees` and friends now
-come from here, so the manual per-module logging in `Drivetrain.periodic()`
-can be deleted.) Third, look at the question-methods: they read the *bundle*,
-not the hardware. Every sensor fact now takes exactly one path into the
-program.
+Three things to sit with. First, the split between the two methods is a
+rule, not a style choice: **sense in `periodic()`, act in a command.**
+`periodic()` runs every tick no matter what (that's why it holds only the
+harmless read-and-log), and the writes live in `setDesiredState`, which a
+command calls — so motors are commanded only while the robot is enabled. And
+because the scheduler runs `periodic()` before any command each tick, the
+bundle is always fresh by the time `setDesiredState` reads it for the cosine
+error: **inputs first, then logic**, which is exactly what makes a tick
+reproducible. Second, **`Logger.processInputs`** is the two-faced door at the
+heart of replay: live, it *writes* the inputs to the log; in replay, the same
+call *reads* them back out of the log and overwrites the bundle — your logic
+can't tell the difference, which is the entire point. (It also logs each
+field under the key you gave it — `Drivetrain/Module0/SteerAngleDegrees` and
+friends now come from here, so the manual per-module `recordOutput` in
+`Drivetrain.periodic()` can be deleted.) Third, look at the question-methods:
+they read the *bundle*, not the hardware. Every sensor fact now takes exactly
+one path into the program.
+
+One wiring consequence: `Drivetrain.periodic()`'s module loop must now call
+`module.periodic()` on each module so the bundles refresh — that's the read
+that used to happen implicitly. The loop still builds the `ModuleStates`
+array for the Swerve tab afterward; it just calls the read first:
+
+```java
+    for (int i = 0; i < m_modules.length; i++) {
+      m_modules[i].periodic();  // refresh + log this module's inputs
+      states[i] = new SwerveModuleState(
+          m_modules[i].getDriveVelocityMetersPerSec(),
+          Rotation2d.fromDegrees(m_modules[i].getSteerAngleDegrees()));
+    }
+    Logger.recordOutput("Drivetrain/ModuleStates", states);
+```
 
 Delete the module's old `simulationPeriodic()` — the physics lives inside
 `ModuleIOTalonFX` now — and remove the module loop from

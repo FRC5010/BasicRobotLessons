@@ -26,7 +26,8 @@ they look.
   walkthrough still applies to whatever code you have — the numbers change, the
   moves don't. (And if you're past [Lesson 12](12-model-based-control.md),
   that P-control code has moved into the motor firmware — set your breakpoints
-  in `setDesiredState` or the cosine math in `periodic()` instead.)
+  in `setDesiredState`, where the target-setting and cosine math now live,
+  instead.)
 
 ---
 

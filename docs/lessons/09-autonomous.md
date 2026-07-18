@@ -183,12 +183,13 @@ want to go?* That's exactly what cosine measures. Pointed perfectly
 (`error = 0°`), `cos = 1` — drive full speed. Pointed 60° off, `cos = 0.5` —
 half of the rolling would be useful, so drive at half. Pointed sideways
 (`90°`), `cos = 0` — nothing you drive goes the right way, so don't drive at
-all. Update the drive line in `SwerveModule.periodic()`:
+all. Update the drive line in `SwerveModule.setDesiredState(...)`:
 
 ```java
-public void periodic() {
+/** One tick of control: steer toward 'angleDegrees', drive at 'speedFraction'. */
+public void setDesiredState(double angleDegrees, double speedFraction) {
   // Steering P control (same math as Lesson 5, with the wrap trick).
-  double error = m_targetSteerDegrees - getSteerAngleDegrees();
+  double error = angleDegrees - getSteerAngleDegrees();
   while (error > 180)  { error -= 360; }
   while (error < -180) { error += 360; }
   double steerOutput = MathUtil.clamp(SteerConstants.kP * error, -1.0, 1.0);
@@ -197,7 +198,7 @@ public void periodic() {
   // Drive only as much as the wheel is pointed the right way:
   // cos(0°) = 1 → full speed; cos(90°) = 0 → don't drive while sideways.
   double alignment = Math.cos(Math.toRadians(error));
-  m_driveMotor.set(m_targetDriveSpeed * alignment);
+  m_driveMotor.set(speedFraction * alignment);
 }
 ```
 

@@ -38,8 +38,8 @@ and your code gets simpler at the same time: instead of computing *efforts*
 every tick, it states *targets* and lets the firmware close the loop.
 
 That's the whole lesson: teach the firmware about your mechanism (gearing,
-wrap-around, gains), then change `periodic()` from "do the math" to "state
-the goal."
+wrap-around, gains), then change `setDesiredState` — the method your commands
+call each tick — from "do the math" to "state the goal."
 
 ---
 
@@ -157,37 +157,30 @@ every tick rather than making a new one 50 times a second:
   private final VelocityVoltage m_driveRequest = new VelocityVoltage(0);
 ```
 
-Then rewrite `periodic()`. Out: the error math, the wrap loops, the clamp,
-the `set(...)` calls. In: two `setControl` calls that state goals:
+Then rewrite `setDesiredState` — the method a command calls each tick. Out:
+the error math, the wrap loops, the clamp, the `set(...)` calls. In: two
+`setControl` calls that state goals. Since the firmware now speaks real
+velocity, the drive target also stops being a fraction and stays in meters
+per second:
 
 ```java
-public void periodic() {
+/** One tick of control: hand the firmware its targets. */
+public void setDesiredState(SwerveModuleState state) {
+  double targetDegrees = state.angle.getDegrees();
+
   // Steering: firmware position control, wrap and gearing included.
-  m_steerMotor.setControl(m_steerRequest.withPosition(m_targetSteerDegrees / 360.0));
+  m_steerMotor.setControl(m_steerRequest.withPosition(targetDegrees / 360.0));
 
   // Drive: cosine compensation (Lesson 9), then firmware velocity control.
-  double error = m_targetSteerDegrees - getSteerAngleDegrees();
+  double error = targetDegrees - getSteerAngleDegrees();
   double alignment = Math.cos(Math.toRadians(error));
-  double wheelRps = (m_targetSpeedMps * alignment) / DriveConstants.kWheelCircumferenceMeters;
-  m_driveMotor.setControl(m_driveRequest.withVelocity(wheelRps));
+  double wheelMps = state.speedMetersPerSecond * alignment;
+  m_driveMotor.setControl(
+      m_driveRequest.withVelocity(wheelMps / DriveConstants.kWheelCircumferenceMeters));
 }
 ```
 
-And since the drive loop now takes real velocity, the module stores its
-target in real units — rename `m_targetDriveSpeed` to `m_targetSpeedMps` and
-delete the fraction conversion in `setDesiredState`:
-
-```java
-private double m_targetSteerDegrees = 0.0;
-private double m_targetSpeedMps     = 0.0;
-
-public void setDesiredState(SwerveModuleState state) {
-  m_targetSteerDegrees = state.angle.getDegrees();
-  m_targetSpeedMps     = state.speedMetersPerSecond;
-}
-```
-
-Look at what `withPosition(m_targetSteerDegrees / 360.0)` replaced: measure,
+Look at what `withPosition(targetDegrees / 360.0)` replaced: measure,
 subtract, wrap, multiply, clamp, command — the whole Lesson 5 ritual — now
 happens inside the motor at 1 kHz. The cosine trick stays in your code
 because it isn't a control loop; it's a *decision* about how hard to drive,
@@ -271,9 +264,10 @@ The robot grew a second brain — or rather, you finally started using the
 eight it already had. A **configuration object** teaches each TalonFX about
 its mechanism once (`SensorToMechanismRatio` retiring your gear-ratio
 divisions, `ContinuousWrap` retiring the wrap loops, `Slot0` holding gains
-in engineering units), and reusable **control requests** turn `periodic()`
-from computing efforts into stating targets — `PositionVoltage` for
-steering, `VelocityVoltage` for drive — closed at 1 kHz next to the sensor.
+in engineering units), and reusable **control requests** turn
+`setDesiredState` from computing efforts into stating targets —
+`PositionVoltage` for steering, `VelocityVoltage` for drive — closed at 1 kHz
+next to the sensor.
 The idea to keep is the division of labor in the drive gains: **`kV` is a
 model** that predicts the voltage a speed costs, and `kP` only corrects
 what the model missed. Predict, then trim — that's model-based control, and
