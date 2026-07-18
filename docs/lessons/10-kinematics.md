@@ -149,7 +149,9 @@ public void setDesiredState(SwerveModuleState state) {
 }
 ```
 
-Delete the old two-argument version — callers switch over in the next section.
+**Delete the old two-argument `setDesiredState`** — its callers switch over in
+the next section.
+
 Two of this lesson's tools show up in that little method. The two `while` loops
 you wrote in Lesson 5 to wrap the error into ±180° collapse into
 **`MathUtil.inputModulus(value, -180, 180)`** — it does exactly what the loops
@@ -270,29 +272,37 @@ never goes negative — the two together give you wheels that take the short pat
 
 ## 6. Wire up the joysticks
 
-**Edit `configureBindings()`** — out with the old, in with the one: delete the
-Lesson 7 default `translate` command and both bumper `rotate` bindings (those
-factories no longer exist, and the right stick is taking over rotation). The A/B
-`turnToHeading` bindings from Lesson 8 stay; they never stopped working. The new
-default is the classic swerve layout — left stick translates, right stick
-rotates:
+Two edits to `configureBindings()` — a deletion and a replacement — and the
+deletion is the kind of thing that's easy to skim past, so it gets its own line:
+
+**Delete from `configureBindings()`:** the Lesson 7 default `translate` command
+and both bumper `rotate` bindings. Those factories no longer exist, and the
+right stick is taking over rotation. (The A/B `turnToHeading` bindings from
+Lesson 8 stay — they never stopped working.)
+
+**Add to `configureBindings()`** the classic swerve default — left stick
+translates, right stick rotates:
 
 ```java
   private void configureBindings() {
+    double maxMps = DriveConstants.kMaxSpeed.in(MetersPerSecond); // convert once, reuse
     m_drivetrain.setDefaultCommand(
         m_drivetrain.drive(
-            () -> -m_driverController.getLeftY()  * DriveConstants.kMaxSpeed.in(MetersPerSecond),
-            () -> -m_driverController.getLeftX()  * DriveConstants.kMaxSpeed.in(MetersPerSecond),
+            () -> -m_driverController.getLeftY()  * maxMps,
+            () -> -m_driverController.getLeftX()  * maxMps,
             () -> -m_driverController.getRightX() * Math.PI * 2)); // ±2π rad/s = ±1 rev/s
 
     // ...turnToHeading bindings from Lesson 8 stay...
   }
 ```
 
-(That `.in(MetersPerSecond)` needs `import static edu.wpi.first.units.Units.MetersPerSecond;`
-at the top of `RobotContainer` — `Ctrl+.` adds it.) The stick reads a fraction
-from −1 to 1; multiplying by the max speed turns it into real m/s, which is what
-`drive` expects.
+That first line is the efficient way to spend a Units value in a hot path.
+Those lambdas run every tick, so you unpack `kMaxSpeed` into a plain `double`
+**once**, here, and let the lambdas close over it — never call `.in(...)`
+inside a per-tick lambda. (The stick itself reads a fraction from −1 to 1;
+multiplying by `maxMps` turns it into the real m/s `drive` expects.) That
+`.in(MetersPerSecond)` needs `import static edu.wpi.first.units.Units.MetersPerSecond;`
+in `RobotContainer` — `Ctrl+.` adds it.
 
 Now, for the first time, a driver can drive forward *and* strafe *and* rotate,
 all in the same tick. Run sim, open the **Swerve** tab, and push both sticks:
@@ -334,10 +344,10 @@ the gyro from Lesson 8 quietly becoming load-bearing. Everything downstream
 still speaks robot frame, and `applyChassisSpeeds` neither knows nor cares
 where the speeds came from. That's the extraction paying rent already.
 
-Bind this instead of `drive` in `setDefaultCommand`, drive around, and rotate
-the robot with the right stick — "forward" on the left stick still moves the
-robot toward the far end of the field. Once you feel it, you won't want to give
-it up.
+**Swap `drive` for `driveFieldRelative` in `setDefaultCommand`** — same three
+suppliers, new method name. Then drive around and rotate the robot with the
+right stick: "forward" on the left stick still moves the robot toward the far
+end of the field. Once you feel it, you won't want to give it up.
 
 ---
 
