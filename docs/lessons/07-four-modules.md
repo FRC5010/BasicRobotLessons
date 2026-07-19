@@ -494,6 +494,16 @@ up.
    `getDistanceMeters()` from `m_modules[0]` after resetting, sequence steps like
    Lesson 6's `driveDistance`. This is the whole-chassis version we'll formalize
    in Lesson 9.
+4. **Move the eight CAN IDs into `Constants.java`.** The array above bakes them
+   in as literals (`new SwerveModule(1, 2, ...)`) — fine to learn with, but a
+   real robot keeps its numbers in one place, the way you did for the single
+   module back in Lesson 1. Add eight named constants to `DriveConstants` —
+   `kFrontLeftDrivePort`, `kFrontLeftSteerPort`, and so on through
+   `kBackRightSteerPort` — and rebuild the array to reference them:
+   `new SwerveModule(DriveConstants.kFrontLeftDrivePort, DriveConstants.kFrontLeftSteerPort, DriveConstants.kFrontLeft)`.
+   Verbose? A little. But now every ID your robot depends on lives in the same
+   file as the gear ratios and chassis dimensions — one place to check when the
+   wiring changes.
 
 ---
 
