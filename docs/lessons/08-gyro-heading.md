@@ -282,6 +282,11 @@ thing that's oscillating:
 3. **Zero the gyro at teleop start:** call `m_gyro.setYaw(0)` inside a
    `runOnce(...)` bound to a button, so "forward" is always relative to where
    you're pointed *now*.
+4. **Keep the CAN-ID habit going:** the gyro went in as a literal,
+   `new Pigeon2(0)`. Move that `0` into `DriveConstants` as `kGyroPort` — right
+   alongside the eight motor ports from Lesson 7 — and use
+   `new Pigeon2(DriveConstants.kGyroPort)`. Every CAN ID your robot owns now
+   lives in one place.
 
 ---
 
