@@ -197,9 +197,10 @@ m_steerSim.setRotorVelocity(
 ```
 
 Heads up: the steering now turns at a believable speed instead of a bare
-rotor's instant snap, so if your Lesson 5 `kP` suddenly feels sluggish or
-jumpy, that's not a bug — the thing being controlled changed. Retune it; you
-know the ritual.
+rotor's instant snap, so your Lesson 5 `kP` is now tuned for the wrong plant —
+it may feel sluggish or jumpy. That's not a bug; the thing being controlled
+changed. You can't retune yet (nothing runs until the wiring in section 6), so
+sit tight — section 7 comes back to this the moment the robot moves.
 
 One more small question-method while we're in here — the visualization in
 section 3 needs wheel *speed*, and it's `getDistanceMeters()`'s pipeline from
@@ -484,6 +485,14 @@ stick and all four arrows swing together and grow with speed; hold the left
 bumper and they snap into the pinwheel — the table above, drawn for you,
 sixty times a second. This diagram is about to become your main debugging
 view for everything swerve.
+
+Now that the robot actually runs, cash in the promise from section 2: the
+steering carries a real `25 : 1` reduction, so it turns at a believable speed
+instead of a bare rotor's instant snap. Watch a wheel chase its target on the
+Swerve tab — if the steering lags in lazily or buzzes around the angle, your
+Lesson 5 `SteerConstants.kP` is tuned for the *old* plant. **Retune it the
+Lesson 5 way** now that you can see it move: nudge `kP` up until it oscillates,
+then back off. This is the first moment you could actually do it.
 
 The **gyro** still reports zero — the chassis isn't yet closing the loop from
 "commanded rotation" to "reported heading." That's exactly what Lesson 8 wires
