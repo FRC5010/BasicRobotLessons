@@ -51,9 +51,11 @@ keep going and it all compiles again by section 6.
 
 `DriveModule` hard-codes CAN IDs `1` and `2` and knows nothing about where it
 sits on the robot. Four modules need four unique ID pairs, and the rotation math
-needs each module's position. Rename the class to **`SwerveModule`** (in VS Code:
-right-click the class name → **Refactor → Rename** — it updates the filename and
-every reference in the project for you), and change two things about it:
+needs each module's position.
+
+**Rename `DriveModule` to `SwerveModule`** — in VS Code, right-click the class
+name → **Refactor → Rename**, which updates the filename and every reference in
+the project for you. Then change two things about it:
 
 1. **Drop `extends SubsystemBase`.** A single wheel isn't what the scheduler
    needs to lock — the *whole chassis* is. From now on, the only subsystem for
@@ -61,7 +63,7 @@ every reference in the project for you), and change two things about it:
 2. **Parameterize the constructor** so the corner and its CAN IDs come in from
    outside.
 
-Here's the new top of the class:
+**Replace the top of the class with:**
 
 ```java
 public class SwerveModule {
@@ -109,9 +111,11 @@ Now the methods. Because the module no longer extends `SubsystemBase`, the
 command factories are literally gone — `run`, `startEnd`, and friends were
 *inherited* from `SubsystemBase`, so `driveAtSpeed`, `steerToAngle`, and
 `driveDistance` don't compile anymore. That's fine: commands belong to
-subsystems, and this class isn't one. Replace them (and the module's old
-`periodic()` — its logging moves up to the `Drivetrain` in the next section)
-with one plain method that does a single tick of control, on demand:
+subsystems, and this class isn't one.
+
+**Delete the command factories and the module's old `periodic()`** (its
+logging moves up to the `Drivetrain` in the next section), **and add one plain
+method** that does a single tick of control, on demand:
 
 ```java
 /** One tick of control: steer toward 'angleDegrees', drive at 'speedFraction'. */
@@ -151,7 +155,7 @@ per steering rotation. The fix is the same two moves you made for the drive
 motor in Lesson 6: *divide* on the way in (sensor → angle), *multiply* on the
 way back (sim model → fake rotor).
 
-The constant goes in `SteerConstants`, next to the gain:
+**Add `kSteerGearRatio` to `SteerConstants`, next to the gain:**
 
 ```java
 public static class SteerConstants {
@@ -160,7 +164,7 @@ public static class SteerConstants {
 }
 ```
 
-Divide in `getSteerAngleDegrees()`:
+**Edit `getSteerAngleDegrees()`** to divide by the ratio:
 
 ```java
 /** Current steering angle in degrees. */
@@ -171,8 +175,8 @@ public double getSteerAngleDegrees() {
 }
 ```
 
-Teach the steer sim model about the gearbox (this is the `m_steerModel` field
-from the top of the class):
+**Edit the `m_steerModel` field** (from the top of the class) to model the
+gearbox:
 
 ```java
 private final DCMotorSim m_steerModel =
@@ -182,8 +186,8 @@ private final DCMotorSim m_steerModel =
         DCMotor.getKrakenX60(1));
 ```
 
-And multiply back to rotor-side in the steer half of `simulationPeriodic()`,
-exactly like the drive motor in Lesson 6:
+**Edit the steer half of `simulationPeriodic()`** to multiply back to
+rotor-side, exactly like the drive motor in Lesson 6:
 
 ```java
 m_steerSim.setRawRotorPosition(
@@ -199,7 +203,9 @@ know the ritual.
 
 One more small question-method while we're in here — the visualization in
 section 3 needs wheel *speed*, and it's `getDistanceMeters()`'s pipeline from
-Lesson 6 applied to velocity instead of position:
+Lesson 6 applied to velocity instead of position.
+
+**Add to `SwerveModule`:**
 
 ```java
 /** Current wheel speed in meters per second. */
@@ -217,8 +223,8 @@ around the Drivetrain. A refactor isn't done until every file that *touched*
 the old shape learns the new one, and the compiler's job is to keep that list
 for you.
 
-Now add the four corners to `Constants.java`, inside the `DriveConstants`
-class you started in Lesson 6:
+**Add the four corners to `DriveConstants`** (the class you started in
+Lesson 6):
 
 ```java
 public static class DriveConstants {
@@ -244,8 +250,9 @@ positive; back-right flips both signs.
 ## 3. Build the Drivetrain with an array
 
 The `Drivetrain` owns four `SwerveModule`s in an **array**, logs them from its
-own `periodic()`, and commands them from its command factories. Create
-`src/main/java/frc/robot/subsystems/Drivetrain.java`:
+own `periodic()`, and commands them from its command factories.
+
+**Create `src/main/java/frc/robot/subsystems/Drivetrain.java`:**
 
 ```java
 package frc.robot.subsystems;
@@ -338,7 +345,9 @@ workers commanded together.
 
 To drive in a direction, aim every wheel the same way and drive at the same
 speed. The direction is the angle of the `(vx, vy)` vector; the speed is its
-length. Add to `Drivetrain`:
+length.
+
+**Add to `Drivetrain`:**
 
 ```java
 /** Drive the whole chassis at fractional velocity (vx, vy). */
@@ -375,6 +384,8 @@ center — the direction it would travel if the whole robot rotated CCW.
 
 For a module at position `(x, y)` from center, the CCW-tangent direction is
 `(-y, x)` (rotate the outward radial 90° CCW). In degrees:
+
+**Add to `Drivetrain`:**
 
 ```java
 /** Spin in place at fractional angular rate 'omega' (positive = CCW). */
@@ -419,22 +430,20 @@ robot spins CCW. Neat, isn't it?
 
 ## 6. Wire it up
 
-Time to fix the red. In `RobotContainer`, **delete the old wiring**: the
-`m_module` field and every binding that used it (the A/B buttons from
-Lesson 1, X/Y steering from Lesson 5, and the D-pad `driveDistance` from
-Lesson 6). Those commands lived on a class that's now a helper; the
-Drivetrain replaces them all.
+Time to fix the red.
 
-In their place, a Drivetrain field up top with the other fields:
+**Delete from `RobotContainer` the old wiring:** the `m_module` field and every
+binding that used it — the A/B buttons from Lesson 1, X/Y steering from
+Lesson 5, and the D-pad `driveDistance` from Lesson 6. Those commands lived on a
+class that's now a helper; the Drivetrain replaces them all.
+
+**Add to `RobotContainer`, with the other fields** (`m_driverController` stays):
 
 ```java
-public class RobotContainer {
-  // ...m_driverController stays...
-
   private final Drivetrain m_drivetrain = new Drivetrain();
 ```
 
-And in `configureBindings()` — left stick translates by default, bumpers spin:
+**Add to `configureBindings()`** — left stick translates by default, bumpers spin:
 
 ```java
   private void configureBindings() {
