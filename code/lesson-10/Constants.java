@@ -7,6 +7,7 @@ package frc.robot;
 import static edu.wpi.first.units.Units.*;
 
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 
 public final class Constants {
@@ -43,6 +44,9 @@ public final class Constants {
     // ratio, multiply by circumference → meters/sec. About 4.7 m/s for our numbers.
     public static final LinearVelocity kMaxSpeed =
         MetersPerSecond.of(100.0 / kDriveGearRatio * kWheelCircumferenceMeters);
+
+    // How fast the chassis may spin at full stick — one full rotation per second.
+    public static final AngularVelocity kMaxAngularSpeed = RotationsPerSecond.of(1.0);
   }
 
   public static class SteerConstants {

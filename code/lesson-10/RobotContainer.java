@@ -4,8 +4,6 @@
 
 package frc.robot;
 
-import static edu.wpi.first.units.Units.MetersPerSecond;
-
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 import edu.wpi.first.wpilibj2.command.Command;
@@ -35,12 +33,13 @@ public class RobotContainer {
 
   private void configureBindings() {
     // Full swerve, field-relative: left stick translates, right stick rotates.
-    double maxMps = DriveConstants.kMaxSpeed.in(MetersPerSecond); // convert once, reuse
+    // Each stick fraction (-1..1) scales a max-speed measure into a velocity —
+    // no unit unpacking, because drive() takes the measures directly.
     m_drivetrain.setDefaultCommand(
         m_drivetrain.driveFieldRelative(
-            () -> -m_driverController.getLeftY() * maxMps, // forward = +X
-            () -> -m_driverController.getLeftX() * maxMps, // left = +Y
-            () -> -m_driverController.getRightX() * Math.PI * 2)); // ±2π rad/s = ±1 rev/s
+            () -> DriveConstants.kMaxSpeed.times(-m_driverController.getLeftY()), // forward = +X
+            () -> DriveConstants.kMaxSpeed.times(-m_driverController.getLeftX()), // left = +Y
+            () -> DriveConstants.kMaxAngularSpeed.times(-m_driverController.getRightX())));
 
     // Tap A to turn to 90°, B to return to 0°. These commands finish on their own.
     m_driverController.a().onTrue(m_drivetrain.turnToHeading(90));

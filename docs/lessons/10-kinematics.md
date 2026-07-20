@@ -49,12 +49,18 @@ it the hard way once, then let the library carry it.
 
 ## 2. Build the kinematics object
 
-**Add to `Drivetrain.java`'s imports** (only these two are new — `Rotation2d`
-and `SwerveModuleState` came in with Lesson 7's logging):
+**Add to `Drivetrain.java`'s imports** (`Rotation2d` and `SwerveModuleState`
+came in with Lesson 7's logging; the measure types and `Supplier` are for the
+Units-typed `drive` in section 4, which also lets you delete the old
+`DoubleSupplier` import once `translate` is gone):
 
 ```java
+import java.util.function.Supplier;
+
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.LinearVelocity;
 ```
 
 **Add to `Drivetrain`, directly below the `m_modules` field** — it's built by
@@ -83,16 +89,21 @@ You've been encoding units in *names* this whole course: `kWheelDiameterMeters`,
 meters when you meant inches, and the compiler — seeing only a `double` — says
 nothing. WPILib ships a types library that puts the unit in the *type* instead:
 a **`LinearVelocity`** value *knows* it's a speed, converts itself to whatever
-unit you ask for, and can't be silently mistaken for an `Angle`. From here on
-we pepper Units into new constants and signatures. The fast per-tick math still
-runs in plain `double`s, so you convert at the edges with `.in(...)` — the
-`Mps` suffix moves out of the name and into a method call.
+unit you ask for, and can't be silently mistaken for an `Angle`. And here's the
+part that makes Units worth the trouble: **WPILib's own APIs speak Units too.**
+`ChassisSpeeds`, `SwerveModuleState`, and kinematics all take measures directly,
+so a `LinearVelocity` flows straight through them — you don't unpack it to a
+`double` until you hit something that genuinely only speaks numbers, like
+Phoenix's `motor.set(-1..1)`. From here on we pepper Units into new constants
+and signatures, unpack with `.in(...)` only at that last boundary, and let the
+type carry the unit everywhere in between.
 
-**Add to `DriveConstants` in `Constants.java`** (with the static Units import at
-the top of the file):
+**Add to `DriveConstants` in `Constants.java`** (with the static Units import
+and the two measure types at the top of the file):
 
 ```java
 import static edu.wpi.first.units.Units.*;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 ```
 
@@ -104,15 +115,19 @@ public static class DriveConstants {
   // ratio, multiply by circumference → meters/sec. About 4.7 m/s for our numbers.
   public static final LinearVelocity kMaxSpeed =
       MetersPerSecond.of(100.0 / kDriveGearRatio * kWheelCircumferenceMeters);
+
+  // How fast the chassis may spin at full stick — one full rotation per second.
+  public static final AngularVelocity kMaxAngularSpeed = RotationsPerSecond.of(1.0);
 }
 ```
 
 `MetersPerSecond.of(...)` builds a `LinearVelocity` from a plain number — the
 arithmetic stays in doubles (readable), and the *result* becomes unit-aware.
-That's the pattern: **compute in doubles, wrap the answer.** (This is the same
-~5 m/s you eyeballed for the Swerve tab's Max Speed in Lesson 7 — now it's a
-typed constant instead of a guess. The older `kWheel...` doubles can migrate to
-`Distance` the same way whenever you next touch them; no rush.)
+That's the pattern for making one: **compute in doubles, wrap the answer.**
+(This is the same ~5 m/s you eyeballed for the Swerve tab's Max Speed in
+Lesson 7 — now it's a typed constant instead of a guess. The older `kWheel...`
+doubles can migrate to `Distance` the same way whenever you next touch them; no
+rush.)
 
 ---
 
@@ -169,10 +184,11 @@ hold in your head.
 
 > **Update `Drivetrain.driveDistance` from Lesson 9** — it commanded
 > `setDesiredState(0.0, 0.4)`, which no longer compiles. Build a state instead:
-> `new SwerveModuleState(0.4 * DriveConstants.kMaxSpeed.in(MetersPerSecond), Rotation2d.fromDegrees(0))`
-> to drive, and speed `0` in `finallyDo` to stop. Same fix anywhere else you
-> called `setDesiredState(angle, speed)` — let the compiler's red list walk you
-> to each one, Lesson 7 style.
+> `new SwerveModuleState(DriveConstants.kMaxSpeed.times(0.4), Rotation2d.fromDegrees(0))`
+> to drive (`.times(0.4)` scales the max-speed measure and stays a
+> `LinearVelocity`), and `new SwerveModuleState()` — zero speed — in `finallyDo`
+> to stop. Same fix anywhere else you called `setDesiredState(angle, speed)` —
+> let the compiler's red list walk you to each one, Lesson 7 style.
 
 ---
 
@@ -198,7 +214,8 @@ private void applyChassisSpeeds(ChassisSpeeds speeds) {
 
   // If the request would drive some wheel past the max, scale ALL wheels
   // down proportionally so the *shape* of the motion is preserved.
-  SwerveDriveKinematics.desaturateWheelSpeeds(states, DriveConstants.kMaxSpeed.in(MetersPerSecond));
+  // desaturateWheelSpeeds takes a LinearVelocity directly — pass kMaxSpeed as-is.
+  SwerveDriveKinematics.desaturateWheelSpeeds(states, DriveConstants.kMaxSpeed);
 
   m_lastCommandedOmega = speeds.omegaRadiansPerSecond / (2 * Math.PI); // rev/s for sim
 
@@ -211,9 +228,10 @@ private void applyChassisSpeeds(ChassisSpeeds speeds) {
 }
 
 /** Drive with full swerve freedom: translate and rotate at once. */
-public Command drive(DoubleSupplier vxMps, DoubleSupplier vyMps, DoubleSupplier omegaRadPerSec) {
-  return run(() -> applyChassisSpeeds(new ChassisSpeeds(
-      vxMps.getAsDouble(), vyMps.getAsDouble(), omegaRadPerSec.getAsDouble())));
+public Command drive(
+    Supplier<LinearVelocity> vx, Supplier<LinearVelocity> vy, Supplier<AngularVelocity> omega) {
+  // ChassisSpeeds takes the unit measures directly — nothing to unpack.
+  return run(() -> applyChassisSpeeds(new ChassisSpeeds(vx.get(), vy.get(), omega.get())));
 }
 ```
 
@@ -240,10 +258,10 @@ private double headingError(double targetDegrees) {
 
 Walk through `applyChassisSpeeds`, because it's the engine of everything now.
 **`new ChassisSpeeds(vx, vy, ω)`** packs "what I want the whole robot to do"
-into a single value — meters per second twice, then radians per second. (These
-WPILib data-carriers take plain doubles, which is exactly why `kMaxSpeed` gets
-unwrapped with `.in(MetersPerSecond)` right above: the Units live in your
-constants, the doubles live at the library's door.) **`toSwerveModuleStates`**
+into a single value — two linear velocities and an angular one. (It takes the
+Units measures straight from `drive`'s suppliers, and `desaturateWheelSpeeds`
+takes `kMaxSpeed` as-is: this is what "WPILib speaks Units" buys you — nothing
+gets unpacked until the motor line, still to come.) **`toSwerveModuleStates`**
 is the library math this lesson exists for: in comes one chassis motion, out
 comes a `SwerveModuleState[]` — one entry per corner, in the order you gave the
 constructor. **`desaturateWheelSpeeds`** matters at the edge of the envelope: if
@@ -296,24 +314,24 @@ translates, right stick rotates:
 
 ```java
   private void configureBindings() {
-    double maxMps = DriveConstants.kMaxSpeed.in(MetersPerSecond); // convert once, reuse
     m_drivetrain.setDefaultCommand(
         m_drivetrain.drive(
-            () -> -m_driverController.getLeftY()  * maxMps,
-            () -> -m_driverController.getLeftX()  * maxMps,
-            () -> -m_driverController.getRightX() * Math.PI * 2)); // ±2π rad/s = ±1 rev/s
+            () -> DriveConstants.kMaxSpeed.times(-m_driverController.getLeftY()),  // forward = +X
+            () -> DriveConstants.kMaxSpeed.times(-m_driverController.getLeftX()),  // left    = +Y
+            () -> DriveConstants.kMaxAngularSpeed.times(-m_driverController.getRightX())));
 
     // ...turnToHeading bindings from Lesson 8 stay...
   }
 ```
 
-That first line is the efficient way to spend a Units value in a hot path.
-Those lambdas run every tick, so you unpack `kMaxSpeed` into a plain `double`
-**once**, here, and let the lambdas close over it — never call `.in(...)`
-inside a per-tick lambda. (The stick itself reads a fraction from −1 to 1;
-multiplying by `maxMps` turns it into the real m/s `drive` expects.) That
-`.in(MetersPerSecond)` needs `import static edu.wpi.first.units.Units.MetersPerSecond;`
-in `RobotContainer` — `Ctrl+.` adds it.
+Look at each supplier: the stick reads a fraction from −1 to 1, and
+`kMaxSpeed.times(fraction)` scales the max-speed *measure* down to that
+fraction — the result is still a `LinearVelocity`, exactly what `drive` now
+asks for. No `maxMps` local, no `.in(...)` — the unit rides all the way from
+the constant into `ChassisSpeeds`. Same story for the rotation supplier with
+`kMaxAngularSpeed`. This is the Units payoff: because every hop speaks the
+type, there's simply no boundary to convert at until Phoenix's `set` deep
+inside `setDesiredState`.
 
 Now, for the first time, a driver can drive forward *and* strafe *and* rotate,
 all in the same tick. Run sim, open the **Swerve** tab, and push both sticks:
@@ -339,10 +357,9 @@ delegation.
 
 ```java
 public Command driveFieldRelative(
-    DoubleSupplier vxMps, DoubleSupplier vyMps, DoubleSupplier omegaRadPerSec) {
+    Supplier<LinearVelocity> vx, Supplier<LinearVelocity> vy, Supplier<AngularVelocity> omega) {
   return run(() -> {
-    ChassisSpeeds fieldSpeeds = new ChassisSpeeds(
-        vxMps.getAsDouble(), vyMps.getAsDouble(), omegaRadPerSec.getAsDouble());
+    ChassisSpeeds fieldSpeeds = new ChassisSpeeds(vx.get(), vy.get(), omega.get());
     applyChassisSpeeds(ChassisSpeeds.fromFieldRelativeSpeeds(
         fieldSpeeds, Rotation2d.fromDegrees(getHeadingDegrees())));
   });
@@ -364,15 +381,18 @@ end of the field. Once you feel it, you won't want to give it up.
 
 ## Try it
 
-1. **Watch a wheel optimize.** Set up: `drivetrain.drive(() -> 0.5, () -> 0,
-   () -> 0)` (a slow forward). Print each module's *desired angle* and *actual
-   speed sign*. Then abruptly reverse to `-0.5`. The wheel should mostly not
-   spin around — it should flip the drive sign. (The Swerve tab shows this
-   beautifully: desired arrows flip length-direction instead of swinging 180°.)
-2. **Try a spin-while-driving auto:** in `Autos`, build
-   `drivetrain.drive(() -> 1.0, () -> 0, () -> Math.PI/2).withTimeout(2.0)` —
-   drive forward at 1 m/s while spinning half a turn per second, for 2 seconds.
-   Watch the plots (and the gyro).
+1. **Watch a wheel optimize.** Set up: `drivetrain.drive(() ->
+   MetersPerSecond.of(0.5), () -> MetersPerSecond.of(0), () -> RadiansPerSecond.of(0))`
+   (a slow forward). Print each module's *desired angle* and *actual speed
+   sign*. Then abruptly reverse to `MetersPerSecond.of(-0.5)`. The wheel should
+   mostly not spin around — it should flip the drive sign. (The Swerve tab shows
+   this beautifully: desired arrows flip length-direction instead of swinging
+   180°.)
+2. **Try a spin-while-driving auto:** in `Autos`, build `drivetrain.drive(() ->
+   MetersPerSecond.of(1.0), () -> MetersPerSecond.of(0), () ->
+   RadiansPerSecond.of(Math.PI / 2)).withTimeout(2.0)` — drive forward at 1 m/s
+   while spinning half a turn per second, for 2 seconds. Watch the plots (and
+   the gyro).
 3. **Slow-mode multiplier:** while a bumper is held, multiply the three
    suppliers' outputs by `0.25` for fine control. Compose it as a new command
    that wraps `drive(...)`.
@@ -393,9 +413,12 @@ extraction habit: because every path funnels through `applyChassisSpeeds`,
 field-relative driving cost one line and `turnToHeading` survived untouched.
 Two library tools also arrived, both earned by having done the work by hand:
 **`MathUtil.inputModulus`** retired the wrap loop, and the **Units library**
-started carrying your physical constants — unit-safe where they live, plain
-`double` at the math with `.in(...)`. **Field-relative** is the version your
-drivers will never let you take away. One thing is still missing: the robot can
+started carrying your physical quantities as *types*. The lesson there is that
+WPILib speaks Units too — `kMaxSpeed` rides as a `LinearVelocity` from the
+constant, through the joystick `.times(fraction)`, into `ChassisSpeeds` and
+`desaturateWheelSpeeds`, and only becomes a bare `double` at the one place
+that truly demands it: Phoenix's `motor.set`. **Field-relative** is the version
+your drivers will never let you take away. One thing is still missing: the robot can
 move any way you ask, but it has no idea *where it is*. Lesson 11 gives it a map.
 
 Next: [Lesson 11 — Odometry & the field view](11-odometry-field.md).

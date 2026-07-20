@@ -1,8 +1,6 @@
 package frc.robot.subsystems;
 
-import static edu.wpi.first.units.Units.MetersPerSecond;
-
-import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 import com.ctre.phoenix6.hardware.Pigeon2;
 
@@ -13,6 +11,8 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriveConstants;
@@ -50,7 +50,8 @@ public class Drivetrain extends SubsystemBase {
 
         // If the request would drive some wheel past the max, scale ALL wheels
         // down proportionally so the *shape* of the motion is preserved.
-        SwerveDriveKinematics.desaturateWheelSpeeds(states, DriveConstants.kMaxSpeed.in(MetersPerSecond));
+        // desaturateWheelSpeeds accepts a LinearVelocity directly — no unpacking.
+        SwerveDriveKinematics.desaturateWheelSpeeds(states, DriveConstants.kMaxSpeed);
 
         m_lastCommandedOmega = speeds.omegaRadiansPerSecond / (2 * Math.PI); // rev/s for sim
 
@@ -63,17 +64,17 @@ public class Drivetrain extends SubsystemBase {
     }
 
     /** Drive with full swerve freedom: translate and rotate at once (robot frame). */
-    public Command drive(DoubleSupplier vxMps, DoubleSupplier vyMps, DoubleSupplier omegaRadPerSec) {
-        return run(() -> applyChassisSpeeds(new ChassisSpeeds(
-                vxMps.getAsDouble(), vyMps.getAsDouble(), omegaRadPerSec.getAsDouble())));
+    public Command drive(
+            Supplier<LinearVelocity> vx, Supplier<LinearVelocity> vy, Supplier<AngularVelocity> omega) {
+        // ChassisSpeeds takes the unit measures directly — no conversion here.
+        return run(() -> applyChassisSpeeds(new ChassisSpeeds(vx.get(), vy.get(), omega.get())));
     }
 
     /** Drive in the field frame: "forward" is away from the driver, whatever way we face. */
     public Command driveFieldRelative(
-            DoubleSupplier vxMps, DoubleSupplier vyMps, DoubleSupplier omegaRadPerSec) {
+            Supplier<LinearVelocity> vx, Supplier<LinearVelocity> vy, Supplier<AngularVelocity> omega) {
         return run(() -> {
-            ChassisSpeeds fieldSpeeds = new ChassisSpeeds(
-                    vxMps.getAsDouble(), vyMps.getAsDouble(), omegaRadPerSec.getAsDouble());
+            ChassisSpeeds fieldSpeeds = new ChassisSpeeds(vx.get(), vy.get(), omega.get());
             applyChassisSpeeds(ChassisSpeeds.fromFieldRelativeSpeeds(
                     fieldSpeeds, Rotation2d.fromDegrees(getHeadingDegrees())));
         });
@@ -98,19 +99,19 @@ public class Drivetrain extends SubsystemBase {
 
     /** Drive straight forward 'meters' at 40% of max speed. Finishes on its own. */
     public Command driveDistance(double meters) {
-        double maxMps = DriveConstants.kMaxSpeed.in(MetersPerSecond); // convert once, reuse
         return runOnce(() -> m_modules[0].resetDrivePosition())
                 .andThen(run(() -> {
                     for (SwerveModule module : m_modules) {
-                        module.setDesiredState(
-                                new SwerveModuleState(0.4 * maxMps, Rotation2d.fromDegrees(0)));
+                        // times(0.4) scales the max-speed measure — stays a LinearVelocity.
+                        module.setDesiredState(new SwerveModuleState(
+                                DriveConstants.kMaxSpeed.times(0.4), Rotation2d.fromDegrees(0)));
                     }
                     m_lastCommandedOmega = 0.0;
                 }))
                 .until(() -> Math.abs(m_modules[0].getDistanceMeters()) >= Math.abs(meters))
                 .finallyDo(() -> {
                     for (SwerveModule module : m_modules) {
-                        module.setDesiredState(new SwerveModuleState(0.0, Rotation2d.fromDegrees(0)));
+                        module.setDesiredState(new SwerveModuleState()); // zero speed, stop
                     }
                 });
     }
