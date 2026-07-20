@@ -227,6 +227,17 @@ private void commandRotation(double omegaRevPerSec) {
 }
 ```
 
+While you're in the file, give `headingError` the same one-liner treatment the
+module just got — its two `while` loops are the last hand-rolled wrap left.
+
+**Replace `headingError`'s body with:**
+
+```java
+private double headingError(double targetDegrees) {
+  return MathUtil.inputModulus(targetDegrees - getHeadingDegrees(), -180, 180);
+}
+```
+
 Walk through `applyChassisSpeeds`, because it's the engine of everything now.
 **`new ChassisSpeeds(vx, vy, ω)`** packs "what I want the whole robot to do"
 into a single value — meters per second twice, then radians per second. (These
