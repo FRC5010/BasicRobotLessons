@@ -140,6 +140,9 @@ almost verbatim; the only change is that the class line now says
 ```java
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
+
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
@@ -197,18 +200,22 @@ helper, called only when there's no real robot:
 ```
 
 **Piece 3 — the writes.** Each one is a Lesson 12 line wearing an
-`@Override`:
+`@Override`. Now that the target arrives as a plain `double` (the IO
+contract speaks degrees and meters-per-second), wrap it in the matching
+unit measure on the way into Phoenix — `Degrees.of(...)` and
+`RotationsPerSecond.of(...)`, exactly as Lesson 12 did:
 
 ```java
   @Override
   public void setSteerAngleDegrees(double angleDegrees) {
-    m_steerMotor.setControl(m_steerRequest.withPosition(angleDegrees / 360.0));
+    // Phoenix speaks Units — hand it the angle as a measure.
+    m_steerMotor.setControl(m_steerRequest.withPosition(Degrees.of(angleDegrees)));
   }
 
   @Override
   public void setDriveVelocityMetersPerSec(double mps) {
-    m_driveMotor.setControl(
-        m_driveRequest.withVelocity(mps / DriveConstants.kWheelCircumferenceMeters));
+    double wheelRps = mps / DriveConstants.kWheelCircumferenceMeters;
+    m_driveMotor.setControl(m_driveRequest.withVelocity(RotationsPerSecond.of(wheelRps)));
   }
 
   @Override
