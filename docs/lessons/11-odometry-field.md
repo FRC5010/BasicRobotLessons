@@ -32,7 +32,7 @@ numbers alone that the robot is at (2.3 m, 1.1 m) facing 35°. That's a
 
 - Field-relative visualizations (watch the robot move on a field).
 - Auto routines that say "drive to (5, 3)" instead of "drive forward 2 m."
-- Vision fusion (Lesson 12 territory — align odometry with camera-based
+- Vision fusion (a future lesson — align odometry with camera-based
   measurements).
 
 The idea itself is old — sailors called it **dead reckoning**: no GPS, but if
@@ -281,10 +281,13 @@ needs no wrap helper — `Rotation2d.minus` already returns the shortest angle.)
    strafe — and try to end exactly where you started. Watch how far off the
    field view says you are. That accumulating error is *drift*, and it's why
    teams add vision.
-3. Refactor `driveToPose` to use a `Rotation2d`-aware helper (the
-   `target.getRotation().minus(current.getRotation()).getRadians()` line
-   handles wrap-around because `Rotation2d` knows about the circle — try
-   printing it as you rotate past 180° to see it stay in `(-π, π]`).
+3. **Watch `Rotation2d` do the wrap for you.** `driveToPose`'s heading term,
+   `target.getRotation().minus(current.getRotation()).getRadians()`, never
+   needs the ±180° trick you wrote by hand — `Rotation2d` already knows angles
+   live on a circle. Prove it: log that value, point the robot near −170°, and
+   call `driveToPose` with a target facing +170°. The logged error should read
+   about **+20°** (turn the short way), not −340°. `minus` always hands back
+   the shortest turn, so the pose controller can't take the long way around.
 
 ---
 
