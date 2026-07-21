@@ -44,9 +44,11 @@ public class Drivetrain extends SubsystemBase {
             m_modules[2].location,
             m_modules[3].location);
 
-    private final GyroIO m_gyroIO = Constants.kCurrentMode == Constants.Mode.REPLAY
-            ? new GyroIO() {}
-            : new GyroIOPigeon2();
+    private final GyroIO m_gyroIO = switch (Constants.kCurrentMode) {
+        case REAL -> new GyroIOPigeon2();
+        case SIM -> new GyroIOSim();
+        case REPLAY -> new GyroIO() {}; // inputs come from the log
+    };
     private final GyroIOInputsAutoLogged m_gyroInputs = new GyroIOInputsAutoLogged();
 
     private final SwerveDriveOdometry m_odometry = new SwerveDriveOdometry(
@@ -60,12 +62,14 @@ public class Drivetrain extends SubsystemBase {
         SmartDashboard.putData("Field", m_field);
     }
 
-    /** Pick a module's IO from the current mode: real/sim hardware, or a no-op for replay. */
+    /** Pick a module's IO from the current mode: one implementation per world. */
     private static SwerveModule makeModule(
             int index, int driveId, int steerId, Translation2d location) {
-        ModuleIO io = Constants.kCurrentMode == Constants.Mode.REPLAY
-                ? new ModuleIO() {} // replay: inputs come from the log
-                : new ModuleIOTalonFX(driveId, steerId); // real & sim: actual hardware
+        ModuleIO io = switch (Constants.kCurrentMode) {
+            case REAL -> new ModuleIOTalonFX(driveId, steerId); // actual hardware
+            case SIM -> new ModuleIOSim(driveId, steerId); // hardware + physics models
+            case REPLAY -> new ModuleIO() {}; // inputs come from the log
+        };
         return new SwerveModule(io, "Drivetrain/Module" + index, location);
     }
 
