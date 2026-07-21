@@ -1,5 +1,7 @@
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.RotationsPerSecond;
+
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
@@ -69,17 +71,15 @@ public class SwerveModule {
 
     /** One tick of control: hand the firmware its targets. */
     public void setDesiredState(SwerveModuleState state) {
-        double targetDegrees = state.angle.getDegrees();
-
-        // Steering: firmware position control, wrap and gearing included.
-        m_steerMotor.setControl(m_steerRequest.withPosition(targetDegrees / 360.0));
+        // Steering: firmware position control. state.angle is a Rotation2d — hand
+        // its Angle measure straight to withPosition (Phoenix speaks Units too).
+        m_steerMotor.setControl(m_steerRequest.withPosition(state.angle.getMeasure()));
 
         // Drive: cosine compensation (Lesson 9), then firmware velocity control.
-        double error = targetDegrees - getSteerAngleDegrees();
+        double error = state.angle.getDegrees() - getSteerAngleDegrees();
         double alignment = Math.cos(Math.toRadians(error));
-        double wheelMps = state.speedMetersPerSecond * alignment;
-        m_driveMotor.setControl(
-                m_driveRequest.withVelocity(wheelMps / Constants.DriveConstants.kWheelCircumferenceMeters));
+        double wheelRps = state.speedMetersPerSecond * alignment / Constants.DriveConstants.kWheelCircumferenceMeters;
+        m_driveMotor.setControl(m_driveRequest.withVelocity(RotationsPerSecond.of(wheelRps)));
     }
 
     /** Zero the drive encoder — start measuring distance from *here*. */

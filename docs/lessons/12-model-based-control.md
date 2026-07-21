@@ -166,27 +166,30 @@ per second:
 ```java
 /** One tick of control: hand the firmware its targets. */
 public void setDesiredState(SwerveModuleState state) {
-  double targetDegrees = state.angle.getDegrees();
-
-  // Steering: firmware position control, wrap and gearing included.
-  m_steerMotor.setControl(m_steerRequest.withPosition(targetDegrees / 360.0));
+  // Steering: firmware position control. state.angle is a Rotation2d — hand its
+  // Angle measure straight to withPosition (Phoenix speaks Units too, so there's
+  // no degrees-to-rotations conversion to write).
+  m_steerMotor.setControl(m_steerRequest.withPosition(state.angle.getMeasure()));
 
   // Drive: cosine compensation (Lesson 9), then firmware velocity control.
-  double error = targetDegrees - getSteerAngleDegrees();
+  double error = state.angle.getDegrees() - getSteerAngleDegrees();
   double alignment = Math.cos(Math.toRadians(error));
-  double wheelMps = state.speedMetersPerSecond * alignment;
-  m_driveMotor.setControl(
-      m_driveRequest.withVelocity(wheelMps / DriveConstants.kWheelCircumferenceMeters));
+  double wheelRps = state.speedMetersPerSecond * alignment / DriveConstants.kWheelCircumferenceMeters;
+  m_driveMotor.setControl(m_driveRequest.withVelocity(RotationsPerSecond.of(wheelRps)));
 }
 ```
 
-Look at what `withPosition(targetDegrees / 360.0)` replaced: measure,
+Look at what `withPosition(state.angle.getMeasure())` replaced: measure,
 subtract, wrap, multiply, clamp, command — the whole Lesson 5 ritual — now
-happens inside the motor at 1 kHz. The cosine trick stays in your code
-because it isn't a control loop; it's a *decision* about how hard to drive,
-and decisions are the coach's job. (Once the wrap and clamp code is gone,
-VS Code will gray out the now-unused `MathUtil` import — let `Ctrl+.` clean
-it up.)
+happens inside the motor at 1 kHz, and you didn't even convert the angle,
+because Phoenix's control requests take `Angle`/`AngularVelocity` measures the
+same way WPILib does. (The drive side still divides by circumference to get
+wheel rev/s, then wraps that in `RotationsPerSecond.of(...)` for
+`withVelocity` — needs `import static edu.wpi.first.units.Units.RotationsPerSecond;`.)
+The cosine trick stays in your code because it isn't a control loop; it's a
+*decision* about how hard to drive, and decisions are the coach's job. (Once
+the wrap and clamp code is gone, VS Code will gray out the now-unused
+`MathUtil` import — let `Ctrl+.` clean it up.)
 
 Now the drive gains, because they're where "model-based" earns its name.
 **`kV` is a model of the motor**: it answers "how many volts does one wheel
