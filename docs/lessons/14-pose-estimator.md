@@ -175,8 +175,8 @@ public class Drivetrain extends SubsystemBase implements PoseProvider {
 ```
 
 Then **delete** the pose machinery that used to live here — the
-`m_odometry` field, `getPose()`, the `m_field`/`Field2d`, the
-`SmartDashboard.putData` in the constructor, and the odometry `update` and
+`m_odometry` field, `getPose()`, `resetPose(...)`, the `m_field`/`Field2d`,
+the `SmartDashboard.putData` in the constructor, and the odometry `update` and
 pose log from `periodic()`. All of it moved to the `Localizer`. In its place,
 three small getters and the provider method:
 
@@ -214,10 +214,22 @@ and it does, because the scheduler ticks subsystems in construction order, and
 you'll build `m_drivetrain` before `m_localizer`. Declare them in that order
 and the dependency takes care of itself.
 
-Any command that used to ask the drivetrain for its pose — Lesson 11's
-`driveToPose` sketch — now asks the localizer instead. Pass the localizer's
-`getPose` in, or hand the command the `Localizer`; the pose simply lives
-somewhere new.
+One method used to ask the drivetrain for its own pose — Lesson 11's
+`driveToPose` sketch. The pose lives somewhere new now, so the command asks
+for it instead of owning it.
+
+**Change `driveToPose`'s signature to take the pose as a supplier:**
+
+```java
+  /** Drive toward a field-coordinate pose. The pose now comes from the Localizer. */
+  public Command driveToPose(Pose2d target, Supplier<Pose2d> pose) {
+    // ...same body as Lesson 11, with every getPose() swapped for pose.get()...
+  }
+```
+
+A caller hands it the localizer's getter — `driveToPose(target,
+() -> m_localizer.getPose())` — the same supplier-lambda move the joystick
+bindings have used all along.
 
 ---
 
