@@ -19,6 +19,8 @@ each lesson to get to understand the code you've added.
 - **TalonFX** motors (CTRE Phoenix 6) — drive and steering.
 - **Pigeon 2** gyro (CTRE Phoenix 6).
 - An Xbox controller on the driver station.
+- A **PhotonVision** coprocessor and camera (Lesson 15 only) — entirely optional;
+  Lesson 15's own simulated cameras cover the whole lesson without one.
 
 You do **not** need a real robot for most of this course — the simulation lessons
 let you see everything working on your laptop. Device IDs in the examples
@@ -64,6 +66,7 @@ let you see everything working on your laptop. Device IDs in the examples
 | 12 | [Model-based control](docs/lessons/12-model-based-control.md) | Onboard 1 kHz closed loop with feedforward, replacing boot-time CANcoder priming with continuous remote-sensor feedback | Config objects, control requests |
 | 13 | [IO layers & replay](docs/lessons/13-io-replay.md) | Re-run a logged session through changed code | Interfaces, enums, subclassing, annotations |
 | 14 | [Pose estimator & localizer](docs/lessons/14-pose-estimator.md) | A localization subsystem fused from pluggable pose providers | Interfaces, registries, timestamps |
+| 15 | [Real vision — PhotonVision](docs/lessons/15-photonvision.md) | A real PhotonVision pose provider, plus simulated multi-camera coverage | `Optional`, varargs |
 
 ### Asides (out of order — read when you need them)
 

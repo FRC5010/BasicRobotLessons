@@ -384,15 +384,21 @@ someday with no change to the localizer at all. Corrections arrive through
 `addVisionMeasurement` carrying a **timestamp**, so the estimator can rewind,
 blend where it belongs, and roll forward.
 
-And that's the course — for real this time. Fourteen lessons ago, printing a
-line of text was an achievement. Now you have a field-relative swerve robot
-with firmware closed-loop control, organized telemetry, deterministic replay,
-and a self-correcting pose fused from pluggable sources — and every piece of
-it is something you typed and can explain. Where the road goes from here:
+Fourteen lessons ago, printing a line of text was an achievement. Now you
+have a field-relative swerve robot with firmware closed-loop control,
+organized telemetry, deterministic replay, and a self-correcting pose fused
+from pluggable sources — and every piece of it is something you typed and
+can explain.
 
-- **A real camera:** PhotonVision + AprilTags produce exactly what
-  `reportSighting` wants — a pose and a capture timestamp. Your fake provider
-  becomes a real one, registered the same way, and nothing else changes.
+One provider in that fusion is still pretend, though — `VisionPoseProvider`
+only reports what a button tells it to. Lesson 15 replaces it with the real
+thing: an actual PhotonVision camera reading actual AprilTags, plus the
+ability to simulate more of them than you own. Watch how much of
+`Localizer` has to change to accept it. (Spoiler: none.)
+
+Beyond that, two more directions worth knowing about, whenever you're ready
+for them:
+
 - **Trajectory following:** `PathPlanner` or `Choreo` turn a drawn path into a
   timed trajectory, chased with the `driveToPose` pattern from Lesson 11 —
   now running on a pose you can finally trust.
@@ -400,5 +406,7 @@ it is something you typed and can explain. Where the road goes from here:
   commands, IO layer, logged inputs — the same spine, one more time, and the
   second time it takes a tenth as long.
 
-Wherever you go, you're not starting over. You're reusing the spine — and
-now you know how it holds up.
+Wherever those take you, you're not starting over. You're reusing the
+spine — and now you know how it holds up.
+
+Next: [Lesson 15 — Real vision: PhotonVision and multi-camera simulation](15-photonvision.md).
