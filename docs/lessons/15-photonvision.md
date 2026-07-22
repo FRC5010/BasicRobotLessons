@@ -382,15 +382,24 @@ robot pose, would feed vision from that pose instead.
 
 All the real work already happened in `VisionIO`, so the provider itself is
 almost nothing — the same shape `SwerveModule` has had since Lesson 13: own
-an IO, own a logged inputs bundle, read the bundle.
+an IO, own a logged inputs bundle, read the bundle. It also picks up one
+more job, one you've seen before in a different class: choosing *which* IO
+to build. `Drivetrain` does that for its modules with a static `makeModule`
+helper back in Lesson 13; `PhotonVisionPoseProvider` does the same for
+itself with `makeCamera`.
 **Create `src/main/java/frc/robot/subsystems/PhotonVisionPoseProvider.java`:**
 
 ```java
 package frc.robot.subsystems;
 
+import java.util.function.Supplier;
+
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Transform3d;
+import frc.robot.Constants;
 
 /** A vision camera, contributing whatever pose corrections its IO logged this tick. */
 public class PhotonVisionPoseProvider implements PoseProvider {
@@ -412,6 +421,17 @@ public class PhotonVisionPoseProvider implements PoseProvider {
       estimator.addVisionMeasurement(observation.pose().toPose2d(), observation.timestampSeconds());
     }
   }
+
+  /** Picks each camera's real/sim/replay IO, the same way Drivetrain picks each module's. */
+  public static PhotonVisionPoseProvider makeCamera(
+      String name, Transform3d robotToCamera, Supplier<Pose2d> poseSupplier) {
+    VisionIO io = switch (Constants.kCurrentMode) {
+      case REAL -> new VisionIOPhotonVision(name, robotToCamera);
+      case SIM -> new VisionIOPhotonVisionSim(name, robotToCamera, poseSupplier);
+      case REPLAY -> new VisionIO() {}; // inputs come from the log
+    };
+    return new PhotonVisionPoseProvider(io, "Localizer/" + name);
+  }
 }
 ```
 
@@ -430,6 +450,15 @@ angle to chase — so Lesson 13 split those into two methods. A camera only
 ever reports; nothing here commands it. `PoseProvider` only ever asked for
 one method, and today that one method both senses and consumes, because
 there's nothing to separate.
+
+`makeCamera` is `Drivetrain.makeModule` with one difference: `makeModule`
+is `private`, because only `Drivetrain` ever calls it. `makeCamera` is
+`public`, because `RobotContainer` is about to call it from the outside —
+building a `PhotonVisionPoseProvider` and picking its IO are the same
+decision now, made in the one class that knows how to make both. That
+`Supplier<Pose2d> poseSupplier` parameter is only ever read by the `SIM`
+arm — `VisionIOPhotonVisionSim` needs to know where the robot is so it
+knows what a camera there would see. Section 10 supplies it.
 
 ---
 
@@ -450,8 +479,7 @@ every method stay exactly as Lesson 14 left them. That's worth sitting with:
 an entire IO layer just went into the project, and the class that fuses
 poses together never had to hear about it.
 
-**In `RobotContainer`, pick each camera's IO the same way `Drivetrain`
-picks each module's** — a small static factory switching on `Constants.kCurrentMode`:
+**In `RobotContainer`, build both cameras with `PhotonVisionPoseProvider.makeCamera`:**
 
 ```java
 public class RobotContainer {
@@ -459,61 +487,22 @@ public class RobotContainer {
       OperatorConstants.kDriverControllerPort);
 
   private final Drivetrain m_drivetrain = new Drivetrain();
-  private final PhotonVisionPoseProvider m_frontCamera = makeCamera(
-      VisionConstants.kFrontCameraName, VisionConstants.kFrontRobotToCamera);
-  private final PhotonVisionPoseProvider m_backCamera = makeCamera(
-      VisionConstants.kBackCameraName, VisionConstants.kBackRobotToCamera);
+  private final PhotonVisionPoseProvider m_frontCamera = PhotonVisionPoseProvider.makeCamera(
+      VisionConstants.kFrontCameraName, VisionConstants.kFrontRobotToCamera, () -> m_localizer.getPose());
+  private final PhotonVisionPoseProvider m_backCamera = PhotonVisionPoseProvider.makeCamera(
+      VisionConstants.kBackCameraName, VisionConstants.kBackRobotToCamera, () -> m_localizer.getPose());
   private final Localizer m_localizer = new Localizer(m_drivetrain);
 
   // ...m_autoChooser stays...
-
-  private static PhotonVisionPoseProvider makeCamera(String name, Transform3d robotToCamera) {
-    VisionIO io = switch (Constants.kCurrentMode) {
-      case REAL -> new VisionIOPhotonVision(name, robotToCamera);
-      case SIM -> new VisionIOPhotonVisionSim(name, robotToCamera, () -> m_localizer.getPose());
-      case REPLAY -> new VisionIO() {}; // inputs come from the log
-    };
-    return new PhotonVisionPoseProvider(io, "Localizer/" + name);
-  }
 ```
 
-That won't compile as written — a `static` method can't reach an instance
-field like `m_localizer`, and `m_localizer` doesn't exist yet at the point
-`m_frontCamera` is being built anyway (declaration order runs top to
-bottom). The fix is the same lambda trick you've used since the joystick
-suppliers in Lesson 2: hand `makeCamera` a `Supplier<Pose2d>` and let it
-pass that straight through to `VisionIOPhotonVisionSim`, unresolved, until
-something actually calls it:
-
-```java
-  private static PhotonVisionPoseProvider makeCamera(
-      String name, Transform3d robotToCamera, Supplier<Pose2d> poseSupplier) {
-    VisionIO io = switch (Constants.kCurrentMode) {
-      case REAL -> new VisionIOPhotonVision(name, robotToCamera);
-      case SIM -> new VisionIOPhotonVisionSim(name, robotToCamera, poseSupplier);
-      case REPLAY -> new VisionIO() {}; // inputs come from the log
-    };
-    return new PhotonVisionPoseProvider(io, "Localizer/" + name);
-  }
-```
-
-**Full field list:**
-
-```java
-  private final Drivetrain m_drivetrain = new Drivetrain();
-  private final PhotonVisionPoseProvider m_frontCamera = makeCamera(
-      VisionConstants.kFrontCameraName, VisionConstants.kFrontRobotToCamera, () -> m_localizer.getPose());
-  private final PhotonVisionPoseProvider m_backCamera = makeCamera(
-      VisionConstants.kBackCameraName, VisionConstants.kBackRobotToCamera, () -> m_localizer.getPose());
-  private final Localizer m_localizer = new Localizer(m_drivetrain);
-```
-
-That `() -> m_localizer.getPose()` reads like it should fail the same way
-the raw method reference did — `m_localizer` is declared *after* the two
-cameras, so it's still unset when their field initializers run. It compiles
-fine, though, and it's worth understanding why: a lambda doesn't evaluate
-its body when it's created, only when something later *calls* it. By the
-time `VisionIOPhotonVisionSim` actually calls `poseSupplier.get()` —
+That `() -> m_localizer.getPose()` looks like it should fail: `m_localizer`
+is declared *after* the two camera fields, so it's still unset when their
+initializers run. It compiles fine, though, and it's worth understanding
+why. A lambda doesn't evaluate its body when it's created, only when
+something later *calls* it — and `makeCamera` doesn't call `poseSupplier`
+itself, it just hands the `Supplier<Pose2d>` off to `VisionIOPhotonVisionSim`
+to hold onto. By the time that IO actually calls `poseSupplier.get()` —
 during a match, ticks after the constructor finished — `m_localizer` has
 long since been assigned. The lambda just remembers *where* to look, the
 same way `steerToAngle`'s lambda remembered `targetDegrees` back in Lesson 5.
@@ -557,11 +546,11 @@ months later, on a laptop with no camera attached at all.
 
 1. **Add a third camera.** Pick a corner mount — angled 45°, say — add its
    `Transform3d` to `VisionConstants`, add a third `PhotonVisionPoseProvider`
-   field built with `makeCamera(...)`, and register it in the constructor
-   with `m_localizer.addProvider(...)`. Nothing in `VisionIOPhotonVisionSim`
-   changes to make this work — its shared `static VisionSystemSim` just
-   picks up a third camera the moment one more `VisionIOPhotonVisionSim` is
-   constructed.
+   field built with `PhotonVisionPoseProvider.makeCamera(...)`, and register
+   it in the constructor with `m_localizer.addProvider(...)`. Nothing in
+   `VisionIOPhotonVisionSim` changes to make this work — its shared
+   `static VisionSystemSim` just picks up a third camera the moment one more
+   `VisionIOPhotonVisionSim` is constructed.
 2. **Turn off multi-tag.** In `VisionIOPhotonVision.updateInputs`, delete the
    `estimateCoprocMultiTagPose` branch so every frame falls straight to
    `estimateLowestAmbiguityPose`. Drive past a spot where two tags are
@@ -587,30 +576,28 @@ months later, on a laptop with no camera attached at all.
 The `Localizer` you built in Lesson 14 just proved its reason for existing:
 a real `PhotonVisionPoseProvider`, backed by an actual `PhotonCamera` and
 `PhotonPoseEstimator`, slots into the exact same registry Lesson 14's fake
-button-press provider used, and nothing about `Localizer` itself had to
-change to accept it. That's what the `PoseProvider` interface was for all
-along.
+button-press provider used, and `Localizer` itself required no changes to
+accept it. That's what the `PoseProvider` interface was for all along.
 
 `Optional<EstimatedRobotPose>` gave "there might not be a pose this frame"
 an honest, checkable type instead of a sentinel value someone forgets to
 guard against, and multi-tag-first-with-single-tag-fallback is the real
 version of the trust story Lesson 14 only sketched: more agreeing evidence
-beats less, every time. Simulation didn't need a real/sim branch inside the
-pose-estimation logic at all — `PhotonCameraSim` fakes the *transport*, not
-the logic, so the exact same `updateInputs` method in `VisionIOPhotonVision`
-runs whether `VisionIOPhotonVisionSim` is quietly feeding it fake detections
-or a real coprocessor is talking to it over NetworkTables. A **`static`
-field** was the tool that let every simulated camera share one
-`VisionSystemSim` without any camera needing a reference to any other.
+beats less, every time. A **`static` field** gave every simulated camera a
+way to share one `VisionSystemSim` without holding a reference to each
+other — this course's first reach for `static` state, and a clean picture
+of what it's for: one copy, owned by the class, not by any one instance.
 
-And the gap this lesson opened with — vision corrections that couldn't be
-replayed — is closed. `VisionIO` gave the camera the same treatment
-`ModuleIO` and `GyroIO` got in Lesson 13: a plain interface, an `@AutoLog`
-inputs bundle, and a `REAL`/`SIM`/`REPLAY` switch that picks the
-implementation. `PhotonVisionPoseProvider` itself never touches a
-`PhotonCamera` at all — it only logs whatever its `VisionIO` handed it and
-reads that right back on replay, so a vision correction that happened live,
-months ago, plays back exactly, on a laptop with no camera attached at all.
+The bigger structural move was giving vision its own `VisionIO` — the same
+interface/`@AutoLog`/`REAL`-`SIM`-`REPLAY` treatment `ModuleIO` and `GyroIO`
+got in Lesson 13. `PhotonVisionPoseProvider` only ever talks to that
+interface: it logs whatever the IO handed it, and reads those same values
+back out on replay, so a vision correction that happened live, months ago,
+plays back exactly, on a laptop with no camera attached at all. And
+`makeCamera`, the factory that decides which `VisionIO` to build, lives on
+`PhotonVisionPoseProvider` itself — the same place `Drivetrain` keeps the
+factory for its own modules. The class that knows how to build something is
+the class that should decide which version to build.
 
 Fifteen lessons built a robot that knows how to move, knows where it is,
 and now remembers everything it saw well enough to prove it later.
