@@ -1,5 +1,7 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.sim.TalonFXSimState;
 
@@ -22,6 +24,7 @@ public class SwerveModule {
 
     private final TalonFX m_driveMotor;
     private final TalonFX m_steerMotor;
+    private final CANcoder m_steerEncoder;
     private final TalonFXSimState m_driveSim;
     private final TalonFXSimState m_steerSim;
 
@@ -37,12 +40,22 @@ public class SwerveModule {
                             DCMotor.getKrakenX60(1), 0.004, Constants.SteerConstants.kSteerGearRatio),
                     DCMotor.getKrakenX60(1));
 
-    public SwerveModule(int driveId, int steerId, Translation2d location) {
+    public SwerveModule(
+            int driveId, int steerId, int cancoderId, double magnetOffsetRotations,
+            Translation2d location) {
         this.location = location;
         m_driveMotor = new TalonFX(driveId);
         m_steerMotor = new TalonFX(steerId);
+        m_steerEncoder = new CANcoder(cancoderId);
         m_driveSim = m_driveMotor.getSimState();
         m_steerSim = m_steerMotor.getSimState();
+
+        // Priming from Lesson 5/7: seed the motor's rotor-side counter from the CANcoder.
+        CANcoderConfiguration cancoderConfig = new CANcoderConfiguration();
+        cancoderConfig.MagnetSensor.MagnetOffset = magnetOffsetRotations;
+        m_steerEncoder.getConfigurator().apply(cancoderConfig);
+        m_steerMotor.setPosition(
+                m_steerEncoder.getAbsolutePosition().getValueAsDouble() * Constants.SteerConstants.kSteerGearRatio);
     }
 
     /** One tick of control: steer toward 'angleDegrees', drive at 'speedFraction'. */

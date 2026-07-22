@@ -12,15 +12,26 @@ public final class Constants {
   }
 
   public static class DriveConstants {
-    // CAN IDs, one drive + one steer per corner — change to yours.
+    // CAN IDs, one drive + one steer + one CANcoder per corner — change to yours.
     public static final int kFrontLeftDrivePort = 1;
     public static final int kFrontLeftSteerPort = 2;
+    public static final int kFrontLeftCancoderPort = 9;
     public static final int kFrontRightDrivePort = 3;
     public static final int kFrontRightSteerPort = 4;
+    public static final int kFrontRightCancoderPort = 10;
     public static final int kBackLeftDrivePort = 5;
     public static final int kBackLeftSteerPort = 6;
+    public static final int kBackLeftCancoderPort = 11;
     public static final int kBackRightDrivePort = 7;
     public static final int kBackRightSteerPort = 8;
+    public static final int kBackRightCancoderPort = 12;
+
+    // Magnet offsets (rotations): negative of each CANcoder's raw reading with
+    // its wheel pointed forward. Measure with Phoenix Tuner X — change to yours.
+    public static final double kFrontLeftMagnetOffset = 0.0;
+    public static final double kFrontRightMagnetOffset = 0.0;
+    public static final double kBackLeftMagnetOffset = 0.0;
+    public static final double kBackRightMagnetOffset = 0.0;
 
     public static final double kDriveGearRatio = 6.75; // rotor : wheel
     public static final double kWheelDiameterMeters = 0.1016; // 4 inch wheel

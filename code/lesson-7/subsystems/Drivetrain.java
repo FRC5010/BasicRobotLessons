@@ -14,12 +14,16 @@ public class Drivetrain extends SubsystemBase {
     // Corner order: FL, FR, BL, BR. Pick a convention and stick to it.
     private final SwerveModule[] m_modules = new SwerveModule[] {
             new SwerveModule(DriveConstants.kFrontLeftDrivePort, DriveConstants.kFrontLeftSteerPort,
+                    DriveConstants.kFrontLeftCancoderPort, DriveConstants.kFrontLeftMagnetOffset,
                     DriveConstants.kFrontLeft),
             new SwerveModule(DriveConstants.kFrontRightDrivePort, DriveConstants.kFrontRightSteerPort,
+                    DriveConstants.kFrontRightCancoderPort, DriveConstants.kFrontRightMagnetOffset,
                     DriveConstants.kFrontRight),
             new SwerveModule(DriveConstants.kBackLeftDrivePort, DriveConstants.kBackLeftSteerPort,
+                    DriveConstants.kBackLeftCancoderPort, DriveConstants.kBackLeftMagnetOffset,
                     DriveConstants.kBackLeft),
             new SwerveModule(DriveConstants.kBackRightDrivePort, DriveConstants.kBackRightSteerPort,
+                    DriveConstants.kBackRightCancoderPort, DriveConstants.kBackRightMagnetOffset,
                     DriveConstants.kBackRight)
     };
 

@@ -54,14 +54,14 @@ let you see everything working on your laptop. Device IDs in the examples
 | 2 | [Joystick control](docs/lessons/02-joystick-control.md) | Drive the motor with a joystick | Methods, parameters, `double`, lambdas |
 | 3 | [Telemetry & plots](docs/lessons/03-telemetry.md) | Plot position & velocity live | Return values, sensors, AdvantageKit logging |
 | 4 | [Simulation](docs/lessons/04-simulation.md) | Make it move on your laptop | `simulationPeriodic`, physics models |
-| 5 | [Steering with P control](docs/lessons/05-steering-p-control.md) | Point the module to an angle | `if`, arithmetic, error, setpoints |
+| 5 | [Steering with P control](docs/lessons/05-steering-p-control.md) | Point the module to an angle, primed from a CANcoder at boot | `if`, arithmetic, error, setpoints |
 | 6 | [Distance & commands](docs/lessons/06-distance-and-commands.md) | Drive an exact distance | Unit conversion, commands that finish |
 | 7 | [Four modules](docs/lessons/07-four-modules.md) | Assemble a 4-module chassis you can translate and rotate | Arrays, `for` loops, helper classes |
 | 8 | [Gyro & heading](docs/lessons/08-gyro-heading.md) | Turn the chassis to a compass heading | Reusing patterns, extracting helpers |
 | 9 | [Autonomous](docs/lessons/09-autonomous.md) | Compose a drive-turn-drive auto | Command composition, sequences & groups |
 | 10 | [Full swerve — kinematics](docs/lessons/10-kinematics.md) | Drive-and-rotate at once with `SwerveDriveKinematics` | Data-carrier types, indexed loops |
 | 11 | [Odometry & the field view](docs/lessons/11-odometry-field.md) | Track and draw the robot on a virtual field | Building arrays in loops, small bundle types |
-| 12 | [Model-based control](docs/lessons/12-model-based-control.md) | Onboard 1 kHz closed loop with feedforward, plus a CANcoder for absolute steering | Config objects, control requests |
+| 12 | [Model-based control](docs/lessons/12-model-based-control.md) | Onboard 1 kHz closed loop with feedforward, replacing boot-time CANcoder priming with continuous remote-sensor feedback | Config objects, control requests |
 | 13 | [IO layers & replay](docs/lessons/13-io-replay.md) | Re-run a logged session through changed code | Interfaces, enums, subclassing, annotations |
 | 14 | [Pose estimator & localizer](docs/lessons/14-pose-estimator.md) | A localization subsystem fused from pluggable pose providers | Interfaces, registries, timestamps |
 

@@ -2,6 +2,8 @@ package frc.robot.subsystems;
 
 import java.util.function.DoubleSupplier;
 
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.sim.TalonFXSimState;
 
@@ -20,6 +22,7 @@ public class DriveModule extends SubsystemBase {
                                                                                                 // yours
     private final TalonFX m_steerMotor = new TalonFX(Constants.DriveConstants.kSteerMotorPort); // CAN ID 2 — change to
                                                                                                 // yours
+    private final CANcoder m_steerEncoder = new CANcoder(Constants.DriveConstants.kCancoderPort); // CAN ID 3
 
     // Sim plumbing for the drive motor.
     private final TalonFXSimState m_driveSim = m_driveMotor.getSimState();
@@ -36,7 +39,13 @@ public class DriveModule extends SubsystemBase {
                     DCMotor.getKrakenX60(1));
 
     public DriveModule() {
-        // Setup that should happen when the module is created goes here.
+        // Calibrate the CANcoder's zero to "wheel pointing forward"...
+        CANcoderConfiguration cancoderConfig = new CANcoderConfiguration();
+        cancoderConfig.MagnetSensor.MagnetOffset = Constants.SteerConstants.kMagnetOffset;
+        m_steerEncoder.getConfigurator().apply(cancoderConfig);
+
+        // ...then prime the steering motor's own sensor to match it, once.
+        m_steerMotor.setPosition(m_steerEncoder.getAbsolutePosition().getValueAsDouble());
     }
 
     /** Spins the drive motor at the given fraction of full power (-1.0 to 1.0). */

@@ -72,16 +72,26 @@ public class SwerveModule {
 
   private final TalonFX m_driveMotor;
   private final TalonFX m_steerMotor;
+  private final CANcoder m_steerEncoder;
   private final TalonFXSimState m_driveSim;
   private final TalonFXSimState m_steerSim;
   // (m_driveModel: same as Lesson 6. m_steerModel: updated below — real gearing at last.)
 
-  public SwerveModule(int driveId, int steerId, Translation2d location) {
-    this.location = location;
-    m_driveMotor  = new TalonFX(driveId);
-    m_steerMotor  = new TalonFX(steerId);
-    m_driveSim    = m_driveMotor.getSimState();
-    m_steerSim    = m_steerMotor.getSimState();
+  public SwerveModule(
+      int driveId, int steerId, int cancoderId, double magnetOffsetRotations,
+      Translation2d location) {
+    this.location  = location;
+    m_driveMotor   = new TalonFX(driveId);
+    m_steerMotor   = new TalonFX(steerId);
+    m_steerEncoder = new CANcoder(cancoderId);
+    m_driveSim     = m_driveMotor.getSimState();
+    m_steerSim     = m_steerMotor.getSimState();
+
+    // Same CANcoder priming as Lesson 5 — the gear-ratio fix comes below.
+    CANcoderConfiguration cancoderConfig = new CANcoderConfiguration();
+    cancoderConfig.MagnetSensor.MagnetOffset = magnetOffsetRotations;
+    m_steerEncoder.getConfigurator().apply(cancoderConfig);
+    m_steerMotor.setPosition(m_steerEncoder.getAbsolutePosition().getValueAsDouble());
   }
 ```
 
@@ -96,8 +106,10 @@ constructor, too: `m_driveSim` is created by asking `m_driveMotor`, so the
 motor lines come first.)
 
 **Constructor parameters** are what make one class serve four corners: each
-`new SwerveModule(...)` call hands in different IDs and a different position.
-And in `this.location = location`, the parameter and the field share a name —
+`new SwerveModule(...)` call hands in different IDs and a different position
+— and now a different CANcoder and magnet offset too, the same priming
+ritual from Lesson 5, just parameterized like everything else here. And in
+`this.location = location`, the parameter and the field share a name —
 `this.` means "the field on this object," which is how Java tells them apart.
 
 One more thing that should bother you: `location` is a **`public` field**,
@@ -173,6 +185,18 @@ public double getSteerAngleDegrees() {
       m_steerMotor.getPosition().getValueAsDouble() / SteerConstants.kSteerGearRatio;
   return steerRotations * 360.0;
 }
+```
+
+**One more line from Lesson 5 needs the same fix.** The constructor primes
+the steering motor's sensor from the CANcoder — but that line was written for
+the pretend 1:1 sensor. Now that 25 real rotor turns happen per wheel turn,
+seeding the motor's *rotor*-side counter means multiplying the CANcoder's
+wheel-side reading by the ratio, the same conversion `getSteerAngleDegrees()`
+just learned to undo:
+
+```java
+m_steerMotor.setPosition(
+    m_steerEncoder.getAbsolutePosition().getValueAsDouble() * SteerConstants.kSteerGearRatio);
 ```
 
 **Edit the `m_steerModel` field** (from the top of the class) to model the
@@ -271,10 +295,10 @@ import frc.robot.Constants.DriveConstants;
 public class Drivetrain extends SubsystemBase {
   // Corner order: FL, FR, BL, BR. Pick a convention and stick to it.
   private final SwerveModule[] m_modules = new SwerveModule[] {
-      new SwerveModule(1, 2, DriveConstants.kFrontLeft),   // CAN IDs — change to yours
-      new SwerveModule(3, 4, DriveConstants.kFrontRight),
-      new SwerveModule(5, 6, DriveConstants.kBackLeft),
-      new SwerveModule(7, 8, DriveConstants.kBackRight)
+      new SwerveModule(1, 2, 9, 0.0, DriveConstants.kFrontLeft),   // CAN IDs, offset — change to yours
+      new SwerveModule(3, 4, 10, 0.0, DriveConstants.kFrontRight),
+      new SwerveModule(5, 6, 11, 0.0, DriveConstants.kBackLeft),
+      new SwerveModule(7, 8, 12, 0.0, DriveConstants.kBackRight)
   };
 
   @Override
@@ -476,6 +500,12 @@ one graph. Push the stick — all four traces should snap to the same value.
 Hold the left bumper — they should split into the four rotate-in-place angles
 from the table above.
 
+Notice what you *didn't* have to do first: walk out to the robot and point
+every wheel at some agreed "forward" before enabling. That's Lesson 5's
+priming, paying off exactly where it matters — four independent modules that
+all agree on zero the instant power comes on, with no ritual and no chance
+to forget it before a match.
+
 Now the payoff for logging `ModuleStates`: open AdvantageScope's **Swerve**
 tab and drag `Drivetrain/ModuleStates` into its **States** slot (set the
 tab's *Max Speed* to about `5` — that's roughly what a Kraken-driven wheel
@@ -512,16 +542,25 @@ up.
    `getDistanceMeters()` from `m_modules[0]` after resetting, sequence steps like
    Lesson 6's `driveDistance`. This is the whole-chassis version we'll formalize
    in Lesson 9.
-4. **Move the eight CAN IDs into `Constants.java`.** The array above bakes them
-   in as literals (`new SwerveModule(1, 2, ...)`) — fine to learn with, but a
-   real robot keeps its numbers in one place, the way you did for the single
-   module back in Lesson 1. Add eight named constants to `DriveConstants` —
-   `kFrontLeftDrivePort`, `kFrontLeftSteerPort`, and so on through
-   `kBackRightSteerPort` — and rebuild the array to reference them:
-   `new SwerveModule(DriveConstants.kFrontLeftDrivePort, DriveConstants.kFrontLeftSteerPort, DriveConstants.kFrontLeft)`.
-   Verbose? A little. But now every ID your robot depends on lives in the same
-   file as the gear ratios and chassis dimensions — one place to check when the
-   wiring changes.
+4. **Move the CAN IDs and offsets into `Constants.java`.** The array above
+   bakes them in as literals (`new SwerveModule(1, 2, 9, 0.0, ...)`) — fine to
+   learn with, but a real robot keeps its numbers in one place, the way you
+   did for the single module back in Lesson 1. Add named constants to
+   `DriveConstants`, right alongside each corner's drive and steer ports:
+   twelve CAN IDs (`kFrontLeftDrivePort`, `kFrontLeftSteerPort`,
+   `kFrontLeftCancoderPort`, and so on through `kBackRightCancoderPort`) and
+   four magnet offsets (`kFrontLeftMagnetOffset`, and so on) — then rebuild
+   the array to reference them:
+   `new SwerveModule(DriveConstants.kFrontLeftDrivePort, DriveConstants.kFrontLeftSteerPort, DriveConstants.kFrontLeftCancoderPort, DriveConstants.kFrontLeftMagnetOffset, DriveConstants.kFrontLeft)`.
+   Verbose? A little. But now every ID and calibration number your robot
+   depends on lives in the same file as the gear ratios and chassis
+   dimensions — one place to check when the wiring changes.
+5. **Break one module's calibration on purpose.** Change a single corner's
+   magnet offset by `0.1` (about 36°) and run it. Watch the Swerve tab: three
+   arrows agree, one doesn't — a fixed, consistent disagreement, not noise.
+   That's exactly what a bad calibration looks like on a real robot, and
+   with four modules on screen at once, it's obvious *which* corner needs
+   remeasuring. Put the offset back.
 
 ---
 
