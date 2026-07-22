@@ -224,8 +224,7 @@ loggable the same way `Pose3d` already is, so an array of them slots into
 
 ## 7. Build `VisionIOPhotonVision`
 
-Now the real hardware implementation — everything section 5 taught, moved
-into an IO class. Create
+Time to put section 5's ideas to work. Create
 `src/main/java/frc/robot/subsystems/VisionIOPhotonVision.java`:
 
 ```java
@@ -272,13 +271,14 @@ public class VisionIOPhotonVision implements VisionIO {
 }
 ```
 
-Line for line, this is section 5's logic — multi-tag first, single-tag
-fallback, `Optional` guarding every step — with one change of destination.
-It used to hand each estimate straight to the shared pose estimator; now it
-packs every estimate this tick produced into `inputs` and stops there.
-Reading is the only job an IO class has; deciding what to *do* with what it
-read belongs one layer up — the same boundary `ModuleIOTalonFX` respects by
-never calling `setDesiredState` on itself.
+`updateInputs` is section 5's logic doing real work: for every unread frame,
+try multi-tag first, fall back to single-tag, and — `Optional` guarding
+every step — pack whatever pose came out into `inputs`. Notice what it
+*doesn't* do: it never touches a pose estimator, never decides whether a
+correction is good enough to trust. Reading is the only job an IO class has;
+deciding what to do with what it read belongs one layer up — the same
+boundary `ModuleIOTalonFX` respects by never calling `setDesiredState` on
+itself.
 
 One detail worth flagging before section 8: `m_camera` is **`protected`**,
 not `private`. That's Lesson 13's signal again — a subclass is coming for it.
@@ -365,24 +365,25 @@ object `VisionIOPhotonVision` already reads, over NetworkTables, the same
 pipe a real coprocessor would use — so `estimateCoprocMultiTagPose` and
 `estimateLowestAmbiguityPose` can't tell the difference, and don't need to.
 
-The `poseSupplier` is how simulated vision learns where the robot *actually*
-is, so it knows what a camera at that pose would see. One honest
-simplification, worth naming rather than hiding: section 10 wires this to
-`Localizer::getPose` — the fused best guess — because this course's
-simulation has no separate "ground truth" physics pose to draw from
-instead. A team running a full rigid-body physics sim would feed vision
-from that instead, to avoid the estimate ever quietly grading its own
-homework. For learning how the wiring and multi-camera mechanics work,
-this is a fine stand-in.
+The `poseSupplier` tells the fake vision field where to look from — what
+pose to check each tag against when deciding whether a camera would see it.
+Section 10 wires it to `Localizer::getPose()`, the same fused pose vision
+itself feeds corrections into. That's the robot checking its simulated
+eyesight against its own best guess, not against some separate "actual"
+position — this course's simulation doesn't keep one of those. It works
+fine in practice: odometry alone already tracks position closely in sim,
+so the estimate never drifts far enough from reality for the difference to
+matter. A team simulating a full physics model, with its own independent
+robot pose, would feed vision from that pose instead.
 
 ---
 
-## 9. Rebuild `PhotonVisionPoseProvider` around the IO layer
+## 9. Build `PhotonVisionPoseProvider`
 
-The provider itself shrinks to almost nothing now — all the real work
-moved into `VisionIO`. What's left is the same shape `SwerveModule` has had
-since Lesson 13: own an IO, own a logged inputs bundle, read the bundle.
-**Replace `PhotonVisionPoseProvider.java` with:**
+All the real work already happened in `VisionIO`, so the provider itself is
+almost nothing — the same shape `SwerveModule` has had since Lesson 13: own
+an IO, own a logged inputs bundle, read the bundle.
+**Create `src/main/java/frc/robot/subsystems/PhotonVisionPoseProvider.java`:**
 
 ```java
 package frc.robot.subsystems;
@@ -583,34 +584,33 @@ months later, on a laptop with no camera attached at all.
 
 ## What you learned
 
-The `Localizer` you built in Lesson 14 just proved its whole reason for
-existing twice over: a real `PhotonVisionPoseProvider`, backed by an actual
-`PhotonCamera` and `PhotonPoseEstimator`, slotted into the exact same
-registry as a fake button-press provider, and nothing about `Localizer`
-itself changed either time. That's what the `PoseProvider` interface was
-for all along.
+The `Localizer` you built in Lesson 14 just proved its reason for existing:
+a real `PhotonVisionPoseProvider`, backed by an actual `PhotonCamera` and
+`PhotonPoseEstimator`, slots into the exact same registry Lesson 14's fake
+button-press provider used, and nothing about `Localizer` itself had to
+change to accept it. That's what the `PoseProvider` interface was for all
+along.
 
 `Optional<EstimatedRobotPose>` gave "there might not be a pose this frame"
 an honest, checkable type instead of a sentinel value someone forgets to
 guard against, and multi-tag-first-with-single-tag-fallback is the real
 version of the trust story Lesson 14 only sketched: more agreeing evidence
-beats less, every time. Simulation didn't need a new real/sim branch inside
-the pose-estimation logic, either — `PhotonCameraSim` fakes the
-*transport*, not the logic, so the exact same `updateInputs` method in
-`VisionIOPhotonVision` runs whether `VisionIOPhotonVisionSim` is quietly
-feeding it fake detections or a real coprocessor is talking to it over
-NetworkTables. A **`static` field** was the tool that let every simulated
-camera share one `VisionSystemSim` without any camera needing a reference
-to any other.
+beats less, every time. Simulation didn't need a real/sim branch inside the
+pose-estimation logic at all — `PhotonCameraSim` fakes the *transport*, not
+the logic, so the exact same `updateInputs` method in `VisionIOPhotonVision`
+runs whether `VisionIOPhotonVisionSim` is quietly feeding it fake detections
+or a real coprocessor is talking to it over NetworkTables. A **`static`
+field** was the tool that let every simulated camera share one
+`VisionSystemSim` without any camera needing a reference to any other.
 
 And the gap this lesson opened with — vision corrections that couldn't be
 replayed — is closed. `VisionIO` gave the camera the same treatment
 `ModuleIO` and `GyroIO` got in Lesson 13: a plain interface, an `@AutoLog`
 inputs bundle, and a `REAL`/`SIM`/`REPLAY` switch that picks the
-implementation. `PhotonVisionPoseProvider` never touches a `PhotonCamera`
-directly anymore — it logs whatever its `VisionIO` handed it and reads that
-right back on replay, so a vision correction that happened live, months
-ago, plays back exactly, on a laptop with no camera attached at all.
+implementation. `PhotonVisionPoseProvider` itself never touches a
+`PhotonCamera` at all — it only logs whatever its `VisionIO` handed it and
+reads that right back on replay, so a vision correction that happened live,
+months ago, plays back exactly, on a laptop with no camera attached at all.
 
 Fifteen lessons built a robot that knows how to move, knows where it is,
 and now remembers everything it saw well enough to prove it later.
