@@ -192,7 +192,7 @@ AdvantageScope from the WPILib command palette → **Start Tool** →
 **AdvantageScope**. In AdvantageScope:
 
 1. **File → Connect to Simulator** (on a real robot it's "Connect to Robot"
-   with team number 5010).
+   with team number e.g. 5010). Also choose the default NetworkTables 4.
 2. In the sidebar, expand **AdvantageKit → RealOutputs → DriveModule** —
    there's your folder tree, with both values ticking.
 3. Drag `VelocityRotPerSec` onto the **📈 Line Graph** tab. A live plot
@@ -223,8 +223,8 @@ around a virtual field.
 ## Try it
 
 1. Log the **commanded** speed too. Inside `driveWithJoystick`'s lambda, add
-   `Logger.recordOutput("DriveModule/CommandedOutput", speed);`. This is the
-   one refinement to the periodic-only rule: a value that only exists inside
+   `Logger.recordOutput("DriveModule/CommandedOutput", speed);`. This is a
+    refinement to the periodic-only rule: a value that only exists inside
    a command — like the command's own output — gets logged right where it's
    computed. On a real robot, overlaying `CommandedOutput` against
    `VelocityRotPerSec` shows how the motor lags your command — the seed of

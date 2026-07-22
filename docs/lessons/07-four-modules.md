@@ -51,9 +51,11 @@ keep going and it all compiles again by section 6.
 
 `DriveModule` hard-codes CAN IDs `1` and `2` and knows nothing about where it
 sits on the robot. Four modules need four unique ID pairs, and the rotation math
-needs each module's position. Rename the class to **`SwerveModule`** (in VS Code:
-right-click the class name → **Refactor → Rename** — it updates the filename and
-every reference in the project for you), and change two things about it:
+needs each module's position.
+
+**Rename `DriveModule` to `SwerveModule`** — in VS Code, right-click the class
+name → **Refactor → Rename**, which updates the filename and every reference in
+the project for you. Then change two things about it:
 
 1. **Drop `extends SubsystemBase`.** A single wheel isn't what the scheduler
    needs to lock — the *whole chassis* is. From now on, the only subsystem for
@@ -61,7 +63,7 @@ every reference in the project for you), and change two things about it:
 2. **Parameterize the constructor** so the corner and its CAN IDs come in from
    outside.
 
-Here's the new top of the class:
+**Replace the top of the class with:**
 
 ```java
 public class SwerveModule {
@@ -70,16 +72,26 @@ public class SwerveModule {
 
   private final TalonFX m_driveMotor;
   private final TalonFX m_steerMotor;
+  private final CANcoder m_steerEncoder;
   private final TalonFXSimState m_driveSim;
   private final TalonFXSimState m_steerSim;
   // (m_driveModel: same as Lesson 6. m_steerModel: updated below — real gearing at last.)
 
-  public SwerveModule(int driveId, int steerId, Translation2d location) {
-    this.location = location;
-    m_driveMotor  = new TalonFX(driveId);
-    m_steerMotor  = new TalonFX(steerId);
-    m_driveSim    = m_driveMotor.getSimState();
-    m_steerSim    = m_steerMotor.getSimState();
+  public SwerveModule(
+      int driveId, int steerId, int cancoderId, double magnetOffsetRotations,
+      Translation2d location) {
+    this.location  = location;
+    m_driveMotor   = new TalonFX(driveId);
+    m_steerMotor   = new TalonFX(steerId);
+    m_steerEncoder = new CANcoder(cancoderId);
+    m_driveSim     = m_driveMotor.getSimState();
+    m_steerSim     = m_steerMotor.getSimState();
+
+    // Same CANcoder priming as Lesson 5 — the gear-ratio fix comes below.
+    CANcoderConfiguration cancoderConfig = new CANcoderConfiguration();
+    cancoderConfig.MagnetSensor.MagnetOffset = magnetOffsetRotations;
+    m_steerEncoder.getConfigurator().apply(cancoderConfig);
+    m_steerMotor.setPosition(m_steerEncoder.getAbsolutePosition().getValueAsDouble());
   }
 ```
 
@@ -94,8 +106,10 @@ constructor, too: `m_driveSim` is created by asking `m_driveMotor`, so the
 motor lines come first.)
 
 **Constructor parameters** are what make one class serve four corners: each
-`new SwerveModule(...)` call hands in different IDs and a different position.
-And in `this.location = location`, the parameter and the field share a name —
+`new SwerveModule(...)` call hands in different IDs and a different position
+— and now a different CANcoder and magnet offset too, the same priming
+ritual from Lesson 5, just parameterized like everything else here. And in
+`this.location = location`, the parameter and the field share a name —
 `this.` means "the field on this object," which is how Java tells them apart.
 
 One more thing that should bother you: `location` is a **`public` field**,
@@ -109,9 +123,11 @@ Now the methods. Because the module no longer extends `SubsystemBase`, the
 command factories are literally gone — `run`, `startEnd`, and friends were
 *inherited* from `SubsystemBase`, so `driveAtSpeed`, `steerToAngle`, and
 `driveDistance` don't compile anymore. That's fine: commands belong to
-subsystems, and this class isn't one. Replace them (and the module's old
-`periodic()` — its logging moves up to the `Drivetrain` in the next section)
-with one plain method that does a single tick of control, on demand:
+subsystems, and this class isn't one.
+
+**Delete the command factories and the module's old `periodic()`** (its
+logging moves up to the `Drivetrain` in the next section), **and add one plain
+method** that does a single tick of control, on demand:
 
 ```java
 /** One tick of control: steer toward 'angleDegrees', drive at 'speedFraction'. */
@@ -151,7 +167,7 @@ per steering rotation. The fix is the same two moves you made for the drive
 motor in Lesson 6: *divide* on the way in (sensor → angle), *multiply* on the
 way back (sim model → fake rotor).
 
-The constant goes in `SteerConstants`, next to the gain:
+**Add `kSteerGearRatio` to `SteerConstants`, next to the gain:**
 
 ```java
 public static class SteerConstants {
@@ -160,7 +176,7 @@ public static class SteerConstants {
 }
 ```
 
-Divide in `getSteerAngleDegrees()`:
+**Edit `getSteerAngleDegrees()`** to divide by the ratio:
 
 ```java
 /** Current steering angle in degrees. */
@@ -171,8 +187,20 @@ public double getSteerAngleDegrees() {
 }
 ```
 
-Teach the steer sim model about the gearbox (this is the `m_steerModel` field
-from the top of the class):
+**One more line from Lesson 5 needs the same fix.** The constructor primes
+the steering motor's sensor from the CANcoder — but that line was written for
+the pretend 1:1 sensor. Now that 25 real rotor turns happen per wheel turn,
+seeding the motor's *rotor*-side counter means multiplying the CANcoder's
+wheel-side reading by the ratio, the same conversion `getSteerAngleDegrees()`
+just learned to undo:
+
+```java
+m_steerMotor.setPosition(
+    m_steerEncoder.getAbsolutePosition().getValueAsDouble() * SteerConstants.kSteerGearRatio);
+```
+
+**Edit the `m_steerModel` field** (from the top of the class) to model the
+gearbox:
 
 ```java
 private final DCMotorSim m_steerModel =
@@ -182,8 +210,8 @@ private final DCMotorSim m_steerModel =
         DCMotor.getKrakenX60(1));
 ```
 
-And multiply back to rotor-side in the steer half of `simulationPeriodic()`,
-exactly like the drive motor in Lesson 6:
+**Edit the steer half of `simulationPeriodic()`** to multiply back to
+rotor-side, exactly like the drive motor in Lesson 6:
 
 ```java
 m_steerSim.setRawRotorPosition(
@@ -193,13 +221,16 @@ m_steerSim.setRotorVelocity(
 ```
 
 Heads up: the steering now turns at a believable speed instead of a bare
-rotor's instant snap, so if your Lesson 5 `kP` suddenly feels sluggish or
-jumpy, that's not a bug — the thing being controlled changed. Retune it; you
-know the ritual.
+rotor's instant snap, so your Lesson 5 `kP` is now tuned for the wrong plant —
+it may feel sluggish or jumpy. That's not a bug; the thing being controlled
+changed. You can't retune yet (nothing runs until the wiring in section 6), so
+sit tight — section 7 comes back to this the moment the robot moves.
 
 One more small question-method while we're in here — the visualization in
 section 3 needs wheel *speed*, and it's `getDistanceMeters()`'s pipeline from
-Lesson 6 applied to velocity instead of position:
+Lesson 6 applied to velocity instead of position.
+
+**Add to `SwerveModule`:**
 
 ```java
 /** Current wheel speed in meters per second. */
@@ -217,8 +248,8 @@ around the Drivetrain. A refactor isn't done until every file that *touched*
 the old shape learns the new one, and the compiler's job is to keep that list
 for you.
 
-Now add the four corners to `Constants.java`, inside the `DriveConstants`
-class you started in Lesson 6:
+**Add the four corners to `DriveConstants`** (the class you started in
+Lesson 6):
 
 ```java
 public static class DriveConstants {
@@ -244,8 +275,9 @@ positive; back-right flips both signs.
 ## 3. Build the Drivetrain with an array
 
 The `Drivetrain` owns four `SwerveModule`s in an **array**, logs them from its
-own `periodic()`, and commands them from its command factories. Create
-`src/main/java/frc/robot/subsystems/Drivetrain.java`:
+own `periodic()`, and commands them from its command factories.
+
+**Create `src/main/java/frc/robot/subsystems/Drivetrain.java`:**
 
 ```java
 package frc.robot.subsystems;
@@ -263,10 +295,10 @@ import frc.robot.Constants.DriveConstants;
 public class Drivetrain extends SubsystemBase {
   // Corner order: FL, FR, BL, BR. Pick a convention and stick to it.
   private final SwerveModule[] m_modules = new SwerveModule[] {
-      new SwerveModule(1, 2, DriveConstants.kFrontLeft),   // CAN IDs — change to yours
-      new SwerveModule(3, 4, DriveConstants.kFrontRight),
-      new SwerveModule(5, 6, DriveConstants.kBackLeft),
-      new SwerveModule(7, 8, DriveConstants.kBackRight)
+      new SwerveModule(1, 2, 9, 0.0, DriveConstants.kFrontLeft),   // CAN IDs, offset — change to yours
+      new SwerveModule(3, 4, 10, 0.0, DriveConstants.kFrontRight),
+      new SwerveModule(5, 6, 11, 0.0, DriveConstants.kBackLeft),
+      new SwerveModule(7, 8, 12, 0.0, DriveConstants.kBackRight)
   };
 
   @Override
@@ -338,7 +370,9 @@ workers commanded together.
 
 To drive in a direction, aim every wheel the same way and drive at the same
 speed. The direction is the angle of the `(vx, vy)` vector; the speed is its
-length. Add to `Drivetrain`:
+length.
+
+**Add to `Drivetrain`:**
 
 ```java
 /** Drive the whole chassis at fractional velocity (vx, vy). */
@@ -375,6 +409,8 @@ center — the direction it would travel if the whole robot rotated CCW.
 
 For a module at position `(x, y)` from center, the CCW-tangent direction is
 `(-y, x)` (rotate the outward radial 90° CCW). In degrees:
+
+**Add to `Drivetrain`:**
 
 ```java
 /** Spin in place at fractional angular rate 'omega' (positive = CCW). */
@@ -419,22 +455,20 @@ robot spins CCW. Neat, isn't it?
 
 ## 6. Wire it up
 
-Time to fix the red. In `RobotContainer`, **delete the old wiring**: the
-`m_module` field and every binding that used it (the A/B buttons from
-Lesson 1, X/Y steering from Lesson 5, and the D-pad `driveDistance` from
-Lesson 6). Those commands lived on a class that's now a helper; the
-Drivetrain replaces them all.
+Time to fix the red.
 
-In their place, a Drivetrain field up top with the other fields:
+**Delete from `RobotContainer` the old wiring:** the `m_module` field and every
+binding that used it — the A/B buttons from Lesson 1, X/Y steering from
+Lesson 5, and the D-pad `driveDistance` from Lesson 6. Those commands lived on a
+class that's now a helper; the Drivetrain replaces them all.
+
+**Add to `RobotContainer`, with the other fields** (`m_driverController` stays):
 
 ```java
-public class RobotContainer {
-  // ...m_driverController stays...
-
   private final Drivetrain m_drivetrain = new Drivetrain();
 ```
 
-And in `configureBindings()` — left stick translates by default, bumpers spin:
+**Add to `configureBindings()`** — left stick translates by default, bumpers spin:
 
 ```java
   private void configureBindings() {
@@ -466,6 +500,12 @@ one graph. Push the stick — all four traces should snap to the same value.
 Hold the left bumper — they should split into the four rotate-in-place angles
 from the table above.
 
+Notice what you *didn't* have to do first: walk out to the robot and point
+every wheel at some agreed "forward" before enabling. That's Lesson 5's
+priming, paying off exactly where it matters — four independent modules that
+all agree on zero the instant power comes on, with no ritual and no chance
+to forget it before a match.
+
 Now the payoff for logging `ModuleStates`: open AdvantageScope's **Swerve**
 tab and drag `Drivetrain/ModuleStates` into its **States** slot (set the
 tab's *Max Speed* to about `5` — that's roughly what a Kraken-driven wheel
@@ -475,6 +515,14 @@ stick and all four arrows swing together and grow with speed; hold the left
 bumper and they snap into the pinwheel — the table above, drawn for you,
 sixty times a second. This diagram is about to become your main debugging
 view for everything swerve.
+
+Now that the robot actually runs, cash in the promise from section 2: the
+steering carries a real `25 : 1` reduction, so it turns at a believable speed
+instead of a bare rotor's instant snap. Watch a wheel chase its target on the
+Swerve tab — if the steering lags in lazily or buzzes around the angle, your
+Lesson 5 `SteerConstants.kP` is tuned for the *old* plant. **Retune it the
+Lesson 5 way** now that you can see it move: nudge `kP` up until it oscillates,
+then back off. This is the first moment you could actually do it.
 
 The **gyro** still reports zero — the chassis isn't yet closing the loop from
 "commanded rotation" to "reported heading." That's exactly what Lesson 8 wires
@@ -494,6 +542,25 @@ up.
    `getDistanceMeters()` from `m_modules[0]` after resetting, sequence steps like
    Lesson 6's `driveDistance`. This is the whole-chassis version we'll formalize
    in Lesson 9.
+4. **Move the CAN IDs and offsets into `Constants.java`.** The array above
+   bakes them in as literals (`new SwerveModule(1, 2, 9, 0.0, ...)`) — fine to
+   learn with, but a real robot keeps its numbers in one place, the way you
+   did for the single module back in Lesson 1. Add named constants to
+   `DriveConstants`, right alongside each corner's drive and steer ports:
+   twelve CAN IDs (`kFrontLeftDrivePort`, `kFrontLeftSteerPort`,
+   `kFrontLeftCancoderPort`, and so on through `kBackRightCancoderPort`) and
+   four magnet offsets (`kFrontLeftMagnetOffset`, and so on) — then rebuild
+   the array to reference them:
+   `new SwerveModule(DriveConstants.kFrontLeftDrivePort, DriveConstants.kFrontLeftSteerPort, DriveConstants.kFrontLeftCancoderPort, DriveConstants.kFrontLeftMagnetOffset, DriveConstants.kFrontLeft)`.
+   Verbose? A little. But now every ID and calibration number your robot
+   depends on lives in the same file as the gear ratios and chassis
+   dimensions — one place to check when the wiring changes.
+5. **Break one module's calibration on purpose.** Change a single corner's
+   magnet offset by `0.1` (about 36°) and run it. Watch the Swerve tab: three
+   arrows agree, one doesn't — a fixed, consistent disagreement, not noise.
+   That's exactly what a bad calibration looks like on a real robot, and
+   with four modules on screen at once, it's obvious *which* corner needs
+   remeasuring. Put the offset back.
 
 ---
 

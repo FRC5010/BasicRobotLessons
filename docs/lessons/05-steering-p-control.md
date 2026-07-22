@@ -12,6 +12,8 @@ its own, using the simplest possible feedback control: *error × a gain*.
 - **Setpoint**, **measurement**, **error** — the vocabulary of control
 - **Proportional (P) control** — the single most important idea in robotics
 - Why you can't just "set the angle" directly
+- A **CANcoder** and **priming** — an absolute sensor and a one-time startup
+  read that keeps the wheel's zero honest across power cycles
 
 ---
 
@@ -99,14 +101,115 @@ public double getSteerAngleDegrees() {
 
 ---
 
-## 3. Write proportional control
+## 3. Give it a memory: priming from an absolute encoder
+
+`getSteerAngleDegrees()` trusts the steering motor's own sensor completely —
+and that sensor has a blind spot. It's **relative**: it counts rotations
+from wherever it happened to be when the robot powered on, not from any
+fixed reference. On the bench that's invisible, because you built the robot
+with the wheel already close enough to "forward." On a real match day, after
+the robot's been unplugged, carried around, and replugged a dozen times,
+there's no guarantee the wheel is anywhere near where it was last time — and
+the sensor has no way to know.
+
+The fix is a second sensor built for exactly this: a **CANcoder**, CTRE's
+magnetic absolute encoder. Mount it on the steering axis and it reads the
+wheel's true angle from a magnet — the same answer every time, power cycle
+or not. We won't make the steering motor read it continuously yet — that's a
+firmware trick for Lesson 12. For now we'll do something simpler and still
+genuinely useful: read the CANcoder **once**, right when the robot boots,
+and tell the steering motor's own sensor to start counting from there. Call
+it **priming** — one honest reading, right at the start, so the motor's own
+count is trustworthy from tick one.
+
+One calibration step first. The CANcoder's own zero is wherever its magnet
+happens to be glued on — probably not "wheel pointing forward." You measure
+that gap once, with a number called the **magnet offset**: point the wheel
+straight forward by hand, read the CANcoder's raw position in Phoenix Tuner
+X, and store the *negative* of that reading as the offset. Configured with
+that number, the CANcoder reports exactly `0` when the wheel is at true
+forward.
+
+**Add to `Constants.java`:**
+
+```java
+public static class DriveConstants {
+  public static final int kDriveMotorPort = 1; // CAN ID — change to yours
+  public static final int kSteerMotorPort = 2; // CAN ID — change to yours
+  public static final int kCancoderPort = 3;   // CAN ID — change to yours
+}
+
+public static class SteerConstants {
+  public static final double kMagnetOffset = 0.0; // rotations — measure with Tuner X, change to yours
+}
+```
+
+(`SteerConstants` gains a second constant, `kP`, in the next section — this
+is the class's first job, not its last.)
+
+**Add the CANcoder field to `DriveModule`, next to the steering motor:**
+
+```java
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.hardware.CANcoder;
+```
+
+```java
+private final CANcoder m_steerEncoder = new CANcoder(Constants.DriveConstants.kCancoderPort);
+```
+
+Now give the constructor a body — this is the first time this lesson has
+had anything to put in it:
+
+```java
+public DriveModule() {
+  // Calibrate the CANcoder's zero to "wheel pointing forward"...
+  CANcoderConfiguration cancoderConfig = new CANcoderConfiguration();
+  cancoderConfig.MagnetSensor.MagnetOffset = Constants.SteerConstants.kMagnetOffset;
+  m_steerEncoder.getConfigurator().apply(cancoderConfig);
+
+  // ...then prime the steering motor's own sensor to match it, once.
+  m_steerMotor.setPosition(m_steerEncoder.getAbsolutePosition().getValueAsDouble());
+}
+```
+
+Two calls do all the work. **`getConfigurator().apply(...)`** is a pattern
+you'll see constantly from here on: build a small object describing what you
+want, hand it to the device once, done. And **`setPosition(...)`** is new —
+every Phoenix device lets you *tell* it what its own sensor should currently
+read, which is exactly what priming means: not moving the wheel, just
+correcting what the motor believes about where it already is.
+
+> **Watch out:** a CAN device needs a moment to start reporting real values
+> after power-on. Reading one in the very first line of the constructor is
+> usually fine — Phoenix's default read waits briefly for a value to arrive —
+> but if a prime ever looks like it read `0` instead of the real angle,
+> that's the usual suspect.
+
+> **Mounting matters.** A CANcoder reads counterclockwise-positive by
+> default, matching this course's convention for the rest of the robot. If
+> yours ever reads backwards — the wheel turns one way and the angle counts
+> the other — set `MagnetSensor.SensorDirection =
+> SensorDirectionValue.Clockwise_Positive` in its config. Get this wrong and
+> priming will confidently seed the *wrong* zero, every single boot — one
+> flipped sign, easy to fix once you know to look for it.
+
+This isn't the last word on the subject — a wheel can still slip against the
+gearbox mid-match, and a one-time prime won't notice. Lesson 12 replaces
+this reading with something that watches continuously. For now, priming
+solves the problem that actually bites you every single boot: an
+unpredictable zero.
+
+---
+
+## 4. Write proportional control
 
 Here's the heart of the lesson — read it slowly, because this little method
 is the seed of every controller you'll ever write. Add the import up top,
 then the command factory below your other ones:
 
 ```java
-import frc.robot.Constants.SteerConstants; // we'll create this constant below
+import frc.robot.Constants.SteerConstants; // SteerConstants exists already — kP joins it below
 ```
 
 ```java
@@ -175,16 +278,14 @@ below the method that uses it.
 
 Last piece: `kP` itself. It's a **tuning constant** — a number you'll adjust
 over and over — and numbers like that live in `Constants.java`, in a nested
-class named for the subsystem area they belong to. Open `Constants.java` and
-add the class inside it:
+class named for the subsystem area they belong to. `SteerConstants` already
+exists (you made it two sections ago, for the magnet offset) — add `kP`
+alongside it:
 
 ```java
-public final class Constants {
-  // ...anything already in here stays...
-
-  public static class SteerConstants {
-    public static final double kP = 0.01; // output per degree of error — tune this
-  }
+public static class SteerConstants {
+  public static final double kMagnetOffset = 0.0; // from the previous section
+  public static final double kP = 0.01;           // output per degree of error — tune this
 }
 ```
 
@@ -195,7 +296,7 @@ needs it points here. That's the whole philosophy of `Constants.java`.
 
 ---
 
-## 4. Bind it and tune `kP`
+## 5. Bind it and tune `kP`
 
 In `RobotContainer.configureBindings()`, with the rest of the wiring:
 
@@ -247,7 +348,7 @@ write.
 
 ---
 
-## 5. A wrinkle: the long way around
+## 6. A wrinkle: the long way around
 
 Ask for `0°` while sitting at `350°`. Error = `0 − 350 = −350`, so it spins almost
 all the way around backwards — when it *could* have nudged +10° forward. Real
@@ -289,5 +390,11 @@ nested-class home for tuning constants in `Constants.java`. Hold onto the
 shape of `steerToAngle`: measure, subtract, multiply, clamp, command. The
 same five moves point a whole chassis at a compass heading in Lesson 8 — only
 the sensor changes. That's a sign you've learned something real.
+
+One more habit started here, smaller but just as real: **priming**. The
+steering motor's own sensor only knows *change*, not *place*, so you gave it
+a memory — read the CANcoder once at startup, tell the motor's sensor to
+match. It isn't the whole fix (Lesson 12 finishes that job), but it's the
+part that matters on the very first boot, which is most of them.
 
 Next: [Lesson 6 — Distance & commands](06-distance-and-commands.md).

@@ -27,16 +27,17 @@ as promised).
 
 Where should it live? Heading is a *chassis* fact — no single module knows it,
 and no single module needs it alone — so the gyro goes on `Drivetrain`, not in
-`SwerveModule` and not in some new subsystem. Open `Drivetrain.java`. Two new
-imports up top (`Logger` is already there from Lesson 7):
+`SwerveModule` and not in some new subsystem. Open `Drivetrain.java`.
+
+**Add to `Drivetrain.java`'s imports** (`Logger` is already there from Lesson 7):
 
 ```java
 import com.ctre.phoenix6.hardware.Pigeon2;
 import frc.robot.Constants.HeadingConstants;
 ```
 
-Then three fields, below the modules array — the gyro is hardware, and the two
-doubles are sim bookkeeping whose job becomes clear in section 5:
+**Add to `Drivetrain`, below the modules array** — the gyro is hardware, and the
+two doubles are sim bookkeeping whose job becomes clear in section 5:
 
 ```java
 private final Pigeon2 m_gyro = new Pigeon2(0); // CAN ID 0 — change to yours
@@ -48,8 +49,9 @@ private double m_simHeadingDegrees  = 0.0;
 
 Notice those two aren't `final` — they're *memory*, a running total the sim
 rewrites every tick, which is why they're plain mutable `double`s and not
-`final` like the hardware fields around them. Then a reading method, with the
-other public methods:
+`final` like the hardware fields around them.
+
+**Add to `Drivetrain`, with the other public methods:**
 
 ```java
 /** Robot heading in degrees (CCW positive). */
@@ -62,8 +64,9 @@ Reading yaw has the same shape as reading motor position: `getYaw()` returns a
 signal, `.getValueAsDouble()` pulls the number out. Sensors all feel alike once
 you've read one.
 
-Finally, log it — in `periodic()`, alongside the module telemetry. Two lines,
-two audiences:
+Finally, log it. Two lines, two audiences.
+
+**Add to `Drivetrain.periodic()`, alongside the module telemetry:**
 
 ```java
   @Override
@@ -90,7 +93,10 @@ for pure rotation. `turnToHeading` is about to need the *same* math with a
 different `omega` each tick — and the sim needs to know what `omega` was just
 asked for. You could copy the tangent-angle loop into the new command. Don't.
 Copied code is a bug with a delay on it: fix the original and the copy stays
-wrong. Instead, pull the body into a private helper so both callers share it:
+wrong. Instead, pull the body into a private helper so both callers share it.
+
+**Add the helper to `Drivetrain`, and replace `rotate` with the one-liner
+version:**
 
 ```java
 private void commandRotation(double omega) {
@@ -115,7 +121,10 @@ commands need the same math, promote it to a helper, and every caller gets the
 
 One loose end: `translate(...)` from Lesson 7 needs a single new line — pure
 translation shouldn't leave a stale rotation rate lying around for the sim to
-integrate:
+integrate.
+
+**Edit `translate` — add the `m_lastCommandedOmega = 0.0;` line** (marked
+below):
 
 ```java
 public Command translate(DoubleSupplier vxSupplier, DoubleSupplier vySupplier) {
@@ -142,8 +151,8 @@ differ from `steerToAngle`: which sensor gets measured, and that headings
 **wrap** around a circle, so the subtract step needs the wrap trick baked in
 (`-170°` to `170°` should turn `20°`, not `340°`).
 
-Add to `Drivetrain` — the wrap logic goes in its own little question-method,
-because the finish condition is about to need it too:
+**Add to `Drivetrain`** — the wrap logic goes in its own little
+question-method, because the finish condition is about to need it too:
 
 ```java
 /** Signed error to 'target' in degrees, wrapped to (-180, 180]. */
@@ -176,7 +185,7 @@ throttle. And because the finish condition calls the *same* `headingError`,
 "done" means "within 2° by the shortest path" — the wrap logic can't disagree
 with itself.
 
-The gain goes in `Constants.java`, in its own nested class next to the others:
+**Add to `Constants.java`** a nested `HeadingConstants` class for the gain:
 
 ```java
 public final class Constants {
@@ -192,8 +201,8 @@ public final class Constants {
 
 ## 4. Wire it up
 
-In `RobotContainer.configureBindings()`, two taps — the A and B buttons are
-free again since Lesson 7's cleanup:
+**Add to `configureBindings()`** two taps — the A and B buttons are free again
+since Lesson 7's cleanup:
 
 ```java
   private void configureBindings() {
@@ -218,7 +227,10 @@ On a real robot, `commandRotation(omega)` spins the four wheels tangent to the
 circle, the chassis rotates, and the gyro reads the result. In sim, our modules
 don't actually push the chassis around — we haven't built that physics. So we
 close the loop **ourselves**: pretend the robot rotates at the rate we just
-commanded, and inject that back into the fake gyro. Update `simulationPeriodic()`:
+commanded, and inject that back into the fake gyro.
+
+**Edit `simulationPeriodic()`** — add the integration below the existing module
+loop:
 
 ```java
 @Override
@@ -282,6 +294,11 @@ thing that's oscillating:
 3. **Zero the gyro at teleop start:** call `m_gyro.setYaw(0)` inside a
    `runOnce(...)` bound to a button, so "forward" is always relative to where
    you're pointed *now*.
+4. **Keep the CAN-ID habit going:** the gyro went in as a literal,
+   `new Pigeon2(0)`. Move that `0` into `DriveConstants` as `kGyroPort` — right
+   alongside the eight motor ports from Lesson 7 — and use
+   `new Pigeon2(DriveConstants.kGyroPort)`. Every CAN ID your robot owns now
+   lives in one place.
 
 ---
 

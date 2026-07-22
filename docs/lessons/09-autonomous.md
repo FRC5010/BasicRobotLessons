@@ -42,8 +42,9 @@ For distance we need one more finish-on-its-own command — this time at the
 
 Lesson 6 had a per-module `driveDistance`. The same shape works for the chassis
 — reset one wheel's odometer, drive all four forward at a fixed speed, stop when
-the wheel has covered the distance. Add it to `Drivetrain`, with the other
-command factories:
+the wheel has covered the distance.
+
+**Add to `Drivetrain`, with the other command factories:**
 
 ```java
 /** Drive straight forward 'meters' at 40% power. Finishes on its own. */
@@ -69,7 +70,8 @@ the TalonFX — but that was *inside* `DriveModule`, where the motor is visible.
 The Drivetrain can't do that: `m_driveMotor` is `private` to the module, and
 that's encapsulation doing its job — outsiders don't get to poke a module's
 hardware. What the module can do is offer a named, intention-revealing method.
-Add to `SwerveModule`, with its other public methods:
+
+**Add to `SwerveModule`, with its other public methods:**
 
 ```java
 /** Zero the drive encoder — start measuring distance from *here*. */
@@ -91,8 +93,10 @@ pattern is starting to feel routine, good — routine is the point.
 ## 3. Build the routine
 
 Now the fun part: writing the plan. `commands/Autos.java` is the home for auto
-factories — the template shipped one with an example in it. Replace the example
-with a routine that takes your subsystem and returns a sequence:
+factories — the template shipped one with an example in it.
+
+**Replace the contents of `commands/Autos.java` with** a routine that takes
+your subsystem and returns a sequence:
 
 ```java
 package frc.robot.commands;
@@ -129,6 +133,15 @@ this class; just use its static methods."
 Read the method like a sentence: *drive a meter, turn to ninety, drive a meter.*
 Good auto code reads like the plan you'd say out loud.
 
+That rewrite orphaned the last of the template's example code — the `Autos`
+you just replaced was the only thing still using it.
+
+**Delete `commands/ExampleCommand.java` and `subsystems/ExampleSubsystem.java`.**
+They came with the template as a demo; nothing references them anymore, and a
+dead file is one more thing to confuse you later. (`RobotContainer` still
+constructs an `ExampleSubsystem` — you'll clear that line out in section 4 when
+you rewire autonomous.)
+
 > `andThen` from Lesson 6 does the same thing for two commands (`a.andThen(b)`);
 > `Commands.sequence(a, b, c, ...)` is the clean way to chain *many*. Use
 > whichever reads better.
@@ -138,7 +151,11 @@ Good auto code reads like the plan you'd say out loud.
 ## 4. Hand it to the robot
 
 `RobotContainer` already has a `getAutonomousCommand()` method — it's been
-sitting in the template since Lesson 0, waiting. Replace its body:
+sitting in the template since Lesson 0, waiting.
+
+**Delete the `m_exampleSubsystem` field and its `import`** from
+`RobotContainer` — with the example auto gone, nothing uses it. Then **replace
+`getAutonomousCommand()`'s body:**
 
 ```java
   public Command getAutonomousCommand() {
@@ -183,7 +200,10 @@ want to go?* That's exactly what cosine measures. Pointed perfectly
 (`error = 0°`), `cos = 1` — drive full speed. Pointed 60° off, `cos = 0.5` —
 half of the rolling would be useful, so drive at half. Pointed sideways
 (`90°`), `cos = 0` — nothing you drive goes the right way, so don't drive at
-all. Update the drive line in `SwerveModule.setDesiredState(...)`:
+all.
+
+**Edit the drive line in `SwerveModule.setDesiredState(...)`** to scale by that
+cosine:
 
 ```java
 /** One tick of control: steer toward 'angleDegrees', drive at 'speedFraction'. */
@@ -249,25 +269,30 @@ auto got picked is an *input* to the robot — and inputs are exactly the kind
 of thing you've been logging since Lesson 3. AdvantageKit's
 **`LoggedDashboardChooser`** does both jobs at once: it publishes a drop-down
 the dashboard can set, and it records the selection in the log, so you can
-always tell from a log file which auto ran. Add to `RobotContainer`:
+always tell from a log file which auto ran.
+
+**Add to `RobotContainer`'s imports:**
 
 ```java
-// imports:
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 ```
 
+**Add to `RobotContainer`, with the other fields:**
+
 ```java
-public class RobotContainer {
-  // ...with the other fields:
   private final LoggedDashboardChooser<Command> m_autoChooser =
       new LoggedDashboardChooser<>("Auto Choice");
 ```
 
+**Add to the `RobotContainer` constructor** (the options the drop-down offers):
+
 ```java
-  // in the constructor:
   m_autoChooser.addDefaultOption("Drive-Turn-Drive", Autos.driveTurnDrive(m_drivetrain));
   m_autoChooser.addOption("Do Nothing", Commands.none());
 ```
+
+**Replace `getAutonomousCommand()`'s body again** — hand back whatever the
+chooser has selected instead of the hard-coded routine:
 
 ```java
   public Command getAutonomousCommand() {

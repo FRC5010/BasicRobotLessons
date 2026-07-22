@@ -55,7 +55,7 @@ tick** — perfect for reading a stick that keeps changing.
 
 Now the twist that makes lambdas genuinely powerful: a lambda is a *value*,
 just like `3.7` or a `TalonFX` object. You can store it in a variable, pass it
-into a method, and run it later. Code, stored as data. And like every value in
+into a method, and run it later. **Code, stored as data.** And like every value in
 Java, it needs a type. **`DoubleSupplier`** is the type for a lambda that
 takes no arguments and *returns a double*:
 
@@ -65,8 +65,8 @@ double position = stickReader.getAsDouble();  // runs the stored code right now
 ```
 
 Read that first line the same way you read `TalonFX driveMotor = new
-TalonFX(1)` in Lesson 1 — type, name, value — except this time the value is a
-piece of code. Nothing runs when the variable is assigned; the code just sits
+TalonFX(1)` in Lesson 1 — type, name, value — except this time the *value* is a
+*piece of code*. Nothing runs when the variable is assigned; the code just sits
 there, stored. Calling `stickReader.getAsDouble()` is what runs it, and it
 hands back whatever the code returned. Call it every tick, get the stick's
 position every tick — exactly the fetch-it-fresh behavior section 1 said we
@@ -167,7 +167,7 @@ the wiring:
 ```
 
 Read the new statement inside-out. `() -> -m_driverController.getLeftY()` is a
-`DoubleSupplier` lambda — re-asked every tick, so it always reflects where the
+`DoubleSupplier` lambda — and it's re-asked every tick, so it always reflects where the
 stick is *right now*. And that **minus sign** is doing real work: on Xbox
 sticks, pushing *forward* reads *negative*. Negating makes "push forward" =
 "positive speed" = "drive forward." Small detail, endless confusion if you

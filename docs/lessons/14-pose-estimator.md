@@ -175,8 +175,8 @@ public class Drivetrain extends SubsystemBase implements PoseProvider {
 ```
 
 Then **delete** the pose machinery that used to live here — the
-`m_odometry` field, `getPose()`, the `m_field`/`Field2d`, the
-`SmartDashboard.putData` in the constructor, and the odometry `update` and
+`m_odometry` field, `getPose()`, `resetPose(...)`, the `m_field`/`Field2d`,
+the `SmartDashboard.putData` in the constructor, and the odometry `update` and
 pose log from `periodic()`. All of it moved to the `Localizer`. In its place,
 three small getters and the provider method:
 
@@ -214,10 +214,22 @@ and it does, because the scheduler ticks subsystems in construction order, and
 you'll build `m_drivetrain` before `m_localizer`. Declare them in that order
 and the dependency takes care of itself.
 
-Any command that used to ask the drivetrain for its pose — Lesson 11's
-`driveToPose` sketch — now asks the localizer instead. Pass the localizer's
-`getPose` in, or hand the command the `Localizer`; the pose simply lives
-somewhere new.
+One method used to ask the drivetrain for its own pose — Lesson 11's
+`driveToPose` sketch. The pose lives somewhere new now, so the command asks
+for it instead of owning it.
+
+**Change `driveToPose`'s signature to take the pose as a supplier:**
+
+```java
+  /** Drive toward a field-coordinate pose. The pose now comes from the Localizer. */
+  public Command driveToPose(Pose2d target, Supplier<Pose2d> pose) {
+    // ...same body as Lesson 11, with every getPose() swapped for pose.get()...
+  }
+```
+
+A caller hands it the localizer's getter — `driveToPose(target,
+() -> m_localizer.getPose())` — the same supplier-lambda move the joystick
+bindings have used all along.
 
 ---
 
@@ -372,15 +384,21 @@ someday with no change to the localizer at all. Corrections arrive through
 `addVisionMeasurement` carrying a **timestamp**, so the estimator can rewind,
 blend where it belongs, and roll forward.
 
-And that's the course — for real this time. Fourteen lessons ago, printing a
-line of text was an achievement. Now you have a field-relative swerve robot
-with firmware closed-loop control, organized telemetry, deterministic replay,
-and a self-correcting pose fused from pluggable sources — and every piece of
-it is something you typed and can explain. Where the road goes from here:
+Fourteen lessons ago, printing a line of text was an achievement. Now you
+have a field-relative swerve robot with firmware closed-loop control,
+organized telemetry, deterministic replay, and a self-correcting pose fused
+from pluggable sources — and every piece of it is something you typed and
+can explain.
 
-- **A real camera:** PhotonVision + AprilTags produce exactly what
-  `reportSighting` wants — a pose and a capture timestamp. Your fake provider
-  becomes a real one, registered the same way, and nothing else changes.
+One provider in that fusion is still pretend, though — `VisionPoseProvider`
+only reports what a button tells it to. Lesson 15 replaces it with the real
+thing: an actual PhotonVision camera reading actual AprilTags, plus the
+ability to simulate more of them than you own. Watch how much of
+`Localizer` has to change to accept it. (Spoiler: none.)
+
+Beyond that, two more directions worth knowing about, whenever you're ready
+for them:
+
 - **Trajectory following:** `PathPlanner` or `Choreo` turn a drawn path into a
   timed trajectory, chased with the `driveToPose` pattern from Lesson 11 —
   now running on a pose you can finally trust.
@@ -388,5 +406,7 @@ it is something you typed and can explain. Where the road goes from here:
   commands, IO layer, logged inputs — the same spine, one more time, and the
   second time it takes a tenth as long.
 
-Wherever you go, you're not starting over. You're reusing the spine — and
-now you know how it holds up.
+Wherever those take you, you're not starting over. You're reusing the
+spine — and now you know how it holds up.
+
+Next: [Lesson 15 — Real vision: PhotonVision and multi-camera simulation](15-photonvision.md).

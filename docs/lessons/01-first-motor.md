@@ -28,7 +28,7 @@ these — all clicking, no downloads, no URLs:
    the vendor dependency manager.
 2. In the list of available dependencies, find the two CTRE entries —
    **Phoenix 6** and **Phoenix 5** — and install both.
-3. Rebuild: `./gradlew build`.
+3. Rebuild: `./gradlew build`. (Ctrl-Shift-P **WPILib: Build Robot Code**)
 
 Why both? This course only uses Phoenix 6, but CTRE's older devices (the
 Talon SRX / Victor SPX generation) speak Phoenix 5, and real robots usually
@@ -345,8 +345,9 @@ the course.
 2. Change `m_driveMotor`'s CAN ID and rebuild. Nothing breaks in sim — IDs only
    matter on the real robot, but get in the habit of setting them deliberately.
 3. Move the CAN ID out of the code and into `Constants.java` as a named constant
-   (e.g. `public static final int kDriveMotorId = 1;`) and use it in the subsystem.
-   This is where robot numbers *should* live.
+   in a nested `DriveConstants` class (`public static final int kDriveMotorPort = 1;`)
+   and use it in the subsystem as `Constants.DriveConstants.kDriveMotorPort`. This
+   is where robot numbers *should* live.
 
 ---
 

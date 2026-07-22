@@ -10,6 +10,8 @@ recompute the whole match, even after you've changed the code.
 - **Anonymous classes** — `new ModuleIO() {}`, a nameless do-nothing implementation
 - **Enums** — a type with a fixed menu of values (`REAL`, `SIM`, `REPLAY`)
 - **Annotations that generate code** — `@AutoLog` and the class it writes for you
+- **Subclassing your own class** — `extends`, `protected`, and `super`
+- **`switch` expressions** — one arm per enum value, checked by the compiler
 
 **New robot concepts**
 - **Inputs vs. outputs** — sensor readings come *in*, computed values go *out*
@@ -127,66 +129,60 @@ requirement, made into a type.
 
 ## 4. The hardware implementation: `ModuleIOTalonFX`
 
-Now the hardware moves house. Everything physical in `SwerveModule` — the
-motors, the Lesson 12 configs, the control requests, and the sim plumbing
-from Lessons 4–7 — relocates into a class that **implements** the contract.
+Now the hardware moves house. The motors, the CANcoder, the Lesson 12
+configs, and the control requests relocate from `SwerveModule` into a class
+that **implements** the contract — and *only* those. The sim plumbing from
+Lessons 4–7 does **not** come along; it gets its own implementation in the
+next section, so this class stays a clean picture of the real robot.
 Create `src/main/java/frc/robot/subsystems/ModuleIOTalonFX.java` and build
 it in three pieces.
 
 **Piece 1 — fields and constructor.** These migrate from `SwerveModule`
-almost verbatim; the only change is that the class line now says
-`implements ModuleIO`:
+almost verbatim; the class line now says `implements ModuleIO`, and the
+motors and CANcoder are `protected` instead of `private` — more on that
+word in the next section:
 
 ```java
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
+
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
+import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.sim.TalonFXSimState;
+import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 
-import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.math.system.plant.LinearSystemId;
-import edu.wpi.first.wpilibj.RobotBase;
-import edu.wpi.first.wpilibj.RobotController;
-import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.SteerConstants;
 
 public class ModuleIOTalonFX implements ModuleIO {
-  private final TalonFX m_driveMotor;
-  private final TalonFX m_steerMotor;
+  protected final TalonFX m_driveMotor;
+  protected final TalonFX m_steerMotor;
+  protected final CANcoder m_steerEncoder;
   private final PositionVoltage m_steerRequest = new PositionVoltage(0);
   private final VelocityVoltage m_driveRequest = new VelocityVoltage(0);
 
-  // Sim plumbing — the same objects you've carried since Lessons 4-7.
-  private final TalonFXSimState m_driveSim;
-  private final TalonFXSimState m_steerSim;
-  private final DCMotorSim m_driveModel = /* same as Lesson 6 */;
-  private final DCMotorSim m_steerModel = /* same as Lesson 7 */;
-
-  public ModuleIOTalonFX(int driveId, int steerId) {
+  public ModuleIOTalonFX(int driveId, int steerId, int cancoderId, double magnetOffsetRotations) {
     m_driveMotor = new TalonFX(driveId);
     m_steerMotor = new TalonFX(steerId);
-    m_driveSim = m_driveMotor.getSimState();
-    m_steerSim = m_steerMotor.getSimState();
+    m_steerEncoder = new CANcoder(cancoderId);
 
-    // ...the two TalonFXConfiguration blocks from Lesson 12, unchanged...
+    // ...the CANcoderConfiguration block and the two TalonFXConfiguration
+    // blocks from Lesson 12, unchanged...
   }
 ```
 
 **Piece 2 — the read.** `updateInputs` fills the inputs bundle from the
-sensors. In sim, it first advances the physics — the four-step loops that
-used to live in `simulationPeriodic()` move into a private `stepSim()`
-helper, called only when there's no real robot:
+sensors — nothing else. No sim checks, no physics: on the real robot the
+sensors just *have* values, and this class is the real robot:
 
 ```java
   @Override
   public void updateInputs(ModuleIOInputs inputs) {
-    if (RobotBase.isSimulation()) {
-      stepSim(); // the drive and steer four-step blocks from Lessons 4-7, verbatim
-    }
     inputs.steerAngleDegrees =
         m_steerMotor.getPosition().getValueAsDouble() * 360.0;
     inputs.drivePositionMeters =
@@ -197,18 +193,22 @@ helper, called only when there's no real robot:
 ```
 
 **Piece 3 — the writes.** Each one is a Lesson 12 line wearing an
-`@Override`:
+`@Override`. Now that the target arrives as a plain `double` (the IO
+contract speaks degrees and meters-per-second), wrap it in the matching
+unit measure on the way into Phoenix — `Degrees.of(...)` and
+`RotationsPerSecond.of(...)`, exactly as Lesson 12 did:
 
 ```java
   @Override
   public void setSteerAngleDegrees(double angleDegrees) {
-    m_steerMotor.setControl(m_steerRequest.withPosition(angleDegrees / 360.0));
+    // Phoenix speaks Units — hand it the angle as a measure.
+    m_steerMotor.setControl(m_steerRequest.withPosition(Degrees.of(angleDegrees)));
   }
 
   @Override
   public void setDriveVelocityMetersPerSec(double mps) {
-    m_driveMotor.setControl(
-        m_driveRequest.withVelocity(mps / DriveConstants.kWheelCircumferenceMeters));
+    double wheelRps = mps / DriveConstants.kWheelCircumferenceMeters;
+    m_driveMotor.setControl(m_driveRequest.withVelocity(RotationsPerSecond.of(wheelRps)));
   }
 
   @Override
@@ -218,12 +218,90 @@ helper, called only when there's no real robot:
 }
 ```
 
-Nothing in this file is *new* — it's Lessons 4 through 12, re-shelved. The
-work of this lesson isn't inventing behavior; it's drawing a boundary.
+Nothing in this file is *new* — it's Lesson 12, re-shelved. The work of
+this lesson isn't inventing behavior; it's drawing a boundary.
 
 ---
 
-## 5. `SwerveModule` goes hardware-free
+## 5. The sim implementation: `ModuleIOSim`
+
+So where did the sim plumbing go? Into its own IO implementation — that's
+the whole point of the boundary you just drew: **each world the code can
+wake up in gets its own hardware class.** The real robot gets
+`ModuleIOTalonFX`; the simulator gets `ModuleIOSim`.
+
+Here's the design question, though. In sim you still want Phoenix's
+simulated firmware running the closed loops (that was Lesson 12's payoff —
+the same configs and gains work on the desktop), so `ModuleIOSim` isn't
+*instead of* the TalonFX class — it's the TalonFX class *plus* the physics
+models. Java has a word for "that class, plus": **`extends`**. You've been
+writing `extends SubsystemBase` since Lesson 1; this is the first time you
+extend a class *you* wrote. The subclass inherits every field and method of
+its parent and only writes down what's different.
+
+**Create `src/main/java/frc/robot/subsystems/ModuleIOSim.java`:**
+
+```java
+package frc.robot.subsystems;
+
+import com.ctre.phoenix6.sim.CANcoderSimState;
+import com.ctre.phoenix6.sim.TalonFXSimState;
+
+import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.system.plant.LinearSystemId;
+import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.simulation.DCMotorSim;
+import frc.robot.Constants.DriveConstants;
+import frc.robot.Constants.SteerConstants;
+
+public class ModuleIOSim extends ModuleIOTalonFX {
+  // Sim plumbing — the same objects you've carried since Lessons 4-7,
+  // plus the CANcoder sim state Lesson 12 added.
+  private final TalonFXSimState m_driveSim;
+  private final TalonFXSimState m_steerSim;
+  private final CANcoderSimState m_steerEncoderSim;
+  private final DCMotorSim m_driveModel = /* same as Lesson 6 */;
+  private final DCMotorSim m_steerModel = /* same as Lesson 7 */;
+
+  public ModuleIOSim(int driveId, int steerId, int cancoderId, double magnetOffsetRotations) {
+    super(driveId, steerId, cancoderId, magnetOffsetRotations); // build motors, CANcoder, and configs
+    m_driveSim = m_driveMotor.getSimState();
+    m_steerSim = m_steerMotor.getSimState();
+    m_steerEncoderSim = m_steerEncoder.getSimState();
+  }
+
+  @Override
+  public void updateInputs(ModuleIOInputs inputs) {
+    stepSim(); // advance the physics one tick...
+    super.updateInputs(inputs); // ...then read the sensors like the real class
+  }
+
+  /** One tick of pretend reality. */
+  private void stepSim() {
+    // ...the drive and steer four-step blocks from Lessons 4-7, plus the
+    // CANcoder feed from Lesson 12, verbatim...
+  }
+}
+```
+
+Three pieces of new Java, all pulling in the same direction. **`super(driveId,
+steerId, cancoderId, magnetOffsetRotations)`** in the constructor runs the
+*parent's* constructor first — so the motors and CANcoder exist and the
+configs are applied before the sim states hook onto them. **`super.updateInputs(inputs)`**
+calls the parent's version of the method this class overrides: step the
+physics, then read the sensors exactly the way the real robot would. And
+that **`protected`** from Piece 1 is the reason this compiles — `private`
+means "mine alone," `protected` means "mine and my subclasses'," and
+`ModuleIOSim` needs the motors *and* the CANcoder to reach their sim states.
+
+Step back and look at what the shape buys you: the real class has *zero* sim
+code, the sim class has *zero* new behavior — same firmware loops, same
+gains, same reads — and the physics runs right before the read, so the
+bundle always holds one fresh tick of pretend reality.
+
+---
+
+## 6. `SwerveModule` goes hardware-free
 
 With the hardware gone, `SwerveModule` becomes short and pure: it owns an
 IO (whichever kind), a bundle of inputs, its targets, and the cosine
@@ -320,12 +398,12 @@ array for the Swerve tab afterward; it just calls the read first:
 ```
 
 Delete the module's old `simulationPeriodic()` — the physics lives inside
-`ModuleIOTalonFX` now — and remove the module loop from
+`ModuleIOSim` now — and remove the module loop from
 `Drivetrain.simulationPeriodic()`.
 
 ---
 
-## 6. Three modes, one switch
+## 7. Three modes, one switch
 
 Which IO does a module get? That depends on where the code is running, and
 "where am I running" deserves a proper type. A Java **enum** is a type whose
@@ -351,35 +429,48 @@ modules for the current mode, with a small static helper next to the
 
 ```java
   private final SwerveModule[] m_modules = new SwerveModule[] {
-      makeModule(0, 1, 2, DriveConstants.kFrontLeft),   // CAN IDs — change to yours
-      makeModule(1, 3, 4, DriveConstants.kFrontRight),
-      makeModule(2, 5, 6, DriveConstants.kBackLeft),
-      makeModule(3, 7, 8, DriveConstants.kBackRight)
+      makeModule(0, DriveConstants.kFrontLeftDrivePort, DriveConstants.kFrontLeftSteerPort,
+          DriveConstants.kFrontLeftCancoderPort, DriveConstants.kFrontLeftMagnetOffset,
+          DriveConstants.kFrontLeft),
+      makeModule(1, DriveConstants.kFrontRightDrivePort, DriveConstants.kFrontRightSteerPort,
+          DriveConstants.kFrontRightCancoderPort, DriveConstants.kFrontRightMagnetOffset,
+          DriveConstants.kFrontRight),
+      makeModule(2, DriveConstants.kBackLeftDrivePort, DriveConstants.kBackLeftSteerPort,
+          DriveConstants.kBackLeftCancoderPort, DriveConstants.kBackLeftMagnetOffset,
+          DriveConstants.kBackLeft),
+      makeModule(3, DriveConstants.kBackRightDrivePort, DriveConstants.kBackRightSteerPort,
+          DriveConstants.kBackRightCancoderPort, DriveConstants.kBackRightMagnetOffset,
+          DriveConstants.kBackRight)
   };
 
   private static SwerveModule makeModule(
-      int index, int driveId, int steerId, Translation2d location) {
-    ModuleIO io = Constants.kCurrentMode == Constants.Mode.REPLAY
-        ? new ModuleIO() {}                        // replay: inputs come from the log
-        : new ModuleIOTalonFX(driveId, steerId);   // real & sim: actual hardware objects
+      int index, int driveId, int steerId, int cancoderId, double magnetOffsetRotations,
+      Translation2d location) {
+    ModuleIO io = switch (Constants.kCurrentMode) {
+      case REAL -> new ModuleIOTalonFX(driveId, steerId, cancoderId, magnetOffsetRotations);
+      case SIM -> new ModuleIOSim(driveId, steerId, cancoderId, magnetOffsetRotations);
+      case REPLAY -> new ModuleIO() {}; // inputs come from the log
+    };
     return new SwerveModule(io, "Drivetrain/Module" + index, location);
   }
 ```
 
-That `new ModuleIO() {}` is an **anonymous class** — "a nameless class
-implementing `ModuleIO`, overriding nothing." Every method keeps its
-`default` do-nothing body: reads leave the inputs untouched (replay
-overwrites them from the log anyway), writes go nowhere (there are no
-motors). Ten characters of syntax for "hardware that doesn't exist" — this
-is why the interface's methods got default bodies.
+Enums and **`switch` expressions** are made for each other: one arrow arm
+per mode, and the whole thing *is* a value you can assign. Better, the
+compiler counts the arms against the menu — add a fourth mode next season
+and this line refuses to build until you say what it means. Three worlds,
+three implementations, chosen in one place.
 
-`REAL` and `SIM` share `ModuleIOTalonFX` because Phoenix simulates its own
-firmware — that was Lesson 12's section 5 — so the only mode that needs
-different hardware is the one with *no* hardware.
+That `new ModuleIO() {}` in the replay arm is an **anonymous class** — "a
+nameless class implementing `ModuleIO`, overriding nothing." Every method
+keeps its `default` do-nothing body: reads leave the inputs untouched
+(replay overwrites them from the log anyway), writes go nowhere (there are
+no motors). Ten characters of syntax for "hardware that doesn't exist" —
+this is why the interface's methods got default bodies.
 
 ---
 
-## 7. The gyro gets the same treatment
+## 8. The gyro gets the same treatment
 
 Same pattern, smaller scale — read it as a rerun. `GyroIO.java`:
 
@@ -401,29 +492,47 @@ public interface GyroIO {
 }
 ```
 
-`GyroIOPigeon2.java` absorbs the Pigeon *and* Lesson 8's fake-gyro
-integration (the `m_lastCommandedOmega` and `m_simHeadingDegrees` fields
-move here from `Drivetrain`):
+The real implementation is the shortest class in the course — a Pigeon and
+one read. **Create `GyroIOPigeon2.java`:**
 
 ```java
 package frc.robot.subsystems;
 
 import com.ctre.phoenix6.hardware.Pigeon2;
-import edu.wpi.first.wpilibj.RobotBase;
 
 public class GyroIOPigeon2 implements GyroIO {
   private final Pigeon2 m_gyro = new Pigeon2(0); // CAN ID 0 — change to yours
+
+  @Override
+  public void updateInputs(GyroIOInputs inputs) {
+    inputs.yawDegrees = m_gyro.getYaw().getValueAsDouble();
+  }
+}
+```
+
+Notice it doesn't override `setSimRotationRate` at all — the real robot has
+no use for it, so the `default` no-op body is exactly right. That's the
+interface earning its keep from the other direction.
+
+The sim implementation absorbs Lesson 8's fake-gyro integration (the
+`m_lastCommandedOmega` and `m_simHeadingDegrees` fields move here from
+`Drivetrain`) — and look: no Pigeon, no Phoenix, no hardware at all. A
+heading you integrate yourself needs nothing but arithmetic, so unlike the
+module, this sim class doesn't extend the real one — it stands alone.
+**Create `GyroIOSim.java`:**
+
+```java
+package frc.robot.subsystems;
+
+public class GyroIOSim implements GyroIO {
   private double m_lastCommandedOmega = 0.0;
   private double m_simHeadingDegrees  = 0.0;
 
   @Override
   public void updateInputs(GyroIOInputs inputs) {
-    if (RobotBase.isSimulation()) {
-      // Lesson 8's integration, relocated: add rate × time, every tick.
-      m_simHeadingDegrees += m_lastCommandedOmega * 360.0 * 0.020;
-      m_gyro.getSimState().setRawYaw(m_simHeadingDegrees);
-    }
-    inputs.yawDegrees = m_gyro.getYaw().getValueAsDouble();
+    // Lesson 8's integration: add rate × time, every tick.
+    m_simHeadingDegrees += m_lastCommandedOmega * 360.0 * 0.020;
+    inputs.yawDegrees = m_simHeadingDegrees;
   }
 
   @Override
@@ -434,11 +543,15 @@ public class GyroIOPigeon2 implements GyroIO {
 ```
 
 In `Drivetrain`: replace the `m_gyro`, `m_lastCommandedOmega`, and
-`m_simHeadingDegrees` fields with an IO pair —
+`m_simHeadingDegrees` fields with an IO pair, picked by the same
+three-arm switch as the modules —
 
 ```java
-  private final GyroIO m_gyroIO = Constants.kCurrentMode == Constants.Mode.REPLAY
-      ? new GyroIO() {} : new GyroIOPigeon2();
+  private final GyroIO m_gyroIO = switch (Constants.kCurrentMode) {
+    case REAL -> new GyroIOPigeon2();
+    case SIM -> new GyroIOSim();
+    case REPLAY -> new GyroIO() {}; // inputs come from the log
+  };
   private final GyroIOInputsAutoLogged m_gyroInputs = new GyroIOInputsAutoLogged();
 
   /** Robot heading in degrees (CCW positive). */
@@ -468,7 +581,7 @@ sim-only code now lives inside an IO implementation, which is exactly where
 
 ---
 
-## 8. Teach `Robot.java` about replay
+## 9. Teach `Robot.java` about replay
 
 Last plumbing: the logger itself has to know it's replaying. Update the
 constructor from Lesson 3 to branch on the mode:
@@ -503,7 +616,7 @@ nothing is waiting for real time to pass.
 
 ---
 
-## 9. Run a replay
+## 10. Run a replay
 
 The moment of truth, in four steps:
 
@@ -556,11 +669,14 @@ Flip `kSimMode` back to `Mode.SIM` when you're done.
    log. The replayed pose now shows where the robot *would* have thought it
    was with honest wheels. This exact move — fix code, replay a match — is
    how top teams debug odometry.
-3. **Add a mechanism-free IO.** Write `ModuleIOSim` implementing `ModuleIO`
-   with a `DCMotorSim` and a WPILib `PIDController` instead of TalonFXs —
-   no Phoenix at all. Swap it in for `SIM` mode. It's the standard
-   AdvantageKit pattern, and building it will test whether the interface
-   boundary is really as clean as it looks.
+3. **Cut the cord.** `ModuleIOSim` leans on Phoenix's simulated firmware by
+   extending the TalonFX class. Rebuild it standalone: `implements ModuleIO`
+   directly, with a `DCMotorSim` and a WPILib `PIDController` doing the
+   closed loops — no Phoenix at all (the way `GyroIOSim` already works). The
+   CANcoder disappears entirely in this version — there's no remote sensor
+   to wire up when the "firmware" is a `PIDController` you wrote yourself.
+   Building it will test whether the interface boundary is really as clean
+   as it looks — nothing outside the class should need to change.
 
 ---
 
@@ -570,12 +686,14 @@ This was the biggest idea in the course, so here it is small: **a robot
 program is a pure function from inputs to outputs, and if you log the
 inputs, you can run the function again.** Making that true took an
 **interface** with `default` do-nothing methods, an `@AutoLog`-generated
-inputs bundle, hardware implementations that fill it
-(`ModuleIOTalonFX`, `GyroIOPigeon2` — with all the sim plumbing tucked
-inside, where pretend hardware belongs), an **anonymous class** as the
-no-hardware implementation replay needs, and an **enum** to name the three
-worlds the code can wake up in. `Logger.processInputs` is the hinge: writer
-when live, reader when replaying, invisible to everything downstream. Your
+inputs bundle, and one implementation per world: real hardware
+(`ModuleIOTalonFX`, `GyroIOPigeon2`), sim (`ModuleIOSim` **extending** the
+real class to borrow its firmware, `GyroIOSim` standing alone with no
+hardware at all), and an **anonymous class** as the no-hardware
+implementation replay needs — with an **enum** and a **`switch`
+expression** picking between the three worlds in one place.
+`Logger.processInputs` is the hinge: writer when live, reader when
+replaying, invisible to everything downstream. Your
 logic classes — `SwerveModule`, `Drivetrain` — never touch hardware anymore,
 and in exchange they gained a superpower: they can be run against the past.
 One last upgrade remains, and it's about trusting that past less — the pose
