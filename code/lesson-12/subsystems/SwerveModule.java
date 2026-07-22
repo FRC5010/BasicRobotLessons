@@ -2,10 +2,14 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
+import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
+import com.ctre.phoenix6.sim.CANcoderSimState;
 import com.ctre.phoenix6.sim.TalonFXSimState;
 
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -20,8 +24,9 @@ import frc.robot.Constants;
 
 /**
  * One swerve corner. Control now runs on the TalonFX itself: firmware position
- * control for steering, firmware velocity control (with a kV model) for drive.
- * setDesiredState just states the targets.
+ * control for steering (reading a CANcoder, not its own rotor, so the angle is
+ * right the instant the robot boots), firmware velocity control (with a kV
+ * model) for drive. setDesiredState just states the targets.
  */
 public class SwerveModule {
     /** Position of this module relative to robot center, in meters. */
@@ -29,8 +34,10 @@ public class SwerveModule {
 
     private final TalonFX m_driveMotor;
     private final TalonFX m_steerMotor;
+    private final CANcoder m_steerEncoder;
     private final TalonFXSimState m_driveSim;
     private final TalonFXSimState m_steerSim;
+    private final CANcoderSimState m_steerEncoderSim;
 
     // Reused every tick — created once as fields, as Phoenix asks.
     private final PositionVoltage m_steerRequest = new PositionVoltage(0);
@@ -47,16 +54,29 @@ public class SwerveModule {
                             DCMotor.getKrakenX60(1), 0.004, Constants.SteerConstants.kSteerGearRatio),
                     DCMotor.getKrakenX60(1));
 
-    public SwerveModule(int driveId, int steerId, Translation2d location) {
+    public SwerveModule(
+            int driveId, int steerId, int cancoderId, double magnetOffsetRotations,
+            Translation2d location) {
         this.location = location;
         m_driveMotor = new TalonFX(driveId);
         m_steerMotor = new TalonFX(steerId);
+        m_steerEncoder = new CANcoder(cancoderId);
         m_driveSim = m_driveMotor.getSimState();
         m_steerSim = m_steerMotor.getSimState();
+        m_steerEncoderSim = m_steerEncoder.getSimState();
 
-        // Steering: firmware knows the gearbox, wraps like a circle, holds a P gain.
+        // The CANcoder's raw zero is wherever its magnet sits — MagnetOffset
+        // shifts that to "wheel pointing forward."
+        CANcoderConfiguration cancoderConfig = new CANcoderConfiguration();
+        cancoderConfig.MagnetSensor.MagnetOffset = magnetOffsetRotations;
+        m_steerEncoder.getConfigurator().apply(cancoderConfig);
+
+        // Steering: read angle from the CANcoder, wrap like a circle, hold a P gain.
         TalonFXConfiguration steerConfig = new TalonFXConfiguration();
-        steerConfig.Feedback.SensorToMechanismRatio = Constants.SteerConstants.kSteerGearRatio;
+        steerConfig.Feedback.FeedbackRemoteSensorID = cancoderId;
+        steerConfig.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;
+        steerConfig.Feedback.RotorToSensorRatio = Constants.SteerConstants.kSteerGearRatio;
+        steerConfig.Feedback.SensorToMechanismRatio = 1.0;
         steerConfig.ClosedLoopGeneral.ContinuousWrap = true;
         steerConfig.Slot0.kP = Constants.SteerConstants.kSteerKP;
         m_steerMotor.getConfigurator().apply(steerConfig);
@@ -94,7 +114,7 @@ public class SwerveModule {
                 Rotation2d.fromDegrees(getSteerAngleDegrees()));
     }
 
-    /** Current steering angle in degrees (firmware already applied the gear ratio). */
+    /** Current steering angle in degrees (the CANcoder, via RemoteCANcoder feedback). */
     public double getSteerAngleDegrees() {
         return m_steerMotor.getPosition().getValueAsDouble() * 360.0; // mechanism rotations → degrees
     }
@@ -111,7 +131,7 @@ public class SwerveModule {
 
     /** Steps the drive and steer physics one tick. Called by the Drivetrain in sim. */
     public void simulationPeriodic() {
-        // The sim state is always rotor-side (upstream of SensorToMechanismRatio),
+        // The sim state is always rotor-side (upstream of any ratio math),
         // so we still multiply the model's mechanism motion back to the rotor.
         m_driveSim.setSupplyVoltage(RobotController.getBatteryVoltage());
         m_driveModel.setInputVoltage(m_driveSim.getMotorVoltage());
@@ -128,5 +148,10 @@ public class SwerveModule {
                 m_steerModel.getAngularPositionRotations() * Constants.SteerConstants.kSteerGearRatio);
         m_steerSim.setRotorVelocity(
                 m_steerModel.getAngularVelocityRPM() * Constants.SteerConstants.kSteerGearRatio / 60.0);
+
+        // The steer closed loop reads the CANcoder now, not the rotor — keep its
+        // sim state honest too. No gear multiply: it sits 1:1 on the wheel.
+        m_steerEncoderSim.setRawPosition(m_steerModel.getAngularPositionRotations());
+        m_steerEncoderSim.setVelocity(m_steerModel.getAngularVelocityRPM() / 60.0);
     }
 }

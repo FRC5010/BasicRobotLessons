@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix6.sim.CANcoderSimState;
 import com.ctre.phoenix6.sim.TalonFXSimState;
 
 import edu.wpi.first.math.system.plant.DCMotor;
@@ -17,6 +18,7 @@ import frc.robot.Constants.SteerConstants;
 public class ModuleIOSim extends ModuleIOTalonFX {
     private final TalonFXSimState m_driveSim;
     private final TalonFXSimState m_steerSim;
+    private final CANcoderSimState m_steerEncoderSim;
     private final DCMotorSim m_driveModel =
             new DCMotorSim(
                     LinearSystemId.createDCMotorSystem(
@@ -28,10 +30,11 @@ public class ModuleIOSim extends ModuleIOTalonFX {
                             DCMotor.getKrakenX60(1), 0.004, SteerConstants.kSteerGearRatio),
                     DCMotor.getKrakenX60(1));
 
-    public ModuleIOSim(int driveId, int steerId) {
-        super(driveId, steerId); // build motors and configs exactly like the real robot
+    public ModuleIOSim(int driveId, int steerId, int cancoderId, double magnetOffsetRotations) {
+        super(driveId, steerId, cancoderId, magnetOffsetRotations); // build motors, CANcoder, and configs
         m_driveSim = m_driveMotor.getSimState();
         m_steerSim = m_steerMotor.getSimState();
+        m_steerEncoderSim = m_steerEncoder.getSimState();
     }
 
     @Override
@@ -57,5 +60,10 @@ public class ModuleIOSim extends ModuleIOTalonFX {
                 m_steerModel.getAngularPositionRotations() * SteerConstants.kSteerGearRatio);
         m_steerSim.setRotorVelocity(
                 m_steerModel.getAngularVelocityRPM() * SteerConstants.kSteerGearRatio / 60.0);
+
+        // The steer closed loop reads the CANcoder now, not the rotor — keep its
+        // sim state honest too. No gear multiply: it sits 1:1 on the wheel.
+        m_steerEncoderSim.setRawPosition(m_steerModel.getAngularPositionRotations());
+        m_steerEncoderSim.setVelocity(m_steerModel.getAngularVelocityRPM() / 60.0);
     }
 }

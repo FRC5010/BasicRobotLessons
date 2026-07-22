@@ -29,12 +29,16 @@ public class Drivetrain extends SubsystemBase {
     // Corner order: FL, FR, BL, BR. Each module gets an IO chosen by the mode.
     private final SwerveModule[] m_modules = new SwerveModule[] {
             makeModule(0, DriveConstants.kFrontLeftDrivePort, DriveConstants.kFrontLeftSteerPort,
+                    DriveConstants.kFrontLeftCancoderPort, DriveConstants.kFrontLeftMagnetOffset,
                     DriveConstants.kFrontLeft),
             makeModule(1, DriveConstants.kFrontRightDrivePort, DriveConstants.kFrontRightSteerPort,
+                    DriveConstants.kFrontRightCancoderPort, DriveConstants.kFrontRightMagnetOffset,
                     DriveConstants.kFrontRight),
             makeModule(2, DriveConstants.kBackLeftDrivePort, DriveConstants.kBackLeftSteerPort,
+                    DriveConstants.kBackLeftCancoderPort, DriveConstants.kBackLeftMagnetOffset,
                     DriveConstants.kBackLeft),
             makeModule(3, DriveConstants.kBackRightDrivePort, DriveConstants.kBackRightSteerPort,
+                    DriveConstants.kBackRightCancoderPort, DriveConstants.kBackRightMagnetOffset,
                     DriveConstants.kBackRight)
     };
 
@@ -64,10 +68,11 @@ public class Drivetrain extends SubsystemBase {
 
     /** Pick a module's IO from the current mode: one implementation per world. */
     private static SwerveModule makeModule(
-            int index, int driveId, int steerId, Translation2d location) {
+            int index, int driveId, int steerId, int cancoderId, double magnetOffsetRotations,
+            Translation2d location) {
         ModuleIO io = switch (Constants.kCurrentMode) {
-            case REAL -> new ModuleIOTalonFX(driveId, steerId); // actual hardware
-            case SIM -> new ModuleIOSim(driveId, steerId); // hardware + physics models
+            case REAL -> new ModuleIOTalonFX(driveId, steerId, cancoderId, magnetOffsetRotations);
+            case SIM -> new ModuleIOSim(driveId, steerId, cancoderId, magnetOffsetRotations);
             case REPLAY -> new ModuleIO() {}; // inputs come from the log
         };
         return new SwerveModule(io, "Drivetrain/Module" + index, location);

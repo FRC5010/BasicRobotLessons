@@ -4,73 +4,77 @@ import static edu.wpi.first.units.Units.MetersPerSecond;
 
 import java.util.function.Supplier;
 
+import com.ctre.phoenix6.hardware.Pigeon2;
+
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.HeadingConstants;
 
-public class Drivetrain extends SubsystemBase implements PoseProvider {
-    // Corner order: FL, FR, BL, BR. Each module gets an IO chosen by the mode.
+public class Drivetrain extends SubsystemBase {
+    // Corner order: FL, FR, BL, BR. Pick a convention and stick to it.
     private final SwerveModule[] m_modules = new SwerveModule[] {
-            makeModule(0, DriveConstants.kFrontLeftDrivePort, DriveConstants.kFrontLeftSteerPort,
+            new SwerveModule(DriveConstants.kFrontLeftDrivePort, DriveConstants.kFrontLeftSteerPort,
                     DriveConstants.kFrontLeftCancoderPort, DriveConstants.kFrontLeftMagnetOffset,
                     DriveConstants.kFrontLeft),
-            makeModule(1, DriveConstants.kFrontRightDrivePort, DriveConstants.kFrontRightSteerPort,
+            new SwerveModule(DriveConstants.kFrontRightDrivePort, DriveConstants.kFrontRightSteerPort,
                     DriveConstants.kFrontRightCancoderPort, DriveConstants.kFrontRightMagnetOffset,
                     DriveConstants.kFrontRight),
-            makeModule(2, DriveConstants.kBackLeftDrivePort, DriveConstants.kBackLeftSteerPort,
+            new SwerveModule(DriveConstants.kBackLeftDrivePort, DriveConstants.kBackLeftSteerPort,
                     DriveConstants.kBackLeftCancoderPort, DriveConstants.kBackLeftMagnetOffset,
                     DriveConstants.kBackLeft),
-            makeModule(3, DriveConstants.kBackRightDrivePort, DriveConstants.kBackRightSteerPort,
+            new SwerveModule(DriveConstants.kBackRightDrivePort, DriveConstants.kBackRightSteerPort,
                     DriveConstants.kBackRightCancoderPort, DriveConstants.kBackRightMagnetOffset,
                     DriveConstants.kBackRight)
     };
 
+    // Built from the module locations — must sit below m_modules.
     private final SwerveDriveKinematics m_kinematics = new SwerveDriveKinematics(
             m_modules[0].location,
             m_modules[1].location,
             m_modules[2].location,
             m_modules[3].location);
 
-    private final GyroIO m_gyroIO = switch (Constants.kCurrentMode) {
-        case REAL -> new GyroIOPigeon2();
-        case SIM -> new GyroIOSim();
-        case REPLAY -> new GyroIO() {}; // inputs come from the log
-    };
-    private final GyroIOInputsAutoLogged m_gyroInputs = new GyroIOInputsAutoLogged();
+    private final Pigeon2 m_gyro = new Pigeon2(DriveConstants.kGyroPort); // CAN ID 0 — change to yours
 
-    /** Pick a module's IO from the current mode: one implementation per world. */
-    private static SwerveModule makeModule(
-            int index, int driveId, int steerId, int cancoderId, double magnetOffsetRotations,
-            Translation2d location) {
-        ModuleIO io = switch (Constants.kCurrentMode) {
-            case REAL -> new ModuleIOTalonFX(driveId, steerId, cancoderId, magnetOffsetRotations);
-            case SIM -> new ModuleIOSim(driveId, steerId, cancoderId, magnetOffsetRotations);
-            case REPLAY -> new ModuleIO() {}; // inputs come from the log
-        };
-        return new SwerveModule(io, "Drivetrain/Module" + index, location);
+    // Remembered for the sim: what rotation rate did we just command?
+    private double m_lastCommandedOmega = 0.0;
+    private double m_simHeadingDegrees = 0.0;
+
+    // Reads kinematics + gyro + module positions, so it sits below all three.
+    private final SwerveDriveOdometry m_odometry = new SwerveDriveOdometry(
+            m_kinematics,
+            Rotation2d.fromDegrees(getHeadingDegrees()),
+            modulePositions());
+
+    private final Field2d m_field = new Field2d();
+
+    public Drivetrain() {
+        SmartDashboard.putData("Field", m_field); // top-down field view inside SimGUI
     }
 
     /** One tick of chassis motion: convert, desaturate, optimize, command. */
     private void applyChassisSpeeds(ChassisSpeeds speeds) {
         SwerveModuleState[] states = m_kinematics.toSwerveModuleStates(speeds);
+
+        // desaturateWheelSpeeds takes a LinearVelocity directly — pass kMaxSpeed as-is.
         SwerveDriveKinematics.desaturateWheelSpeeds(states, DriveConstants.kMaxSpeed);
 
-        m_gyroIO.setSimRotationRate(speeds.omegaRadiansPerSecond / (2 * Math.PI)); // rev/s for sim
+        m_lastCommandedOmega = speeds.omegaRadiansPerSecond / (2 * Math.PI); // rev/s for sim
 
         for (int i = 0; i < m_modules.length; i++) {
             states[i].optimize(Rotation2d.fromDegrees(m_modules[i].getSteerAngleDegrees()));
@@ -106,7 +110,7 @@ public class Drivetrain extends SubsystemBase implements PoseProvider {
         return run(() -> {
             double omega = MathUtil.clamp(
                     HeadingConstants.kP * headingError(targetDegrees),
-                    -0.5, 0.5);
+                    -0.5, 0.5); // clamp to ±50% turn power
             commandRotation(omega);
         })
                 .until(() -> Math.abs(headingError(targetDegrees)) < 2.0)
@@ -121,21 +125,21 @@ public class Drivetrain extends SubsystemBase implements PoseProvider {
                         module.setDesiredState(new SwerveModuleState(
                                 DriveConstants.kMaxSpeed.times(0.4), Rotation2d.fromDegrees(0)));
                     }
-                    m_gyroIO.setSimRotationRate(0.0);
+                    m_lastCommandedOmega = 0.0;
                 }))
                 .until(() -> Math.abs(m_modules[0].getDistanceMeters()) >= Math.abs(meters))
                 .finallyDo(() -> {
                     for (SwerveModule module : m_modules) {
-                        module.setDesiredState(new SwerveModuleState());
+                        module.setDesiredState(new SwerveModuleState()); // zero speed, stop
                     }
                 });
     }
 
-    /** Drive toward a field-coordinate pose. The pose now comes from the Localizer. */
-    public Command driveToPose(Pose2d target, Supplier<Pose2d> pose) {
-        double maxMps = DriveConstants.kMaxSpeed.in(MetersPerSecond);
+    /** Drive toward a field-coordinate pose with three stacked P controllers. */
+    public Command driveToPose(Pose2d target) {
+        double maxMps = DriveConstants.kMaxSpeed.in(MetersPerSecond); // hand-rolled P math needs a double
         return run(() -> {
-            Pose2d current = pose.get();
+            Pose2d current = getPose();
             double dx = target.getX() - current.getX();
             double dy = target.getY() - current.getY();
             double vx = MathUtil.clamp(1.5 * dx, -maxMps, maxMps);
@@ -145,36 +149,32 @@ public class Drivetrain extends SubsystemBase implements PoseProvider {
                     -Math.PI, Math.PI);
             applyChassisSpeeds(ChassisSpeeds.fromFieldRelativeSpeeds(
                     vx, vy, omega, current.getRotation()));
-        }).until(() -> pose.get().minus(target).getTranslation().getNorm() < 0.05);
+        }).until(() -> getPose().minus(target).getTranslation().getNorm() < 0.05);
     }
 
-    /** Robot heading in degrees (CCW positive) — read from the gyro's logged inputs. */
+    public Pose2d getPose() {
+        return m_odometry.getPoseMeters();
+    }
+
+    public void resetPose(Pose2d pose) {
+        m_odometry.resetPosition(
+                Rotation2d.fromDegrees(getHeadingDegrees()),
+                modulePositions(),
+                pose);
+    }
+
+    /** Robot heading in degrees (CCW positive). */
     public double getHeadingDegrees() {
-        return m_gyroInputs.yawDegrees;
+        return m_gyro.getYaw().getValueAsDouble();
     }
 
-    public SwerveDriveKinematics getKinematics() {
-        return m_kinematics;
-    }
-
-    /** Heading as a Rotation2d — what the estimator speaks. */
-    public Rotation2d getRotation() {
-        return Rotation2d.fromDegrees(getHeadingDegrees());
-    }
-
-    /** Snapshot the four modules' positions. (Was the private modulePositions() in Lesson 11.) */
-    public SwerveModulePosition[] getModulePositions() {
+    /** Snapshot the four modules' positions into one array — used by odometry. */
+    private SwerveModulePosition[] modulePositions() {
         SwerveModulePosition[] positions = new SwerveModulePosition[m_modules.length];
         for (int i = 0; i < m_modules.length; i++) {
             positions[i] = m_modules[i].getPosition();
         }
         return positions;
-    }
-
-    /** As a PoseProvider, the drivetrain contributes wheel-and-gyro odometry. */
-    @Override
-    public void updatePoseEstimate(SwerveDrivePoseEstimator estimator) {
-        estimator.update(getRotation(), getModulePositions());
     }
 
     /** Signed error to 'target' in degrees, wrapped to (-180, 180]. */
@@ -184,19 +184,36 @@ public class Drivetrain extends SubsystemBase implements PoseProvider {
 
     @Override
     public void periodic() {
-        // Inputs first: refresh + log the gyro, then each module.
-        m_gyroIO.updateInputs(m_gyroInputs);
-        Logger.processInputs("Drivetrain/Gyro", m_gyroInputs);
-
+        // periodic() watches (reads + logs); commands do the acting.
         SwerveModuleState[] states = new SwerveModuleState[4];
-        for (int i = 0; i < m_modules.length; i++) {
-            m_modules[i].periodic(); // refresh + log this module's inputs
-            states[i] = new SwerveModuleState(
-                    m_modules[i].getDriveVelocityMetersPerSec(),
-                    Rotation2d.fromDegrees(m_modules[i].getSteerAngleDegrees()));
+        int index = 0;
+        for (SwerveModule module : m_modules) {
+            Logger.recordOutput("Drivetrain/Module" + index + "/SteerAngleDegrees",
+                    module.getSteerAngleDegrees());
+            states[index] = new SwerveModuleState(
+                    module.getDriveVelocityMetersPerSec(),
+                    Rotation2d.fromDegrees(module.getSteerAngleDegrees()));
+            index++;
         }
         Logger.recordOutput("Drivetrain/ModuleStates", states);
+
+        Logger.recordOutput("Drivetrain/HeadingDegrees", getHeadingDegrees());
         Logger.recordOutput("Drivetrain/Heading", Rotation2d.fromDegrees(getHeadingDegrees()));
-        // Pose tracking moved to the Localizer — it reads these inputs after we refresh them.
+
+        // Fold this tick's motion into the running pose, then log and draw it.
+        m_odometry.update(Rotation2d.fromDegrees(getHeadingDegrees()), modulePositions());
+        Logger.recordOutput("Drivetrain/Pose", getPose());
+        m_field.setRobotPose(getPose());
+    }
+
+    @Override
+    public void simulationPeriodic() {
+        for (SwerveModule module : m_modules) {
+            module.simulationPeriodic();
+        }
+
+        // Integrate the commanded angular rate into a fake heading.
+        m_simHeadingDegrees += m_lastCommandedOmega * 360.0 * 0.020; // one 20 ms tick
+        m_gyro.getSimState().setRawYaw(m_simHeadingDegrees);
     }
 }

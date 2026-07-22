@@ -129,9 +129,9 @@ requirement, made into a type.
 
 ## 4. The hardware implementation: `ModuleIOTalonFX`
 
-Now the hardware moves house. The motors, the Lesson 12 configs, and the
-control requests relocate from `SwerveModule` into a class that
-**implements** the contract — and *only* those. The sim plumbing from
+Now the hardware moves house. The motors, the CANcoder, the Lesson 12
+configs, and the control requests relocate from `SwerveModule` into a class
+that **implements** the contract — and *only* those. The sim plumbing from
 Lessons 4–7 does **not** come along; it gets its own implementation in the
 next section, so this class stays a clean picture of the real robot.
 Create `src/main/java/frc/robot/subsystems/ModuleIOTalonFX.java` and build
@@ -139,8 +139,8 @@ it in three pieces.
 
 **Piece 1 — fields and constructor.** These migrate from `SwerveModule`
 almost verbatim; the class line now says `implements ModuleIO`, and the
-motors are `protected` instead of `private` — more on that word in the
-next section:
+motors and CANcoder are `protected` instead of `private` — more on that
+word in the next section:
 
 ```java
 package frc.robot.subsystems;
@@ -148,10 +148,13 @@ package frc.robot.subsystems;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
+import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.SteerConstants;
@@ -159,14 +162,17 @@ import frc.robot.Constants.SteerConstants;
 public class ModuleIOTalonFX implements ModuleIO {
   protected final TalonFX m_driveMotor;
   protected final TalonFX m_steerMotor;
+  protected final CANcoder m_steerEncoder;
   private final PositionVoltage m_steerRequest = new PositionVoltage(0);
   private final VelocityVoltage m_driveRequest = new VelocityVoltage(0);
 
-  public ModuleIOTalonFX(int driveId, int steerId) {
+  public ModuleIOTalonFX(int driveId, int steerId, int cancoderId, double magnetOffsetRotations) {
     m_driveMotor = new TalonFX(driveId);
     m_steerMotor = new TalonFX(steerId);
+    m_steerEncoder = new CANcoder(cancoderId);
 
-    // ...the two TalonFXConfiguration blocks from Lesson 12, unchanged...
+    // ...the CANcoderConfiguration block and the two TalonFXConfiguration
+    // blocks from Lesson 12, unchanged...
   }
 ```
 
@@ -238,6 +244,7 @@ its parent and only writes down what's different.
 ```java
 package frc.robot.subsystems;
 
+import com.ctre.phoenix6.sim.CANcoderSimState;
 import com.ctre.phoenix6.sim.TalonFXSimState;
 
 import edu.wpi.first.math.system.plant.DCMotor;
@@ -248,16 +255,19 @@ import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.SteerConstants;
 
 public class ModuleIOSim extends ModuleIOTalonFX {
-  // Sim plumbing — the same objects you've carried since Lessons 4-7.
+  // Sim plumbing — the same objects you've carried since Lessons 4-7,
+  // plus the CANcoder sim state Lesson 12 added.
   private final TalonFXSimState m_driveSim;
   private final TalonFXSimState m_steerSim;
+  private final CANcoderSimState m_steerEncoderSim;
   private final DCMotorSim m_driveModel = /* same as Lesson 6 */;
   private final DCMotorSim m_steerModel = /* same as Lesson 7 */;
 
-  public ModuleIOSim(int driveId, int steerId) {
-    super(driveId, steerId); // build motors and configs exactly like the real robot
+  public ModuleIOSim(int driveId, int steerId, int cancoderId, double magnetOffsetRotations) {
+    super(driveId, steerId, cancoderId, magnetOffsetRotations); // build motors, CANcoder, and configs
     m_driveSim = m_driveMotor.getSimState();
     m_steerSim = m_steerMotor.getSimState();
+    m_steerEncoderSim = m_steerEncoder.getSimState();
   }
 
   @Override
@@ -268,20 +278,21 @@ public class ModuleIOSim extends ModuleIOTalonFX {
 
   /** One tick of pretend reality. */
   private void stepSim() {
-    // ...the drive and steer four-step blocks from Lessons 4-7, verbatim...
+    // ...the drive and steer four-step blocks from Lessons 4-7, plus the
+    // CANcoder feed from Lesson 12, verbatim...
   }
 }
 ```
 
 Three pieces of new Java, all pulling in the same direction. **`super(driveId,
-steerId)`** in the constructor runs the *parent's* constructor first — so the
-motors exist and the configs are applied before the sim state hooks onto
-them. **`super.updateInputs(inputs)`** calls the parent's version of the
-method this class overrides: step the physics, then read the sensors exactly
-the way the real robot would. And that **`protected`** from Piece 1 is the
-reason this compiles — `private` means "mine alone," `protected` means "mine
-and my subclasses'," and `ModuleIOSim` needs the motors to reach their sim
-states.
+steerId, cancoderId, magnetOffsetRotations)`** in the constructor runs the
+*parent's* constructor first — so the motors and CANcoder exist and the
+configs are applied before the sim states hook onto them. **`super.updateInputs(inputs)`**
+calls the parent's version of the method this class overrides: step the
+physics, then read the sensors exactly the way the real robot would. And
+that **`protected`** from Piece 1 is the reason this compiles — `private`
+means "mine alone," `protected` means "mine and my subclasses'," and
+`ModuleIOSim` needs the motors *and* the CANcoder to reach their sim states.
 
 Step back and look at what the shape buys you: the real class has *zero* sim
 code, the sim class has *zero* new behavior — same firmware loops, same
@@ -418,18 +429,27 @@ modules for the current mode, with a small static helper next to the
 
 ```java
   private final SwerveModule[] m_modules = new SwerveModule[] {
-      makeModule(0, 1, 2, DriveConstants.kFrontLeft),   // CAN IDs — change to yours
-      makeModule(1, 3, 4, DriveConstants.kFrontRight),
-      makeModule(2, 5, 6, DriveConstants.kBackLeft),
-      makeModule(3, 7, 8, DriveConstants.kBackRight)
+      makeModule(0, DriveConstants.kFrontLeftDrivePort, DriveConstants.kFrontLeftSteerPort,
+          DriveConstants.kFrontLeftCancoderPort, DriveConstants.kFrontLeftMagnetOffset,
+          DriveConstants.kFrontLeft),
+      makeModule(1, DriveConstants.kFrontRightDrivePort, DriveConstants.kFrontRightSteerPort,
+          DriveConstants.kFrontRightCancoderPort, DriveConstants.kFrontRightMagnetOffset,
+          DriveConstants.kFrontRight),
+      makeModule(2, DriveConstants.kBackLeftDrivePort, DriveConstants.kBackLeftSteerPort,
+          DriveConstants.kBackLeftCancoderPort, DriveConstants.kBackLeftMagnetOffset,
+          DriveConstants.kBackLeft),
+      makeModule(3, DriveConstants.kBackRightDrivePort, DriveConstants.kBackRightSteerPort,
+          DriveConstants.kBackRightCancoderPort, DriveConstants.kBackRightMagnetOffset,
+          DriveConstants.kBackRight)
   };
 
   private static SwerveModule makeModule(
-      int index, int driveId, int steerId, Translation2d location) {
+      int index, int driveId, int steerId, int cancoderId, double magnetOffsetRotations,
+      Translation2d location) {
     ModuleIO io = switch (Constants.kCurrentMode) {
-      case REAL -> new ModuleIOTalonFX(driveId, steerId); // actual hardware
-      case SIM -> new ModuleIOSim(driveId, steerId);      // hardware + physics models
-      case REPLAY -> new ModuleIO() {};                   // inputs come from the log
+      case REAL -> new ModuleIOTalonFX(driveId, steerId, cancoderId, magnetOffsetRotations);
+      case SIM -> new ModuleIOSim(driveId, steerId, cancoderId, magnetOffsetRotations);
+      case REPLAY -> new ModuleIO() {}; // inputs come from the log
     };
     return new SwerveModule(io, "Drivetrain/Module" + index, location);
   }
@@ -652,7 +672,9 @@ Flip `kSimMode` back to `Mode.SIM` when you're done.
 3. **Cut the cord.** `ModuleIOSim` leans on Phoenix's simulated firmware by
    extending the TalonFX class. Rebuild it standalone: `implements ModuleIO`
    directly, with a `DCMotorSim` and a WPILib `PIDController` doing the
-   closed loops — no Phoenix at all (the way `GyroIOSim` already works).
+   closed loops — no Phoenix at all (the way `GyroIOSim` already works). The
+   CANcoder disappears entirely in this version — there's no remote sensor
+   to wire up when the "firmware" is a `PIDController` you wrote yourself.
    Building it will test whether the interface boundary is really as clean
    as it looks — nothing outside the class should need to change.
 
