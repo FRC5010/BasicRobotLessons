@@ -472,9 +472,10 @@ your own code.
     }
 ```
 
-(`Ctrl+.` will pull in `frc.robot.Constants` and `frc.robot.Constants.DriveConstants`
-— `RobotContainer` has only ever imported the nested constants classes it needed,
-and this is the first line in it that names `Constants` itself.)
+(No new imports for that one. `DriveConstants` has been imported since Lesson 7,
+and `Constants` itself needs no import at all — `RobotContainer` lives in the
+same `frc.robot` package, so it's already in scope. Classes in the same package
+can always see each other; that's what a package *is*.)
 
 That's Lesson 11's "autos start from a known place," applied to the simulator:
 anchor the estimate to the truth once, at the start, and every difference after
