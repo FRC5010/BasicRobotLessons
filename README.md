@@ -67,6 +67,7 @@ let you see everything working on your laptop. Device IDs in the examples
 | 13 | [IO layers & replay](docs/lessons/13-io-replay.md) | Re-run a logged session through changed code | Interfaces, enums, subclassing, annotations |
 | 14 | [Pose estimator & localizer](docs/lessons/14-pose-estimator.md) | A localization subsystem fused from pluggable pose providers | Interfaces, registries, timestamps |
 | 15 | [Real vision — PhotonVision](docs/lessons/15-photonvision.md) | A real, replay-capable PhotonVision pose provider, plus simulated multi-camera coverage | `Optional`, `static` fields, `record` |
+| 16 | [maple-sim — a world to drive in](docs/lessons/16-maple-sim-field.md) | Physics-engine simulation with mass, tire grip, walls, and game pieces | Callbacks, anonymous class bodies |
 
 ### Asides (out of order — read when you need them)
 
