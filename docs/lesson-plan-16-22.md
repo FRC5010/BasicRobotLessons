@@ -1,0 +1,562 @@
+# Lesson plan: 16–22
+
+A working plan for the next stretch of the course. **This is a contributor
+document, not lesson content** — it lives beside `docs/lessons/`, never inside
+it, and nothing here should be pasted into a lesson as-is.
+
+Written one lesson at a time, reviewed between each, same as the voice-rewrite
+pass. Lesson 16 is done; 17–22 are outlines waiting to be drafted.
+
+---
+
+## Status
+
+| # | Working title | Builds on | 3rd-party library | Status |
+|---|---|---|---|---|
+| 16 | maple-sim — a world to drive in | L13 (IO layers), L11 (field views) | `maple-sim` | **Done** — [lesson](lessons/16-maple-sim-field.md), [code](../code/lesson-16/) |
+| 17 | B-Line autos: waypoints and trajectories | L9 (autos), L10 (kinematics), L14 (Localizer) | `BLine-Lib` | Outline |
+| 18 | Scoring elevator | L13 (IO spine), L12 (configs/control requests) | none | Outline |
+| 19 | Mechanism2d for the elevator | L18, L11 (`putData` precedent) | none | Outline |
+| 20 | Intake arm (−20°…180°) + roller | L18/L19, L12 | none | Outline |
+| 21 | Limit sensors / current sensing | L18, L20 | none | Outline |
+| 22 | Light sensors for game-piece handoff | L20, L21 | none | Outline |
+
+16–17 finish the drivetrain half of the course (simulation realism, then real
+path following). 18–22 open the mechanisms half — the "second mechanism" Lesson
+14's epilogue promised — ending with two mechanisms coordinating through
+sensors. That's a real FRC build order: chassis first, scoring second.
+
+---
+
+## Open decisions
+
+### 1. maple-sim integration depth — RESOLVED (deep)
+
+Chose the physics-owning integration over a visualization bolt-on, and built it
+that way in Lesson 16. A shallow version (feed maple-sim your own odometry pose
+just to draw obstacles) would have been a one-way puppet: nothing would actually
+*stop* the chassis at a wall, because maple-sim wouldn't be authoritative over
+position. "Field and obstacles" needs obstacles that push back.
+
+**What that means architecturally, for anyone editing 17+:**
+
+- `SwerveDriveSimulation` is a `private static final` field on `Drivetrain`,
+  built by `createDriveSim()`, **null outside `SIM` mode**. Only the `SIM` arms
+  of the two mode switches read it. `SimulatedArena.getInstance()` *throws* on a
+  real robot, so the null guard is load-bearing, not defensive habit.
+- `ModuleIOSim` still `extends ModuleIOTalonFX`. Phoenix's simulated firmware
+  still runs Lesson 12's closed loops. maple-sim drives it through a
+  `SimulatedMotorController` callback that trades our applied voltage for its
+  motion — see the appendix for the exact contract.
+- `GyroIOSim` now wraps maple-sim's `GyroSimulation`; `GyroIO.setSimRotationRate`
+  is deleted, along with both `Drivetrain` call sites.
+- The arena is stepped **once**, in `Robot.simulationPeriodic()` — the one
+  deliberate exception to Lesson 13's "sim code lives inside IO
+  implementations," because the arena is shared world state, not one device's
+  pretend hardware.
+- Nothing above the IO boundary changed: `SwerveModule`, `Drivetrain`'s
+  commands, `Localizer`, kinematics, autos, and every log key are untouched.
+
+### 2. Elevator/arm control style — STILL OPEN, blocks 18–22
+
+**Recommendation: onboard Phoenix 6 `MotionMagicVoltage` + `Slot0.kG`**, not
+WPILib's `TrapezoidProfile` / `ProfiledPIDController` / `ElevatorFeedforward` /
+`ArmFeedforward`.
+
+Lesson 12 already spent a whole lesson moving control *onto* the TalonFX and
+teaching the `TalonFXConfiguration` / `Slot0` / control-request vocabulary.
+Motion Magic and gravity-type gains are the next control request in that family
+(`Slot0.kG` with `GravityTypeValue.Elevator_Static` / `Arm_Cosine`), so 18 and
+20 read as "one more `Slot0` gain" rather than a second, competing control
+framework.
+
+The tradeoff worth naming: this ties the mechanisms lessons to CTRE hardware the
+same way the drivetrain already is, instead of teaching the vendor-agnostic
+WPILib profiling classes. Given the course is TalonFX-first throughout, that
+seems consistent — but it's the one choice that ripples through five lessons
+(18, 19, 20, 21, 22 all assume it), so **confirm before drafting Lesson 18.**
+
+### Conventions applied without asking
+
+- **Season-generic where possible.** Lesson 15 aliased
+  `AprilTagFields.kDefaultField` rather than naming a season; Lesson 16 leans on
+  maple-sim's own current-season default arena. Keep that habit — but note
+  maple-sim's game-piece *class names* are season-specific by nature
+  (`RebuiltFuelOnField`, type string `"Fuel"`), so those will need a pass each
+  new game.
+- **New mechanisms get their own IO layer** — `ElevatorIO` / `ElevatorIOTalonFX`
+  / `ElevatorIOSim`, `ArmIO` / … — matching `ModuleIO` exactly. Lesson 13 made
+  that the house style; nothing else fits.
+- **Treat both new libraries as young.** maple-sim's docs carry a beta notice
+  and its published examples have already drifted from its source (see
+  appendix). BLine's announcement thread is mid-season with active iteration.
+  Verify every class and method name against current source/Javadoc when
+  drafting — sharper than the standing CTRE caveat in the README.
+
+---
+
+## Repo conventions (discovered while building 16)
+
+Worth writing down, because `CLAUDE.md` currently contradicts the first one.
+
+- **`CLAUDE.md` says this is a "documentation-only" repo with "no Java source,
+  no `build.gradle`." That is not true** — there's a `code/` tree with ~70
+  Java/Gradle/JSON files. Worth correcting.
+- **`code/lesson-N/`** holds *only the files that lesson changes*, mirroring the
+  `frc/robot` package layout: root classes at `code/lesson-N/`, subsystems at
+  `code/lesson-N/subsystems/`, commands at `code/lesson-N/commands/`.
+- **Style splits by directory.** Root files (`Constants`, `Robot`,
+  `RobotContainer`) carry the WPILib copyright header and 2-space indent.
+  `subsystems/` files have no header, use 4-space indent, and open with a class
+  Javadoc. Lesson *markdown* snippets use 2-space throughout regardless — that
+  mismatch is pre-existing and consistent.
+- **`code/ActualLessons/`** is the student's starter project, frozen at roughly
+  Lesson 1 state (`ExampleSubsystem`/`ExampleCommand` still present, only
+  Phoenix 6 + WPILibNewCommands vendordeps). It does **not** track the lesson
+  sequence. Nothing in `code/lesson-N/` is compiled by anything — no lesson code
+  in this repo has ever been build-verified. If that's worth changing, the move
+  is bringing `ActualLessons` up to current state with the four vendordeps
+  (AdvantageKit, Phoenix 6, PhotonLib, maple-sim) so `./gradlew build` actually
+  exercises it.
+
+---
+
+## Housekeeping
+
+- [x] README lessons table row for 16.
+- [x] `Next:` link added to the end of Lesson 15.
+- [ ] **Lesson 16 ends with a link to `17-bline-autos.md`, which does not exist
+      yet.** Dead until 17 lands. Keep the filename or fix the link.
+- [ ] **Lesson 14's epilogue is stale.** It name-drops `PathPlanner`/`Choreo`
+      for trajectory following and sketches "an elevator, a shooter, an intake"
+      as vague future work. Once 17 and 18 exist, point at them by name or trim
+      the section.
+- [ ] Add README rows for 17–22 as each lands.
+- [ ] Consider correcting `CLAUDE.md`'s "documentation-only" claim.
+
+---
+
+# Lesson 17 — B-Line autos: waypoints and trajectories
+
+**Builds on:** L9 (`Commands.sequence`, auto chooser), L10 (`ChassisSpeeds`,
+kinematics, `drive`), L14 (`Localizer.getPose`/`resetPose`). Independent of L16,
+though running a drawn path against real obstacles is a good combined payoff.
+
+**Goal (draft):** Replace hand-composed drive-turn-drive autos with a real path
+— drawn as waypoints, followed continuously against Lesson 14's fused pose —
+using B-Line, a polyline path-following library built for holonomic chassis.
+
+**New Java concepts**
+- **`PIDController`** — the library object behind the P control hand-rolled
+  since Lesson 5, met as an actual class for the first time (three of them:
+  translation, rotation, cross-track)
+- **Method references as plug-in behavior** — extending "supplier for a value"
+  (every lambda since L2) to "reference for an *action*"
+- The **`deploy` folder** — first non-code asset shipped with the robot program
+
+**New robot concepts**
+- B-Line's path model: `Waypoint` (position + heading), `TranslationTarget`
+  (position only), `RotationTarget` (heading only) — straight segments, not curves
+- `EventTrigger` — firing a command partway along a path
+- `FollowPath.Builder` — assembling a path-following `Command`
+- Kinematics run **backward**: `toChassisSpeeds` as the mirror of L10's
+  `toSwerveModuleStates`
+- BLine-Web, the hosted path editor, as this lesson's outside tool (same role
+  AdvantageScope had in L3, the PhotonVision UI in L15)
+
+**Walkthrough outline**
+1. What drive-turn-drive can't do — a fixed sentence of steps vs. a plan in
+   field coordinates, chased continuously.
+2. Install BLine. Vendor URL
+   `https://bline-metrics.edan-liahovetsky.workers.dev/vendor/BLine-Lib.json`
+   (fallback: the raw GitHub JSON).
+3. Two new doors on `Drivetrain`: a public `getChassisSpeeds()` (kinematics
+   backward over current module states) and a public
+   `driveRobotRelative(ChassisSpeeds)` wrapping the existing private
+   `applyChassisSpeeds`, so BLine binds without reaching past encapsulation.
+4. Meet `PIDController` — "the object version of math you've written by hand
+   five times." Gains into `Constants.java` with the others.
+5. Draw a path in BLine-Web (or hand-write the JSON) into
+   `src/main/deploy/autos/paths/`. When to reach for each of the three element
+   types.
+6. Build the follow command with `FollowPath.Builder`, wired to
+   `Localizer::getPose`, `Drivetrain::getChassisSpeeds`,
+   `Drivetrain::driveRobotRelative`, three `PIDController`s, and
+   `Localizer::resetPose`.
+7. Add it to Lesson 9's `LoggedDashboardChooser` — no new plumbing.
+8. Meet `EventTrigger`; bind it to something harmless (a print) since no
+   mechanism exists yet. Explicit forward pointer to 18+.
+9. Run it: commanded path vs. fused pose on the Odometry/Swerve tabs — the same
+   desired-vs-measured habit as every closed-loop lesson.
+
+**Try it (draft)**
+- A 4-waypoint path to two field corners and back.
+- Mistune the cross-track PID and watch the chassis wobble off the line.
+- Chain a BLine path and a Lesson 9 `Commands.sequence` step, proving they compose.
+- (With L16) run the path with obstacles active and see what happens when the
+  drawn line clips one.
+
+**Research flags**
+- Confirmed: `BLine-Lib` (library) + `BLine-Web` (GUI) + `BLine-Docs`, same
+  author, FRC Team 2638. The `FollowPath.Builder` shape (drive subsystem, pose
+  supplier, chassis-speeds supplier, drive consumer, three `PIDController`s) plus
+  chained `.withDefaultShouldFlip()` / `.withPoseReset(...)` comes from the
+  library README.
+- **Not** confirmed to signature precision: `Waypoint` / `TranslationTarget` /
+  `RotationTarget` / `EventTrigger` constructors, and the
+  `deploy/autos/paths/*.json` convention. Verify before drafting.
+- `BLine-Docs`' hosted site and GitHub HTML both 403 automated fetches; raw
+  `raw.githubusercontent.com` URLs work.
+
+---
+
+# Lesson 18 — Scoring elevator: a second mechanism
+
+**Builds on:** L13 (the IO spine), L12 (configs, control requests). The "second
+mechanism" Lesson 14 promised — first full repetition of the pattern on new
+hardware. **Blocked on open decision #2.**
+
+**Goal (draft):** Build a scoring elevator on the exact `ModuleIO` spine —
+`ElevatorIO` → `ElevatorIOTalonFX`/`ElevatorIOSim` → `Elevator` — driven by
+onboard Motion Magic and gravity feedforward.
+
+**New Java concepts**
+- Mostly a **reuse** lesson; the payoff is speed, not syntax. Possibly:
+  clamping a *goal* rather than a per-tick output.
+
+**New robot concepts**
+- A **linear mechanism with a hard range** vs. the wheel's wraparound circle —
+  no `ContinuousWrap`, but real min/max limits
+- **`MotionMagicVoltage`** — a third control request alongside L12's
+  `PositionVoltage`/`VelocityVoltage`: onboard profiling, not just a setpoint
+- **`MotionMagicConfigs`** (cruise velocity, acceleration) — how fast it may get
+  there, not just where
+- **`Slot0.kG` + `GravityTypeValue.Elevator_Static`** — first mechanism with a
+  persistent load fighting it
+- **Soft limits** — clamp the goal before it's sent, ahead of L21's real sensors
+
+**Walkthrough outline**
+1. Same spine, new mechanism — say the plan up front so the lesson can move fast.
+2. `ElevatorIO`: `@AutoLog` inputs (height, velocity), `default setHeight(...)`.
+3. `ElevatorIOTalonFX`: `SensorToMechanismRatio` from drum circumference;
+   `MotionMagicConfigs`; `Slot0.kP`/`kG`; a `MotionMagicVoltage` request field.
+4. `ElevatorIOSim extends ElevatorIOTalonFX`, mirroring `ModuleIOSim` — WPILib
+   `ElevatorSim` feeding the sim state.
+5. `Elevator` subsystem: `setGoalHeight(Distance)` clamped to travel limits,
+   `atGoal()`.
+6. Height presets in a new `ElevatorConstants`, bound to buttons/POV.
+7. Run it: commanded vs. measured height, watching the profile ramp.
+
+**Try it (draft)**
+- A third preset and a cycle-presets binding.
+- Zero `kG` and compare lag up vs. down — a gravity asymmetry the drivetrain's
+  `kV` never showed.
+- Log applied voltage next to height and spot the feedforward jump (L12's Try It,
+  new mechanism).
+
+**Research flags**
+- `MotionMagicVoltage` / `MotionMagicConfigs` field names and
+  `GravityTypeValue.Elevator_Static` need a fresh Phoenix 6 doc check.
+- `ElevatorSim`'s constructor overload (motor, gearing, carriage mass, drum
+  radius, min/max height, gravity flag, starting height, noise) is from general
+  knowledge, **not** a verified fetch — confirm against current WPILib docs.
+- Note: `docs.wpilib.org` and `v6.docs.ctr-electronics.com` both 403 automated
+  fetches from this environment; the `frc-docs` MCP search works but its page
+  fetch failed on both. Budget for that.
+
+---
+
+# Lesson 19 — Mechanism2d: watching the elevator move
+
+**Builds on:** L18, L11 (`Field2d` / `SmartDashboard.putData` — "the one
+sanctioned SmartDashboard use").
+
+**Goal (draft):** Draw the elevator as a live stick figure, and mount a second,
+smaller ligament on it — the exact attachment point Lesson 20's arm takes over.
+
+**New Java concepts**
+- **Composition as attachment.** Every earlier composition example built one
+  object out of others, once. `append(...)` is a scene graph: attach a child and
+  moving the parent moves it for free, every tick, with no extra code.
+
+**New robot concepts**
+- `Mechanism2d`, `MechanismRoot2d`, `MechanismLigament2d`
+- Publishing it the `Field2d` way: build once in the constructor, `putData`
+  once, mutate every `periodic()`
+- Driving `setLength`/`setAngle` from logged inputs — the mechanism equivalent
+  of `Field2d.setRobotPose`
+
+**Walkthrough outline**
+1. A picture instead of a number plot.
+2. Build the frame: `Mechanism2d`, a `MechanismRoot2d` at the elevator's base,
+   `putData` once in the constructor.
+3. Append the elevator ligament; length tracks `m_inputs.heightMeters`. Contrast
+   `append` (attach to parent) with the root (anchored to the world).
+4. Append a second, smaller ligament **onto the first** — the "simple motor on
+   carriage." This is the lesson's real payoff and Lesson 20's mount point.
+5. `setColor(...)` as a status signal; updates live in `Elevator.periodic()`.
+6. View it in SimGUI — same discovery motion as L11's `Field2d`.
+
+**Try it (draft)**
+- Color the ligament by height band.
+- A third fixed ligament for visual context.
+- Drive the child ligament's angle with `Math.sin(Timer.getFPGATimestamp())` to
+  prove a child's angle is independent of its parent's length.
+
+**Research flags**
+- Stable WPILib API for many seasons — low drift risk. Confirm exact setter
+  overloads and the `Color8Bit` import path when drafting.
+
+---
+
+# Lesson 20 — Intake arm: a mechanism that swings
+
+**Builds on:** L18/L19 (spine + picture), L12. Swings −20°…180° with a roller on
+the end.
+
+**Goal (draft):** A second real mechanism, reusing Lesson 18's spine end-to-end,
+mounted into Lesson 19's picture in place of the placeholder.
+
+**New Java concepts**
+- Likely none major — explicitly a **repeat-the-spine, faster** lesson, the beat
+  Lesson 14 promised ("the second time it takes a tenth as long"). Possibly: two
+  motors in *one* subsystem on purpose, contrasted with L7's "why `SwerveModule`
+  stopped being a subsystem."
+
+**New robot concepts**
+- **`GravityTypeValue.Arm_Cosine`** vs. L18's `Elevator_Static` — gravity torque
+  that varies with angle (`kG × cos θ`: maximum horizontal, zero vertical). A
+  genuine physics beat, not just a different enum value.
+- **Asymmetric soft limits** (−20°/180°) instead of a centered range
+- Mounting a real mechanism onto L19's picture — the arm's ligament replaces the
+  placeholder at the same attachment point, so both mechanisms move together
+- A **second, unprofiled motor** in the same subsystem: the roller runs on plain
+  percent output (Lesson 1's very first control style), because "spin while
+  held" has no position goal to profile
+
+**Walkthrough outline**
+1. The second mechanism, the fast way — state the repeat up front.
+2. What's actually different: gravity that depends on angle. Its own short section.
+3. `ArmIO`/`ArmIOTalonFX`: gearing, `Slot0.kG` + `Arm_Cosine`,
+   `MotionMagicConfigs`, soft limits.
+4. The end-effector roller: a second `TalonFX`, plain duty cycle, no profiling.
+5. `ArmIOSim` with `SingleJointedArmSim`, in `ElevatorSim`'s slot from L18.
+6. `Arm` subsystem: `setGoalAngle(Angle)` clamped, `runIntake()`/`stopIntake()`,
+   `atGoal()`.
+7. Swap L19's placeholder ligament for the arm's real one.
+8. Wire up presets + roller; watch the arm swing while riding the elevator.
+
+**Try it (draft)**
+- Command outside [−20°, 180°] and confirm the clamp holds.
+- Log applied voltage vs. angle; watch `kG`'s contribution change sign across
+  vertical.
+- Run roller and pivot at once — they don't fight over the subsystem. Callback to
+  L7's subsystem-boundary reasoning from the opposite direction.
+
+**Research flags**
+- Confirm `GravityTypeValue.Arm_Cosine` and `SingleJointedArmSim`'s constructor.
+- **Nail the angle convention first.** Does Phoenix's cosine gravity model expect
+  angle-from-horizontal in the same sense WPILib's `Rotation2d`/`Mechanism2d`
+  measure angles (CCW from +X)? Backwards means `kG` fights the arm. Confirm
+  against docs before writing any code.
+- If L16 is in play, maple-sim's `IntakeSimulation` can back this with real game
+  pieces — see appendix.
+
+---
+
+# Lesson 21 — Limit sensors: knowing when you've arrived
+
+**Builds on:** L18 and L20 as the mechanisms needing sensing; the button-binding
+habit from L1 onward.
+
+**Goal (draft):** Give the elevator a way to know where its hard stops actually
+are — a limit switch or a current spike — and use it to home at startup: the
+linear-mechanism answer to Lesson 5's CANcoder priming.
+
+**New Java concepts**
+- **Building a `Trigger` from any `BooleanSupplier`**, not just a controller
+  button — generalizing a type used since L1 without being named as reusable
+
+**New robot concepts**
+- **`DigitalInput`** — a roboRIO DIO channel; normally-closed vs. normally-open,
+  and why `!get()` is usually "pressed" (a cut wire should read as pressed, not
+  silently never-pressed — a fail-safe habit worth naming)
+- **Current-based detection** — Phoenix 6 stator/supply current as a software
+  alternative: a mechanism jammed against a stop draws current with no motion
+- **Homing** — drive slowly to a known stop, then zero the encoder there
+- A **hardware cutout** — stop travel the instant a limit trips, independent of
+  whatever command is running
+
+**Walkthrough outline**
+1. Two mechanisms, one blind spot: a relative encoder has no idea where zero is
+   after a power cycle. Frame it exactly as L5 framed boot alignment.
+2. A physical switch: `DigitalInput`, normally-closed convention.
+3. Turn a sensor into a `Trigger` — `new Trigger(() -> !m_bottomLimit.get())`,
+   bound with `.onTrue(...)` like a controller button. The generalization moment.
+4. Home the elevator: drive down slowly until the trigger fires, zero the
+   encoder (L9's `resetDrivePosition` idiom, now sensor-gated); run at init.
+5. A software alternative: stator current threshold.
+6. Belt and suspenders: a cutout independent of the active command.
+7. Simulate the sensor — compute `atBottomLimit`/`atTopLimit` in the sim IO from
+   position crossing travel bounds, so homing is testable with no hardware.
+
+**Try it (draft)**
+- Add a top limit and matching `Trigger`.
+- Tune a stator-current threshold by logging current into a hard stop.
+- Invert a switch's polarity and diagnose why homing never finishes, from the
+  log — L13's replay-debugging habit on a new bug.
+
+**Research flags**
+- `DigitalInput`/`Trigger` are stable core WPILib — low risk.
+- Confirm Phoenix 6 current accessor names (`getStatorCurrent()`/
+  `getSupplyCurrent()`) and whether per-tick polling has a CAN-utilization
+  caveat worth a callout.
+
+---
+
+# Lesson 22 — Light sensors: catching the handoff
+
+**Builds on:** L20 (arm + roller), L21 (`DigitalInput`/`Trigger`). Capstone-ish:
+the two mechanisms finally coordinate.
+
+**Goal (draft):** Give the arm a way to know it's actually holding a game piece
+— a beam break — and use it to coordinate an automatic handoff instead of
+trusting "the roller is spinning" as a proxy for "something is captured."
+
+**New Java concepts**
+- **`Trigger` combinators** — `.and(...)`, `.debounce(...)` — composing sensor
+  logic declaratively instead of nested `if`s
+
+**New robot concepts**
+- Beam-break / photoelectric sensors — electrically just another `DigitalInput`,
+  doing a different job
+- **Debouncing** a signal that flickers exactly at the moment of capture — a
+  small honest echo of L14's "sensors lie a little"
+- **Coordinating two subsystems from one sensor event** — no new class, just
+  `Trigger.onTrue(Commands.sequence(...))` spanning arm and elevator. The direct
+  payoff of L9's command composition, thirteen lessons later.
+
+**Walkthrough outline**
+1. Knowing you're holding something — the roller spins whether or not it caught
+   anything.
+2. Wire the beam-break where a captured piece sits.
+3. Debounce it; short honest note on why.
+4. On beam-broken: stop the roller, drive the arm to a "handoff" preset —
+   composed with L9's `Commands.sequence`/`parallel`.
+5. On beam-clear: return to stowed/intake-ready, closing the cycle.
+6. Log it — `Logger.recordOutput("Arm/HasGamePiece", ...)` so a replay (L13!)
+   shows exactly when the robot believed it held something.
+
+**Try it (draft)**
+- A second beam-break at the scoring end; require piece-present **and** arm-at-goal
+  before a score trigger fires (`Trigger.and(...)`).
+- A fake beam-break button for sim testing — the trick L14 used for a fake camera
+  sighting.
+- Replay a cycle and confirm `HasGamePiece` reconstructs identically.
+
+**Research flags**
+- Stable core WPILib. Confirm `Trigger.debounce`'s default debounce *type*
+  (rising-edge only vs. both edges) — it changes which parameter value reads
+  correctly in prose.
+- With L16 in place, maple-sim's `IntakeSimulation` gives this a real backing
+  signal instead of a fake button — see appendix.
+
+---
+
+# Appendix: verified maple-sim API notes
+
+Read from maple-sim source and docs while building Lesson 16, so 17–22 don't
+have to re-derive it. **The published docs have already drifted from the
+source** — `swerve-sim-hardware-abstraction.md` still shows
+`moduleSimulation.STEER_GEAR_RATIO`, which now lives on `.config`. Prefer source.
+
+Raw source paths (the docs site and GitHub HTML both 403 automated fetches;
+`raw.githubusercontent.com` works):
+`https://raw.githubusercontent.com/Shenzhen-Robotics-Alliance/maple-sim/main/project/src/main/java/org/ironmaple/simulation/…`
+
+### The motor-controller bridge (the heart of Lesson 16)
+
+```java
+public interface SimulatedMotorController {
+    Voltage updateControlSignal(
+            Angle mechanismAngle, AngularVelocity mechanismVelocity,
+            Angle encoderAngle, AngularVelocity encoderVelocity);
+}
+```
+
+Registered with `SwerveModuleSimulation.useDriveMotorController(T)` /
+`useSteerMotorController(T)`. **Pass an anonymous class, not a lambda** — both
+methods are generic (`<T extends SimulatedMotorController> T`), and a type
+variable is not a reliable lambda target type.
+
+Argument semantics, confirmed by reading the call sites:
+
+- **Drive** (`SwerveModuleSimulation.getDriveWheelTorque`): mechanism = wheel
+  (post-gearbox), encoder = rotor (wheel × `DRIVE_GEAR_RATIO`).
+- **Steer** (`MapleMotorSim.update`): mechanism = steer mechanism, encoder =
+  mechanism × `STEER_GEAR_RATIO`.
+
+So rotor sim states get `encoderAngle`/`encoderVelocity`; the CANcoder — 1:1 on
+the wheel — gets `mechanismAngle`/`mechanismVelocity` with no gear multiply.
+That lines up exactly with Lesson 12's `RemoteCANcoder` +
+`RotorToSensorRatio = 25` + `SensorToMechanismRatio = 1` config.
+
+**Gotcha:** `getSteerRelativeEncoderPosition()` deliberately includes a random
+per-boot offset (`(Math.random() - 0.5) * 30` radians) to model an uncalibrated
+relative encoder. Harmless here because Lesson 12's loop reads the CANcoder, not
+the rotor — but it would wreck any code that trusted the rotor's absolute zero.
+
+### Config, with this course's numbers
+
+`DriveTrainSimulationConfig.Default()` then `.withRobotMass(Mass)`,
+`.withBumperSize(Distance, Distance)`,
+`.withTrackLengthTrackWidth(Distance, Distance)`,
+`.withGyro(Supplier<GyroSimulation>)`,
+`.withSwerveModule(Supplier<SwerveModuleSimulation>)` —
+`SwerveModuleSimulationConfig` implements that supplier, so it can be passed
+directly. `COTS.ofPigeon2()`, `COTS.ofMark4(...)`, `COTS.WHEELS.COLSONS.cof`
+(= 0.899) are the shortcuts.
+
+`SwerveModuleSimulationConfig` runs **runtime bounds checks** that throw. This
+course's constants all pass, verified: drive gear 6.75 ∈ [4, 24]; steer gear 25.0
+∈ [6, 50]; wheel radius 2 in ∈ [1, 3.2]; COF 0.899 ∈ [0.6, 2.5]; drive friction
+0.1 V ∈ [0.01, 0.35]; steer friction 0.2 V ∈ [0.01, 0.6]; steer MOI 0.03 ∈
+[0.005, 0.06].
+
+### Arena
+
+- `SimulatedArena.getInstance()` — **throws `IllegalStateException` on a real
+  robot** unless `ALLOW_CREATION_ON_REAL_ROBOT` is set. Defaults to
+  `Arena2026Rebuilt`.
+- `.simulationPeriodic()` — call once per tick; runs 5 physics sub-ticks per
+  robot period (so 250 Hz odometry on a 50 Hz robot). Don't override the timing
+  while using AdvantageKit — it only supports 50 Hz.
+- `.addDriveTrainSimulation(...)`, `.addGamePiece(...)`, `.clearGamePieces()`,
+  `.resetFieldForAuto()`, `.getGamePiecesArrayByType(String) → Pose3d[]`.
+- Drivetrain pose: `getSimulatedDriveTrainPose()`,
+  `getDriveTrainSimulatedChassisSpeedsFieldRelative()`,
+  `setSimulationWorldPose(Pose2d)` (on `AbstractDriveTrainSimulation`).
+- Current season: `org.ironmaple.simulation.seasonspecific.rebuilt2026.RebuiltFuelOnField`,
+  game-piece type string `"Fuel"`.
+
+### For Lessons 20 and 22 — `IntakeSimulation`
+
+Directly useful, and it removes the need for a fake beam-break button:
+
+```java
+IntakeSimulation.OverTheBumperIntake(
+        "Fuel", driveTrainSimulation,
+        Meters.of(0.4),   // intake width
+        Meters.of(0.2),   // extension beyond the frame when active
+        IntakeSimulation.IntakeSide.BACK,
+        20);              // capacity
+```
+
+Also `InTheFrameIntake(...)` and a custom-shape constructor.
+`startIntake()`/`stopIntake()` extend and retract the collision rectangle;
+**`gamePiecesInIntakeCount` is the natural simulated beam-break signal** for
+Lesson 22. Models an idealized "touch it, get it" intake, so it's for testing
+code, not for validating a real intake's geometry.
+
+Projectiles (`RebuiltFuelOnFly`, `addGamePieceProjectile`, hit-target callbacks)
+exist too, if the course ever grows a shooter.
