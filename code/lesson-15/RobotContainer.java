@@ -24,17 +24,20 @@ public class RobotContainer {
   // Declaration order matters: the scheduler ticks subsystems in construction
   // order, and the localizer reads inputs the drivetrain refreshes.
   private final Drivetrain m_drivetrain = new Drivetrain();
-  private final PhotonVisionPoseProvider m_frontCamera = PhotonVisionPoseProvider.makeCamera(
-      VisionConstants.kFrontCameraName, VisionConstants.kFrontRobotToCamera, () -> m_localizer.getPose());
-  private final PhotonVisionPoseProvider m_backCamera = PhotonVisionPoseProvider.makeCamera(
-      VisionConstants.kBackCameraName, VisionConstants.kBackRobotToCamera, () -> m_localizer.getPose());
   private final Localizer m_localizer = new Localizer(m_drivetrain); // registers drivetrain
+  // Blank finals: building a camera needs m_localizer, which must already exist.
+  private final PhotonVisionPoseProvider m_frontCamera;
+  private final PhotonVisionPoseProvider m_backCamera;
 
   // Publishes a drop-down AND logs the selection (AdvantageKit).
   private final LoggedDashboardChooser<Command> m_autoChooser =
       new LoggedDashboardChooser<>("Auto Choice");
 
   public RobotContainer() {
+    m_frontCamera = PhotonVisionPoseProvider.makeCamera(
+        VisionConstants.kFrontCameraName, VisionConstants.kFrontRobotToCamera, m_localizer::getPose);
+    m_backCamera = PhotonVisionPoseProvider.makeCamera(
+        VisionConstants.kBackCameraName, VisionConstants.kBackRobotToCamera, m_localizer::getPose);
     m_localizer.addProvider(m_frontCamera);
     m_localizer.addProvider(m_backCamera);
 

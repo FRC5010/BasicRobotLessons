@@ -11,6 +11,8 @@ corrections replay exactly like everything else.
   ways to react to that
 - A **`static` field** — shared by every instance of a class, not owned by
   any one of them
+- A **blank `final`** — a field that gets its one and only value from the
+  constructor instead of its declaration line
 - **`record`** — a small, loggable data bundle (you've read them since
   Lesson 13; today you write one)
 
@@ -458,7 +460,11 @@ building a `PhotonVisionPoseProvider` and picking its IO are the same
 decision now, made in the one class that knows how to make both. That
 `Supplier<Pose2d> poseSupplier` parameter is only ever read by the `SIM`
 arm — `VisionIOPhotonVisionSim` needs to know where the robot is so it
-knows what a camera there would see. Section 10 supplies it.
+knows what a camera there would see. It has to be a *supplier*, not a
+plain `Pose2d`: the robot's pose changes every tick, and
+`VisionIOPhotonVisionSim` needs a fresh one each time `updateInputs` runs,
+not whatever the pose happened to be once, back at construction. Section 10
+supplies it.
 
 ---
 
@@ -479,7 +485,8 @@ every method stay exactly as Lesson 14 left them. That's worth sitting with:
 an entire IO layer just went into the project, and the class that fuses
 poses together never had to hear about it.
 
-**In `RobotContainer`, build both cameras with `PhotonVisionPoseProvider.makeCamera`:**
+**In `RobotContainer`, declare `m_localizer` right after `m_drivetrain`,
+and leave the two cameras unassigned for now:**
 
 ```java
 public class RobotContainer {
@@ -487,34 +494,47 @@ public class RobotContainer {
       OperatorConstants.kDriverControllerPort);
 
   private final Drivetrain m_drivetrain = new Drivetrain();
-  private final PhotonVisionPoseProvider m_frontCamera = PhotonVisionPoseProvider.makeCamera(
-      VisionConstants.kFrontCameraName, VisionConstants.kFrontRobotToCamera, () -> m_localizer.getPose());
-  private final PhotonVisionPoseProvider m_backCamera = PhotonVisionPoseProvider.makeCamera(
-      VisionConstants.kBackCameraName, VisionConstants.kBackRobotToCamera, () -> m_localizer.getPose());
-  private final Localizer m_localizer = new Localizer(m_drivetrain);
+  private final Localizer m_localizer = new Localizer(m_drivetrain); // registers drivetrain
+  private final PhotonVisionPoseProvider m_frontCamera;
+  private final PhotonVisionPoseProvider m_backCamera;
 
   // ...m_autoChooser stays...
 ```
 
-That `() -> m_localizer.getPose()` looks like it should fail: `m_localizer`
-is declared *after* the two camera fields, so it's still unset when their
-initializers run. It compiles fine, though, and it's worth understanding
-why. A lambda doesn't evaluate its body when it's created, only when
-something later *calls* it — and `makeCamera` doesn't call `poseSupplier`
-itself, it just hands the `Supplier<Pose2d>` off to `VisionIOPhotonVisionSim`
-to hold onto. By the time that IO actually calls `poseSupplier.get()` —
-during a match, ticks after the constructor finished — `m_localizer` has
-long since been assigned. The lambda just remembers *where* to look, the
-same way `steerToAngle`'s lambda remembered `targetDegrees` back in Lesson 5.
+A `final` field doesn't have to get its value from its own declaration line
+— it just has to get assigned exactly once, by the time the constructor
+returns. Java calls that a **blank final**, and `m_frontCamera`/`m_backCamera`
+are blank finals on purpose here: building a camera needs `m_localizer`,
+so `m_localizer` has to be a real, finished object *first*. Moving its
+declaration above the cameras' guarantees that — field initializers still
+run top to bottom, so by the time you'd build a camera, `m_localizer`
+already exists.
+
+**Finish building both cameras in the constructor, where `m_localizer` is
+now guaranteed to be ready:**
 
 ```java
   public RobotContainer() {
+    m_frontCamera = PhotonVisionPoseProvider.makeCamera(
+        VisionConstants.kFrontCameraName, VisionConstants.kFrontRobotToCamera, m_localizer::getPose);
+    m_backCamera = PhotonVisionPoseProvider.makeCamera(
+        VisionConstants.kBackCameraName, VisionConstants.kBackRobotToCamera, m_localizer::getPose);
     m_localizer.addProvider(m_frontCamera);
     m_localizer.addProvider(m_backCamera);
 
     // ...configureBindings(), auto chooser setup stay...
   }
 ```
+
+`m_localizer::getPose` is a **method reference** — shorthand for
+`() -> m_localizer.getPose()` — and there's nothing subtle about it this
+time. `m_localizer` isn't a promise to look something up later; it's an
+already-built object sitting right there, the same way `m_drivetrain` is an
+already-built object by the time `configureBindings()` reaches for it a few
+lines down. Building the cameras in the constructor body, instead of in
+their own field initializers, is what buys that: every field initializer
+above the constructor has already run before the constructor's first line
+executes.
 
 **Delete the Start-button binding from Lesson 14** — `m_camera.reportSighting(...)`
 doesn't exist anymore; there's no fake sighting to trigger, because there's
@@ -545,12 +565,13 @@ months later, on a laptop with no camera attached at all.
 ## Try it
 
 1. **Add a third camera.** Pick a corner mount — angled 45°, say — add its
-   `Transform3d` to `VisionConstants`, add a third `PhotonVisionPoseProvider`
-   field built with `PhotonVisionPoseProvider.makeCamera(...)`, and register
-   it in the constructor with `m_localizer.addProvider(...)`. Nothing in
-   `VisionIOPhotonVisionSim` changes to make this work — its shared
-   `static VisionSystemSim` just picks up a third camera the moment one more
-   `VisionIOPhotonVisionSim` is constructed.
+   `Transform3d` to `VisionConstants`, declare a third `PhotonVisionPoseProvider`
+   blank final next to the other two, build it in the constructor with
+   `PhotonVisionPoseProvider.makeCamera(...)`, and register it right after
+   with `m_localizer.addProvider(...)`. Nothing in `VisionIOPhotonVisionSim`
+   changes to make this work — its shared `static VisionSystemSim` just
+   picks up a third camera the moment one more `VisionIOPhotonVisionSim` is
+   constructed.
 2. **Turn off multi-tag.** In `VisionIOPhotonVision.updateInputs`, delete the
    `estimateCoprocMultiTagPose` branch so every frame falls straight to
    `estimateLowestAmbiguityPose`. Drive past a spot where two tags are
