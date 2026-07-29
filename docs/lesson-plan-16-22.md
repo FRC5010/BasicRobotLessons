@@ -87,24 +87,29 @@ may now all assume it.
 - **New mechanisms get their own IO layer** — `ElevatorIO` / `ElevatorIOTalonFX`
   / `ElevatorIOSim`, `ArmIO` / … — matching `ModuleIO` exactly. Lesson 13 made
   that the house style; nothing else fits.
-- **Treat both new libraries as young.** maple-sim's docs carry a beta notice
-  and its published examples have already drifted from its source (see
-  appendix). BLine's announcement thread is mid-season with active iteration.
-  Verify every class and method name against current source/Javadoc when
-  drafting — sharper than the standing CTRE caveat in the README.
+- **Treat both new libraries as young.** maple-sim's docs carry a beta notice and
+  its published examples have already drifted from its source (see appendix);
+  BLine's announcement thread is mid-season with active iteration. Verify every
+  class and method name against current source/Javadoc when drafting — sharper
+  than the standing CTRE caveat in the README. This is not hypothetical: the
+  BLine docs' `EventTrigger` shape was wrong (it's a `FollowPath` static), and
+  both PhotonVision's and maple-sim's advertised install URLs were broken in
+  different ways at the same time.
+- **Pin vendordeps to WPILib's marketplace, not the vendor's own link.**
+  `https://raw.githubusercontent.com/wpilibsuite/vendor-json-repo/main/<YEAR>/<name>-<version>.json`
+  is one immutable file per version; `<YEAR>_metadata.json` lists what exists.
+  Vendors' "latest" links drift, and two of the three third-party libraries in
+  this course were actively broken through theirs.
 
 ---
 
 ## Repo conventions (discovered while building 16)
 
-Worth writing down, because `CLAUDE.md` currently contradicts the first one.
-
-- **`CLAUDE.md` says this is a "documentation-only" repo with "no Java source,
-  no `build.gradle`." That is not true** — there's a `code/` tree with ~70
-  Java/Gradle/JSON files. Worth correcting.
 - **`code/lesson-N/`** holds *only the files that lesson changes*, mirroring the
   `frc/robot` package layout: root classes at `code/lesson-N/`, subsystems at
-  `code/lesson-N/subsystems/`, commands at `code/lesson-N/commands/`.
+  `code/lesson-N/subsystems/`, commands at `code/lesson-N/commands/`, and — from
+  Lesson 17 — deploy assets at `code/lesson-N/deploy/`, which maps to
+  `src/main/deploy/`, *not* into the Java tree.
 - **Style splits by directory.** Root files (`Constants`, `Robot`,
   `RobotContainer`) carry the WPILib copyright header and 2-space indent.
   `subsystems/` files have no header, use 4-space indent, and open with a class
@@ -139,9 +144,23 @@ non-deprecated API replacement — a throwaway JUnit test under
 JSON and `config.json` were validated that way, against BLine's real parser,
 rather than being taken on faith from the docs.
 
-Verified state as of Lesson 17: **lessons 0–15 and 17 compile with zero
-warnings**, against PhotonLib `v2026.3.4`. Lesson 16 is compile-verified only
-for its non-maple-sim parts (see findings).
+Verified state as of Lesson 17: **the whole course, lessons 0–17, compiles with
+zero warnings** — against PhotonLib `v2026.3.4`, maple-sim `0.4.0-beta`,
+AdvantageKit `26.0.2`, BLine-Lib `v0.9.1`, Phoenix 6 `26.3.0`.
+
+Beyond compiling, two runtime checks worth keeping:
+
+- Lesson 16's `SwerveModuleSimulationConfig` / `DriveTrainSimulationConfig` are
+  built in a JUnit test, which exercises maple-sim's **runtime bounds checks** —
+  they *throw* on an out-of-range constant. The course's numbers pass (45 kg
+  robot, 2″ wheel radius, COLSONS cof 0.899). No HAL or `SimulatedArena` needed,
+  so it's cheap to re-run.
+- Lesson 17's path JSON and `config.json` load through BLine's real parser, and
+  `AprilTagFieldLayout.loadField` returns 32 tags on the 2026 Rebuilt field.
+
+Note that `code/lesson-N/deploy/**` maps to `src/main/deploy/**`, not into the
+Java tree — Lesson 17 is the first snapshot with deploy assets, so a
+roll-forward script has to copy that subtree separately.
 
 **Pin vendordeps to a season-specific URL.** WPILib's own vendordep marketplace
 keeps one immutable file per library *per version*, which is the right thing to
@@ -188,36 +207,31 @@ Still open:
   is introduced by Lesson 1's **Try It #3**, and the `lesson-1`…`lesson-4`
   snapshots ship the post-Try-It `DriveModule` without a matching
   `Constants.java`. Cheapest fix is adding a `code/lesson-1/Constants.java`.
-- **maple-sim cannot be resolved in the Claude Code environment**, so Lesson 16's
-  code is the one part of the course that is *not* compile-verified.
-  `org.ironmaple:maplesim-java` is published only to
-  `https://shenzhen-robotics-alliance.github.io/maple-sim/vendordep/repos/releases`,
-  and that host is denied by the environment's network policy (gateway answers
-  403 to CONNECT). Every workaround was checked and none of them work:
-  - Not on Maven Central, despite `repo1.maven.org` being listed as a fallback
-    `mavenUrl` (`.../org/ironmaple/maplesim-java/maven-metadata.xml` → 404). Only
-    its `dyn4j` dependency is there.
-  - Not mirrored by WPILib. maple-sim *is* in the vendordep marketplace, but the
-    pinned `2026/maple-sim-0.4.0-beta.json` still points `mavenUrls` at the same
-    github.io host, and `frcmaven.wpi.edu` doesn't carry the jars (404).
-  - Not buildable via JitPack (which *is* reachable — it's how BLine's sources
-    were obtained). The repo has no `jitpack.yml` and its Gradle project sits in a
-    `project/` subdirectory, so JitPack has nothing to build; `main-SNAPSHOT` → 404.
+- **maple-sim's own vendordep URL advertises a version that was never
+  published.** Lesson 16 pointed at
+  `shenzhen-robotics-alliance.github.io/maple-sim/vendordep/maple-sim.json`, which
+  names `0.4.0-beta-obstacles-fix`. That version is absent from their Maven repo
+  (its `.pom` 404s), so the install *succeeds* and the next build dies with
+  `Could not find org.ironmaple:maplesim-java`. Newest actually-published version
+  is `0.4.0-beta`, which is exactly what WPILib's pinned marketplace copy names —
+  repointed Lesson 16 at that, with a callout tying it back to Lesson 15's
+  moving-link warning. Two vendors, same failure mode, one lesson apart: **cite
+  WPILib's pinned marketplace URL, never a vendor's "latest" link.**
 
-  **The fix is a one-line network-policy change**: allow
-  `shenzhen-robotics-alliance.github.io` in the environment's egress allowlist.
-  That single host covers both the vendordep JSON and the Maven repo. (Optional
-  nice-to-have while in there: `bline-metrics.edan-liahovetsky.workers.dev`, the
-  URL BLine's docs advertise — also 403 today, though `raw.githubusercontent.com`
-  serves the identical JSON so it isn't blocking.)
+  With the host allowed and the version pinned, Lesson 16's code compiles and its
+  constants pass maple-sim's runtime bounds checks — so the API usage the lesson
+  teaches is confirmed against the real `0.4.0-beta`, not just against the docs
+  (which the appendix notes had already drifted).
 
-  Until then, Lesson 17 was verified at the Lesson 15 state, which is sound:
-  Lesson 16's `Drivetrain` changes are confined to the static `m_driveSim` field,
-  `createDriveSim()`, the two `SIM` switch arms, and the ground-truth log — none
-  of which Lesson 17 touches. Lessons 18–22 add mechanisms that don't depend on
-  maple-sim either (WPILib's own `ElevatorSim`/`SingleJointedArmSim` back them),
-  so this only blocks re-verifying Lesson 16 itself and any later lesson that
-  reaches for `IntakeSimulation`.
+  For the record, in case this environment is rebuilt: the two hosts that need to
+  be reachable are **`shenzhen-robotics-alliance.github.io`** (maple-sim's
+  vendordep JSON *and* its Maven repo — the artifacts are nowhere else; not on
+  Maven Central despite being listed as a fallback, not mirrored on
+  `frcmaven.wpi.edu`, and not buildable via JitPack since the repo has no
+  `jitpack.yml` and its Gradle project sits in a `project/` subdirectory) and
+  **`bline-metrics.edan-liahovetsky.workers.dev`** (the URL BLine's docs
+  advertise; `raw.githubusercontent.com` serves the identical JSON as a fallback).
+  `jitpack.io` is what serves BLine's own jars and sources.
 
 ---
 
@@ -238,10 +252,12 @@ Still open:
 - [ ] Add README rows for 18–22 as each lands.
 - [x] Fixed Lesson 15's PhotonLib install to a pinned `v2026.3.4` URL, and
       replaced the deprecated `loadAprilTagLayoutField()` everywhere.
+- [x] Fixed Lesson 16's maple-sim install to the pinned `0.4.0-beta` URL.
 - [ ] Add a `code/lesson-1/Constants.java` so the early snapshots — and
       `ActualLessons` — actually compile.
-- [ ] Allow `shenzhen-robotics-alliance.github.io` in the environment network
-      policy so Lesson 16 can be compile-verified (see findings).
+- [x] Environment network policy now allows `shenzhen-robotics-alliance.github.io`
+      and `bline-metrics.edan-liahovetsky.workers.dev`, so Lesson 16 is
+      compile-verified too. Whole course builds.
 
 ---
 
