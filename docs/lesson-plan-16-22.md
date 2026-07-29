@@ -115,34 +115,35 @@ may now all assume it.
   `subsystems/` files have no header, use 4-space indent, and open with a class
   Javadoc. Lesson *markdown* snippets use 2-space throughout regardless — that
   mismatch is pre-existing and consistent.
-- **`code/ActualLessons/`** is the student's starter project, frozen at roughly
-  Lesson 2 state (`ExampleSubsystem`/`ExampleCommand` still present, only
-  Phoenix 6 + WPILibNewCommands vendordeps). It does **not** track the lesson
-  sequence, and **as committed it does not compile** (see findings below).
+- **`code/ActualLessons/`** is **the students' starting point**, held at pristine
+  WPILib Command Robot template state — byte-identical to the upstream template
+  (verified against `allwpilib` `v2026.2.1`
+  `wpilibjExamples/.../templates/commandbased/`, whose only difference is the
+  package name the project generator rewrites), with only `WPILibNewCommands` in
+  `vendordeps/`. Phoenix 6 is installed by Lesson 1 and everything else later, so
+  none of it belongs here. **Keep it at baseline**: don't roll lesson work in, and
+  don't pre-install a vendordep a lesson hasn't reached.
 
-## Compile-verifying lesson code (workflow)
+## Compile-verifying lesson code
 
-`ActualLessons` is a real Gradle project, so it can be used as a compile
-sandbox for lesson code — which is now the expected practice when drafting or
-editing a lesson. **Never commit changes to `ActualLessons`**; copy it out first.
+**`./tools/verify-lessons.sh [N] [test]`** does the whole thing: copies
+`ActualLessons` to a scratch sandbox (never touching the repo copy), fetches
+pinned vendordeps, rolls `code/lesson-0` … `code/lesson-N` forward in order,
+replays the deletions the lessons instruct, appends Lesson 13's AdvantageKit
+`build.gradle` blocks, and runs Gradle. First run fills the Gradle cache (a few
+minutes); later runs are seconds.
 
-The workflow, as used to verify Lesson 17:
+This is the expected practice when drafting or editing a lesson — run the lesson
+you touched and the highest one. Because the baseline is clean and *every*
+intermediate stopping point currently compiles, a failure is a real result rather
+than pre-existing noise.
 
-1. `cp -r code/ActualLessons <scratch>/verify` and `chmod +x gradlew`.
-2. Apply `code/lesson-0` … `code/lesson-N` in order into
-   `src/main/java/frc/robot/` (last writer wins), then delete the files the
-   lessons delete: `DriveModule.java` (became `SwerveModule` in L7),
-   `VisionPoseProvider.java` (deleted in L15), and the two `Example*` samples.
-3. Drop the vendordep JSONs into `vendordeps/` and append Lesson 13's two
-   AdvantageKit `build.gradle` blocks.
-4. `./gradlew compileJava`. First run takes ~90 s to populate the Gradle cache;
-   after that it's seconds.
-
-For anything with runtime behavior worth checking — a JSON schema, a
-non-deprecated API replacement — a throwaway JUnit test under
-`src/test/java/` is cheap and much stronger than a compile. Lesson 17's path
-JSON and `config.json` were validated that way, against BLine's real parser,
-rather than being taken on faith from the docs.
+For anything with runtime behavior — a JSON schema, a deprecated-API replacement,
+a config with validation — drop a throwaway JUnit test into the sandbox's
+`src/test/java/` and re-run with `test`. That has caught things a compile never
+would: BLine's docs described an `EventTrigger` class you construct, when it's
+actually a `FollowPath` static, and reading its **sources jar** off JitPack was
+what settled it. Prefer a library's sources jar over its docs generally.
 
 Verified state as of Lesson 17: **the whole course, lessons 0–17, compiles with
 zero warnings** — against PhotonLib `v2026.3.4`, maple-sim `0.4.0-beta`,
@@ -157,10 +158,6 @@ Beyond compiling, two runtime checks worth keeping:
   so it's cheap to re-run.
 - Lesson 17's path JSON and `config.json` load through BLine's real parser, and
   `AprilTagFieldLayout.loadField` returns 32 tags on the 2026 Rebuilt field.
-
-Note that `code/lesson-N/deploy/**` maps to `src/main/deploy/**`, not into the
-Java tree — Lesson 17 is the first snapshot with deploy assets, so a
-roll-forward script has to copy that subtree separately.
 
 **Pin vendordeps to a season-specific URL.** WPILib's own vendordep marketplace
 keeps one immutable file per library *per version*, which is the right thing to
@@ -200,13 +197,17 @@ Real defects surfaced by actually compiling. Fixed:
 
 Still open:
 
-- **`code/ActualLessons` does not compile as committed.** Its `DriveModule.java`
-  is the Lesson 2 snapshot, which reads
-  `Constants.DriveConstants.kDriveMotorPort`, but its `Constants.java` is the
-  untouched template with only `OperatorConstants`. Root cause: `DriveConstants`
-  is introduced by Lesson 1's **Try It #3**, and the `lesson-1`…`lesson-4`
-  snapshots ship the post-Try-It `DriveModule` without a matching
-  `Constants.java`. Cheapest fix is adding a `code/lesson-1/Constants.java`.
+- Nothing blocking. Every lesson 0–17 compiles at every intermediate stopping
+  point. The remaining checklist items are content polish, not defects.
+
+- **`code/ActualLessons` was frozen mid-Lesson-2 and did not compile.** Its
+  `DriveModule.java` read `Constants.DriveConstants.kDriveMotorPort` while its
+  `Constants.java` was the untouched template. Rolled all the way back to pristine
+  template state instead, so it now serves as the students' actual starting point.
+  The underlying snapshot gap — `lesson-1`…`lesson-4` shipping the *post-Try-It*
+  `DriveModule` with no matching `Constants.java`, since `DriveConstants` is
+  introduced by Lesson 1's **Try It #3** — is fixed by a new
+  `code/lesson-1/Constants.java`. Lessons 1–4 are verifiable as a result.
 - **maple-sim's own vendordep URL advertises a version that was never
   published.** Lesson 16 pointed at
   `shenzhen-robotics-alliance.github.io/maple-sim/vendordep/maple-sim.json`, which
@@ -245,16 +246,16 @@ Still open:
 - [x] Corrected `CLAUDE.md`'s "documentation-only / no Java source" claim.
 - [ ] **Lesson 17 ends with a link to `18-elevator.md`, which does not exist
       yet.** Dead until 18 lands; keep the filename.
-- [ ] **Lesson 14's epilogue is stale.** It name-drops `PathPlanner`/`Choreo`
-      for trajectory following and sketches "an elevator, a shooter, an intake"
-      as vague future work. Lesson 17 now exists — point at it by name (and at 18
-      once it lands) or trim the section.
 - [ ] Add README rows for 18–22 as each lands.
 - [x] Fixed Lesson 15's PhotonLib install to a pinned `v2026.3.4` URL, and
       replaced the deprecated `loadAprilTagLayoutField()` everywhere.
 - [x] Fixed Lesson 16's maple-sim install to the pinned `0.4.0-beta` URL.
-- [ ] Add a `code/lesson-1/Constants.java` so the early snapshots — and
-      `ActualLessons` — actually compile.
+- [x] Added `code/lesson-1/Constants.java` (Lesson 1 Try It #3's `DriveConstants`),
+      so lessons 1–4 compile.
+- [x] Rolled `code/ActualLessons` back to pristine template state — it is the
+      students' starting point now, not a half-finished Lesson 2.
+- [x] Lesson 14's epilogue now points at Lessons 17 and 18 by name.
+- [x] Added `tools/verify-lessons.sh`; CLAUDE.md and this doc point at it.
 - [x] Environment network policy now allows `shenzhen-robotics-alliance.github.io`
       and `bline-metrics.edan-liahovetsky.workers.dev`, so Lesson 16 is
       compile-verified too. Whole course builds.

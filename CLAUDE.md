@@ -9,7 +9,24 @@ A teaching repo whose product is the ordered markdown lessons under [docs/lesson
 There is Java here, though, in two forms under `code/`:
 
 - **`code/lesson-N/`** — a per-lesson reference snapshot holding *only the files that lesson changes*, mirroring the `frc/robot` package layout (root classes at `code/lesson-N/`, subsystems at `code/lesson-N/subsystems/`, commands at `code/lesson-N/commands/`, deploy assets at `code/lesson-N/deploy/`). These are reference copies, not a buildable project.
-- **`code/ActualLessons/`** — a real, buildable GradleRIO project: the student's starter, frozen at roughly Lesson 2 state. **Never commit changes to it.** Copy it to a scratch directory and roll it forward through the `code/lesson-N/` snapshots to compile-verify lesson code — see [docs/lesson-plan-16-22.md](docs/lesson-plan-16-22.md) for the exact workflow, the current verified-state record, and the known defects that pass turned up. **Verify code changes this way rather than reasoning about whether they compile**, and prefer a throwaway JUnit test under `src/test/java/` for anything with runtime behavior worth checking (a JSON schema, a replacement for a deprecated API).
+- **`code/ActualLessons/`** — a real, buildable GradleRIO project: **the students' starting point**, held at pristine WPILib Command Robot template state (byte-identical to the upstream template, only `WPILibNewCommands` in `vendordeps/`, since Phoenix 6 is installed by Lesson 1 and everything else later). Students clone it and work forward from Lesson 0. **Keep it at baseline** — do not roll lesson work into it, and do not add vendordeps a lesson hasn't reached yet.
+
+## Verifying lesson code
+
+**`./tools/verify-lessons.sh [N] [test]`** compile-checks the lessons for real. It copies `ActualLessons` to a scratch sandbox (never touching the repo copy), fetches pinned vendordeps, rolls `code/lesson-0` … `code/lesson-N` forward in order, replays the deletions the lessons instruct, appends Lesson 13's AdvantageKit `build.gradle` blocks, and runs Gradle. First run takes a few minutes to fill the Gradle cache; later runs are seconds.
+
+**Use it instead of reasoning about whether a snippet compiles.** Current state: lessons 0–17 all compile, at every intermediate stopping point, with zero warnings. A regression is therefore a real result, not noise. Run the specific lesson you touched plus the highest one.
+
+For anything with runtime behavior — a JSON schema, a replacement for a deprecated API, a config with validation — drop a throwaway JUnit test into the sandbox's `src/test/java/` and re-run with `test`. That has caught things compiling never would.
+
+Hard-won details worth not rediscovering:
+
+- **Pin vendordeps to WPILib's marketplace**, `.../vendor-json-repo/main/<YEAR>/<name>-<version>.json` — one immutable file per version, with `<YEAR>_metadata.json` as the index. Do **not** cite a vendor's own "latest" link in a lesson. Two of the three third-party libraries here were actively broken through theirs at the same time: PhotonVision's served a next-season alpha whose manifest GradleRIO rejects outright, and maple-sim's advertised a version that was never uploaded to their Maven repo.
+- A vendordep must be saved under the `fileName` declared **inside** the JSON, not the URL's basename — Lesson 13's `build.gradle` block reads `vendordeps/AdvantageKit.json` by that exact name.
+- `code/lesson-N/deploy/**` maps to `src/main/deploy/**`, not into the Java tree.
+- Snapshots can only add or replace files, so **deletions live in the script**: `DriveModule` (L7), `ExampleCommand`/`ExampleSubsystem` (L9 §3), `VisionPoseProvider` (L15).
+- maple-sim's jars exist **only** on `shenzhen-robotics-alliance.github.io` — not Maven Central despite being a listed fallback, not on `frcmaven.wpi.edu`, and not buildable via JitPack. That host must be reachable or Lesson 16 can't be verified. BLine's jars and sources come from `jitpack.io`.
+- Reading a library's **sources jar** beats reading its docs. BLine's docs described an `EventTrigger` class you construct; it's actually a `FollowPath` static. Its sources/javadoc jars are on JitPack next to the main jar.
 
 Target platform (assumed by every lesson): **WPILib 2026**, **Phoenix 6**, **TalonFX** drive/steer motors, **Pigeon 2** gyro, Xbox controller, **AdvantageKit** logging (from Lesson 3 on).
 
