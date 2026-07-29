@@ -622,3 +622,10 @@ the class that should decide which version to build.
 
 Fifteen lessons built a robot that knows how to move, knows where it is,
 and now remembers everything it saw well enough to prove it later.
+
+What it still doesn't have is anywhere to drive. Every simulation you've run
+since Lesson 4 has been motors spinning in an empty void — no mass, no tire
+grip, no walls, and no way to check the robot's estimated pose against where it
+actually is. Lesson 16 hands the whole thing a physics engine.
+
+Next: [Lesson 16 — maple-sim: give the simulation a world](16-maple-sim-field.md).

@@ -157,6 +157,15 @@ roughly one moment of teacher voice every 10–15 lines — noticeable, not
 overwhelming. If you count more than one warm beat per short paragraph,
 dial back. If a whole section reads as pure imperative, dial up.
 
+## The plan for upcoming lessons
+
+[docs/lesson-plan-16-22.md](docs/lesson-plan-16-22.md) is the working plan for
+Lessons 16–22 — per-lesson outlines, open decisions that are still the user's
+call, discovered repo conventions, and a verified API appendix for the
+third-party libraries involved. **Read it before drafting any lesson in that
+range**, and update its status table and housekeeping checklist as lessons land.
+It is a contributor document: it lives beside `docs/lessons/`, never inside it.
+
 ## When adding or editing a lesson
 
 - Update the lessons table in [README.md](README.md) if the number, title, or "You'll build" summary changes.
