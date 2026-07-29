@@ -139,9 +139,12 @@ non-deprecated API replacement — a throwaway JUnit test under
 JSON and `config.json` were validated that way, against BLine's real parser,
 rather than being taken on faith from the docs.
 
-Verified state as of Lesson 17: **lessons 0–15 and 17 compile clean with zero
-warnings.** Lesson 16 is compile-verified only for its non-maple-sim parts (see
-findings).
+Verified state as of Lesson 17: **lessons 0–15 and 17 compile**, with exactly
+one warning in the whole tree — the deprecated tag-layout loader in
+`lesson-15/Constants.java`, which is still committed as-is and listed under
+housekeeping. Swapping in `AprilTagFieldLayout.loadField(...)` was confirmed to
+build warning-free. Lesson 16 is compile-verified only for its non-maple-sim
+parts (see findings).
 
 ## Findings from the first verification pass
 
