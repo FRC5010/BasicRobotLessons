@@ -139,12 +139,21 @@ non-deprecated API replacement — a throwaway JUnit test under
 JSON and `config.json` were validated that way, against BLine's real parser,
 rather than being taken on faith from the docs.
 
-Verified state as of Lesson 17: **lessons 0–15 and 17 compile**, with exactly
-one warning in the whole tree — the deprecated tag-layout loader in
-`lesson-15/Constants.java`, which is still committed as-is and listed under
-housekeeping. Swapping in `AprilTagFieldLayout.loadField(...)` was confirmed to
-build warning-free. Lesson 16 is compile-verified only for its non-maple-sim
-parts (see findings).
+Verified state as of Lesson 17: **lessons 0–15 and 17 compile with zero
+warnings**, against PhotonLib `v2026.3.4`. Lesson 16 is compile-verified only
+for its non-maple-sim parts (see findings).
+
+**Pin vendordeps to a season-specific URL.** WPILib's own vendordep marketplace
+keeps one immutable file per library *per version*, which is the right thing to
+cite in a lesson:
+
+```
+https://raw.githubusercontent.com/wpilibsuite/vendor-json-repo/main/<YEAR>/<name>-<version>.json
+```
+
+The index of what's available for a year is `<YEAR>_metadata.json` in the same
+repo. Prefer these over a vendor's own "latest" link — see the PhotonLib finding
+for what a floating link does to an offseason build.
 
 ## Findings from the first verification pass
 
@@ -157,20 +166,21 @@ Real defects surfaced by actually compiling. Fixed:
   block); the snapshot had been copied from a pre-fix Lesson 15. Rebuilt on the
   corrected version.
 - **`AprilTagFields.loadAprilTagLayoutField()` is deprecated for removal** in
-  WPILib 2026 — the only compile warning in the whole tree. Replacement is
-  `AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField)`, confirmed
-  working at runtime (loads 32 tags on the 2026 Rebuilt field).
+  WPILib 2026 — was the only compile warning in the whole tree. Replaced
+  everywhere with `AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField)`
+  (`lesson-15`/`16`/`17` `Constants.java` plus Lesson 15's section 3), confirmed
+  working at runtime: loads 32 tags on the 2026 Rebuilt field.
+- **Lesson 15's PhotonLib install URL was season-wrong.** The
+  `photonlib-json/1.0/photonlib-json-1.0.json` artifact PhotonVision's docs hand
+  out is a *floating* pointer — it now serves `v2027.0.0-alpha-2`, which carries a
+  `wpilibYear` key instead of `frcYear`, so GradleRIO 2026 refuses to configure at
+  all: *"Vendor Dependency photonlib has invalid year null."* Repointed at
+  WPILib's pinned marketplace copy of **v2026.3.4**
+  (`.../vendor-json-repo/main/2026/photonlib-v2026.3.4.json`), which is immutable,
+  and added a callout explaining the moving-link hazard generally.
 
 Still open:
 
-- **Lesson 15's PhotonLib install URL is season-wrong.** The
-  `photonlib-json/1.0/photonlib-json-1.0.json` artifact is a *floating* pointer,
-  and it currently serves `v2027.0.0-alpha-2` with a `wpilibYear` key instead of
-  `frcYear`. GradleRIO 2026 rejects it outright: *"Vendor Dependency photonlib
-  has invalid year null."* PhotonVision publishes no season-pinned vendordep
-  URL, so the fix is prose, not a different link: lead with the vendor-manager
-  online search (which filters by the project's year) and warn that the raw URL
-  tracks the newest build, which off-season means next season.
 - **`code/ActualLessons` does not compile as committed.** Its `DriveModule.java`
   is the Lesson 2 snapshot, which reads
   `Constants.DriveConstants.kDriveMotorPort`, but its `Constants.java` is the
@@ -179,13 +189,35 @@ Still open:
   snapshots ship the post-Try-It `DriveModule` without a matching
   `Constants.java`. Cheapest fix is adding a `code/lesson-1/Constants.java`.
 - **maple-sim cannot be resolved in the Claude Code environment**, so Lesson 16's
-  code is not compile-verified. Its Maven repo is
-  `shenzhen-robotics-alliance.github.io`, which the network policy denies (403 on
-  CONNECT), and `org.ironmaple:maplesim-java` is *not* on Maven Central despite
-  being listed as a fallback repo. Lesson 17 was verified at the Lesson 15 state
-  instead, which is sound because Lesson 16's `Drivetrain` changes are confined
-  to the static `m_driveSim` field, `createDriveSim()`, the two `SIM` switch
-  arms, and the ground-truth log — none of which Lesson 17 touches.
+  code is the one part of the course that is *not* compile-verified.
+  `org.ironmaple:maplesim-java` is published only to
+  `https://shenzhen-robotics-alliance.github.io/maple-sim/vendordep/repos/releases`,
+  and that host is denied by the environment's network policy (gateway answers
+  403 to CONNECT). Every workaround was checked and none of them work:
+  - Not on Maven Central, despite `repo1.maven.org` being listed as a fallback
+    `mavenUrl` (`.../org/ironmaple/maplesim-java/maven-metadata.xml` → 404). Only
+    its `dyn4j` dependency is there.
+  - Not mirrored by WPILib. maple-sim *is* in the vendordep marketplace, but the
+    pinned `2026/maple-sim-0.4.0-beta.json` still points `mavenUrls` at the same
+    github.io host, and `frcmaven.wpi.edu` doesn't carry the jars (404).
+  - Not buildable via JitPack (which *is* reachable — it's how BLine's sources
+    were obtained). The repo has no `jitpack.yml` and its Gradle project sits in a
+    `project/` subdirectory, so JitPack has nothing to build; `main-SNAPSHOT` → 404.
+
+  **The fix is a one-line network-policy change**: allow
+  `shenzhen-robotics-alliance.github.io` in the environment's egress allowlist.
+  That single host covers both the vendordep JSON and the Maven repo. (Optional
+  nice-to-have while in there: `bline-metrics.edan-liahovetsky.workers.dev`, the
+  URL BLine's docs advertise — also 403 today, though `raw.githubusercontent.com`
+  serves the identical JSON so it isn't blocking.)
+
+  Until then, Lesson 17 was verified at the Lesson 15 state, which is sound:
+  Lesson 16's `Drivetrain` changes are confined to the static `m_driveSim` field,
+  `createDriveSim()`, the two `SIM` switch arms, and the ground-truth log — none
+  of which Lesson 17 touches. Lessons 18–22 add mechanisms that don't depend on
+  maple-sim either (WPILib's own `ElevatorSim`/`SingleJointedArmSim` back them),
+  so this only blocks re-verifying Lesson 16 itself and any later lesson that
+  reaches for `IntakeSimulation`.
 
 ---
 
@@ -204,9 +236,12 @@ Still open:
       as vague future work. Lesson 17 now exists — point at it by name (and at 18
       once it lands) or trim the section.
 - [ ] Add README rows for 18–22 as each lands.
-- [ ] Fix Lesson 15's PhotonLib install prose (see findings above).
+- [x] Fixed Lesson 15's PhotonLib install to a pinned `v2026.3.4` URL, and
+      replaced the deprecated `loadAprilTagLayoutField()` everywhere.
 - [ ] Add a `code/lesson-1/Constants.java` so the early snapshots — and
       `ActualLessons` — actually compile.
+- [ ] Allow `shenzhen-robotics-alliance.github.io` in the environment network
+      policy so Lesson 16 can be compile-verified (see findings).
 
 ---
 

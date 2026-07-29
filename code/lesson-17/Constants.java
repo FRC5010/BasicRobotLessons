@@ -104,7 +104,7 @@ public final class Constants {
 
   public static class VisionConstants {
     public static final AprilTagFieldLayout kTagLayout =
-        AprilTagFields.kDefaultField.loadAprilTagLayoutField();
+        AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
 
     // Camera mount positions: robot center → camera lens.
     public static final String kFrontCameraName = "Front"; // must match the name in the PhotonVision UI

@@ -61,14 +61,25 @@ difference, because it was never told there was one.
 
 Same ritual as Lesson 3's AdvantageKit install: open the vendor dependency
 manager (Ctrl+Shift+P → **WPILib: Manage Vendor Libraries** → **Install new
-library (online search)**), search for **PhotonLib**, and install it. If
-your search doesn't turn it up, install it by URL instead:
+library (online search)**), search for **photonlib**, and install it. The
+search list is scoped to your project's season, so what it offers you is a
+2026 build — this course was written against **v2026.3.4**.
+
+If the search comes up empty, install by URL instead:
 
 ```
-https://maven.photonvision.org/repository/internal/org/photonvision/photonlib-json/1.0/photonlib-json-1.0.json
+https://raw.githubusercontent.com/wpilibsuite/vendor-json-repo/main/2026/photonlib-v2026.3.4.json
 ```
 
 Rebuild to confirm: `./gradlew build`.
+
+> **Take the version pin seriously here.** PhotonVision's own docs hand out a
+> URL ending `photonlib-json-1.0.json`, and that one is a *moving* link — it
+> serves whatever build is newest, which in the offseason means next season's
+> alpha. Feed a 2027 alpha to a 2026 project and the build dies before it
+> compiles a line, with `Vendor Dependency photonlib has invalid year null`.
+> The URL above is WPILib's own copy, pinned to one version, and it can't drift.
+> Same trick works for any vendordep: swap the year and library name.
 
 ---
 
@@ -84,7 +95,7 @@ the official tag layout for the current game.
 ```java
 public static class VisionConstants {
   public static final AprilTagFieldLayout kTagLayout =
-      AprilTagFields.kDefaultField.loadAprilTagLayoutField();
+      AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
 }
 ```
 
@@ -94,6 +105,11 @@ line never goes stale when the calendar turns over. (If your specific event
 uses a field built by a different manufacturer — AndyMark and Welded field
 kits mount tags with tiny position differences — swap in that season's
 exact constant instead, e.g. `AprilTagFields.k2026RebuiltWelded`.)
+
+Read the call in that order — the *layout class* does the loading, and the
+enum value is just which field to load. Autocomplete may also offer
+`kDefaultField.loadAprilTagLayoutField()`, which reads more naturally and is
+what older code does; it's deprecated for removal, so use `loadField` instead.
 
 ---
 
