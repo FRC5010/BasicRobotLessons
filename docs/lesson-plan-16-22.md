@@ -5,7 +5,7 @@ document, not lesson content** — it lives beside `docs/lessons/`, never inside
 it, and nothing here should be pasted into a lesson as-is.
 
 Written one lesson at a time, reviewed between each, same as the voice-rewrite
-pass. Lesson 16 is done; 17–22 are outlines waiting to be drafted.
+pass. Lessons 16–17 are done; 18–22 are outlines waiting to be drafted.
 
 ---
 
@@ -14,7 +14,7 @@ pass. Lesson 16 is done; 17–22 are outlines waiting to be drafted.
 | # | Working title | Builds on | 3rd-party library | Status |
 |---|---|---|---|---|
 | 16 | maple-sim — a world to drive in | L13 (IO layers), L11 (field views) | `maple-sim` | **Done** — [lesson](lessons/16-maple-sim-field.md), [code](../code/lesson-16/) |
-| 17 | B-Line autos: waypoints and trajectories | L9 (autos), L10 (kinematics), L14 (Localizer) | `BLine-Lib` | Outline |
+| 17 | B-Line autos: waypoints and trajectories | L9 (autos), L10 (kinematics), L14 (Localizer) | `BLine-Lib` | **Done** — [lesson](lessons/17-bline-autos.md), [code](../code/lesson-17/) |
 | 18 | Scoring elevator | L13 (IO spine), L12 (configs/control requests) | none | Outline |
 | 19 | Mechanism2d for the elevator | L18, L11 (`putData` precedent) | none | Outline |
 | 20 | Intake arm (−20°…180°) + roller | L18/L19, L12 | none | Outline |
@@ -57,10 +57,10 @@ position. "Field and obstacles" needs obstacles that push back.
 - Nothing above the IO boundary changed: `SwerveModule`, `Drivetrain`'s
   commands, `Localizer`, kinematics, autos, and every log key are untouched.
 
-### 2. Elevator/arm control style — STILL OPEN, blocks 18–22
+### 2. Elevator/arm control style — RESOLVED (Motion Magic)
 
-**Recommendation: onboard Phoenix 6 `MotionMagicVoltage` + `Slot0.kG`**, not
-WPILib's `TrapezoidProfile` / `ProfiledPIDController` / `ElevatorFeedforward` /
+**Decided: onboard Phoenix 6 `MotionMagicVoltage` + `Slot0.kG`**, not WPILib's
+`TrapezoidProfile` / `ProfiledPIDController` / `ElevatorFeedforward` /
 `ArmFeedforward`.
 
 Lesson 12 already spent a whole lesson moving control *onto* the TalonFX and
@@ -70,11 +70,11 @@ Motion Magic and gravity-type gains are the next control request in that family
 20 read as "one more `Slot0` gain" rather than a second, competing control
 framework.
 
-The tradeoff worth naming: this ties the mechanisms lessons to CTRE hardware the
-same way the drivetrain already is, instead of teaching the vendor-agnostic
-WPILib profiling classes. Given the course is TalonFX-first throughout, that
-seems consistent — but it's the one choice that ripples through five lessons
-(18, 19, 20, 21, 22 all assume it), so **confirm before drafting Lesson 18.**
+The tradeoff, named once here so lessons don't have to re-litigate it: this ties
+the mechanisms lessons to CTRE hardware the same way the drivetrain already is,
+instead of teaching the vendor-agnostic WPILib profiling classes. Given the
+course is TalonFX-first throughout, that's the consistent choice. Lessons 18–22
+may now all assume it.
 
 ### Conventions applied without asking
 
@@ -111,13 +111,78 @@ Worth writing down, because `CLAUDE.md` currently contradicts the first one.
   Javadoc. Lesson *markdown* snippets use 2-space throughout regardless — that
   mismatch is pre-existing and consistent.
 - **`code/ActualLessons/`** is the student's starter project, frozen at roughly
-  Lesson 1 state (`ExampleSubsystem`/`ExampleCommand` still present, only
+  Lesson 2 state (`ExampleSubsystem`/`ExampleCommand` still present, only
   Phoenix 6 + WPILibNewCommands vendordeps). It does **not** track the lesson
-  sequence. Nothing in `code/lesson-N/` is compiled by anything — no lesson code
-  in this repo has ever been build-verified. If that's worth changing, the move
-  is bringing `ActualLessons` up to current state with the four vendordeps
-  (AdvantageKit, Phoenix 6, PhotonLib, maple-sim) so `./gradlew build` actually
-  exercises it.
+  sequence, and **as committed it does not compile** (see findings below).
+
+## Compile-verifying lesson code (workflow)
+
+`ActualLessons` is a real Gradle project, so it can be used as a compile
+sandbox for lesson code — which is now the expected practice when drafting or
+editing a lesson. **Never commit changes to `ActualLessons`**; copy it out first.
+
+The workflow, as used to verify Lesson 17:
+
+1. `cp -r code/ActualLessons <scratch>/verify` and `chmod +x gradlew`.
+2. Apply `code/lesson-0` … `code/lesson-N` in order into
+   `src/main/java/frc/robot/` (last writer wins), then delete the files the
+   lessons delete: `DriveModule.java` (became `SwerveModule` in L7),
+   `VisionPoseProvider.java` (deleted in L15), and the two `Example*` samples.
+3. Drop the vendordep JSONs into `vendordeps/` and append Lesson 13's two
+   AdvantageKit `build.gradle` blocks.
+4. `./gradlew compileJava`. First run takes ~90 s to populate the Gradle cache;
+   after that it's seconds.
+
+For anything with runtime behavior worth checking — a JSON schema, a
+non-deprecated API replacement — a throwaway JUnit test under
+`src/test/java/` is cheap and much stronger than a compile. Lesson 17's path
+JSON and `config.json` were validated that way, against BLine's real parser,
+rather than being taken on faith from the docs.
+
+Verified state as of Lesson 17: **lessons 0–15 and 17 compile clean with zero
+warnings.** Lesson 16 is compile-verified only for its non-maple-sim parts (see
+findings).
+
+## Findings from the first verification pass
+
+Real defects surfaced by actually compiling. Fixed:
+
+- **`code/lesson-16/RobotContainer.java` had regressed Lesson 15's
+  construction-order fix** — it rebuilt the two cameras as field initializers
+  capturing `() -> m_localizer.getPose()` *above* `m_localizer`'s own
+  declaration. Lesson 16's markdown was fine (it only adds the `resetPose`
+  block); the snapshot had been copied from a pre-fix Lesson 15. Rebuilt on the
+  corrected version.
+- **`AprilTagFields.loadAprilTagLayoutField()` is deprecated for removal** in
+  WPILib 2026 — the only compile warning in the whole tree. Replacement is
+  `AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField)`, confirmed
+  working at runtime (loads 32 tags on the 2026 Rebuilt field).
+
+Still open:
+
+- **Lesson 15's PhotonLib install URL is season-wrong.** The
+  `photonlib-json/1.0/photonlib-json-1.0.json` artifact is a *floating* pointer,
+  and it currently serves `v2027.0.0-alpha-2` with a `wpilibYear` key instead of
+  `frcYear`. GradleRIO 2026 rejects it outright: *"Vendor Dependency photonlib
+  has invalid year null."* PhotonVision publishes no season-pinned vendordep
+  URL, so the fix is prose, not a different link: lead with the vendor-manager
+  online search (which filters by the project's year) and warn that the raw URL
+  tracks the newest build, which off-season means next season.
+- **`code/ActualLessons` does not compile as committed.** Its `DriveModule.java`
+  is the Lesson 2 snapshot, which reads
+  `Constants.DriveConstants.kDriveMotorPort`, but its `Constants.java` is the
+  untouched template with only `OperatorConstants`. Root cause: `DriveConstants`
+  is introduced by Lesson 1's **Try It #3**, and the `lesson-1`…`lesson-4`
+  snapshots ship the post-Try-It `DriveModule` without a matching
+  `Constants.java`. Cheapest fix is adding a `code/lesson-1/Constants.java`.
+- **maple-sim cannot be resolved in the Claude Code environment**, so Lesson 16's
+  code is not compile-verified. Its Maven repo is
+  `shenzhen-robotics-alliance.github.io`, which the network policy denies (403 on
+  CONNECT), and `org.ironmaple:maplesim-java` is *not* on Maven Central despite
+  being listed as a fallback repo. Lesson 17 was verified at the Lesson 15 state
+  instead, which is sound because Lesson 16's `Drivetrain` changes are confined
+  to the static `m_driveSim` field, `createDriveSim()`, the two `SIM` switch
+  arms, and the ground-truth log — none of which Lesson 17 touches.
 
 ---
 
@@ -125,14 +190,20 @@ Worth writing down, because `CLAUDE.md` currently contradicts the first one.
 
 - [x] README lessons table row for 16.
 - [x] `Next:` link added to the end of Lesson 15.
-- [ ] **Lesson 16 ends with a link to `17-bline-autos.md`, which does not exist
-      yet.** Dead until 17 lands. Keep the filename or fix the link.
+- [x] **Lesson 16's link to `17-bline-autos.md`** — resolved; Lesson 17 landed
+      under exactly that filename.
+- [x] README lessons table row for 17.
+- [x] Corrected `CLAUDE.md`'s "documentation-only / no Java source" claim.
+- [ ] **Lesson 17 ends with a link to `18-elevator.md`, which does not exist
+      yet.** Dead until 18 lands; keep the filename.
 - [ ] **Lesson 14's epilogue is stale.** It name-drops `PathPlanner`/`Choreo`
       for trajectory following and sketches "an elevator, a shooter, an intake"
-      as vague future work. Once 17 and 18 exist, point at them by name or trim
-      the section.
-- [ ] Add README rows for 17–22 as each lands.
-- [ ] Consider correcting `CLAUDE.md`'s "documentation-only" claim.
+      as vague future work. Lesson 17 now exists — point at it by name (and at 18
+      once it lands) or trim the section.
+- [ ] Add README rows for 18–22 as each lands.
+- [ ] Fix Lesson 15's PhotonLib install prose (see findings above).
+- [ ] Add a `code/lesson-1/Constants.java` so the early snapshots — and
+      `ActualLessons` — actually compile.
 
 ---
 
@@ -196,17 +267,60 @@ using B-Line, a polyline path-following library built for holonomic chassis.
 - (With L16) run the path with obstacles active and see what happens when the
   drawn line clips one.
 
-**Research flags**
-- Confirmed: `BLine-Lib` (library) + `BLine-Web` (GUI) + `BLine-Docs`, same
-  author, FRC Team 2638. The `FollowPath.Builder` shape (drive subsystem, pose
-  supplier, chassis-speeds supplier, drive consumer, three `PIDController`s) plus
-  chained `.withDefaultShouldFlip()` / `.withPoseReset(...)` comes from the
-  library README.
-- **Not** confirmed to signature precision: `Waypoint` / `TranslationTarget` /
-  `RotationTarget` / `EventTrigger` constructors, and the
-  `deploy/autos/paths/*.json` convention. Verify before drafting.
-- `BLine-Docs`' hosted site and GitHub HTML both 403 automated fetches; raw
-  `raw.githubusercontent.com` URLs work.
+**As built — verified BLine API notes**
+
+All of the below was read from the real `v0.9.1` artifact (sources + javadoc jars
+pulled from JitPack at
+`https://jitpack.io/com/github/edanliahovetsky/BLine-Lib/v0.9.1/`) and, where it
+had runtime behavior, confirmed by a JUnit test. The GitHub API and the docs site
+403 in this environment; `raw.githubusercontent.com` and JitPack both work.
+
+- Vendordep: `BLine-Lib` v0.9.1, `frcYear` 2026, from `jitpack.io`, coordinates
+  `com.github.edanliahovetsky:BLine-Lib`. The worker URL in the install docs
+  (`bline-metrics.edan-liahovetsky.workers.dev`) is 403 from this environment;
+  `https://raw.githubusercontent.com/EdanLiahovetsky/BLine-Lib/main/BLine-Lib.json`
+  serves the same JSON.
+- **Package is `frc.robot.lib.BLine`** — the library ships under the robot's own
+  package root, not a vendor namespace. Surprising, worth calling out to students.
+- `new FollowPath.Builder(Subsystem, Supplier<Pose2d>, Supplier<ChassisSpeeds>,
+  Consumer<ChassisSpeeds>, PIDController translation, PIDController rotation,
+  PIDController crossTrack)`, then `.withDefaultShouldFlip()`,
+  `.withPoseReset(Consumer<Pose2d>)`, `.build(Path)`. Also available:
+  `withShouldFlip`, `withShouldMirror`, `withTRatioBasedTranslationHandoffs`.
+- Controller units, from the call sites: translation and cross-track both take
+  **meters** of error and output m/s; rotation takes **radians** (with
+  `enableContinuousInput(-π, π)` applied internally) and outputs rad/s. So all
+  three gains are `1/s`. README's suggested gains — 5.0 / 3.0 / 2.0 — are what
+  the lesson uses.
+- **Event triggers are static, not a constructed object**:
+  `FollowPath.registerEventTrigger(String libKey, Command)` (also a `Runnable`
+  overload). The path-file side is a `PathElement` of `"type": "event_trigger"`
+  carrying `lib_key` + `t_ratio`. The plan's earlier guess at an `EventTrigger`
+  class you instantiate was wrong.
+- `new Path(name)` loads `deploy/autos/paths/<name>.json`;
+  `new Path(File autosDir, name)` takes an explicit directory. `Filesystem.getDeployDirectory()`
+  resolves to `src/main/deploy` off-robot, so paths work in sim with no extra
+  wiring (verified).
+- **`config.json` is mandatory**, not a default-if-absent: `loadPath` eagerly
+  calls `loadGlobalConstraints(autosDir)`, which throws if
+  `deploy/autos/config.json` is missing. Keys are
+  `kinematic_constraints.default_*` (`max_velocity_meters_per_sec`,
+  `max_acceleration_meters_per_sec2`, `max_velocity_deg_per_sec`,
+  `max_acceleration_deg_per_sec2`, `end_translation_tolerance_meters`,
+  `end_rotation_tolerance_deg`, `intermediate_handoff_radius_meters`), each also
+  accepted without the `default_` prefix.
+- Path-file element schema, all angles in **radians**: `waypoint` (nested
+  `translation_target` `{x_meters, y_meters, intermediate_handoff_radius_meters?}`
+  + `rotation_target` `{rotation_radians, t_ratio?, profiled_rotation?}`),
+  `translation` (`x_meters`, `y_meters`, optional handoff),
+  `rotation` (`rotation_radians`, `t_ratio` default 0.5, `profiled_rotation`),
+  `event_trigger` (`t_ratio`, `lib_key`).
+- **Validation rule:** first and last elements must each be a `waypoint` or
+  `translation` — anything else and `isValid()` goes false with a logged warning
+  (it does not throw).
+- Useful extras not used by the lesson: `FollowPath.overrideRotation(DoubleSupplier)`
+  / `clearRotationOverride()` for vision-aiming while driving a path, and four
+  `setXxxLoggingConsumer` statics for piping BLine's internals into AdvantageKit.
 
 ---
 
