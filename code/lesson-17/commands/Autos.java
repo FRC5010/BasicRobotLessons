@@ -18,7 +18,7 @@ import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Localizer;
 
 public final class Autos {
-  /** How this robot follows a path. One for the whole program — see buildChooser. */
+  /** How this robot follows a path. One for the whole program — buildChooser sets it. */
   private static FollowPath.Builder s_pathBuilder;
 
   /** The selected auto, already built and ready to schedule. */
@@ -34,9 +34,23 @@ public final class Autos {
         drivetrain.driveDistance(1.0));    // step 3: forward 1 meter
   }
 
-  /** One path auto, by file name: deploy/autos/paths/<pathName>.json. */
-  private static Command followPath(String pathName) {
-    return s_pathBuilder.build(new Path(pathName));
+  /** Everything about following a path that doesn't depend on which path it is. */
+  private static FollowPath.Builder makePathBuilder(Drivetrain drivetrain, Localizer localizer) {
+    return new FollowPath.Builder(
+        drivetrain,                     // the subsystem the command will require
+        localizer::getPose,             // where we are (fused, Lesson 14)
+        drivetrain::getChassisSpeeds,   // how fast we're going, robot-relative
+        drivetrain::driveRobotRelative, // how to make the robot move
+        new PIDController(PathConstants.kTranslationP, 0, 0),
+        new PIDController(PathConstants.kRotationP, 0, 0),
+        new PIDController(PathConstants.kCrossTrackP, 0, 0))
+        .withDefaultShouldFlip()               // mirror the path for the red alliance
+        .withPoseReset(localizer::resetPose);  // snap the estimate to the path's start
+  }
+
+  /** A recipe for one path auto. The file is deploy/autos/paths/<pathName>.json. */
+  private static Supplier<Command> followPath(String pathName) {
+    return () -> s_pathBuilder.build(new Path(pathName));
   }
 
   /**
@@ -46,25 +60,14 @@ public final class Autos {
    */
   public static LoggedDashboardChooser<Supplier<Command>> buildChooser(
       Drivetrain drivetrain, Localizer localizer) {
-    // One builder, used by every path auto. It describes how *this robot* follows
-    // a path; the path file is the only thing that differs per auto.
-    s_pathBuilder = new FollowPath.Builder(
-        drivetrain,                     // the subsystem the command will require
-        localizer::getPose,             // where we are (fused, Lesson 14)
-        drivetrain::getChassisSpeeds,   // how fast we're going, robot-relative
-        drivetrain::driveRobotRelative, // how to make the robot move
-        new PIDController(PathConstants.kTranslationP, 0, 0),
-        new PIDController(PathConstants.kRotationP, 0, 0),
-        new PIDController(PathConstants.kCrossTrackP, 0, 0))
-        .withDefaultShouldFlip()              // mirror the path for the red alliance
-        .withPoseReset(localizer::resetPose); // snap the estimate to the path's start
+    s_pathBuilder = makePathBuilder(drivetrain, localizer);
 
     LoggedDashboardChooser<Supplier<Command>> chooser =
         new LoggedDashboardChooser<>("Auto Choice");
     chooser.addDefaultOption("Drive-Turn-Drive", () -> driveTurnDrive(drivetrain));
     chooser.addOption("Do Nothing", Commands::none);
-    chooser.addOption("Two Corners", () -> followPath("TwoCorners"));
-    chooser.addOption("Far Side", () -> followPath("FarSide"));
+    chooser.addOption("Two Corners", followPath("TwoCorners"));
+    chooser.addOption("Far Side", followPath("FarSide"));
 
     chooser.onChange(recipe -> s_selected = recipe.get());
     return chooser;
