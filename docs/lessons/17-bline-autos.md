@@ -29,7 +29,9 @@ continuously against Lesson 14's fused pose.
 
 ## 1. What drive-turn-drive can't do
 
-Look at Lesson 9's auto again, honestly:
+Look at Lesson 9's auto again, honestly.
+
+*Nothing to add — this is code you already have:*
 
 ```java
 Commands.sequence(
@@ -150,7 +152,9 @@ thing to do; what would be unhealthy is quietly changing `applyChassisSpeeds` to
 
 ## 4. Meet `PIDController`
 
-You have written this code four times:
+You have written this code four times.
+
+*Nothing to add — you know this one:*
 
 ```java
 double error = target - measured;
@@ -160,7 +164,9 @@ double output = kP * error;
 Lesson 5 steered a module with it. Lesson 6 drove a distance. Lesson 8 turned to
 a heading. Lesson 11 drove to a pose. Each time, the same three lines with
 different names around them. WPILib has had a class for this the whole time, and
-now you need three of them at once, so it's finally worth reaching for:
+now you need three of them at once, so it's finally worth reaching for.
+
+*Nothing to add — this is just how the class is used:*
 
 ```java
 PIDController controller = new PIDController(5.0, 0.0, 0.0);
@@ -404,6 +410,11 @@ the method. The path isn't in it. Every one of those seven arguments describes h
 the builder instead of a finished command: one builder can serve every path you'll
 ever draw.
 
+> **One builder means one set of controllers for every auto. Is that safe?** Yes, and
+> the reason is worth knowing. Every `FollowPath` requires the drivetrain, so the
+> scheduler guarantees only one is ever running. B-Line also resets the controllers
+> and re-reads the path's tolerances in `initialize()`, so each run starts clean.
+
 That builder needs a home, though — somewhere that outlives the call and is reachable
 from the rest of `Autos`.
 
@@ -418,16 +429,13 @@ from the rest of `Autos`.
 `m_driveSim` are: there's exactly one of the thing, and it isn't owned by any one
 caller.
 
-With that in place, turning a path into something you can schedule is a single call:
+With that in place, turning a path into something you can schedule takes one call.
+
+*Nothing to add — this is just the shape of it:*
 
 ```java
     Command twoCorners = s_pathBuilder.build(new Path("TwoCorners"));
 ```
-
-> **Is sharing three controllers across every auto safe?** Yes, and the reason is
-> worth knowing. Every `FollowPath` requires the drivetrain, so the scheduler
-> guarantees only one is ever running. B-Line also resets the controllers and
-> re-reads the path's tolerances in `initialize()`, so each run starts clean.
 
 ---
 
@@ -438,18 +446,20 @@ where those lines go — and the answer is less obvious than it looks, because *
 they run matters as much as what they do.
 
 Start with the straightforward version. Lesson 9's chooser takes `Command` objects,
-so each path auto would be an option like this:
+so each path auto would be an option like this.
+
+*Nothing to add — this is the version we're about to reject:*
 
 ```java
     chooser.addOption("Two Corners", s_pathBuilder.build(new Path("TwoCorners")));
 ```
 
-Read that as code rather than as intent. `build(...)` runs *right there*, while the
-chooser is being set up, to produce the object handed to `addOption`. So every auto
-in the drop-down is fully constructed before the robot finishes booting — including
-all the ones you won't run today. Each path auto opens a file, parses JSON, and
-validates the result. A team with ten autos does ten file reads on a roboRIO at
-startup to throw away nine of them.
+The trap is that `build(...)` is a call, and calls happen when you write them. It
+runs while the chooser is being set up, to produce the object handed to `addOption`.
+So every auto in the drop-down is fully constructed before the robot finishes
+booting — including all the ones you won't run today. Each path auto opens a file,
+parses JSON, and validates the result. A team with ten autos does ten file reads on
+a roboRIO at startup to throw away nine of them.
 
 What belongs in the chooser isn't the auto, then. It's the *knowledge of how to make
 one*. Java has had a type for that since Lesson 2 — a `Supplier` — and here what it
@@ -499,7 +509,9 @@ Starting it at `Commands.none()` rather than `null` means `getAutonomousCommand(
 can never hand the scheduler a null — which Lesson 9's version could, if nothing was
 ever selected.
 
-Now the callback itself is one line:
+The callback itself is one line. You'll add it as part of `buildChooser` in a moment.
+
+*Nothing to add yet — here it is on its own:*
 
 ```java
     chooser.onChange(recipe -> s_selected = recipe.get());
