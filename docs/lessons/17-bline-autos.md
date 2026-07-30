@@ -397,22 +397,15 @@ the red alliance — draw once, works on both. `withPoseReset(...)` gives B-Line
 way to re-anchor your pose estimate to the path's starting point as the command
 begins; that's Lesson 14's `resetPose`, now called by a library instead of by you.
 
-Alright — now the part worth stopping on, and the reason that's a method of its own.
-Look at the list again and notice what *isn't* in it: **the path.** Every one of
-those seven things describes how *this robot* follows a line, and not one of them
-changes between autos. Only the `Path` does:
+Alright — one more thing to notice about that list, because it explains the shape of
+the method. The path isn't in it. Every one of those seven arguments describes how
+*this robot* follows a line, and none of them depend on *which* line. That's why
+`makePathBuilder` takes only the drivetrain and the localizer, and why it hands back
+the builder instead of a finished command: one builder can serve every path you'll
+ever draw.
 
-```java
-    Command twoCorners = builder.build(new Path("TwoCorners"));
-    Command farSide    = builder.build(new Path("FarSide"));
-```
-
-So you want one builder, made once, with `build(...)` called on it per path.
-Getting that backwards — a fresh builder and three fresh `PIDController`s for every
-auto — is the kind of thing that looks fine at two autos and quietly triples the
-work at six.
-
-One builder for the whole program means a **field** to keep it in.
+That builder needs a home, though — somewhere that outlives the call and is reachable
+from the rest of `Autos`.
 
 **Add to `Autos`, at the top of the class:**
 
@@ -422,8 +415,14 @@ One builder for the whole program means a **field** to keep it in.
 ```
 
 `static` for the same reason Lesson 15's `VisionSystemSim` and Lesson 16's
-`m_driveSim` are: there is exactly one of the thing, and it isn't owned by any one
+`m_driveSim` are: there's exactly one of the thing, and it isn't owned by any one
 caller.
+
+With that in place, turning a path into something you can schedule is a single call:
+
+```java
+    Command twoCorners = s_pathBuilder.build(new Path("TwoCorners"));
+```
 
 > **Is sharing three controllers across every auto safe?** Yes, and the reason is
 > worth knowing. Every `FollowPath` requires the drivetrain, so the scheduler
@@ -434,26 +433,27 @@ caller.
 
 ## 7. A chooser that holds recipes
 
-Now the part that decides *when* all of that happens, and it's the difference
-between a robot that boots fast and one that doesn't.
+You can turn a path name into a `Command` in one line now. The remaining question is
+where those lines go — and the answer is less obvious than it looks, because *when*
+they run matters as much as what they do.
 
-Lesson 9's chooser holds `Command` objects, so the obvious way to add a path auto
-would be:
+Start with the straightforward version. Lesson 9's chooser takes `Command` objects,
+so each path auto would be an option like this:
 
 ```java
     chooser.addOption("Two Corners", s_pathBuilder.build(new Path("TwoCorners")));
 ```
 
-Read that as code, not as intent. `s_pathBuilder.build(...)` runs *right there*, at
-startup, to produce the object you hand to `addOption`. Which means every auto in
-the drop-down gets fully constructed before the robot is ready — including all the
-ones you aren't going to run. Each path auto opens a file, parses JSON, and
-validates a path. A team with ten autos does ten file reads on a roboRIO during
-boot to throw away nine of them.
+Read that as code rather than as intent. `build(...)` runs *right there*, while the
+chooser is being set up, to produce the object handed to `addOption`. So every auto
+in the drop-down is fully constructed before the robot finishes booting — including
+all the ones you won't run today. Each path auto opens a file, parses JSON, and
+validates the result. A team with ten autos does ten file reads on a roboRIO at
+startup to throw away nine of them.
 
-What you want to store is not the auto but the *knowledge of how to make one*. Java
-already has the type for that, and you've used it since Lesson 2: a `Supplier`. Here
-it supplies a whole `Command`.
+What belongs in the chooser isn't the auto, then. It's the *knowledge of how to make
+one*. Java has had a type for that since Lesson 2 — a `Supplier` — and here what it
+supplies is a whole `Command`.
 
 **Add to `Autos`, below `makePathBuilder`:**
 
@@ -464,13 +464,14 @@ it supplies a whole `Command`.
   }
 ```
 
-Notice what changed and what didn't. The body is the same `build(new Path(name))`
-call — it's just wrapped in `() ->`, which means *don't do this yet*. So
-`followPath("TwoCorners")` no longer hands you an auto; it hands you a way to get
-one, and asking for it is free.
+The return type is the whole point. `followPath("TwoCorners")` doesn't build
+anything — it hands back a `Supplier<Command>`, a small object carrying the
+instructions for building one. The `() ->` is what makes the difference: everything
+after the arrow is code that hasn't run yet and won't until somebody calls
+`get()`. Asking `followPath` for a recipe costs nothing; no file is opened.
 
-That's the whole trick, and it's worth saying plainly: **a lambda is how you move
-work from now to later.**
+Worth saying plainly, because it's a tool you'll reach for well beyond autos: **a
+lambda is how you move work from now to later.**
 
 Except — later *when*? If the answer is `getAutonomousCommand()`, you've only moved
 the file read into the moment the match starts, out of the fifteen seconds you
@@ -537,12 +538,15 @@ Now assemble all of it into the method `RobotContainer` will call.
   }
 ```
 
-The two path options are one line each, which is section 6's argument made concrete:
-a new auto is a new file plus a new line. And every option is the same *type* even
-though they got there differently — `followPath(...)` returns a `Supplier<Command>`
-itself, while `() -> driveTurnDrive(drivetrain)` and `Commands::none` are a lambda
-and a method reference written at the call site. All three are "code that will make a
-command, later."
+Adding a path auto from here is a new file and a new line — that's what the one
+shared builder buys you.
+
+The four options are worth comparing, because they reach the same type by three
+different routes. `followPath(...)` is a method that *returns* a `Supplier<Command>`.
+`() -> driveTurnDrive(drivetrain)` is a lambda written at the call site, needed
+because `driveTurnDrive` wants an argument. `Commands::none` is a method reference,
+which works because `Commands.none()` already takes nothing and returns a `Command`.
+Three spellings, one type: code that will make a command later.
 
 `followPath` and `makePathBuilder` are both `private`, and `followPath` reads a field
 that `buildChooser` assigns. That ordering is safe by construction: the only thing
@@ -674,9 +678,9 @@ import java.util.function.Supplier;
   }
 ```
 
-`driveTurnDrive` survived all of this, by the way. Lesson 9's auto isn't wrong,
-and keeping it in the drop-down makes the difference easy to see on the field
-view — a fixed sequence of nudges next to a path being chased.
+Lesson 9's `driveTurnDrive` stays in the drop-down, and not just for
+sentiment — having both lets you switch between them on the field view and watch the
+difference directly: a fixed sequence of nudges, then a line being chased.
 
 ---
 
