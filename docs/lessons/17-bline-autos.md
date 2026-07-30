@@ -347,32 +347,69 @@ two here makes something visible in section 7 that one path would hide.
 
 ---
 
-## 6. Build the follow command
+## 6. Meet `FollowPath.Builder`
 
-`FollowPath.Builder` takes everything B-Line needs to drive your specific robot,
-and `build(path)` turns a `Path` into a `Command` you can schedule like any other.
+B-Line needs a handful of facts about your specific robot before it can drive it
+down a line, and `FollowPath.Builder` is where you hand them over. Once it has
+them, `build(path)` turns a `Path` into an ordinary `Command`.
 
-Look at what goes into the builder and notice what *isn't* there: the path. The
-builder describes how **this robot** follows a line — which subsystem to require,
-where to read pose and speed, how to make it move, how hard to correct. None of
-that changes between autos. Only the `Path` does.
-
-So build one builder and call `build(...)` on it as many times as you have paths.
-Two autos, one builder, two lines that differ by a filename:
+Here's the whole thing. Read it rather than typing it — it lives inside a method
+you'll write in section 7, and you'll get the assembled file there:
 
 ```java
-    FollowPath.Builder paths = new FollowPath.Builder(/* ...seven things... */);
-
-    Command twoCorners = paths.build(new Path("TwoCorners"));
-    Command farSide    = paths.build(new Path("FarSide"));
+    s_pathBuilder = new FollowPath.Builder(
+        drivetrain,                     // the subsystem the command will require
+        localizer::getPose,             // where we are (fused, Lesson 14)
+        drivetrain::getChassisSpeeds,   // how fast we're going, robot-relative
+        drivetrain::driveRobotRelative, // how to make the robot move
+        new PIDController(PathConstants.kTranslationP, 0, 0),
+        new PIDController(PathConstants.kRotationP, 0, 0),
+        new PIDController(PathConstants.kCrossTrackP, 0, 0))
+        .withDefaultShouldFlip()              // mirror the path for the red alliance
+        .withPoseReset(localizer::resetPose); // snap the estimate to the path's start
 ```
 
-Getting that backwards — a fresh builder and three fresh `PIDController`s per
-auto — is the kind of thing that looks fine and quietly triples as your auto list
-grows.
+Seven arguments, and you've already met every idea in them.
 
-Since the builder is the same every time and `new Path(name)` is pure ceremony,
-wrap the pair once and never type it again:
+The first is the **subsystem the command requires** — Lesson 9's mutual exclusion,
+so your joystick drive command steps aside while a path is running and takes back
+over when it finishes.
+
+The next three are section 3's two new doors plus Lesson 14's pose, all handed over
+as **method references**. Two of them are suppliers: `localizer::getPose` and
+`drivetrain::getChassisSpeeds` fetch a value when asked, exactly like the joystick
+suppliers back in Lesson 2. The third is different in kind.
+`drivetrain::driveRobotRelative` doesn't return anything — B-Line *calls* it, every
+tick, with the chassis speeds it has decided on. You're not handing over a value,
+or even a way to get one. You're handing over a **verb**.
+
+Then the three `PIDController`s from section 4, in the order the builder expects
+them: translation, rotation, cross-track.
+
+Two more settings are chained onto the end. `withDefaultShouldFlip()` mirrors the
+whole path to the far side of the field when the driver station reports you're on
+the red alliance — draw once, works on both. `withPoseReset(...)` gives B-Line a
+way to re-anchor your pose estimate to the path's starting point as the command
+begins; that's Lesson 14's `resetPose`, now called by a library instead of by you.
+
+Alright — now the part worth stopping on. Look at that list again and notice what
+*isn't* in it: **the path.** Every one of those seven things describes how *this
+robot* follows a line, and not one of them changes between autos. Only the `Path`
+does.
+
+So build one builder, and call `build(...)` on it once per path:
+
+```java
+    Command twoCorners = s_pathBuilder.build(new Path("TwoCorners"));
+    Command farSide    = s_pathBuilder.build(new Path("FarSide"));
+```
+
+Getting that backwards — a fresh builder and three fresh `PIDController`s for every
+auto — is the kind of thing that looks fine at two autos and quietly triples the
+work at six.
+
+And since the builder never varies and `new Path(name)` is pure ceremony, wrap the
+pair once so you never type it again:
 
 ```java
   private static Command followPath(String pathName) {
@@ -380,15 +417,15 @@ wrap the pair once and never type it again:
   }
 ```
 
-Now an auto is `followPath("TwoCorners")`. The builder becomes a field —
-`s_pathBuilder` — because there is exactly one of them for the whole program, the
-same reason Lesson 15's `VisionSystemSim` and Lesson 16's `m_driveSim` are
+Now an auto is `followPath("TwoCorners")`. `s_pathBuilder` is a **field** rather
+than a local because there is exactly one of them for the whole program — the same
+reasoning that made Lesson 15's `VisionSystemSim` and Lesson 16's `m_driveSim`
 `static`.
 
-> **Is sharing controllers safe?** Yes, and for a reason worth knowing. Every
-> `FollowPath` requires the drivetrain, so the scheduler guarantees only one runs
-> at a time. B-Line also resets the controllers and re-reads the path's tolerances
-> in `initialize()`, so each run starts clean.
+> **Is sharing three controllers across every auto safe?** Yes, and the reason is
+> worth knowing. Every `FollowPath` requires the drivetrain, so the scheduler
+> guarantees only one is ever running. B-Line also resets the controllers and
+> re-reads the path's tolerances in `initialize()`, so each run starts clean.
 
 ---
 
@@ -397,18 +434,19 @@ same reason Lesson 15's `VisionSystemSim` and Lesson 16's `m_driveSim` are
 Now the part that decides *when* all of that happens, and it's the difference
 between a robot that boots fast and one that doesn't.
 
-Lesson 9's chooser holds `Command` objects:
+Lesson 9's chooser holds `Command` objects, so the obvious way to add a path auto
+would be:
 
 ```java
     chooser.addOption("Two Corners", followPath("TwoCorners"));
 ```
 
-Read that as code, not as intent. `followPath("TwoCorners")` runs *right there*,
-at startup, to produce the object you hand to `addOption`. Which means
-every auto in the drop-down gets fully constructed before the robot is ready —
-including the nine you aren't going to run. Each BLine auto opens a file, parses
-JSON, and validates a path. Ten of those is ten file reads on a roboRIO during
-boot, to throw away nine of them.
+Read that as code, not as intent. `followPath("TwoCorners")` runs *right there*, at
+startup, to produce the object you hand to `addOption`. Which means every auto in
+the drop-down gets fully constructed before the robot is ready — including all the
+ones you aren't going to run. Each path auto opens a file, parses JSON, and
+validates a path. A team with ten autos does ten file reads on a roboRIO during
+boot to throw away nine of them.
 
 The fix is to put a **recipe** in the chooser instead of a finished dish:
 
@@ -561,7 +599,7 @@ but it no longer knows what's in it.
 import java.util.function.Supplier;
 ```
 
-**In the constructor, replace the three `addOption` lines with:**
+**In the constructor, replace both of Lesson 9's chooser-option lines with:**
 
 ```java
     m_autoChooser = Autos.buildChooser(m_drivetrain, m_localizer);
