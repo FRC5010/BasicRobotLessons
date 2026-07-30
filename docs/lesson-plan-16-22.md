@@ -5,7 +5,7 @@ document, not lesson content** — it lives beside `docs/lessons/`, never inside
 it, and nothing here should be pasted into a lesson as-is.
 
 Written one lesson at a time, reviewed between each, same as the voice-rewrite
-pass. Lessons 16–17 are done; 18–22 are outlines waiting to be drafted.
+pass. Lessons 16–18 are done; 19–22 are outlines waiting to be drafted.
 
 ---
 
@@ -15,7 +15,7 @@ pass. Lessons 16–17 are done; 18–22 are outlines waiting to be drafted.
 |---|---|---|---|---|
 | 16 | maple-sim — a world to drive in | L13 (IO layers), L11 (field views) | `maple-sim` | **Done** — [lesson](lessons/16-maple-sim-field.md), [code](../code/lesson-16/) |
 | 17 | B-Line autos: waypoints and trajectories | L9 (autos), L10 (kinematics), L14 (Localizer) | `BLine-Lib` | **Done** — [lesson](lessons/17-bline-autos.md), [code](../code/lesson-17/) |
-| 18 | Scoring elevator | L13 (IO spine), L12 (configs/control requests) | none | Outline |
+| 18 | Scoring elevator | L13 (IO spine), L12 (configs/control requests) | none | **Done** — [lesson](lessons/18-elevator.md), [code](../code/lesson-18/) |
 | 19 | Mechanism2d for the elevator | L18, L11 (`putData` precedent) | none | Outline |
 | 20 | Intake arm (−20°…180°) + roller | L18/L19, L12 | none | Outline |
 | 21 | Limit sensors / current sensing | L18, L20 | none | Outline |
@@ -158,6 +158,15 @@ Beyond compiling, two runtime checks worth keeping:
   so it's cheap to re-run.
 - Lesson 17's path JSON and `config.json` load through BLine's real parser, and
   `AprilTagFieldLayout.loadField` returns 32 tags on the 2026 Rebuilt field.
+- Lesson 18's elevator closed loop is exercised end to end in sim (HAL up,
+  `Unmanaged.feedEnable` each tick, ~400 ticks): it converges on the commanded
+  height and its steady-state voltage equals `kG`. That test is what caught a
+  guessed `kElevatorKG = 0.3` — the elevator still *converged*, because `kP`
+  silently made up the difference, which is precisely the failure the lesson warns
+  about. The physically correct value is `mass × g × drumRadius / gearRatio`
+  through the motor's torque constant ≈ **0.18 V**, and with it `kP` has nothing
+  left to do. **When a lesson introduces a feedforward gain, verify the gain, not
+  just that the mechanism arrives.**
 
 **Pin vendordeps to a season-specific URL.** WPILib's own vendordep marketplace
 keeps one immutable file per library *per version*, which is the right thing to
@@ -244,9 +253,12 @@ Still open:
       under exactly that filename.
 - [x] README lessons table row for 17.
 - [x] Corrected `CLAUDE.md`'s "documentation-only / no Java source" claim.
-- [ ] **Lesson 17 ends with a link to `18-elevator.md`, which does not exist
-      yet.** Dead until 18 lands; keep the filename.
-- [ ] Add README rows for 18–22 as each lands.
+- [x] **Lesson 17's link to `18-elevator.md`** — resolved; Lesson 18 landed under
+      exactly that filename.
+- [ ] **Lesson 18 ends with a link to `19-mechanism2d.md`, which does not exist
+      yet.** Dead until 19 lands; keep the filename.
+- [x] README row for 18.
+- [ ] Add README rows for 19–22 as each lands.
 - [x] Fixed Lesson 15's PhotonLib install to a pinned `v2026.3.4` URL, and
       replaced the deprecated `loadAprilTagLayoutField()` everywhere.
 - [x] Fixed Lesson 16's maple-sim install to the pinned `0.4.0-beta` URL.
