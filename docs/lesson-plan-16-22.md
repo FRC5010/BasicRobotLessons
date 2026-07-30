@@ -376,7 +376,9 @@ had runtime behavior, confirmed by a JUnit test. The GitHub API and the docs sit
 - **One `FollowPath.Builder`, reused.** The builder holds everything that is the
   same for every path (subsystem, pose/speed suppliers, drive consumer, the three
   controllers); only the `Path` differs, so `build(path)` is called per auto on a
-  single builder. Sharing the `PIDController`s is safe because every `FollowPath`
+  single builder — held as `private static FollowPath.Builder s_pathBuilder` and
+  wrapped by `private static Command followPath(String pathName)`, so `new Path(...)`
+  is written once and each auto is one line. Sharing the `PIDController`s is safe because every `FollowPath`
   requires the drivetrain — the scheduler runs one at a time — and `initialize()`
   resets the controllers and re-reads the path's tolerances. BLine's own README
   calls this "a reusable path builder"; per-auto builders are the anti-pattern.

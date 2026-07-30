@@ -371,6 +371,20 @@ Getting that backwards — a fresh builder and three fresh `PIDController`s per
 auto — is the kind of thing that looks fine and quietly triples as your auto list
 grows.
 
+Since the builder is the same every time and `new Path(name)` is pure ceremony,
+wrap the pair once and never type it again:
+
+```java
+  private static Command followPath(String pathName) {
+    return s_pathBuilder.build(new Path(pathName));
+  }
+```
+
+Now an auto is `followPath("TwoCorners")`. The builder becomes a field —
+`s_pathBuilder` — because there is exactly one of them for the whole program, the
+same reason Lesson 15's `VisionSystemSim` and Lesson 16's `m_driveSim` are
+`static`.
+
 > **Is sharing controllers safe?** Yes, and for a reason worth knowing. Every
 > `FollowPath` requires the drivetrain, so the scheduler guarantees only one runs
 > at a time. B-Line also resets the controllers and re-reads the path's tolerances
@@ -386,11 +400,11 @@ between a robot that boots fast and one that doesn't.
 Lesson 9's chooser holds `Command` objects:
 
 ```java
-    m_autoChooser.addOption("Two Corners", Autos.followPath("TwoCorners"));
+    chooser.addOption("Two Corners", followPath("TwoCorners"));
 ```
 
-Read that as code, not as intent. `Autos.followPath("TwoCorners")` runs *right
-there*, at startup, to produce the object you hand to `addOption`. Which means
+Read that as code, not as intent. `followPath("TwoCorners")` runs *right there*,
+at startup, to produce the object you hand to `addOption`. Which means
 every auto in the drop-down gets fully constructed before the robot is ready —
 including the nine you aren't going to run. Each BLine auto opens a file, parses
 JSON, and validates a path. Ten of those is ten file reads on a roboRIO during
@@ -399,7 +413,7 @@ boot, to throw away nine of them.
 The fix is to put a **recipe** in the chooser instead of a finished dish:
 
 ```java
-    chooser.addOption("Two Corners", () -> paths.build(new Path("TwoCorners")));
+    chooser.addOption("Two Corners", () -> followPath("TwoCorners"));
 ```
 
 That lambda is a `Supplier<Command>` — the same "code stored as data" idea as the
@@ -446,6 +460,9 @@ import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Localizer;
 
 public final class Autos {
+  /** How this robot follows a path. One for the whole program — see buildChooser. */
+  private static FollowPath.Builder s_pathBuilder;
+
   /** The selected auto, already built and ready to schedule. */
   private static Command s_selected = Commands.none();
 
@@ -459,6 +476,11 @@ public final class Autos {
         drivetrain.driveDistance(1.0));    // step 3: forward 1 meter
   }
 
+  /** One path auto, by file name: deploy/autos/paths/<pathName>.json. */
+  private static Command followPath(String pathName) {
+    return s_pathBuilder.build(new Path(pathName));
+  }
+
   /**
    * Builds the auto chooser. Every option is a recipe, not a finished command, so
    * nothing is constructed at startup. onChange builds whichever one is selected
@@ -466,9 +488,9 @@ public final class Autos {
    */
   public static LoggedDashboardChooser<Supplier<Command>> buildChooser(
       Drivetrain drivetrain, Localizer localizer) {
-    // One builder, shared by every path below. It describes how *this robot*
-    // follows a path; the Path is the only thing that differs per auto.
-    FollowPath.Builder paths = new FollowPath.Builder(
+    // One builder, used by every path auto. It describes how *this robot* follows
+    // a path; the path file is the only thing that differs per auto.
+    s_pathBuilder = new FollowPath.Builder(
         drivetrain,                     // the subsystem the command will require
         localizer::getPose,             // where we are (fused, Lesson 14)
         drivetrain::getChassisSpeeds,   // how fast we're going, robot-relative
@@ -483,8 +505,8 @@ public final class Autos {
         new LoggedDashboardChooser<>("Auto Choice");
     chooser.addDefaultOption("Drive-Turn-Drive", () -> driveTurnDrive(drivetrain));
     chooser.addOption("Do Nothing", Commands::none);
-    chooser.addOption("Two Corners", () -> paths.build(new Path("TwoCorners")));
-    chooser.addOption("Far Side", () -> paths.build(new Path("FarSide")));
+    chooser.addOption("Two Corners", () -> followPath("TwoCorners"));
+    chooser.addOption("Far Side", () -> followPath("FarSide"));
 
     chooser.onChange(recipe -> s_selected = recipe.get());
     return chooser;
@@ -500,14 +522,18 @@ public final class Autos {
 Those last two path options are the payoff from section 6: adding an auto is one
 line, because `paths` already knows how this robot drives.
 
-A few things worth reading twice. `paths` is a **local variable**, and the lambdas
-below it still use it after `buildChooser` returns — the same closure behavior as
-`m_localizer::getPose` in Lesson 15, and the reason no field is needed. Java
-requires such a captured local to be effectively final, which `paths` is.
-`Commands::none` is a method reference standing in for `() -> Commands.none()`.
-And `s_selected` starts as `Commands.none()` rather than `null`, so
-`getAutonomousCommand()` can never hand the scheduler a null — an improvement on
-Lesson 9, where an untouched chooser could do exactly that.
+A few things worth reading twice. The two path options are one line each, which is
+section 6's whole argument made concrete — `followPath` already knows the builder,
+so a new auto is a new file plus a new line. `Commands::none` is a method reference
+standing in for `() -> Commands.none()`. And `s_selected` starts as
+`Commands.none()` rather than `null`, so `getAutonomousCommand()` can never hand
+the scheduler a null — an improvement on Lesson 9, where an untouched chooser could
+do exactly that.
+
+`followPath` is `private` on purpose, even though it reads `s_pathBuilder`, which
+`buildChooser` assigns. Nothing can call it too early: the only callers are the
+lambdas above, and a lambda can't run until something pulls it out of the chooser —
+long after `buildChooser` returned.
 
 > **Why is the chooser in `Autos` now?** Because everything it needs is here: the
 > builder, the path names, `driveTurnDrive`. `RobotContainer` is the wiring
@@ -632,8 +658,8 @@ the pre-building working. Take it out when you've seen it.
 ## Try it
 
 1. **Add a third path.** Draw or hand-write one, then add it to the chooser. It
-   should be a single line next to the other two, because `paths` already exists —
-   if you find yourself building a second `FollowPath.Builder`, re-read section 6.
+   should be a single `followPath("YourPath")` line next to the other two — if you
+   find yourself building a second `FollowPath.Builder`, re-read section 6.
    Then set `default_intermediate_handoff_radius_meters` to `0.05` and run it
    again: tight corners, slower lap.
 2. **Mistune the cross-track gain.** Set `kCrossTrackP` to `0.0` and run the path.

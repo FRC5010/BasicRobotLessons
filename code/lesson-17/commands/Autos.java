@@ -18,6 +18,9 @@ import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Localizer;
 
 public final class Autos {
+  /** How this robot follows a path. One for the whole program — see buildChooser. */
+  private static FollowPath.Builder s_pathBuilder;
+
   /** The selected auto, already built and ready to schedule. */
   private static Command s_selected = Commands.none();
 
@@ -31,6 +34,11 @@ public final class Autos {
         drivetrain.driveDistance(1.0));    // step 3: forward 1 meter
   }
 
+  /** One path auto, by file name: deploy/autos/paths/<pathName>.json. */
+  private static Command followPath(String pathName) {
+    return s_pathBuilder.build(new Path(pathName));
+  }
+
   /**
    * Builds the auto chooser. Every option is a recipe, not a finished command, so
    * nothing is constructed at startup. onChange builds whichever one is selected
@@ -38,9 +46,9 @@ public final class Autos {
    */
   public static LoggedDashboardChooser<Supplier<Command>> buildChooser(
       Drivetrain drivetrain, Localizer localizer) {
-    // One builder, shared by every path below. It describes how *this robot*
-    // follows a path; the Path is the only thing that differs per auto.
-    FollowPath.Builder paths = new FollowPath.Builder(
+    // One builder, used by every path auto. It describes how *this robot* follows
+    // a path; the path file is the only thing that differs per auto.
+    s_pathBuilder = new FollowPath.Builder(
         drivetrain,                     // the subsystem the command will require
         localizer::getPose,             // where we are (fused, Lesson 14)
         drivetrain::getChassisSpeeds,   // how fast we're going, robot-relative
@@ -55,8 +63,8 @@ public final class Autos {
         new LoggedDashboardChooser<>("Auto Choice");
     chooser.addDefaultOption("Drive-Turn-Drive", () -> driveTurnDrive(drivetrain));
     chooser.addOption("Do Nothing", Commands::none);
-    chooser.addOption("Two Corners", () -> paths.build(new Path("TwoCorners")));
-    chooser.addOption("Far Side", () -> paths.build(new Path("FarSide")));
+    chooser.addOption("Two Corners", () -> followPath("TwoCorners"));
+    chooser.addOption("Far Side", () -> followPath("FarSide"));
 
     chooser.onChange(recipe -> s_selected = recipe.get());
     return chooser;
