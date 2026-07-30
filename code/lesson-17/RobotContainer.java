@@ -15,7 +15,6 @@ import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.Constants.VisionConstants;
 import frc.robot.commands.Autos;
-import frc.robot.lib.BLine.FollowPath;
 import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Localizer;
 import frc.robot.subsystems.PhotonVisionPoseProvider;
@@ -50,10 +49,6 @@ public class RobotContainer {
     if (Constants.kCurrentMode == Constants.Mode.SIM) {
       m_localizer.resetPose(DriveConstants.kSimStartingPose);
     }
-
-    // Any "shoot" marker dropped on a path fires this. No mechanism exists yet,
-    // so it just says so in the console — Lesson 18 gives it something to do.
-    FollowPath.registerEventTrigger("shoot", Commands.print("Event: shoot!"));
 
     configureBindings();
 

@@ -53,6 +53,13 @@ public final class Autos {
     return () -> s_pathBuilder.build(new Path(pathName));
   }
 
+  /** Names a path file can fire with lib_key. BLine keeps the registry statically. */
+  private static void registerEventTriggers() {
+    // Nothing on this robot can shoot yet, so it just says so in the console.
+    // Lesson 18 starts building mechanisms; this becomes a real command then.
+    FollowPath.registerEventTrigger("shoot", Commands.print("Event: shoot!"));
+  }
+
   /**
    * Builds the auto chooser. Every option is a recipe, not a finished command, so
    * nothing is constructed at startup. onChange builds whichever one is selected
@@ -60,6 +67,7 @@ public final class Autos {
    */
   public static LoggedDashboardChooser<Supplier<Command>> buildChooser(
       Drivetrain drivetrain, Localizer localizer) {
+    registerEventTriggers();
     s_pathBuilder = makePathBuilder(drivetrain, localizer);
 
     LoggedDashboardChooser<Supplier<Command>> chooser =

@@ -565,7 +565,64 @@ that `buildChooser` assigns. That ordering is safe by construction: the only thi
 that calls `followPath` is `buildChooser` itself, and the lambda it returns can't run
 until something pulls it out of the chooser — long after `buildChooser` returned.
 
-Here's the assembled file, to check yours against:
+> **Why is the chooser in `Autos` now?** Because everything it needs is here: the
+> builder, the path names, `driveTurnDrive`. `RobotContainer` is the wiring
+> diagram — it says which subsystems exist and what triggers what. *Which autos the
+> robot has* is a fact about autos.
+
+---
+
+## 8. Event markers
+
+Real autos do things along the way — spin up a shooter while still driving, drop an
+intake before arriving. B-Line handles that with **event markers**: a named point on
+the path that fires a command as the robot passes it.
+
+The name is the link. A path file refers to a marker by `lib_key`, and your code
+registers what that key should do. Registration is `static` — B-Line keeps one table
+for the whole program, not one per path — so it happens once, and every path that
+mentions `"shoot"` gets it.
+
+Which makes it another fact about autos, so it belongs in `Autos` next to the rest.
+
+**Add to `Autos`, above `buildChooser`:**
+
+```java
+  /** Names a path file can fire with lib_key. BLine keeps the registry statically. */
+  private static void registerEventTriggers() {
+    // Nothing on this robot can shoot yet, so it just says so in the console.
+    // Lesson 18 starts building mechanisms; this becomes a real command then.
+    FollowPath.registerEventTrigger("shoot", Commands.print("Event: shoot!"));
+  }
+```
+
+**And call it as the first line of `buildChooser`:**
+
+```java
+    registerEventTriggers();
+```
+
+Now the path side.
+
+**Add a marker to `TwoCorners.json`, between the `rotation` and the final `waypoint`:**
+
+```json
+    {
+      "type": "event_trigger",
+      "t_ratio": 0.8,
+      "lib_key": "shoot"
+    },
+```
+
+`t_ratio` places it 80% of the way along that segment, the same fraction-of-segment
+idea rotations use.
+
+> **A misspelled `lib_key` won't crash.** B-Line looks the name up while the path is
+> running, not while it's being built, and an unknown key just logs a warning and
+> keeps driving. So if a marker never seems to fire, check the console for
+> `Unregistered event trigger key` before you go hunting in the geometry.
+
+That's the last piece of `Autos`. Here's the whole file, to check yours against:
 
 ```java
 // Copyright (c) FIRST and other WPILib contributors.
@@ -623,6 +680,13 @@ public final class Autos {
     return () -> s_pathBuilder.build(new Path(pathName));
   }
 
+  /** Names a path file can fire with lib_key. BLine keeps the registry statically. */
+  private static void registerEventTriggers() {
+    // Nothing on this robot can shoot yet, so it just says so in the console.
+    // Lesson 18 starts building mechanisms; this becomes a real command then.
+    FollowPath.registerEventTrigger("shoot", Commands.print("Event: shoot!"));
+  }
+
   /**
    * Builds the auto chooser. Every option is a recipe, not a finished command, so
    * nothing is constructed at startup. onChange builds whichever one is selected
@@ -630,6 +694,7 @@ public final class Autos {
    */
   public static LoggedDashboardChooser<Supplier<Command>> buildChooser(
       Drivetrain drivetrain, Localizer localizer) {
+    registerEventTriggers();
     s_pathBuilder = makePathBuilder(drivetrain, localizer);
 
     LoggedDashboardChooser<Supplier<Command>> chooser =
@@ -650,14 +715,7 @@ public final class Autos {
 }
 ```
 
-> **Why is the chooser in `Autos` now?** Because everything it needs is here: the
-> builder, the path names, `driveTurnDrive`. `RobotContainer` is the wiring
-> diagram — it says which subsystems exist and what triggers what. *Which autos the
-> robot has* is a fact about autos.
-
----
-
-## 8. Wire it up
+## 9. Wire it up
 
 `RobotContainer` gets shorter. It holds the chooser — something has to own it —
 but it no longer knows what's in it.
@@ -693,50 +751,6 @@ import java.util.function.Supplier;
 Lesson 9's `driveTurnDrive` stays in the drop-down, and not just for
 sentiment — having both lets you switch between them on the field view and watch the
 difference directly: a fixed sequence of nudges, then a line being chased.
-
----
-
-## 9. Event markers
-
-Real autos do things along the way — start a shooter while still driving, drop an
-intake before arriving. B-Line handles that with **event markers**: a named point
-on the path that fires a command when the robot passes it.
-
-You register the name once in code, and the path file refers to it by that name.
-
-**Add to `RobotContainer`'s constructor, above `configureBindings()`:**
-
-```java
-    // Any "shoot" marker dropped on a path fires this. No mechanism exists yet,
-    // so it just says so in the console — Lesson 18 gives it something to do.
-    FollowPath.registerEventTrigger("shoot", Commands.print("Event: shoot!"));
-```
-
-**Add the import at the top of `RobotContainer.java`:**
-
-```java
-import frc.robot.lib.BLine.FollowPath;
-```
-
-**Then add a marker to `TwoCorners.json`, between the `rotation` and the final
-`waypoint`:**
-
-```json
-    {
-      "type": "event_trigger",
-      "t_ratio": 0.8,
-      "lib_key": "shoot"
-    },
-```
-
-`lib_key` is the name you registered; `t_ratio` places it 80% of the way along
-that segment. The registration is `static` — it's a table B-Line keeps for the
-whole program, not something a single path owns — which is why one call in
-`RobotContainer` covers every path that mentions `"shoot"`.
-
-Printing to the console is a placeholder, and an honest one: there is nothing on
-this robot to shoot with yet. Lesson 18 starts building mechanisms, and when it
-does, this line becomes a real command and nothing else here changes.
 
 ---
 
@@ -788,10 +802,11 @@ the pre-building working. Take it out when you've seen it.
    `Commands.sequence`. A library-built command and a hand-written one are both
    just `Command`s. Note that the whole composition still happens lazily, inside
    the lambda — you get that for free now.
-4. **Give the marker a real job.** Swap the `Commands.print` for something you can
-   see — `Commands.runOnce(() -> Logger.recordOutput("Auto/ShootFired", true))`,
-   say — and confirm on the plot that it fires where you placed it. Then move the
-   `t_ratio` and watch the timing move with it.
+4. **Give the marker a real job.** In `registerEventTriggers`, swap the
+   `Commands.print` for something you can see — `Commands.runOnce(() ->
+   Logger.recordOutput("Auto/ShootFired", true))`, say — and confirm on the plot
+   that it fires where you placed it. Then move the `t_ratio` in the path file and
+   watch the timing move with it.
 5. **(With Lesson 16)** Run a path that clips a field wall. maple-sim will refuse
    to let the robot through, the follower will keep trying to reach a point it
    can't get to, and you'll learn something real about drawing paths that assume
