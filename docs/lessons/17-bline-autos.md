@@ -776,11 +776,29 @@ While the path is running, drag the robot sideways off the line in the sim's fie
 view. `driveDistance` would have carried that error to the end of the match. This
 just... drives back to the line and carries on.
 
-One more thing to notice, and it's about section 7 rather than the driving. Put a
-`System.out.println` inside the `Two Corners` lambda, restart the sim, and watch
-*when* it prints while the robot sits disabled: once at startup for the default,
-then once each time you change the drop-down — never during autonomous. That's
-the pre-building working. Take it out when you've seen it.
+One more thing worth seeing, and it's about section 7 rather than the driving. Make
+`followPath` announce itself — note the braces, since the body stops being a single
+expression:
+
+**Temporarily change `followPath` to:**
+
+```java
+  private static Supplier<Command> followPath(String pathName) {
+    return () -> {
+      System.out.println("building " + pathName);
+      return s_pathBuilder.build(new Path(pathName));
+    };
+  }
+```
+
+Restart the sim and watch *when* it prints. Nothing at startup — the default option
+is Drive-Turn-Drive, which doesn't go through `followPath`. Now, still disabled,
+pick **Two Corners**: it prints immediately. Pick **Far Side**: it prints again.
+Then enable Autonomous and watch it stay quiet, because that command was built the
+moment you selected it.
+
+Selecting builds; enabling just runs. That's the whole scheme in one console log.
+Put `followPath` back when you've seen it.
 
 ---
 
@@ -797,11 +815,13 @@ the pre-building working. Take it out when you've seen it.
    try `15.0` and watch it oscillate across the line instead. This is the clearest
    single-loop demo in the whole course, because you can see exactly which job
    that one controller was doing.
-3. **Compose a path with a sequence.** Add a chooser option whose lambda follows
+3. **Compose a path with a sequence.** Add a chooser option that follows
    `TwoCorners` and *then* runs Lesson 8's `turnToHeading(0)`, via
-   `Commands.sequence`. A library-built command and a hand-written one are both
-   just `Command`s. Note that the whole composition still happens lazily, inside
-   the lambda — you get that for free now.
+   `Commands.sequence` — a library-built command and a hand-written one are both
+   just `Command`s. You'll write the lambda at the call site for this one, and
+   you'll need a `Command` rather than a recipe to hand to `Commands.sequence`;
+   `Supplier` has a method for that. Whichever way you get there, the composing
+   still happens inside the lambda, so it stays as lazy as the others.
 4. **Give the marker a real job.** In `registerEventTriggers`, swap the
    `Commands.print` for something you can see — `Commands.runOnce(() ->
    Logger.recordOutput("Auto/ShootFired", true))`, say — and confirm on the plot
