@@ -9,6 +9,8 @@ continuously against Lesson 14's fused pose.
   writing by hand since Lesson 5
 - **Method references as *actions*** — `drivetrain::driveRobotRelative`, not
   just "a reference that fetches a value"
+- **`Supplier<Command>`** — storing *how to build* a command instead of the
+  command, so the work happens when you want it to
 - **The `deploy` folder** — the first thing you ship to the robot that isn't code
 
 **New robot concepts**
@@ -19,6 +21,8 @@ continuously against Lesson 14's fused pose.
 - **Three loops at once** — separate controllers for distance-to-go, heading, and
   how far you've drifted off the line
 - **Event markers** — firing a command partway along a path
+- **Building autos lazily** — a chooser that costs nothing at startup, and
+  pre-builds the selected auto while the robot is still disabled
 - **BLine Web**, the browser-based path editor, as this lesson's outside tool
 
 ---
@@ -34,7 +38,7 @@ Commands.sequence(
     drivetrain.driveDistance(1.0));
 ```
 
-That's a *recipe*, and it works. But notice what it doesn't contain: any mention
+That's a *script*, and it works. But notice what it doesn't contain: any mention
 of where the robot is on the field. It's a sequence of relative nudges — go
 forward a bit, spin, go forward a bit — and each one starts from wherever the
 last one happened to end. Errors don't cancel; they stack. Bump the robot at the
@@ -314,13 +318,110 @@ program when you run `./gradlew deploy` — it's for the files your code needs t
 between matches without recompiling anything. The simulator points at the same
 folder, so a path you drop in works in sim immediately.
 
+Make a second path too. Real robots carry one per starting position, and having
+two here makes something visible in section 7 that one path would hide.
+
+**Create `src/main/deploy/autos/paths/FarSide.json`:**
+
+```json
+{
+  "path_elements": [
+    {
+      "type": "waypoint",
+      "translation_target": { "x_meters": 2.0, "y_meters": 6.0 },
+      "rotation_target": { "rotation_radians": 0.0 }
+    },
+    {
+      "type": "translation",
+      "x_meters": 8.0,
+      "y_meters": 6.0
+    },
+    {
+      "type": "waypoint",
+      "translation_target": { "x_meters": 8.0, "y_meters": 2.0 },
+      "rotation_target": { "rotation_radians": -1.5707963 }
+    }
+  ]
+}
+```
+
 ---
 
 ## 6. Build the follow command
 
-Time to wire it together. `FollowPath.Builder` takes everything B-Line needs to
-drive your specific robot, and hands back a `Command` you can schedule like any
-other.
+`FollowPath.Builder` takes everything B-Line needs to drive your specific robot,
+and `build(path)` turns a `Path` into a `Command` you can schedule like any other.
+
+Look at what goes into the builder and notice what *isn't* there: the path. The
+builder describes how **this robot** follows a line — which subsystem to require,
+where to read pose and speed, how to make it move, how hard to correct. None of
+that changes between autos. Only the `Path` does.
+
+So build one builder and call `build(...)` on it as many times as you have paths.
+Two autos, one builder, two lines that differ by a filename:
+
+```java
+    FollowPath.Builder paths = new FollowPath.Builder(/* ...seven things... */);
+
+    Command twoCorners = paths.build(new Path("TwoCorners"));
+    Command farSide    = paths.build(new Path("FarSide"));
+```
+
+Getting that backwards — a fresh builder and three fresh `PIDController`s per
+auto — is the kind of thing that looks fine and quietly triples as your auto list
+grows.
+
+> **Is sharing controllers safe?** Yes, and for a reason worth knowing. Every
+> `FollowPath` requires the drivetrain, so the scheduler guarantees only one runs
+> at a time. B-Line also resets the controllers and re-reads the path's tolerances
+> in `initialize()`, so each run starts clean.
+
+---
+
+## 7. A chooser that holds recipes
+
+Now the part that decides *when* all of that happens, and it's the difference
+between a robot that boots fast and one that doesn't.
+
+Lesson 9's chooser holds `Command` objects:
+
+```java
+    m_autoChooser.addOption("Two Corners", Autos.followPath("TwoCorners"));
+```
+
+Read that as code, not as intent. `Autos.followPath("TwoCorners")` runs *right
+there*, at startup, to produce the object you hand to `addOption`. Which means
+every auto in the drop-down gets fully constructed before the robot is ready —
+including the nine you aren't going to run. Each BLine auto opens a file, parses
+JSON, and validates a path. Ten of those is ten file reads on a roboRIO during
+boot, to throw away nine of them.
+
+The fix is to put a **recipe** in the chooser instead of a finished dish:
+
+```java
+    chooser.addOption("Two Corners", () -> paths.build(new Path("TwoCorners")));
+```
+
+That lambda is a `Supplier<Command>` — the same "code stored as data" idea as the
+joystick suppliers in Lesson 2, except what it supplies is a whole command. The
+chooser now holds ten tiny lambdas instead of ten built autos, and startup does no
+path loading at all.
+
+But that just moves the bill. If you build the command in
+`getAutonomousCommand()`, you pay for the file read *when autonomous starts* —
+out of the fifteen seconds you actually needed. So build it as soon as the
+**selection changes**, which is minutes earlier, while everyone's still standing
+behind the glass:
+
+```java
+    chooser.onChange(recipe -> s_selected = recipe.get());
+```
+
+`onChange` is AdvantageKit's callback for "the driver picked something different."
+It fires while the robot is **disabled** — AdvantageKit polls its dashboard inputs
+every loop regardless of enable state — so the work lands in dead time. It also
+fires once for the *default* option on the first loop, which matters: if it
+didn't, a driver who never touched the chooser would get nothing.
 
 **Replace `Autos.java` with:**
 
@@ -330,6 +431,10 @@ other.
 // the WPILib BSD license file in the root directory of this project.
 
 package frc.robot.commands;
+
+import java.util.function.Supplier;
+
+import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -341,6 +446,9 @@ import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Localizer;
 
 public final class Autos {
+  /** The selected auto, already built and ready to schedule. */
+  private static Command s_selected = Commands.none();
+
   private Autos() {} // utility class — never instantiated
 
   /** Drive 1 m, turn to 90°, drive 1 m more. */
@@ -351,9 +459,16 @@ public final class Autos {
         drivetrain.driveDistance(1.0));    // step 3: forward 1 meter
   }
 
-  /** Follow a path drawn in BLine Web and saved to deploy/autos/paths/<name>.json. */
-  public static Command followPath(Drivetrain drivetrain, Localizer localizer, String pathName) {
-    FollowPath.Builder builder = new FollowPath.Builder(
+  /**
+   * Builds the auto chooser. Every option is a recipe, not a finished command, so
+   * nothing is constructed at startup. onChange builds whichever one is selected
+   * the moment the selection changes — including the default, on the first loop.
+   */
+  public static LoggedDashboardChooser<Supplier<Command>> buildChooser(
+      Drivetrain drivetrain, Localizer localizer) {
+    // One builder, shared by every path below. It describes how *this robot*
+    // follows a path; the Path is the only thing that differs per auto.
+    FollowPath.Builder paths = new FollowPath.Builder(
         drivetrain,                     // the subsystem the command will require
         localizer::getPose,             // where we are (fused, Lesson 14)
         drivetrain::getChassisSpeeds,   // how fast we're going, robot-relative
@@ -364,58 +479,83 @@ public final class Autos {
         .withDefaultShouldFlip()              // mirror the path for the red alliance
         .withPoseReset(localizer::resetPose); // snap the estimate to the path's start
 
-    return builder.build(new Path(pathName));
+    LoggedDashboardChooser<Supplier<Command>> chooser =
+        new LoggedDashboardChooser<>("Auto Choice");
+    chooser.addDefaultOption("Drive-Turn-Drive", () -> driveTurnDrive(drivetrain));
+    chooser.addOption("Do Nothing", Commands::none);
+    chooser.addOption("Two Corners", () -> paths.build(new Path("TwoCorners")));
+    chooser.addOption("Far Side", () -> paths.build(new Path("FarSide")));
+
+    chooser.onChange(recipe -> s_selected = recipe.get());
+    return chooser;
+  }
+
+  /** The selected auto, built ahead of time. Never null — worst case it does nothing. */
+  public static Command selected() {
+    return s_selected;
   }
 }
 ```
 
-`driveTurnDrive` stays. Lesson 9's auto isn't wrong, and keeping both in the
-chooser makes the difference easy to see on the field view.
+Those last two path options are the payoff from section 6: adding an auto is one
+line, because `paths` already knows how this robot drives.
 
-Those four arguments in the middle are the interesting part, and they're all
-things you've done before with a twist. `localizer::getPose` and
-`drivetrain::getChassisSpeeds` are **method references** used as suppliers —
-exactly the joystick-supplier move from Lesson 2, just fetching a pose instead of
-a stick axis. But `drivetrain::driveRobotRelative` is a reference to a method
-that *does* something rather than returning something. B-Line will call it every
-tick with the speeds it wants. You're not handing over a value or a way to get
-one; you're handing over a **verb**.
+A few things worth reading twice. `paths` is a **local variable**, and the lambdas
+below it still use it after `buildChooser` returns — the same closure behavior as
+`m_localizer::getPose` in Lesson 15, and the reason no field is needed. Java
+requires such a captured local to be effectively final, which `paths` is.
+`Commands::none` is a method reference standing in for `() -> Commands.none()`.
+And `s_selected` starts as `Commands.none()` rather than `null`, so
+`getAutonomousCommand()` can never hand the scheduler a null — an improvement on
+Lesson 9, where an untouched chooser could do exactly that.
 
-Then two options chained on. `withDefaultShouldFlip()` mirrors the whole path to
-the other side of the field when the driver station says you're on the red
-alliance, which means one drawn path covers both. `withPoseReset(...)` tells
-B-Line how to re-anchor your pose estimate to the path's starting point when the
-command begins — the same `resetPose` Lesson 14 built, now called by a library
-rather than by you.
-
-> **`new Path(pathName)` reads the file right then**, when the command is being
-> built at startup — not when it runs. A typo'd filename is a crash on boot,
-> which is genuinely the better time to find out.
+> **Why is the chooser in `Autos` now?** Because everything it needs is here: the
+> builder, the path names, `driveTurnDrive`. `RobotContainer` is the wiring
+> diagram — it says which subsystems exist and what triggers what. *Which autos
+> the robot has* is a fact about autos.
 
 ---
 
-## 7. Put it in the chooser
+## 8. Wire it up
 
-This part costs nothing, which is the point.
+`RobotContainer` gets shorter. It holds the chooser — something has to own it —
+but it no longer knows what's in it.
 
-**Add to `RobotContainer`'s constructor, next to the existing options:**
+**In `RobotContainer`, replace the `m_autoChooser` field with:**
 
 ```java
-    m_autoChooser.addDefaultOption("Drive-Turn-Drive", Autos.driveTurnDrive(m_drivetrain));
-    m_autoChooser.addOption("Do Nothing", Commands.none());
-    m_autoChooser.addOption("BLine — Two Corners",
-        Autos.followPath(m_drivetrain, m_localizer, "TwoCorners"));
+  // Publishes a drop-down AND logs the selection (AdvantageKit). Holds recipes,
+  // not built commands — Autos owns the options and pre-builds the pick.
+  private final LoggedDashboardChooser<Supplier<Command>> m_autoChooser;
 ```
 
-That's the whole integration. Lesson 9's `LoggedDashboardChooser` takes any
-`Command`, and B-Line produces a `Command`, so there's nothing to adapt. Eight
-lessons ago you built a drop-down for two hand-written autos, and it accepts a
-path-following command from a third-party library without modification.
-Interfaces again.
+**Add the import:**
+
+```java
+import java.util.function.Supplier;
+```
+
+**In the constructor, replace the three `addOption` lines with:**
+
+```java
+    m_autoChooser = Autos.buildChooser(m_drivetrain, m_localizer);
+```
+
+**And read the pre-built command instead of building one:**
+
+```java
+  public Command getAutonomousCommand() {
+    return Autos.selected();
+  }
+```
+
+`driveTurnDrive` survived all of this, by the way. Lesson 9's auto isn't wrong,
+and keeping it in the drop-down makes the difference easy to see on the field
+view — a fixed sequence of nudges next to a path being chased.
 
 ---
 
-## 8. Event markers
+## 9. Event markers
 
 Real autos do things along the way — start a shooter while still driving, drop an
 intake before arriving. B-Line handles that with **event markers**: a named point
@@ -459,10 +599,10 @@ does, this line becomes a real command and nothing else here changes.
 
 ---
 
-## 9. Run it
+## 10. Run it
 
-Run `./gradlew simulateJava`, pick **BLine — Two Corners** in the auto chooser,
-and enable **Autonomous**.
+Run `./gradlew simulateJava`, pick **Two Corners** in the auto chooser, and enable
+**Autonomous**.
 
 Then watch it the way you've watched every closed-loop lesson since Lesson 5 —
 commanded against measured. Open AdvantageScope, put `Localizer/Pose` on the
@@ -476,28 +616,37 @@ available: plot `Drivetrain/SimulatedPose` — ground truth — on the same char
 `Localizer/Pose`. Now you can see all three stories at once: the line you drew,
 where the robot thinks it is, and where it actually is.
 
-The satisfying test is the one the recipe autos could never survive. While the
-path is running, drag the robot sideways off the line in the sim's field view.
-`driveDistance` would have carried that error to the end of the match. This
+The satisfying test is the one a fixed sequence of nudges could never survive.
+While the path is running, drag the robot sideways off the line in the sim's field
+view. `driveDistance` would have carried that error to the end of the match. This
 just... drives back to the line and carries on.
+
+One more thing to notice, and it's about section 7 rather than the driving. Put a
+`System.out.println` inside the `Two Corners` lambda, restart the sim, and watch
+*when* it prints while the robot sits disabled: once at startup for the default,
+then once each time you change the drop-down — never during autonomous. That's
+the pre-building working. Take it out when you've seen it.
 
 ---
 
 ## Try it
 
-1. **Draw a longer path.** Four waypoints out to two far corners of the field and
-   back. Watch what the handoff radius does to the corners, then set
-   `default_intermediate_handoff_radius_meters` to `0.05` and run it again — tight
-   corners, slower lap.
+1. **Add a third path.** Draw or hand-write one, then add it to the chooser. It
+   should be a single line next to the other two, because `paths` already exists —
+   if you find yourself building a second `FollowPath.Builder`, re-read section 6.
+   Then set `default_intermediate_handoff_radius_meters` to `0.05` and run it
+   again: tight corners, slower lap.
 2. **Mistune the cross-track gain.** Set `kCrossTrackP` to `0.0` and run the path.
    The robot still gets to the end, because translation and rotation are handling
    themselves — but it will visibly bow off the straight lines in between. Then
    try `15.0` and watch it oscillate across the line instead. This is the clearest
    single-loop demo in the whole course, because you can see exactly which job
    that one controller was doing.
-3. **Compose a path with a sequence.** Write an auto that follows `TwoCorners`,
-   then runs Lesson 8's `turnToHeading(0)`, using `Commands.sequence`. A
-   library-built command and a hand-written one are both just `Command`s.
+3. **Compose a path with a sequence.** Add a chooser option whose lambda follows
+   `TwoCorners` and *then* runs Lesson 8's `turnToHeading(0)`, via
+   `Commands.sequence`. A library-built command and a hand-written one are both
+   just `Command`s. Note that the whole composition still happens lazily, inside
+   the lambda — you get that for free now.
 4. **Give the marker a real job.** Swap the `Commands.print` for something you can
    see — `Commands.runOnce(() -> Logger.recordOutput("Auto/ShootFired", true))`,
    say — and confirm on the plot that it fires where you placed it. Then move the
@@ -511,7 +660,7 @@ just... drives back to the line and carries on.
 
 ## What you learned
 
-Autonomous stopped being a recipe. A path is a shape now — points in field
+Autonomous stopped being a script. A path is a shape now — points in field
 coordinates, saved in a file you can redraw between matches — and the robot's job
 changed from "perform these moves in order" to "find the nearest point on that
 shape and chase it." That's why a bump no longer ruins the match: correcting is
@@ -529,12 +678,20 @@ line are genuinely separate jobs, and giving each its own loop with its own gain
 is what lets you tune them independently — which is exactly what Try It 2 lets you
 feel.
 
-Underneath the new library, though, the old shapes kept holding. Kinematics ran
-backward with no new class. The auto chooser from Lesson 9 accepted a
-library-built command without a line of adaptation. `resetPose` from Lesson 14 got
-called by B-Line instead of by you. And a **method reference** turned out to work
-just as well for handing over a verb as it did for handing over a value back in
-Lesson 2. The only genuinely new construction was two small public doors on
+Two habits from this lesson outlive B-Line entirely. **Build the expensive,
+unchanging thing once** — the `FollowPath.Builder` describes how your robot follows
+a line, which is the same for every path, so one builder serves all of them.
+And **store work you might not need as a recipe, not a result**: a chooser full of
+`Supplier<Command>` costs nothing at boot, and `onChange` moves the real
+construction into the minutes the robot spends disabled instead of the fifteen
+seconds it spends scoring. Neither is about path following. Both are about
+noticing *when* your code runs, not just what it does.
+
+Underneath all of it the old shapes kept holding. Kinematics ran backward with no
+new class. `resetPose` from Lesson 14 got called by B-Line instead of by you. And a
+**method reference** turned out to work just as well for handing over a verb
+(`drivetrain::driveRobotRelative`) as it did for handing over a value back in
+Lesson 2. The only genuinely new plumbing was two small public doors on
 `Drivetrain` — deliberate, named, and narrow.
 
 The drivetrain half of this course is done. Your robot drives itself along drawn

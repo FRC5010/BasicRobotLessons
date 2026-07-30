@@ -373,6 +373,45 @@ had runtime behavior, confirmed by a JUnit test. The GitHub API and the docs sit
 - **Validation rule:** first and last elements must each be a `waypoint` or
   `translation` — anything else and `isValid()` goes false with a logged warning
   (it does not throw).
+- **One `FollowPath.Builder`, reused.** The builder holds everything that is the
+  same for every path (subsystem, pose/speed suppliers, drive consumer, the three
+  controllers); only the `Path` differs, so `build(path)` is called per auto on a
+  single builder. Sharing the `PIDController`s is safe because every `FollowPath`
+  requires the drivetrain — the scheduler runs one at a time — and `initialize()`
+  resets the controllers and re-reads the path's tolerances. BLine's own README
+  calls this "a reusable path builder"; per-auto builders are the anti-pattern.
+
+### Lazy autos (Lesson 17, §7) — and why there is no monitor command
+
+The chooser holds `Supplier<Command>`, not `Command`, so no auto is constructed at
+startup; `Autos.buildChooser` owns the options and `Autos.selected()` returns the
+pre-built pick. The pre-building is done by **`LoggedDashboardChooser.onChange`**,
+not by a command that runs while disabled. That was considered and is unnecessary:
+
+- `onChange` fires from `LoggedDashboardChooser.periodic()`, which
+  `Logger.periodicBeforeUser()` calls for every registered dashboard input **every
+  loop with no enable gate** (verified in AdvantageKit `26.0.2` source), so it
+  already runs during disabled — which is the whole point of the monitor command.
+- It fires for the **default** option, not just on a driver-initiated change:
+  `previousValue` starts `null` while the constructor's first `periodic()` sees a
+  null selection, so the first real cycle after options are added is a transition.
+  Verified with a JUnit test — this is the load-bearing bit, since a driver who
+  never opens the chooser must still get their auto built.
+- It does not re-fire on unchanged selections (also tested), so nothing rebuilds
+  every loop.
+- It reads the selection from the log under replay, so the behavior replays.
+
+`Command.ignoringDisable(true)` does exist if a future lesson wants to teach
+disabled-running commands for their own sake, but using it here would add a
+concept and a schedule-from-constructor wrinkle to buy nothing.
+
+This stayed out of Lesson 9 deliberately. At Lesson 9 both autos are instant to
+construct, so the optimization would have no observable effect and would be a
+forward reference to a problem the student cannot see — against the course's own
+"smallest set of new ideas" rule. Lesson 17 is where building an auto first means
+reading and parsing files, so the motivation is real and the refactor is one of
+this course's signature motivated revisits.
+
 - Useful extras not used by the lesson: `FollowPath.overrideRotation(DoubleSupplier)`
   / `clearRotationOverride()` for vision-aiming while driving a path, and four
   `setXxxLoggingConsumer` statics for piping BLine's internals into AdvantageKit.
