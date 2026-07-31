@@ -70,6 +70,7 @@ let you see everything working on your laptop. Device IDs in the examples
 | 16 | [maple-sim — a world to drive in](docs/lessons/16-maple-sim-field.md) | Physics-engine simulation with mass, tire grip, walls, and game pieces | Callbacks, anonymous class bodies |
 | 17 | [B-Line autos](docs/lessons/17-bline-autos.md) | Follow a drawn path against the fused pose, with event markers | `PIDController`, method refs as actions |
 | 18 | [Scoring elevator](docs/lessons/18-elevator.md) | A second mechanism on the same IO spine, profiled and gravity-compensated | Clamping a goal, reuse over novelty |
+| 19 | [A picture of the elevator](docs/lessons/19-mechanism2d.md) | A live stick figure of the mechanism, with a second piece riding on it | Composition as attachment |
 
 ### Asides (out of order — read when you need them)
 

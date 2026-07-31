@@ -5,7 +5,7 @@ document, not lesson content** — it lives beside `docs/lessons/`, never inside
 it, and nothing here should be pasted into a lesson as-is.
 
 Written one lesson at a time, reviewed between each, same as the voice-rewrite
-pass. Lessons 16–18 are done; 19–22 are outlines waiting to be drafted.
+pass. Lessons 16–19 are done; 20–22 are outlines waiting to be drafted.
 
 ---
 
@@ -16,7 +16,7 @@ pass. Lessons 16–18 are done; 19–22 are outlines waiting to be drafted.
 | 16 | maple-sim — a world to drive in | L13 (IO layers), L11 (field views) | `maple-sim` | **Done** — [lesson](lessons/16-maple-sim-field.md), [code](../code/lesson-16/) |
 | 17 | B-Line autos: waypoints and trajectories | L9 (autos), L10 (kinematics), L14 (Localizer) | `BLine-Lib` | **Done** — [lesson](lessons/17-bline-autos.md), [code](../code/lesson-17/) |
 | 18 | Scoring elevator | L13 (IO spine), L12 (configs/control requests) | none | **Done** — [lesson](lessons/18-elevator.md), [code](../code/lesson-18/) |
-| 19 | Mechanism2d for the elevator | L18, L11 (`putData` precedent) | none | Outline |
+| 19 | A picture of the elevator | L18, L11 (field-view precedent) | none | **Done** — [lesson](lessons/19-mechanism2d.md), [code](../code/lesson-19/) |
 | 20 | Intake arm (−20°…180°) + roller | L18/L19, L12 | none | Outline |
 | 21 | Limit sensors / current sensing | L18, L20 | none | Outline |
 | 22 | Light sensors for game-piece handoff | L20, L21 | none | Outline |
@@ -488,46 +488,67 @@ onboard Motion Magic and gravity feedforward.
 
 ---
 
-# Lesson 19 — Mechanism2d: watching the elevator move
+# Lesson 19 — A picture of the elevator — DONE
 
-**Builds on:** L18, L11 (`Field2d` / `SmartDashboard.putData` — "the one
-sanctioned SmartDashboard use").
+Shipped as [lessons/19-mechanism2d.md](lessons/19-mechanism2d.md), code in
+[code/lesson-19/](../code/lesson-19/) (`Constants.java`, `subsystems/Elevator.java`
+— nothing else changes).
 
-**Goal (draft):** Draw the elevator as a live stick figure, and mount a second,
-smaller ligament on it — the exact attachment point Lesson 20's arm takes over.
+**Goal as built:** Draw the elevator as a live stick figure, and hang a second,
+smaller ligament off the top of it — the exact attachment point Lesson 20's arm
+takes over.
 
-**New Java concepts**
-- **Composition as attachment.** Every earlier composition example built one
-  object out of others, once. `append(...)` is a scene graph: attach a child and
-  moving the parent moves it for free, every tick, with no extra code.
+**New Java concept (as built):** composition as attachment. `append(...)` is a
+scene graph: attach a child and moving the parent moves it for free, every tick,
+with no extra code. Section 5 is built entirely around "count the ligaments you
+just updated: one. There are two in the picture."
 
-**New robot concepts**
-- `Mechanism2d`, `MechanismRoot2d`, `MechanismLigament2d`
-- Publishing it the `Field2d` way: build once in the constructor, `putData`
-  once, mutate every `periodic()`
-- Driving `setLength`/`setAngle` from logged inputs — the mechanism equivalent
-  of `Field2d.setRobotPose`
+**One deviation from this outline, and it matters:** the plan said publish it the
+`Field2d` way — build in the constructor, `SmartDashboard.putData` once. Don't.
+**AdvantageKit ships `LoggedMechanism2d` / `LoggedMechanismRoot2d` /
+`LoggedMechanismLigament2d`** (package `org.littletonrobotics.junction.mechanism`)
+with an API identical to WPILib's, plus a
+`Logger.recordOutput(String, LoggedMechanism2d)` overload. That makes the drawing
+a logged *output* rather than a dashboard widget, so it replays like everything
+else since Lesson 13 — which is the whole reason this course has an IO layer.
+Using WPILib's `Mechanism2d` here would have shipped the one thing on the robot
+that a replay can't show you. Consequences:
 
-**Walkthrough outline**
-1. A picture instead of a number plot.
-2. Build the frame: `Mechanism2d`, a `MechanismRoot2d` at the elevator's base,
-   `putData` once in the constructor.
-3. Append the elevator ligament; length tracks `m_inputs.heightMeters`. Contrast
-   `append` (attach to parent) with the root (anchored to the world).
-4. Append a second, smaller ligament **onto the first** — the "simple motor on
-   carriage." This is the lesson's real payoff and Lesson 20's mount point.
-5. `setColor(...)` as a status signal; updates live in `Elevator.periodic()`.
-6. View it in SimGUI — same discovery motion as L11's `Field2d`.
+- No constructor on `Elevator`; the drawing is fields plus one `recordOutput` in
+  `periodic()`. Simpler than the `Field2d` version, not more complex.
+- `recordOutput` must be called **every tick** — it serializes current state.
+  (Try-it #4 has the student break exactly this on purpose.)
+- CLAUDE.md's "`putData` for a widget is the one sanctioned SmartDashboard use"
+  still stands for `Field2d` in Lesson 11; it just doesn't apply here.
+- `LoggedMechanism2d.logOutput` writes `.type = "Mechanism2d"`, the same sendable
+  marker WPILib's does, so SimGUI renders it too — under **NetworkTables →
+  AdvantageKit → RealOutputs → Elevator → Mechanism**. Both viewers work, same
+  as Lesson 11.
 
-**Try it (draft)**
-- Color the ligament by height band.
-- A third fixed ligament for visual context.
-- Drive the child ligament's angle with `Math.sin(Timer.getFPGATimestamp())` to
-  prove a child's angle is independent of its parent's length.
+**Verified API** (from the akit-java 26.0.2 jar and a JUnit test in the sandbox):
 
-**Research flags**
-- Stable WPILib API for many seasons — low drift risk. Confirm exact setter
-  overloads and the `Color8Bit` import path when drafting.
+- `new LoggedMechanism2d(double, double)` and `(Distance, Distance)`; optional
+  trailing `Color8Bit` background on both.
+- `mech.getRoot(String, double, double)` → `LoggedMechanismRoot2d`. **Doubles
+  only** — no measure overload, so `kDisplayWidth.in(Meters) / 2` is a genuine
+  unpack boundary.
+- `new LoggedMechanismLigament2d(String, double length, double angleDeg)` and
+  `(String, Distance, Angle)`; both have a 5-arg form adding
+  `double lineWeight, Color8Bit`.
+- `append(T)` returns `T` (declared on `LoggedMechanismObject2d` and repeated on
+  the root), which is what lets `m_carriage = m_base.append(new ...)` be one
+  statement. **This is the lesson's payoff — verified by test:** setting the
+  parent's length leaves the child's own length and angle untouched.
+- `setLength(double|Distance)`, `setAngle(double|Rotation2d|Angle)`,
+  `setColor(Color8Bit)`, `setLineWeight(double)`, plus getters.
+- `Color`/`Color8Bit` are in `edu.wpi.first.wpilibj.util`. `Color.kOrange` and
+  `Color.kLimeGreen` both exist; `new Color8Bit(Color)` is the conversion.
+
+**Try it (as shipped):** color by height band; a fixed third ligament on the root
+as a travel reference; wiggle the effector with
+`Math.sin(Timer.getFPGATimestamp())` to show a child's angle is its own while its
+position is the parent's; move `setLength` out of `periodic()` to see the drawing
+freeze; replay the picture.
 
 ---
 
