@@ -2,7 +2,8 @@
 
 **Goal:** Build a scoring elevator on the exact spine the swerve modules already
 use — `ElevatorIO` → `ElevatorIOTalonFX`/`ElevatorIOSim` → `Elevator` — and let the
-TalonFX profile its own motion while a feedforward term holds the carriage up.
+TalonFX plan its own trip, then follow that plan from a model of what the mechanism
+costs to move, with feedback left to correct only what the model missed.
 
 **New Java concepts**
 - Clamping a **goal** rather than a per-tick output — validating a request once,
@@ -14,8 +15,10 @@ TalonFX profile its own motion while a feedforward term holds the carriage up.
   jumping at the setpoint
 - **`MotionMagicConfigs`** — cruise velocity and acceleration: how fast it's
   *allowed* to get there
-- **`Slot0.kG` and `GravityTypeValue.Elevator_Static`** — the first mechanism that
-  falls when you stop pushing
+- **`Slot0.kG`, `kV`, and `kA`** — a model of the mechanism, paying for gravity,
+  speed, and acceleration *before* any error exists, with `kP` left as the trim
+- **`GravityTypeValue.Elevator_Static`** — the first mechanism that falls when you
+  stop pushing
 - **`ElevatorSim`** — a physics model with mass and gravity, in `DCMotorSim`'s slot
 
 ---
@@ -76,8 +79,12 @@ circumference you've used since Lesson 6.
     public static final LinearAcceleration kMaxAcceleration =
         MetersPerSecondPerSecond.of(2.0);
 
-    public static final double kElevatorKP = 20.0; // volts per rotation of error
+    // The model: what this mechanism costs to hold, to move, and to speed up.
     public static final double kElevatorKG = 0.18; // volts just to hold station
+    public static final double kElevatorKV = 1.44; // volts per drum rotation/sec
+    public static final double kElevatorKA = 0.003; // volts per drum rotation/sec²
+    // The trim: whatever the model got wrong.
+    public static final double kElevatorKP = 20.0; // volts per rotation of error
 
     // Where the driver actually wants it.
     public static final Distance kStowed = Meters.of(0.02);
@@ -97,8 +104,8 @@ Lesson 10 — they're physical quantities, and `kScoreMid` reads better as a
 `kDrumCircumferenceMeters` is the exception that proves the rule: it exists only to
 be divided into other numbers, so it converts once, here, and stays a `double`.
 
-The gains stay `double`s too, same as `kDriveKV` and `kSteerKP` — a gain is a ratio,
-not a length.
+The four gains stay `double`s, same as `kDriveKV` and `kSteerKP` — a gain is a ratio,
+not a length. Section 4 is about what each of them means.
 
 ---
 
@@ -140,7 +147,7 @@ direct evidence of what the feedforward is doing. You'll plot it in section 8.
 
 ---
 
-## 4. Motion Magic, and holding a thing up
+## 4. A plan, and a model that follows it
 
 Two new ideas go into the hardware class, and they're the reason this lesson exists.
 
@@ -162,27 +169,71 @@ config.MotionMagic.MotionMagicCruiseVelocity = ...; // mechanism rotations per s
 config.MotionMagic.MotionMagicAcceleration   = ...; // rotations per second squared
 ```
 
-**The second: gravity never takes a tick off.** Every mechanism so far stayed put
-when you stopped commanding it. This one doesn't. Holding a carriage still isn't
-"zero output" — it's whatever voltage exactly cancels its weight, forever.
+**The second: a plan is only worth having if something can follow it.** And this is
+the idea to take out of the lesson, so it's worth going slowly.
 
-That's `kG`, and it sits alongside `kP` in the same `Slot0` you met in Lesson 12:
+The profile isn't only a sequence of positions. At every instant it also knows how
+fast the carriage *should* be moving and how hard it *should* be accelerating —
+because it invented those numbers itself. That turns out to be enough to work out
+the required voltage in advance, before the carriage has done anything at all.
 
-> `kP` is a *reaction* — it only produces output once there's error, so a purely
-> reactive elevator has to sag before it pushes back. `kG` is a *prediction*: the
-> voltage we know in advance the carriage needs, applied whether or not anything
-> has gone wrong yet. Same relationship as `kV` and `kP` on the drive motors in
-> Lesson 12, with gravity in the model's place.
+Four gains live in `Slot0`, and each one answers a physical question about this
+specific mechanism:
 
-`GravityTypeValue.Elevator_Static` tells the firmware which kind of gravity: a
-constant pull, the same at every height. (There's an `Arm_Cosine` for things that
-swing, where the pull depends on angle. That's Lesson 20's problem.)
+| gain | the question it answers | what it's paid for |
+|---|---|---|
+| `kG` | what does it cost to hold the carriage still? | gravity |
+| `kV` | what does it cost to keep it moving at a given speed? | back-EMF |
+| `kA` | what does it cost to *change* that speed? | inertia |
+| `kP` | and whatever those three got wrong? | error |
 
-Where does `0.18` come from? Torque to hold the carriage is mass × gravity × drum
-radius — 5 kg × 9.81 m/s² × 0.0254 m ≈ 1.25 N·m at the drum, so ≈ 0.10 N·m at the
-rotor through the 12:1 gearbox, which a Kraken X60 produces at roughly 0.18 volts.
-You can also just find it: raise the elevator, nudge the voltage until it neither
-climbs nor sinks, and write that number down.
+The first three are **feedforward**: the firmware reads them off the plan and applies
+the result immediately, whether or not anything has gone wrong. `kP` is **feedback**:
+it can only act on error that has already happened. Lesson 12 drew that line for the
+drive motors — `kV` is the model, `kP` is the trim — and it's the same line here, with
+gravity and inertia joining the model.
+
+It is very tempting to skip the first three and let `kP` handle everything. Do the
+arithmetic once and you won't want to.
+
+At one meter per second, the drum turns about 6.3 times a second, which through the
+12:1 gearbox is 75 rotor rotations a second — and a Kraken X60 needs roughly **9
+volts** to spin that fast. Those 9 volts have to come from somewhere. With `kV` in the
+config they come from the plan: the profile says "1.0 m/s", `kV` multiplies, and 9
+volts appear the instant they're needed. Without it, the only thing producing output
+is `kP × error`, and at 20 volts per drum rotation, 9 volts requires **0.45 of a
+rotation of error — about 7 centimeters.**
+
+> Read that one more time, because it's the whole argument. A purely reactive elevator
+> doesn't fall behind by accident. It falls behind **on purpose**: error is the only
+> raw material `kP` has, so it must let 7 cm of error pile up to buy the voltage it
+> needs to keep up. The lag isn't a tuning failure you can fix with a bigger `kP` —
+> it's how a pure feedback loop works.
+>
+> Hand the firmware the numbers it can compute in advance and `kP` goes back to its
+> real job: correcting the small stuff the model didn't know about.
+
+The other two model numbers come out the same way. `kV = 1.44` is the volts a Kraken
+needs to turn the drum once per second through that gearbox. `kA = 0.003` is what it
+costs to accelerate 5 kg through a 1-inch drum — nearly nothing, because a small drum
+and a big gearbox make the carriage feel light to the motor. Being right about a small
+number is free, so include it.
+
+`kG = 0.18` is the one you can also just measure. Torque to hold the carriage is mass
+× gravity × drum radius — 5 kg × 9.81 m/s² × 0.0254 m ≈ 1.25 N·m at the drum, so
+≈ 0.10 N·m at the rotor through the 12:1 gearbox, which a Kraken X60 produces at
+roughly 0.18 volts. Or: raise the elevator, nudge the voltage until it neither climbs
+nor sinks, and write that number down.
+
+`GravityTypeValue.Elevator_Static` tells the firmware which *kind* of gravity `kG`
+describes: a constant pull, the same at every height. (There's an `Arm_Cosine` for
+things that swing, where the pull depends on angle. That's Lesson 20's problem.)
+
+> **One more gain you'll meet on real hardware.** `kS` is the voltage it takes to
+> break a mechanism loose from rest — friction that a simulation with frictionless
+> bearings never shows you. It's zero here for exactly that reason, but on a real
+> elevator it's the first thing to add when the carriage refuses to start moving on
+> small commands.
 
 **Create `src/main/java/frc/robot/subsystems/ElevatorIOTalonFX.java`:**
 
@@ -212,9 +263,12 @@ public class ElevatorIOTalonFX implements ElevatorIO {
         // One "mechanism rotation" is now one drum rotation.
         config.Feedback.SensorToMechanismRatio = ElevatorConstants.kGearRatio;
 
-        config.Slot0.kP = ElevatorConstants.kElevatorKP;
+        // The model first: hold, move, accelerate. Then the trim.
         config.Slot0.kG = ElevatorConstants.kElevatorKG;
         config.Slot0.GravityType = GravityTypeValue.Elevator_Static;
+        config.Slot0.kV = ElevatorConstants.kElevatorKV;
+        config.Slot0.kA = ElevatorConstants.kElevatorKA;
+        config.Slot0.kP = ElevatorConstants.kElevatorKP;
 
         // The speed limit for the profile the firmware will generate.
         config.MotionMagic.MotionMagicCruiseVelocity =
@@ -468,8 +522,15 @@ onto the goal without overshooting. That gap between the two traces is the profi
 and it's the whole difference between `MotionMagicVoltage` and `PositionVoltage`.
 
 Add `Elevator/VelocityMetersPerSec` underneath and you can see the profile directly:
-a ramp up to 1.0 m/s, a flat cruise, a ramp back down to zero. That trapezoid is what
-the firmware invented for you out of two constants.
+a ramp up to about a meter per second, a cruise, a ramp back down to zero. That
+trapezoid is what the firmware invented for you out of two constants.
+
+Now watch how *closely* the height trace follows the goal. During the cruise the
+carriage runs a couple of centimeters behind where the plan says it should be — small
+enough that the two traces look almost like one line. That gap is everything `kP` is
+being asked to fix, and it's small precisely because `kV` already supplied the nine
+volts the cruise costs. Section 4's arithmetic predicted seven centimeters of lag if
+that voltage had to be bought with error instead; Try It #2 lets you go see it.
 
 Then add `Elevator/AppliedVolts`, and watch what happens *after* it arrives. The
 voltage doesn't return to zero. It settles at about `0.18` — `kG`, still holding, for
@@ -482,18 +543,24 @@ the way to the floor: going down, gravity is helping, so the motor has to resist
 
 1. **Add a third preset.** A `kScoreLow` between stowed and mid, on `povLeft()`.
    One constant, one binding — that's the whole cost of a new position now.
-2. **Turn off the feedforward.** Set `kElevatorKG` to `0.0` and run it again. The
-   elevator still gets there, because `kP` eventually notices the error — but watch
-   the height trace sag below the goal and sit there, and watch it behave differently
-   going up than coming down. Gravity is asymmetric and a purely reactive controller
-   can't be. Put it back.
-3. **Ask for something impossible.** Call `goToHeight(Meters.of(3.0))` from a
+2. **Take the model away.** Set `kElevatorKV` to `0.0` and run it again, watching
+   `Elevator/HeightMeters` against `Elevator/GoalMeters`. The elevator still arrives —
+   but now it trails the plan by the better part of ten centimeters. Section 4
+   predicted seven of those for the cruise voltage alone; the rest is the same trick
+   paying for gravity and acceleration, since `kP` is now buying all of it with
+   error. This is the difference between controlling a mechanism you understand and
+   controlling one you're only reacting to. Put it back.
+3. **Take gravity out of the model.** Set `kElevatorKG` to `0.0` instead. The
+   elevator still gets there, but watch the height trace sag below the goal and sit
+   there, and watch it behave differently going up than coming down. Gravity is
+   asymmetric and a purely reactive controller can't be. Put it back too.
+4. **Ask for something impossible.** Call `goToHeight(Meters.of(3.0))` from a
    binding. Confirm on the plot that `Elevator/GoalMeters` reads `1.5`, not `3.0` —
    the clamp caught it, and nothing downstream ever saw the bad number.
-4. **Make it slower.** Halve `kMaxVelocity` and double `kMaxAcceleration`, and
+5. **Make it slower.** Halve `kMaxVelocity` and double `kMaxAcceleration`, and
    predict the velocity trace before you look at it. Which part of the trapezoid
    changes shape, and which part just gets longer?
-5. **Replay it.** Record a run with a few preset presses, switch `kSimMode` to
+6. **Replay it.** Record a run with a few preset presses, switch `kSimMode` to
    `Mode.REPLAY`, and confirm `Elevator/HeightMeters` comes back identical. The
    elevator got replay for free by being built on the same spine as everything else —
    nobody wrote a line of code for that.
@@ -513,16 +580,26 @@ collect it.
 
 What was genuinely new is what an elevator is: a thing with **ends**, and a thing
 **gravity acts on**. The ends turned into a clamp on the goal — validate the request
-once, rather than defending against it every tick. Gravity turned into `kG`, and with
-it a distinction worth carrying into every mechanism you build after this: `kP`
-reacts to error that has already happened, while a feedforward predicts the effort
-the job is known to require. A well-chosen `kG` means the carriage simply stays where
-you put it, and `kP` has almost nothing left to do.
+once, rather than defending against it every tick.
+
+Gravity turned into `kG`, and `kG` turned out to have company. If you keep one idea
+from this lesson, keep this one: **`kV`, `kA`, and `kG` are a description of the
+machine, and `kP` is an apology for the parts of that description you got wrong.**
+The first three are computed from a plan the firmware already has, so they arrive
+before anything has gone wrong. `kP` can only act on error that already exists, which
+means a controller leaning on it has to *let the mechanism fail first* — the seven
+centimeters of lag in section 4 weren't a bug, they were `kP` buying voltage the only
+way it can. Model what you can. Trim the rest.
+
+That's not a new idea, either. Lesson 12 put `kV` on the drive motors and called it
+the model. What changed here is only that an elevator's model needs more terms in it,
+because an elevator has a mass to accelerate and a weight that never lets go.
 
 And `MotionMagicVoltage` changed what a "setpoint" means. You no longer hand the
 motor a destination and brace for how violently it gets there; you hand it a
-destination and a speed limit, and the firmware works out a sane trip. Two numbers,
-and the leap-and-slam problem simply doesn't arise.
+destination and a speed limit, and the firmware works out a sane trip — then hands
+that trip's velocity and acceleration to the model, tick by tick, so the whole thing
+is one connected system rather than a target and a hope.
 
 Next up, the same elevator gets something it's been missing: a picture. Numbers on a
 graph tell you the height is 0.75 m, but they don't show you a robot.

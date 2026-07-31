@@ -150,8 +150,12 @@ public final class Constants {
     public static final LinearAcceleration kMaxAcceleration =
         MetersPerSecondPerSecond.of(2.0);
 
-    public static final double kElevatorKP = 20.0; // volts per rotation of error
+    // The model: what this mechanism costs to hold, to move, and to speed up.
     public static final double kElevatorKG = 0.18; // volts just to hold station
+    public static final double kElevatorKV = 1.44; // volts per drum rotation/sec
+    public static final double kElevatorKA = 0.003; // volts per drum rotation/sec²
+    // The trim: whatever the model got wrong.
+    public static final double kElevatorKP = 20.0; // volts per rotation of error
 
     // Where the driver actually wants it.
     public static final Distance kStowed = Meters.of(0.02);
@@ -186,8 +190,12 @@ public final class Constants {
     public static final AngularAcceleration kMaxAcceleration =
         DegreesPerSecondPerSecond.of(360);
 
-    public static final double kArmKP = 60.0; // volts per rotation of error
+    // The model: what this arm costs to hold, to move, and to speed up.
     public static final double kArmKG = 0.25; // volts to hold it out horizontal
+    public static final double kArmKV = 6.0; // volts per arm rotation/sec
+    public static final double kArmKA = 0.055; // volts per arm rotation/sec²
+    // The trim: whatever the model got wrong.
+    public static final double kArmKP = 60.0; // volts per rotation of error
 
     // Where the operator actually wants it.
     public static final Angle kIntake = Degrees.of(-20);

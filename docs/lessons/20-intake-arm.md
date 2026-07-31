@@ -3,7 +3,8 @@
 **Goal:** Build an intake arm on the exact spine Lesson 18 built the elevator
 on — `ArmIO` → `ArmIOTalonFX`/`ArmIOSim` → `Arm` — hang it off the elevator's
 carriage so it rides up and down, and meet the one thing that genuinely changes
-when a mechanism rotates instead of sliding: gravity that depends on where it is.
+when a mechanism rotates instead of sliding: the gravity term in its model now
+depends on where it is.
 
 **New Java concepts**
 - **Two motors in one subsystem, on purpose** — the opposite of Lesson 7's
@@ -11,8 +12,8 @@ when a mechanism rotates instead of sliding: gravity that depends on where it is
 - A subsystem constructor that takes **another subsystem** as an argument
 
 **New robot concepts**
-- **`GravityTypeValue.Arm_Cosine`** — the gravity term scaled by `cos θ`, so it
-  is full effort held out sideways and *nothing* balanced over the pivot
+- **`GravityTypeValue.Arm_Cosine`** — the model's `kG` term scaled by `cos θ`, so
+  it is full effort held out sideways and *nothing* balanced over the pivot
 - **Zero must be horizontal** — a physical constraint the firmware imposes on you
 - **Soft limits** (`SoftwareLimitSwitchConfigs`) — travel limits enforced below
   your code, not by it
@@ -116,8 +117,12 @@ Lesson 19's ligaments. Everything in this lesson agrees on where zero is.
     public static final AngularAcceleration kMaxAcceleration =
         DegreesPerSecondPerSecond.of(360);
 
-    public static final double kArmKP = 60.0; // volts per rotation of error
+    // The model: what this arm costs to hold, to move, and to speed up.
     public static final double kArmKG = 0.25; // volts to hold it out horizontal
+    public static final double kArmKV = 6.0; // volts per arm rotation/sec
+    public static final double kArmKA = 0.055; // volts per arm rotation/sec²
+    // The trim: whatever the model got wrong.
+    public static final double kArmKP = 60.0; // volts per rotation of error
 
     // Where the operator actually wants it.
     public static final Angle kIntake = Degrees.of(-20);
@@ -144,12 +149,29 @@ can get under a game piece on the floor, and `180°` folds it all the way back
 over the robot. There's no reason for the two ends to be mirror images — they're
 wherever the hardware stops.
 
-`kArmKG = 0.25` is the voltage it takes to hold this arm out horizontal, and like
-Lesson 18's `kG` it is a number you can *compute*, not guess: mass × g × half the
-arm's length gives the torque at the pivot, divide by the gear ratio to get what
-the motor sees, and convert through the motor's torque constant and winding
-resistance to get volts. For a 3 kg, 20-inch arm through a 50:1 gearbox that
-works out to about a quarter of a volt. Section 8 checks it against the plot.
+The four gains are the same four the elevator has, describing the same three
+costs plus the trim, and they're computed the same way — from this arm's mass,
+length, and gearbox rather than guessed at.
+
+`kArmKG = 0.25` is the voltage it takes to hold the arm out horizontal: mass × g ×
+half the arm's length gives the torque at the pivot, divide by the gear ratio to
+get what the motor sees, and convert through the motor's torque constant and
+winding resistance to get volts. For a 3 kg, 20-inch arm through a 50:1 gearbox
+that works out to about a quarter of a volt. Section 9 checks it against the plot.
+
+`kArmKV = 6.0` is the voltage to keep the arm turning once per second — 50 rotor
+rotations a second through that gearbox, and a Kraken X60 wants six volts to spin
+that fast. It's the term that pays for the swing itself, and the arithmetic for
+why it has to exist is worth redoing with these numbers: cruising at 180°/s is
+half an arm rotation a second, so `kV` supplies 3 volts. Ask `kP` to produce
+those 3 volts instead and, at 60 volts per rotation of error, it needs a twentieth
+of a rotation — **18 degrees** of the arm trailing behind its own plan, for the
+entire swing. Feedforward isn't a refinement here; it's the difference between an
+arm that follows a profile and an arm that chases one.
+
+`kArmKA = 0.055` is what it costs to change that speed, and unlike the elevator's
+it isn't negligible: an arm's mass sits far from the pivot, so there's real
+rotational inertia to get moving.
 
 ---
 
@@ -240,11 +262,14 @@ public class ArmIOTalonFX implements ArmIO {
         // One "mechanism rotation" is now one full swing of the arm.
         config.Feedback.SensorToMechanismRatio = ArmConstants.kGearRatio;
 
-        config.Slot0.kP = ArmConstants.kArmKP;
+        // The model first: hold, move, accelerate. Then the trim.
         config.Slot0.kG = ArmConstants.kArmKG;
         // Gravity's pull on the arm depends on where the arm is: full effort
         // held out horizontal, none at all balanced over the pivot.
         config.Slot0.GravityType = GravityTypeValue.Arm_Cosine;
+        config.Slot0.kV = ArmConstants.kArmKV;
+        config.Slot0.kA = ArmConstants.kArmKA;
+        config.Slot0.kP = ArmConstants.kArmKP;
 
         config.MotionMagic.MotionMagicCruiseVelocity =
                 ArmConstants.kMaxVelocity.in(RotationsPerSecond);
@@ -293,6 +318,11 @@ rotations is a unit conversion and nothing else —
 `m_request.withPosition(Degrees.of(angleDegrees))` hand the whole job to the
 Units library. The same is true reading back: `getPosition()` gives a Phoenix
 `Angle`, and `.getValue().in(Degrees)` is the entire conversion.
+
+Everything about the gains transfers from the elevator unchanged except one
+thing, and it's the one this lesson is about: `kG` stopped being a constant. The
+`GravityType` line is what tells the firmware to scale it by `cos θ` rather than
+apply it flat. `kV`, `kA`, and `kP` don't care that the mechanism rotates.
 
 **The soft limits are new, and they're a different kind of protection from the
 clamp Lesson 18 wrote.** `clampToTravel` is *your code's* opinion about what
@@ -658,17 +688,22 @@ profile, no goal, no gains — a motor and a number.
    from inside `Arm`, skipping `clampToTravel` entirely, and watch the arm stop
    at 180° anyway. Two layers of protection, and you just proved the lower one
    works on its own.
-4. **Break the zero.** Change `kArmKG` to a negative number and run it again.
+4. **Take the model away.** Set `kArmKV` to `0.0` and swing the arm from intake to
+   stow, watching `Arm/AngleDegrees` against `Arm/GoalDegrees`. It gets there, but
+   it now trails its own plan by something close to the 18 degrees section 3
+   predicted, because error is the only thing `kP` has to make voltage out of. Put
+   it back.
+5. **Break the zero.** Change `kArmKG` to a negative number and run it again.
    That's what a 180°-wrong encoder calibration does: the feedforward pulls the
    arm down exactly when it should be holding it up. Watch how much harder `kP`
    has to work, and put it back.
-5. **Both at once.** Hold a bumper while the arm is still swinging. The roller
+6. **Both at once.** Hold a bumper while the arm is still swinging. The roller
    command takes the subsystem and interrupts the pivot command — but the arm
    keeps going anyway, because the pivot command's last act was to hand Motion
    Magic a goal, and the firmware doesn't need a command alive to finish the job.
    Lesson 18's "a control request persists until replaced," now something you can
    see.
-6. **Replay it.** Record a run, switch `kSimMode` to `Mode.REPLAY`, and confirm
+7. **Replay it.** Record a run, switch `kSimMode` to `Mode.REPLAY`, and confirm
    the arm's angle and the drawing both come back identical. Third mechanism,
    still free.
 
@@ -684,10 +719,12 @@ a word of justification, because the justification was Lesson 13's and it's stil
 good. This is the third mechanism on that spine, and the sound you're listening
 for is how quiet it was.
 
-What was actually new was small and worth keeping. **Gravity on a rotating thing
-depends on the angle**, and `Arm_Cosine` encodes that in one enum value — with a
-string attached, since the firmware can only compute `cos θ` if you have promised
-it that zero means horizontal. **Soft limits** sit below your code rather than
+What was actually new was small and worth keeping. The model is the same four
+gains describing the same machine — what it costs to hold, to move, to speed up,
+and an apology for the rest — but **gravity on a rotating thing depends on the
+angle**, so `kG` alone had to change shape. `Arm_Cosine` encodes that in one enum
+value, with a string attached: the firmware can only compute `cos θ` if you have
+promised it that zero means horizontal. **Soft limits** sit below your code rather than
 inside it, so they hold even when your logic doesn't. And **not every motor
 wants a control loop**: the roller runs on the same plain `set(fraction)` call as
 Lesson 1's very first motor, because "spin while I hold this" has no setpoint to

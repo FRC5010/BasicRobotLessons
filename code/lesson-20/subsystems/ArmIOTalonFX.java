@@ -28,11 +28,14 @@ public class ArmIOTalonFX implements ArmIO {
         // One "mechanism rotation" is now one full swing of the arm.
         config.Feedback.SensorToMechanismRatio = ArmConstants.kGearRatio;
 
-        config.Slot0.kP = ArmConstants.kArmKP;
+        // The model first: hold, move, accelerate. Then the trim.
         config.Slot0.kG = ArmConstants.kArmKG;
         // Gravity's pull on the arm depends on where the arm is: full effort
         // held out horizontal, none at all balanced over the pivot.
         config.Slot0.GravityType = GravityTypeValue.Arm_Cosine;
+        config.Slot0.kV = ArmConstants.kArmKV;
+        config.Slot0.kA = ArmConstants.kArmKA;
+        config.Slot0.kP = ArmConstants.kArmKP;
 
         config.MotionMagic.MotionMagicCruiseVelocity =
                 ArmConstants.kMaxVelocity.in(RotationsPerSecond);

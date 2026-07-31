@@ -76,6 +76,40 @@ instead of teaching the vendor-agnostic WPILib profiling classes. Given the
 course is TalonFX-first throughout, that's the consistent choice. Lessons 18–22
 may now all assume it.
 
+**Corollary, and it is not optional: every profiled mechanism gets the full
+feedforward set — `kG`, `kV`, `kA` — with `kP` as the trim.** Motion Magic
+publishes a velocity and an acceleration at every instant precisely so a model can
+convert them to voltage before any error exists. Configuring `kP` + `kG` alone
+technically converges, which is exactly what makes it a trap: the mechanism still
+arrives, so nothing looks broken, while the student is quietly taught that
+position control means "react to error." It also *is* broken in a way that matters,
+because a pure feedback loop can only manufacture voltage by first allowing error:
+
+- Elevator, 1.0 m/s cruise ⇒ 9 V of back-EMF. With `kP = 20` V/drum-rot that is
+  0.45 rot = **7.2 cm of deliberate lag**. Measured with `kV = 0`: 94.5 mm peak.
+  With the model: ~23 mm.
+- Arm, 180°/s cruise ⇒ 3 V. With `kP = 60` V/arm-rot that is **18° of lag**.
+  Measured with `kV = 0`: 19.9°. With the model: ~8°.
+
+Derivation and measurement agree closely enough that both lessons state the
+arithmetic and then have the student switch `kV` off and watch it happen.
+
+**Computing the gains** (Kraken X60: kT = 7.09/366 = 0.0194 N·m/A, R = 12/366 =
+0.0328 Ω, kV_motor = 628.3/12 = 52.36 rad/s per V):
+
+- `kV` = volts to run the *mechanism* at 1 unit/s = (gear ratio × 2π) / 52.36.
+  Elevator (12:1) → 1.44; arm (50:1) → 6.00. Sanity check: the same formula on the
+  drivetrain's 6.75:1 gives 0.81, and `kDriveKV` has been 0.8 since Lesson 12.
+- `kA` = J_mechanism × 2π / gear ratio / kT × R. Elevator → 0.003 (a small drum
+  and a big gearbox make 5 kg feel weightless to the motor); arm → 0.055 (mass far
+  from the pivot is real inertia).
+- `kS` is **0 in this course** — a frictionless sim can't show it — but Lesson 18
+  names it in a callout as the first gain to add on real hardware.
+
+Lowering `kP` after adding the model was tried and rejected: sweeping the elevator
+over 20/10/5/2 and the arm over 60/30/15 made tracking monotonically *worse* every
+time. Keep `kElevatorKP = 20` and `kArmKP = 60`.
+
 ### Conventions applied without asking
 
 - **Season-generic where possible.** Lesson 15 aliased
@@ -615,8 +649,8 @@ Shipped as [lessons/20-intake-arm.md](lessons/20-intake-arm.md), code in
   Phoenix request holds position by itself) a roller left spinning stays spinning.
   Try-it #5 has the student collide the roller and pivot commands on purpose and
   observe that the arm keeps swinging anyway.
-- **No `kS`/`kA`.** `kP` + `kG` is enough here; see the timing trap below before
-  concluding otherwise.
+- **Full feedforward set**, per the corollary under decision 2: `kArmKG = 0.25`,
+  `kArmKV = 6.0`, `kArmKA = 0.055`, `kArmKP = 60`. `kS` stays 0 (frictionless sim).
 
 **Verified numbers (real-time sim, `ArmTest`)**
 

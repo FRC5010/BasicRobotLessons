@@ -23,9 +23,12 @@ public class ElevatorIOTalonFX implements ElevatorIO {
         // One "mechanism rotation" is now one drum rotation.
         config.Feedback.SensorToMechanismRatio = ElevatorConstants.kGearRatio;
 
-        config.Slot0.kP = ElevatorConstants.kElevatorKP;
+        // The model first: hold, move, accelerate. Then the trim.
         config.Slot0.kG = ElevatorConstants.kElevatorKG;
         config.Slot0.GravityType = GravityTypeValue.Elevator_Static;
+        config.Slot0.kV = ElevatorConstants.kElevatorKV;
+        config.Slot0.kA = ElevatorConstants.kElevatorKA;
+        config.Slot0.kP = ElevatorConstants.kElevatorKP;
 
         // The speed limit for the profile the firmware will generate.
         config.MotionMagic.MotionMagicCruiseVelocity =
