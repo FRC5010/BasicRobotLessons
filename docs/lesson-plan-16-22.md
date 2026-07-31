@@ -5,7 +5,7 @@ document, not lesson content** — it lives beside `docs/lessons/`, never inside
 it, and nothing here should be pasted into a lesson as-is.
 
 Written one lesson at a time, reviewed between each, same as the voice-rewrite
-pass. Lessons 16–19 are done; 20–22 are outlines waiting to be drafted.
+pass. Lessons 16–20 are done; 21–22 are outlines waiting to be drafted.
 
 ---
 
@@ -17,7 +17,7 @@ pass. Lessons 16–19 are done; 20–22 are outlines waiting to be drafted.
 | 17 | B-Line autos: waypoints and trajectories | L9 (autos), L10 (kinematics), L14 (Localizer) | `BLine-Lib` | **Done** — [lesson](lessons/17-bline-autos.md), [code](../code/lesson-17/) |
 | 18 | Scoring elevator | L13 (IO spine), L12 (configs/control requests) | none | **Done** — [lesson](lessons/18-elevator.md), [code](../code/lesson-18/) |
 | 19 | A picture of the elevator | L18, L11 (field-view precedent) | none | **Done** — [lesson](lessons/19-mechanism2d.md), [code](../code/lesson-19/) |
-| 20 | Intake arm (−20°…180°) + roller | L18/L19, L12 | none | Outline |
+| 20 | Intake arm (−20°…180°) + roller | L18/L19, L12 | none | **Done** — [lesson](lessons/20-intake-arm.md), [code](../code/lesson-20/) |
 | 21 | Limit sensors / current sensing | L18, L20 | none | Outline |
 | 22 | Light sensors for game-piece handoff | L20, L21 | none | Outline |
 
@@ -255,10 +255,15 @@ Still open:
 - [x] Corrected `CLAUDE.md`'s "documentation-only / no Java source" claim.
 - [x] **Lesson 17's link to `18-elevator.md`** — resolved; Lesson 18 landed under
       exactly that filename.
-- [ ] **Lesson 18 ends with a link to `19-mechanism2d.md`, which does not exist
-      yet.** Dead until 19 lands; keep the filename.
+- [x] **Lesson 18's link to `19-mechanism2d.md`** — resolved; Lesson 19 landed
+      under exactly that filename.
+- [x] **Lesson 19's link to `20-intake-arm.md`** — resolved; Lesson 20 landed
+      under exactly that filename.
+- [ ] **Lesson 20 ends with a link to `21-limit-sensors.md`, which does not
+      exist yet.** Dead until 21 lands; keep the filename.
 - [x] README row for 18.
-- [ ] Add README rows for 19–22 as each lands.
+- [x] README rows for 19 and 20.
+- [ ] Add README rows for 21–22 as each lands.
 - [x] Fixed Lesson 15's PhotonLib install to a pinned `v2026.3.4` URL, and
       replaced the deprecated `loadAprilTagLayoutField()` everywhere.
 - [x] Fixed Lesson 16's maple-sim install to the pinned `0.4.0-beta` URL.
@@ -552,58 +557,104 @@ freeze; replay the picture.
 
 ---
 
-# Lesson 20 — Intake arm: a mechanism that swings
+# Lesson 20 — Intake arm: a mechanism that swings — DONE
 
-**Builds on:** L18/L19 (spine + picture), L12. Swings −20°…180° with a roller on
-the end.
+Shipped as [lessons/20-intake-arm.md](lessons/20-intake-arm.md), code in
+[code/lesson-20/](../code/lesson-20/) (`Constants.java`, `RobotContainer.java`,
+`subsystems/Arm*.java`, and a small edit to `subsystems/Elevator.java`).
 
-**Goal (draft):** A second real mechanism, reusing Lesson 18's spine end-to-end,
-mounted into Lesson 19's picture in place of the placeholder.
+**Goal as built:** a third mechanism on Lesson 13's spine, mounted into Lesson
+19's picture in place of the placeholder, with gravity that varies by angle.
 
-**New Java concepts**
-- Likely none major — explicitly a **repeat-the-spine, faster** lesson, the beat
-  Lesson 14 promised ("the second time it takes a tenth as long"). Possibly: two
-  motors in *one* subsystem on purpose, contrasted with L7's "why `SwerveModule`
-  stopped being a subsystem."
+**Resolved research flags**
 
-**New robot concepts**
-- **`GravityTypeValue.Arm_Cosine`** vs. L18's `Elevator_Static` — gravity torque
-  that varies with angle (`kG × cos θ`: maximum horizontal, zero vertical). A
-  genuine physics beat, not just a different enum value.
-- **Asymmetric soft limits** (−20°/180°) instead of a centered range
-- Mounting a real mechanism onto L19's picture — the arm's ligament replaces the
-  placeholder at the same attachment point, so both mechanisms move together
-- A **second, unprofiled motor** in the same subsystem: the roller runs on plain
-  percent output (Lesson 1's very first control style), because "spin while
-  held" has no position goal to profile
+- **The angle convention agrees end to end — verified in source, not docs.**
+  Phoenix's `GravityTypeValue.Arm_Cosine` javadoc: "the sensor reports a position
+  of 0 when the mechanism is horizontal (parallel to the ground), and the
+  reported sensor position is 1:1 with the mechanism." WPILib's
+  `SingleJointedArmSim.updateX` applies `alphaGrav = 3/2 · (−9.8) · cos(θ) / L`,
+  i.e. **θ measured from horizontal, positive CCW** — the same sense as
+  `Rotation2d` and Lesson 19's ligaments. Nothing needs a sign flip anywhere.
+  The lesson turns that shared requirement into a teaching beat rather than a
+  footnote: zero-is-horizontal is imposed on you, and a bad zero makes `kG`
+  fight the arm.
+- **`SingleJointedArmSim(DCMotor gearbox, double gearing, double jKgMetersSquared,
+  double armLengthMeters, double minAngleRads, double maxAngleRads, boolean
+  simulateGravity, double startingAngleRads, double... measurementStdDevs)`**,
+  plus `static estimateMOI(lengthMeters, massKg)` = `1/3·m·L²` (uniform rod about
+  its end). `getAngleRads()` / `getVelocityRadPerSec()`, and it pins hard at both
+  limits.
+- **`SoftwareLimitSwitchConfigs`**: `Forward/ReverseSoftLimitEnable` +
+  `Forward/ReverseSoftLimitThreshold`, thresholds in **rotations** (mechanism
+  rotations, given `SensorToMechanismRatio`). Output goes neutral in the blocked
+  direction only.
+- **maple-sim's `IntakeSimulation` was deliberately left out.** The lesson was
+  already carrying Arm_Cosine, soft limits, a second unprofiled motor, and the
+  ligament swap. Game pieces belong to Lesson 22, which is where the appendix's
+  `gamePiecesInIntakeCount` beam-break signal earns its place.
 
-**Walkthrough outline**
-1. The second mechanism, the fast way — state the repeat up front.
-2. What's actually different: gravity that depends on angle. Its own short section.
-3. `ArmIO`/`ArmIOTalonFX`: gearing, `Slot0.kG` + `Arm_Cosine`,
-   `MotionMagicConfigs`, soft limits.
-4. The end-effector roller: a second `TalonFX`, plain duty cycle, no profiling.
-5. `ArmIOSim` with `SingleJointedArmSim`, in `ElevatorSim`'s slot from L18.
-6. `Arm` subsystem: `setGoalAngle(Angle)` clamped, `runIntake()`/`stopIntake()`,
-   `atGoal()`.
-7. Swap L19's placeholder ligament for the arm's real one.
-8. Wire up presets + roller; watch the arm swing while riding the elevator.
+**Design decisions worth not re-litigating**
 
-**Try it (draft)**
-- Command outside [−20°, 180°] and confirm the clamp holds.
-- Log applied voltage vs. angle; watch `kG`'s contribution change sign across
-  vertical.
-- Run roller and pivot at once — they don't fight over the subsystem. Callback to
-  L7's subsystem-boundary reasoning from the opposite direction.
+- **`Arm`'s constructor takes `Elevator`** and calls
+  `elevator.getCarriage().append(...)` — a new one-line public accessor on
+  `Elevator` returning the carriage ligament. This is the payoff Lesson 19 set
+  up: the arm rides the elevator with no code computing that, because the
+  ligament is attached. `RobotContainer` declares `m_arm` after `m_elevator`, and
+  now for a hard reason (the field is read), not just tick order.
+- **`ElevatorConstants.kCarriageAngle = Degrees.of(90)`** was added so the 90° the
+  carriage points at exists in one place; `Arm.toDrawingAngle` subtracts it to go
+  from a world angle to a parent-relative ligament angle. Lesson 19's
+  `m_effector` and `kEffectorLength` are deleted here.
+- **Lesson 19's closing line was amended.** It had promised the elevator's code
+  would not change at all in Lesson 20, which is false — it gains `getCarriage()`
+  and loses the placeholder. It now promises what is true: the two lines that
+  move the carriage don't change.
+- **The roller shares the subsystem** and runs on plain `m_roller.set(fraction)`,
+  the Lesson 1 control style. `runRoller` has no `.until(...)` — nothing to
+  arrive at — and uses `finallyDo` to stop, because unlike the pivot (whose
+  Phoenix request holds position by itself) a roller left spinning stays spinning.
+  Try-it #5 has the student collide the roller and pivot commands on purpose and
+  observe that the arm keeps swinging anyway.
+- **No `kS`/`kA`.** `kP` + `kG` is enough here; see the timing trap below before
+  concluding otherwise.
 
-**Research flags**
-- Confirm `GravityTypeValue.Arm_Cosine` and `SingleJointedArmSim`'s constructor.
-- **Nail the angle convention first.** Does Phoenix's cosine gravity model expect
-  angle-from-horizontal in the same sense WPILib's `Rotation2d`/`Mechanism2d`
-  measure angles (CCW from +X)? Backwards means `kG` fights the arm. Confirm
-  against docs before writing any code.
-- If L16 is in play, maple-sim's `IntakeSimulation` can back this with real game
-  pieces — see appendix.
+**Verified numbers (real-time sim, `ArmTest`)**
+
+`kArmKG = 0.25 V` is computed, not guessed: `m·g·(L/2)` = 3 kg · 9.81 · 0.254 m
+= 7.48 N·m at the arm, /50 = 0.150 N·m at the rotor, /kT (7.09/366 = 0.0194
+N·m/A) = 7.7 A, × R (12/366 = 0.0328 Ω) = **0.253 V**. Measured holding voltage
+vs. `kG·cos θ`:
+
+| angle | applied V | `kG·cos θ` |
+|---|---|---|
+| 0° | +0.25 | +0.25 |
+| 45° | +0.18 | +0.18 |
+| 90° | 0.00 | 0.00 |
+| 135° | −0.18 | −0.18 |
+| 180° | −0.25 | −0.25 |
+
+Also verified: uncommanded the arm falls to −20° at 0 V; both soft limits hold
+(commanded −90° → stops at −20.0°, commanded 270° → stops at 179.8°); the roller
+reaches 60.3 rot/s at 0.6 output and coasts to 0.
+
+**⚠ Timing trap in Phoenix sim tests — this cost real time, don't repeat it.**
+A JUnit loop that calls `m_model.update(0.020)` but sleeps only 4 ms of wall
+clock advances the *physics* 5× faster than the *firmware* clock, because
+Phoenix's simulated firmware runs against real time. Everything then looks like a
+starved control loop: the elevator appeared to peak at 0.365 m/s against a 1.0
+m/s cruise, and the arm crawled at 40°/s against 180°/s. That reads exactly like
+a missing velocity feedforward, and it is not — adding `kV` changed the peak by
+nothing once the timing was fixed. **Sleep the full 20 ms** (or otherwise keep
+wall time and physics time in step) in any test that judges profile tracking.
+With that corrected, Lesson 18's elevator does trace the trapezoid its §8
+describes (peak 1.32 m/s, settles at 1.450 m, holds at 0.17–0.18 V = `kG`), and
+the arm swings −20°→180° in about 1.5 s. **Lesson 18 needed no change.**
+
+Second, smaller trap: **Phoenix's simulated devices are keyed by CAN ID and
+outlive a single JUnit test.** Reusing an ID across tests leaks the previous
+test's control request into the next one, which produced a genuinely baffling
+"uncommanded arm holds itself horizontal at 0.25 V." Give every test its own IDs.
+(TalonFX IDs must also be ≤ 62; `new TalonFX(70)` throws `IllegalArgumentException`.)
 
 ---
 

@@ -212,9 +212,9 @@ arm, and a roller on the end of the wrist — four links. Raise the elevator and
 all three of the others come with it. You update one number.
 
 `m_effector` is a placeholder with no motor behind it, so you will not touch it
-again in this lesson. **That is the point.** In Lesson 20 it becomes a real arm
-with its own angle, and the only thing that changes about the elevator's code is
-nothing.
+again in this lesson. **That is the point.** In Lesson 20 a real arm takes its
+place — its own motor, its own angle, its own subsystem — and the two lines above
+that move the carriage won't change at all.
 
 `setColor` is the other new call, and it's carrying information rather than
 decoration: `atGoal()` is already computed for the log, so feeding it into the
