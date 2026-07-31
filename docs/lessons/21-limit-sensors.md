@@ -535,4 +535,4 @@ That last one is going to be useful immediately. Next up is a sensor whose entir
 job is answering one boolean question — do I have the game piece? — and by now you
 already know what to do with an answer like that.
 
-Next: [Lesson 22 — Light sensors: catching the handoff](22-light-sensors.md).
+Next: [Lesson 22 — Beam breaks: knowing you actually have it](22-light-sensors.md).

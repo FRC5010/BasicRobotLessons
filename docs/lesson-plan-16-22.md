@@ -5,7 +5,7 @@ document, not lesson content** — it lives beside `docs/lessons/`, never inside
 it, and nothing here should be pasted into a lesson as-is.
 
 Written one lesson at a time, reviewed between each, same as the voice-rewrite
-pass. Lessons 16–21 are done; 22 is an outline waiting to be drafted.
+pass. Lessons 16–22 are all done — this plan is complete.
 
 ---
 
@@ -19,7 +19,7 @@ pass. Lessons 16–21 are done; 22 is an outline waiting to be drafted.
 | 19 | A picture of the elevator | L18, L11 (field-view precedent) | none | **Done** — [lesson](lessons/19-mechanism2d.md), [code](../code/lesson-19/) |
 | 20 | Intake arm (−20°…180°) + roller | L18/L19, L12 | none | **Done** — [lesson](lessons/20-intake-arm.md), [code](../code/lesson-20/) |
 | 21 | Homing & limit sensors | L18, L20 | none | **Done** — [lesson](lessons/21-limit-sensors.md), [code](../code/lesson-21/) |
-| 22 | Light sensors for game-piece handoff | L20, L21 | none | Outline |
+| 22 | Beam breaks & the handoff | L20, L21, L16 (arena) | `maple-sim` | **Done** — [lesson](lessons/22-light-sensors.md), [code](../code/lesson-22/) |
 
 16–17 finish the drivetrain half of the course (simulation realism, then real
 path following). 18–22 open the mechanisms half — the "second mechanism" Lesson
@@ -351,11 +351,14 @@ Still open:
       under exactly that filename.
 - [x] **Lesson 20's link to `21-limit-sensors.md`** — resolved; Lesson 21 landed
       under exactly that filename.
-- [ ] **Lesson 21 ends with a link to `22-light-sensors.md`, which does not exist
-      yet.** Dead until 22 lands; keep the filename.
+- [x] **Lesson 21's link to `22-light-sensors.md`** — resolved; Lesson 22 landed
+      under exactly that filename.
+- [x] **Lesson 22 deliberately has no `Next:` link.** It is the last lesson in
+      this plan, so it closes with a course send-off instead. If a Lesson 23 is
+      ever added, that ending needs rewriting rather than just appending a link.
 - [x] README row for 18.
 - [x] README rows for 19, 20 and 21.
-- [ ] Add a README row for 22 when it lands.
+- [x] README row for 22.
 - [x] Fixed Lesson 15's PhotonLib install to a pinned `v2026.3.4` URL, and
       replaced the deprecated `loadAprilTagLayoutField()` everywhere.
 - [x] Fixed Lesson 16's maple-sim install to the pinned `0.4.0-beta` URL.
@@ -835,52 +838,80 @@ belief, switch = fact, homing = the moment one replaces the other.
 
 ---
 
-# Lesson 22 — Light sensors: catching the handoff
+# Lesson 22 — Beam breaks: knowing you actually have it — DONE
 
-**Builds on:** L20 (arm + roller), L21 (`DigitalInput`/`Trigger`). Capstone-ish:
-the two mechanisms finally coordinate.
+Shipped as [lessons/22-light-sensors.md](lessons/22-light-sensors.md), code in
+[code/lesson-22/](../code/lesson-22/) (`Constants.java`, `RobotContainer.java`,
+`subsystems/Arm*.java`, plus a one-method addition to `Drivetrain`).
 
-**Goal (draft):** Give the arm a way to know it's actually holding a game piece
-— a beam break — and use it to coordinate an automatic handoff instead of
-trusting "the roller is spinning" as a proxy for "something is captured."
+**Goal as built:** a beam break that distinguishes "the roller is spinning" from
+"there is a piece in here," driving both mechanisms off one boolean.
 
-**New Java concepts**
-- **`Trigger` combinators** — `.and(...)`, `.debounce(...)` — composing sensor
-  logic declaratively instead of nested `if`s
+**The safe-failure direction is the opposite of Lesson 21's, and that is the
+teaching beat.** Same pull-up, same `DigitalInput`, different consequence: a
+limit switch stuck on "at the limit" merely stops a mechanism, but a beam break
+stuck on "I have a piece" makes the robot *move on its own* and lets an empty
+intake pass the score interlock. So this one is wired so a broken beam pulls the
+line **low** and reads `!get()`, meaning a disconnected sensor says "no piece."
+State the rule as *ask what a stuck reading would make the robot do*, not as a
+per-sensor convention — two `DigitalInput`s on the same robot honestly end up
+with opposite polarity.
 
-**New robot concepts**
-- Beam-break / photoelectric sensors — electrically just another `DigitalInput`,
-  doing a different job
-- **Debouncing** a signal that flickers exactly at the moment of capture — a
-  small honest echo of L14's "sensors lie a little"
-- **Coordinating two subsystems from one sensor event** — no new class, just
-  `Trigger.onTrue(Commands.sequence(...))` spanning arm and elevator. The direct
-  payoff of L9's command composition, thirteen lessons later.
+**maple-sim's `IntakeSimulation` is load-bearing, not decoration.** Faking
+`hasGamePiece` off the roller would have made the simulated sensor a function of
+the very thing the lesson says it must be independent of — the demo would look
+perfect and prove nothing. Verified API:
 
-**Walkthrough outline**
-1. Knowing you're holding something — the roller spins whether or not it caught
-   anything.
-2. Wire the beam-break where a captured piece sits.
-3. Debounce it; short honest note on why.
-4. On beam-broken: stop the roller, drive the arm to a "handoff" preset —
-   composed with L9's `Commands.sequence`/`parallel`.
-5. On beam-clear: return to stowed/intake-ready, closing the cycle.
-6. Log it — `Logger.recordOutput("Arm/HasGamePiece", ...)` so a replay (L13!)
-   shows exactly when the robot believed it held something.
+- `IntakeSimulation.OverTheBumperIntake(String type, AbstractDriveTrainSimulation,
+  Distance width, Distance extension, IntakeSide, int capacity)`; also
+  `InTheFrameIntake(...)` and a custom-`Convex` constructor.
+- `register()` (must be called, or collisions never count), `startIntake()` /
+  `stopIntake()`, `getGamePiecesAmount()`, `obtainGamePieceFromIntake()` → boolean.
+- Game piece type string is `"Fuel"` (`RebuiltFuelOnField`, package
+  `org.ironmaple.simulation.seasonspecific.rebuilt2026`) — season-specific, will
+  need a pass each new game, same caveat as Lesson 16's arena.
+- `Drivetrain` gained `public static SwerveDriveSimulation getDriveSim()`. Sim
+  types stay out of `Arm` and `RobotContainer` entirely; only `ArmIOSim` touches
+  them, which is the Lesson 13 rule.
+- Ejecting calls `obtainGamePieceFromIntake()` and drops a fresh
+  `RebuiltFuelOnField` 0.8 m in front of the robot, so the intake → carry →
+  score → collect cycle actually closes in sim.
 
-**Try it (draft)**
-- A second beam-break at the scoring end; require piece-present **and** arm-at-goal
-  before a score trigger fires (`Trigger.and(...)`).
-- A fake beam-break button for sim testing — the trick L14 used for a fake camera
-  sighting.
-- Replay a cycle and confirm `HasGamePiece` reconstructs identically.
+**Verified** (`HandoffTest`, one sequential scenario):
 
-**Research flags**
-- Stable core WPILib. Confirm `Trigger.debounce`'s default debounce *type*
-  (rising-edge only vs. both edges) — it changes which parameter value reads
-  correctly in prose.
-- With L16 in place, maple-sim's `IntakeSimulation` gives this a real backing
-  signal instead of a fake button — see appendix.
+| | |
+|---|---|
+| roller at 68 rps on a cleared field | `hasGamePiece = false` ← the lesson's whole claim |
+| piece placed 0.55 m ahead | captured in 1 arena step |
+| roller stopped | still held |
+| eject | sensor clears, piece back on the field |
+
+**`Trigger` combinators — confirmed semantics.** `.debounce(double)` defaults to
+`Debouncer.DebounceType.kRising`, i.e. it delays believing *true* and reports
+*false* immediately. That is the right shape here (be sure before firing an
+automatic sequence; notice a dropped piece at once) and the lesson says so
+explicitly. `.and(...)` takes any `BooleanSupplier`, so method references compose
+with `Trigger`s directly.
+
+**Be honest that the debounce does nothing in sim.** maple-sim's capture signal is
+clean — a held piece stays held — so there is no flicker to smooth. The lesson
+says this outright and Try It #2 has the student *introduce* flicker in
+`ArmIOSim` to see what the debounce is insuring against. Do not fake a flicker in
+the shipped code to make the feature look busy.
+
+**Capture binding is `Commands.parallel(arm.goToAngle(kStowed),
+elevator.goToHeight(kScoreMid))`** — two subsystems moving off one sensor reading,
+which is Lesson 9's composition finally doing what it was built for, and visible
+on Lesson 19's Mechanism tab. A side effect worth the sentence it gets: the
+capture command takes the `Arm`, which interrupts the driver's held-bumper
+`runRoller` and stops the roller for free, out of the scheduler's requirement
+rules rather than any written logic.
+
+**Ending.** Lesson 22 has **no `Next:` link** — it is the last lesson, and it
+closes with a course send-off that points at the structure rather than the APIs
+(one sensor, two mechanisms, no `Superstructure` class, same wiring diagram as
+Lesson 1). If a Lesson 23 is ever added, rewrite that ending rather than
+appending a link to it.
 
 ---
 
