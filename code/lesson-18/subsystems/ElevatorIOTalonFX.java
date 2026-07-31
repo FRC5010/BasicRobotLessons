@@ -53,6 +53,9 @@ public class ElevatorIOTalonFX implements ElevatorIO {
         inputs.heightMeters = rotationsToMeters(m_motor.getPosition().getValueAsDouble());
         inputs.velocityMetersPerSec = rotationsToMeters(m_motor.getVelocity().getValueAsDouble());
         inputs.appliedVolts = m_motor.getMotorVoltage().getValueAsDouble();
+        // Where the profile says we should be *right now* — not the final goal.
+        inputs.setpointMeters =
+                rotationsToMeters(m_motor.getClosedLoopReference().getValueAsDouble());
     }
 
     @Override

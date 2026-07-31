@@ -17,6 +17,8 @@ depends on where it is.
 - **Zero must be horizontal** — a physical constraint the firmware imposes on you
 - **Soft limits** (`SoftwareLimitSwitchConfigs`) — travel limits enforced below
   your code, not by it
+- **Moment of inertia** — why an arm resists being started and stopped far more
+  than a carriage of the same mass
 - **`SingleJointedArmSim`** — a rotating physics model, in `ElevatorSim`'s slot
 - A **second, unprofiled motor**: the roller runs on plain percent output,
   because "spin while held" has no position goal to profile
@@ -149,29 +151,51 @@ can get under a game piece on the floor, and `180°` folds it all the way back
 over the robot. There's no reason for the two ends to be mirror images — they're
 wherever the hardware stops.
 
-The four gains are the same four the elevator has, describing the same three
-costs plus the trim, and they're computed the same way — from this arm's mass,
-length, and gearbox rather than guessed at.
+The four gains are the same four the elevator has, describing the same three costs
+plus the trim. They come out of the same three steps — what does the *mechanism*
+need, divide by the gear ratio for what the *rotor* needs, then `× 0.12` for a
+speed or `× 1.69` for a torque — with this arm's numbers substituted in.
 
-`kArmKG = 0.25` is the voltage it takes to hold the arm out horizontal: mass × g ×
-half the arm's length gives the torque at the pivot, divide by the gear ratio to
-get what the motor sees, and convert through the motor's torque constant and
-winding resistance to get volts. For a 3 kg, 20-inch arm through a 50:1 gearbox
-that works out to about a quarter of a volt. Section 9 checks it against the plot.
+**`kArmKV = 6.0`** — one arm rotation per second is 50 rotor rotations per second
+through the gearbox:
 
-`kArmKV = 6.0` is the voltage to keep the arm turning once per second — 50 rotor
-rotations a second through that gearbox, and a Kraken X60 wants six volts to spin
-that fast. It's the term that pays for the swing itself, and the arithmetic for
-why it has to exist is worth redoing with these numbers: cruising at 180°/s is
-half an arm rotation a second, so `kV` supplies 3 volts. Ask `kP` to produce
-those 3 volts instead and, at 60 volts per rotation of error, it needs a twentieth
-of a rotation — **18 degrees** of the arm trailing behind its own plan, for the
-entire swing. Feedforward isn't a refinement here; it's the difference between an
-arm that follows a profile and an arm that chases one.
+```
+50 rot/s × 0.12 V = 6.0 V
+```
 
-`kArmKA = 0.055` is what it costs to change that speed, and unlike the elevator's
-it isn't negligible: an arm's mass sits far from the pivot, so there's real
-rotational inertia to get moving.
+**`kArmKG = 0.25`** — the torque to hold the arm out horizontal. A uniform arm's
+weight acts at its middle, so the lever arm is half its length, `0.508 / 2 = 0.254 m`:
+
+```
+weight       3 kg × 9.81 m/s²        = 29.4 N
+torque       29.4 N × 0.254 m         = 7.47 N·m at the pivot
+at the rotor 7.47 ÷ 50                = 0.149 N·m
+volts        0.149 N·m × 1.69         = 0.25 V
+```
+
+**`kArmKA = 0.055`** — the torque to speed the arm up. Rotating things resist
+acceleration by their **moment of inertia**, and for a uniform rod pivoting about
+one end that's `⅓ m L² = ⅓ × 3 × 0.508² = 0.258 kg·m²`. One arm rotation per second
+squared is `2π = 6.28 rad/s²`:
+
+```
+torque       0.258 kg·m² × 6.28 rad/s² = 1.62 N·m at the pivot
+at the rotor 1.62 ÷ 50                  = 0.032 N·m
+volts        0.032 N·m × 1.69           = 0.055 V
+```
+
+That's twenty times the elevator's `kA`, and the reason is worth noticing: the
+elevator's load hangs off a 1-inch drum, while the arm's mass sits 10 inches out
+from the pivot. Distance from the axis is squared in the moment of inertia, so it
+dominates. An arm is genuinely harder to start and stop than a carriage of similar
+mass.
+
+And the argument for having `kV` at all is worth redoing with these numbers.
+Cruising at 180°/s is half an arm rotation per second, so `kV` supplies 3 volts.
+Ask `kP` to produce those 3 volts instead and, at 60 volts per rotation of error,
+it needs a twentieth of a rotation — **18 degrees** of arm trailing behind its own
+plan, for the whole swing. On an arm that's not just sloppy, it's 18 degrees of
+somewhere you didn't intend to be.
 
 ---
 
@@ -200,6 +224,7 @@ public interface ArmIO {
         public double angleDegrees = 0.0;
         public double velocityDegPerSec = 0.0;
         public double appliedVolts = 0.0;
+        public double setpointDegrees = 0.0;
         public double rollerVelocityRotPerSec = 0.0;
     }
 
@@ -294,6 +319,9 @@ public class ArmIOTalonFX implements ArmIO {
         inputs.angleDegrees = m_pivot.getPosition().getValue().in(Degrees);
         inputs.velocityDegPerSec = m_pivot.getVelocity().getValue().in(DegreesPerSecond);
         inputs.appliedVolts = m_pivot.getMotorVoltage().getValueAsDouble();
+        // Where the profile says we should be *right now* — not the final goal.
+        inputs.setpointDegrees =
+                Rotations.of(m_pivot.getClosedLoopReference().getValueAsDouble()).in(Degrees);
         inputs.rollerVelocityRotPerSec = m_roller.getVelocity().getValueAsDouble();
     }
 
@@ -671,6 +699,19 @@ It also tells you `kArmKG` is right. If the applied voltage matches `kG × cos �
 at every angle, the feedforward is carrying the whole load and `kP` has nothing
 left to correct — which is precisely what a good feedforward looks like.
 
+Two more traces are worth a look before you move on.
+
+Add `Arm/SetpointDegrees` alongside `Arm/AngleDegrees` and swing between the
+presets. Same story as the elevator: the goal steps, the setpoint slides, and the
+angle trails the setpoint by a handful of degrees — worst during the acceleration
+ramp, under ten at its peak — rather than the eighteen it would take to buy that
+voltage out of error. Lesson 18's section 9 tuning order —
+`kG` from the steady hold, `kV` from the flat cruise, `kA` from the ramps, `kP`
+last and small — works here unchanged. The arm just gives you a bonus: because
+`kG` is scaled by `cos θ`, you can check it at **five different angles** instead
+of one, and the table above is exactly that check. An elevator only ever offers
+you a single number to verify.
+
 Finally, hold **right bumper** and watch `Arm/RollerVelocityRotPerSec` climb to
 around 60 rotations per second, then let go and watch it coast down to zero. No
 profile, no goal, no gains — a motor and a number.
@@ -678,6 +719,12 @@ profile, no goal, no gains — a motor and a number.
 ---
 
 ## Try it
+
+> **Do these in simulation** (`kSimMode = Mode.SIM`). Three of them deliberately
+> defeat a safety layer or invert the gravity model to show you what that failure
+> looks like, and a real arm answers by slamming into a hard stop under power. An
+> arm is also the first mechanism in this course that can reach *you*. In sim it
+> costs nothing to be wrong, which is the whole reason to be wrong there first.
 
 1. **Add a third position.** A `kScore` angle around 35° on another button. One
    constant, one binding, same as the elevator.
@@ -687,16 +734,20 @@ profile, no goal, no gains — a motor and a number.
 3. **Then get past the clamp.** Call `m_io.setGoalAngleDegrees(270)` directly
    from inside `Arm`, skipping `clampToTravel` entirely, and watch the arm stop
    at 180° anyway. Two layers of protection, and you just proved the lower one
-   works on its own.
+   works on its own. (This one deliberately removes a guard. Sim only — the whole
+   point is that you're relying on the soft limit to catch you.)
 4. **Take the model away.** Set `kArmKV` to `0.0` and swing the arm from intake to
-   stow, watching `Arm/AngleDegrees` against `Arm/GoalDegrees`. It gets there, but
-   it now trails its own plan by something close to the 18 degrees section 3
+   stow, watching `Arm/AngleDegrees` against `Arm/SetpointDegrees`. It gets there,
+   but it now trails its own plan by something close to the 18 degrees section 3
    predicted, because error is the only thing `kP` has to make voltage out of. Put
    it back.
 5. **Break the zero.** Change `kArmKG` to a negative number and run it again.
    That's what a 180°-wrong encoder calibration does: the feedforward pulls the
    arm down exactly when it should be holding it up. Watch how much harder `kP`
-   has to work, and put it back.
+   has to work — and watch `Arm/SetpointDegrees` and `Arm/AngleDegrees` come
+   apart, which is what this failure looks like on a plot when you meet it for
+   real. Put it back. (On actual hardware this experiment drives the arm into its
+   own hard stop under power, which is why it lives in sim.)
 6. **Both at once.** Hold a bumper while the arm is still swinging. The roller
    command takes the subsystem and interrupts the pivot command — but the arm
    keeps going anyway, because the pivot command's last act was to hand Motion

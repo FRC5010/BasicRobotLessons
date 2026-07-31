@@ -17,6 +17,8 @@ costs to move, with feedback left to correct only what the model missed.
   *allowed* to get there
 - **`Slot0.kG`, `kV`, and `kA`** — a model of the mechanism, paying for gravity,
   speed, and acceleration *before* any error exists, with `kP` left as the trim
+- **Computing gains instead of guessing them**, then reading the real ones off an
+  AdvantageScope graph one at a time
 - **`GravityTypeValue.Elevator_Static`** — the first mechanism that falls when you
   stop pushing
 - **`ElevatorSim`** — a physics model with mass and gravity, in `DCMotorSim`'s slot
@@ -131,6 +133,7 @@ public interface ElevatorIO {
         public double heightMeters = 0.0;
         public double velocityMetersPerSec = 0.0;
         public double appliedVolts = 0.0;
+        public double setpointMeters = 0.0;
     }
 
     /** Read every sensor into 'inputs'. Called once per tick, before anything else. */
@@ -141,9 +144,25 @@ public interface ElevatorIO {
 }
 ```
 
-`appliedVolts` is new to this course's inputs, and it earns its place here: on a
-mechanism fighting gravity, the voltage the motor is actually using is the most
-direct evidence of what the feedforward is doing. You'll plot it in section 8.
+Two of those inputs are new to this course, and both are there because you cannot
+tune a mechanism you cannot see.
+
+`appliedVolts` is the voltage the motor is actually using. On a thing fighting
+gravity that's the most direct evidence of what the model is doing — section 9
+reads every gain off this one trace.
+
+`setpointMeters` is subtler and more useful. There are **three** different heights
+worth keeping straight:
+
+| | what it is |
+|---|---|
+| goal | where the carriage will end up. Jumps the instant you press a button. |
+| setpoint | where the plan says it should be *this tick*. Slides smoothly from here to the goal. |
+| height | where it actually is. |
+
+The goal is your program's intent. The setpoint is the firmware's plan. The
+difference between the setpoint and the height is **tracking error** — the only
+thing `kP` can see, and the thing the rest of this lesson is about shrinking.
 
 ---
 
@@ -213,17 +232,66 @@ rotation of error — about 7 centimeters.**
 > Hand the firmware the numbers it can compute in advance and `kP` goes back to its
 > real job: correcting the small stuff the model didn't know about.
 
-The other two model numbers come out the same way. `kV = 1.44` is the volts a Kraken
-needs to turn the drum once per second through that gearbox. `kA = 0.003` is what it
-costs to accelerate 5 kg through a 1-inch drum — nearly nothing, because a small drum
-and a big gearbox make the carriage feel light to the motor. Being right about a small
-number is free, so include it.
+### Where those three numbers come from
 
-`kG = 0.18` is the one you can also just measure. Torque to hold the carriage is mass
-× gravity × drum radius — 5 kg × 9.81 m/s² × 0.0254 m ≈ 1.25 N·m at the drum, so
-≈ 0.10 N·m at the rotor through the 12:1 gearbox, which a Kraken X60 produces at
-roughly 0.18 volts. Or: raise the elevator, nudge the voltage until it neither climbs
-nor sinks, and write that number down.
+You don't guess them. Two facts off a Kraken X60's spec sheet turn all three into
+arithmetic:
+
+- On 12 volts with nothing attached, it free-spins at **6000 RPM** — 100 rotations a
+  second. So making the *rotor* spin costs `12 / 100 =` **0.12 volts per rotation
+  per second**.
+- Held still at 12 volts, it produces **7.09 N·m**. So making the *rotor* twist costs
+  `12 / 7.09 =` **1.69 volts per newton-metre**.
+
+Every gain in this course follows the same three steps from there:
+
+> 1. Work out what the **mechanism** needs — a speed, or a torque.
+> 2. Divide by the gear ratio to get what the **rotor** needs. (A gearbox trades
+>    speed for torque, so the rotor spins 12× faster and twists 12× less.)
+> 3. Multiply by **0.12** if it's a speed, or **1.69** if it's a torque.
+
+**`kV = 1.44` — what one drum rotation per second costs.** The drum turns once, the
+rotor turns 12 times, so this is a speed of 12 rotor rotations per second:
+
+```
+12 rot/s × 0.12 V = 1.44 V
+```
+
+**`kG = 0.18` — what holding the carriage costs.** This one's a torque, so it needs
+all three steps:
+
+```
+weight       5 kg × 9.81 m/s²          = 49.1 N
+torque       49.1 N × 0.0254 m (drum r) = 1.25 N·m at the drum
+at the rotor 1.25 ÷ 12                  = 0.104 N·m
+volts        0.104 N·m × 1.69           = 0.18 V
+```
+
+**`kA = 0.003` — what speeding the carriage up costs.** Also a torque, and the same
+walk. One drum rotation per second squared works out to `2π × 0.0254 = 0.16 m/s²` of
+carriage acceleration:
+
+```
+force        5 kg × 0.16 m/s²           = 0.80 N
+torque       0.80 N × 0.0254 m          = 0.0203 N·m at the drum
+at the rotor 0.0203 ÷ 12                = 0.0017 N·m
+volts        0.0017 N·m × 1.69          = 0.003 V
+```
+
+Three thousandths of a volt, which tells you something real: a 1-inch drum behind a
+12:1 gearbox makes 5 kg feel almost weightless to the motor. Being right about a small
+number is free, so keep it.
+
+Want a check that the method works? Run the `kV` step on the **drivetrain**: a 6.75:1
+gear ratio gives `6.75 × 0.12 = 0.81`, and `kDriveKV` has been `0.8` since Lesson 12.
+Same rule, same motor, a number you already trusted.
+
+> These are honest starting values, not final ones. Real gearboxes lose some effort
+> to friction, real cables stack up on the drum, and the mass in your CAD is always a
+> little optimistic. Section 9 shows you how to read the true values off a graph.
+
+You can also find `kG` without any arithmetic at all: raise the elevator, nudge the
+voltage until it neither climbs nor sinks, and write that number down.
 
 `GravityTypeValue.Elevator_Static` tells the firmware which *kind* of gravity `kG`
 describes: a constant pull, the same at every height. (There's an `Arm_Cosine` for
@@ -293,6 +361,9 @@ public class ElevatorIOTalonFX implements ElevatorIO {
         inputs.heightMeters = rotationsToMeters(m_motor.getPosition().getValueAsDouble());
         inputs.velocityMetersPerSec = rotationsToMeters(m_motor.getVelocity().getValueAsDouble());
         inputs.appliedVolts = m_motor.getMotorVoltage().getValueAsDouble();
+        // Where the profile says we should be *right now* — not the final goal.
+        inputs.setpointMeters =
+                rotationsToMeters(m_motor.getClosedLoopReference().getValueAsDouble());
     }
 
     @Override
@@ -515,22 +586,30 @@ import frc.robot.subsystems.Elevator;
 
 `./gradlew simulateJava`, **Teleoperated**, and press D-pad up.
 
-Open AdvantageScope and put `Elevator/HeightMeters` and `Elevator/GoalMeters` on the
-same graph. The goal is a step — it jumps the instant you press the button. The
-height is not: it eases away from the floor, runs up at a steady rate, and settles
-onto the goal without overshooting. That gap between the two traces is the profile,
-and it's the whole difference between `MotionMagicVoltage` and `PositionVoltage`.
+Open AdvantageScope and put all three heights on one graph: `Elevator/GoalMeters`,
+`Elevator/SetpointMeters`, and `Elevator/HeightMeters`.
 
-Add `Elevator/VelocityMetersPerSec` underneath and you can see the profile directly:
-a ramp up to about a meter per second, a cruise, a ramp back down to zero. That
+The **goal** is a step — it jumps the instant you press the button. The **setpoint**
+is not: it leaves the floor gently, slides upward at a steady rate, and eases onto the
+goal. That's the profile, drawn. It's the whole difference between
+`MotionMagicVoltage` and `PositionVoltage`, and it's the thing the elevator is
+actually chasing — the goal is just where the plan is headed.
+
+Add `Elevator/VelocityMetersPerSec` underneath and you can see the same plan from the
+side: a ramp up to about a meter per second, a cruise, a ramp back down to zero. That
 trapezoid is what the firmware invented for you out of two constants.
 
-Now watch how *closely* the height trace follows the goal. During the cruise the
-carriage runs a couple of centimeters behind where the plan says it should be — small
-enough that the two traces look almost like one line. That gap is everything `kP` is
-being asked to fix, and it's small precisely because `kV` already supplied the nine
-volts the cruise costs. Section 4's arithmetic predicted seven centimeters of lag if
-that voltage had to be bought with error instead; Try It #2 lets you go see it.
+Now zoom in on the setpoint and the height together, because that pair is the score.
+The height stays within about two or three centimeters of the setpoint through the
+cruise, widens to four or five at the sharpest part of the acceleration ramp, and
+converges to a fraction of a millimeter once the carriage settles. (That the gap is
+worst while *speeding up* and best while *holding* is not a coincidence — section 9
+turns it into a tuning signal.)
+
+That gap is the *entire* job you left to `kP`, and it stays that small because `kV` is
+already supplying the nine volts the cruise costs. Section 4's arithmetic said seven
+centimeters of lag if that voltage had to be bought with error instead — Try It #2
+lets you go watch it happen.
 
 Then add `Elevator/AppliedVolts`, and watch what happens *after* it arrives. The
 voltage doesn't return to zero. It settles at about `0.18` — `kG`, still holding, for
@@ -539,17 +618,70 @@ the way to the floor: going down, gravity is helping, so the motor has to resist
 
 ---
 
+## 9. Reading the gains off a graph
+
+The numbers section 4 computed are a good starting point. They are not your robot's
+numbers, because your robot has friction, a cable that stacks unevenly on the drum,
+and a carriage that weighs whatever it actually weighs rather than whatever CAD said.
+So here's how to find the real ones — and the useful part is that **each gain has its
+own signature on the plot**, so you can tune them one at a time instead of guessing at
+four numbers at once.
+
+Put `Elevator/SetpointMeters`, `Elevator/HeightMeters`, and `Elevator/AppliedVolts`
+on one AdvantageScope graph and work down the list. Tune in model order: each gain
+depends on the ones above it being right.
+
+**`kG` first, because it's nearly free.** Send the elevator to a middle height and let
+it sit there. Once it stops moving, read `AppliedVolts`. That number *is* your `kG` —
+nothing is moving, so `kV` and `kA` are contributing zero and there's no error for
+`kP` to act on. If the carriage slowly sinks, `kG` is too low; if it creeps upward,
+too high.
+
+**`kV` next, from the flat middle.** Command a long move and look at the cruise, where
+the velocity trace is flat. There, `AppliedVolts ≈ kG + kV × velocity`. Read the volts,
+read the velocity, subtract the `kG` you just found, divide by the velocity. On the
+tracking traces: if `kV` is low, the height trace separates from the setpoint at the
+start of the cruise and stays a constant distance behind it. If `kV` is high, the
+height trace runs *ahead* of the setpoint.
+
+**`kA` from the corners.** `kA` only does anything while the speed is *changing* — the
+two ramps at either end of the trapezoid, not the flat part in between. So its
+signature is a gap that opens during the ramps and closes once the cruise starts. On
+this elevator `kA` is three thousandths of a volt and you will not see it; on a heavy
+arm or a flywheel it matters much more.
+
+**`kP` last, and keep it small.** With the model right, the height should already be
+tracking the setpoint closely. Raise `kP` until the leftover gap closes, and back off
+the moment the height trace starts oscillating around the setpoint instead of settling
+onto it. If you find yourself reaching for a huge `kP`, that's the model asking for
+attention — a big trim means something above it is wrong.
+
+> **Tuning a real mechanism.** A wrong `kG` on a real elevator means the carriage
+> drops the instant you enable, so set yourself up to be wrong safely: start the
+> mechanism near the middle of its travel, keep `kMaxVelocity` and `kMaxAcceleration`
+> well below their real values while you work on `kG` and `kV`, raise them only once
+> tracking looks good, stand clear of everything the carriage can reach, and keep a
+> hand on the disable button. Get it behaving in simulation first — that's most of
+> what simulation is for.
+
+---
+
 ## Try it
+
+> **Do these in simulation** (`kSimMode = Mode.SIM`, which is where you already are).
+> Several of them deliberately break the model to show you what a broken model looks
+> like, and a real carriage answers a broken model by falling. In sim, being wrong is
+> free — that's the point of having it.
 
 1. **Add a third preset.** A `kScoreLow` between stowed and mid, on `povLeft()`.
    One constant, one binding — that's the whole cost of a new position now.
 2. **Take the model away.** Set `kElevatorKV` to `0.0` and run it again, watching
-   `Elevator/HeightMeters` against `Elevator/GoalMeters`. The elevator still arrives —
-   but now it trails the plan by the better part of ten centimeters. Section 4
-   predicted seven of those for the cruise voltage alone; the rest is the same trick
-   paying for gravity and acceleration, since `kP` is now buying all of it with
-   error. This is the difference between controlling a mechanism you understand and
-   controlling one you're only reacting to. Put it back.
+   `Elevator/HeightMeters` against `Elevator/SetpointMeters`. The elevator still
+   arrives — but the worst gap between the two traces roughly doubles, from four or
+   five centimeters to about eleven. Section 4 predicted seven of those for the cruise
+   voltage alone; the rest is the same trick paying for gravity and acceleration, since
+   `kP` is now buying all of it with error. This is the difference between controlling
+   a mechanism you understand and reacting to one you don't. Put it back.
 3. **Take gravity out of the model.** Set `kElevatorKG` to `0.0` instead. The
    elevator still gets there, but watch the height trace sag below the goal and sit
    there, and watch it behave differently going up than coming down. Gravity is
@@ -594,6 +726,13 @@ way it can. Model what you can. Trim the rest.
 That's not a new idea, either. Lesson 12 put `kV` on the drive motors and called it
 the model. What changed here is only that an elevator's model needs more terms in it,
 because an elevator has a mass to accelerate and a weight that never lets go.
+
+Every one of those gains was a number you *computed* — two facts off a motor's spec
+sheet, a gear ratio, and the mechanism's own dimensions. Tuning didn't mean turning
+knobs until it looked right; it meant working out what the machine should need and
+then checking the graph to see where reality disagreed. That's a habit worth keeping
+for every mechanism you build, and section 9's tuning order — `kG`, `kV`, `kA`, `kP`,
+one at a time, each with its own signature on the plot — works on all of them.
 
 And `MotionMagicVoltage` changed what a "setpoint" means. You no longer hand the
 motor a destination and brace for how violently it gets there; you hand it a

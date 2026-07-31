@@ -13,6 +13,7 @@ public interface ElevatorIO {
         public double heightMeters = 0.0;
         public double velocityMetersPerSec = 0.0;
         public double appliedVolts = 0.0;
+        public double setpointMeters = 0.0;
     }
 
     /** Read every sensor into 'inputs'. Called once per tick, before anything else. */

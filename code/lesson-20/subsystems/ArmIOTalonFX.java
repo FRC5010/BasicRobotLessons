@@ -60,6 +60,9 @@ public class ArmIOTalonFX implements ArmIO {
         inputs.angleDegrees = m_pivot.getPosition().getValue().in(Degrees);
         inputs.velocityDegPerSec = m_pivot.getVelocity().getValue().in(DegreesPerSecond);
         inputs.appliedVolts = m_pivot.getMotorVoltage().getValueAsDouble();
+        // Where the profile says we should be *right now* — not the final goal.
+        inputs.setpointDegrees =
+                Rotations.of(m_pivot.getClosedLoopReference().getValueAsDouble()).in(Degrees);
         inputs.rollerVelocityRotPerSec = m_roller.getVelocity().getValueAsDouble();
     }
 

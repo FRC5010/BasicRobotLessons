@@ -13,6 +13,7 @@ public interface ArmIO {
         public double angleDegrees = 0.0;
         public double velocityDegPerSec = 0.0;
         public double appliedVolts = 0.0;
+        public double setpointDegrees = 0.0;
         public double rollerVelocityRotPerSec = 0.0;
     }
 

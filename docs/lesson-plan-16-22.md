@@ -86,29 +86,85 @@ position control means "react to error." It also *is* broken in a way that matte
 because a pure feedback loop can only manufacture voltage by first allowing error:
 
 - Elevator, 1.0 m/s cruise ⇒ 9 V of back-EMF. With `kP = 20` V/drum-rot that is
-  0.45 rot = **7.2 cm of deliberate lag**. Measured with `kV = 0`: 94.5 mm peak.
-  With the model: ~23 mm.
+  0.45 rot = **7.2 cm of deliberate lag**.
 - Arm, 180°/s cruise ⇒ 3 V. With `kP = 60` V/arm-rot that is **18° of lag**.
-  Measured with `kV = 0`: 19.9°. With the model: ~8°.
+
+Measured peak |setpoint − position| (the metric students can actually plot; real
+time, 20 ms sleep):
+
+| | `kV` on | `kV` off |
+|---|---|---|
+| elevator | 44–49 mm | 107 mm |
+| arm | 8–9° | 20.3° |
+
+Peak lag lands on the *acceleration ramp*, not the cruise — worth knowing, since
+Lesson 18 §9 teaches that as `kA`'s tuning signature. Quote ranges, not single
+figures: run-to-run spread is real (the sim feeds the rotor position at 50 Hz while
+Phoenix's firmware loops at 1 kHz).
 
 Derivation and measurement agree closely enough that both lessons state the
 arithmetic and then have the student switch `kV` off and watch it happen.
 
-**Computing the gains** (Kraken X60: kT = 7.09/366 = 0.0194 N·m/A, R = 12/366 =
-0.0328 Ω, kV_motor = 628.3/12 = 52.36 rad/s per V):
+**A logged profile setpoint is what makes any of this visible**, so both IO layers
+carry one: `ElevatorIOInputs.setpointMeters` / `ArmIOInputs.setpointDegrees`, read
+from `getClosedLoopReference()`. Without it a student can only plot position against
+the *goal*, which is a step — so profile lag and tracking error are indistinguishable
+and there is nothing to tune against. Lesson 18 §3 introduces the three-way
+distinction explicitly (goal = destination, setpoint = where the plan says you should
+be this tick, position = where you are; error = setpoint − position).
 
-- `kV` = volts to run the *mechanism* at 1 unit/s = (gear ratio × 2π) / 52.36.
-  Elevator (12:1) → 1.44; arm (50:1) → 6.00. Sanity check: the same formula on the
-  drivetrain's 6.75:1 gives 0.81, and `kDriveKV` has been 0.8 since Lesson 12.
-- `kA` = J_mechanism × 2π / gear ratio / kT × R. Elevator → 0.003 (a small drum
-  and a big gearbox make 5 kg feel weightless to the motor); arm → 0.055 (mass far
-  from the pivot is real inertia).
-- `kS` is **0 in this course** — a frictionless sim can't show it — but Lesson 18
-  names it in a callout as the first gain to add on real hardware.
+Lesson 18 §9 is the tuning procedure, in model order, each gain with its own graph
+signature: `kG` from steady-state `AppliedVolts` while holding; `kV` from
+`AppliedVolts ≈ kG + kV·v` on the flat cruise; `kA` from gaps that open on the ramps
+and close on the cruise; `kP` last and small, backed off at the first oscillation.
+Lesson 20 §9 points back at it and adds the arm's bonus — `cos θ` means `kG` can be
+verified at five angles instead of one.
+
+**Computing the gains — use the student-facing form, it is exact.** Two facts off
+the Kraken X60 spec sheet (`DCMotor.getKrakenX60`: 12 V, 7.09 N·m stall, 366 A
+stall, 6000 RPM free) collapse the whole thing to two constants:
+
+- 6000 RPM on 12 V = 100 rot/s ⇒ **0.12 V per rotor rotation/sec** (speed)
+- 7.09 N·m on 12 V ⇒ 12/7.09 = **1.69 V per N·m at the rotor** (torque)
+
+Then, every time: *what does the mechanism need → divide by the gear ratio for what
+the rotor needs → × 0.12 for a speed, × 1.69 for a torque.* Avoid the
+kT/R/Kv_rad-per-volt formulation in lesson text; it gives the same answers with
+more machinery, and the free-current term makes `Kv` 52.65 rather than 52.36, which
+then *doesn't* reproduce the constants in the file.
+
+| | derivation | = | in file |
+|---|---|---|---|
+| elevator `kV` | 12 × 0.12 | 1.440 | 1.44 |
+| elevator `kG` | 5·9.81·0.0254 ÷ 12 × 1.69 | 0.176 | 0.18 |
+| elevator `kA` | 5·(2π·0.0254)·0.0254 ÷ 12 × 1.69 | 0.0029 | 0.003 |
+| arm `kV` | 50 × 0.12 | 6.000 | 6.0 |
+| arm `kG` | 3·9.81·0.254 ÷ 50 × 1.69 | 0.253 | 0.25 |
+| arm `kA` | (⅓·3·0.508²)·2π ÷ 50 × 1.69 | 0.0549 | 0.055 |
+| drivetrain check | 6.75 × 0.12 | 0.810 | `kDriveKV` = 0.8 |
+
+`GainsTest.publishedArithmeticProducesTheConstantsInTheFile` asserts this table, so
+changing a mass, length, or gear ratio without redoing the gain fails a test.
+
+`kS` is **0 in this course** — a frictionless sim can't show it — but Lesson 18
+names it in a callout as the first gain to add on real hardware.
 
 Lowering `kP` after adding the model was tried and rejected: sweeping the elevator
 over 20/10/5/2 and the arm over 60/30/15 made tracking monotonically *worse* every
 time. Keep `kElevatorKP = 20` and `kArmKP = 60`.
+
+### Try-It safety
+
+Both mechanism lessons carry a **"do these in simulation"** callout at the top of
+their Try It sections, and the two most destructive items say so again inline. This
+is not boilerplate — the experiments deliberately zero `kG`, invert `kG`, or bypass
+`clampToTravel`, and on real hardware those mean a carriage that drops on enable or
+an arm driven into its hard stop under power. Lesson 20's callout also notes that an
+arm is the first mechanism in this course that can reach the student. Lesson 18 §9
+carries a separate callout for tuning on real hardware (start mid-travel, keep
+`kMaxVelocity`/`kMaxAcceleration` low until tracking looks right, stand clear, hand
+on disable). Keep all of this when editing, and add it to any future lesson whose
+Try It breaks a safety layer on purpose.
 
 ### Conventions applied without asking
 
