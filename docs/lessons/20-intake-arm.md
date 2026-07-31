@@ -793,4 +793,4 @@ are because they assume they started at zero. Power the robot on with the arm
 halfway up and every number in this lesson — the angle, the cosine, the soft
 limits — is wrong by the same amount, confidently.
 
-Next: [Lesson 21 — Limit sensors: knowing when you've arrived](21-limit-sensors.md).
+Next: [Lesson 21 — Homing: finding out where you actually are](21-limit-sensors.md).

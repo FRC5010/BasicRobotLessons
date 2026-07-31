@@ -5,7 +5,7 @@ document, not lesson content** — it lives beside `docs/lessons/`, never inside
 it, and nothing here should be pasted into a lesson as-is.
 
 Written one lesson at a time, reviewed between each, same as the voice-rewrite
-pass. Lessons 16–20 are done; 21–22 are outlines waiting to be drafted.
+pass. Lessons 16–21 are done; 22 is an outline waiting to be drafted.
 
 ---
 
@@ -18,7 +18,7 @@ pass. Lessons 16–20 are done; 21–22 are outlines waiting to be drafted.
 | 18 | Scoring elevator | L13 (IO spine), L12 (configs/control requests) | none | **Done** — [lesson](lessons/18-elevator.md), [code](../code/lesson-18/) |
 | 19 | A picture of the elevator | L18, L11 (field-view precedent) | none | **Done** — [lesson](lessons/19-mechanism2d.md), [code](../code/lesson-19/) |
 | 20 | Intake arm (−20°…180°) + roller | L18/L19, L12 | none | **Done** — [lesson](lessons/20-intake-arm.md), [code](../code/lesson-20/) |
-| 21 | Limit sensors / current sensing | L18, L20 | none | Outline |
+| 21 | Homing & limit sensors | L18, L20 | none | **Done** — [lesson](lessons/21-limit-sensors.md), [code](../code/lesson-21/) |
 | 22 | Light sensors for game-piece handoff | L20, L21 | none | Outline |
 
 16–17 finish the drivetrain half of the course (simulation realism, then real
@@ -349,11 +349,13 @@ Still open:
       under exactly that filename.
 - [x] **Lesson 19's link to `20-intake-arm.md`** — resolved; Lesson 20 landed
       under exactly that filename.
-- [ ] **Lesson 20 ends with a link to `21-limit-sensors.md`, which does not
-      exist yet.** Dead until 21 lands; keep the filename.
+- [x] **Lesson 20's link to `21-limit-sensors.md`** — resolved; Lesson 21 landed
+      under exactly that filename.
+- [ ] **Lesson 21 ends with a link to `22-light-sensors.md`, which does not exist
+      yet.** Dead until 22 lands; keep the filename.
 - [x] README row for 18.
-- [x] README rows for 19 and 20.
-- [ ] Add README rows for 21–22 as each lands.
+- [x] README rows for 19, 20 and 21.
+- [ ] Add a README row for 22 when it lands.
 - [x] Fixed Lesson 15's PhotonLib install to a pinned `v2026.3.4` URL, and
       replaced the deprecated `loadAprilTagLayoutField()` everywhere.
 - [x] Fixed Lesson 16's maple-sim install to the pinned `0.4.0-beta` URL.
@@ -748,53 +750,88 @@ test's control request into the next one, which produced a genuinely baffling
 
 ---
 
-# Lesson 21 — Limit sensors: knowing when you've arrived
+# Lesson 21 — Homing: finding out where you actually are — DONE
 
-**Builds on:** L18 and L20 as the mechanisms needing sensing; the button-binding
-habit from L1 onward.
+Shipped as [lessons/21-limit-sensors.md](lessons/21-limit-sensors.md), code in
+[code/lesson-21/](../code/lesson-21/) (`Constants.java`, `RobotContainer.java`,
+`subsystems/Elevator*.java` — the arm is untouched).
 
-**Goal (draft):** Give the elevator a way to know where its hard stops actually
-are — a limit switch or a current spike — and use it to home at startup: the
-linear-mechanism answer to Lesson 5's CANcoder priming.
+**Goal as built:** a limit switch that establishes the elevator's zero at
+power-on, plus `Trigger` generalized off the controller.
 
-**New Java concepts**
-- **Building a `Trigger` from any `BooleanSupplier`**, not just a controller
-  button — generalizing a type used since L1 without being named as reusable
+**The framing that makes it work.** Do *not* open with "here is a DigitalInput."
+Open with the uncomfortable fact: a TalonFX's built-in encoder is **relative**, so
+`HeightMeters == 0.00` at boot means "counting started here," not "the carriage is
+down." Everything since Lesson 18 has been silently building on that — `clampToTravel`
+clamps a shifted range, and the arm's `cos θ` is computed from a `θ` that isn't the
+real one, so `kG` pushes the wrong way. Nothing errors; the mechanism is
+confidently, precisely wrong. That pays off Lesson 20's closing line and Lesson 5's
+CANcoder in one move.
 
-**New robot concepts**
-- **`DigitalInput`** — a roboRIO DIO channel; normally-closed vs. normally-open,
-  and why `!get()` is usually "pressed" (a cut wire should read as pressed, not
-  silently never-pressed — a fail-safe habit worth naming)
-- **Current-based detection** — Phoenix 6 stator/supply current as a software
-  alternative: a mechanism jammed against a stop draws current with no motion
-- **Homing** — drive slowly to a known stop, then zero the encoder there
-- A **hardware cutout** — stop travel the instant a limit trips, independent of
-  whatever command is running
+**Fail-safe wiring is derived, not asserted.** The roboRIO pulls DIO high, so a
+cut wire reads `true`. Therefore the reading that means "keep going" must be the one
+requiring a working wire ⇒ **normally-closed to ground**, ⇒ `get() == true` is "at
+the limit," ⇒ a broken wire looks exactly like a pressed switch, which is the safe
+failure. Note this is the *opposite* of the `!get()` convention the earlier outline
+assumed — derive it, don't repeat folklore.
 
-**Walkthrough outline**
-1. Two mechanisms, one blind spot: a relative encoder has no idea where zero is
-   after a power cycle. Frame it exactly as L5 framed boot alignment.
-2. A physical switch: `DigitalInput`, normally-closed convention.
-3. Turn a sensor into a `Trigger` — `new Trigger(() -> !m_bottomLimit.get())`,
-   bound with `.onTrue(...)` like a controller button. The generalization moment.
-4. Home the elevator: drive down slowly until the trigger fires, zero the
-   encoder (L9's `resetDrivePosition` idiom, now sensor-gated); run at init.
-5. A software alternative: stator current threshold.
-6. Belt and suspenders: a cutout independent of the active command.
-7. Simulate the sensor — compute `atBottomLimit`/`atTopLimit` in the sim IO from
-   position crossing travel bounds, so homing is testable with no hardware.
+**The sim change is the pedagogical centre.** `ElevatorIOSim` had been feeding the
+encoder the model's absolute height, which made the simulated encoder *better than
+real hardware*. Now it feeds `truth − kSimStartHeight` (a relative encoder can only
+report movement since power-on) while the switch reads plain `truth`. Encoder =
+belief, switch = fact, homing = the moment one replaces the other.
 
-**Try it (draft)**
-- Add a top limit and matching `Trigger`.
-- Tune a stator-current threshold by logging current into a hard stop.
-- Invert a switch's polarity and diagnose why homing never finishes, from the
-  log — L13's replay-debugging habit on a new bug.
+- **Do this by subtracting the start height, not by calling `m_motor.setPosition(0)`
+  in the sim constructor.** The constructor version worked intermittently — the
+  offset needs a tick to propagate, so whether the first `updateInputs` saw 0.00 or
+  0.35 depended on timing. The subtraction is deterministic. (`setPosition` *does*
+  hold as a persistent offset once applied — verified over hundreds of ticks of
+  continued raw feeding — it just isn't instant.)
 
-**Research flags**
-- `DigitalInput`/`Trigger` are stable core WPILib — low risk.
-- Confirm Phoenix 6 current accessor names (`getStatorCurrent()`/
-  `getSupplyCurrent()`) and whether per-tick polling has a CAN-utilization
-  caveat worth a callout.
+**Verified numbers** (`HomingTest`, real time, one IO instance):
+
+| | |
+|---|---|
+| boot | encoder `+0.000 m`, truth `0.35 m`, switch false |
+| homing descent | ~9 cm/s at `kHomingVolts = −0.7 V` |
+| switch trips | 3.9 s in, encoder reading `−0.339 m` |
+| after `setPositionMeters` | `0.0083 m` — 0.349 m of error deleted |
+| then commanded 0.75 m | encoder `0.750 m` |
+| held against the stop at −3 V | **120.7 A** stator, 0.0000 m/s |
+
+**Design notes**
+
+- `home()` is `run(...).until(this::atBottomLimit).finallyDo(...)` — Lesson 18's
+  `goToHeight` shape with a *sensor* as the stop condition. `finallyDo` order
+  matters: kill voltage, then reset the encoder, then set `m_goal` so `atGoal()`
+  doesn't immediately disagree. Ending at 0 V is correct — the carriage rests on
+  its hard stop.
+- Homing is **open loop** (`VoltageOut`), because the position is the thing being
+  established. First and only use of `VoltageOut` in the course.
+- `rezeroAtBottom()` is `Commands.runOnce(...).ignoringDisable(true)` — **no
+  subsystem requirement**, deliberately, so a switch brush can't cancel the
+  driver's motion; and it fires while disabled because that's when someone pushes
+  the carriage by hand. Both choices are taught explicitly.
+- File order in `Elevator.java` is `home` → `acceptBottomLimit` → `atBottomLimit`
+  → `rezeroAtBottom`, matching the order §5 and §6 add them. (§6's lead-in says
+  "below `atBottomLimit`" for exactly this reason — the block-verbatim audit
+  catches it if that drifts.)
+- Current sensing is *taught* in §9 with the measured 120 A figure and an
+  illustration snippet, but **not shipped** — Try It #3 is the student building it.
+  `statorCurrentAmps` is logged regardless, since a motor drawing current with
+  nothing to show for it is what a jam looks like in a log.
+- §9 also closes the absolute-vs-relative loop: an arm sweeps under one rotation,
+  so it can carry a CANcoder and never have a wrong zero — which is the better
+  answer to Lesson 20's `Arm_Cosine` warning where the geometry allows it. Rule of
+  thumb stated: under one turn ⇒ measure absolutely, otherwise ⇒ home.
+
+**Test-harness gotchas** (on top of the ones under Lesson 20)
+
+- `DigitalInput` holds its DIO channel for the life of the JVM and `HAL.shutdown()`
+  does not reliably free it, so a second `ElevatorIOSim` in the same test class
+  throws `AllocationException`. Write this as **one sequential scenario** with a
+  single IO instance.
+- `setPositionMeters` needs **two** ticks before the new value reads back.
 
 ---
 

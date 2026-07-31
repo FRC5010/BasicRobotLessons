@@ -72,6 +72,7 @@ let you see everything working on your laptop. Device IDs in the examples
 | 18 | [Scoring elevator](docs/lessons/18-elevator.md) | A second mechanism on the same IO spine, profiled and gravity-compensated | Clamping a goal, reuse over novelty |
 | 19 | [A picture of the elevator](docs/lessons/19-mechanism2d.md) | A live stick figure of the mechanism, with a second piece riding on it | Composition as attachment |
 | 20 | [Intake arm](docs/lessons/20-intake-arm.md) | A swinging arm with a roller, mounted on the elevator, gravity-compensated by angle | Two motors in one subsystem |
+| 21 | [Homing & limit sensors](docs/lessons/21-limit-sensors.md) | A limit switch that tells the elevator where zero actually is | `Trigger` from any boolean |
 
 ### Asides (out of order — read when you need them)
 
