@@ -184,12 +184,25 @@ dial back. If a whole section reads as pure imperative, dial up.
 
 ## The plan for upcoming lessons
 
-[docs/lesson-plan-16-22.md](docs/lesson-plan-16-22.md) is the working plan for
-Lessons 16–22 — per-lesson outlines, open decisions that are still the user's
-call, discovered repo conventions, and a verified API appendix for the
-third-party libraries involved. **Read it before drafting any lesson in that
-range**, and update its status table and housekeeping checklist as lessons land.
-It is a contributor document: it lives beside `docs/lessons/`, never inside it.
+Two working plans live beside `docs/lessons/` — per-lesson outlines, open
+decisions that are still the user's call, discovered repo conventions, and a
+verified API appendix for the third-party libraries involved. **Read the relevant
+one before drafting any lesson in its range**, and update its status table and
+housekeeping checklist as lessons land. They are contributor documents: they live
+beside `docs/lessons/`, never inside it, and nothing in them should be pasted into
+a lesson as-is.
+
+- [docs/lesson-plan-16-22.md](docs/lesson-plan-16-22.md) — Lessons 16–22, all
+  written. Still the reference for the conventions those lessons established
+  (the full `kG`/`kV`/`kA` feedforward rule, sensors as `@AutoLog` inputs, sim
+  implementations that can disagree with the code, sim-only Try-It callouts) and
+  for the verified maple-sim / BLine API notes.
+- [docs/lesson-plan-23-34.md](docs/lesson-plan-23-34.md) — Lessons 23–34, all
+  outlines. LEDs, a superstructure state machine, event-driven and vision-driven
+  autos, a flywheel, and the "survives a real match" arc (current limits, alerts,
+  testing, log forensics, SysId). **Commands V3 is deliberately an aside, not a
+  lesson**: it needs Java 21 continuations and does not exist in the 2026
+  vendordep, so it cannot be taught on this course's target.
 
 ## When adding or editing a lesson
 

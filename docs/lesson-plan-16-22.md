@@ -7,6 +7,9 @@ it, and nothing here should be pasted into a lesson as-is.
 Written one lesson at a time, reviewed between each, same as the voice-rewrite
 pass. Lessons 16–22 are all done — this plan is complete.
 
+**Continued in [lesson-plan-23-34.md](lesson-plan-23-34.md)**, which plans Lessons
+23–34 and inherits the conventions established here.
+
 ---
 
 ## Status
