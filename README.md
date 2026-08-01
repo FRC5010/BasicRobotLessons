@@ -74,6 +74,7 @@ let you see everything working on your laptop. Device IDs in the examples
 | 20 | [Intake arm](docs/lessons/20-intake-arm.md) | A swinging arm with a roller, mounted on the elevator, gravity-compensated by angle | Two motors in one subsystem |
 | 21 | [Homing & limit sensors](docs/lessons/21-limit-sensors.md) | A limit switch that tells the elevator where zero actually is | `Trigger` from any boolean |
 | 22 | [Beam breaks & the handoff](docs/lessons/22-light-sensors.md) | A sensor that knows you caught a game piece, driving both mechanisms at once | `Trigger` combinators |
+| 23 | [LEDs](docs/lessons/23-leds.md) | A strip that shows what the robot knows, and a priority order you chose | Combinator methods |
 
 ### Asides (out of order — read when you need them)
 

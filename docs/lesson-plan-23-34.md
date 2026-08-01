@@ -21,7 +21,7 @@ must be able to disagree with the code**, and its Try-It safety convention.
 
 | # | Working title | Builds on | 3rd-party library | Status |
 |---|---|---|---|---|
-| 23 | LEDs: showing what the robot is thinking | L22 (state to show) | none | Outline |
+| 23 | LEDs: showing what the robot is thinking | L22 (state to show) | none | **Done** — [lesson](lessons/23-leds.md), [code](../code/lesson-23/) |
 | 24 | A superstructure: state you can name | L23, L22, L9 | none | Outline |
 | 25 | BLine events: doing things while driving | L17, L24 | `BLine-Lib` | Outline |
 | 26 | Two-step drive to pose | L17, L14 | `BLine-Lib` | Outline |
@@ -151,13 +151,27 @@ computes, so a human can read the robot's mind from across the field.
 - `progressMaskLayer` showing elevator height as a bar.
 - `synchronizedBlink` so two strips blink together.
 
-**Research flags**
-- `LEDPattern` is Units-native (`blink(Time)`, `atBrightness(Dimensionless)`,
-  `scrollAtAbsoluteSpeed(LinearVelocity, Distance)`), which fits the course's
-  Units convention from L10 — use the measure overloads, not bare doubles.
-- Confirm whether SimGUI renders an addressable strip, or whether the lesson has
-  to log colours instead. **This decides whether the lesson is watchable in sim
-  at all** and should be settled first.
+**Resolved when it was written**
+- **SimGUI renders addressable strips** (user-confirmed), so the lesson is
+  watchable in sim like every other one. No colour-logging fallback needed.
+- `LEDPattern` is Units-native and the lesson uses the measure overloads
+  throughout, per the L10 convention.
+- **No IO layer**, and §4 argues the case: the IO pattern exists to make sensor
+  *inputs* replayable, and a strip is write-only. L19's mechanism drawing is the
+  precedent. Stated as a rule — *if you're writing an empty inputs class, stop.*
+- **`Elevator.isHomed()` was added here**, not in L21. Homing established the zero
+  and recorded nothing; the flag is 3 lines and gives the strip its
+  highest-priority indication.
+- **Priority is the lesson's design content.** Four indications, ordered so that
+  *not homed* outranks *has a game piece* — a collision that really happens
+  (a piece loaded in the queue line before anyone homed). Try-It #3 has the
+  student reorder it and find the damage.
+- **No enum**, deliberately: `Leds/Showing` is a `String`, and L24 replaces both
+  the string and the `if`/`else` chain with the superstructure state. The lesson
+  ends by naming that limit — "mid-handoff isn't a condition, it's a state."
+- **Verified numbers:** `Color.kLimeGreen` is (50, 205, 50) — *not* pure green, a
+  wrong assumption that failed a test on the first run. `atBrightness(Percent.of(25))`
+  takes green 205 → 51, exactly a quarter.
 
 ---
 
