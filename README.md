@@ -68,6 +68,12 @@ let you see everything working on your laptop. Device IDs in the examples
 | 14 | [Pose estimator & localizer](docs/lessons/14-pose-estimator.md) | A localization subsystem fused from pluggable pose providers | Interfaces, registries, timestamps |
 | 15 | [Real vision — PhotonVision](docs/lessons/15-photonvision.md) | A real, replay-capable PhotonVision pose provider, plus simulated multi-camera coverage | `Optional`, `static` fields, `record` |
 | 16 | [maple-sim — a world to drive in](docs/lessons/16-maple-sim-field.md) | Physics-engine simulation with mass, tire grip, walls, and game pieces | Callbacks, anonymous class bodies |
+| 17 | [B-Line autos](docs/lessons/17-bline-autos.md) | Follow a drawn path against the fused pose, with event markers | `PIDController`, method refs as actions |
+| 18 | [Scoring elevator](docs/lessons/18-elevator.md) | A second mechanism on the same IO spine, profiled and gravity-compensated | Clamping a goal, reuse over novelty |
+| 19 | [A picture of the elevator](docs/lessons/19-mechanism2d.md) | A live stick figure of the mechanism, with a second piece riding on it | Composition as attachment |
+| 20 | [Intake arm](docs/lessons/20-intake-arm.md) | A swinging arm with a roller, mounted on the elevator, gravity-compensated by angle | Two motors in one subsystem |
+| 21 | [Homing & limit sensors](docs/lessons/21-limit-sensors.md) | A limit switch that tells the elevator where zero actually is | `Trigger` from any boolean |
+| 22 | [Beam breaks & the handoff](docs/lessons/22-light-sensors.md) | A sensor that knows you caught a game piece, driving both mechanisms at once | `Trigger` combinators |
 
 ### Asides (out of order — read when you need them)
 

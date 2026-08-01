@@ -4,16 +4,20 @@
 
 package frc.robot;
 
+import java.util.function.Supplier;
+
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants.DriveConstants;
+import frc.robot.Constants.ElevatorConstants;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.Constants.VisionConstants;
 import frc.robot.commands.Autos;
 import frc.robot.subsystems.Drivetrain;
+import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Localizer;
 import frc.robot.subsystems.PhotonVisionPoseProvider;
 
@@ -25,13 +29,14 @@ public class RobotContainer {
   // order, and the localizer reads inputs the drivetrain refreshes.
   private final Drivetrain m_drivetrain = new Drivetrain();
   private final Localizer m_localizer = new Localizer(m_drivetrain); // registers drivetrain
+  private final Elevator m_elevator = new Elevator();
   // Blank finals: building a camera needs m_localizer, which must already exist.
   private final PhotonVisionPoseProvider m_frontCamera;
   private final PhotonVisionPoseProvider m_backCamera;
 
-  // Publishes a drop-down AND logs the selection (AdvantageKit).
-  private final LoggedDashboardChooser<Command> m_autoChooser =
-      new LoggedDashboardChooser<>("Auto Choice");
+  // Publishes a drop-down AND logs the selection (AdvantageKit). Holds recipes,
+  // not built commands — Autos owns the options and pre-builds the pick.
+  private final LoggedDashboardChooser<Supplier<Command>> m_autoChooser;
 
   public RobotContainer() {
     m_frontCamera = PhotonVisionPoseProvider.makeCamera(
@@ -50,8 +55,7 @@ public class RobotContainer {
 
     configureBindings();
 
-    m_autoChooser.addDefaultOption("Drive-Turn-Drive", Autos.driveTurnDrive(m_drivetrain));
-    m_autoChooser.addOption("Do Nothing", Commands.none());
+    m_autoChooser = Autos.buildChooser(m_drivetrain, m_localizer);
   }
 
   private void configureBindings() {
@@ -67,9 +71,15 @@ public class RobotContainer {
     // Tap A to turn to 90°, B to return to 0°. These commands finish on their own.
     m_driverController.a().onTrue(m_drivetrain.turnToHeading(90));
     m_driverController.b().onTrue(m_drivetrain.turnToHeading(0));
+
+    // The D-pad drives the elevator: down stows it, right is the mid goal,
+    // up is the high one. Each finishes on arrival and the firmware holds.
+    m_driverController.povDown().onTrue(m_elevator.goToHeight(ElevatorConstants.kStowed));
+    m_driverController.povRight().onTrue(m_elevator.goToHeight(ElevatorConstants.kScoreMid));
+    m_driverController.povUp().onTrue(m_elevator.goToHeight(ElevatorConstants.kScoreHigh));
   }
 
   public Command getAutonomousCommand() {
-    return m_autoChooser.get();
+    return Autos.selected();
   }
 }

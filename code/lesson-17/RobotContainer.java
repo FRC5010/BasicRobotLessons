@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import java.util.function.Supplier;
+
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 import edu.wpi.first.wpilibj2.command.Command;
@@ -29,9 +31,9 @@ public class RobotContainer {
   private final PhotonVisionPoseProvider m_frontCamera;
   private final PhotonVisionPoseProvider m_backCamera;
 
-  // Publishes a drop-down AND logs the selection (AdvantageKit).
-  private final LoggedDashboardChooser<Command> m_autoChooser =
-      new LoggedDashboardChooser<>("Auto Choice");
+  // Publishes a drop-down AND logs the selection (AdvantageKit). Holds recipes,
+  // not built commands — Autos owns the options and pre-builds the pick.
+  private final LoggedDashboardChooser<Supplier<Command>> m_autoChooser;
 
   public RobotContainer() {
     m_frontCamera = PhotonVisionPoseProvider.makeCamera(
@@ -50,8 +52,7 @@ public class RobotContainer {
 
     configureBindings();
 
-    m_autoChooser.addDefaultOption("Drive-Turn-Drive", Autos.driveTurnDrive(m_drivetrain));
-    m_autoChooser.addOption("Do Nothing", Commands.none());
+    m_autoChooser = Autos.buildChooser(m_drivetrain, m_localizer);
   }
 
   private void configureBindings() {
@@ -70,6 +71,6 @@ public class RobotContainer {
   }
 
   public Command getAutonomousCommand() {
-    return m_autoChooser.get();
+    return Autos.selected();
   }
 }

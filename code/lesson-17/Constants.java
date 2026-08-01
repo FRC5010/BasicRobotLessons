@@ -117,4 +117,12 @@ public final class Constants {
         new Translation3d(-0.3, 0.0, 0.2), // 30 cm back, 20 cm up
         new Rotation3d(0, 0, Math.PI));    // facing straight backward
   }
+  public static class PathConstants {
+    // BLine runs three P loops at once. Every gain here is "output per unit of
+    // error", and since error is meters (or radians) and output is per-second,
+    // the units all come out to 1/s.
+    public static final double kTranslationP = 5.0; // m/s per meter of path left
+    public static final double kRotationP = 3.0;    // rad/s per radian of heading error
+    public static final double kCrossTrackP = 2.0;  // m/s per meter off the line
+  }
 }

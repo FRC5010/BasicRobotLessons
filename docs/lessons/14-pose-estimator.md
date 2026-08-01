@@ -396,17 +396,16 @@ thing: an actual PhotonVision camera reading actual AprilTags, plus the
 ability to simulate more of them than you own. Watch how much of
 `Localizer` has to change to accept it. (Spoiler: none.)
 
-Beyond that, two more directions worth knowing about, whenever you're ready
-for them:
+And a trustworthy pose unlocks the thing autonomous has been missing. In
+[Lesson 17](17-bline-autos.md) you draw a path on a picture of the field and
+the robot follows it — chasing the nearest point on a shape instead of
+performing Lesson 9's fixed sequence of nudges. That only works on a pose you
+can believe, which is what you just built.
 
-- **Trajectory following:** `PathPlanner` or `Choreo` turn a drawn path into a
-  timed trajectory, chased with the `driveToPose` pattern from Lesson 11 —
-  now running on a pose you can finally trust.
-- **A second mechanism:** an elevator, a shooter, an intake. Subsystem,
-  commands, IO layer, logged inputs — the same spine, one more time, and the
-  second time it takes a tenth as long.
-
-Wherever those take you, you're not starting over. You're reusing the
-spine — and now you know how it holds up.
+After that the course changes subject. [Lesson 18](18-elevator.md) starts the
+mechanisms half — an elevator, then an arm, then the sensors that let the two
+coordinate. Subsystem, commands, IO layer, logged inputs: the same spine, one
+more time. The second time it takes a tenth as long, and that's the whole
+point of having built it carefully once.
 
 Next: [Lesson 15 — Real vision: PhotonVision and multi-camera simulation](15-photonvision.md).

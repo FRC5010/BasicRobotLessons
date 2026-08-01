@@ -57,13 +57,25 @@ underneath the IO layer you built in Lesson 13, and that's not a happy accident
 
 Same ritual as AdvantageKit in Lesson 3 and PhotonLib in Lesson 15. Open the
 vendor dependency manager (Ctrl+Shift+P → **WPILib: Manage Vendor Libraries** →
-**Install new library (online)**) and paste:
+**Install new library (online search)**), search for **maplesim**, and install
+it. This course was written against **0.4.0-beta**. To install by URL instead,
+use WPILib's pinned copy:
 
 ```
-https://shenzhen-robotics-alliance.github.io/maple-sim/vendordep/maple-sim.json
+https://raw.githubusercontent.com/wpilibsuite/vendor-json-repo/main/2026/maple-sim-0.4.0-beta.json
 ```
 
 Rebuild to confirm: `./gradlew build`.
+
+> **Not maple-sim's own link.** Lesson 15 warned that a vendor's "latest"
+> vendordep URL can drift; maple-sim is the live example. Its published
+> `maple-sim/vendordep/maple-sim.json` currently advertises a version
+> (`0.4.0-beta-obstacles-fix`) that was never uploaded to their Maven repo, so
+> Gradle installs it happily and then fails with `Could not find
+> org.ironmaple:maplesim-java`. The pinned URL above names a version that
+> actually exists. If you hit that error anyway, the newest genuinely-published
+> version is listed in
+> [their Maven metadata](https://shenzhen-robotics-alliance.github.io/maple-sim/vendordep/repos/releases/org/ironmaple/maplesim-java/maven-metadata.xml).
 
 > maple-sim moves fast and its docs carry a beta notice. If a class or method
 > name below doesn't autocomplete, check the
