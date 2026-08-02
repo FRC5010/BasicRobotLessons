@@ -22,7 +22,7 @@ must be able to disagree with the code**, and its Try-It safety convention.
 | # | Working title | Builds on | 3rd-party library | Status |
 |---|---|---|---|---|
 | 23 | LEDs: showing what the robot is thinking | L22 (state to show) | none | **Done** — [lesson](lessons/23-leds.md), [code](../code/lesson-23/) |
-| 24 | A superstructure: state you can name | L23, L22, L9 | none | Outline |
+| 24 | A superstructure: state you can name | L23, L22, L9 | none | **Done** — [lesson](lessons/24-superstructure.md), [code](../code/lesson-24/) |
 | 25 | BLine events: doing things while driving | L17, L24 | `BLine-Lib` | Outline |
 | 26 | Two-step drive to pose | L17, L14 | `BLine-Lib` | Outline |
 | 27 | Object detection: find the piece and go get it | L15, L26, L20/22 | `photonlib`, `maple-sim` | Outline |
@@ -218,6 +218,52 @@ robot state, and let the LEDs show it.
   work. States log as strings, which is exactly what a replay wants.
 - Watch scope. This lesson can swallow the whole robot if it tries to convert
   everything at once; convert the handoff only, and leave the rest as an exercise.
+
+**What shipped** (differs from the outline in places — these are the decisions
+later lessons have to respect):
+
+- **Six states**, not four: `UNHOMED`, `IDLE`, `INTAKING`, `HANDOFF`, `HOLDING`,
+  `SCORING`. `HANDOFF` is the one L23's ending promised.
+- **Named `SuperstructureState`, not `RobotState`** — `edu.wpi.first.wpilibj.RobotState`
+  is a real class and the collision is a nasty first compile error. It lives in
+  `frc/robot/subsystems/` next to `Superstructure`.
+- **Legality and readiness are deliberately separated.** `canGoTo` is an
+  exhaustive switch expression on the enum: no sensors, never changes, governs
+  what a *request* may ask for. `Superstructure.periodic()` owns the automatic,
+  sensor-driven transitions and does **not** consult `canGoTo` — the state
+  machine doesn't ask itself permission. Keep that split.
+- **`UNHOMED.canGoTo(anything)` is `false`.** The only exit is `periodic()`
+  seeing `m_elevator.isHomed()`. This makes L23's LED priority structural rather
+  than cosmetic, and it closes the hole where a button could declare the robot
+  homed without homing it.
+- **The guard rule:** a command bound to a *button* guards itself with
+  `.onlyIf(() -> allow(...))`; a command bound to a *state* (via `inState(...)`)
+  does not, because arriving in the state already means the machine said yes.
+- `Command.onlyIf(BooleanSupplier)` is the one new decorator (verified present in
+  2026, returns `ConditionalCommand`, condition evaluated once at schedule time).
+- **`Commands.parallel` cannot hold two commands requiring the same subsystem** —
+  it throws at construction. `requestIntake` is therefore a *sequence* of
+  `goToAngle` then `runRoller`. L22's parallel was legal only because it combined
+  an arm command with an elevator command.
+- The L22 `.debounce(...)` moved off the `Trigger` and into a plain
+  `edu.wpi.first.math.filter.Debouncer` field, since the beam break is now read
+  in `periodic()` rather than in a binding.
+- **`Leds(Supplier<SuperstructureState>)`** — the user asked for the LED subsystem
+  to stop taking subsystems. It no longer imports `Elevator` or `Arm` at all, and
+  `Leds/Showing` was deleted in favour of `Superstructure/State`. The alliance
+  colour is a real casualty (an enum constant is `static final` and can't know the
+  runtime alliance) and became Try It #1.
+- **Scope held:** the drivetrain, autos, vision, homing, and the D-pad elevator
+  overrides were left alone. The D-pad staying outside the state machine is
+  called out honestly in the text and is Try It #4.
+- **Testing note:** a scheduler test is *vacuous* unless you enable the robot —
+  `CommandScheduler.run()` cancels everything while disabled, so both halves of
+  an `onlyIf` test "pass" for the same wrong reason. Use `DriverStationSim.setEnabled(true)`
+  + `notifyNewData()` + `DriverStation.refreshData()`, and assert
+  `!DriverStation.isDisabled()` before trusting the result.
+- **L24 is currently the last lesson, so it ends with a send-off and no `Next:`
+  link** — exactly the trap L22 had. Adding Lesson 25 means rewriting that
+  ending, not appending to it.
 
 ---
 
