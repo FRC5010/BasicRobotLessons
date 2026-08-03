@@ -938,5 +938,13 @@ dependencies are easier to test, easier to replace, and much harder to misuse.
 
 That's the mechanisms half done. You have four subsystems, sensors that fail safe,
 a picture you can watch, a strip that says what's happening, and one value that
-ties it all together. Go run a full cycle in sim a few times and enjoy watching it
-work — you built every piece of it.
+ties it all together. Go run a full cycle in sim a few times before you move on —
+you built every piece of it.
+
+One thing to notice while you watch. In teleop the robot does several things at
+once all the time: you drive while the arm swings, the elevator rises while you
+line up. Your autonomous does none of that. Look back at Lesson 17's autos and
+they're strictly one-at-a-time — drive, stop, act, drive. That's dead time you're
+paying for in every single match, and the next lesson takes it back.
+
+Next: [Lesson 25 — Doing two things at once](25-path-events.md).

@@ -23,7 +23,7 @@ must be able to disagree with the code**, and its Try-It safety convention.
 |---|---|---|---|---|
 | 23 | LEDs: showing what the robot is thinking | L22 (state to show) | none | **Done** — [lesson](lessons/23-leds.md), [code](../code/lesson-23/) |
 | 24 | A superstructure: state you can name | L23, L22, L9 | none | **Done** — [lesson](lessons/24-superstructure.md), [code](../code/lesson-24/) |
-| 25 | BLine events: doing things while driving | L17, L24 | `BLine-Lib` | Outline |
+| 25 | Doing two things at once (path events) | L17, L24 | `BLine-Lib` | **Done** — [lesson](lessons/25-path-events.md), [code](../code/lesson-25/) |
 | 26 | Two-step drive to pose | L17, L14 | `BLine-Lib` | Outline |
 | 27 | Object detection: find the piece and go get it | L15, L26, L20/22 | `photonlib`, `maple-sim` | Outline |
 | 28 | Aiming at an AprilTag | L15, L25 | `photonlib` | Outline |
@@ -302,11 +302,39 @@ up, hand off — so the robot stops doing one thing at a time.
   to prove the trigger still fires in the right place.
 - Deliberately require the drivetrain in an event command and diagnose the result.
 
-**Research flags**
-- Verify what `overrideRotation` does when the path itself specifies rotation
-  waypoints — does the override win everywhere, or only where unspecified?
-- `registerEventTrigger` has both `Runnable` and `Command` overloads; the course
-  used the `Command` one in L17. Keep that.
+**Research flags — RESOLVED** (all read out of the v0.9.1 sources jar and then
+confirmed with a runtime test; do not re-derive these from the docs):
+
+- **`overrideRotation` wins everywhere, unconditionally.** `execute()` computes the
+  path's own rotation PID output and then overwrites it whenever an override is
+  active. The path's rotation targets are still evaluated and logged
+  (`FollowPath/targetRotationDeg`) — they are simply discarded. Measured: the path
+  wanted 4.712 rad/s, the override forced 1.234.
+- **The supplier is an angular velocity in rad/s, NOT a target heading.** Anyone
+  arriving from PathPlanner will assume otherwise. The lesson says so in bold.
+- The 1-arg overload defaults to `BYPASS_CONSTRAINTS`; `RESPECT_CONSTRAINTS` sends
+  the override through `ChassisRateLimiter` instead.
+- **`isFinished()` requires rotation within `endRotationToleranceDeg`**, so an
+  override left active stalls the path *forever*. Measured: 303 ticks to finish
+  normally, never within 2000 ticks with an override held on. Hence both the
+  `release` marker and the `finallyDo` handback.
+- `registerEventTrigger(String, Command)` is implemented as
+  `CommandScheduler.getInstance().schedule(command)` — the event command runs
+  independently, so **an event command requiring the drivetrain cancels the path**.
+  Verified with the scheduler.
+- **`t_ratio` on an `event_trigger` is a fraction of its owning segment** (between
+  the surrounding translation targets), not of the whole path.
+- **`getRemainingPathDistanceMeters()` returns `0.0` before `initialize()`** — a
+  sentinel indistinguishable from "arrived". Safe inside `Commands.parallel` with
+  the path (the group initializes the path first, verified), dangerous if hoisted
+  into a standalone `Trigger`.
+
+**Testing trap worth not rediscovering:** BLine derives `dt` from
+`Timer::getTimestamp`, so a JUnit loop that calls `execute()` 2000 times in a few
+milliseconds sees ~0 elapsed time, the rate limiter clamps everything, and the
+robot never moves. There is a package-private `FollowPath.setTimestampSupplier` —
+put the test in package `frc.robot.lib.BLine` and feed it a clock that advances
+0.020 per tick. This is the mirror image of the Lesson 20-22 sleep trap.
 
 ---
 
