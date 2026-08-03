@@ -24,7 +24,7 @@ must be able to disagree with the code**, and its Try-It safety convention.
 | 23 | LEDs: showing what the robot is thinking | L22 (state to show) | none | **Done** — [lesson](lessons/23-leds.md), [code](../code/lesson-23/) |
 | 24 | A superstructure: state you can name | L23, L22, L9 | none | **Done** — [lesson](lessons/24-superstructure.md), [code](../code/lesson-24/) |
 | 25 | Doing two things at once (path events) | L17, L24 | `BLine-Lib` | **Done** — [lesson](lessons/25-path-events.md), [code](../code/lesson-25/) |
-| 26 | Two-step drive to pose | L17, L14 | `BLine-Lib` | Outline |
+| 26 | Getting there exactly (two-step drive to pose) | L17, L14 | `BLine-Lib` | **Done** — [lesson](lessons/26-drive-to-pose.md), [code](../code/lesson-26/) |
 | 27 | Object detection: find the piece and go get it | L15, L26, L20/22 | `photonlib`, `maple-sim` | Outline |
 | 28 | Aiming at an AprilTag | L15, L25 | `photonlib` | Outline |
 | 29 | A flywheel: velocity control, and why it's different | L13 spine, L18 model | none | Outline |
@@ -368,11 +368,37 @@ and "precise at the end" are different problems.
 - Make the staging pose a function of approach direction.
 - Handle "already close enough" — skip stage one entirely.
 
-**Research flags**
-- Decide whether stage two is BLine, a `ProfiledPIDController` pair, or the
-  drivetrain's own method. Prefer whatever reuses L17's `PathConstants` idiom.
-- `Path.isValid()` exists — worth using on generated paths, since a path built
-  from a bad pose is a runtime problem, not a compile one.
+**Research flags — RESOLVED**
+
+- **Stage two is the drivetrain's own method**, three `PIDController`s on
+  field-relative error, gains in `PathConstants`. Renamed `driveToPose` →
+  `alignToPose`, because `Autos.driveToPose` is now the two-stage composition.
+- The lesson pays off **Lesson 11's unused `driveToPose` sketch** — written,
+  called "minimal", and never invoked in fifteen lessons. That sketch's finish
+  condition ignores rotation, and the lesson uses it as the cautionary tale.
+- **A generated path is a single `Waypoint`** — it names only the destination,
+  because it starts wherever the robot is. Verified: valid, and it drives there
+  from the current pose.
+- **`withPoseReset` must NOT be used on generated paths.** `getStartPose()` on a
+  one-waypoint path returns *that waypoint*, so a reset teleports the estimate to
+  the destination. Hence a second builder, `s_generatedBuilder`.
+- `Path.isValid()` needs no defensive call: `FollowPath.isFinished()` already
+  checks it, logs a warning, and finishes early. Saying that is better teaching
+  than adding a check that never fires.
+- `PIDController.atSetpoint()` is `false` before the first `calculate()`, so
+  `.until(this::atPose)` needs no reset beforehand. Verified.
+
+**Measured numbers the lesson quotes** (from (1,1) to (5,4) facing 90°, sim):
+
+| | Time | Actual error |
+|---|---|---|
+| L11 sketch at its own finish line | 3.02 s | 49.9 mm |
+| L11 sketch pushed to 2 cm / 1° | 3.64 s | 20 mm / 1° |
+| Two stages | 2.58 s | 17.9 mm / 0.01° |
+
+Two stages is both faster *and* more accurate. Also measured: started on the
+target but facing backwards, the L11 sketch declares arrival on tick zero while
+**176° out** — the sharpest demonstration that "arrived" is a decision.
 
 ---
 

@@ -481,3 +481,10 @@ go the way you expected.
 Go time a few autos against their Lesson 17 versions. Seconds you get back here
 are seconds the robot spends scoring, and this is the cheapest place on the whole
 robot to find them.
+
+While you're timing them, watch where each path actually stops. BLine calls it
+arrived when it's within five centimetres and a couple of degrees, which is
+plenty for driving across a field and nowhere near enough to place a game piece
+on something. The next lesson is about that last five centimetres.
+
+Next: [Lesson 26 — Getting there exactly](26-drive-to-pose.md).
