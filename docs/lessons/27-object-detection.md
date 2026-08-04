@@ -855,3 +855,11 @@ field.
 
 Go and watch it chase a few balls. It's the first thing in this whole course that
 looks like the robot decided something on its own.
+
+One more thing the camera can do for you, though, and it's the opposite problem.
+A game piece is somewhere you don't know, so you have to see it to go get it. A
+scoring target is bolted to the field and never moves — you've always known where
+it is. The next lesson uses that to keep the robot pointed at one, and hands the
+driver back a stick they were never much good at.
+
+Next: [Lesson 28 — Keeping the nose on the target](28-aim-at-tag.md).

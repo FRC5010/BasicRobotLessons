@@ -26,7 +26,7 @@ must be able to disagree with the code**, and its Try-It safety convention.
 | 25 | Doing two things at once (path events) | L17, L24 | `BLine-Lib` | **Done** — [lesson](lessons/25-path-events.md), [code](../code/lesson-25/) |
 | 26 | Getting there exactly (two-step drive to pose) | L17, L14 | `BLine-Lib` | **Done** — [lesson](lessons/26-drive-to-pose.md), [code](../code/lesson-26/) |
 | 27 | Going to get something you just saw | L15, L26, L20/22 | `photonlib`, `maple-sim` | **Done** — [lesson](lessons/27-object-detection.md), [code](../code/lesson-27/) |
-| 28 | Aiming at an AprilTag | L15, L25 | `photonlib` | Outline |
+| 28 | Keeping the nose on the target | L15, L25 | `photonlib` | **Done** — [lesson](lessons/28-aim-at-tag.md), [code](../code/lesson-28/) |
 | 29 | A flywheel: velocity control, and why it's different | L13 spine, L18 model | none | Outline |
 | 30 | Current limits and brownouts | L21 (current sensing) | none | Outline |
 | 31 | Alerts: knowing something is wrong before the match | L13, L15 | none | Outline |
@@ -515,11 +515,38 @@ moves it around.
 - Add a "ready to score" boolean: aimed, in range, and settled.
 - Drive fast sideways and watch the error; then reason about latency.
 
-**Research flags**
-- Decide whether aim is a drivetrain command or a rotation `DoubleSupplier` that
-  several things can use. The latter composes better with L25.
-- `PhotonPipelineResult` carries a timestamp — the course already uses it in L15's
-  `PoseObservation`. Reuse rather than re-derive.
+**Research flags — RESOLVED**
+
+- **Aim is plain static methods, not a command** (`frc/robot/commands/Aim.java`,
+  a utility class like `Autos`). That is exactly why the driver binding *and* the
+  BLine rotation override can both use it — a command would have served one.
+- **No new drivetrain code was needed.** `driveFieldRelative` has taken three
+  suppliers since L10; aim assist swaps the third. Worth remembering as the payoff
+  for having written it that way.
+- **`Aim` contains no camera.** Aiming reads the tag layout (a file) and the fused
+  pose, so it keeps working with nothing visible; it degrades with odometry drift
+  rather than failing. This is the answer to walkthrough item 5 and it is
+  structural — visible in the signatures.
+- Tag **20** at (5.23, 4.03) is the aiming target on the 2026 field (32 tags).
+  `getTagPose` returns `Optional`, so a typo'd ID is an empty, not a crash.
+
+**The lesson's centre changed from the outline, and for the better.** The plan
+expected camera *latency* to be the honest treatment. The dominant error is
+actually **P-control tracking lag against a moving bearing**, which is bigger,
+measurable, and already compensated for on the latency side by L14's timestamped
+`addVisionMeasurement`. Measured, orbiting the tag at 3 m/s on a 3 m radius:
+
+| | Worst heading error |
+|---|---|
+| P only | **14.32°** |
+| P + bearing-rate feedforward | **0.20°** |
+
+The prediction matches exactly: the bearing moves at 1.0 rad/s, and `error × kAimP`
+can only make that from `1.0/4.0 = 0.25 rad = 14.32°`. **This is the third
+instance of the course's feedforward rule** (`kG` in L18, `kV` in L18/L12, bearing
+rate here), and the lesson says so explicitly. The feedforward is
+`(vx·dy − vy·dx) / d²` — the cross product of field velocity with the offset to
+the target, over distance squared.
 
 ---
 
