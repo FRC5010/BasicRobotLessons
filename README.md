@@ -78,6 +78,7 @@ let you see everything working on your laptop. Device IDs in the examples
 | 24 | [A superstructure](docs/lessons/24-superstructure.md) | One named state the whole robot reads, with the illegal moves made impossible | Enums with fields and methods, exhaustive `switch` |
 | 25 | [Doing two things at once](docs/lessons/25-path-events.md) | Autos that intake, stow and aim *while* they drive, instead of after | Composition applied, not new syntax |
 | 26 | [Getting there exactly](docs/lessons/26-drive-to-pose.md) | A two-stage drive-to-pose: fast across the field, then precise onto the spot | Building a `Path` in code |
+| 27 | [Going to get something you just saw](docs/lessons/27-object-detection.md) | A camera that finds a game piece, and an approach built while the robot runs | `Commands.defer` |
 
 ### Asides (out of order — read when you need them)
 

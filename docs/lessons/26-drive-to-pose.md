@@ -490,3 +490,10 @@ teleports itself onto its own destination.
 
 Go run the left-bumper alignment a few dozen times from silly places. Watching it
 land on the same spot every time never quite gets old.
+
+Notice what you had to do to make it work, though: you typed the target into
+`Constants`. Everything the robot drives to is still somewhere you decided in
+advance, at a laptop, before the match. The next lesson hands that decision to
+the camera.
+
+Next: [Lesson 27 — Going to get something you just saw](27-object-detection.md).

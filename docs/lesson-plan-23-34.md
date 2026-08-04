@@ -25,7 +25,7 @@ must be able to disagree with the code**, and its Try-It safety convention.
 | 24 | A superstructure: state you can name | L23, L22, L9 | none | **Done** — [lesson](lessons/24-superstructure.md), [code](../code/lesson-24/) |
 | 25 | Doing two things at once (path events) | L17, L24 | `BLine-Lib` | **Done** — [lesson](lessons/25-path-events.md), [code](../code/lesson-25/) |
 | 26 | Getting there exactly (two-step drive to pose) | L17, L14 | `BLine-Lib` | **Done** — [lesson](lessons/26-drive-to-pose.md), [code](../code/lesson-26/) |
-| 27 | Object detection: find the piece and go get it | L15, L26, L20/22 | `photonlib`, `maple-sim` | Outline |
+| 27 | Going to get something you just saw | L15, L26, L20/22 | `photonlib`, `maple-sim` | **Done** — [lesson](lessons/27-object-detection.md), [code](../code/lesson-27/) |
 | 28 | Aiming at an AprilTag | L15, L25 | `photonlib` | Outline |
 | 29 | A flywheel: velocity control, and why it's different | L13 spine, L18 model | none | Outline |
 | 30 | Current limits and brownouts | L21 (current sensing) | none | Outline |
@@ -74,13 +74,14 @@ position control to deserve its own mechanism, the roller's "no setpoint" framin
 in L20 is good and shouldn't be undone, and a flywheel gives Lessons 25 and 28 a
 payload — spin-up-while-driving and aim-then-shoot both need something to shoot.
 
-### 3. Object detection needs a class-ID convention — UNRESOLVED
+### 3. Object detection class-ID convention — RESOLVED (two constants, no enum)
 
-maple-sim's game pieces are typed by string (`"Fuel"`); PhotonVision's detections
-are typed by `int objDetClassId`. Lesson 27's sim glue has to map one to the
-other, and the mapping is arbitrary. Decide the convention (a constant in
-`VisionConstants`? a small enum?) **before drafting 27**, because it shows up in
-both the sim IO and the target-filtering logic.
+`VisionConstants.kGamePieceType = "Fuel"` (maple-sim's name) and
+`kGamePieceClassId = 0` (the model's number). One game piece type means an enum
+would be ceremony; the lesson instead makes the point that **there is no standard
+class ID** — it is the class index in the model you trained, so the only
+requirement is that the constant and the model agree. Getting it wrong yields no
+error and no detections, which is called out explicitly.
 
 ### 4. Lesson 33 needs a broken log to investigate — UNRESOLVED
 
@@ -436,14 +437,48 @@ picks it up — with no path drawn in advance.
 - Add a confidence floor; find the value where it starts missing real pieces.
 - Make the approach abort and re-search instead of trusting a stale estimate.
 
-**Research flags**
-- **Simulation works** — `VisionTargetSim` carries `objDetClassId`/`objDetConf`
-  and `PhotonCameraSim.process` reads both into the emitted target. This lesson is
-  verifiable in the usual way.
-- Open decision 3 (class-ID convention) blocks drafting.
-- The sim needs vision targets placed where maple-sim's `Fuel` actually is, or the
-  robot will drive to a piece that isn't there. That glue is the lesson's real
-  sim work.
+**Research flags — RESOLVED** (measured, not inferred)
+
+- **Simulation works.** `classId` and `conf` come through the fake camera exactly
+  as set. Confirmed end to end.
+- **`new VisionTargetSim(pose, model, int, float)` sets `objDetClassId`/`objDetConf`
+  and leaves `fiducialID = -1`. The 3-arg `(pose, model, int)` sets `fiducialID`
+  instead** and leaves the detection fields at `-1`. Both compile; the 3-arg one
+  produces detections your class filter silently rejects forever.
+- **Positive pitch in a `robotToCamera` `Transform3d` points the camera DOWN**,
+  while `PhotonUtils.calculateDistanceToTargetMeters` wants camera pitch measured
+  UP from horizontal — hence the minus sign in `toFieldPosition`. Verified by
+  reproducing measured distances to the millimetre.
+- **maple-sim's Fuel is a 15 cm ball** (`REBUILT_FUEL_INFO`: radius 0.075 m,
+  height 15 cm) whose centre sits ~8 cm off the floor. `kGamePieceHeight` is that
+  8 cm, and the height assumption is what makes one camera sufficient.
+- `SimulatedArena.getInstance().getGamePiecesPosesByType("Fuel")` is the glue;
+  the sim IO rebuilds its target set from it every tick because pieces move.
+- The detection camera needs its **own `VisionSystemSim`**, separate from Lesson
+  15's tag layout — a camera belongs to exactly one, and this one's targets are
+  rebuilt every tick.
+
+**Measured detection error vs. distance** (ball straight ahead, sim camera noise
+on). This table is quoted in the lesson and is the justification for treating
+target-loss as a design decision rather than a footnote:
+
+| Distance | Mean position error |
+|---|---|
+| 1.0 m | ~10 mm |
+| 2.0 m | ~65 mm |
+| 3.0 m | ~130 mm |
+| 5.0 m | ~150 mm |
+
+Also verified: straight-ahead detection at 2.5 m lands within **21 mm**; a robot
+rotated 90° with the piece off-axis lands within **113 mm**; nearest-piece
+selection picks correctly with two balls on the field; an empty field yields no
+target.
+
+**What shipped, and the one honest compromise:** `fetchPiece` uses
+`Commands.defer(..., Set.of(drivetrain))` to build the approach at schedule time,
+which **commits to a snapshot**. The error table says re-looking on the way in
+would be better, and the lesson says so plainly rather than pretending the simple
+version is optimal — building it is Try It #3.
 
 ---
 
