@@ -82,6 +82,7 @@ let you see everything working on your laptop. Device IDs in the examples
 | 28 | [Keeping the nose on the target](docs/lessons/28-aim-at-tag.md) | Aim assist that holds while you drive, shared by the driver and by autos | None — the point is that it needs none |
 | 29 | [A wheel that holds a speed](docs/lessons/29-flywheel.md) | A shooter flywheel with a speedometer, and the first mechanism with no destination | None — the spine repeats |
 | 30 | [One battery, everything on it](docs/lessons/30-current-limits.md) | Current limits chosen as a budget, and a brownout you cause on purpose | None |
+| 31 | [The robot tells you what's wrong](docs/lessons/31-alerts.md) | A pre-match checklist the robot runs on itself, surfaced where a human looks | None |
 
 ### Asides (out of order — read when you need them)
 

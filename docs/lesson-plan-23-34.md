@@ -29,7 +29,7 @@ must be able to disagree with the code**, and its Try-It safety convention.
 | 28 | Keeping the nose on the target | L15, L25 | `photonlib` | **Done** — [lesson](lessons/28-aim-at-tag.md), [code](../code/lesson-28/) |
 | 29 | A wheel that holds a speed | L13 spine, L18 model | none | **Done** — [lesson](lessons/29-flywheel.md), [code](../code/lesson-29/) |
 | 30 | One battery, everything on it | L21 (current sensing) | none | **Done** — [lesson](lessons/30-current-limits.md), [code](../code/lesson-30/) |
-| 31 | Alerts: knowing something is wrong before the match | L13, L15 | none | Outline |
+| 31 | The robot tells you what's wrong | L13, L15 | none | **Done** — [lesson](lessons/31-alerts.md), [code](../code/lesson-31/) |
 | 32 | Testing your own robot code | all mechanisms | none | Outline |
 | 33 | Reading a match log | L3, L13 | none | Outline |
 | 34 | Tuning your robot when build team hands it over | L18, L20, L29 | none | Outline |
@@ -764,10 +764,38 @@ it reset the rail explicitly. Any test that reads
 - Add a "battery low" alert and pick the threshold from L30's data.
 - Decide which alerts are errors and which are warnings, and defend the split.
 
-**Research flags**
-- Confirm how `Alert` renders in the dashboards the course already uses.
-- Check whether Phoenix exposes a device-connected signal the IO layers can read
-  directly (`isConnected()` or a status-signal age check).
+**Research flags — RESOLVED**
+
+- **Alerts publish to `/SmartDashboard/Alerts/`** as three `string[]` topics —
+  `errors`, `warnings`, `infos` — with `.type = "Alerts"`. AdvantageScope, Elastic
+  and Shuffleboard all render that with no wiring. The 2-arg constructor uses the
+  default `Alerts` group; the lesson uses only that, so there is one place to look.
+- **`ParentDevice.isConnected()` exists** (so `TalonFX.isConnected()` works), plus
+  an `isConnected(double maxLatencySeconds)` overload. `PhotonCamera.isConnected()`
+  exists too.
+
+**What is and isn't demonstrable in sim** — this shaped the lesson:
+
+- **`TalonFX.isConnected()` reads false for roughly the first 240 ms after
+  construction, then true forever.** So the motor-disconnect alert cannot be made
+  to fire at a laptop — but the boot flicker is a *great* demonstration that an
+  alert is a statement about now rather than an event, and the lesson uses it that
+  way.
+- **`PhotonCamera.isConnected()` is honest in sim**: a camera nothing publishes
+  reads false. So renaming a camera in `VisionConstants` makes a real error alert
+  appear, which is the lesson's hands-on demo.
+- The battery alert is fully demonstrable, because L30 already simulates the rail.
+
+**Testing trap:** `Alert` rides on SmartDashboard's sendable mechanism, which
+`IterativeRobotBase` pumps every tick. A bare JUnit test sees **empty** alert
+arrays unless it calls `SmartDashboard.updateValues()` itself.
+
+**Design:** `connected` goes in the `@AutoLog` inputs (not read ad-hoc in the
+subsystem) because it is a hardware reading and a replay is far more useful when
+the log knows the device was missing. Each subsystem owns the alerts about itself;
+the battery alert lives in `Robot.robotPeriodic()` on the same "nothing smaller
+knows about it" argument L30 used for the current total. The camera alert puts the
+camera's name in the message, because there are two of them.
 
 ---
 

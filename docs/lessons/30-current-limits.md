@@ -456,3 +456,9 @@ diagnosis. Put them in before you need them.
 That's the robot protected from itself. Go and brown it out a few times on
 purpose — it's the cheapest way to learn what the trace looks like, and the only
 time you'll ever get to do it without a crowd watching.
+
+Notice, though, that finding it took a laptop, a log, and someone who knew which
+three keys to plot. In a queue line you have none of those. The next lesson gives
+the robot a way to tell you what's wrong out loud.
+
+Next: [Lesson 31 — The robot tells you what's wrong](31-alerts.md).
