@@ -510,3 +510,10 @@ one caller and forced the other to duplicate the maths.
 Hold that left trigger and drive a few loops around the tag. Watching the nose
 stay locked on while the chassis slides around underneath it is the most satisfying
 thing on this robot.
+
+Which does raise a question. The robot is now beautifully aimed at a target, and
+it has nothing whatsoever to fire at it. The next lesson fixes that — and the
+mechanism turns out to be the first one in this course that doesn't want to go
+anywhere at all.
+
+Next: [Lesson 29 — A wheel that holds a speed](29-flywheel.md).

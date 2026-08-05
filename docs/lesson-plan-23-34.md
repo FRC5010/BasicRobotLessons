@@ -27,7 +27,7 @@ must be able to disagree with the code**, and its Try-It safety convention.
 | 26 | Getting there exactly (two-step drive to pose) | L17, L14 | `BLine-Lib` | **Done** — [lesson](lessons/26-drive-to-pose.md), [code](../code/lesson-26/) |
 | 27 | Going to get something you just saw | L15, L26, L20/22 | `photonlib`, `maple-sim` | **Done** — [lesson](lessons/27-object-detection.md), [code](../code/lesson-27/) |
 | 28 | Keeping the nose on the target | L15, L25 | `photonlib` | **Done** — [lesson](lessons/28-aim-at-tag.md), [code](../code/lesson-28/) |
-| 29 | A flywheel: velocity control, and why it's different | L13 spine, L18 model | none | Outline |
+| 29 | A wheel that holds a speed | L13 spine, L18 model | none | **Done** — [lesson](lessons/29-flywheel.md), [code](../code/lesson-29/) |
 | 30 | Current limits and brownouts | L21 (current sensing) | none | Outline |
 | 31 | Alerts: knowing something is wrong before the match | L13, L15 | none | Outline |
 | 32 | Testing your own robot code | all mechanisms | none | Outline |
@@ -586,11 +586,48 @@ is a *speed* rather than a place.
 - Set `kV` to zero and watch how long it takes to reach speed on `kP` alone —
   the same experiment as L18's, on a mechanism where it's even starker.
 
-**Research flags**
-- Confirm `FlywheelSim`'s 2026 constructor (it takes a `LinearSystem`, unlike
-  `ElevatorSim`'s convenience form).
-- Decide the gear ratio and MOI so the numbers are computable by the L18 method —
-  the arithmetic must reproduce whatever constants ship.
+**Research flags — RESOLVED**
+
+- `FlywheelSim(LinearSystem<N1,N1,N1>, DCMotor, double... stdDevs)`, built with
+  `LinearSystemId.createFlywheelSystem(DCMotor, jKgMetersSquared, gearing)`.
+  Confirmed against the 2026 jars.
+- **Gear ratio 1.0 (direct drive), J = 0.01 kg·m², shoot 60 rot/s, idle 30.** The
+  L18 arithmetic reproduces the shipped constants exactly:
+  `kV = 12/100 = 0.12` V per rot/s, and `kA = J × 2π × (12/7.09) = 0.106` V per
+  rot/s². Direct drive was chosen so the "÷ gear ratio" step is trivially visible
+  rather than doing hidden work.
+- **No `kG`.** The lesson makes this the centrepiece: a model has a term for each
+  thing the physics does, not a fixed set of four.
+
+**Measured numbers the lesson quotes:**
+
+| | |
+|---|---|
+| Spin-up, rest → 60 rot/s | 2.32 s |
+| Spin-up, idle 30 → 60 rot/s | 1.24 s |
+| Holding 60 rot/s | 60.44 rot/s (0.44 error), ~7.2 V |
+| **kP alone (kV = kA = 0)** | settles at **42.90 rot/s, forever** |
+| Predicted kP-only settle | `goal·kP/(kP+kV)` = **42.86** |
+
+Recovery vs. idle speed — the lesson's figure-of-merit table: 0 → 2.32 s,
+15 → 1.76 s, 30 → 1.24 s, 45 → 0.70 s.
+
+**`kS` is discussed but provably does nothing in this sim** — `FlywheelSim` has no
+friction term, and 0.05 V spins the simulated wheel to 0.37 rot/s. The lesson says
+so outright rather than faking it (same discipline as L22's debounce). `kS = 0.15`
+ships as the honest hardware value.
+
+**Deliberately left out:** the shot-dip-and-recover demo. Simulating a shot would
+need a sim-only hook on `FlywheelIO`, which is exactly the `GyroIO.setSimRotationRate`
+shape L16 deleted. Recovery is taught instead as *idle → shoot speed*, which is
+real practice, fully observable, and needs no fake disturbance. The auto spin-up
+tie-in is Try It #4 for the same scope reason — the interesting part is working out
+what makes a hold-a-speed command end.
+
+**Testing trap:** Phoenix's simulated motors output **nothing while the robot is
+disabled**, so a bare motor+model rig reads 0.00 rot/s forever unless the test
+calls `DriverStationSim.setEnabled(true)`. Same trap as L24's scheduler test,
+different symptom.
 
 ---
 
