@@ -617,6 +617,22 @@ friction term, and 0.05 V spins the simulated wheel to 0.37 rot/s. The lesson sa
 so outright rather than faking it (same discipline as L22's debounce). `kS = 0.15`
 ships as the honest hardware value.
 
+**Added after review (user request):** a `Mechanism2d` **speedometer**, since the
+flywheel is the one mechanism with nothing physical to draw and the one whose
+behaviour you most want to watch. `Flywheel` owns a square `LoggedMechanism2d`
+with a centre hub and **two** needles — actual speed and goal speed — so the gap
+between them is the error drawn to scale. One expression does the geometry:
+`angle = kZeroAngle − kFullSweep × (speed / kFreeSpeed)`, i.e.
+`−90° − 180° × fraction`, giving straight down at rest, straight up at full scale,
+positive sweeping through the left half and negative through the right (verified
+at 0/±50/100%). Full scale is the motor's **free speed**, and the fraction is
+**clamped** — an unclamped needle would wrap past vertical and sit looking like a
+modest negative speed, and a gauge that wraps is worse than no gauge because it
+doesn't look broken. Shooting speed lands at 60% of full scale. The dial updates
+live in `updateDial()` rather than inline in `periodic()`, purely so the lesson can
+present the control and the picture as separate pieces that are each contiguous
+substrings of the final file.
+
 **Deliberately left out:** the shot-dip-and-recover demo. Simulating a shot would
 need a sim-only hook on `FlywheelIO`, which is exactly the `GyroIO.setSimRotationRate`
 shape L16 deleted. Recovery is taught instead as *idle → shoot speed*, which is

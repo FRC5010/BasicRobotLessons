@@ -270,10 +270,20 @@ public final class Constants {
     public static final double kMomentOfInertia = 0.01; // kg m^2
 
     // Speeds, not places. Idling between shots is not laziness — it is what makes
-    // the wheel ready again quickly, and section 6 measures exactly how much.
+    // the wheel ready again quickly, and this lesson measures exactly how much.
     public static final AngularVelocity kShootSpeed = RotationsPerSecond.of(60);
     public static final AngularVelocity kIdleSpeed = RotationsPerSecond.of(30);
     public static final AngularVelocity kTolerance = RotationsPerSecond.of(1.5);
+
+    // The speedometer. Full scale is the motor's free speed, so the needle can
+    // never run off the end of the dial.
+    public static final AngularVelocity kFreeSpeed = RotationsPerSecond.of(100);
+    public static final Distance kDialSize = Meters.of(2.0);
+    public static final Distance kNeedleLength = Meters.of(0.8);
+    /** Where the needle sits at rest: straight down. */
+    public static final Angle kZeroAngle = Degrees.of(-90);
+    /** How far it swings from rest to full scale: down, round, and up. */
+    public static final Angle kFullSweep = Degrees.of(180);
 
     // The model: what this wheel costs to break free, to spin, and to speed up.
     // No kG — nothing here is being held up against gravity.

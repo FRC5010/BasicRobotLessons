@@ -13,6 +13,7 @@ is a *speed* instead of a place, which changes more than it sounds like it shoul
 - **`kS`**, finally discussed honestly
 - **Recovery time, not error**, as the number that matters
 - Why a shooter idles between shots
+- **A gauge for a mechanism with nothing to draw** — a `Mechanism2d` speedometer
 
 ---
 
@@ -237,10 +238,20 @@ Now the constants, and the reason this lesson exists in an arc about control.
     public static final double kMomentOfInertia = 0.01; // kg m^2
 
     // Speeds, not places. Idling between shots is not laziness — it is what makes
-    // the wheel ready again quickly, and section 6 measures exactly how much.
+    // the wheel ready again quickly, and this lesson measures exactly how much.
     public static final AngularVelocity kShootSpeed = RotationsPerSecond.of(60);
     public static final AngularVelocity kIdleSpeed = RotationsPerSecond.of(30);
     public static final AngularVelocity kTolerance = RotationsPerSecond.of(1.5);
+
+    // The speedometer. Full scale is the motor's free speed, so the needle can
+    // never run off the end of the dial.
+    public static final AngularVelocity kFreeSpeed = RotationsPerSecond.of(100);
+    public static final Distance kDialSize = Meters.of(2.0);
+    public static final Distance kNeedleLength = Meters.of(0.8);
+    /** Where the needle sits at rest: straight down. */
+    public static final Angle kZeroAngle = Degrees.of(-90);
+    /** How far it swings from rest to full scale: down, round, and up. */
+    public static final Angle kFullSweep = Degrees.of(180);
 
     // The model: what this wheel costs to break free, to spin, and to speed up.
     // No kG — nothing here is being held up against gravity.
@@ -279,27 +290,41 @@ kA = 0.01 × 2π × 1.69 = 0.106 V per rot/s²
 ```
 
 Both numbers came from the motor's spec sheet and one number off the CAD. Neither
-was guessed, and section 5 checks them against what the wheel actually does.
+was guessed, and section 6 checks them against what the wheel actually does.
 
 ---
 
 ## 4. The subsystem
 
-**Create `Flywheel.java` in `frc/robot/subsystems/`:**
+**Create `Flywheel.java` in `frc/robot/subsystems/`, starting with:**
 
 ```java
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.mechanism.LoggedMechanism2d;
+import org.littletonrobotics.junction.mechanism.LoggedMechanismLigament2d;
+import org.littletonrobotics.junction.mechanism.LoggedMechanismRoot2d;
 
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.Constants.ElevatorConstants;
 import frc.robot.Constants.FlywheelConstants;
+```
 
+Three of those imports are for the picture in section 5 — the compiler won't mind
+them sitting unused until then.
+
+**Then the class, its IO and its goal:**
+
+```java
 /**
  * A shooter wheel: the fourth mechanism on the same spine, and the first whose
  * goal is a speed rather than a place.
@@ -313,13 +338,156 @@ public class Flywheel extends SubsystemBase {
     private final FlywheelIOInputsAutoLogged m_inputs = new FlywheelIOInputsAutoLogged();
 
     private AngularVelocity m_goal = RotationsPerSecond.of(0);
+```
 
+**Then `periodic`, and the commands:**
+
+```java
     @Override
     public void periodic() {
         m_io.updateInputs(m_inputs);
         Logger.processInputs("Flywheel", m_inputs);
         Logger.recordOutput("Flywheel/GoalRps", m_goal.in(RotationsPerSecond));
         Logger.recordOutput("Flywheel/AtSpeed", atSpeed());
+        updateDial();
+    }
+
+
+```
+
+`updateDial()` doesn't exist yet — that's section 5. Everything else here is the
+same shape as the elevator's subsystem, with speeds where the heights were.
+
+**Wire it up. Add the field to `RobotContainer`, above `m_superstructure`:**
+
+```java
+  private final Flywheel m_flywheel = new Flywheel();
+```
+
+**Add the default command in `configureBindings`, above the left-trigger aim:**
+
+```java
+    // The wheel idles whenever nothing else asks for it, so a shot never starts
+    // from a dead stop.
+    m_flywheel.setDefaultCommand(m_flywheel.idle());
+```
+
+**And add spin-up to the aiming trigger, right below the aim binding:**
+
+```java
+    // Same trigger, different subsystem: lining up and spinning up are the same
+    // decision, so they happen together.
+    m_driverController.leftTrigger().whileTrue(
+        m_flywheel.spinUp(FlywheelConstants.kShootSpeed));
+```
+
+**Add the imports:**
+
+```java
+import frc.robot.Constants.FlywheelConstants;
+import frc.robot.subsystems.Flywheel;
+```
+
+Two commands on one trigger is legal and deliberate — they need different
+subsystems, which is Lesson 24's rule pointing the other way for once. Aiming and
+spinning up are the same decision from the driver's side, so they share a button.
+
+---
+
+## 5. A picture of a number
+
+Lesson 19 drew the elevator, and Lesson 20 hung the arm off it, because both of
+those move through space and a stick figure shows you where they are. A flywheel
+defeats that entirely: it looks exactly the same at 0 rot/s and at 60. There is
+nothing to draw.
+
+Which is a shame, because the flywheel is the mechanism whose behaviour you most
+want to *watch*. Spin-up, overshoot, the dip after a shot — those are all shapes
+in time, and a graph shows them beautifully but tells you nothing at a glance
+while you're driving.
+
+So draw the number instead: a speedometer. A needle that hangs straight down at
+rest and swings all the way round to straight up at full speed — positive speeds
+sweeping through the left half of the dial, negative through the right.
+
+**Add to `Flywheel`, below `m_goal`:**
+
+```java
+    // A speedometer: one hub, two needles. There is nothing physical to draw
+    // here — a spinning wheel looks the same at every speed — so the picture is
+    // of the number instead.
+    private final LoggedMechanism2d m_dial = new LoggedMechanism2d(
+            FlywheelConstants.kDialSize.in(Meters), FlywheelConstants.kDialSize.in(Meters));
+    private final LoggedMechanismRoot2d m_hub = m_dial.getRoot(
+            "Hub",
+            FlywheelConstants.kDialSize.in(Meters) / 2,
+            FlywheelConstants.kDialSize.in(Meters) / 2);
+    /** Where the wheel is asked to be. The gap to the other needle is the error. */
+    private final LoggedMechanismLigament2d m_goalNeedle = m_hub.append(
+            new LoggedMechanismLigament2d(
+                    "Goal", FlywheelConstants.kNeedleLength, FlywheelConstants.kZeroAngle));
+    /** Where the wheel actually is. */
+    private final LoggedMechanismLigament2d m_needle = m_hub.append(
+            new LoggedMechanismLigament2d(
+                    "Speed", FlywheelConstants.kNeedleLength, FlywheelConstants.kZeroAngle));
+```
+
+Two needles from one hub, and the second one is the useful bit. `m_needle` shows
+where the wheel *is*; `m_goalNeedle` shows where it was *asked* to be. **The gap
+between them is the error, drawn to scale.** Watch them converge during spin-up
+and you are watching the controller work.
+
+The canvas is square and the hub sits in the middle of it — unlike the elevator's
+canvas, this one isn't a picture of the robot, so its "metres" are just units on a
+dial. `getRoot` takes plain doubles (the same unpack Lesson 19 called out), while
+the ligament constructors take measures.
+
+**Add the method `periodic` is already calling, below it:**
+
+```java
+    /** Point both needles and publish the dial. Runs every tick, like any drawing. */
+    private void updateDial() {
+        m_goalNeedle.setAngle(toDialAngle(m_goal.in(RotationsPerSecond)));
+        m_needle.setAngle(toDialAngle(m_inputs.velocityRps));
+        m_needle.setColor(
+                atSpeed() ? ElevatorConstants.kAtGoalColor : ElevatorConstants.kMovingColor);
+        Logger.recordOutput("Flywheel/Dial", m_dial);
+    }
+
+    /**
+     * Where a needle points for a given speed: straight down at rest, straight up
+     * at full scale, sweeping round the left half for positive speeds and the
+     * right half for negative ones.
+     *
+     * <p>Clamped, so a wheel driven past its own free speed pins the needle at the
+     * top instead of wrapping back round and lying about it.
+     */
+    private static Angle toDialAngle(double rps) {
+        double fraction = MathUtil.clamp(
+                rps / FlywheelConstants.kFreeSpeed.in(RotationsPerSecond), -1.0, 1.0);
+        return FlywheelConstants.kZeroAngle.minus(FlywheelConstants.kFullSweep.times(fraction));
+    }
+```
+
+`recordOutput` runs every tick because it serialises the drawing's current state —
+exactly as Lesson 19 established. The colour is the same trick the elevator and arm
+use, reusing their constants: orange while it's working, green once `atSpeed()`.
+
+**And the arithmetic, at the bottom of the class:**
+
+```java
+    /**
+     * Where a needle points for a given speed: straight down at rest, straight up
+     * at full scale, sweeping round the left half for positive speeds and the
+     * right half for negative ones.
+     *
+     * <p>Clamped, so a wheel driven past its own free speed pins the needle at the
+     * top instead of wrapping back round and lying about it.
+     */
+    private static Angle toDialAngle(double rps) {
+        double fraction = MathUtil.clamp(
+                rps / FlywheelConstants.kFreeSpeed.in(RotationsPerSecond), -1.0, 1.0);
+        return FlywheelConstants.kZeroAngle.minus(FlywheelConstants.kFullSweep.times(fraction));
     }
 
     /**
@@ -362,43 +530,29 @@ public class Flywheel extends SubsystemBase {
 }
 ```
 
-**Wire it up. Add the field to `RobotContainer`, above `m_superstructure`:**
+That one expression is the whole dial:
 
-```java
-  private final Flywheel m_flywheel = new Flywheel();
+```
+angle = -90°  -  180° x (speed / free speed)
 ```
 
-**Add the default command in `configureBindings`, above the left-trigger aim:**
+At zero the needle sits at −90°, straight down. Feed in full speed and it reaches
+−270°, which is the same direction as +90° — straight up. Halfway there it passes
+−180°, straight left. Negative speeds run the subtraction the other way, so −50%
+lands on 0° and points straight right. Positive on the left, negative on the
+right, exactly as intended, out of one minus sign.
 
-```java
-    // The wheel idles whenever nothing else asks for it, so a shot never starts
-    // from a dead stop.
-    m_flywheel.setDefaultCommand(m_flywheel.idle());
-```
+The clamp matters more than it looks. Without it, a wheel commanded past its free
+speed would carry the needle round past vertical and back down the right-hand
+side, where it would sit looking like a modest negative speed. **A gauge that
+wraps is worse than no gauge**, because it doesn't look broken.
 
-**And add spin-up to the aiming trigger, right below the aim binding:**
-
-```java
-    // Same trigger, different subsystem: lining up and spinning up are the same
-    // decision, so they happen together.
-    m_driverController.leftTrigger().whileTrue(
-        m_flywheel.spinUp(FlywheelConstants.kShootSpeed));
-```
-
-**Add the imports:**
-
-```java
-import frc.robot.Constants.FlywheelConstants;
-import frc.robot.subsystems.Flywheel;
-```
-
-Two commands on one trigger is legal and deliberate — they need different
-subsystems, which is Lesson 24's rule pointing the other way for once. Aiming and
-spinning up are the same decision from the driver's side, so they share a button.
+Shooting speed lands at 60% of full scale, so the needle sits in the upper-left
+when the wheel is ready — a glance-able position you'll come to recognise.
 
 ---
 
-## 5. What `kV` is actually worth
+## 6. What `kV` is actually worth
 
 Here's the experiment Lesson 18 ran on the elevator, on a mechanism where the
 answer is much starker.
@@ -435,7 +589,7 @@ inside the 1.5 rot/s tolerance.
 
 ---
 
-## 6. Recovery is the number that matters
+## 7. Recovery is the number that matters
 
 Now the thing that separates a shooter that works from one that scores.
 
@@ -465,7 +619,7 @@ this is the trade real teams make, and now you can see both sides of it.
 
 ---
 
-## 7. `kS`, honestly
+## 8. `kS`, honestly
 
 `kS` is the volts needed to get a mechanism moving at all: bearing stiction, belt
 drag, the shaft seal. Every previous lesson in this course set it to zero and moved
@@ -491,7 +645,7 @@ belt is tensioned.
 
 ---
 
-## 8. Run it
+## 9. Run it
 
 ```powershell
 ./gradlew simulateJava
@@ -516,6 +670,11 @@ Worth doing deliberately:
   climb further, no matter how long you wait. Put it back.
 - **Watch `Flywheel/setpointRps`.** Unlike the elevator's, it snaps straight to the
   goal instead of ramping — there's no profile, because there's nothing to profile.
+- **Open `Flywheel/Dial` in AdvantageScope's Mechanism tab** and hold the trigger.
+  The goal needle jumps to the shooting mark and the speed needle chases it round
+  the left of the dial, turning green as it arrives. Do it once with the graph and
+  once with the dial, and notice they tell you different things: the graph shows
+  you the shape over time, the dial shows you the state right now.
 
 ---
 
@@ -536,7 +695,11 @@ Worth doing deliberately:
    stowing when the path has two metres left. Add the flywheel to that. The
    interesting part isn't the composition, it's deciding what makes a command that
    holds a speed ever *end* — think about it before you write it.
-5. **Find `kS` the real way.** On hardware, ramp the voltage up slowly and note
+5. **Put a mark on the dial.** The gauge has two needles and no scale. Add a
+   third, fixed ligament at the shooting-speed angle in a dim colour, so there's a
+   permanent mark to aim at — and think about why that one gets set once in the
+   field initialiser rather than every tick, when the other two don't.
+6. **Find `kS` the real way.** On hardware, ramp the voltage up slowly and note
    where the wheel first turns. In sim, do the same thing and explain why the
    number you get is meaningless.
 

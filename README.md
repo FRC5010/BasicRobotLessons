@@ -80,7 +80,7 @@ let you see everything working on your laptop. Device IDs in the examples
 | 26 | [Getting there exactly](docs/lessons/26-drive-to-pose.md) | A two-stage drive-to-pose: fast across the field, then precise onto the spot | Building a `Path` in code |
 | 27 | [Going to get something you just saw](docs/lessons/27-object-detection.md) | A camera that finds a game piece, and an approach built while the robot runs | `Commands.defer` |
 | 28 | [Keeping the nose on the target](docs/lessons/28-aim-at-tag.md) | Aim assist that holds while you drive, shared by the driver and by autos | None — the point is that it needs none |
-| 29 | [A wheel that holds a speed](docs/lessons/29-flywheel.md) | A shooter flywheel: the fourth mechanism on the same spine, and the first with no destination | None — the spine repeats |
+| 29 | [A wheel that holds a speed](docs/lessons/29-flywheel.md) | A shooter flywheel with a speedometer, and the first mechanism with no destination | None — the spine repeats |
 
 ### Asides (out of order — read when you need them)
 
