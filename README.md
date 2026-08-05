@@ -74,6 +74,15 @@ let you see everything working on your laptop. Device IDs in the examples
 | 20 | [Intake arm](docs/lessons/20-intake-arm.md) | A swinging arm with a roller, mounted on the elevator, gravity-compensated by angle | Two motors in one subsystem |
 | 21 | [Homing & limit sensors](docs/lessons/21-limit-sensors.md) | A limit switch that tells the elevator where zero actually is | `Trigger` from any boolean |
 | 22 | [Beam breaks & the handoff](docs/lessons/22-light-sensors.md) | A sensor that knows you caught a game piece, driving both mechanisms at once | `Trigger` combinators |
+| 23 | [LEDs](docs/lessons/23-leds.md) | A strip that shows what the robot knows, and a priority order you chose | Combinator methods |
+| 24 | [A superstructure](docs/lessons/24-superstructure.md) | One named state the whole robot reads, with the illegal moves made impossible | Enums with fields and methods, exhaustive `switch` |
+| 25 | [Doing two things at once](docs/lessons/25-path-events.md) | Autos that intake, stow and aim *while* they drive, instead of after | Composition applied, not new syntax |
+| 26 | [Getting there exactly](docs/lessons/26-drive-to-pose.md) | A two-stage drive-to-pose: fast across the field, then precise onto the spot | Building a `Path` in code |
+| 27 | [Going to get something you just saw](docs/lessons/27-object-detection.md) | A camera that finds a game piece, and an approach built while the robot runs | `Commands.defer` |
+| 28 | [Keeping the nose on the target](docs/lessons/28-aim-at-tag.md) | Aim assist that holds while you drive, shared by the driver and by autos | None — the point is that it needs none |
+| 29 | [A wheel that holds a speed](docs/lessons/29-flywheel.md) | A shooter flywheel with a speedometer, and the first mechanism with no destination | None — the spine repeats |
+| 30 | [One battery, everything on it](docs/lessons/30-current-limits.md) | Current limits chosen as a budget, and a brownout you cause on purpose | None |
+| 31 | [The robot tells you what's wrong](docs/lessons/31-alerts.md) | A pre-match checklist the robot runs on itself, surfaced where a human looks | None |
 
 ### Asides (out of order — read when you need them)
 

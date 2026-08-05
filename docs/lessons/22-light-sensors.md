@@ -427,12 +427,12 @@ edge-detection bookkeeping scattered across two subsystems. You built a small
 piece of robot behavior by describing when it should happen rather than by
 checking, every tick, whether it should be happening now.
 
-And the last one is the reason this is the end of the course rather than the middle
-of it. Look at what the capture binding actually is: one sensor reading, and two
-mechanisms that put themselves where they need to be. There's no `Superstructure`
-class, no state machine, no coordinator. There's a subsystem that owns an arm, a
-subsystem that owns an elevator, commands that describe what each can do, and a
-scheduler that was always going to be able to run them together.
+And the last one is worth sitting with. Look at what the capture binding actually
+is: one sensor reading, and two mechanisms that put themselves where they need to
+be. There's no `Superstructure` class, no state machine, no coordinator. There's a
+subsystem that owns an arm, a subsystem that owns an elevator, commands that
+describe what each can do, and a scheduler that was always going to be able to run
+them together.
 
 That structure has been there since Lesson 1, when `RobotContainer` bound a single
 button to a single motor. Everything since — the IO layers, the physics models, the
@@ -443,4 +443,9 @@ still the one from the first page.
 
 That's the thing to take with you. Not the API names, which will drift; the shape.
 
-Go build something.
+Which leaves one gap, and it's a funny one for a robot this capable: it knows a
+great deal about itself and has no way to tell anybody. Every sensor reading in the
+last three lessons lives on a laptop screen. Time to put some of it where a human
+can see it.
+
+Next: [Lesson 23 — LEDs: showing what the robot is thinking](23-leds.md).
