@@ -736,3 +736,10 @@ better position to be in than having found some gains that seemed to work.
 That's the whole robot built: a drivetrain that knows where it is, mechanisms that
 know where they are, cameras that find things, and now something to shoot with. Go
 run a full cycle and enjoy it.
+
+Then try running all of it at once — drive hard, raise the elevator, drop the
+intake and spin the flywheel up together. Every one of those mechanisms was tuned
+on its own, and every one of them draws from the same battery. The next lesson is
+about what happens when they all ask at the same moment.
+
+Next: [Lesson 30 — One battery, everything on it](30-current-limits.md).

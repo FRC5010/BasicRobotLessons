@@ -28,7 +28,7 @@ must be able to disagree with the code**, and its Try-It safety convention.
 | 27 | Going to get something you just saw | L15, L26, L20/22 | `photonlib`, `maple-sim` | **Done** — [lesson](lessons/27-object-detection.md), [code](../code/lesson-27/) |
 | 28 | Keeping the nose on the target | L15, L25 | `photonlib` | **Done** — [lesson](lessons/28-aim-at-tag.md), [code](../code/lesson-28/) |
 | 29 | A wheel that holds a speed | L13 spine, L18 model | none | **Done** — [lesson](lessons/29-flywheel.md), [code](../code/lesson-29/) |
-| 30 | Current limits and brownouts | L21 (current sensing) | none | Outline |
+| 30 | One battery, everything on it | L21 (current sensing) | none | **Done** — [lesson](lessons/30-current-limits.md), [code](../code/lesson-30/) |
 | 31 | Alerts: knowing something is wrong before the match | L13, L15 | none | Outline |
 | 32 | Testing your own robot code | all mechanisms | none | Outline |
 | 33 | Reading a match log | L3, L13 | none | Outline |
@@ -682,10 +682,56 @@ different symptom.
 - Lower the limit until Motion Magic can't hit its profile, and see what that
   looks like on the setpoint trace (callback to L18 §9).
 
-**Research flags**
-- Confirm whether Phoenix's *simulated* firmware enforces current limits, or
-  whether the lesson has to demonstrate them on the battery model alone. **This
-  decides whether step 6 is real or narrated** — settle it before drafting.
+**Research flag — RESOLVED: Phoenix's simulated firmware DOES enforce current
+limits.** Measured: a Kraken given 12 V from rest peaked at 200 A stator
+unlimited, and 21 A with a 20 A stator limit — and only reached 5.5 rot/s instead
+of 54.8, with the motor voltage cut to 1.20 V. Every step of this lesson is real,
+nothing is narrated.
+
+**Phoenix's defaults are ENABLED, which reframes the lesson.** Read off a fresh
+`TalonFXConfiguration`: stator 120 A enabled, supply 70 A enabled,
+`SupplyCurrentLowerLimit` 40 A after 1.0 s. So the lesson is not "add limits where
+there were none" — it is **"the defaults are per motor and the battery is per
+robot."** Measured with identical loads on untouched defaults:
+
+| Motors | Peak draw | Battery low | |
+|---|---|---|---|
+| 3 | 108 A | 9.84 V | fine |
+| 6 | 332 A | 5.37 V | **brownout** |
+| 9 | 552 A | 0.96 V | **brownout** |
+| 12 | 751 A | 0.00 V | **brownout** |
+
+**Supply vs. stator, measured** (Kraken at 12 V spinning up a heavy wheel): stator
+pinned at 120 A throughout while supply climbed 30 → 58 A as speed rose, with
+applied volts 3.00 → 5.79. The relationship `supply ≈ stator × (applied/battery)`
+reproduces both endpoints exactly, and that one line explains why the two limits
+answer different questions.
+
+**The brownout demo, measured** (three heavy mechanism motors, all flat out):
+
+| | Peak draw | Battery low | |
+|---|---|---|---|
+| No limits at all | 490 A | 2.09 V | brownout |
+| Phoenix defaults | 108 A | 9.84 V | survives (only 3 motors) |
+| The lesson's budget | 42 A | 11.16 V | comfortable |
+
+**Design decisions:** every limit lives in one new `PowerConstants` class rather
+than beside each mechanism, because a budget only means anything read as a set.
+The battery model goes in `Robot.simulationPeriodic()` — the same "shared world
+state" argument L16 used for the maple-sim arena, and the lesson says so. The loop
+closes for free because every sim IO layer already feeds
+`RobotController.getBatteryVoltage()` to its motors.
+
+**Scope:** the total sums the three *mechanisms* only. Adding the drivetrain's
+eight motors is Try It #1 — it is the biggest consumer and the same edit repeated,
+so it earns more as an exercise than as eight more near-identical blocks.
+
+**Testing traps:** CAN IDs must be **≤ 62** — a rig on ID 70 silently failed the
+whole test with no output. And **`RoboRioSim` voltage is global state that survives
+across tests in the same JVM**: the brownout tests leave the rail sagged, which
+silently corrupted the supply-vs-stator measurement (23 A instead of 120 A) until
+it reset the rail explicitly. Any test that reads
+`RobotController.getBatteryVoltage()` must set it first.
 
 ---
 
