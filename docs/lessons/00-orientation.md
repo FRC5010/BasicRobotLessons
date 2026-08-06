@@ -131,7 +131,7 @@ The very first run has to download a pile of dependencies and might take
 several minutes. Grab an energy drink. 
 
 When the build finishes, you'll see a prompt at the top of VSCode asking if you 
-want Sin GUI and/or Real Driverstation. Just **Sim GUI** is correct for now.
+want Sim GUI and/or Real Driverstation. Just **Sim GUI** is correct for now.
 When the **SimGUI** window finally opens:
 
 - Find the **Robot State** panel and change it from *Disabled* to *Teleoperated*.

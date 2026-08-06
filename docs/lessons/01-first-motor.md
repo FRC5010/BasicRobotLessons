@@ -14,6 +14,7 @@ spin at a fixed speed while you hold a button.
 - Adding a vendor library (Phoenix 6)
 - The `TalonFX` motor object
 - Exposing behavior as a **command factory method**
+- Binding a controller button, and giving the simulator a joystick to read
 
 ---
 
@@ -26,22 +27,21 @@ these — all clicking, no downloads, no URLs:
 1. Click the **WPILib icon** in VS Code's left sidebar (or open the command
    palette with Ctrl+Shift+P → **WPILib: Manage Vendor Libraries**) to open
    the vendor dependency manager.
-2. In the list of available dependencies, find the two CTRE entries —
-   **Phoenix 6** and **Phoenix 5** — and install both.
+2. In the list of available dependencies, find **Phoenix 6** and install it.
 3. Rebuild: `./gradlew build`. (Ctrl-Shift-P **WPILib: Build Robot Code**)
 
-Why both? This course only uses Phoenix 6, but CTRE's older devices (the
-Talon SRX / Victor SPX generation) speak Phoenix 5, and real robots usually
-carry a mix of hardware generations. Installing both now means whatever CTRE
-device you plug in later, the code for it is already on board.
+You'll spot a **Phoenix 5** entry sitting right next to it. That one is for
+CTRE's older Talon SRX / Victor SPX generation, which this course never
+touches — leave it alone. Installing a library you don't use only gives you
+more autocomplete suggestions to wade through.
 
-Two new files appear under `vendordeps/`. GradleRIO finds them automatically —
+A new file appears under `vendordeps/`. GradleRIO finds it automatically —
 you never edit `build.gradle` for this.
 
 > **Why isn't this just part of WPILib?** WPILib ships the core robot
 > framework. Hardware makers (CTRE, REV, etc.) ship *their* code separately so
-> they can update on their own schedule. The vendordep files you just
-> installed are nothing more than JSON files telling Gradle where to download
+> they can update on their own schedule. The vendordep file you just
+> installed is nothing more than a JSON file telling Gradle where to download
 > CTRE's code.
 
 ---
@@ -289,7 +289,32 @@ course.
 **Third, the binding.** Find the `configureBindings()` method — the template
 calls it once at startup, and it exists precisely so every "this button does
 that" decision lives in one place instead of scattered through the project.
-Add one line inside it:
+
+Before you add to it, meet the object you're about to use. Scroll back up to
+the fields and look at the one the template wrote for you:
+
+*Nothing to add — this is code the template already gave you:*
+
+```java
+  // Replace with CommandPS4Controller or CommandJoystick if needed
+  private final CommandXboxController m_driverController =
+      new CommandXboxController(OperatorConstants.kDriverControllerPort);
+```
+
+That's an object, made with `new`, exactly like your motor — except this one
+is your *handle to the driver's controller* rather than to a piece of the
+robot. The number handed to it (`kDriverControllerPort`, which the template
+sets to `0` over in `Constants.java`) is a **USB port number** on the driver
+station: controller 0 is the first one plugged in. Keep that `0` in mind —
+you'll need it again in a minute when you tell the simulator which device to
+feed it.
+
+`CommandXboxController` gives you a method per button — `a()`, `b()`,
+`leftBumper()`, and so on. Each one hands back a **`Trigger`**: an object that
+knows how to answer "is that button down right now?" and, more usefully, lets
+you attach a command to it.
+
+**Add one line inside `configureBindings()`:**
 
 ```java
   private void configureBindings() {
@@ -322,15 +347,54 @@ after tick, all match long.
 
 ## 5. Run it
 
-`./gradlew simulateJava`, set state to **Teleoperated**. In SimGUI, open the
-**Other Devices** or **CAN** panel — you can find the TalonFX and watch its output
-change when you press A. (On a real robot the wheel would spin. We'll get proper
-motion in the simulation lesson.)
+**Start the simulator:**
 
-If you don't have an Xbox controller plugged in, use SimGUI's **Keyboard 0**
-settings to map a key to the A button, or drag the joystick sliders. A number
-changing in a panel isn't as satisfying as a wheel spinning — but that number
-*is* your code commanding a motor. It counts.
+```powershell
+./gradlew simulateJava
+```
+
+Before the A button can do anything, you have to hand SimGUI a controller.
+It doesn't pick one up on its own, and this is the step everybody misses the
+first time — then spends ten minutes convinced their perfectly good binding
+is broken.
+
+Two panels do the work. **System Joysticks** lists what your laptop currently
+has attached: any real controllers, plus a few entries named **Keyboard 0**,
+**Keyboard 1**, and so on. **Joysticks** is the panel your robot code actually
+reads, and it's a set of numbered slots starting at 0.
+
+**Drag an entry from System Joysticks into slot 0 of the Joysticks panel.** If
+you have an Xbox controller plugged in, drag that. If you don't, drag
+**Keyboard 0** and your keyboard will stand in for one — that's how most of
+this course gets driven.
+
+Slot 0 isn't an arbitrary choice. It's the `0` you just read in
+`kDriverControllerPort`: `CommandXboxController` reads whichever slot number
+it was handed, so the field and the panel have to agree. Plug in a second
+controller someday and it goes in slot 1, with a `1` in its constructor.
+
+Once something is in slot 0, that slot grows a row of numbered buttons. **A is
+button 1** — WPILib numbers the Xbox face buttons A, B, X, Y as 1, 2, 3, 4, so
+`m_driverController.a()` is asking about button 1. You can click that button
+right in the panel with your mouse, which is often the fastest way to test.
+For the keyboard, open **DS → Keyboard 0 Settings** in the menu bar to see
+which key is bound to which button and axis, and change any of them you like.
+
+> **Using a real gamepad?** Turn on the **Map gamepad** toggle underneath the
+> Joysticks panel. The real Driver Station quietly remaps gamepads so every
+> controller reports its buttons in the same order; SimGUI doesn't bother
+> unless you ask it to. Without that toggle, A might not land on button 1 for
+> your particular controller.
+
+Now set **Robot State** to **Teleoperated** and open the **Other Devices**
+panel, where the TalonFX turns up. Hold A — on the controller, on the keyboard,
+or by clicking the button in the Joysticks panel — and watch the motor's
+output jump to `0.3` and drop back to `0` when you let go. (On a real robot
+the wheel would spin. We'll get proper motion in the simulation lesson.)
+
+A number changing in a panel isn't as satisfying as a wheel spinning. But that
+number *is* your code commanding a motor, because you pressed a button. It
+counts.
 
 ---
 
@@ -365,7 +429,10 @@ every file you'll write from here on. On the robot side, subsystems expose
 behavior as **command factory methods** that *return* commands, so the
 scheduler can manage who controls the hardware, and motors **hold the last
 value** you set — which is why `startEnd(start, end)` pairs every start with
-a cleanup. Next up, that hard-coded `0.3` becomes a live joystick reading,
-and this starts feeling like driving.
+a cleanup. You also wired a real button to real behavior, and learned that the
+simulator needs a joystick dragged into slot 0 before any of it responds —
+worth remembering, because that one bites people every season. Next up, that
+hard-coded `0.3` becomes a live joystick reading, and this starts feeling like
+driving.
 
 Next: [Lesson 2 — Joystick control](02-joystick-control.md).
