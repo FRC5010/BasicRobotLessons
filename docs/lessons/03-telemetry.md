@@ -27,7 +27,9 @@ tell you two things for free:
 - **Position** — how many rotations it has turned since boot.
 - **Velocity** — how fast it's turning right now, in rotations per second (rps).
 
-You *read* these instead of *setting* them:
+You *read* these instead of *setting* them.
+
+*Nothing to add yet — this is how you'll read them, in section 4:*
 
 ```java
 double rotations = m_driveMotor.getPosition().getValueAsDouble();
@@ -96,8 +98,12 @@ since Lesson 0's print statement. Two changes.
 **First, change what `Robot` extends.** Until now, `Robot` has extended
 `TimedRobot` — the WPILib base class that provides the 50 Hz heartbeat.
 `LoggedRobot` is AdvantageKit's drop-in replacement: the same heartbeat, plus
-hooks that let the logger ride along on every tick. Change the class line and
-the import (delete the `TimedRobot` import if VS Code doesn't do it for you):
+hooks that let the logger ride along on every tick.
+
+VS Code won't always delete the old `TimedRobot` import on its own — remove
+it by hand if it's still there.
+
+**Edit `Robot.java`'s class line and imports:**
 
 ```java
 import org.littletonrobotics.junction.LoggedRobot;
@@ -107,13 +113,17 @@ public class Robot extends LoggedRobot {
 
 **Second, configure and start the logger.** This goes at the *top* of the
 `Robot` constructor — the logger should be running before anything else gets
-set up, so it never misses a value:
+set up, so it never misses a value.
+
+**Add to `Robot.java`'s imports:**
 
 ```java
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 ```
+
+**Add to the top of the `Robot` constructor:**
 
 ```java
   public Robot() {
@@ -143,12 +153,15 @@ Remember the empty `periodic()` that's been sitting at the bottom of
 `DriveModule` since Lesson 1? The scheduler calls it about 50 times a second
 no matter what commands are running — it's been waiting for exactly this job.
 Telemetry wants to be fresh *always*, not just while some command happens to
-be active, so it goes in the method that always runs. Add the `Logger` import
-up top with the others, then fill in the body:
+be active, so it goes in the method that always runs.
+
+**Add to `DriveModule`'s imports:**
 
 ```java
 import org.littletonrobotics.junction.Logger;
 ```
+
+**Fill in `periodic()` in `DriveModule`:**
 
 ```java
 public class DriveModule extends SubsystemBase {

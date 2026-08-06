@@ -41,8 +41,9 @@ your hook for injecting fake sensor readings into the motor. WPILib gives
 you **`DCMotorSim`** — the physics.
 
 Both live in `DriveModule`, and both are data the module keeps for life — so
-they're fields, up top with the motor. Add the imports first, up with the
-others:
+they're fields, up top with the motor.
+
+**Add to `DriveModule`'s imports:**
 
 ```java
 import com.ctre.phoenix6.sim.TalonFXSimState;
@@ -52,7 +53,7 @@ import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 ```
 
-Then the fields, directly *below* `m_driveMotor`:
+**Add to `DriveModule`, directly below `m_driveMotor`:**
 
 ```java
 public class DriveModule extends SubsystemBase {
@@ -102,7 +103,9 @@ WPILib calls **`simulationPeriodic()`** ~50×/sec, but **only in simulation**
 — on a real robot it never runs, so nothing in it can leak onto the field.
 That's where the physics goes. Add it to `DriveModule`, right below
 `periodic()` — they're siblings: same `@Override`, same rhythm, different
-worlds:
+worlds.
+
+**Add to `DriveModule`, below `periodic()`:**
 
 ```java
 @Override
@@ -124,7 +127,9 @@ public void simulationPeriodic() {
 ```
 
 Those four steps form a loop, and the loop is the whole idea of simulation —
-if you take one picture from this lesson, take this one:
+if you take one picture from this lesson, take this one.
+
+*Nothing to add — a picture of the loop, not code:*
 
 ```
 your set(0.3)  →  TalonFX applies volts  →  getMotorVoltage()

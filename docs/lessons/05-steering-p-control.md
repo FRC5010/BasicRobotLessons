@@ -49,6 +49,8 @@ applies again: `m_steerSim` is built by asking `m_steerMotor` for its sim
 state, so the motor comes first. No new imports needed; everything here
 arrived in Lesson 4.
 
+**Add to `DriveModule`, below the drive motor's fields:**
+
 ```java
 public class DriveModule extends SubsystemBase {
   // ...the drive motor and its sim fields from Lessons 1 and 4 stay put...
@@ -66,7 +68,9 @@ public class DriveModule extends SubsystemBase {
 ```
 
 Then step the steer physics in `simulationPeriodic()`, right after the drive
-motor's four steps — same loop, second motor:
+motor's four steps — same loop, second motor.
+
+**Add to `DriveModule`'s `simulationPeriodic()`:**
 
 ```java
   @Override
@@ -88,9 +92,10 @@ pretend the sensor turns **1:1** with the wheel for now. In Lesson 6 you'll
 see the gear-ratio pattern applied to the drive motor, and in Lesson 7 the
 steering gets its real `25 : 1` as part of growing up.
 
-Add the reading method with your other public methods — it's a
-question-method, Lesson 3 style: ask the motor for rotations, hand back
-degrees:
+It's a question-method, Lesson 3 style: ask the motor for rotations, hand
+back degrees.
+
+**Add to `DriveModule`, with your other public methods:**
 
 ```java
 /** Current steering angle in degrees. */
@@ -147,19 +152,23 @@ public static class SteerConstants {
 (`SteerConstants` gains a second constant, `kP`, in the next section — this
 is the class's first job, not its last.)
 
-**Add the CANcoder field to `DriveModule`, next to the steering motor:**
+**Add to `DriveModule`'s imports:**
 
 ```java
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.hardware.CANcoder;
 ```
 
+**Add the CANcoder field to `DriveModule`, next to the steering motor:**
+
 ```java
 private final CANcoder m_steerEncoder = new CANcoder(Constants.DriveConstants.kCancoderPort);
 ```
 
-Now give the constructor a body — this is the first time this lesson has
-had anything to put in it:
+This is the first time this lesson has had anything to put in the
+constructor.
+
+**Fill in `DriveModule`'s constructor:**
 
 ```java
 public DriveModule() {
@@ -205,12 +214,15 @@ unpredictable zero.
 ## 4. Write proportional control
 
 Here's the heart of the lesson — read it slowly, because this little method
-is the seed of every controller you'll ever write. Add the import up top,
-then the command factory below your other ones:
+is the seed of every controller you'll ever write.
+
+**Add to `DriveModule`'s imports:**
 
 ```java
 import frc.robot.Constants.SteerConstants; // SteerConstants exists already — kP joins it below
 ```
+
+**Add to `DriveModule`, below your other command factories:**
 
 ```java
 /** Turns the steering motor toward 'targetDegrees' and holds it there. */
@@ -279,8 +291,9 @@ below the method that uses it.
 Last piece: `kP` itself. It's a **tuning constant** — a number you'll adjust
 over and over — and numbers like that live in `Constants.java`, in a nested
 class named for the subsystem area they belong to. `SteerConstants` already
-exists (you made it two sections ago, for the magnet offset) — add `kP`
-alongside it:
+exists (you made it two sections ago, for the magnet offset).
+
+**Add `kP` to `SteerConstants` in `Constants.java`:**
 
 ```java
 public static class SteerConstants {
@@ -298,7 +311,7 @@ needs it points here. That's the whole philosophy of `Constants.java`.
 
 ## 5. Bind it and tune `kP`
 
-In `RobotContainer.configureBindings()`, with the rest of the wiring:
+**Add to `configureBindings()` in `RobotContainer`, with the rest of the wiring:**
 
 ```java
   private void configureBindings() {
@@ -325,7 +338,9 @@ command cancels the go-to-90 one (firing its `finallyDo` on the way out).
 > learns to do both at once when it grows up in Lesson 7.
 
 To watch the controller work, log the steering angle from `periodic()`, next
-to the two values from Lesson 3:
+to the two values from Lesson 3.
+
+**Add to `DriveModule`'s `periodic()`:**
 
 ```java
   @Override
