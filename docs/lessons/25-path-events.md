@@ -389,6 +389,8 @@ finished, was interrupted, or the match ended.
 
 ## 6. Run it
 
+**Run it:**
+
 ```powershell
 ./gradlew simulateJava
 ```

@@ -420,6 +420,8 @@ smooth, current, and degrades gently.
 
 ## 8. Run it
 
+**Run it:**
+
 ```powershell
 ./gradlew simulateJava
 ```

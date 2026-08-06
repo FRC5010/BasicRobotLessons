@@ -272,7 +272,9 @@ other two had one would be inventing a force.
 
 The two that remain come out of Lesson 18's arithmetic unchanged. A Kraken X60
 free-spins at 6000 rpm on 12 V — that's 100 rotations per second, so **0.12 V per
-rotation per second**, and with no gearbox the wheel *is* the rotor:
+rotation per second**, and with no gearbox the wheel *is* the rotor.
+
+*Nothing to add — the arithmetic, not code:*
 
 ```
 kV = 0.12 V per rot/s        →  holding 60 rot/s costs 0.12 × 60 = 7.2 V
@@ -283,7 +285,9 @@ of headroom for accelerating, which is why the wheel takes a moment to come up.
 
 `kA` is the torque side of the same recipe. Speeding a wheel up by 1 rot/s² needs
 `J × 2π` newton-metres, and the Kraken stalls at 7.09 N·m on 12 V, so **1.69 V per
-N·m**:
+N·m**.
+
+*Nothing to add — the arithmetic, not code:*
 
 ```
 kA = 0.01 × 2π × 1.69 = 0.106 V per rot/s²
@@ -530,7 +534,9 @@ use, reusing their constants: orange while it's working, green once `atSpeed()`.
 }
 ```
 
-That one expression is the whole dial:
+That one expression is the whole dial.
+
+*Nothing to add — the formula, not code:*
 
 ```
 angle = -90°  -  180° x (speed / free speed)
@@ -563,7 +569,9 @@ rot/s** and stays there. Twenty-nine percent low, forever.
 
 And you can predict that number before running it. With only a P term, the wheel
 stops gaining speed when the correction exactly equals the voltage needed to
-sustain the speed it's at:
+sustain the speed it's at.
+
+*Nothing to add — the arithmetic, not code:*
 
 ```
 kP × (goal − ω)  =  kV × ω
@@ -646,6 +654,8 @@ belt is tensioned.
 ---
 
 ## 9. Run it
+
+**Run it:**
 
 ```powershell
 ./gradlew simulateJava

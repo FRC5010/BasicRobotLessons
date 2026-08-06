@@ -774,6 +774,8 @@ builds the good one.
 
 ## 8. Run it
 
+**Run it:**
+
 ```powershell
 ./gradlew simulateJava
 ```
