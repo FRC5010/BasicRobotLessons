@@ -65,7 +65,7 @@ library (online search)**), search for **photonlib**, and install it. The
 search list is scoped to your project's season, so what it offers you is a
 2026 build — this course was written against **v2026.3.4**.
 
-If the search comes up empty, install by URL instead:
+**If the search comes up empty, install by this URL instead:**
 
 ```
 https://raw.githubusercontent.com/wpilibsuite/vendor-json-repo/main/2026/photonlib-v2026.3.4.json
@@ -160,6 +160,8 @@ crossing your fingers nobody checks it. Java's answer to that problem is
 **`Optional<T>`**: a box that either holds a `T` or holds nothing, and the
 compiler makes you ask before you reach in.
 
+*Nothing to add yet — this is the shape you'll write in a moment:*
+
 ```java
 Optional<EstimatedRobotPose> estimate = poseEstimator.estimateCoprocMultiTagPose(result);
 if (estimate.isPresent()) {
@@ -205,7 +207,7 @@ there'd be no error, no warning — the robot would just trust odometry alone
 and nobody would notice until the replayed pose looked wrong. Today that
 gap closes the same way it closed for `ModuleIO` and `GyroIO`.
 
-Create `src/main/java/frc/robot/subsystems/VisionIO.java`:
+**Create `src/main/java/frc/robot/subsystems/VisionIO.java`:**
 
 ```java
 package frc.robot.subsystems;
@@ -242,8 +244,9 @@ loggable the same way `Pose3d` already is, so an array of them slots into
 
 ## 7. Build `VisionIOPhotonVision`
 
-Time to put section 5's ideas to work. Create
-`src/main/java/frc/robot/subsystems/VisionIOPhotonVision.java`:
+Time to put section 5's ideas to work.
+
+**Create `src/main/java/frc/robot/subsystems/VisionIOPhotonVision.java`:**
 
 ```java
 package frc.robot.subsystems;
@@ -307,8 +310,9 @@ not `private`. That's Lesson 13's signal again — a subclass is coming for it.
 
 Nobody in this course has a coprocessor on their desk, so simulate it —
 and this time, reach for the exact trick Lesson 13 already taught for
-`ModuleIOSim`: **extend the real class, add the physics.** Create
-`src/main/java/frc/robot/subsystems/VisionIOPhotonVisionSim.java`:
+`ModuleIOSim`: **extend the real class, add the physics.**
+
+**Create `src/main/java/frc/robot/subsystems/VisionIOPhotonVisionSim.java`:**
 
 ```java
 package frc.robot.subsystems;
@@ -501,8 +505,10 @@ every method stay exactly as Lesson 14 left them. That's worth sitting with:
 an entire IO layer just went into the project, and the class that fuses
 poses together never had to hear about it.
 
-**In `RobotContainer`, declare `m_localizer` right after `m_drivetrain`,
-and leave the two cameras unassigned for now:**
+Declare `m_localizer` right after `m_drivetrain`, and leave the two cameras
+unassigned for now.
+
+**Edit `RobotContainer`'s fields:**
 
 ```java
 public class RobotContainer {
@@ -526,8 +532,9 @@ declaration above the cameras' guarantees that — field initializers still
 run top to bottom, so by the time you'd build a camera, `m_localizer`
 already exists.
 
-**Finish building both cameras in the constructor, where `m_localizer` is
-now guaranteed to be ready:**
+`m_localizer` is now guaranteed to be ready by the time the constructor runs.
+
+**Finish building both cameras in the `RobotContainer` constructor:**
 
 ```java
   public RobotContainer() {

@@ -58,8 +58,9 @@ underneath the IO layer you built in Lesson 13, and that's not a happy accident
 Same ritual as AdvantageKit in Lesson 3 and PhotonLib in Lesson 15. Open the
 vendor dependency manager (Ctrl+Shift+P → **WPILib: Manage Vendor Libraries** →
 **Install new library (online search)**), search for **maplesim**, and install
-it. This course was written against **0.4.0-beta**. To install by URL instead,
-use WPILib's pinned copy:
+it. This course was written against **0.4.0-beta**.
+
+**To install by URL instead, use WPILib's pinned copy:**
 
 ```
 https://raw.githubusercontent.com/wpilibsuite/vendor-json-repo/main/2026/maple-sim-0.4.0-beta.json
@@ -232,6 +233,8 @@ at each of those sub-steps, not once per tick when you happen to feel like
 offering it. So the relationship flips: instead of your code calling the physics,
 **the physics calls your code.**
 
+*Nothing to add — a picture of the flip, not code:*
+
 ```
 Lesson 4:  you ask the motor for volts  →  you step the model  →  you push motion back
 Lesson 16: the engine asks you for volts  →  it steps the world  →  it hands you motion
@@ -341,8 +344,9 @@ we just handed it. Your `PositionVoltage` request, your `Slot0` gains, your
 output is what the physics engine now pushes the robot with. The simulation got
 more real without your control code learning anything new.
 
-**Finally, give the modules their corner of the chassis. Edit `makeModule`'s
-`SIM` arm in `Drivetrain`:**
+Finally, give the modules their corner of the chassis.
+
+**Edit `makeModule`'s `SIM` arm in `Drivetrain`:**
 
 ```java
       case SIM -> new ModuleIOSim(
@@ -405,8 +409,10 @@ feed an integration that no longer happens.
   public default void setSimRotationRate(double omegaRevPerSec) {}
 ```
 
-**Delete both calls to it in `Drivetrain`** — one near the bottom of
-`applyChassisSpeeds`, one in `driveDistance` where it zeroed the rate:
+One call is near the bottom of `applyChassisSpeeds`; the other is in
+`driveDistance`, where it zeroed the rate.
+
+**Delete both calls to `setSimRotationRate` in `Drivetrain`:**
 
 ```java
   // DELETE from applyChassisSpeeds:
@@ -566,8 +572,9 @@ can shove them around.
 ```
 
 `resetFieldForAuto()` lays out the current season's pieces the way they'd be
-staged at the start of a match. To place one somewhere specific instead, add it
-yourself:
+staged at the start of a match.
+
+**To place one somewhere specific instead, add it yourself:**
 
 ```java
     SimulatedArena.getInstance().addGamePiece(new RebuiltFuelOnField(new Translation2d(3, 3)));
