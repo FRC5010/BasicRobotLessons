@@ -83,6 +83,7 @@ let you see everything working on your laptop. Device IDs in the examples
 | 29 | [A wheel that holds a speed](docs/lessons/29-flywheel.md) | A shooter flywheel with a speedometer, and the first mechanism with no destination | None — the spine repeats |
 | 30 | [One battery, everything on it](docs/lessons/30-current-limits.md) | Current limits chosen as a budget, and a brownout you cause on purpose | None |
 | 31 | [The robot tells you what's wrong](docs/lessons/31-alerts.md) | A pre-match checklist the robot runs on itself, surfaced where a human looks | None |
+| 32 | [Tests that catch what a plot won't](docs/lessons/32-testing.md) | JUnit tests against your own subsystems, with the simulation running inside them | JUnit, arrange/act/assert |
 
 ### Asides (out of order — read when you need them)
 
