@@ -55,7 +55,9 @@ class is a blueprint: `TalonFX` describes what any TalonFX can do. An
 with CAN ID 1, bolted to your robot*. One blueprint, as many objects as you
 need.
 
-You create an object with the keyword **`new`**:
+You create an object with the keyword **`new`**.
+
+*Nothing to add — this is just an example, not code for any file:*
 
 ```java
 TalonFX driveMotor = new TalonFX(1);
@@ -91,6 +93,8 @@ talk about each piece as it lands. Type them in yourself rather than pasting
 Every Java file opens the same way: the `package` line first, the imports
 under it, and nothing else until the class begins.
 
+**Start `DriveModule.java` with:**
+
 ```java
 package frc.robot.subsystems;
 
@@ -110,7 +114,9 @@ underlines it in red and offers to add the import for you.
 
 ### Piece 2 — the class line and the motor field
 
-Below the imports, open the class and give it its one piece of hardware:
+Below the imports, open the class and give it its one piece of hardware.
+
+**Add to `DriveModule`, below the imports:**
 
 ```java
 public class DriveModule extends SubsystemBase {
@@ -139,6 +145,8 @@ you can tell fields from local variables at a glance.
 
 ### Piece 3 — the constructor
 
+**Add to `DriveModule`, below the field:**
+
 ```java
   public DriveModule() {
     // Setup that should happen when the module is created goes here.
@@ -156,6 +164,8 @@ constructor right after the fields, and this course sticks to that.
 
 The last piece: one method that does something, one that doesn't yet, and the
 closing brace for the whole class.
+
+**Add to `DriveModule`, below the constructor:**
 
 ```java
   /** Spins the drive motor at the given fraction of full power (-1.0 to 1.0). */
@@ -207,8 +217,9 @@ semicolon on the beginner error charts.
 Read your file top to bottom and check the order: package, imports, class
 line, field, constructor, methods, closing brace. Java mostly doesn't care
 about that order, but every file in this course — and most Java you'll ever
-read — follows it, so your eyes learn where to look. Assembled, the whole
-thing is:
+read — follows it, so your eyes learn where to look.
+
+*Nothing to add — this is code you already have, assembled so you can check it:*
 
 ```java
 package frc.robot.subsystems;
@@ -256,7 +267,9 @@ lands matters as much as what it says.
 
 **First, give `RobotContainer` the module as a field.** Near the top of the
 class you'll find the fields the template already declares —
-`m_driverController` is one of them. Add yours alongside:
+`m_driverController` is one of them.
+
+**Add to `RobotContainer`, alongside the existing fields:**
 
 ```java
 public class RobotContainer {
@@ -274,8 +287,9 @@ One `new` sets off the whole chain.
 
 **Second, the import.** `DriveModule` lives in the `frc.robot.subsystems`
 package; `RobotContainer` lives in `frc.robot`. Different package, so this
-file needs an import — up top with the other imports, anywhere among them,
-below the `package` line:
+file needs an import.
+
+**Add to `RobotContainer`'s imports, anywhere among them, below the `package` line:**
 
 ```java
 import frc.robot.subsystems.DriveModule;
