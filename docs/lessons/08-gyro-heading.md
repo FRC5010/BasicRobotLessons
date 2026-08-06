@@ -29,15 +29,19 @@ Where should it live? Heading is a *chassis* fact — no single module knows it,
 and no single module needs it alone — so the gyro goes on `Drivetrain`, not in
 `SwerveModule` and not in some new subsystem. Open `Drivetrain.java`.
 
-**Add to `Drivetrain.java`'s imports** (`Logger` is already there from Lesson 7):
+`Logger` is already imported from Lesson 7.
+
+**Add to `Drivetrain.java`'s imports:**
 
 ```java
 import com.ctre.phoenix6.hardware.Pigeon2;
 import frc.robot.Constants.HeadingConstants;
 ```
 
-**Add to `Drivetrain`, below the modules array** — the gyro is hardware, and the
-two doubles are sim bookkeeping whose job becomes clear in section 5:
+The gyro is hardware; the two doubles are sim bookkeeping whose job becomes
+clear in section 5.
+
+**Add to `Drivetrain`, below the modules array:**
 
 ```java
 private final Pigeon2 m_gyro = new Pigeon2(0); // CAN ID 0 — change to yours
@@ -95,8 +99,7 @@ asked for. You could copy the tangent-angle loop into the new command. Don't.
 Copied code is a bug with a delay on it: fix the original and the copy stays
 wrong. Instead, pull the body into a private helper so both callers share it.
 
-**Add the helper to `Drivetrain`, and replace `rotate` with the one-liner
-version:**
+**Add a helper to `Drivetrain`, and replace `rotate` with the one-liner:**
 
 ```java
 private void commandRotation(double omega) {
@@ -123,8 +126,9 @@ One loose end: `translate(...)` from Lesson 7 needs a single new line — pure
 translation shouldn't leave a stale rotation rate lying around for the sim to
 integrate.
 
-**Edit `translate` — add the `m_lastCommandedOmega = 0.0;` line** (marked
-below):
+The added line is marked below.
+
+**Edit `translate` in `Drivetrain`, adding one line:**
 
 ```java
 public Command translate(DoubleSupplier vxSupplier, DoubleSupplier vySupplier) {
@@ -151,8 +155,10 @@ differ from `steerToAngle`: which sensor gets measured, and that headings
 **wrap** around a circle, so the subtract step needs the wrap trick baked in
 (`-170°` to `170°` should turn `20°`, not `340°`).
 
-**Add to `Drivetrain`** — the wrap logic goes in its own little
-question-method, because the finish condition is about to need it too:
+The wrap logic goes in its own little question-method, because the finish
+condition is about to need it too.
+
+**Add to `Drivetrain`:**
 
 ```java
 /** Signed error to 'target' in degrees, wrapped to (-180, 180]. */
@@ -185,7 +191,7 @@ throttle. And because the finish condition calls the *same* `headingError`,
 "done" means "within 2° by the shortest path" — the wrap logic can't disagree
 with itself.
 
-**Add to `Constants.java`** a nested `HeadingConstants` class for the gain:
+**Add a nested `HeadingConstants` class to `Constants.java` for the gain:**
 
 ```java
 public final class Constants {
@@ -201,8 +207,9 @@ public final class Constants {
 
 ## 4. Wire it up
 
-**Add to `configureBindings()`** two taps — the A and B buttons are free again
-since Lesson 7's cleanup:
+The A and B buttons are free again since Lesson 7's cleanup.
+
+**Add two taps to `configureBindings()`:**
 
 ```java
   private void configureBindings() {
@@ -229,8 +236,9 @@ don't actually push the chassis around — we haven't built that physics. So we
 close the loop **ourselves**: pretend the robot rotates at the rate we just
 commanded, and inject that back into the fake gyro.
 
-**Edit `simulationPeriodic()`** — add the integration below the existing module
-loop:
+Add the integration below the existing module loop.
+
+**Edit `Drivetrain`'s `simulationPeriodic()`:**
 
 ```java
 @Override

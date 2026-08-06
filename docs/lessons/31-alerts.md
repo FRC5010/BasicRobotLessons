@@ -294,6 +294,8 @@ that's technically correct.
 
 ## 7. Run it
 
+**Run it:**
+
 ```powershell
 ./gradlew simulateJava
 ```
@@ -385,3 +387,9 @@ you've given them, you've built a log entry with a colour.
 
 That's the robot able to tell you it's unwell. Go and break something on purpose,
 and enjoy being told about it for once.
+
+Alerts tell you when something is wrong *now*. There's a third question neither
+they nor the logs answer: is the thing that worked last Tuesday still working? The
+next lesson gets a machine to check.
+
+Next: [Lesson 32 — Tests that catch what a plot won't](32-testing.md).

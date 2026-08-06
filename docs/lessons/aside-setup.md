@@ -44,7 +44,7 @@ When it's done you have a shortcut to **WPILib VS Code 2026**. That's what
 you'll use for the course — not your regular VSCode. Both can live on your
 machine at once; they don't fight.
 
-Sanity check:
+**Sanity check — run:**
 
 ```powershell
 & "C:\Users\Public\wpilib\2026\jdk\bin\java.exe" -version
@@ -58,7 +58,10 @@ in.)
 
 ## 2. Install Git
 
-WPILib doesn't bundle Git. Get it from **git-scm.com/download/win**, or:
+WPILib doesn't bundle Git. Get it from **git-scm.com/download/win**, or install
+it from the command line.
+
+**Run:**
 
 ```powershell
 winget install --id Git.Git
@@ -67,7 +70,9 @@ winget install --id Git.Git
 Default options are fine. When it asks about line endings, pick **"Checkout
 Windows-style, commit Unix-style"** — that's what team collaborations expect.
 
-Configure your identity once so every commit records who made it:
+Configure your identity once so every commit records who made it.
+
+**Run:**
 
 ```powershell
 git config --global user.name  "Your Name"
@@ -93,7 +98,9 @@ and search for **WPILib: Create a new project**. In the wizard:
 - **Desktop support:** **Yes**. Without this, `./gradlew simulateJava` won't
   work and you can't do the course on your laptop.
 
-Open the newly created folder in VSCode. Verify it builds:
+Open the newly created folder in VSCode.
+
+**Verify it builds:**
 
 ```powershell
 ./gradlew build
@@ -107,7 +114,7 @@ normal, not broken. When it finishes with `BUILD SUCCESSFUL`, you're ready for
 
 ## 4. Make it a Git repo
 
-From the project folder in PowerShell:
+**From the project folder in PowerShell, run:**
 
 ```powershell
 git init
@@ -118,14 +125,16 @@ The WPILib template already ships with a `.gitignore` that excludes `build/`,
 `.gradle/`, VSCode cache files, and other things that shouldn't be tracked.
 Trust it — don't hand-edit unless you have a specific reason.
 
-See what Git sees:
+**See what Git sees:**
 
 ```powershell
 git status
 ```
 
 Every file listed as *untracked* is code or config that should live in the
-repo. Stage and commit:
+repo.
+
+**Stage and commit:**
 
 ```powershell
 git add .
@@ -142,13 +151,17 @@ this laptop. Which brings us to section 5.
 
 Sign up at **github.com** with the same email you used in `git config` above.
 
-The friction-free way to authenticate from the command line is **GitHub CLI**:
+The friction-free way to authenticate from the command line is **GitHub CLI**.
+
+**Install it:**
 
 ```powershell
 winget install --id GitHub.cli
 ```
 
-Close and re-open PowerShell so `gh` is on the PATH. Then:
+Close and re-open PowerShell so `gh` is on the PATH.
+
+**Authenticate:**
 
 ```powershell
 gh auth login
@@ -167,7 +180,7 @@ in place of the commands below.)
 
 ## 6. Create the remote and push
 
-From inside the project folder:
+**From inside the project folder, run:**
 
 ```powershell
 gh repo create BasicRobotLessons --private --source=. --remote=origin --push
@@ -175,7 +188,9 @@ gh repo create BasicRobotLessons --private --source=. --remote=origin --push
 
 That one command creates a GitHub repo named `BasicRobotLessons`, marks your
 local folder as its source, wires it up as the `origin` remote, and pushes
-your first commit. When it finishes:
+your first commit.
+
+**Then run:**
 
 ```powershell
 gh repo view --web
@@ -185,9 +200,11 @@ opens the repo in your browser. You should see every file from your project.
 Take a second to actually look — that's your code, living somewhere your
 laptop can't take it down with it.
 
-Prefer to do it in two steps? Create the repo on github.com first (**+** menu
+Prefer to do it in two steps? Create the repo on github.com first — **+** menu
 → **New repository**, **Private**, do **not** add a README or `.gitignore` on
-the web form since you already have them), then:
+the web form since you already have them.
+
+**Then run:**
 
 ```powershell
 git remote add origin https://github.com/<you>/BasicRobotLessons.git
@@ -203,7 +220,9 @@ this branch, this is where you send it."
 
 Everything above was one-time setup. This section is the part you'll actually
 live in. Once a day, or every time you finish a lesson, or every time
-something works that didn't work before — snapshot it:
+something works that didn't work before — snapshot it.
+
+**Run:**
 
 ```powershell
 git status                             # see what changed
@@ -217,7 +236,9 @@ Future-you reading this list in a month will thank you.
 
 If you (or a teammate) edit on GitHub directly — say, fixing a typo in
 `README.md` through the web UI — pull those changes down before you do more
-work:
+work.
+
+**Run:**
 
 ```powershell
 git pull

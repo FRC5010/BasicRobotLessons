@@ -49,10 +49,12 @@ it the hard way once, then let the library carry it.
 
 ## 2. Build the kinematics object
 
-**Add to `Drivetrain.java`'s imports** (`Rotation2d` and `SwerveModuleState`
-came in with Lesson 7's logging; the measure types and `Supplier` are for the
-Units-typed `drive` in section 4, which also lets you delete the old
-`DoubleSupplier` import once `translate` is gone):
+`Rotation2d` and `SwerveModuleState` came in with Lesson 7's logging; the
+measure types and `Supplier` are for the Units-typed `drive` in section 4,
+which also lets you delete the old `DoubleSupplier` import once `translate`
+is gone.
+
+**Add to `Drivetrain.java`'s imports:**
 
 ```java
 import java.util.function.Supplier;
@@ -63,9 +65,10 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 ```
 
-**Add to `Drivetrain`, directly below the `m_modules` field** — it's built by
-reading the modules' locations, and you know the rule by now: when one field is
-built from another, the one it depends on goes first.
+It's built by reading the modules' locations, and you know the rule by now:
+when one field is built from another, the one it depends on goes first.
+
+**Add to `Drivetrain`, directly below the `m_modules` field:**
 
 ```java
 private final SwerveDriveKinematics m_kinematics = new SwerveDriveKinematics(
@@ -98,14 +101,15 @@ Phoenix's `motor.set(-1..1)`. From here on we pepper Units into new constants
 and signatures, unpack with `.in(...)` only at that last boundary, and let the
 type carry the unit everywhere in between.
 
-**Add to `DriveConstants` in `Constants.java`** (with the static Units import
-and the two measure types at the top of the file):
+**Add to the top of `Constants.java`:**
 
 ```java
 import static edu.wpi.first.units.Units.*;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 ```
+
+**Add to `DriveConstants`:**
 
 ```java
 public static class DriveConstants {
@@ -137,8 +141,9 @@ rush.)
 Kinematics speaks meters per second. Update the module to accept a full
 `SwerveModuleState` and do the conversion in one place.
 
-**Add to `SwerveModule.java`'s imports** (`MathUtil` is already imported from
-Lesson 7's `clamp`):
+`MathUtil` is already imported from Lesson 7's `clamp`.
+
+**Add to `SwerveModule.java`'s imports:**
 
 ```java
 import static edu.wpi.first.units.Units.MetersPerSecond;
@@ -235,8 +240,10 @@ public Command drive(
 }
 ```
 
-**Replace `commandRotation` in `Drivetrain` with** its one-line translator, so
-`turnToHeading` keeps working without a single edit:
+Its one-line translator means `turnToHeading` keeps working without a single
+edit.
+
+**Replace `commandRotation` in `Drivetrain`:**
 
 ```java
 /** 'omega' is now revolutions per second (0.5 = half a turn per second). */
@@ -309,8 +316,10 @@ and both bumper `rotate` bindings. Those factories no longer exist, and the
 right stick is taking over rotation. (The A/B `turnToHeading` bindings from
 Lesson 8 stay — they never stopped working.)
 
-**Add to `configureBindings()`** the classic swerve default — left stick
-translates, right stick rotates:
+This is the classic swerve default — left stick translates, right stick
+rotates.
+
+**Add to `configureBindings()`:**
 
 ```java
   private void configureBindings() {

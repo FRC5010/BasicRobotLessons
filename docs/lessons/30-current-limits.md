@@ -69,7 +69,9 @@ quarter of that and climbs steadily as the motor speeds up.
 
 The reason is in the last column. A controller that only wants to apply 3 V out of
 12 does it by being switched on a quarter of the time, so it only draws off the
-battery a quarter of the time:
+battery a quarter of the time.
+
+*Nothing to add — the arithmetic, not code:*
 
 ```
 supply current  ≈  stator current × (applied volts / battery volts)
@@ -87,7 +89,9 @@ the other, which is why there are two settings.
 ## 3. The defaults protect the motor, not the robot
 
 Here's the part that surprises people: **Phoenix is already limiting current, and
-has been since Lesson 1.** Print a fresh config and you get:
+has been since Lesson 1.** Print a fresh config and you get this.
+
+*Nothing to add — sample output, not code:*
 
 ```
 StatorCurrentLimit      = 120 A   enabled = true
@@ -356,6 +360,8 @@ costs you 2 V. 300 A costs you 6, and 6 V is where the roboRIO gives up.
 ---
 
 ## 7. Watch one happen
+
+**Run it:**
 
 ```powershell
 ./gradlew simulateJava

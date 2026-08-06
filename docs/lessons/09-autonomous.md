@@ -95,8 +95,9 @@ pattern is starting to feel routine, good — routine is the point.
 Now the fun part: writing the plan. `commands/Autos.java` is the home for auto
 factories — the template shipped one with an example in it.
 
-**Replace the contents of `commands/Autos.java` with** a routine that takes
-your subsystem and returns a sequence:
+This routine takes your subsystem and returns a sequence.
+
+**Replace the contents of `commands/Autos.java`:**
 
 ```java
 package frc.robot.commands;
@@ -154,8 +155,9 @@ you rewire autonomous.)
 sitting in the template since Lesson 0, waiting.
 
 **Delete the `m_exampleSubsystem` field and its `import`** from
-`RobotContainer` — with the example auto gone, nothing uses it. Then **replace
-`getAutonomousCommand()`'s body:**
+`RobotContainer` — with the example auto gone, nothing uses it.
+
+**Replace `getAutonomousCommand()`'s body:**
 
 ```java
   public Command getAutonomousCommand() {
@@ -200,10 +202,9 @@ want to go?* That's exactly what cosine measures. Pointed perfectly
 (`error = 0°`), `cos = 1` — drive full speed. Pointed 60° off, `cos = 0.5` —
 half of the rolling would be useful, so drive at half. Pointed sideways
 (`90°`), `cos = 0` — nothing you drive goes the right way, so don't drive at
-all.
+all — scale the drive line by cosine.
 
-**Edit the drive line in `SwerveModule.setDesiredState(...)`** to scale by that
-cosine:
+**Edit `setDesiredState` in `SwerveModule`:**
 
 ```java
 /** One tick of control: steer toward 'angleDegrees', drive at 'speedFraction'. */
@@ -246,6 +247,8 @@ say, running a mechanism (once you have one) alongside a drive step. Two tools:
 - **`Commands.deadline(deadline, a, b)`** runs all, but finishes when the
   **first (deadline)** command finishes, cancelling the rest.
 
+*Nothing to add — this is just an example, not code for any file:*
+
 ```java
 // Turn to 90° while continuously reporting — finishes when the turn is done.
 Commands.deadline(
@@ -284,15 +287,18 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
       new LoggedDashboardChooser<>("Auto Choice");
 ```
 
-**Add to the `RobotContainer` constructor** (the options the drop-down offers):
+The options are what the drop-down offers.
+
+**Add to the `RobotContainer` constructor:**
 
 ```java
   m_autoChooser.addDefaultOption("Drive-Turn-Drive", Autos.driveTurnDrive(m_drivetrain));
   m_autoChooser.addOption("Do Nothing", Commands.none());
 ```
 
-**Replace `getAutonomousCommand()`'s body again** — hand back whatever the
-chooser has selected instead of the hard-coded routine:
+Hand back whatever the chooser has selected instead of the hard-coded routine.
+
+**Replace `getAutonomousCommand()`'s body again:**
 
 ```java
   public Command getAutonomousCommand() {

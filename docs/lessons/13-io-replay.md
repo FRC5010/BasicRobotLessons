@@ -53,8 +53,9 @@ untangled shape is called an **IO layer**.
 Back in Lesson 3, AdvantageKit's install docs mention two `build.gradle`
 additions we skipped, because plain `recordOutput` logging didn't need them.
 This lesson does — one block powers the `@AutoLog` code generator you're
-about to meet, the other adds a replay helper task. Open `build.gradle`
-(project root) and paste both at the bottom of the file:
+about to meet, the other adds a replay helper task.
+
+**Add to the bottom of `build.gradle` (project root):**
 
 ```groovy
 task(replayWatch, type: JavaExec) {
@@ -79,8 +80,9 @@ confirm nothing complains.
 An **interface** is a contract: a list of methods with no bodies, saying
 "anything that claims to be a ModuleIO can do these things." Ours describes
 everything the rest of the code needs from a module's hardware — which turns
-out to be one read and three writes. Create
-`src/main/java/frc/robot/subsystems/ModuleIO.java`:
+out to be one read and three writes.
+
+**Create `src/main/java/frc/robot/subsystems/ModuleIO.java`:**
 
 ```java
 package frc.robot.subsystems;
@@ -139,8 +141,10 @@ it in three pieces.
 
 **Piece 1 — fields and constructor.** These migrate from `SwerveModule`
 almost verbatim; the class line now says `implements ModuleIO`, and the
-motors and CANcoder are `protected` instead of `private` — more on that
-word in the next section:
+motors and CANcoder are `protected` instead of `private` (more on that word
+in the next section).
+
+**Create `ModuleIOTalonFX.java`:**
 
 ```java
 package frc.robot.subsystems;
@@ -178,7 +182,9 @@ public class ModuleIOTalonFX implements ModuleIO {
 
 **Piece 2 — the read.** `updateInputs` fills the inputs bundle from the
 sensors — nothing else. No sim checks, no physics: on the real robot the
-sensors just *have* values, and this class is the real robot:
+sensors just *have* values, and this class is the real robot.
+
+**Add to `ModuleIOTalonFX`:**
 
 ```java
   @Override
@@ -196,7 +202,9 @@ sensors just *have* values, and this class is the real robot:
 `@Override`. Now that the target arrives as a plain `double` (the IO
 contract speaks degrees and meters-per-second), wrap it in the matching
 unit measure on the way into Phoenix — `Degrees.of(...)` and
-`RotationsPerSecond.of(...)`, exactly as Lesson 12 did:
+`RotationsPerSecond.of(...)`, exactly as Lesson 12 did.
+
+**Add to `ModuleIOTalonFX`:**
 
 ```java
   @Override
@@ -305,7 +313,9 @@ bundle always holds one fresh tick of pretend reality.
 
 With the hardware gone, `SwerveModule` becomes short and pure: it owns an
 IO (whichever kind), a bundle of inputs, its targets, and the cosine
-decision. Rewrite it:
+decision.
+
+**Rewrite `SwerveModule.java`:**
 
 ```java
 package frc.robot.subsystems;
@@ -385,7 +395,9 @@ one path into the program.
 One wiring consequence: `Drivetrain.periodic()`'s module loop must now call
 `module.periodic()` on each module so the bundles refresh — that's the read
 that used to happen implicitly. The loop still builds the `ModuleStates`
-array for the Swerve tab afterward; it just calls the read first:
+array for the Swerve tab afterward; it just calls the read first.
+
+**Edit the module loop in `Drivetrain.periodic()`:**
 
 ```java
     for (int i = 0; i < m_modules.length; i++) {
@@ -407,8 +419,9 @@ Delete the module's old `simulationPeriodic()` — the physics lives inside
 
 Which IO does a module get? That depends on where the code is running, and
 "where am I running" deserves a proper type. A Java **enum** is a type whose
-values are a fixed menu — you can't typo a mode that doesn't exist. Add to
-`Constants.java`, at the top of the class:
+values are a fixed menu — you can't typo a mode that doesn't exist.
+
+**Add to the top of `Constants.java`:**
 
 ```java
 public final class Constants {
@@ -424,8 +437,9 @@ public final class Constants {
 
 (`RobotBase.isReal()` needs `import edu.wpi.first.wpilibj.RobotBase;` — a
 question-method deciding a constant.) Then teach `Drivetrain` to build
-modules for the current mode, with a small static helper next to the
-`m_modules` field:
+modules for the current mode, with a small static helper.
+
+**Edit the `m_modules` field in `Drivetrain`:**
 
 ```java
   private final SwerveModule[] m_modules = new SwerveModule[] {
@@ -472,7 +486,9 @@ this is why the interface's methods got default bodies.
 
 ## 8. The gyro gets the same treatment
 
-Same pattern, smaller scale — read it as a rerun. `GyroIO.java`:
+Same pattern, smaller scale — read it as a rerun.
+
+**Create `GyroIO.java`:**
 
 ```java
 package frc.robot.subsystems;
@@ -493,7 +509,9 @@ public interface GyroIO {
 ```
 
 The real implementation is the shortest class in the course — a Pigeon and
-one read. **Create `GyroIOPigeon2.java`:**
+one read.
+
+**Create `GyroIOPigeon2.java`:**
 
 ```java
 package frc.robot.subsystems;
@@ -542,9 +560,10 @@ public class GyroIOSim implements GyroIO {
 }
 ```
 
-In `Drivetrain`: replace the `m_gyro`, `m_lastCommandedOmega`, and
-`m_simHeadingDegrees` fields with an IO pair, picked by the same
-three-arm switch as the modules —
+Replace the `m_gyro`, `m_lastCommandedOmega`, and `m_simHeadingDegrees`
+fields with an IO pair, picked by the same three-arm switch as the modules.
+
+**Edit `Drivetrain`'s gyro fields:**
 
 ```java
   private final GyroIO m_gyroIO = switch (Constants.kCurrentMode) {
@@ -560,10 +579,11 @@ three-arm switch as the modules —
   }
 ```
 
-— update the two places that fed the old bookkeeping
-(`applyChassisSpeeds` sets `m_gyroIO.setSimRotationRate(...)` instead of
-`m_lastCommandedOmega`, and `driveDistance`'s zero line does the same), put
-the gyro read at the very top of `periodic()` —
+Update the two places that fed the old bookkeeping (`applyChassisSpeeds`
+sets `m_gyroIO.setSimRotationRate(...)` instead of `m_lastCommandedOmega`,
+and `driveDistance`'s zero line does the same).
+
+**Add the gyro read to the very top of `Drivetrain.periodic()`:**
 
 ```java
   @Override
@@ -583,13 +603,16 @@ sim-only code now lives inside an IO implementation, which is exactly where
 
 ## 9. Teach `Robot.java` about replay
 
-Last plumbing: the logger itself has to know it's replaying. Update the
-constructor from Lesson 3 to branch on the mode:
+Last plumbing: the logger itself has to know it's replaying.
+
+**Add to `Robot.java`'s imports:**
 
 ```java
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.wpilog.WPILOGReader;
 ```
+
+**Update the constructor from Lesson 3 to branch on the mode:**
 
 ```java
   public Robot() {
@@ -637,8 +660,9 @@ The moment of truth, in four steps:
 
 Right now `ReplayOutputs` should *match* the original `RealOutputs` — same
 inputs, same code, same answers, which is itself worth checking (that's
-determinism, verified). The magic arrives when the code *changes*: add a
-brand-new logged value — say, in `Drivetrain.periodic()`:
+determinism, verified). The magic arrives when the code *changes*.
+
+**Add a brand-new logged value to `Drivetrain.periodic()`:**
 
 ```java
     Logger.recordOutput("Drivetrain/SpeedMps",

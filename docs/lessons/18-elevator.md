@@ -251,14 +251,18 @@ Every gain in this course follows the same three steps from there:
 > 3. Multiply by **0.12** if it's a speed, or **1.69** if it's a torque.
 
 **`kV = 1.44` — what one drum rotation per second costs.** The drum turns once, the
-rotor turns 12 times, so this is a speed of 12 rotor rotations per second:
+rotor turns 12 times, so this is a speed of 12 rotor rotations per second.
+
+*Nothing to add — the arithmetic, not code:*
 
 ```
 12 rot/s × 0.12 V = 1.44 V
 ```
 
 **`kG = 0.18` — what holding the carriage costs.** This one's a torque, so it needs
-all three steps:
+all three steps.
+
+*Nothing to add — the arithmetic, not code:*
 
 ```
 weight       5 kg × 9.81 m/s²          = 49.1 N
@@ -269,7 +273,9 @@ volts        0.104 N·m × 1.69           = 0.18 V
 
 **`kA = 0.003` — what speeding the carriage up costs.** Also a torque, and the same
 walk. One drum rotation per second squared works out to `2π × 0.0254 = 0.16 m/s²` of
-carriage acceleration:
+carriage acceleration.
+
+*Nothing to add — the arithmetic, not code:*
 
 ```
 force        5 kg × 0.16 m/s²           = 0.80 N

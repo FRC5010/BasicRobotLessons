@@ -56,7 +56,9 @@ kinds of sources, and that's a job for an **interface** — the same tool that
 gave you swappable IO in Lesson 13, pointed at a new problem.
 
 A **`PoseProvider`** is anything that can fold its own evidence into the
-shared estimate. Create `src/main/java/frc/robot/subsystems/PoseProvider.java`:
+shared estimate.
+
+**Create `src/main/java/frc/robot/subsystems/PoseProvider.java`:**
 
 ```java
 package frc.robot.subsystems;
@@ -79,7 +81,8 @@ tradeoff buys a dead-simple contract, and we take it.
 
 Now the subsystem itself. It owns the estimator, keeps a **list** of
 providers, ticks every one of them each cycle, and exposes the fused pose.
-Create `src/main/java/frc/robot/subsystems/Localizer.java`:
+
+**Create `src/main/java/frc/robot/subsystems/Localizer.java`:**
 
 ```java
 package frc.robot.subsystems;
@@ -163,10 +166,12 @@ tracking if someone shoves the robot on the field.
 ## 3. Teach the drivetrain to be a provider
 
 The drivetrain already knows everything odometry needs; now it just has to
-expose it and answer the `PoseProvider` call. In `Drivetrain`, add the one new
-import and let the class line grow a promise (`SwerveDriveKinematics`,
-`Rotation2d`, and `SwerveModulePosition` are all already imported from earlier
-lessons; `PoseProvider` is in the same package, so it needs no import):
+expose it and answer the `PoseProvider` call. `SwerveDriveKinematics`,
+`Rotation2d`, and `SwerveModulePosition` are all already imported from
+earlier lessons; `PoseProvider` is in the same package, so it needs no
+import.
+
+**Add to `Drivetrain`'s imports, and let the class line grow a promise:**
 
 ```java
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
@@ -174,11 +179,12 @@ import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 public class Drivetrain extends SubsystemBase implements PoseProvider {
 ```
 
-Then **delete** the pose machinery that used to live here — the
-`m_odometry` field, `getPose()`, `resetPose(...)`, the `m_field`/`Field2d`,
-the `SmartDashboard.putData` in the constructor, and the odometry `update` and
-pose log from `periodic()`. All of it moved to the `Localizer`. In its place,
-three small getters and the provider method:
+**Delete** the pose machinery that used to live here — the `m_odometry`
+field, `getPose()`, `resetPose(...)`, the `m_field`/`Field2d`, the
+`SmartDashboard.putData` in the constructor, and the odometry `update` and
+pose log from `periodic()`. All of it moved to the `Localizer`.
+
+**Add to `Drivetrain` in its place, three small getters and the provider method:**
 
 ```java
   public SwerveDriveKinematics getKinematics() {
@@ -236,7 +242,9 @@ bindings have used all along.
 ## 4. The door: a vision provider
 
 Now the *second* kind of provider — the one this whole lesson was for. A
-camera contributes through the estimator's other input:
+camera contributes through the estimator's other input.
+
+*Nothing to add — this is just how it's called, inside the provider you're about to write:*
 
 ```java
 estimator.addVisionMeasurement(visionPose, timestampSeconds);
@@ -255,8 +263,9 @@ it's everywhere in robotics.
 
 We have no camera on the bench, so we'll write a stand-in that holds a pending
 sighting until the next tick folds it in. It's a `PoseProvider` of a different
-type — same contract, different contribution. Create
-`src/main/java/frc/robot/subsystems/VisionPoseProvider.java`:
+type — same contract, different contribution.
+
+**Create `src/main/java/frc/robot/subsystems/VisionPoseProvider.java`:**
 
 ```java
 package frc.robot.subsystems;
@@ -298,9 +307,10 @@ exactly like the IO layer did.
 
 ## 5. Wire it up and watch it correct
 
-In `RobotContainer`, three fields — drivetrain, camera, localizer, *in that
-order* so the drivetrain ticks first — and the camera registered as a second
-provider:
+Three fields — drivetrain, camera, localizer, *in that order* so the
+drivetrain ticks first — and the camera registered as a second provider.
+
+**Add to `RobotContainer`, with the other fields:**
 
 ```java
 public class RobotContainer {
@@ -309,12 +319,14 @@ public class RobotContainer {
   private final Localizer m_localizer = new Localizer(m_drivetrain); // registers drivetrain
 ```
 
+**Add to the `RobotContainer` constructor:**
+
 ```java
   // in the constructor:
   m_localizer.addProvider(m_camera); // the second provider — vision
 ```
 
-Then a button that fires a fake sighting. In `configureBindings()`:
+**Add a button that fires a fake sighting, to `configureBindings()`:**
 
 ```java
     // Pretend a camera just saw us at (2, 5) facing 90°.

@@ -30,7 +30,7 @@ must be able to disagree with the code**, and its Try-It safety convention.
 | 29 | A wheel that holds a speed | L13 spine, L18 model | none | **Done** — [lesson](lessons/29-flywheel.md), [code](../code/lesson-29/) |
 | 30 | One battery, everything on it | L21 (current sensing) | none | **Done** — [lesson](lessons/30-current-limits.md), [code](../code/lesson-30/) |
 | 31 | The robot tells you what's wrong | L13, L15 | none | **Done** — [lesson](lessons/31-alerts.md), [code](../code/lesson-31/) |
-| 32 | Testing your own robot code | all mechanisms | none | Outline |
+| 32 | Tests that catch what a plot won't | all mechanisms | none | **Done** — [lesson](lessons/32-testing.md), [code](../code/lesson-32/) |
 | 33 | Reading a match log | L3, L13 | none | Outline |
 | 34 | Tuning your robot when build team hands it over | L18, L20, L29 | none | Outline |
 | — | `aside-commands-v3.md` | not in the linear build | none | Outline |
@@ -834,10 +834,38 @@ exactly the technique that verified every lesson in this course.
 - Test the L22 claim that a spinning roller doesn't mean a held piece.
 - Break a gain on purpose and watch the right test fail.
 
-**Research flags**
-- The student project's `build.gradle` needs a test source set — check whether the
-  WPILib template ships one, or whether the lesson has to add it.
-- Keep the tests students write *small*. The goal is the habit, not coverage.
+**Research flags — RESOLVED**
+
+- **The template already ships everything.** `build.gradle` has
+  `testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'`, a `test { useJUnitPlatform() }`
+  block, and — crucially — `wpi.java.configureTestTasks(test)`, which is what puts
+  the HAL and sim libraries on the test classpath. **No build change is needed**;
+  the only missing piece is the `src/test/java/frc/robot/` directory, which the
+  student creates. That is a nice surprise and the lesson says so.
+- Tests are kept small on purpose: three trivial pure-logic ones and a single
+  physics scenario.
+
+**`tools/verify-lessons.sh` gained a `tests/` mapping** for this lesson:
+`code/lesson-N/tests/**` now lands in `src/test/java/frc/robot/`, and the
+main-source pass excludes `./tests/*` so those files don't also get copied into
+`src/main`. That means `./tools/verify-lessons.sh 32 test` runs the lesson's own
+tests, which is the right payoff.
+
+**`Elevator` gained `getHeightMeters()`** so the homing test has something to
+assert on. The lesson makes the point explicitly: you cannot assert on what you
+cannot observe, and being unable to write a test is usually the design telling you
+something.
+
+**Both traps measured, with their symptoms:**
+
+- **Real-time trap.** With 4 ms sleeps instead of 20, the homing test still
+  *passes* its liveness checks but the final height reads **−0.34 m** — a third of
+  a metre below the floor, physically impossible, and indistinguishable from a
+  broken homing routine.
+- **Devices outlive the test.** A second `Elevator` in a second test method throws
+  **`AllocationException: Code: -1029`** — the first elevator's `DigitalInput`
+  still holds DIO 0, and `HAL.shutdown()` does not release it. Hence one
+  sequential scenario per subsystem, or per-test CAN IDs (≤ 62).
 
 ---
 

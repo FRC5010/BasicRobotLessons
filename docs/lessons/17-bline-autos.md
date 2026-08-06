@@ -75,7 +75,9 @@ about — you can look at a drawn path and know what the robot will do.
 ## 2. Install BLine
 
 Same ritual as every vendordep since Lesson 3 — Ctrl+Shift+P → **WPILib: Manage
-Vendor Libraries** → **Install new library (online search)**, then paste this URL:
+Vendor Libraries** → **Install new library (online search)**.
+
+**Paste this URL:**
 
 ```
 https://bline-metrics.edan-liahovetsky.workers.dev/vendor/BLine-Lib.json
@@ -622,7 +624,9 @@ idea rotations use.
 > keeps driving. So if a marker never seems to fire, check the console for
 > `Unregistered event trigger key` before you go hunting in the geometry.
 
-That's the last piece of `Autos`. Here's the whole file, to check yours against:
+That's the last piece of `Autos`.
+
+*Nothing to add — this is the whole file, assembled so you can check it:*
 
 ```java
 // Copyright (c) FIRST and other WPILib contributors.

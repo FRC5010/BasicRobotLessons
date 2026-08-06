@@ -67,7 +67,9 @@ up and the center of mass is directly over the pivot: horizontal distance zero,
 torque zero, no effort at all to hold it.
 
 That "horizontal distance out from the pivot" is `r × cos θ`, where `θ` is the
-angle up from horizontal. So the torque gravity applies is:
+angle up from horizontal. So the torque gravity applies is this.
+
+*Nothing to add — the arithmetic, not code:*
 
 ```
 torque = m × g × r × cos(θ)
@@ -157,14 +159,18 @@ need, divide by the gear ratio for what the *rotor* needs, then `× 0.12` for a
 speed or `× 1.69` for a torque — with this arm's numbers substituted in.
 
 **`kArmKV = 6.0`** — one arm rotation per second is 50 rotor rotations per second
-through the gearbox:
+through the gearbox.
+
+*Nothing to add — the arithmetic, not code:*
 
 ```
 50 rot/s × 0.12 V = 6.0 V
 ```
 
 **`kArmKG = 0.25`** — the torque to hold the arm out horizontal. A uniform arm's
-weight acts at its middle, so the lever arm is half its length, `0.508 / 2 = 0.254 m`:
+weight acts at its middle, so the lever arm is half its length, `0.508 / 2 = 0.254 m`.
+
+*Nothing to add — the arithmetic, not code:*
 
 ```
 weight       3 kg × 9.81 m/s²        = 29.4 N
@@ -176,7 +182,9 @@ volts        0.149 N·m × 1.69         = 0.25 V
 **`kArmKA = 0.055`** — the torque to speed the arm up. Rotating things resist
 acceleration by their **moment of inertia**, and for a uniform rod pivoting about
 one end that's `⅓ m L² = ⅓ × 3 × 0.508² = 0.258 kg·m²`. One arm rotation per second
-squared is `2π = 6.28 rad/s²`:
+squared is `2π = 6.28 rad/s²`.
+
+*Nothing to add — the arithmetic, not code:*
 
 ```
 torque       0.258 kg·m² × 6.28 rad/s² = 1.62 N·m at the pivot

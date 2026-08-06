@@ -23,6 +23,8 @@ A controller axis reports a `double` — a number with a decimal point — from 
 to `1.0`. Centered is `0.0` (ish — section 3 deals with the "ish"). WPILib hands
 it to you like this:
 
+*Nothing to add — this is just how you read one:*
+
 ```java
 double y = m_driverController.getLeftY();
 ```
@@ -38,7 +40,9 @@ on **every tick**. That's what a **supplier** is for.
 
 ## 2. Lambdas and suppliers
 
-You already used lambdas in Lesson 1 without us naming them:
+You already used lambdas in Lesson 1 without us naming them.
+
+*Nothing to add — this is code you already have:*
 
 ```java
 return startEnd(() -> m_driveMotor.set(fraction), () -> m_driveMotor.set(0));
@@ -59,6 +63,8 @@ into a method, and run it later. **Code, stored as data.** And like every value 
 Java, it needs a type. **`DoubleSupplier`** is the type for a lambda that
 takes no arguments and *returns a double*:
 
+*Nothing to add — this is just an example, not code for any file:*
+
 ```java
 DoubleSupplier stickReader = () -> m_driverController.getLeftY();
 double position = stickReader.getAsDouble();  // runs the stored code right now
@@ -76,7 +82,9 @@ Time to put it to work. Open `DriveModule.java` and add a second command factory
 directly below `driveAtSpeed` — it's the same kind of method, so they belong
 side by side. Look at its parameter: `speedSupplier` is a variable of type
 `DoubleSupplier`, which means whoever calls this method hands in *the code for
-reading the speed*, and the command runs that code every tick:
+reading the speed*, and the command runs that code every tick.
+
+**Add to `DriveModule`, below `driveAtSpeed`:**
 
 ```java
 public class DriveModule extends SubsystemBase {
@@ -94,7 +102,9 @@ public class DriveModule extends SubsystemBase {
 
 `DoubleSupplier` is a class from another package, so the file needs an import —
 up top with the others, below the `package` line (or click the red underline and
-let `Ctrl+.` add it):
+let `Ctrl+.` add it).
+
+**Add to `DriveModule`'s imports:**
 
 ```java
 import java.util.function.DoubleSupplier;
@@ -117,9 +127,10 @@ Real joysticks don't rest at exactly `0.0` — a centered stick might read `0.03
 Left alone, the motor would hum and creep forever. A **deadband** treats anything
 close to center as zero.
 
-Add the helper to `DriveModule`, right below `driveWithJoystick`. Make it
-`private`: this is internal cleanup plumbing, and nothing outside the class has
-any business calling it — so nothing outside gets to.
+Make the helper `private`: this is internal cleanup plumbing, and nothing
+outside the class has any business calling it — so nothing outside gets to.
+
+**Add to `DriveModule`, below `driveWithJoystick`:**
 
 ```java
 /** Returns 0 when |value| is within 'band', otherwise passes the value through. */
@@ -155,7 +166,9 @@ is happening. WPILib has a name for exactly that: a **default command** runs
 automatically whenever no other command is using the subsystem.
 
 Back in `RobotContainer.java`, inside `configureBindings()` with the rest of
-the wiring:
+the wiring.
+
+**Edit `configureBindings()` in `RobotContainer`:**
 
 ```java
   private void configureBindings() {

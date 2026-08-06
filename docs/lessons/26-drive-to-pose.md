@@ -394,6 +394,8 @@ import frc.robot.Constants.PathConstants;
 
 ## 7. Run it
 
+**Run it:**
+
 ```powershell
 ./gradlew simulateJava
 ```

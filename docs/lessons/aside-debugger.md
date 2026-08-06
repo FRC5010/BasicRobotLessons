@@ -91,7 +91,9 @@ is exactly why debugging in sim is almost always safer.
 
 Open [`SwerveModule.java`](../../src/main/java/frc/robot/subsystems/SwerveModule.java)
 (or `DriveModule.java` if you're still on Lesson 5). Find the line inside
-`steerToAngle` that computes `error`:
+`steerToAngle` that computes `error`.
+
+*Nothing to add — this is code you already have:*
 
 ```java
 double error = targetDegrees - measurement;
@@ -139,7 +141,9 @@ When something throws, Java prints a **stack trace**, and the first time you
 see one it reads like the program yelling at you in a foreign language. It
 isn't. It's a receipt — a list of every method call that was open at the
 moment of the crash. Here's a typical one from forgetting to construct a
-motor:
+motor.
+
+*Nothing to add — a sample stack trace, not code:*
 
 ```
 Unhandled exception: java.lang.NullPointerException: Cannot invoke

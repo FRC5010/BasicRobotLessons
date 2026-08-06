@@ -123,7 +123,7 @@ this shape any time a library wants an array whose contents change every
 tick. (Sizing it with `m_modules.length` instead of a literal `4` means one
 less place to fix if the module count ever changes.)
 
-**Add to `Drivetrain.periodic()`** — feed odometry the newest sample every tick:
+**Add to `Drivetrain.periodic()`, feeding odometry the newest sample every tick:**
 
 ```java
   @Override
@@ -182,7 +182,9 @@ import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 ```
 
-**Add to `Drivetrain`** — the field, and a constructor to publish the widget once:
+This is the field, and a constructor to publish the widget once.
+
+**Add to `Drivetrain`:**
 
 ```java
 private final Field2d m_field = new Field2d();
@@ -232,9 +234,10 @@ then on is anchored to that origin.
 
 Once odometry works, auto routines can talk in field coordinates.
 
-**Add to `Drivetrain`** a minimal `driveToPose` — drive toward a target pose
-using P control on the position error, with `applyChassisSpeeds` from Lesson 10
-doing the actuation:
+This minimal `driveToPose` drives toward a target pose using P control on the
+position error, with `applyChassisSpeeds` from Lesson 10 doing the actuation.
+
+**Add to `Drivetrain`:**
 
 ```java
 public Command driveToPose(Pose2d target) {

@@ -98,7 +98,7 @@ for n in $(seq 0 "$THROUGH"); do
   # Java: code/lesson-N/**.java mirrors the frc/robot package tree
   # (root classes at the top, then subsystems/, commands/). Last writer wins,
   # which is what makes "apply in order" equal "the state after Lesson N".
-  (cd "$d" && find . -name '*.java' -print0 | while IFS= read -r -d '' f; do
+  (cd "$d" && find . -name '*.java' -not -path './tests/*' -print0 | while IFS= read -r -d '' f; do
       mkdir -p "$JAVA_DIR/$(dirname "$f")"
       cp "$f" "$JAVA_DIR/$f"
   done)
@@ -106,6 +106,13 @@ for n in $(seq 0 "$THROUGH"); do
   if [ -d "$d/deploy" ]; then
     mkdir -p "$SANDBOX/src/main/deploy"
     cp -r "$d/deploy/." "$SANDBOX/src/main/deploy/"
+  fi
+  # Tests (Lesson 32 on) land in the test source set, not the main one. They are
+  # copied in the same pass so 'verify-lessons.sh 32 test' runs the lesson's own
+  # tests — which is the whole point of that lesson.
+  if [ -d "$d/tests" ]; then
+    mkdir -p "$SANDBOX/src/test/java/frc/robot"
+    cp -r "$d/tests/." "$SANDBOX/src/test/java/frc/robot/"
   fi
   echo "  applied lesson-$n"
 done

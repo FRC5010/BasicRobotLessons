@@ -75,8 +75,9 @@ who's allowed to read it.
 Phoenix 6 configuration works in two steps: build a **configuration object**
 that describes everything about the mechanism, then `apply` it to the motor
 once. You've done this already, back in Lesson 5, for the CANcoder itself —
-now the same pattern, applied to the motors. Add to `SwerveModule`'s
-imports:
+now the same pattern, applied to the motors.
+
+**Add to `SwerveModule`'s imports:**
 
 ```java
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
@@ -89,7 +90,9 @@ import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 `m_steerMotor.setPosition(...)`, seeding the rotor's counter from the
 CANcoder's absolute reading. The firmware is about to take over reading the
 CANcoder permanently, so seeding the rotor's own count is solving a problem
-that's about to stop existing:
+that's about to stop existing.
+
+**Delete from `SwerveModule`'s constructor:**
 
 ```java
     // DELETE — the config below reads the CANcoder continuously; seeding
@@ -98,10 +101,11 @@ that's about to stop existing:
         m_steerEncoder.getAbsolutePosition().getValueAsDouble() * SteerConstants.kSteerGearRatio);
 ```
 
-**In its place, configure both motors** — the CANcoder object, its CAN ID,
-and its magnet offset are all still right there as constructor parameters
-from Lesson 7; nothing about the constructor's *signature* changes today,
-only what happens inside it:
+The CANcoder object, its CAN ID, and its magnet offset are all still right
+there as constructor parameters from Lesson 7; nothing about the
+constructor's *signature* changes today, only what happens inside it.
+
+**Add to `SwerveModule`'s constructor, in priming's place:**
 
 ```java
     // Steering: read angle from the CANcoder, wrap like a circle, hold a P gain.
@@ -150,9 +154,11 @@ apart, not most of a revolution. That's the Lesson 5 wrap trick — the two
 `while` loops — implemented in silicon. (This part doesn't care which sensor
 feeds the loop — wrap-around is about the *mechanism*, not the sensor.)
 
-**`Slot0`** holds the gains the onboard loop will use, same as before. New
-constants in `Constants.java` (the old software-P `kP` in `SteerConstants` is
-retiring this lesson — different loop, different units, different name):
+**`Slot0`** holds the gains the onboard loop will use, same as before. The
+old software-P `kP` in `SteerConstants` is retiring this lesson — different
+loop, different units, different name.
+
+**Add these constants to `Constants.java`:**
 
 ```java
 public static class SteerConstants {
@@ -182,8 +188,9 @@ still takes the same five parameters it's taken since Lesson 7, and every
 ## 4. The question-methods go on a diet
 
 With the firmware doing mechanism math, three methods in `SwerveModule`
-simplify. This is the rare edit where *deleting* is the progress — update
-each to drop its gear-ratio division:
+simplify. This is the rare edit where *deleting* is the progress.
+
+**Update these three methods in `SwerveModule`, dropping the gear-ratio division:**
 
 ```java
 /** Current steering angle in degrees. */
@@ -217,21 +224,24 @@ question moved, and the method never noticed.
 
 ## 5. Command targets, not efforts
 
-Now the heart of it. First, two **control request** fields, up with the
-other fields. A control request is a little message object — "run position
-control toward X" — and Phoenix asks you to create it *once* and reuse it
-every tick rather than making a new one 50 times a second:
+Now the heart of it. A control request is a little message object — "run
+position control toward X" — and Phoenix asks you to create it *once* and
+reuse it every tick rather than making a new one 50 times a second.
+
+**Add two control request fields to `SwerveModule`, up with the others:**
 
 ```java
   private final PositionVoltage m_steerRequest = new PositionVoltage(0);
   private final VelocityVoltage m_driveRequest = new VelocityVoltage(0);
 ```
 
-Then rewrite `setDesiredState` — the method a command calls each tick. Out:
-the error math, the wrap loops, the clamp, the `set(...)` calls. In: two
-`setControl` calls that state goals. Since the firmware now speaks real
+`setDesiredState` — the method a command calls each tick — gets rewritten.
+Out: the error math, the wrap loops, the clamp, the `set(...)` calls. In:
+two `setControl` calls that state goals. Since the firmware now speaks real
 velocity, the drive target also stops being a fraction and stays in meters
-per second:
+per second.
+
+**Replace `setDesiredState` in `SwerveModule` with:**
 
 ```java
 /** One tick of control: hand the firmware its targets. */
@@ -302,24 +312,29 @@ the CANcoder *continuously*, so it needs its own honest sim feed every
 tick, or the simulated firmware spends the whole match chasing a signal
 that never moves.
 
-**Add its sim-state field next to the motors' — grab it in the constructor:**
+**Add to `SwerveModule`'s imports:**
 
 ```java
 import com.ctre.phoenix6.sim.CANcoderSimState;
 ```
 
+**Add its sim-state field next to the motors':**
+
 ```java
   private final CANcoderSimState m_steerEncoderSim;
 ```
+
+**Grab it in the constructor, alongside the other sim states:**
 
 ```java
   m_steerEncoderSim = m_steerEncoder.getSimState();
 ```
 
-**Then feed it inside `simulationPeriodic()`**, right after the steer
-motor's own rotor feed. Unlike that feed, there's no gear multiply here: the
-CANcoder sits directly on the wheel, so it reads mechanism rotations
-straight from the model:
+Unlike the rotor feed, there's no gear multiply here: the CANcoder sits
+directly on the wheel, so it reads mechanism rotations straight from the
+model.
+
+**Add to `simulationPeriodic()`, right after the steer motor's own rotor feed:**
 
 ```java
     m_steerEncoderSim.setRawPosition(m_steerModel.getAngularPositionRotations());

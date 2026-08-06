@@ -32,7 +32,9 @@ travels `π × 0.1016 ≈ 0.319 m` per turn.
 
 Both numbers describe *your hardware*, which makes them constants — so they
 go in `Constants.java`, in a new nested class alongside `SteerConstants` from
-Lesson 5:
+Lesson 5.
+
+**Add to `Constants.java`:**
 
 ```java
 public final class Constants {
@@ -52,11 +54,15 @@ public final class Constants {
 multiplication beats typing in a rounded decimal.)
 
 Now the conversion itself: a question-method in `DriveModule`, next to
-`getSteerAngleDegrees`. Add the import up top, then the method:
+`getSteerAngleDegrees`.
+
+**Add to `DriveModule`'s imports:**
 
 ```java
 import frc.robot.Constants.DriveConstants;
 ```
+
+**Add to `DriveModule`, with your other public methods:**
 
 ```java
 /** How far this module's wheel has driven, in meters, since the last reset. */
@@ -72,7 +78,9 @@ circumference = meters. This is why the constants get names instead of
 `6.75` sprinkled through the code — when you swap modules next season, you
 change *one line* in `Constants.java` and everything downstream is correct.
 
-Log it from `periodic()` with the others, and you've got a live odometer:
+Log it from `periodic()` with the others, and you've got a live odometer.
+
+**Add to `DriveModule`'s `periodic()`:**
 
 ```java
   @Override
@@ -92,7 +100,7 @@ a tiny inertia, no gearbox. Now that a real `6.75 : 1` reduction exists in the
 distance math, the sim has to learn about it too, or "one wheel turn" in sim
 won't mean the same physical motion as on the real robot.
 
-Update the `DCMotorSim` field in `DriveModule`:
+**Replace the `m_driveModel` field in `DriveModule`:**
 
 ```java
 private final DCMotorSim m_driveModel =
@@ -114,7 +122,9 @@ gearbox, `getAngularPositionRotations()` and `getAngularVelocityRPM()` report
 the **wheel** (output) motion, not the rotor. But the TalonFX's fake encoder
 still lives on the *rotor* — the sensor is physically on the motor, gearbox
 or not. So `simulationPeriodic()` has to convert wheel-side back to
-rotor-side by *multiplying* by the ratio:
+rotor-side by *multiplying* by the ratio.
+
+**Replace the last two lines of `simulationPeriodic()`'s drive-motor steps:**
 
 ```java
 m_driveSim.setRawRotorPosition(
@@ -145,7 +155,7 @@ thing that knows when the job is done, so the command has to decide **for
 itself** when to end. A command reports this through its **finish
 condition**, and the easy way to add one is the **`until`** decorator.
 
-Add to `DriveModule`, with the other command factories:
+**Add to `DriveModule`, with the other command factories:**
 
 ```java
 /** Drives forward 'meters' at 'speed', then stops. Finishes on its own. */
@@ -198,9 +208,10 @@ both bricks; snapping them together is the point.
 
 ## 5. Bind and test
 
-In `configureBindings()`, with the rest of the wiring. `povUp()` is a new
-button: the **POV** is the D-pad, and `povUp()` fires on its up direction —
-handy once the face buttons fill up:
+`povUp()` is a new button: the **POV** is the D-pad, and `povUp()` fires on
+its up direction — handy once the face buttons fill up.
+
+**Add to `configureBindings()` in `RobotContainer`, with the rest of the wiring:**
 
 ```java
   private void configureBindings() {
