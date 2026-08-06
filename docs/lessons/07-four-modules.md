@@ -125,9 +125,10 @@ command factories are literally gone — `run`, `startEnd`, and friends were
 `driveDistance` don't compile anymore. That's fine: commands belong to
 subsystems, and this class isn't one.
 
-**Delete the command factories and the module's old `periodic()`** (its
-logging moves up to the `Drivetrain` in the next section), **and add one plain
-method** that does a single tick of control, on demand:
+**Delete the command factories and the module's old `periodic()`** from
+`SwerveModule` (its logging moves up to the `Drivetrain` in the next section).
+
+**Add to `SwerveModule`, one plain method that does a single tick of control:**
 
 ```java
 /** One tick of control: steer toward 'angleDegrees', drive at 'speedFraction'. */
@@ -176,7 +177,7 @@ public static class SteerConstants {
 }
 ```
 
-**Edit `getSteerAngleDegrees()`** to divide by the ratio:
+**Edit `getSteerAngleDegrees()` in `SwerveModule` to divide by the ratio:**
 
 ```java
 /** Current steering angle in degrees. */
@@ -192,15 +193,16 @@ the steering motor's sensor from the CANcoder — but that line was written for
 the pretend 1:1 sensor. Now that 25 real rotor turns happen per wheel turn,
 seeding the motor's *rotor*-side counter means multiplying the CANcoder's
 wheel-side reading by the ratio, the same conversion `getSteerAngleDegrees()`
-just learned to undo:
+just learned to undo.
+
+**Edit the priming line in `SwerveModule`'s constructor:**
 
 ```java
 m_steerMotor.setPosition(
     m_steerEncoder.getAbsolutePosition().getValueAsDouble() * SteerConstants.kSteerGearRatio);
 ```
 
-**Edit the `m_steerModel` field** (from the top of the class) to model the
-gearbox:
+**Edit `SwerveModule`'s `m_steerModel` field to model the gearbox:**
 
 ```java
 private final DCMotorSim m_steerModel =
@@ -210,8 +212,9 @@ private final DCMotorSim m_steerModel =
         DCMotor.getKrakenX60(1));
 ```
 
-**Edit the steer half of `simulationPeriodic()`** to multiply back to
-rotor-side, exactly like the drive motor in Lesson 6:
+Multiply back to rotor-side, exactly like the drive motor in Lesson 6.
+
+**Edit the steer half of `simulationPeriodic()` in `SwerveModule`:**
 
 ```java
 m_steerSim.setRawRotorPosition(
@@ -248,8 +251,9 @@ around the Drivetrain. A refactor isn't done until every file that *touched*
 the old shape learns the new one, and the compiler's job is to keep that list
 for you.
 
-**Add the four corners to `DriveConstants`** (the class you started in
-Lesson 6):
+This is the `DriveConstants` class you started in Lesson 6.
+
+**Add the four corners to `DriveConstants`:**
 
 ```java
 public static class DriveConstants {
@@ -462,13 +466,17 @@ binding that used it — the A/B buttons from Lesson 1, X/Y steering from
 Lesson 5, and the D-pad `driveDistance` from Lesson 6. Those commands lived on a
 class that's now a helper; the Drivetrain replaces them all.
 
-**Add to `RobotContainer`, with the other fields** (`m_driverController` stays):
+`m_driverController` stays put.
+
+**Add to `RobotContainer`, with the other fields:**
 
 ```java
   private final Drivetrain m_drivetrain = new Drivetrain();
 ```
 
-**Add to `configureBindings()`** — left stick translates by default, bumpers spin:
+Left stick translates by default, bumpers spin.
+
+**Add to `configureBindings()` in `RobotContainer`:**
 
 ```java
   private void configureBindings() {
