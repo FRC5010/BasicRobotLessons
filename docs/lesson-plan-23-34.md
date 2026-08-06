@@ -31,7 +31,7 @@ must be able to disagree with the code**, and its Try-It safety convention.
 | 30 | One battery, everything on it | L21 (current sensing) | none | **Done** — [lesson](lessons/30-current-limits.md), [code](../code/lesson-30/) |
 | 31 | The robot tells you what's wrong | L13, L15 | none | **Done** — [lesson](lessons/31-alerts.md), [code](../code/lesson-31/) |
 | 32 | Tests that catch what a plot won't | all mechanisms | none | **Done** — [lesson](lessons/32-testing.md), [code](../code/lesson-32/) |
-| 33 | Reading a match log | L3, L13 | none | Outline |
+| 33 | Reading a match log | L3, L13 | none | **Done** — [lesson](lessons/33-reading-a-log.md), [code](../code/lesson-33/) |
 | 34 | Tuning your robot when build team hands it over | L18, L20, L29 | none | Outline |
 | — | `aside-commands-v3.md` | not in the linear build | none | Outline |
 
@@ -83,20 +83,22 @@ class ID** — it is the class index in the model you trained, so the only
 requirement is that the constant and the model agree. Getting it wrong yields no
 error and no detections, which is called out explicitly.
 
-### 4. Lesson 33 needs a broken log to investigate — UNRESOLVED
+### 4. Lesson 33 needed a broken log to investigate — RESOLVED
 
-The lesson is a worked forensic investigation, which needs a failure to
-investigate. Two options:
-
-- **Commit a `.wpilog` fixture** to the repo. Repeatable, everyone sees the same
-  data, and the lesson can quote exact timestamps — but it's a binary blob in a
-  teaching repo and it goes stale when log keys change.
-- **Have the student produce one** by breaking a gain and recording a run. More
-  in keeping with the course's "go see it happen" habit, and self-updating — but
-  the lesson can't reference specific numbers.
-
-Leaning toward the second, with the lesson written so the *method* is the content
-and the numbers are whatever the student got.
+Went with a third option, splitting the difference: a **contrived scenario the
+student generates themselves**. Rather than a fixture (binary blob, goes stale)
+or an open-ended "break something" (no numbers to write against), the lesson
+specifies one exact, deliberate bug — `ElevatorConstants.kTolerance` tightened
+by a decimal-place typo from `Centimeters.of(2)` to `Centimeters.of(0.002)` —
+that the student introduces in their own project and records themselves. That
+gets the lesson a specific, quotable failure signature (verified in the sandbox:
+the elevator's real Motion Magic settle error is a stable ~0.12 mm floor, so a
+0.02 mm tolerance never trips `atGoal()`, comfortably and repeatably) while
+keeping every number the student's own machine actually produces, not a
+committed fixture. A second, faster example (a BLine `lib_key` case mismatch —
+`"intake"` vs `"Intake"`) is narrated rather than hands-on, reusing L17's
+already-established "logs a warning, keeps driving" behavior instead of
+re-deriving it.
 
 ### 5. Lesson 34 can't be verified the usual way — UNRESOLVED
 
@@ -901,10 +903,41 @@ something.
 - Add one output that would have made the investigation trivial.
 - Replay a log through fixed code and confirm the fix.
 
-**Research flags**
-- Open decision 4: fixture log vs. student-generated. Settle before drafting.
-- Check what AdvantageScope 2026 calls the relevant tabs so the instructions are
-  accurate.
+**Research flags — RESOLVED**
+- Open decision 4 resolved as a contrived, student-generated scenario — see
+  decision 4 above. `Line Graph` and `Odometry` are the tab names actually used
+  (matching what Lessons 3, 7, and 11 already established); no new AdvantageScope
+  vocabulary was needed.
+
+**Shipped**
+- The main worked example is `ElevatorConstants.kTolerance` tightened by a
+  decimal-place typo (`Centimeters.of(2)` → `Centimeters.of(0.002)`), verified in
+  the sandbox with a throwaway JUnit scenario: commanding `goToHeight(kScoreMid)`
+  settles to a stable **~0.12 mm** residual (measured `1.1594621136490346E-4` m,
+  flat across five additional seconds — a real floor, not still converging), so a
+  0.02 mm tolerance never trips `atGoal()`. The fix, `Centimeters.of(0.1)` (1 mm),
+  passes with a comfortable ~8.6× margin — also verified. Full timeline captured:
+  a clean Motion Magic climb finishing around t=1.5s, holding flat at the error
+  floor from there on.
+- The bug is invisible in teleop specifically because `goToHeight` already ends
+  in `.until(this::atGoal)` — a button binding just re-triggers a fresh command on
+  every press, so a command that never finishes never gets noticed. It only bites
+  an auto's `.andThen(...)` sequencing, which is the "worked on the bench, failed
+  on the field" story the lesson is built on.
+- `Elevator/HeightErrorMeters` (signed) is the one permanent code change kept
+  from the lesson — added to `code/lesson-33/subsystems/Elevator.java` — closing
+  the gap where the log had the decision (`AtGoal`) and the raw measurements
+  (`HeightMeters`, `GoalMeters`) but not the number that explains the decision.
+- The second, faster example (a BLine `lib_key` case mismatch, `"intake"` vs.
+  `"Intake"`) is narrated rather than hands-on and reuses L17's own
+  already-verified "logs a warning, keeps driving" behavior rather than
+  re-deriving it — deliberately a different *kind* of bug (a GUI-authored path
+  file, not a Java constant) so the lesson's method reads as general-purpose
+  rather than tolerance-specific.
+- `code/lesson-33/` ships `Constants.java` (full file, per the "last writer wins"
+  snapshot convention — only `kTolerance`'s value and comment changed) and
+  `subsystems/Elevator.java` (the new log line). Verified with
+  `./tools/verify-lessons.sh 33`.
 
 ---
 
