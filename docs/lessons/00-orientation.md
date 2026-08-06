@@ -21,7 +21,9 @@ If you just opened this project cold, the folder tree probably looks like a wall
 of unfamiliar names. That's totally normal — half of them don't matter yet, and
 the other half will start making sense by the end of this lesson. Open
 `src/main/java/frc/robot/` and you'll find the four files that do the real
-work:
+work.
+
+*Nothing to add — just look at what's already there:*
 
 ```
 frc/robot/
@@ -40,7 +42,9 @@ matters, and the details will come as we go.
 
 ### Classes and packages
 
-Peek at any `.java` file and the first real line looks like this:
+Peek at any `.java` file and the first real line looks like this.
+
+*Nothing to add — this is code you already have:*
 
 ```java
 package frc.robot;
@@ -65,7 +69,9 @@ and command you write from Lesson 1 on will get its own class.
 
 Inside a class, the code that actually runs lives in **methods** — named
 blocks of code that *do* something. Open `Robot.java` and you'll see several
-already:
+already.
+
+*Nothing to add — this is code you already have:*
 
 ```java
 @Override
@@ -91,7 +97,9 @@ own schedule. Which brings us to…
 
 ## 2. The heartbeat
 
-Still in `Robot.java`, find `robotPeriodic()`:
+Still in `Robot.java`, find `robotPeriodic()`.
+
+*Nothing to add — this is code you already have:*
 
 ```java
 @Override
@@ -123,6 +131,8 @@ Alright — time to actually see it. Well, not move, but boot. Either:
    WPILib Command Pallet menu or... 
 2. From the project folder in PowerShell:
 
+**Run:**
+
 ```powershell
 ./gradlew simulateJava
 ```
@@ -144,8 +154,9 @@ Close the window (or hit `Ctrl+C` in the terminal) when you're done.
 
 ## 4. Your first change: say hello
 
-Let's prove that when you edit code, the robot notices. Back in `Robot.java`,
-find `teleopInit()` and drop this line into it:
+Let's prove that when you edit code, the robot notices.
+
+**Back in `Robot.java`, find `teleopInit()` and drop this line into it:**
 
 ```java
 @Override
