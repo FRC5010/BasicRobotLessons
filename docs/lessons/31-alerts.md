@@ -294,6 +294,8 @@ that's technically correct.
 
 ## 7. Run it
 
+**Run it:**
+
 ```powershell
 ./gradlew simulateJava
 ```

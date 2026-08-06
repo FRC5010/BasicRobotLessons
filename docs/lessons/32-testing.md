@@ -65,7 +65,7 @@ so a test for something in `frc.robot.subsystems` still lives in a file whose
 package line says `package frc.robot;` or `package frc.robot.subsystems;` — the
 same rule from Lesson 0 about packages matching folders, in a second tree.
 
-Then:
+**Then run:**
 
 ```powershell
 ./gradlew test
@@ -386,7 +386,7 @@ The ones that aren't worth it:
 > real breaks are worth more than thirty that fail whenever anyone touches
 > anything.
 
-Run them:
+**Run them:**
 
 ```powershell
 ./gradlew test
