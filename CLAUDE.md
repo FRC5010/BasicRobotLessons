@@ -127,6 +127,26 @@ stalled main loop drops samples rather than exhausting memory, `setDaemon(true)`
 and `volatile` with its narrow guarantee. The `Drivetrain` constructor exists only
 to `start()` the thread after every field initialiser has registered its signals.
 
+[aside-git-branching.md](docs/lessons/aside-git-branching.md) extends
+[aside-setup.md](docs/lessons/aside-setup.md) (which teaches install / `init` /
+`add` / `commit` / `push` / `pull` and has **no branching at all**) with
+one-branch-per-lesson workflow: `git switch -c`, fast-forward vs. merge commit,
+merge conflicts, pull requests, and `rebase`. **Every command's output in it was
+captured from real scratch repos, not written from memory** — including the
+fast-forward text, the `UU` short status, both sets of conflict markers, the
+diamond `--graph` output, and the rebase hint block. Two teaching points carry
+the page and must survive edits: **most conflicts in this course are two
+*additions* landing near each other, so the resolution is "keep both", not "pick
+a side"** (aside-setup's §7 says "decide which version wins", which is true of
+its `git pull` case but is the misconception this aside exists to correct); and
+**during a rebase conflict `HEAD` is the *other* branch**, because rebase has
+already moved you onto the new base and is replaying your commit as the incoming
+change — the aside says to read the labels, not the positions. The rule stated
+for `rebase` is *rebase to update your branch, merge to deliver it*, plus the
+never-rebase-shared-history rule justified by the commit hash visibly changing
+(`5adaa87` → `c7a003a`). It ships **no `code/` snapshot** and needs no
+`verify-lessons.sh` entry, same as aside-setup and aside-debugger.
+
 [aside-commands-v3.md](docs/lessons/aside-commands-v3.md) is the one page in the
 course whose code **deliberately does not compile**, and it is the reason the
 lead-in convention exists in the form it does: **every one of its fenced blocks

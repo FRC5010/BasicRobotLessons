@@ -93,6 +93,11 @@ let you see everything working on your laptop. Device IDs in the examples
   installing WPILib, Git, and the GitHub CLI; creating the project from the
   template; the daily `add`/`commit`/`push` loop. **Start here before Lesson 0
   if you're new to any of it.**
+- [Branches: one per lesson, merged into a `main` that always works](docs/lessons/aside-git-branching.md) —
+  branching, merging, and the day two lessons touch the same file. Reads on from
+  the setup aside, so you can start using it from Lesson 1. Covers merge
+  conflicts (and why "keep both" is usually the answer), pull requests, and when
+  `rebase` beats `merge`.
 - [Debugging in VSCode and reading stack traces](docs/lessons/aside-debugger.md) —
   breakpoints, stepping, watches, conditional breakpoints, and how to read the
   error trail Java prints when something crashes. Useful from Lesson 1 onward;
