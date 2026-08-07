@@ -13,7 +13,7 @@ There is Java here, though, in two forms under `code/`:
 
 ## Verifying lesson code
 
-**`./tools/verify-lessons.sh [N] [test]`** compile-checks the lessons for real. It copies `ActualLessons` to a scratch sandbox (never touching the repo copy), fetches pinned vendordeps, rolls `code/lesson-0` … `code/lesson-N` forward in order, replays the deletions the lessons instruct, appends Lesson 13's AdvantageKit `build.gradle` blocks, and runs Gradle. First run takes a few minutes to fill the Gradle cache; later runs are seconds.
+**`./tools/verify-lessons.sh [N] [test] [aside-<slug>]`** compile-checks the lessons for real. It copies `ActualLessons` to a scratch sandbox (never touching the repo copy), fetches pinned vendordeps, rolls `code/lesson-0` … `code/lesson-N` forward in order, replays the deletions the lessons instruct, appends Lesson 13's AdvantageKit `build.gradle` blocks, and runs Gradle. First run takes a few minutes to fill the Gradle cache; later runs are seconds.
 
 **Use it instead of reasoning about whether a snippet compiles.** Current state: lessons 0–34 all compile, at every intermediate stopping point, with zero warnings. A regression is therefore a real result, not noise. Run the specific lesson you touched plus the highest one.
 
@@ -88,6 +88,44 @@ voice and template as numbered lessons but:
 
 When adding a new aside, use the `aside-<slug>.md` prefix and add it to the
 README's Asides list.
+
+**An aside may ship code**, in `code/aside-<slug>/`, applied *on top of* a named
+lesson rather than rolled through in order:
+`./tools/verify-lessons.sh 16 aside-odometry-thread`. The base lesson is
+explicit and not guessed, because an aside's snapshot is written against one
+lesson's version of the files it touches — applying it over a later lesson would
+revert everything that lesson changed in those same files. For the same reason an
+aside must **not** ship `Constants.java` or any other file the linear build keeps
+editing; put constants the aside needs in the aside's own new class.
+
+[aside-odometry-thread.md](docs/lessons/aside-odometry-thread.md) converts the
+drivetrain to the full AdvantageKit shape: an `OdometryThread` sampling drive,
+steer and gyro signals at 250 Hz via `BaseStatusSignal.waitForAll`, timestamped
+samples in the `@AutoLog` inputs, and `estimator.updateWithTime` replacing
+`estimator.update`. **Its headline finding is negative and measured, and the page
+leads with it**: 250 Hz odometry is *not* meaningfully more accurate than 50 Hz.
+WPILib integrates a constant-curvature arc exactly, so on smooth motion the error
+difference is **0.000000 m at both rates**; only changing curvature breaks the arc
+assumption, and an aggressive slalom (4 m/s, ±3 rad/s) gives **1.7 mm at 50 Hz vs
+0.1 mm at 250 Hz** — 26.7× better, of a number already dwarfed by the centimetres
+of wheel slip Lesson 16 made visible. The real reasons given are coherent
+snapshots (`waitForAll` refreshes every signal together, instead of five reads
+smeared across a loop), finer timestamp resolution for L14's vision rewind, and
+being able to read the AdvantageKit template. **Verified end to end in sim**:
+Phoenix's simulated firmware really does publish at the requested rate, and the
+real `Drivetrain` collects **5.2 samples per 20 ms tick** (max 6, zero empty
+ticks) — the wobble being exactly why samples carry timestamps. The page is
+honest that sim physics still only advances at 50 Hz, so the extra samples
+faithfully describe motion computed at 50 Hz. **The change is additive**: a
+`samples == 0` branch falls back to Lesson 14's single `estimator.update`, so
+Lessons 17–34 neither need it nor break with it, and the entire upgrade lands
+inside `Drivetrain.updatePoseEstimate` — the payoff of L14's `PoseProvider`
+interface. Threading content is the real teaching load: `ReentrantLock` with
+`try`/`finally`, holding one lock across the gyro *and* all four modules so the
+snapshot can't be stitched from two instants, bounded `ArrayBlockingQueue` so a
+stalled main loop drops samples rather than exhausting memory, `setDaemon(true)`,
+and `volatile` with its narrow guarantee. The `Drivetrain` constructor exists only
+to `start()` the thread after every field initialiser has registered its signals.
 
 [aside-commands-v3.md](docs/lessons/aside-commands-v3.md) is the one page in the
 course whose code **deliberately does not compile**, and it is the reason the

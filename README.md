@@ -97,6 +97,11 @@ let you see everything working on your laptop. Device IDs in the examples
   breakpoints, stepping, watches, conditional breakpoints, and how to read the
   error trail Java prints when something crashes. Useful from Lesson 1 onward;
   the worked example uses Lesson 5's P control.
+- [A second thread: sampling odometry faster than the robot loop](docs/lessons/aside-odometry-thread.md) —
+  the AdvantageKit odometry thread, and the Java it needs: threads, locks, and
+  `waitForAll`. Readable any time after Lesson 16, and genuinely optional —
+  Lessons 17–34 neither need it nor break with it. Includes the measurement of
+  what 250 Hz odometry actually buys, which is less than you'd think.
 - [Commands V3: what changes when a command becomes a normal method](docs/lessons/aside-commands-v3.md) —
   the command framework WPILib is designing to replace the one this course
   teaches, and what your own commands would look like written against it.

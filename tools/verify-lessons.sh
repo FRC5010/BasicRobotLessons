@@ -15,6 +15,15 @@
 #   ./tools/verify-lessons.sh 13       # stop after Lesson 13
 #   ./tools/verify-lessons.sh 17 test  # also run any src/test/java you dropped in
 #
+# Asides are optional side-quests, not part of the linear build, so they are
+# applied ON TOP of a named lesson rather than rolled through in order:
+#
+#   ./tools/verify-lessons.sh 16 aside-odometry-thread
+#
+# An aside's snapshot is written against the lesson it names. Applying it on
+# top of a LATER lesson would revert everything that lesson changed in the same
+# files, which is why the base lesson is explicit rather than guessed.
+#
 # The sandbox is a scratch copy — code/ActualLessons is never modified. Keep it
 # that way: it is the students' starting point, and it is expected to stay at
 # pristine template state.
@@ -32,7 +41,16 @@ GRADLE_TASK="compileJava"
 # Highest lesson-N directory present, unless the caller names one.
 LATEST="$(ls -d "$REPO"/code/lesson-* 2>/dev/null | sed 's/.*lesson-//' | sort -n | tail -1)"
 THROUGH="${1:-$LATEST}"
-[ "${2:-}" = "test" ] && GRADLE_TASK="compileJava test"
+ASIDE=""
+for arg in "${@:2}"; do
+  case "$arg" in
+    test)     GRADLE_TASK="compileJava test" ;;
+    aside-*)  ASIDE="$arg" ;;
+    *) echo "unknown argument: $arg" >&2; exit 1 ;;
+  esac
+done
+[ -n "$ASIDE" ] && [ ! -d "$REPO/code/$ASIDE" ] && {
+  echo "no such aside: code/$ASIDE" >&2; exit 1; }
 
 # --- vendordeps -------------------------------------------------------------
 # Pinned to WPILib's vendordep marketplace, one immutable file per version.
@@ -117,6 +135,21 @@ for n in $(seq 0 "$THROUGH"); do
   echo "  applied lesson-$n"
 done
 
+if [ -n "$ASIDE" ]; then
+  say "Applying $ASIDE on top of lesson-$THROUGH"
+  d="$REPO/code/$ASIDE"
+  (cd "$d" && find . -name '*.java' -not -path './tests/*' -print0 | while IFS= read -r -d '' f; do
+      mkdir -p "$JAVA_DIR/$(dirname "$f")"
+      cp "$f" "$JAVA_DIR/$f"
+  done)
+  [ -d "$d/deploy" ] && { mkdir -p "$SANDBOX/src/main/deploy"; cp -r "$d/deploy/." "$SANDBOX/src/main/deploy/"; }
+  if [ -d "$d/tests" ]; then
+    mkdir -p "$SANDBOX/src/test/java/frc/robot"
+    cp -r "$d/tests/." "$SANDBOX/src/test/java/frc/robot/"
+  fi
+  echo "  applied $ASIDE"
+fi
+
 say "Applying the deletions the lessons instruct"
 # Snapshots can only add or replace files, so removals have to be replayed here.
 del() { [ "$THROUGH" -ge "$1" ] && shift && for f; do rm -f "$JAVA_DIR/$f"; done || true; }
@@ -154,5 +187,9 @@ cd "$SANDBOX"
 # shellcheck disable=SC2086
 ./gradlew $GRADLE_TASK --console=plain
 
-say "OK — lessons 0..$THROUGH compile"
+if [ -n "$ASIDE" ]; then
+  say "OK — lessons 0..$THROUGH plus $ASIDE compile"
+else
+  say "OK — lessons 0..$THROUGH compile"
+fi
 echo "Sandbox kept at $SANDBOX (drop JUnit tests in src/test/java and re-run with 'test')."
