@@ -453,3 +453,9 @@ you've already had once — because those have proved they can happen.
 That's the last thing standing between "it worked on Tuesday" and knowing. Go and
 write one test for something you're quietly unsure about; that unease is usually
 right.
+
+Tests catch what you already thought to check. Lesson 33 is for the failure
+nobody thought to write a test for — the one you only find out about from a
+log, after the fact.
+
+Next: [Lesson 33 — Reading a match log](33-reading-a-log.md).

@@ -31,9 +31,9 @@ must be able to disagree with the code**, and its Try-It safety convention.
 | 30 | One battery, everything on it | L21 (current sensing) | none | **Done** — [lesson](lessons/30-current-limits.md), [code](../code/lesson-30/) |
 | 31 | The robot tells you what's wrong | L13, L15 | none | **Done** — [lesson](lessons/31-alerts.md), [code](../code/lesson-31/) |
 | 32 | Tests that catch what a plot won't | all mechanisms | none | **Done** — [lesson](lessons/32-testing.md), [code](../code/lesson-32/) |
-| 33 | Reading a match log | L3, L13 | none | Outline |
-| 34 | Tuning your robot when build team hands it over | L18, L20, L29 | none | Outline |
-| — | `aside-commands-v3.md` | not in the linear build | none | Outline |
+| 33 | Reading a match log | L3, L13 | none | **Done** — [lesson](lessons/33-reading-a-log.md), [code](../code/lesson-33/) |
+| 34 | Tuning your robot when build team hands it over | L18, L20, L29 | none | **Done** — [lesson](lessons/34-tuning-with-sysid.md), [code](../code/lesson-34/) |
+| — | `aside-commands-v3.md` | not in the linear build | none | **Done** — [aside](lessons/aside-commands-v3.md), no code snapshot (nothing compiles) |
 
 The arc runs in four groups: **23–24** make the robot's state visible and then
 explicit; **25–28** make autonomous react to what it sees, in game-cycle order
@@ -83,28 +83,58 @@ class ID** — it is the class index in the model you trained, so the only
 requirement is that the constant and the model agree. Getting it wrong yields no
 error and no detections, which is called out explicitly.
 
-### 4. Lesson 33 needs a broken log to investigate — UNRESOLVED
+### 4. Lesson 33 needed a broken log to investigate — RESOLVED
 
-The lesson is a worked forensic investigation, which needs a failure to
-investigate. Two options:
+Went with a third option, splitting the difference: a **contrived scenario the
+student generates themselves**. Rather than a fixture (binary blob, goes stale)
+or an open-ended "break something" (no numbers to write against), the lesson
+specifies one exact, deliberate bug — `ElevatorConstants.kTolerance` tightened
+by a decimal-place typo from `Centimeters.of(2)` to `Centimeters.of(0.002)` —
+that the student introduces in their own project and records themselves. That
+gets the lesson a specific, quotable failure signature (verified in the sandbox:
+the elevator's real Motion Magic settle error is a stable ~0.12 mm floor, so a
+0.02 mm tolerance never trips `atGoal()`, comfortably and repeatably) while
+keeping every number the student's own machine actually produces, not a
+committed fixture. A second, faster example (a BLine `lib_key` case mismatch —
+`"intake"` vs `"Intake"`) is narrated rather than hands-on, reusing L17's
+already-established "logs a warning, keeps driving" behavior instead of
+re-deriving it.
 
-- **Commit a `.wpilog` fixture** to the repo. Repeatable, everyone sees the same
-  data, and the lesson can quote exact timestamps — but it's a binary blob in a
-  teaching repo and it goes stale when log keys change.
-- **Have the student produce one** by breaking a gain and recording a run. More
-  in keeping with the course's "go see it happen" habit, and self-updating — but
-  the lesson can't reference specific numbers.
+### 5. Lesson 34 can't be verified the usual way — RESOLVED
 
-Leaning toward the second, with the lesson written so the *method* is the content
-and the numbers are whatever the student got.
+Split cleanly in the end. **Section 2 (safe first power-on) is pure procedure**,
+explicitly labeled as such in its own opening line ("This section has no code in
+it"), grounded in infrastructure the course already built (Lesson 30's current
+limits, Lesson 20's soft limits) rather than invented from scratch. **Everything
+else is code, verified for real in the sandbox** — including the lesson's central
+claim, which turned out richer than the outline expected. Characterizing the
+flywheel with `SysIdRoutine.Config()`'s defaults (1 V/s ramp) measures **`kS`
+around 0.89 V** in this course's own simulated run — nearly 6× the shipped 0.15 V
+— because the default ramp is too fast for a small, direct-drive flywheel to stay
+quasi-static. Slowing the ramp to 0.25 V/s (`Config(Volts.of(0.25).per(Second),
+Volts.of(7), Seconds.of(30))`) drops measured `kS` to **≈0.23 V**; `kV` recovers
+accurately either way (≈0.12, matching the model). This is real, general SysId
+methodology (a too-fast ramp corrupts `kS` on real hardware too, not just in
+sim) and became the lesson's section 6, answering the outline's own "what to do
+when they disagree a lot" beat with a verified, non-invented answer. Section 7
+is honest about the sim-specific limit: `FlywheelSim` has never modeled
+friction (Lesson 29 proved this by hand), so even the corrected 0.23 V isn't
+"the friction sim found" — it's the residual of a ramp-rate artifact on a
+mechanism whose true simulated `kS` is 0. That's stated explicitly, not implied.
+Also verified via direct bytecode inspection of the actual 2026.2.1 jars
+(`javap`, not guessed): `SysIdRoutine.Config()`'s defaults are 1 V/s ramp, 7 V
+step, 10 s timeout; and `SysIdRoutineLog`'s data lands in **WPILib's own
+`DataLogManager`**, not through AdvantageKit's `Logger` — a second `.wpilog`
+file, auto-started on first use, landing in the same `logs/` folder in sim.
 
-### 5. Lesson 34 can't be verified the usual way — UNRESOLVED
+### 6. Arc D ordering — soft, resolved as written
 
-Its subject is real hardware. `SysIdRoutine` does run in simulation, so the
-*mechanics* (building a routine, binding the four test commands, producing a log)
-are verifiable; the *procedure* (what order to check things, when to stop, how to
-know a number is wrong) is not. Decide how much of the lesson is code and how much
-is checklist, and be honest in the text about which is which.
+30–33 have no dependencies on each other; 34 wants 29 to exist so there's a
+flywheel to characterise, which the order already satisfies. The flywheel was
+also the right mechanism for a second reason found while writing 34: it has no
+position to get wrong (no floor, no hard stop), making it the safer first
+mechanism to hand raw open-loop voltage to — worth stating in the lesson, not
+just true by accident.
 
 ### 6. Arc D ordering — soft
 
@@ -901,10 +931,41 @@ something.
 - Add one output that would have made the investigation trivial.
 - Replay a log through fixed code and confirm the fix.
 
-**Research flags**
-- Open decision 4: fixture log vs. student-generated. Settle before drafting.
-- Check what AdvantageScope 2026 calls the relevant tabs so the instructions are
-  accurate.
+**Research flags — RESOLVED**
+- Open decision 4 resolved as a contrived, student-generated scenario — see
+  decision 4 above. `Line Graph` and `Odometry` are the tab names actually used
+  (matching what Lessons 3, 7, and 11 already established); no new AdvantageScope
+  vocabulary was needed.
+
+**Shipped**
+- The main worked example is `ElevatorConstants.kTolerance` tightened by a
+  decimal-place typo (`Centimeters.of(2)` → `Centimeters.of(0.002)`), verified in
+  the sandbox with a throwaway JUnit scenario: commanding `goToHeight(kScoreMid)`
+  settles to a stable **~0.12 mm** residual (measured `1.1594621136490346E-4` m,
+  flat across five additional seconds — a real floor, not still converging), so a
+  0.02 mm tolerance never trips `atGoal()`. The fix, `Centimeters.of(0.1)` (1 mm),
+  passes with a comfortable ~8.6× margin — also verified. Full timeline captured:
+  a clean Motion Magic climb finishing around t=1.5s, holding flat at the error
+  floor from there on.
+- The bug is invisible in teleop specifically because `goToHeight` already ends
+  in `.until(this::atGoal)` — a button binding just re-triggers a fresh command on
+  every press, so a command that never finishes never gets noticed. It only bites
+  an auto's `.andThen(...)` sequencing, which is the "worked on the bench, failed
+  on the field" story the lesson is built on.
+- `Elevator/HeightErrorMeters` (signed) is the one permanent code change kept
+  from the lesson — added to `code/lesson-33/subsystems/Elevator.java` — closing
+  the gap where the log had the decision (`AtGoal`) and the raw measurements
+  (`HeightMeters`, `GoalMeters`) but not the number that explains the decision.
+- The second, faster example (a BLine `lib_key` case mismatch, `"intake"` vs.
+  `"Intake"`) is narrated rather than hands-on and reuses L17's own
+  already-verified "logs a warning, keeps driving" behavior rather than
+  re-deriving it — deliberately a different *kind* of bug (a GUI-authored path
+  file, not a Java constant) so the lesson's method reads as general-purpose
+  rather than tolerance-specific.
+- `code/lesson-33/` ships `Constants.java` (full file, per the "last writer wins"
+  snapshot convention — only `kTolerance`'s value and comment changed) and
+  `subsystems/Elevator.java` (the new log line). Verified with
+  `./tools/verify-lessons.sh 33`.
 
 ---
 
@@ -942,13 +1003,72 @@ finds out how close they were.
 - Characterise a second mechanism and predict the result first.
 - Write the team's power-on checklist.
 
-**Research flags**
-- Open decision 5: how much is code and how much is procedure.
-- SysId's analysis step is a separate desktop tool — confirm the 2026 workflow
-  before writing instructions.
-- The lesson must not imply SysId replaces understanding the model. It measures
-  the same terms the course already taught; the point is agreement, not
-  substitution.
+**Research flags — RESOLVED**
+- Open decision 5 resolved — see decision 5 above.
+- The analysis tool's exact 2026 menu layout could not be confirmed (no network
+  access to frc-docs in this session); the lesson describes the workflow at the
+  conceptual level (log-file mode, point at the file, select the mechanism,
+  analyze) and explicitly tells the reader to trust the tool's own help over the
+  lesson's wording if the two disagree, rather than asserting unverified menu
+  paths. Everything about the API itself (`SysIdRoutine`/`Config`/`Mechanism`/
+  `Direction`/`SysIdRoutineLog.MotorLog`'s exact signatures and defaults) *was*
+  confirmed, by decompiling the actual 2026.2.1 jars with `javap` rather than
+  guessing — see decision 5's bytecode-verified defaults.
+- The "point is agreement, not substitution" concern shows up explicitly in the
+  lesson's closing paragraph and in section 7's framing: `kV`/`kA` agreeing is
+  presented as the model being confirmed, not superseded, and `kS` disagreeing
+  is presented as a real, informative disagreement rather than a tool result
+  that overrides the model.
+
+**Shipped**
+- Mechanism: the flywheel (L29), chosen partly for a reason surfaced while
+  writing this lesson — see decision 6.
+- Code: `FlywheelIO.setVoltage` (mirrors `ElevatorIO.setVoltage` from L21's
+  homing, same "open loop because closed loop is what you don't trust yet"
+  reasoning), `FlywheelIOTalonFX`'s `VoltageOut` implementation (`FlywheelIOSim`
+  needs no changes — inherits it), `Flywheel.m_sysId` + `sysIdQuasistatic`/
+  `sysIdDynamic`, and four `RobotContainer` bindings using `Trigger.and(...)`
+  (L22) as two-button combos (`back+y`/`back+a`/`start+y`/`start+a`) so a
+  characterization command can't be tripped by a single accidental button press.
+- **§7 ("A mechanism that can run out of room") was added after review**, because
+  Try It #1 had been sending students to characterize the elevator or arm with
+  no guidance, and those are exactly the mechanisms that can hit a hard stop.
+  Three findings, all measured on an elevator-shaped rig:
+  - **Phoenix soft limits DO stop an open-loop `VoltageOut`** — driven at 6 V
+    for 4 s against a 1.5 m limit: **2.503 m** without them, **1.505 m** with
+    them and 0.000 applied volts. So L20's arm soft limits protect a SysId run,
+    while L18's `clampToTravel` does nothing (it clamps a *goal*, and open loop
+    never sets one). `code/lesson-34/` now also ships `ElevatorIOTalonFX.java`
+    with soft limits added, since the course had only ever put them on the arm.
+  - **The slower ramp from §6 makes travel WORSE, not better** — this inverted
+    the reviewer's hypothesis, which is why it was worth measuring. Distance to
+    reach 6 V: **1.568 m at 1.0 V/s, 3.158 m at 0.5 V/s, 6.469 m at 0.25 V/s**
+    — halve the rate, double the distance, cleanly (2.01× then 2.05×). §6's own
+    recommended 0.25 V/s would need 6.469 m of an elevator that has 1.5 m. The
+    lesson presents this as a genuine tension with no clever resolution: give up
+    voltage range, not ramp rate.
+  - **Lowering the dynamic step voltage is right** (the reviewer's other
+    instinct, confirmed): travel in 1.5 s is **1.010 m at 7 V, 0.561 m at 4 V,
+    0.268 m at 2 V**. The default 7 V step eats two-thirds of the elevator's
+    entire travel in a second and a half, against a 10 s default timeout.
+- **A correction found while verifying, kept as a callout:** the soft limits
+  cannot be demonstrated in this course's own simulation. `ElevatorIOSim` builds
+  its `ElevatorSim` with `kMinHeight`/`kMaxHeight`, making the *physics model* a
+  wall at 1.5 m — running the real sim elevator open loop into the top stopped
+  it at exactly 1.500 m while the encoder had only reached **1.150**, well under
+  the 1.5 threshold, so the limit provably never fired. The model stopped it,
+  and adding soft limits changes nothing in sim. This is stated in the lesson
+  as an early arrival of §8's theme: the simulation is not where you find out
+  whether your guards work. The isolated rig above had to widen the model's own
+  bounds to ±20 m to observe the firmware limit at all.
+- The "home it first" callout is **derived, not freshly measured**, for the same
+  reason — sim can't show it either. It follows from L21's already-measured fact
+  that a relative encoder reads zero wherever the carriage sits: an elevator
+  booted 35 cm up reads 35 cm low, so a "1.5 m" threshold is really 1.85 m of
+  carriage. Stated as arithmetic the reader can follow rather than a new claim.
+- `code/lesson-34/` ships `FlywheelIO.java`, `FlywheelIOTalonFX.java`,
+  `Flywheel.java`, `ElevatorIOTalonFX.java`, and `RobotContainer.java`. Verified
+  with `./tools/verify-lessons.sh 34`.
 
 ---
 
@@ -970,12 +1090,61 @@ how the code in this course would translate.
 - Listed in the README's **Asides** section.
 - May reference numbered lessons freely.
 
-**Research flags**
-- Written against the 2027 API, which is still settling. **Date it and say so** —
-  this is the one piece of the course that is deliberately ahead of the target
-  version, and it should be re-checked whenever 2027 stabilises.
-- The `design-docs/commands-v3.md` in `wpilibsuite/allwpilib` is the primary
-  source; `docs.wpilib.org/en/2027/` has the user-facing version.
+**Research flags — RESOLVED**
+- "Date it and say so" turned out to understate the situation, and the aside
+  says so in its own §1 before anything else. **As of 2026-08-07 there is no
+  implementation at all** — `design-docs/commands-v3.md` exists in
+  `wpilibsuite/allwpilib`, but probing the paths an implementation would live at
+  (`wpilibj3/command/`, `wpilibj2/command/v3/`, `commandsv3/`, several spellings)
+  returns 404 on `main`. The doc is written throughout in proposal tense (60
+  instances of "will ") and carries no version, date, or status marker.
+- It is also internally inconsistent in a citable way: `Scheduler.getInstance()`
+  at doc lines 216/263/264 and `Scheduler.getDefault()` at line 230, for the same
+  object. The aside cites this as evidence the API is unsettled rather than as a
+  criticism — it is the cleanest available proof that nothing here should be
+  typed yet.
+- Confirmed absent from the 2026 vendordep by listing the actual jar: the
+  shipped `wpilibNewCommands-java-2026.2.1.jar` contains exactly three packages
+  (`command`, `command/button`, `command/sysid`), no V3 anywhere.
+
+**Shipped**
+- **Every fenced block is an italic illustration** — zero bold "type this"
+  lead-ins in the whole file, which is the convention doing real work for once:
+  the page's code genuinely cannot compile, and §1 says so before the reader
+  reaches a single block.
+- The four "code you already have" blocks are **verbatim from the snapshots**
+  (verified by diff): L21/L33's `Elevator.home()`, L24's `Superstructure.handoff()`,
+  and L25's `registerEventTrigger("aim"/"release")` plus the
+  `.finallyDo(FollowPath::clearRotationOverride)` handback. Every V3 block uses
+  only constructs the design doc actually shows (`run(coroutine -> ...)`,
+  `.named(...)`, `coroutine.yield()`, `coroutine.await(...)`,
+  `Command.noRequirements(...)`, `whenCancelled(Runnable)`) — nothing invented,
+  and no fabricated `Sequence.of(...)`-style call, since the doc names the
+  built-in Sequence composition without showing its constructor.
+- **The pedagogical spine is that all three of V3's headline problems are ones
+  this course already hit for real**, which is what makes the aside worth
+  reading rather than speculative: `home()`'s procedure turned inside out into
+  run/until/finallyDo (§3), `handoff()` holding both mechanisms in an
+  uncommanded state *and* L24's `requestIntake` being forced into a sequence
+  because `Commands.parallel` throws on shared requirements (§4), and L25's
+  static rotation override needing a hand-written `finallyDo` because a
+  cancelled auto never reaches its `release` marker — a lifetime nothing tracked
+  (§5). §2 also lands the Lesson 0 callback: the course taught "you never write
+  `while (true)` yourself," and V3's entire thesis is making that loop legal.
+- **Two honest caveats kept rather than smoothed over**: V3's built-in
+  `ParallelGroup`/`Sequence` still take full ownership for behavior parity, so
+  the narrower ownership is opt-in and not free on upgrade; and V3 would not
+  retroactively fix BLine, which holds its own statics — it would let a library
+  like BLine be written without a global registry.
+- §6 ("what doesn't change") is deliberately reassuring and true: subsystems,
+  requirements, triggers, and **everything below commands** — IO layers, logging,
+  replay, the `kG`/`kV`/`kA` models, kinematics, odometry, vision, current
+  limits, alerts, SysId — are not command-framework code and survive a migration
+  untouched. Worth stating plainly so nobody concludes the next WPILib release
+  invalidates the course.
+- Try It #4 asks the reader to check whether the page has gone stale and fix it,
+  which is the honest maintenance story for the one page here that is dated by
+  construction.
 
 ---
 

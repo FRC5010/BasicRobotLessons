@@ -84,6 +84,8 @@ let you see everything working on your laptop. Device IDs in the examples
 | 30 | [One battery, everything on it](docs/lessons/30-current-limits.md) | Current limits chosen as a budget, and a brownout you cause on purpose | None |
 | 31 | [The robot tells you what's wrong](docs/lessons/31-alerts.md) | A pre-match checklist the robot runs on itself, surfaced where a human looks | None |
 | 32 | [Tests that catch what a plot won't](docs/lessons/32-testing.md) | JUnit tests against your own subsystems, with the simulation running inside them | JUnit, arrange/act/assert |
+| 33 | [Reading a match log](docs/lessons/33-reading-a-log.md) | Diagnose a failure that already happened, from the log alone, and prove the fix by replaying the match | None |
+| 34 | [Tuning your robot when build team hands it over](docs/lessons/34-tuning-with-sysid.md) | Measure a real machine's gains with `SysIdRoutine`, and find out how close the computed ones were | None |
 
 ### Asides (out of order — read when you need them)
 
@@ -91,10 +93,25 @@ let you see everything working on your laptop. Device IDs in the examples
   installing WPILib, Git, and the GitHub CLI; creating the project from the
   template; the daily `add`/`commit`/`push` loop. **Start here before Lesson 0
   if you're new to any of it.**
+- [Branches: one per lesson, merged into a `main` that always works](docs/lessons/aside-git-branching.md) —
+  branching, merging, and the day two lessons touch the same file. Reads on from
+  the setup aside, so you can start using it from Lesson 1. Covers merge
+  conflicts (and why "keep both" is usually the answer), pull requests, and when
+  `rebase` beats `merge`.
 - [Debugging in VSCode and reading stack traces](docs/lessons/aside-debugger.md) —
   breakpoints, stepping, watches, conditional breakpoints, and how to read the
   error trail Java prints when something crashes. Useful from Lesson 1 onward;
   the worked example uses Lesson 5's P control.
+- [A second thread: sampling odometry faster than the robot loop](docs/lessons/aside-odometry-thread.md) —
+  the AdvantageKit odometry thread, and the Java it needs: threads, locks, and
+  `waitForAll`. Readable any time after Lesson 16, and genuinely optional —
+  Lessons 17–34 neither need it nor break with it. Includes the measurement of
+  what 250 Hz odometry actually buys, which is less than you'd think.
+- [Commands V3: what changes when a command becomes a normal method](docs/lessons/aside-commands-v3.md) —
+  the command framework WPILib is designing to replace the one this course
+  teaches, and what your own commands would look like written against it.
+  Readable any time after Lesson 9. **Deliberately ahead of this course's
+  target — it's a design document, not a library, so none of its code runs.**
 
 ## A mental model to carry through the whole course
 
