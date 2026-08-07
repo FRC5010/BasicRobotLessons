@@ -1030,9 +1030,45 @@ finds out how close they were.
   `sysIdDynamic`, and four `RobotContainer` bindings using `Trigger.and(...)`
   (L22) as two-button combos (`back+y`/`back+a`/`start+y`/`start+a`) so a
   characterization command can't be tripped by a single accidental button press.
+- **§7 ("A mechanism that can run out of room") was added after review**, because
+  Try It #1 had been sending students to characterize the elevator or arm with
+  no guidance, and those are exactly the mechanisms that can hit a hard stop.
+  Three findings, all measured on an elevator-shaped rig:
+  - **Phoenix soft limits DO stop an open-loop `VoltageOut`** — driven at 6 V
+    for 4 s against a 1.5 m limit: **2.503 m** without them, **1.505 m** with
+    them and 0.000 applied volts. So L20's arm soft limits protect a SysId run,
+    while L18's `clampToTravel` does nothing (it clamps a *goal*, and open loop
+    never sets one). `code/lesson-34/` now also ships `ElevatorIOTalonFX.java`
+    with soft limits added, since the course had only ever put them on the arm.
+  - **The slower ramp from §6 makes travel WORSE, not better** — this inverted
+    the reviewer's hypothesis, which is why it was worth measuring. Distance to
+    reach 6 V: **1.568 m at 1.0 V/s, 3.158 m at 0.5 V/s, 6.469 m at 0.25 V/s**
+    — halve the rate, double the distance, cleanly (2.01× then 2.05×). §6's own
+    recommended 0.25 V/s would need 6.469 m of an elevator that has 1.5 m. The
+    lesson presents this as a genuine tension with no clever resolution: give up
+    voltage range, not ramp rate.
+  - **Lowering the dynamic step voltage is right** (the reviewer's other
+    instinct, confirmed): travel in 1.5 s is **1.010 m at 7 V, 0.561 m at 4 V,
+    0.268 m at 2 V**. The default 7 V step eats two-thirds of the elevator's
+    entire travel in a second and a half, against a 10 s default timeout.
+- **A correction found while verifying, kept as a callout:** the soft limits
+  cannot be demonstrated in this course's own simulation. `ElevatorIOSim` builds
+  its `ElevatorSim` with `kMinHeight`/`kMaxHeight`, making the *physics model* a
+  wall at 1.5 m — running the real sim elevator open loop into the top stopped
+  it at exactly 1.500 m while the encoder had only reached **1.150**, well under
+  the 1.5 threshold, so the limit provably never fired. The model stopped it,
+  and adding soft limits changes nothing in sim. This is stated in the lesson
+  as an early arrival of §8's theme: the simulation is not where you find out
+  whether your guards work. The isolated rig above had to widen the model's own
+  bounds to ±20 m to observe the firmware limit at all.
+- The "home it first" callout is **derived, not freshly measured**, for the same
+  reason — sim can't show it either. It follows from L21's already-measured fact
+  that a relative encoder reads zero wherever the carriage sits: an elevator
+  booted 35 cm up reads 35 cm low, so a "1.5 m" threshold is really 1.85 m of
+  carriage. Stated as arithmetic the reader can follow rather than a new claim.
 - `code/lesson-34/` ships `FlywheelIO.java`, `FlywheelIOTalonFX.java`,
-  `Flywheel.java`, and `RobotContainer.java`. Verified with
-  `./tools/verify-lessons.sh 34`.
+  `Flywheel.java`, `ElevatorIOTalonFX.java`, and `RobotContainer.java`. Verified
+  with `./tools/verify-lessons.sh 34`.
 
 ---
 

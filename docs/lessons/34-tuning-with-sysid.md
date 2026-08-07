@@ -14,6 +14,9 @@ what a spec sheet can't tell you.
 - **A safe first power-on**, as a procedure, not a piece of code.
 - **A test can lie about the mechanism if the test is wrong for it** — the
   same ramp rate that's fine for one mechanism can quietly corrupt another.
+- **Characterizing something with finite travel**, where the settings that
+  make the measurement good and the settings that keep the mechanism intact
+  pull against each other.
 
 ---
 
@@ -38,7 +41,7 @@ name: friction, efficiency, or a mass that isn't what you thought.
 This course can't put a real Kraken in front of you — it's a docs-only repo
 running in simulation. What it *can* do is teach you the tool for real, verify
 every line of code compiles and runs, and be honest about the one thing
-simulation can never show you. Hold that thought; section 7 comes back to it.
+simulation can never show you. Hold that thought; section 8 comes back to it.
 
 ---
 
@@ -55,7 +58,9 @@ arm needs its soft limits (Lesson 20) or it can drive into its own hard stop.
 A flywheel spinning open loop has neither problem — it has no position to get
 wrong, no floor to fall through, nothing to crash into except itself. That
 makes it the safer mechanism to hand raw, uncontrolled voltage to, and it's
-part of why this lesson picked it.
+part of why this lesson picked it. **Section 7 is what changes when you point
+this same tool at a mechanism that can run out of room** — read it before you
+characterize the elevator or the arm, not after.
 
 What's still real: a spinning flywheel is genuinely dangerous to fingers,
 hair, and shoelaces, current limits protect windings but not people, and
@@ -299,7 +304,166 @@ the mechanism actually responds before you believe the number it hands back.
 
 ---
 
-## 7. Computed vs. measured — and the one thing sim can't show you
+## 7. A mechanism that can run out of room
+
+Everything so far worked partly because a flywheel can spin forever. Section 2
+said that was why it went first; here is the other half of that sentence.
+
+Your elevator has **1.5 m** of travel. Your arm has about **200°**. A
+characterization run drives them open loop, at a voltage that only goes up,
+for as long as the routine says — and neither of those mechanisms has anywhere
+to put the extra.
+
+### What still protects you, and what doesn't
+
+You built two position protections into this robot, and open loop treats them
+completely differently.
+
+**Lesson 18's `clampToTravel` does nothing here.** It clamps the *goal*, inside
+`Elevator.goToHeight`. SysId never calls `goToHeight` — it calls `setVoltage`
+on the IO layer directly, which is the entire point of an open-loop test. The
+clamp isn't overridden or ignored; it simply is not on the path.
+
+**Lesson 20's soft limits, on the other hand, hold.** They're
+`SoftwareLimitSwitchConfigs` in the firmware, enforced where output leaves the
+motor controller, so they don't care which control mode asked. Driving an
+elevator-shaped rig open loop at 6 V for four seconds, against a 1.5 m travel
+limit:
+
+*Nothing to add — measured, not asserted:*
+
+```
+no soft limits    : ended at 2.503 m  (a full metre past the top)
+with soft limits  : ended at 1.505 m, applied volts 0.000
+```
+
+That is exactly the distinction Lesson 20 drew when it added them — *the clamp
+is your code's opinion, the soft limit sits below your code and holds when the
+logic is wrong* — and a SysId run is the case where your code's opinion is
+never consulted at all.
+
+> **Your simulator will not show you this, and that's worth knowing before you
+> trust a clean sim run.** `ElevatorIOSim` builds its `ElevatorSim` with
+> `kMinHeight` and `kMaxHeight`, which makes the *physics model itself* a wall
+> at 1.5 m. Running the real sim elevator open loop into the top, the carriage
+> stopped at exactly 1.500 m — but the encoder had only reached 1.150, well
+> under the soft limit's threshold, so the limit demonstrably never fired. The
+> model stopped it. Add the soft limits and sim behaves identically, because it
+> was already refusing to go past travel. A real elevator has no such courtesy;
+> it has a hard stop and a gearbox. This is the same lesson section 8 is about,
+> arriving early: **the simulation is not where you find out whether your
+> guards work.**
+
+Which leaves one thing to actually do, because the course only ever put soft
+limits on the arm:
+
+**Add to `ElevatorIOTalonFX`'s imports:**
+
+```java
+import static edu.wpi.first.units.Units.Meters;
+```
+
+**Add to `ElevatorIOTalonFX`'s config, before `apply`:**
+
+```java
+// The firmware's own end stops. Open loop bypasses the goal clamp in
+// Elevator.goToHeight; it does not bypass these.
+config.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
+config.SoftwareLimitSwitch.ForwardSoftLimitThreshold =
+        metersToRotations(ElevatorConstants.kMaxHeight.in(Meters));
+config.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
+config.SoftwareLimitSwitch.ReverseSoftLimitThreshold =
+        metersToRotations(ElevatorConstants.kMinHeight.in(Meters));
+```
+
+Thresholds are in *mechanism* rotations, and `SensorToMechanismRatio =
+kGearRatio` already made those drum rotations — so `metersToRotations` is the
+same conversion Motion Magic's own limits use, which is why it was `protected`
+rather than `private` all along.
+
+> Soft limits depend on the encoder being right about where the mechanism is,
+> so on the elevator that means **home it first** (Lesson 21). Follow the
+> arithmetic: Lesson 21 established that a relative encoder reads zero wherever
+> the carriage happens to be sitting, so an elevator booted 35 cm up reads
+> 35 cm low forever. A threshold written as "1.5 m" is then really 1.85 m of
+> actual carriage, and the guard sits a comfortable 35 cm inside the ceiling —
+> on the wrong side of it. **An unhomed soft limit is worse than no soft limit,
+> because it looks like protection.** Home first, every time, before any
+> open-loop run.
+
+### Now the awkward part: section 6 and your travel budget disagree
+
+Section 6 told you to slow the ramp down, and it was right — that's what
+dragged `kS` from 0.89 V to 0.23 V. It's also the single most expensive thing
+you can do to a mechanism that can run out of room, and it's worth seeing the
+size of it. Same rig, measuring how far the carriage travels before the ramp
+reaches 6 V:
+
+*Nothing to add — measured, not asserted:*
+
+```
+ramp 1.00 V/s  ->  6 V after 6.0 s,   travelled 1.568 m
+ramp 0.50 V/s  ->  6 V after 12.0 s,  travelled 3.158 m
+ramp 0.25 V/s  ->  6 V after 24.0 s,  travelled 6.469 m
+```
+
+**Halve the ramp rate and you double the distance.** The mechanism spends twice
+as long at every voltage on the way up, so it covers twice the ground getting
+there. Section 6's recommended 0.25 V/s would need **6.469 m** of elevator to
+reach 6 V. You have 1.5 m.
+
+So the thing that made `kS` trustworthy on the flywheel is the thing you cannot
+afford here, and there's no clever way out of it — the two goals genuinely pull
+opposite directions. What you do instead is give up voltage range rather than
+give up ramp rate: keep the ramp slow, accept that the run ends early against
+the soft limit, and fit the gains over the smaller span of voltage you actually
+got. A short honest run beats a long one that spent its last second driving
+into a hard stop.
+
+### And lower the step voltage
+
+The dynamic test has the same problem in a more concentrated form, since it
+jumps straight to full step voltage and stays there. Same rig, 1.5 seconds:
+
+*Nothing to add — measured, not asserted:*
+
+```
+step 7.0 V  ->  travelled 1.010 m
+step 4.0 V  ->  travelled 0.561 m
+step 2.0 V  ->  travelled 0.268 m
+```
+
+The default 7 V step eats **two-thirds of the elevator's entire travel in a
+second and a half** — and `Config`'s default timeout is ten seconds. Drop the
+step voltage until the run fits: 2–4 V is a reasonable starting point for this
+elevator, and you can raise it once you've watched one run finish safely.
+
+You lose nothing important by doing this. `kA` is a slope — volts per unit of
+acceleration — and a smaller step measures the same slope over a smaller
+range. What you must not do is keep 7 V and shorten the timeout instead,
+hoping it stops in time. The timeout is a backstop, not a plan.
+
+### Three more things gravity changes
+
+Unlike the flywheel, these mechanisms are pulled on constantly, and that makes
+forward and reverse genuinely different tests rather than mirror images.
+
+- **Start at the end you're driving away from.** Forward on the elevator means
+  up, so start at the bottom; reverse means down, so start at the top. Getting
+  this backwards wastes the run and finds the hard stop in about a second.
+- **Reverse runs are the dangerous ones.** Driving down, gravity is helping,
+  so the mechanism reaches a given speed at a *lower* voltage than the model
+  suggests and keeps accelerating past where your intuition says it should.
+- **Know what 0 V does before you find out.** When a run ends — finished,
+  cancelled, or stopped by a soft limit — the motor is handed zero. On a
+  flywheel that means coasting. On a gravity-loaded mechanism it means whatever
+  the neutral mode and the gearbox's backdriveability say it means, which is
+  worth establishing deliberately at 10 cm off the floor rather than at full
+  extension.
+
+---
+
+## 8. Computed vs. measured — and the one thing sim can't show you
 
 Here's the honest part, and it's worth sitting with rather than skating past.
 
@@ -335,21 +499,29 @@ just guessing at.
 
 ## Try it
 
-1. **Characterize a second mechanism, and predict first.** Pick the elevator
-   or the arm. Before running anything, write down what you expect `kS`,
-   `kV`, and `kA` to come back as, given what you already know about
-   `ElevatorSim`/`SingleJointedArmSim`'s modeling from Lessons 18 and 20.
-   Then build the routine (same shape as sections 3–4, driven by
-   `setVoltage`) and see how close your prediction was.
-2. **Find the ramp rate that's "slow enough."** Section 6 used 0.25 V/s.
+1. **Characterize the elevator, and budget the run before you build it.**
+   Section 7 gives you the two numbers that matter: how far the carriage
+   travels per volt of ramp, and how far a step voltage carries it in a
+   second and a half. Work out a `Config` that fits inside 1.5 m *before*
+   writing any code, then add the soft limits, home it, and find out whether
+   your budget was right. Predict `kS`/`kV`/`kA` first, too — you already
+   know what `ElevatorSim` does and doesn't model.
+2. **Do the arm, and notice it's a different problem.** The arm already has
+   soft limits from Lesson 20, so the protection work is done — but gravity
+   on an arm varies with angle (`kG·cos θ`, Lesson 20), which the elevator's
+   constant `kG` didn't. Think about what that does to a quasistatic ramp
+   that starts horizontal and ends vertical, and whether forward and reverse
+   should be expected to agree.
+3. **Find the ramp rate that's "slow enough."** Section 6 used 0.25 V/s.
    Try 0.5 V/s and 0.1 V/s on the flywheel and watch how `kS` moves between
    them. Is the relationship linear? At what point does going slower stop
-   changing the answer?
-3. **Write your team's power-on checklist.** Section 2 is a starting point,
+   changing the answer? (Do this on the flywheel, not the elevator —
+   section 7 explains why that's not an accident.)
+4. **Write your team's power-on checklist.** Section 2 is a starting point,
    not a finished one — it doesn't know your robot's specific pinch points,
    your specific current limits, or which mechanism your team is most
    nervous about. Write the version that's actually about your robot.
-4. **Read the dynamic test's own log by hand.** Before trusting the analysis
+5. **Read the dynamic test's own log by hand.** Before trusting the analysis
    tool, open the `.wpilog` from a `sysIdDynamic` run and look at how fast
    velocity climbs right after the voltage step. That climb rate *is* what
    `kA` measures — seeing it once by eye is worth more than reading the
@@ -368,8 +540,19 @@ which is less code than computing the gains by hand ever was. The harder
 lesson sat in section 6: **a characterization is only as trustworthy as the
 test that produced it**, and a `kS` that comes back looking absurd is more
 often a ramp rate that's wrong for the mechanism than a spec sheet that's
-wrong for the robot — check the test before you doubt the model. And the
-most honest lesson sat in section 7: simulation measured `kV` and `kA`
+wrong for the robot — check the test before you doubt the model.
+
+Section 7 then took that away again, at least partly. On anything with finite
+travel the slow ramp that fixes `kS` is the same slow ramp that runs the
+mechanism out of room — **halve the rate, double the distance** — so you
+trade voltage range for safety and fit the gains over whatever span you
+actually survived. The protection that carries you through that is the
+firmware's, not your code's: `clampToTravel` clamps a goal that an open-loop
+test never sets, while Lesson 20's soft limits are enforced below your code
+and hold regardless of control mode. That's worth remembering as a general
+shape, not just a SysId detail — **the guard that survives your logic being
+absent is the only one that was ever really a guard.** And the
+most honest lesson sat in section 8: simulation measured `kV` and `kA`
 faithfully because it actually models the physics behind them, and it could
 only approximate `kS` toward zero, because there was never real friction in
 it to measure. Your real robot doesn't have that excuse, which is exactly
