@@ -85,6 +85,7 @@ let you see everything working on your laptop. Device IDs in the examples
 | 31 | [The robot tells you what's wrong](docs/lessons/31-alerts.md) | A pre-match checklist the robot runs on itself, surfaced where a human looks | None |
 | 32 | [Tests that catch what a plot won't](docs/lessons/32-testing.md) | JUnit tests against your own subsystems, with the simulation running inside them | JUnit, arrange/act/assert |
 | 33 | [Reading a match log](docs/lessons/33-reading-a-log.md) | Diagnose a failure that already happened, from the log alone, and prove the fix by replaying the match | None |
+| 34 | [Tuning your robot when build team hands it over](docs/lessons/34-tuning-with-sysid.md) | Measure a real machine's gains with `SysIdRoutine`, and find out how close the computed ones were | None |
 
 ### Asides (out of order — read when you need them)
 

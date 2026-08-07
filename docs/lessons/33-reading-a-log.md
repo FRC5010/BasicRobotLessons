@@ -313,3 +313,8 @@ instead of a hypothesis.
 None of this required the bug to be dramatic. A tenth of a millimetre and a
 capital letter both cost a team an entire autonomous run, and both were
 sitting in a log the whole time, waiting to be read.
+
+Every gain this reading skill has ever pointed at came from a spec sheet, not
+a real motor. Lesson 34 is where that finally changes.
+
+Next: [Lesson 34 — Tuning your robot when build team hands it over](34-tuning-with-sysid.md).

@@ -32,7 +32,7 @@ must be able to disagree with the code**, and its Try-It safety convention.
 | 31 | The robot tells you what's wrong | L13, L15 | none | **Done** — [lesson](lessons/31-alerts.md), [code](../code/lesson-31/) |
 | 32 | Tests that catch what a plot won't | all mechanisms | none | **Done** — [lesson](lessons/32-testing.md), [code](../code/lesson-32/) |
 | 33 | Reading a match log | L3, L13 | none | **Done** — [lesson](lessons/33-reading-a-log.md), [code](../code/lesson-33/) |
-| 34 | Tuning your robot when build team hands it over | L18, L20, L29 | none | Outline |
+| 34 | Tuning your robot when build team hands it over | L18, L20, L29 | none | **Done** — [lesson](lessons/34-tuning-with-sysid.md), [code](../code/lesson-34/) |
 | — | `aside-commands-v3.md` | not in the linear build | none | Outline |
 
 The arc runs in four groups: **23–24** make the robot's state visible and then
@@ -100,13 +100,41 @@ committed fixture. A second, faster example (a BLine `lib_key` case mismatch —
 already-established "logs a warning, keeps driving" behavior instead of
 re-deriving it.
 
-### 5. Lesson 34 can't be verified the usual way — UNRESOLVED
+### 5. Lesson 34 can't be verified the usual way — RESOLVED
 
-Its subject is real hardware. `SysIdRoutine` does run in simulation, so the
-*mechanics* (building a routine, binding the four test commands, producing a log)
-are verifiable; the *procedure* (what order to check things, when to stop, how to
-know a number is wrong) is not. Decide how much of the lesson is code and how much
-is checklist, and be honest in the text about which is which.
+Split cleanly in the end. **Section 2 (safe first power-on) is pure procedure**,
+explicitly labeled as such in its own opening line ("This section has no code in
+it"), grounded in infrastructure the course already built (Lesson 30's current
+limits, Lesson 20's soft limits) rather than invented from scratch. **Everything
+else is code, verified for real in the sandbox** — including the lesson's central
+claim, which turned out richer than the outline expected. Characterizing the
+flywheel with `SysIdRoutine.Config()`'s defaults (1 V/s ramp) measures **`kS`
+around 0.89 V** in this course's own simulated run — nearly 6× the shipped 0.15 V
+— because the default ramp is too fast for a small, direct-drive flywheel to stay
+quasi-static. Slowing the ramp to 0.25 V/s (`Config(Volts.of(0.25).per(Second),
+Volts.of(7), Seconds.of(30))`) drops measured `kS` to **≈0.23 V**; `kV` recovers
+accurately either way (≈0.12, matching the model). This is real, general SysId
+methodology (a too-fast ramp corrupts `kS` on real hardware too, not just in
+sim) and became the lesson's section 6, answering the outline's own "what to do
+when they disagree a lot" beat with a verified, non-invented answer. Section 7
+is honest about the sim-specific limit: `FlywheelSim` has never modeled
+friction (Lesson 29 proved this by hand), so even the corrected 0.23 V isn't
+"the friction sim found" — it's the residual of a ramp-rate artifact on a
+mechanism whose true simulated `kS` is 0. That's stated explicitly, not implied.
+Also verified via direct bytecode inspection of the actual 2026.2.1 jars
+(`javap`, not guessed): `SysIdRoutine.Config()`'s defaults are 1 V/s ramp, 7 V
+step, 10 s timeout; and `SysIdRoutineLog`'s data lands in **WPILib's own
+`DataLogManager`**, not through AdvantageKit's `Logger` — a second `.wpilog`
+file, auto-started on first use, landing in the same `logs/` folder in sim.
+
+### 6. Arc D ordering — soft, resolved as written
+
+30–33 have no dependencies on each other; 34 wants 29 to exist so there's a
+flywheel to characterise, which the order already satisfies. The flywheel was
+also the right mechanism for a second reason found while writing 34: it has no
+position to get wrong (no floor, no hard stop), making it the safer first
+mechanism to hand raw open-loop voltage to — worth stating in the lesson, not
+just true by accident.
 
 ### 6. Arc D ordering — soft
 
@@ -975,13 +1003,36 @@ finds out how close they were.
 - Characterise a second mechanism and predict the result first.
 - Write the team's power-on checklist.
 
-**Research flags**
-- Open decision 5: how much is code and how much is procedure.
-- SysId's analysis step is a separate desktop tool — confirm the 2026 workflow
-  before writing instructions.
-- The lesson must not imply SysId replaces understanding the model. It measures
-  the same terms the course already taught; the point is agreement, not
-  substitution.
+**Research flags — RESOLVED**
+- Open decision 5 resolved — see decision 5 above.
+- The analysis tool's exact 2026 menu layout could not be confirmed (no network
+  access to frc-docs in this session); the lesson describes the workflow at the
+  conceptual level (log-file mode, point at the file, select the mechanism,
+  analyze) and explicitly tells the reader to trust the tool's own help over the
+  lesson's wording if the two disagree, rather than asserting unverified menu
+  paths. Everything about the API itself (`SysIdRoutine`/`Config`/`Mechanism`/
+  `Direction`/`SysIdRoutineLog.MotorLog`'s exact signatures and defaults) *was*
+  confirmed, by decompiling the actual 2026.2.1 jars with `javap` rather than
+  guessing — see decision 5's bytecode-verified defaults.
+- The "point is agreement, not substitution" concern shows up explicitly in the
+  lesson's closing paragraph and in section 7's framing: `kV`/`kA` agreeing is
+  presented as the model being confirmed, not superseded, and `kS` disagreeing
+  is presented as a real, informative disagreement rather than a tool result
+  that overrides the model.
+
+**Shipped**
+- Mechanism: the flywheel (L29), chosen partly for a reason surfaced while
+  writing this lesson — see decision 6.
+- Code: `FlywheelIO.setVoltage` (mirrors `ElevatorIO.setVoltage` from L21's
+  homing, same "open loop because closed loop is what you don't trust yet"
+  reasoning), `FlywheelIOTalonFX`'s `VoltageOut` implementation (`FlywheelIOSim`
+  needs no changes — inherits it), `Flywheel.m_sysId` + `sysIdQuasistatic`/
+  `sysIdDynamic`, and four `RobotContainer` bindings using `Trigger.and(...)`
+  (L22) as two-button combos (`back+y`/`back+a`/`start+y`/`start+a`) so a
+  characterization command can't be tripped by a single accidental button press.
+- `code/lesson-34/` ships `FlywheelIO.java`, `FlywheelIOTalonFX.java`,
+  `Flywheel.java`, and `RobotContainer.java`. Verified with
+  `./tools/verify-lessons.sh 34`.
 
 ---
 
