@@ -33,7 +33,7 @@ must be able to disagree with the code**, and its Try-It safety convention.
 | 32 | Tests that catch what a plot won't | all mechanisms | none | **Done** — [lesson](lessons/32-testing.md), [code](../code/lesson-32/) |
 | 33 | Reading a match log | L3, L13 | none | **Done** — [lesson](lessons/33-reading-a-log.md), [code](../code/lesson-33/) |
 | 34 | Tuning your robot when build team hands it over | L18, L20, L29 | none | **Done** — [lesson](lessons/34-tuning-with-sysid.md), [code](../code/lesson-34/) |
-| — | `aside-commands-v3.md` | not in the linear build | none | Outline |
+| — | `aside-commands-v3.md` | not in the linear build | none | **Done** — [aside](lessons/aside-commands-v3.md), no code snapshot (nothing compiles) |
 
 The arc runs in four groups: **23–24** make the robot's state visible and then
 explicit; **25–28** make autonomous react to what it sees, in game-cycle order
@@ -1054,12 +1054,61 @@ how the code in this course would translate.
 - Listed in the README's **Asides** section.
 - May reference numbered lessons freely.
 
-**Research flags**
-- Written against the 2027 API, which is still settling. **Date it and say so** —
-  this is the one piece of the course that is deliberately ahead of the target
-  version, and it should be re-checked whenever 2027 stabilises.
-- The `design-docs/commands-v3.md` in `wpilibsuite/allwpilib` is the primary
-  source; `docs.wpilib.org/en/2027/` has the user-facing version.
+**Research flags — RESOLVED**
+- "Date it and say so" turned out to understate the situation, and the aside
+  says so in its own §1 before anything else. **As of 2026-08-07 there is no
+  implementation at all** — `design-docs/commands-v3.md` exists in
+  `wpilibsuite/allwpilib`, but probing the paths an implementation would live at
+  (`wpilibj3/command/`, `wpilibj2/command/v3/`, `commandsv3/`, several spellings)
+  returns 404 on `main`. The doc is written throughout in proposal tense (60
+  instances of "will ") and carries no version, date, or status marker.
+- It is also internally inconsistent in a citable way: `Scheduler.getInstance()`
+  at doc lines 216/263/264 and `Scheduler.getDefault()` at line 230, for the same
+  object. The aside cites this as evidence the API is unsettled rather than as a
+  criticism — it is the cleanest available proof that nothing here should be
+  typed yet.
+- Confirmed absent from the 2026 vendordep by listing the actual jar: the
+  shipped `wpilibNewCommands-java-2026.2.1.jar` contains exactly three packages
+  (`command`, `command/button`, `command/sysid`), no V3 anywhere.
+
+**Shipped**
+- **Every fenced block is an italic illustration** — zero bold "type this"
+  lead-ins in the whole file, which is the convention doing real work for once:
+  the page's code genuinely cannot compile, and §1 says so before the reader
+  reaches a single block.
+- The four "code you already have" blocks are **verbatim from the snapshots**
+  (verified by diff): L21/L33's `Elevator.home()`, L24's `Superstructure.handoff()`,
+  and L25's `registerEventTrigger("aim"/"release")` plus the
+  `.finallyDo(FollowPath::clearRotationOverride)` handback. Every V3 block uses
+  only constructs the design doc actually shows (`run(coroutine -> ...)`,
+  `.named(...)`, `coroutine.yield()`, `coroutine.await(...)`,
+  `Command.noRequirements(...)`, `whenCancelled(Runnable)`) — nothing invented,
+  and no fabricated `Sequence.of(...)`-style call, since the doc names the
+  built-in Sequence composition without showing its constructor.
+- **The pedagogical spine is that all three of V3's headline problems are ones
+  this course already hit for real**, which is what makes the aside worth
+  reading rather than speculative: `home()`'s procedure turned inside out into
+  run/until/finallyDo (§3), `handoff()` holding both mechanisms in an
+  uncommanded state *and* L24's `requestIntake` being forced into a sequence
+  because `Commands.parallel` throws on shared requirements (§4), and L25's
+  static rotation override needing a hand-written `finallyDo` because a
+  cancelled auto never reaches its `release` marker — a lifetime nothing tracked
+  (§5). §2 also lands the Lesson 0 callback: the course taught "you never write
+  `while (true)` yourself," and V3's entire thesis is making that loop legal.
+- **Two honest caveats kept rather than smoothed over**: V3's built-in
+  `ParallelGroup`/`Sequence` still take full ownership for behavior parity, so
+  the narrower ownership is opt-in and not free on upgrade; and V3 would not
+  retroactively fix BLine, which holds its own statics — it would let a library
+  like BLine be written without a global registry.
+- §6 ("what doesn't change") is deliberately reassuring and true: subsystems,
+  requirements, triggers, and **everything below commands** — IO layers, logging,
+  replay, the `kG`/`kV`/`kA` models, kinematics, odometry, vision, current
+  limits, alerts, SysId — are not command-framework code and survive a migration
+  untouched. Worth stating plainly so nobody concludes the next WPILib release
+  invalidates the course.
+- Try It #4 asks the reader to check whether the page has gone stale and fix it,
+  which is the honest maintenance story for the one page here that is dated by
+  construction.
 
 ---
 

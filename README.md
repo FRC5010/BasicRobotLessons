@@ -97,6 +97,11 @@ let you see everything working on your laptop. Device IDs in the examples
   breakpoints, stepping, watches, conditional breakpoints, and how to read the
   error trail Java prints when something crashes. Useful from Lesson 1 onward;
   the worked example uses Lesson 5's P control.
+- [Commands V3: what changes when a command becomes a normal method](docs/lessons/aside-commands-v3.md) —
+  the command framework WPILib is designing to replace the one this course
+  teaches, and what your own commands would look like written against it.
+  Readable any time after Lesson 9. **Deliberately ahead of this course's
+  target — it's a design document, not a library, so none of its code runs.**
 
 ## A mental model to carry through the whole course
 
