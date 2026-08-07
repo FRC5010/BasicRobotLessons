@@ -113,6 +113,66 @@ let you see everything working on your laptop. Device IDs in the examples
   Readable any time after Lesson 9. **Deliberately ahead of this course's
   target — it's a design document, not a library, so none of its code runs.**
 
+## Skipping ahead to a lesson in the middle
+
+The lessons are cumulative — [Lesson 18](docs/lessons/18-elevator.md) assumes the
+`Drivetrain`, `ModuleIO`, `Localizer` and everything else that lessons 0–17
+built is already sitting in your project. So you can't just open Lesson 18 and
+start typing.
+
+You can, though, have this repo **build that starting point for you**. The
+`tools/verify-lessons.sh` script exists to compile-check the course's reference
+code, and it does that by rolling the pristine WPILib template forward through
+one lesson snapshot at a time. Point its output at a folder you want to keep and
+what falls out is a complete, buildable project in exactly the state the course
+would have left it in.
+
+**Roll forward to the lesson *before* the one you want to start on.** To begin at
+Lesson 18, build the state as of the end of Lesson 17:
+
+```bash
+git clone https://github.com/FRC5010/BasicRobotLessons.git
+cd BasicRobotLessons
+VERIFY_SANDBOX=~/dev/MyRobot ./tools/verify-lessons.sh 17
+```
+
+On Windows, run that in **Git Bash** (the WPILib/Git installers from
+[the setup aside](docs/lessons/aside-setup.md) give you one), not PowerShell, and
+use a forward-slash path like `~/dev/MyRobot`. The script needs `bash`, `curl`,
+`python3`, and network access — it downloads the vendordeps each lesson requires
+as it goes.
+
+The result is a real GradleRIO project. Vendordeps are fetched and pinned, the
+AdvantageKit `build.gradle` blocks are in place, and the files the lessons
+deleted along the way are gone. Verify it before you start:
+
+```powershell
+cd ~/dev/MyRobot
+./gradlew build
+./gradlew simulateJava
+```
+
+Then make it yours: `git init` it and push it somewhere (see
+[the setup aside](docs/lessons/aside-setup.md)), and set your team number in
+`.wpilib/wpilib_preferences.json` — the template ships 5010.
+
+Three things to know before you do this:
+
+- **Pick a folder outside this repo, and don't re-run the script against it.**
+  That folder is deleted at the start of every run. Once you've generated it,
+  treat it as your project and leave the script alone. (The script refuses a path
+  inside this repo for the same reason.)
+- **The device IDs are placeholders.** The reference code uses `0`, `1`, … for
+  CAN IDs and camera names; change them to match your robot.
+- **You're skipping the explanations, not just the typing.** The snapshots are
+  reference code, and the reasoning behind them lives in the lesson text. If you
+  jump to Lesson 18, at least skim the lessons that introduced the patterns
+  you're about to build on — the table above says what each one added.
+
+The same trick works when you're stuck rather than ahead: generate a known-good
+state as of the last lesson you finished and diff it against your own project to
+find what drifted.
+
 ## A mental model to carry through the whole course
 
 - **`Robot`** is a metronome. ~50 times a second it ticks the scheduler. You almost

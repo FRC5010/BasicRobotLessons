@@ -22,6 +22,10 @@ snapshots and fetch no vendordeps — that just builds the base as it stands.
 The sandbox is `rm -rf`'d every run, so the script refuses a `VERIFY_SANDBOX`
 that names the base or anything inside this repo, and it drops the base's
 `.git`/`build`/`.gradle` from the copy rather than building on stale state.
+[README.md](README.md)'s "Skipping ahead to a lesson in the middle" section
+points students at `VERIFY_SANDBOX` for the other direction — generating a
+keepable project in the state a lesson expects, so they can start mid-course.
+Keep the two in sync if the script's interface changes.
 
 **Use it instead of reasoning about whether a snippet compiles.** Current state: lessons 0–34 all compile, at every intermediate stopping point, with zero warnings. A regression is therefore a real result, not noise. Run the specific lesson you touched plus the highest one.
 
