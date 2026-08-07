@@ -15,6 +15,14 @@ There is Java here, though, in two forms under `code/`:
 
 **`./tools/verify-lessons.sh [N] [test] [aside-<slug>]`** compile-checks the lessons for real. It copies `ActualLessons` to a scratch sandbox (never touching the repo copy), fetches pinned vendordeps, rolls `code/lesson-0` … `code/lesson-N` forward in order, replays the deletions the lessons instruct, appends Lesson 13's AdvantageKit `build.gradle` blocks, and runs Gradle. First run takes a few minutes to fill the Gradle cache; later runs are seconds.
 
+**`VERIFY_BASE` swaps the project the snapshots roll onto** (default
+`code/ActualLessons`), so the same script can check a student's own repo:
+`VERIFY_BASE=~/dev/MyRobot ./tools/verify-lessons.sh 7`. Pass `-1` to roll no
+snapshots and fetch no vendordeps — that just builds the base as it stands.
+The sandbox is `rm -rf`'d every run, so the script refuses a `VERIFY_SANDBOX`
+that names the base or anything inside this repo, and it drops the base's
+`.git`/`build`/`.gradle` from the copy rather than building on stale state.
+
 **Use it instead of reasoning about whether a snippet compiles.** Current state: lessons 0–34 all compile, at every intermediate stopping point, with zero warnings. A regression is therefore a real result, not noise. Run the specific lesson you touched plus the highest one.
 
 For anything with runtime behavior — a JSON schema, a replacement for a deprecated API, a config with validation — drop a throwaway JUnit test into the sandbox's `src/test/java/` and re-run with `test`. That has caught things compiling never would.
