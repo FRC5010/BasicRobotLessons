@@ -15,6 +15,16 @@
 #   ./tools/verify-lessons.sh 13       # stop after Lesson 13
 #   ./tools/verify-lessons.sh 17 test  # also run any src/test/java you dropped in
 #
+# The project the snapshots are rolled onto is code/ActualLessons by default.
+# Point VERIFY_BASE at any other GradleRIO project to use that instead — a
+# student's own repo, say, to check their work against a lesson's snapshot:
+#
+#   VERIFY_BASE=~/dev/MyRobot ./tools/verify-lessons.sh 7
+#   VERIFY_BASE=~/dev/MyRobot ./tools/verify-lessons.sh -1   # no lessons, just build it
+#
+# -1 rolls no snapshots at all and fetches no vendordeps, so the project is
+# built exactly as it stands, with whatever vendordeps it already carries.
+#
 # Asides are optional side-quests, not part of the linear build, so they are
 # applied ON TOP of a named lesson rather than rolled through in order:
 #
@@ -24,9 +34,13 @@
 # top of a LATER lesson would revert everything that lesson changed in the same
 # files, which is why the base lesson is explicit rather than guessed.
 #
-# The sandbox is a scratch copy — code/ActualLessons is never modified. Keep it
-# that way: it is the students' starting point, and it is expected to stay at
-# pristine template state.
+# The sandbox is a scratch copy and is DELETED at the start of every run, so the
+# base project is never modified — neither code/ActualLessons nor whatever
+# VERIFY_BASE names. Never point VERIFY_SANDBOX at anything you want to keep;
+# the script refuses the obvious mistakes but cannot catch every one.
+#
+# code/ActualLessons in particular is expected to stay at pristine template
+# state: it is the students' starting point.
 #
 # First run takes a few minutes to populate the Gradle cache and needs network
 # access to the hosts listed in VENDORDEPS below plus Maven Central, WPILib's
@@ -35,8 +49,24 @@
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+BASE="${VERIFY_BASE:-$REPO/code/ActualLessons}"
 SANDBOX="${VERIFY_SANDBOX:-${TMPDIR:-/tmp}/verify-lessons}"
 GRADLE_TASK="compileJava"
+
+[ -d "$BASE" ] || { echo "VERIFY_BASE is not a directory: $BASE" >&2; exit 1; }
+[ -f "$BASE/build.gradle" ] || {
+  echo "no build.gradle in $BASE — VERIFY_BASE must name a GradleRIO project" >&2; exit 1; }
+BASE="$(cd "$BASE" && pwd)"
+
+# The sandbox gets rm -rf'd below. Refuse the two ways that turns into a
+# disaster: naming the base project, or naming anything inside this repo.
+mkdir -p "$(dirname "$SANDBOX")"
+SANDBOX="$(cd "$(dirname "$SANDBOX")" && pwd)/$(basename "$SANDBOX")"
+case "$SANDBOX" in
+  "$BASE"|"$BASE"/*|"$REPO"|"$REPO"/*)
+    echo "refusing to use $SANDBOX as the sandbox — it is deleted on every run" >&2
+    exit 1 ;;
+esac
 
 # Highest lesson-N directory present, unless the caller names one.
 LATEST="$(ls -d "$REPO"/code/lesson-* 2>/dev/null | sed 's/.*lesson-//' | sort -n | tail -1)"
@@ -74,13 +104,24 @@ VENDORDEPS=(
 
 say() { printf '\n\033[1m==> %s\033[0m\n' "$*"; }
 
-say "Sandbox: $SANDBOX  (rolling forward through lesson-$THROUGH)"
+if [ "$THROUGH" -lt 0 ]; then
+  say "Sandbox: $SANDBOX  (no lessons — building $BASE as it stands)"
+else
+  say "Sandbox: $SANDBOX  (rolling forward through lesson-$THROUGH)"
+fi
+echo "  base: $BASE"
 rm -rf "$SANDBOX"
-mkdir -p "$(dirname "$SANDBOX")"
-cp -r "$REPO/code/ActualLessons" "$SANDBOX"
-chmod +x "$SANDBOX/gradlew"
+cp -r "$BASE" "$SANDBOX"
+# A base copied from a git checkout brings its own history and build outputs;
+# neither belongs in a scratch build, and .gradle in particular carries absolute
+# paths from wherever it was last built.
+rm -rf "$SANDBOX/.git" "$SANDBOX/build" "$SANDBOX/.gradle"
+[ -f "$SANDBOX/gradlew" ] && chmod +x "$SANDBOX/gradlew"
 JAVA_DIR="$SANDBOX/src/main/java/frc/robot"
 
+if [ "$THROUGH" -lt 0 ]; then
+  say "Vendordeps: using whatever $BASE already carries"
+else
 say "Fetching pinned vendordeps"
 # Save each under the "fileName" it declares internally, not the URL's basename —
 # that is what the VS Code vendor manager writes, and Lesson 13's build.gradle
@@ -108,9 +149,13 @@ for entry in "${VENDORDEPS[@]}"; do
   need="${entry%%|*}"
   [ "$THROUGH" -ge "$need" ] && fetch_vendordep "${entry#*|}"
 done
+fi
 
+if [ "$THROUGH" -lt 0 ]; then
+  say "Applying no lesson snapshots"
+else
 say "Applying lesson snapshots 0..$THROUGH"
-for n in $(seq 0 "$THROUGH"); do
+for n in $(seq 0 "$THROUGH" 2>/dev/null || true); do
   d="$REPO/code/lesson-$n"
   [ -d "$d" ] || continue
   # Java: code/lesson-N/**.java mirrors the frc/robot package tree
@@ -134,6 +179,7 @@ for n in $(seq 0 "$THROUGH"); do
   fi
   echo "  applied lesson-$n"
 done
+fi
 
 if [ -n "$ASIDE" ]; then
   say "Applying $ASIDE on top of lesson-$THROUGH"
@@ -150,6 +196,7 @@ if [ -n "$ASIDE" ]; then
   echo "  applied $ASIDE"
 fi
 
+if [ "$THROUGH" -ge 0 ]; then
 say "Applying the deletions the lessons instruct"
 # Snapshots can only add or replace files, so removals have to be replayed here.
 del() { [ "$THROUGH" -ge "$1" ] && shift && for f; do rm -f "$JAVA_DIR/$f"; done || true; }
@@ -157,6 +204,7 @@ del 7  subsystems/DriveModule.java                                   # became Sw
 del 9  commands/ExampleCommand.java subsystems/ExampleSubsystem.java # Lesson 9, section 3
 del 15 subsystems/VisionPoseProvider.java                            # replaced by PhotonVision
 echo "  done"
+fi
 
 say "AdvantageKit build.gradle blocks (Lesson 13, section 2)"
 # Gated on Lesson 3, when AdvantageKit is installed: the block reads
@@ -187,7 +235,9 @@ cd "$SANDBOX"
 # shellcheck disable=SC2086
 ./gradlew $GRADLE_TASK --console=plain
 
-if [ -n "$ASIDE" ]; then
+if [ "$THROUGH" -lt 0 ]; then
+  say "OK — $BASE compiles as it stands"
+elif [ -n "$ASIDE" ]; then
   say "OK — lessons 0..$THROUGH plus $ASIDE compile"
 else
   say "OK — lessons 0..$THROUGH compile"
