@@ -16,10 +16,12 @@ lean on multiple `@Autonomous` opmodes once there's more than one routine;
 controller bindings use `CommandGamepad`'s generic naming
 (`southFace()/eastFace()/westFace()/northFace()`), not any Xbox-specific
 method names; and — the change that unblocks this whole doc — telemetry uses
-`org.wpilib.epilogue`'s `EpilogueBackend` directly instead of AdvantageKit's
-`Logger`, per the team's 2026-08-10 decision to proceed without replay for
-now and add it back in a later pass. See
-[Telemetry without AdvantageKit](lesson-plan-opmode-restructure.md#telemetry-without-advantagekit-epilogue)
+plain `SmartDashboard`/`NetworkTables` directly instead of AdvantageKit's
+`Logger`, per the team's 2026-08-10 decisions to proceed without replay for
+now (adding it back in a later pass) and, on reconsideration the same day, to
+skip Epilogue too rather than reach for another library when a plainer one
+already does the job. See
+[Telemetry without AdvantageKit](lesson-plan-opmode-restructure.md#telemetry-without-advantagekit-smartdashboard-and-networktables)
 for the full design this lesson's rewrite is built on.
 
 Each lesson section below was checked against the actual old-course lesson
@@ -35,13 +37,16 @@ same rule as everywhere else in this repo: verify before drafting.
 | 0 | Orientation | none | none | Ready to write |
 | 1 | Your first motor | L0 | Phoenix 6 (`Phoenix6-26.50.0-alpha-1.json`) | Ready to write — one API detail needs a live-jar check, see below |
 | 2 | Joystick control | L1 | none new | Ready to write |
-| 3 | Telemetry & plots | L2 | none (Epilogue ships with core WPILib) | Ready to write — uses `EpilogueBackend` directly; real replay deferred to a later pass |
+| 3 | Telemetry & plots | L2 | none (`SmartDashboard`/`NetworkTables` are core WPILib) | Ready to write — `SmartDashboard.putNumber(...)` directly; real replay deferred to a later pass |
 
 All four lessons are ready to write. Lesson 3 was blocked on AdvantageKit's
-missing `OpModeRobot` support; the team decided (2026-08-10) to proceed using
-WPILib's own Epilogue telemetry system instead, deferring real replay rather
-than waiting on it — see that lesson's section for the design and what's
-explicitly deferred.
+missing `OpModeRobot` support; the team decided (2026-08-10) to proceed
+without it, deferring real replay to a later pass. A same-day second look
+also dropped Epilogue (WPILib's own annotation-based telemetry system) as
+the replacement — technically workable, but more machinery than the decision
+needs — in favor of plain `SmartDashboard`, already confirmed present and
+used by the framework itself. See that lesson's section for the design and
+what's explicitly deferred.
 
 ---
 
@@ -340,22 +345,27 @@ extends," from `TimedRobot` to `LoggedRobot` — has no equivalent here.
 `Robot` already extends `OpModeRobot`, Java has no multiple inheritance, and
 WPILib's own `SystemCoreTesting/AdvantageKit.md` confirms there's no third
 option yet: *"An equivalent for WPILib's `OpModeRobot` will be available in a
-future release."* Per the team's 2026-08-10 decision (full reasoning in
-[Telemetry without AdvantageKit](lesson-plan-opmode-restructure.md#telemetry-without-advantagekit-epilogue)),
-this lesson uses **`org.wpilib.epilogue`** — WPILib's own native telemetry
-system, ships with core WPILib, no vendordep install step at all — instead of
-waiting. The trade, stated to students directly rather than hidden: this
-lesson's plots work today; **replay** (rerunning a whole match from its log
-through changed code, which the old course's Lesson 13 teaches) does not yet,
-and won't until a follow-up pass once AdvantageKit supports `OpModeRobot`.
+future release."* Per the team's 2026-08-10 decisions (full reasoning in
+[Telemetry without AdvantageKit](lesson-plan-opmode-restructure.md#telemetry-without-advantagekit-smartdashboard-and-networktables)),
+this lesson uses **plain `SmartDashboard`**, not AdvantageKit and not
+Epilogue either — WPILib's own `org.wpilib.epilogue` telemetry system was
+considered and found to work technically, but judged more machinery than
+needed once replay is already off the table. `SmartDashboard` needs no
+vendordep, no backend object, and no constructor changes anywhere — it's
+`static` methods, already confirmed in active use by `OpModeRobot` itself.
+The trade, stated to students directly rather than hidden: this lesson's
+plots work today; **replay** (rerunning a whole match from its log through
+changed code, which the old course's Lesson 13 teaches) does not yet, and
+won't until a follow-up pass once AdvantageKit supports `OpModeRobot`.
 
 ### New Java/robot concepts
 
 Unchanged from old L3's core teaching content (return values vs. commands,
-chaining, the encoder, units) plus the swapped telemetry vocabulary: instead
-of "data receivers" (`NT4Publisher`/`WPILOGWriter`), this lesson teaches
-**backends** (`EpilogueBackend`, `NTEpilogueBackend`) — same job, same
-plural-destinations idea, different noun.
+chaining, the encoder, units) and, for once, the telemetry vocabulary barely
+changes either — `SmartDashboard.putNumber(...)` is the same method this
+course's own `CLAUDE.md` names as the thing AdvantageKit replaced, so this
+lesson is closer to a *return* to familiar WPILib teaching material than a
+new concept.
 
 ### Walkthrough outline
 
@@ -363,83 +373,58 @@ plural-destinations idea, different noun.
    `.getVelocity().getValueAsDouble()` is Phoenix 6 API, untouched by the
    OpMode/Commands V3 swap. Old L3 §1's chaining/return-value teaching content
    carries over verbatim.
-2. **No vendor library to install.** Old L3 §2 has the student open the
-   vendor-library manager and install AdvantageKit. This lesson skips that
-   step entirely — `org.wpilib.epilogue` is part of core WPILib
-   (`epilogue-processor`/`epilogue-runtime` live in the same `allwpilib`
-   monorepo as `wpilibj`, confirmed from source; high confidence this is
-   already on the classpath via `wpi.java.deps.wpilib()`, but double-check
-   against a real build before asserting it as fact in lesson prose).
-3. **Construct a backend, once, somewhere with the right lifetime.** This
+2. **No vendor library to install, and no new class to meet.** Old L3 §2 has
+   the student open the vendor-library manager and install AdvantageKit. This
+   lesson skips that step entirely — `SmartDashboard` is
+   `org.wpilib.smartdashboard.SmartDashboard`, already on the classpath
+   (confirmed: `OpModeRobot.loopFunc()` itself calls
+   `SmartDashboard.updateValues()` every tick, unconditionally).
+3. **Start the flight recorder, once, in `Robot`'s constructor.** This
    replaces old L3 §3's "change what `Robot` extends" + `Logger.start()`
-   steps. Since nothing about `EpilogueBackend` depends on `Robot`'s base
-   class, the natural home is a small `private final EpilogueBackend` field —
-   on `Robot` itself is the cleanest choice, since `Robot` is already the one
-   object every opmode receives via constructor injection, so any opmode (or
-   mechanism, once mechanisms take a `Robot` reference from Lesson 9 on) can
-   reach it the same way.
+   steps with a single line — `DataLogManager` is separate, older, plain
+   WPILib infrastructure, unrelated to Epilogue or AdvantageKit, that mirrors
+   every NetworkTables value (including everything `SmartDashboard` publishes)
+   to a `.wpilog` file automatically.
 
-   **Add to `Robot.java`:**
+   **Add to `Robot.java`'s constructor:**
    ```java
-   package first.robot;
-
-   import org.wpilib.epilogue.logging.EpilogueBackend;
-   import org.wpilib.epilogue.logging.NTEpilogueBackend;
-   import org.wpilib.framework.OpModeRobot;
-   import org.wpilib.networktables.NetworkTableInstance;
-   import org.wpilib.datalog.DataLogManager; // verify exact package before writing for real
-
-   public class Robot extends OpModeRobot {
-     public final EpilogueBackend telemetry =
-         new NTEpilogueBackend(NetworkTableInstance.getDefault());
-
-     public Robot() {
-       DataLogManager.start(); // mirrors every NetworkTables value to a .wpilog file
-     }
-     // ...driverStationConnected()/nonePeriodic() stay as the scaffold has them...
+   public Robot() {
+     DataLogManager.start(); // mirrors NetworkTables (incl. SmartDashboard) to a .wpilog file
    }
    ```
-   Two lines are doing the whole job that old L3's `Logger.addDataReceiver(...)`
-   pair did: `NTEpilogueBackend` for live values (`NT4Publisher`'s role),
-   `DataLogManager.start()` for the `.wpilog` flight recorder (`WPILOGWriter`'s
-   role) — confirmed to auto-mirror NetworkTables, so nothing further is
-   needed to wire the two together.
-4. **Give `DriveModule` its own scoped backend and its own periodic hook.**
-   This replaces old L3 §4's "fill in `periodic()`" step — `Mechanism` has no
-   `periodic()` override the way `SubsystemBase` did, so the mechanism
-   registers its own callback instead, once, in its constructor. `DriveModule`
-   takes exactly what it needs — an `EpilogueBackend`, not the whole `Robot` —
-   which matters: this deliberately does **not** preview Lesson 9's
-   Robot-sharing restructure, since that lesson's forcing function is a
-   different, specific problem (two opmodes needing the same *hardware*
-   instance). Handing a mechanism a narrow `EpilogueBackend` today doesn't
-   set up that expectation early or muddy Lesson 9's motivation later.
+   That's the entire setup step — no field on `Robot`, no object to
+   construct and hand around, nothing else to import beyond `DataLogManager`
+   itself.
+4. **Log from `DriveModule`'s own periodic hook — constructor unchanged from
+   Lessons 1–2.** This replaces old L3 §4's "fill in `periodic()`" step —
+   `Mechanism` has no `periodic()` override the way `SubsystemBase` did, so
+   the mechanism registers its own callback instead, once, in its
+   constructor. Because `SmartDashboard`'s methods are `static`, this needs
+   no field, no parameter, and no change to `DriveModule`'s constructor
+   signature at all — worth pointing out to students explicitly, since it's
+   the clearest evidence this design really is simpler than the alternative
+   that was considered and dropped.
 
    **Add to `DriveModule`:**
    ```java
-   private final EpilogueBackend m_backend;
-
-   public DriveModule(EpilogueBackend backend) {
-     m_backend = backend.getNested("DriveModule");
+   public DriveModule() {
      Scheduler.getDefault().addPeriodic(this::logTelemetry);
    }
 
    private void logTelemetry() {
      double rotations = m_driveMotor.getPosition().getValueAsDouble();
      double rps = m_driveMotor.getVelocity().getValueAsDouble();
-     m_backend.log("PositionRotations", rotations);
-     m_backend.log("VelocityRotPerSec", rps);
+     SmartDashboard.putNumber("DriveModule/PositionRotations", rotations);
+     SmartDashboard.putNumber("DriveModule/VelocityRotPerSec", rps);
    }
    ```
-   `.getNested("DriveModule")` is confirmed from source to prepend
-   `"DriveModule/"` to every key logged through it, so
-   `"PositionRotations"` becomes the NetworkTables entry
-   `"DriveModule/PositionRotations"` — the exact naming convention old L3
-   teaches, unchanged. `MyTeleop`'s constructor changes to match:
-   `new DriveModule(robot.telemetry)` in place of Lessons 1–2's no-arg
-   `new DriveModule()` — a small, deliberate change worth calling out to
-   students directly ("the module needs to reach something that lives on
-   `Robot` now"), not glossed over.
+   The `"DriveModule/PositionRotations"` naming is a **habit the lesson
+   teaches**, not something a library enforces — NT4 topic names are
+   genuinely hierarchical on `/`, so dashboards (AdvantageScope included)
+   still render this as a nested `DriveModule` folder under `SmartDashboard`,
+   reproducing old L3's organized tree exactly. Say this plainly: nothing
+   stops a student from writing an unorganized key here the way old L3
+   warned against — the discipline is the lesson's job now, not the API's.
 
    `Scheduler.getDefault().addPeriodic(Runnable)` runs the callback every
    scheduler tick regardless of which command is active — the direct
@@ -448,47 +433,44 @@ plural-destinations idea, different noun.
    over unchanged as advice, just with a new mechanism underneath it.
 5. **AdvantageScope — same tool, unchanged.** AdvantageScope reads
    NetworkTables and `.wpilog` files generically; it was never
-   AdvantageKit-exclusive (teams used it with plain `DataLogManager` output
-   for years before AdvantageKit existed). Old L3 §5's walkthrough (Connect to
-   Simulator, expand the sidebar tree, drag signals onto a line graph) carries
-   over with one change: there's no `AdvantageKit → RealOutputs` prefix in the
-   tree — values sit directly under `DriveModule/`, since that's the root this
-   lesson's backend was given.
+   AdvantageKit-exclusive (teams used it with plain `SmartDashboard`/
+   `DataLogManager` output for years before AdvantageKit existed). Old L3
+   §5's walkthrough (Connect to Simulator, expand the sidebar tree, drag
+   signals onto a line graph) carries over with one change: values sit
+   under `SmartDashboard/DriveModule/` in the tree, not
+   `AdvantageKit → RealOutputs`.
 
 ### Try it
 
 1. Log the **commanded** speed too, same idea as old L3's Try It #1 — call
-   `m_backend.log("CommandedOutput", speed)` from inside `driveWithJoystick`'s
-   loop body (`runRepeatedly`'s `Runnable`), where the value is computed.
+   `SmartDashboard.putNumber("DriveModule/CommandedOutput", speed)` from
+   inside `driveWithJoystick`'s loop body (`runRepeatedly`'s `Runnable`),
+   where the value is computed.
 2. Same `getPositionRotations()` accessor exercise as old L3.
-3. Same "change the prefix, watch the tree update" exercise — now change the
-   string passed to `robot.telemetry.getNested(...)` instead of the old
-   `"Elevator/"` prefix rename.
+3. Same "change the prefix, watch the tree update" exercise as old L3 —
+   change the string literal's prefix from `"DriveModule/"` to
+   `"Elevator/"`, rebuild, watch AdvantageScope.
 
 ### What's deliberately not in this lesson
 
-**Replay.** `EpilogueBackend` is write-only — nothing in its interface reads
-a value back — so there is no way to teach "rerun this match through changed
-code" the way old L3 sets up for Lesson 13 to pay off. Don't invent a
-substitute or hint that one is coming soon within this lesson; state plainly
-that this is deferred, the same honest framing the team decision uses, and
-let the eventual replay-focused follow-up lesson (once AdvantageKit ships
-`OpModeRobot` support) own that payoff instead.
+**Replay.** Neither `SmartDashboard` nor raw `NetworkTables` reads a value
+back — publishing is one-directional — so there is no way to teach "rerun
+this match through changed code" the way old L3 sets up for Lesson 13 to pay
+off. Don't invent a substitute or hint that one is coming soon within this
+lesson; state plainly that this is deferred, the same honest framing the
+team decision uses, and let the eventual replay-focused follow-up lesson
+(once AdvantageKit ships `OpModeRobot` support) own that payoff instead.
 
 ### Open items
 
-- Confirm `org.wpilib.epilogue`'s presence on the classpath without any extra
-  `build.gradle` configuration, against a real build — high confidence, not
-  yet driven.
 - Confirm `DataLogManager`'s exact 2027 package (`org.wpilib.datalog` is a
-  reasonable guess from `FileBackend`'s imports, not directly verified) and
-  that it still auto-mirrors NetworkTables the way it has for years.
-- Confirm `Robot.telemetry` (or an equivalent shared root backend) still
-  makes sense as a public field once Lesson 9 restructures mechanism
-  ownership onto `Robot` — `DriveModule(EpilogueBackend backend)` was
-  deliberately kept narrow so this lesson doesn't preview that restructure
-  early; revisit whether that narrowness still holds once mechanisms
-  multiply.
+  reasonable guess from other confirmed imports in that package, not
+  directly verified for `DataLogManager` itself) and that it still
+  auto-mirrors NetworkTables the way it has for years.
+- Struct-valued logging (a `Pose2d`, later in the course) has no
+  `SmartDashboard` one-liner the way AdvantageKit/Epilogue offered — not a
+  Lesson 3 problem, but flagged in the master plan so it's not rediscovered
+  as a surprise when the odometry/field-view lessons arrive.
 
 ---
 
@@ -496,13 +478,12 @@ let the eventual replay-focused follow-up lesson (once AdvantageKit ships
 
 - [ ] Lessons 0–3: verify against a real running sandbox (SimGUI opmode
       selection UI, `TalonFX`/`CANBus` constructor, vendor-manager alpha
-      visibility, `org.wpilib.epilogue`'s presence without extra
-      `build.gradle` config, `DataLogManager`'s exact package) before
-      finalizing prose — several details above are flagged as
-      read-from-source-but-not-driven.
+      visibility, `DataLogManager`'s exact package) before finalizing prose —
+      several details above are flagged as read-from-source-but-not-driven.
 - [x] Lesson 3: no longer blocked. Team decision (2026-08-10) — proceed using
-      `org.wpilib.epilogue`'s `EpilogueBackend` directly, defer real replay to
-      a later pass once AdvantageKit ships `OpModeRobot` support.
+      plain `SmartDashboard.putNumber(...)` (Epilogue investigated and found
+      workable, dropped same day as unnecessary machinery), defer real replay
+      to a later pass once AdvantageKit ships `OpModeRobot` support.
 - [ ] Once Lessons 0–3 are written, extend `tools/verify-lessons.sh` (or
       build its v3-track sibling) to actually compile them against
       `code/OpModeV3Robot` — per R6 in the master plan, nothing here should
