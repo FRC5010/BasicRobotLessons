@@ -8,6 +8,10 @@ on **SystemCore** instead of the roboRIO — using the **OpMode** framework
 lesson content** — it lives beside `docs/lessons/`, never inside it, and
 nothing here should be pasted into a lesson as-is.
 
+**Continued in [docs/lesson-plan-v3-0-3.md](lesson-plan-v3-0-3.md)**, which
+lays out the first four lessons of the new track (Lessons 0–3) in detail and
+inherits the decisions recorded here.
+
 This plan is written before any lesson work has started. Every API claim in
 it was read from the actual source at tag `v2027.0.0-alpha-6` of
 `wpilibsuite/allwpilib` (the exact version pinned in
@@ -27,26 +31,33 @@ guessed at.
 `code/OpModeV3Robot` was added to this branch as a byte-for-byte WPILib
 template scaffold: `Main`, `Robot extends OpModeRobot`, and two opmodes,
 `MyTeleop` and `MyAuto`, each a `PeriodicOpMode` annotated `@Teleop` /
-`@Autonomous`. It ships WPILib's **Commands V2** vendordep
+`@Autonomous`. It originally shipped WPILib's **Commands V2** vendordep
 (`org.wpilib.commandsv2`) — the same architecture this course already
-teaches, just repackaged under `org.wpilib.*`. Nothing about the scaffold as
-committed forces coroutine-style commands; that requires deliberately
-swapping in the **Commands V3** vendordep, which conflicts with V2 and cannot
-be installed alongside it (`CommandsV2.json`'s own `conflictsWith` block names
-it by UUID).
+teaches, just repackaged under `org.wpilib.*`.
 
-There's a second reason this is worth planning now rather than later:
-[`aside-commands-v3.md`](lessons/aside-commands-v3.md) — this course's existing
-page about the *design* for Commands V3 — ends its Try It #4 with "if a real
+**Resolved 2026-08-10: swapped.** `code/OpModeV3Robot/vendordeps/CommandsV2.json`
+is gone; `CommandsV3.json` is in its place, copied verbatim from
+`commandsv3/CommandsV3.json` at `wpilibsuite/allwpilib` tag `v2027.0.0-alpha-6`
+(the same tag this project's `build.gradle` pins). Coroutine-style commands
+are the point of this whole track, so there was no reason to let the scaffold
+sit on V2 even temporarily — see [OD1](#od1-commandsv3-installed-resolved).
+Checked first: no Java source in `code/OpModeV3Robot/src` referenced
+`commandsv2` anything, so the swap is a pure build-dependency change with zero
+code impact.
+
+There's a second reason this was worth doing now rather than later: this
+course used to carry a page, `aside-commands-v3.md` (now deleted — see below),
+about the *design* for Commands V3, whose Try It #4 said "if a real
 `Coroutine` class exists by the time you read this, trust it over this page."
-That condition is now true. `org.wpilib.command3.Coroutine`,
-`org.wpilib.command3.Command`, `org.wpilib.command3.Scheduler`, and the rest
-of the framework the aside speculated about are real, compiled, documented
-Java source in the 2027 alpha — see the appendix for exactly what changed
-between the design doc and the shipped API (mostly nothing; a few names
-moved). **That aside is now stale by its own stated test and is the single
-smallest, highest-value fix this plan identifies** — see
-[Immediate action: retire or rewrite the Commands V3 aside](#immediate-action-retire-or-rewrite-the-commands-v3-aside).
+That condition is now true.
+`org.wpilib.command3.Coroutine`, `org.wpilib.command3.Command`,
+`org.wpilib.command3.Scheduler`, and the rest of the framework the aside
+speculated about are real, compiled, documented Java source in the 2027
+alpha — see the appendix for exactly what changed between the design doc and
+the shipped API (mostly nothing; a few names moved). **That aside was retired
+2026-08-10** — its content now lives here, verified against the real API
+instead of the design doc. See
+[Retired: the Commands V3 aside](#retired-the-commands-v3-aside).
 
 ## Scope and posture
 
@@ -68,29 +79,39 @@ things argue against that, all real and not hedges:
    alpha notes literally list "no Sendable replacement yet" as a known
    limitation). An API detail cited here as fact today can legitimately be
    wrong by alpha-7.
-3. **The vendor ecosystem this course leans on hardest — AdvantageKit,
-   PhotonVision, maple-sim, BLine — has unverified 2027/SystemCore status**
-   for three of those four, and the fourth (AdvantageKit) has a confirmed
-   alpha release but an **unconfirmed integration point**: this course's
-   entire telemetry and replay pedagogy (Lesson 3 onward, and all of Lesson
-   13) assumes AdvantageKit hooks a `LoggedRobot`-shaped lifecycle, and
-   `OpModeRobot` is a different `RobotBase` subclass. Nobody should write
-   Lesson 3 for this stack before that's answered with a real, compiling
-   sandbox project — see [Risk R1](#risks-and-blocking-unknowns).
+3. **AdvantageKit does not support `OpModeRobot` yet — confirmed, not just
+   unverified.** This course's entire telemetry and replay pedagogy (Lesson 3
+   onward, and all of Lesson 13) assumes AdvantageKit hooks a
+   `LoggedRobot`-shaped lifecycle. WPILib's own
+   `wpilibsuite/SystemCoreTesting/AdvantageKit.md`, describing the exact
+   release paired with this project's pinned WPILib version
+   (`v27.0.0-alpha-4` ↔ `2027.0.0-alpha-6`), says so directly: *"Users can
+   continue to use `LoggedRobot`, which is the equivalent of WPILib's
+   `TimedRobot` class. An equivalent for WPILib's `OpModeRobot` will be
+   available in a future release."* This is now the single hardest blocker in
+   the whole plan — see [R1](#risks-and-blocking-unknowns) and its concrete
+   effect on [Lesson 3](lesson-plan-v3-0-3.md#lesson-3-telemetry--plots-blocked).
+   Meanwhile PhotonVision's 2027 alpha vendordep does exist
+   (`photonlib-v2027.0.0-alpha-2.json`), so that part of the ecosystem is in
+   better shape than AdvantageKit specifically — see the appendix.
 
 **Recommended posture: build this as a parallel track, not an in-place
 rewrite**, using the same discipline `CLAUDE.md` already prescribes for the
-existing course — a `code/lesson-N-opmode/` (or similar) snapshot line, its
-own extension to `tools/verify-lessons.sh` (or a sibling script) that rolls
-those snapshots onto `code/OpModeV3Robot` and actually compiles them, and a
-lesson written and verified **one at a time**, same as every other pass this
-repo has done. Nothing in the existing 0–34 course should be deleted, retitled
-away from roboRIO, or treated as superseded until this track has independently
-proven out at least through the equivalent of today's Lesson 13 (IO layers +
-replay) — the point where the AdvantageKit risk either resolves or kills the
-plan. That gate is deliberate: it's the cheapest point to find out the answer,
-and it's exactly the point the existing course discovered how central that
-pattern is to everything after it.
+existing course. Per direction from the user, the new track's lesson prose
+lives under **`docs/lessons/v3/`** (e.g. `docs/lessons/v3/00-orientation.md`),
+a sibling of `docs/lessons/`'s numbered files rather than mixed into them, and
+its code side needs the same treatment: a `code/lesson-N` snapshot line for
+the v3 track and its own extension to `tools/verify-lessons.sh` (or a sibling
+script) that rolls those snapshots onto `code/OpModeV3Robot` and actually
+compiles them. Naming for both is an open item — see
+[the housekeeping checklist](#housekeeping-checklist). A lesson gets written
+and verified **one at a time**, same as every other pass this repo has done.
+Nothing in the existing 0–34 course should be deleted, retitled away from
+roboRIO, or treated as superseded by this track. The AdvantageKit blocker
+means the natural gate is now **Lesson 3 itself**, not Lesson 13 — Lessons
+0–2 of the new track can be written and verified today; Lesson 3 needs
+either AdvantageKit's `OpModeRobot` support to land, or a deliberate,
+flagged interim workaround — see the detailed lesson plan linked above.
 
 ---
 
@@ -108,13 +129,13 @@ Read this table with that in mind — it separates "the words change" from
 | Wiring class | `RobotContainer`: constructed once at boot, owns every subsystem and every binding for the robot's entire life | No such class exists in the template. `Robot` is the only thing constructed once at boot; opmodes receive it via constructor injection (`MyTeleop(Robot robot)`) already, in the stock scaffold | This is the crux of [the MyTeleop → RobotTeleop decision](#the-myteleopmyauto--robotteleop-transition) |
 | Subsystem base | `SubsystemBase` (`periodic()` override, auto-registers with `CommandScheduler`) | `Mechanism` (constructor registers with `Scheduler.getDefault()`, auto-installs an idle default command) | No baked-in `periodic()` hook — see [Risk R1](#risks-and-blocking-unknowns) on where per-tick logging goes |
 | Command shape | `initialize/execute/isFinished/end`, or `run(Runnable).until(...).finallyDo(...)` | Single `run(Coroutine)` method; `Mechanism.run(Consumer<Coroutine>)....named(...)`, with `.until(...)`, `.whenCanceled(...)`, `.withPriority(...)` builder stages | `.named(...)` is now a **compiler-enforced** final step, not a convention |
-| Composition | `Commands.sequence/parallel/race/deadline`; `.andThen/.alongWith/.raceWith/.deadlineWith`; `Commands.defer(Supplier<Command>, Set<Subsystem>)` | `Command.sequence/parallel/race`; `.andThen/.alongWith/.raceWith/.until`; `coroutine.await(...)`/`coroutine.fork(...)` largely replace `defer` | See [Lesson 27 impact](#lesson-27-object-detection--medium) |
+| Composition | `Commands.sequence/parallel/race/deadline`; `.andThen/.alongWith/.raceWith/.deadlineWith`; `Commands.defer(Supplier<Command>, Set<Subsystem>)` | `Command.sequence/parallel/race`; `.andThen/.alongWith/.raceWith/.until`; `coroutine.await(...)`/`coroutine.fork(...)` largely replace `defer` | See [the per-lesson impact table](#per-lesson-impact-assessment) (Lesson 27) |
 | Controller | `CommandXboxController` — `a()/b()/x()/y()` | `CommandGamepad` — `southFace()/eastFace()/westFace()/northFace()` | On a standard Xbox pad: south=A, east=B, west=X, north=Y. Generic naming, FTC-style — no `CommandXboxController` equivalent shipped |
 | Triggers | `edu.wpi.first.wpilibj2.command.button.Trigger`; lives until the program restarts | `org.wpilib.command3.Trigger`; **same** `and/or/negate/debounce`, **same** `onTrue/onFalse/whileTrue/whileFalse`, plus new `risingEdge()/fallingEdge()`; auto-torn-down when its creation scope (an opmode or a command) goes inactive | Direct vocabulary win for Lesson 22; real simplification opportunity for Lesson 25 — see below |
-| Autonomous selection | Hand-built `LoggedDashboardChooser<Supplier<Command>>` (`Autos.buildChooser`) | Every `@Autonomous` class is automatically listed and grouped on the DS — no chooser code at all | Large simplification; open decision, not a mandate — see [OD3](#open-decisions) |
-| State machines | Hand-rolled enum (`SuperstructureState`) + exhaustive `switch` | Library primitive: `org.wpilib.command3.StateMachine` (states, `switchFromAny`, `onEnter/onExit`, `when`/`whenComplete`) | Recommend keep the hand-rolled version for the teaching payoff, reference `StateMachine` the way the course already references `MathUtil.clamp` — see [Lesson 24 impact](#lesson-24-superstructure--medium) |
+| Autonomous selection | Hand-built `LoggedDashboardChooser<Supplier<Command>>` (`Autos.buildChooser`) | Every `@Autonomous` class is automatically listed and grouped on the DS — no chooser code at all | **Decided:** lean into multiple `@Autonomous` classes, not a single routine-selecting `RobotAuto` — see [OD3](#od3-multiple-autonomous-opmodes-resolved) |
+| State machines | Hand-rolled enum (`SuperstructureState`) + exhaustive `switch` | Library primitive: `org.wpilib.command3.StateMachine` (states, `switchFromAny`, `onEnter/onExit`, `when`/`whenComplete`) | Recommend keep the hand-rolled version for the teaching payoff, reference `StateMachine` the way the course already references `MathUtil.clamp` — see [the per-lesson impact table](#per-lesson-impact-assessment) (Lesson 24) |
 | Telemetry widgets | `SmartDashboard.putData` (the one sanctioned use) | `org.wpilib.smartdashboard.SmartDashboard` — same class name, confirmed present (`OpModeRobot.loopFunc()` calls `SmartDashboard.updateValues()` itself) | Low risk |
-| AdvantageKit logging | `Logger.recordOutput(...)` from every subsystem's `periodic()`, hooked into `LoggedRobot`'s lifecycle | AdvantageKit 2027 alpha exists (`v27.0.0-alpha-4`, pinned to WPILib `2027.0.0-alpha-5/6`) — but its integration point against `OpModeRobot` (not `LoggedRobot`) is **unverified** | **Blocking risk — see R1** |
+| AdvantageKit logging | `Logger.recordOutput(...)` from every subsystem's `periodic()`, hooked into `LoggedRobot`'s lifecycle | **Confirmed blocked.** AdvantageKit `v27.0.0-alpha-4` (paired with WPILib `2027.0.0-alpha-6`) explicitly does not support `OpModeRobot` yet — WPILib's own compatibility notes name `LoggedRobot` as the only supported base and say an `OpModeRobot` equivalent is "available in a future release" | **Blocking risk — see R1** |
 | Hardware target | roboRIO | SystemCore | Removes device classes this course never used; CAN devices (TalonFX, Pigeon 2, CANcoder) unaffected in principle, pending Phoenix 6 SystemCore verification |
 
 ---
@@ -248,13 +269,14 @@ Today's Lesson 17 (BLine autos) builds a `LoggedDashboardChooser<Supplier<Comman
 by hand specifically because WPILib's V2 stack has no other way to offer
 "pick one of several autos" on the dashboard. The OpMode framework makes that
 built in — every `@Autonomous` class is its own DS-selectable entry, grouped
-by the annotation's `group` parameter. Whether the course should lean into
-that (multiple small `@Autonomous` classes once there's more than one
-routine worth choosing between) or keep growing a single `RobotAuto` with its
-own internal routine-selection logic (preserving today's factory-lambda
-teaching content) is a genuine open call — [see OD3](#open-decisions) — not
-resolved here, because it changes what Lesson 17 is *for* pedagogically, and
-that's exactly the kind of call `CLAUDE.md` reserves for the user.
+by the annotation's `group` parameter. **Decided: lean into that** — multiple
+small `@Autonomous(name=..., group=...)` classes once there's more than one
+routine worth choosing between, rather than growing `RobotAuto` into its own
+internal chooser. See [OD3](#od3-multiple-autonomous-opmodes-resolved) for
+what that costs the syllabus (today's `Autos.buildChooser`
+factory-lambda/`Supplier<Command>` teaching content needs a new home) and
+what it buys (zero chooser boilerplate, and it's the idiomatic shape for this
+stack — `MyAuto` already starts as "one opmode, one job").
 
 ---
 
@@ -311,7 +333,7 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 0 | Orientation | **High** | Entry point itself changes — OpMode selection replaces "the one Robot class," see [OpMode fundamentals](#opmode-fundamentals) |
 | 1 | Your first motor | **High** | First real command, written directly in `MyTeleop`, no `RobotContainer` analog yet |
 | 2 | Joystick control | Low | Same lambda-binding pattern, stays in `MyTeleop` |
-| 3 | Telemetry & plots | Medium | AdvantageKit-on-`OpModeRobot` hookup is unverified — see [R1](#risks-and-blocking-unknowns) |
+| 3 | Telemetry & plots | **Blocked** | AdvantageKit's 2027 alpha confirms `OpModeRobot` is not supported yet — see [R1](#risks-and-blocking-unknowns) and the [detailed Lesson 3 plan](lesson-plan-v3-0-3.md#lesson-3-telemetry--plots-blocked) |
 | 4 | Simulation | Low | `simulationInit()`/`simulationPeriodic()` still exist on `OpModeRobot` |
 | 5 | Steering P control | Low | Mechanically unaffected |
 | 6 | Distance & commands | Low–Medium | "Commands that finish" is now trivially a `while` loop + `coroutine.yield()` — arguably simpler to teach, not just portable |
@@ -323,9 +345,9 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 12 | Model-based control | Low | Phoenix 6 config/control-request API; SystemCore Phoenix 6 alpha status noted in [R3](#risks-and-blocking-unknowns) |
 | 13 | IO layers & replay | **High** | Single biggest unverified risk lands here — see [R1](#risks-and-blocking-unknowns) |
 | 14 | Pose estimator & localizer | Low | `SubsystemBase` → `Mechanism` rename only |
-| 15 | PhotonVision | Medium | Vendor library SystemCore/2027 status unverified — [R2](#risks-and-blocking-unknowns) |
-| 16 | maple-sim | Medium | Same — [R2](#risks-and-blocking-unknowns). `Robot.simulationPeriodic()`'s "shared world state" exception still has a home on `OpModeRobot` |
-| 17 | BLine autos | **High** | Vendor risk (R2) *and* the native multi-`@Autonomous` selection design call (OD3) both land here |
+| 15 | PhotonVision | Medium | Vendordep confirmed present for 2027 alpha (`photonlib-v2027.0.0-alpha-2.json`); `OpModeRobot`-specific integration still unverified — [R2](#risks-and-blocking-unknowns) |
+| 16 | maple-sim | Medium | 2027/SystemCore status still unverified — [R2](#risks-and-blocking-unknowns). `Robot.simulationPeriodic()`'s "shared world state" exception still has a home on `OpModeRobot` |
+| 17 | BLine autos | **High** | BLine's 2027 status still unverified (R2) *and* this is where the resolved multi-`@Autonomous` selection decision (OD3) actually lands — `Autos.buildChooser` retires |
 | 18–23 | Elevator … LEDs | Low | `SubsystemBase` → `Mechanism` rename; IO-layer pattern (Lesson 13's spine) is unaffected by this table's changes once Lesson 13 itself is resolved |
 | 24 | Superstructure | Medium | `StateMachine` library primitive now exists — recommend keep the hand-rolled enum, reference the library the way the course references `MathUtil.clamp` |
 | 25 | Path events | Medium | `Trigger`'s auto-scoping may let the manual `.finallyDo(FollowPath::clearRotationOverride)` handback shrink or disappear — depends on whether BLine v3 exposes a scoped registration path; needs the same source-jar verification this course already applies to BLine |
@@ -342,14 +364,15 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | aside-git-branching | None | Tool-based, no framework dependency |
 | aside-debugger | Low | Breakpoints/stepping unaffected; worked example's lesson reference may need updating |
 | aside-odometry-thread | Low | Phoenix 6 `BaseStatusSignal.waitForAll` API; `Mechanism` rename only |
-| aside-commands-v3 | **Retire/rewrite** | Its entire premise ("this is a design doc, none of this code runs") is now false — see below |
+| aside-commands-v3 | **Retired** | Its entire premise ("this is a design doc, none of this code runs") went false — see below |
 
-### Immediate action: retire or rewrite the Commands V3 aside
+### Retired: the Commands V3 aside
 
-This is small, independent of the rest of this plan, and worth doing before
-any lesson-restructuring work starts, because it's currently giving readers
-wrong information about the state of the world. Concretely, verified against
-the real shipped API:
+`docs/lessons/aside-commands-v3.md` was **deleted 2026-08-10** rather than
+rewritten in place — it was giving readers wrong information about the state
+of the world, and its real content (verified against the shipped API instead
+of the design doc) belongs in this plan, not in a standalone aside pretending
+to be evergreen. Verified against the real shipped API before deleting it:
 
 - The aside's speculative `run(() -> ...)` V3 rewrite of `home()` is close but
   not quite right — the real builder doesn't let cleanup-after-cancellation
@@ -391,15 +414,15 @@ the real shipped API:
 - `RobotModeTriggers` (`autonomous()`/`teleop()`/`disabled()`/`utility()`)
   shipped, matching the pattern the aside describes for scoped triggers.
 - `StateMachine` — not mentioned in the aside at all — shipped as a full
-  library primitive; see [Lesson 24 impact](#lesson-24-superstructure--medium).
+  library primitive; see [the per-lesson impact table](#per-lesson-impact-assessment) (Lesson 24).
 
-Recommend rewriting the aside's §1 disclaimer (the "this doesn't compile"
-framing) and its code blocks' italic "nothing to add" markers to bold
-"type this" ones once a real sandbox confirms they compile against
-`code/OpModeV3Robot`, and pointing its closing paragraph at this plan doc for
-what comes next — rather than deleting it, since §§2–6's *reasoning* (why V3
-solves the problems it solves) remains accurate and is good teaching material
-independent of the rest of this restructure.
+Its §§2–6 *reasoning* (why V3 solves the problems it solves — a procedure
+turned inside out because the old framework couldn't wait, a mechanism held
+uncommanded by a group that isn't using it, a lifetime nothing tracked) is
+not lost — it's accurate and worth carrying forward once the actual v3 lesson
+track reaches the equivalent material (today's Lessons 21, 24, and 25), just
+written against the real API and with real measurements instead of design-doc
+speculation, the same as every other lesson in this course.
 
 ---
 
@@ -407,41 +430,40 @@ independent of the rest of this restructure.
 
 Genuinely the user's call, listed with a recommendation where this plan has
 one, per the convention of `docs/lesson-plan-16-22.md` and `-23-34.md`.
+Resolved items are kept, not deleted, as the record of what was decided —
+same convention those two docs use.
 
-### OD1: When to swap `CommandsV2.json` for `CommandsV3.json` in `code/OpModeV3Robot`
+### OD1: CommandsV3 installed (resolved)
 
-They conflict and cannot coexist (`CommandsV2.json`'s `conflictsWith` block
-names V3 by UUID). **Recommend swapping now**, before any lesson work starts,
-since this whole plan is predicated on coroutine-style commands and there's
-no reason to teach V2 syntax on this scaffold even temporarily. Pin it the
-same way every other vendordep in this course is pinned — `CLAUDE.md`'s
-existing rule: one immutable file from the marketplace's `vendor-json-repo`,
-not a vendor "latest" link — at whatever `2027_alpha` version matches
-GradleRIO `2027.0.0-alpha-6`.
+Swapped 2026-08-10. `code/OpModeV3Robot/vendordeps/CommandsV2.json` → deleted;
+`CommandsV3.json` → added, content copied verbatim from
+`commandsv3/CommandsV3.json` at `wpilibsuite/allwpilib` tag `v2027.0.0-alpha-6`.
+This vendordep is first-party WPILib (`"version": "wpilib"` in its
+`javaDependencies` entry, no `mavenUrls`/`jsonUrl`), so it isn't pinned via
+the third-party `vendor-json-repo` pattern `CLAUDE.md` documents for vendors
+like CTRE/PhotonVision/REV — it ships bundled with the WPILib installation
+itself, and the source tree is the authoritative copy to pin against.
 
-### OD2: MyTeleop/MyAuto → RobotTeleop/RobotAuto timing
+### OD2: RobotTeleop rename timing (confirmed)
 
-Recommended: Lesson 9 (autonomous), for the reasons in
-[the transition section](#the-myteleopmyauto--robotteleop-transition).
+Confirmed at Lesson 9 (autonomous), for the reasons in
+[the transition section](#the-myteleopmyauto--robotteleop-transition). User's
+framing: the rename is really about the name no longer sounding like example
+code once it's carrying real wiring — which lines up with the Lesson-9
+forcing function exactly, since that's the first lesson where it stops being
+example code and starts owning shared hardware.
 
-### OD3: Single `RobotAuto` vs. multiple `@Autonomous` classes for multi-routine selection
+### OD3: multiple Autonomous opmodes (resolved)
 
-At today's Lesson 17 (BLine, multiple named autos), the OpMode framework
-offers native DS-side selection with zero chooser code. Two paths:
+Decided: lean into the framework's native multi-opmode selection at Lesson 17
+(BLine, multiple named autos) — several small `@Autonomous(name=..., group=...)`
+classes, not a single `RobotAuto` with its own internal chooser. `Autos.buildChooser`
+and its `LoggedDashboardChooser<Supplier<Command>>` machinery retire outright;
+whatever teaching value that factory-lambda pattern carried needs a new home
+elsewhere in the syllabus (candidate: the coroutine `await`/`fork` material at
+Lesson 9, which already needs a `Supplier`-shaped example).
 
-- **Keep one `RobotAuto`**, internally selecting between routines (closer to
-  today's course — preserves the `Supplier<Command>`/factory-lambda teaching
-  content that currently lives in `Autos.buildChooser`).
-- **Split into several small `@Autonomous(name=..., group=...)` classes**,
-  leaning into the framework's native selector (less boilerplate, more
-  idiomatic to this stack, mirrors how `MyAuto` already starts as "one
-  opmode, one job").
-
-No recommendation forced here — this changes what Lesson 17 is *teaching*,
-not just how it's coded, which is exactly the kind of call this repo's plan
-docs reserve for the user.
-
-### OD4: `StateMachine` adoption at Lesson 24
+### OD4: `StateMachine` adoption at Lesson 24 — still open
 
 Recommend **keep the hand-rolled `SuperstructureState` enum** — it's the
 course's first enum-with-fields-and-methods-and-exhaustive-`switch` lesson,
@@ -450,16 +472,17 @@ stops the build") is worth protecting. Reference `org.wpilib.command3.StateMachi
 the way the course already references `MathUtil.clamp` after teaching the
 by-hand version: "now that you've built one, here's the library's version."
 
-### OD5: Xbox-specific framing vs. generic "gamepad" framing
+### OD5: use CommandGamepad (resolved)
 
-`CommandGamepad` ships no Xbox-specific method names — only
-`southFace()/eastFace()/westFace()/northFace()`. Recommend the course keep
-assuming a physical Xbox-layout controller (most student teams have one, and
-`README.md` already states this hardware assumption) but state the
-south/east/west/north ↔ A/B/X/Y mapping once, early, rather than renaming the
-course's whole framing to "gamepad."
+Decided: use the new generic gamepad API (`southFace()/eastFace()/westFace()/northFace()`,
+not any Xbox-specific naming — there is no `CommandXboxController` equivalent
+to fall back to anyway). The course keeps assuming a physical Xbox-layout
+controller as its target hardware (most student teams have one, and this
+matches `README.md`'s existing hardware assumption); only the *method names*
+change. State the south/east/west/north ↔ A/B/X/Y mapping once, early — see
+the [first-4-lessons plan](lesson-plan-v3-0-3.md) for where.
 
-### OD6: "roboRIO" → "SystemCore" terminology pass
+### OD6: "roboRIO" → "SystemCore" terminology pass — still open
 
 `CLAUDE.md`'s "Target platform" line, `README.md`'s "Hardware assumed"
 section, and the `./gradlew deploy` table row ("Deploy to the roboRIO") all
@@ -474,27 +497,42 @@ worth calling out as a real target, not preemptively.
 Ranked by how much they could invalidate downstream lesson work if they turn
 out badly.
 
-- **R1 (blocking — verify before writing Lesson 3 or 13):** Does
-  AdvantageKit's `Logger`/replay machinery integrate with `OpModeRobot`, or
-  does it require `LoggedRobot`? This course's entire telemetry model
-  (`Logger.recordOutput` from every subsystem, from Lesson 3 on) and all of
-  Lesson 13's IO/replay pattern depend on the answer. AdvantageKit
-  `v27.0.0-alpha-4` is confirmed compatible with WPILib `2027.0.0-alpha-5/6`
-  at the *version* level; whether it's compatible at the *robot-base-class*
-  level is unverified from source reading and needs a real compiling sandbox.
-  Also unresolved: where per-tick logging happens now that `Mechanism` has no
+- **R1 — CONFIRMED BLOCKED (was "unverified"):** AdvantageKit does not
+  support `OpModeRobot`. Quoted directly from `wpilibsuite/SystemCoreTesting/AdvantageKit.md`,
+  describing `v27.0.0-alpha-4` (paired with WPILib `2027.0.0-alpha-6`, this
+  project's pinned version): *"Users can continue to use `LoggedRobot`, which
+  is the equivalent of WPILib's `TimedRobot` class. An equivalent for
+  WPILib's `OpModeRobot` will be available in a future release."* This course's
+  entire telemetry model (`Logger.recordOutput` from every subsystem, from
+  Lesson 3 on) and all of Lesson 13's IO/replay pattern depend on this. There
+  is no current workaround that stays honest to "verified, not guessed" —
+  see the [detailed Lesson 3 plan](lesson-plan-v3-0-3.md#lesson-3-telemetry--plots-blocked)
+  for the options and the recommendation (wait, tracked against AdvantageKit's
+  releases). Separately unresolved, and irrelevant until R1 clears: where
+  per-tick logging happens once it's unblocked, given `Mechanism` has no
   `periodic()` hook the way `SubsystemBase` did — candidates are
   `Scheduler.addPeriodic(Runnable)` (confirmed to exist) or a mechanism
   registering its own callback in its constructor.
-- **R2:** PhotonVision (Lessons 15, 27, 28), maple-sim (Lessons 16, 22, 27),
-  and BLine (Lessons 17, 25, 26) — no confirmed 2027-alpha/SystemCore/
-  `org.wpilib` compatibility found for any of the three. Each gates a
-  meaningful chunk of the back half of the course.
-- **R3:** Phoenix 6's own 2027 alpha has documented gaps: Motioncore CAN
+- **R2 — partially de-risked:** PhotonVision's 2027 alpha vendordep is
+  confirmed to exist (`photonlib-v2027.0.0-alpha-2.json`, in the same
+  `vendor-json-repo/2027_alpha5/` bucket as `AdvantageKit-27.0.0-alpha-4.json`
+  and `Phoenix6-26.50.0-alpha-1.json`) — its `OpModeRobot`-specific
+  integration is still unverified, but the library itself is real for this
+  season, unlike before. **maple-sim and BLine remain fully unverified** —
+  neither publishes through `vendor-json-repo` even in the current course
+  (maple-sim ships from `shenzhen-robotics-alliance.github.io`, BLine from
+  `jitpack.io`), so their 2027/SystemCore status has to be checked at those
+  hosts directly, not inferred from this search. Each gates a meaningful
+  chunk of the back half of the course (Lessons 15–17, 22, 25–28).
+- **R3 — pin confirmed:** Phoenix 6's 2027 alpha vendordep for this
+  project's WPILib version is `Phoenix6-26.50.0-alpha-1.json` (with a
+  matching `Phoenix6-replay-26.50.0-alpha-1.json` for AdvantageKit-replay
+  support — encouraging, once R1 clears), both in `vendor-json-repo/2027_alpha5/`.
+  CTRE's own compatibility notes still list documented gaps: Motioncore CAN
   buses aren't supported yet (only SystemCore-native buses and CANivore), and
   there's no Sendable replacement yet, pending WPILib's Telemetry API. Neither
   appears to block this course's TalonFX/Pigeon 2/CANcoder usage directly,
-  but should be confirmed against a real device before Lesson 1 is rewritten.
+  but should be confirmed against a real device before Lesson 1 is written.
 - **R4:** Everything cited in this plan is alpha software. An API fact
   verified today against `v2027.0.0-alpha-6` is not guaranteed to hold at
   alpha-7 or at a stable 2027 release.
@@ -538,10 +576,12 @@ appendices: verify before drafting, record what you verified.
 | `OpModeFetcher` | Package-private; default implementation reads `org.wpilib.driverstation.RobotState.getOpModeId()`/`getOpMode()` — this is the mechanism `BindingScope.ForOpmode` uses to detect "is this still the selected opmode" |
 | `SmartDashboard` | `org.wpilib.smartdashboard.SmartDashboard` — confirmed present; `OpModeRobot.loopFunc()` itself calls `SmartDashboard.updateValues()` every tick |
 | `Alert` | `org.wpilib.driverstation.Alert` — confirmed present; imported and used directly by `OpModeRobot` itself (`m_loopOverrunAlert`), with `Alert.Level` |
-| Vendordep conflict | `code/OpModeV3Robot/vendordeps/CommandsV2.json` (`org.wpilib.commandsv2`) declares a `conflictsWith` entry naming `CommandsV3.json` by UUID — the two cannot be installed together |
-| `commandsv3` module location | Confirmed present at `commandsv3/` in the `allwpilib` repo, with its own `CommandsV3.json`, `build.gradle`, `BUILD.bazel`, `CMakeLists.txt` |
-| AdvantageKit 2027 compatibility | `v27.0.0-alpha-4` compatible with WPILib `2027.0.0-alpha-5/6` (matches this scaffold's pinned GradleRIO version) — version-level only, **robot-base-class integration unverified**, see R1 |
-| Phoenix 6 2027 compatibility | Alpha vendordep exists (`Phoenix6-25.90.0-alpha-2.json` at time of writing); `CANBus.systemCore(int busId)` for SystemCore CAN buses; documented gaps: Motioncore CAN buses unsupported, no Sendable replacement yet |
+| Vendordep conflict | The old `CommandsV2.json` (`org.wpilib.commandsv2`) declared a `conflictsWith` entry naming `CommandsV3.json` by UUID — the two cannot be installed together. **Resolved**: `code/OpModeV3Robot` now ships `CommandsV3.json` only |
+| `commandsv3` module location | Confirmed present at `commandsv3/` in the `allwpilib` repo, with its own `CommandsV3.json`, `build.gradle`, `BUILD.bazel`, `CMakeLists.txt`. Its `CommandsV3.json` (`uuid` `4decdc05-a056-46cf-9561-39449bbb0130`, `javaDependencies` group `org.wpilib` artifact `commands3-java`) is now installed in `code/OpModeV3Robot/vendordeps/`, copied byte-for-byte from source at tag `v2027.0.0-alpha-6` |
+| AdvantageKit 2027 compatibility | **Confirmed blocked, not just unverified.** `v27.0.0-alpha-4` is the release paired with WPILib `2027.0.0-alpha-6` (this scaffold's pinned version), per `wpilibsuite/SystemCoreTesting/AdvantageKit.md`. That same doc states directly: `LoggedRobot` is supported, `OpModeRobot` support is "available in a future release." Its vendordep (`AdvantageKit-27.0.0-alpha-4.json`) is mirrored in `vendor-json-repo/2027_alpha5/` alongside the other 2027-alpha vendor files, for whenever it's needed |
+| Phoenix 6 2027 compatibility | Pin confirmed: `Phoenix6-26.50.0-alpha-1.json` (plus `Phoenix6-replay-26.50.0-alpha-1.json` for AdvantageKit-replay support) in `vendor-json-repo/2027_alpha5/`, CTRE's own compatibility doc pairs it with WPILib's `2027_alpha5` checkpoint (no `2027_alpha6`-specific row published yet — this is the most recent confirmed pairing, not a guess, but re-check before relying on it for a real device). `CANBus.systemCore(int busId)` for SystemCore CAN buses; documented gaps: Motioncore CAN buses unsupported, no Sendable replacement yet |
+| PhotonVision 2027 compatibility | Vendordep confirmed present: `photonlib-v2027.0.0-alpha-2.json`, same `vendor-json-repo/2027_alpha5/` bucket. `OpModeRobot`-specific integration unverified |
+| `vendor-json-repo` 2027 structure | Confirmed directories: `2027_alpha1`, `2027_alpha5` (the current active bucket — despite the name, it also holds newer per-vendor releases like `REVLib-2027.0.0-alpha6.json`, so the folder name marks the prerelease *channel*, not a hard per-vendor version ceiling). Also present in `2027_alpha5/`: `AmLib`, `DogLog`, `PathplannerLib-2027.0.0-alpha-3.json`, `ThriftyLib` — **no BLine, no maple-sim** (both distribute outside `vendor-json-repo`; see R2) |
 | SystemCore removed device classes | Relay, analog output, SPI (incl. SPI IMUs: ADIS16448, ADIS16470, ADXL345, ADXRS450), analog gyro, DMA, built-in accelerometer, digital glitch filter, interrupts, counter, ultrasonic, analog trigger, Nidec Brushless, `Servo`, `Jaguar` — none currently used by this course |
 | Build target | `code/OpModeV3Robot/build.gradle`: `sourceCompatibility`/`targetCompatibility = JavaVersion.VERSION_25`, GradleRIO `2027.0.0-alpha-6`, shadow plugin `9.3.0`; deploys to a `SystemCore` target via `getTargetTypeClass('SystemCore')` |
 
@@ -549,21 +589,36 @@ appendices: verify before drafting, record what you verified.
 
 ## Housekeeping checklist
 
+- [x] Swap `CommandsV2.json` for `CommandsV3.json` in `code/OpModeV3Robot`
+      (OD1) — done 2026-08-10, content copied from `wpilibsuite/allwpilib`
+      source at the pinned tag.
+- [x] Decide MyTeleop/MyAuto → RobotTeleop/RobotAuto timing (OD2) — confirmed
+      Lesson 9.
+- [x] Decide single vs. multiple autonomous opmodes (OD3) — resolved:
+      multiple `@Autonomous` classes.
+- [x] Decide Xbox-specific vs. generic gamepad framing (OD5) — resolved: use
+      `CommandGamepad`'s generic naming.
+- [x] Retire `docs/lessons/aside-commands-v3.md` — done 2026-08-10, content
+      folded into this plan (see [Retired: the Commands V3 aside](#retired-the-commands-v3-aside)).
+- [x] Pin exact vendordep versions for the libraries the first 4 lessons
+      need — see the appendix: `CommandsV3` (installed), `AdvantageKit-27.0.0-alpha-4.json`
+      (blocked, see R1), `Phoenix6-26.50.0-alpha-1.json` (Lesson 1).
 - [ ] Verify AdvantageKit against a real `OpModeRobot`-based sandbox build
-      (R1) before writing Lesson 3 or Lesson 13 content.
-- [ ] Verify PhotonVision / maple-sim / BLine 2027-alpha status (R2) before
-      writing Lessons 15–17, 22, 25–28.
-- [ ] Swap `CommandsV2.json` for a pinned `CommandsV3.json` in
-      `code/OpModeV3Robot` (OD1) once the correct marketplace URL is located,
-      following `CLAUDE.md`'s existing vendordep-pinning rule.
-- [ ] Stand up a `tools/verify-lessons.sh`-equivalent for the OpMode track
-      (R6) before any lesson in it is marked done.
-- [ ] Rewrite or retire `docs/lessons/aside-commands-v3.md` per
-      [Immediate action](#immediate-action-retire-or-rewrite-the-commands-v3-aside) —
-      independent of the rest of this plan, doable now.
-- [ ] Resolve OD2–OD6 with the user before drafting Lesson 0 of the new
-      track.
+      (R1) — track AdvantageKit's releases for `OpModeRobot` support landing.
+      This blocks [Lesson 3](lesson-plan-v3-0-3.md#lesson-3-telemetry--plots-blocked)
+      specifically, not Lessons 0–2.
+- [ ] Verify maple-sim / BLine 2027-alpha status directly at their own hosts
+      (R2) before writing Lessons 16, 17, 22, 25–27 — PhotonVision's status is
+      now confirmed better (vendordep exists), but its `OpModeRobot`
+      integration is still unverified.
+- [ ] Stand up a `tools/verify-lessons.sh`-equivalent for the v3 track (R6)
+      before any lesson in it is marked done. Naming for the v3 track's
+      `code/lesson-N` snapshot line is still an open item.
+- [ ] Resolve OD4 (StateMachine adoption) and OD6 (roboRIO → SystemCore
+      terminology pass) with the user.
 - [ ] Confirm empirically (not by re-reading source) whether
       `BindingScope.createNarrowestScope` sees the new opmode's ID during its
       constructor or only from `start()` onward, before writing the
-      MyTeleop → RobotTeleop lesson.
+      MyTeleop → RobotTeleop lesson (Lesson 9).
+- [ ] See [docs/lesson-plan-v3-0-3.md](lesson-plan-v3-0-3.md) for the
+      detailed Lessons 0–3 plan and its own open items.

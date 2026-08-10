@@ -107,11 +107,6 @@ let you see everything working on your laptop. Device IDs in the examples
   `waitForAll`. Readable any time after Lesson 16, and genuinely optional —
   Lessons 17–34 neither need it nor break with it. Includes the measurement of
   what 250 Hz odometry actually buys, which is less than you'd think.
-- [Commands V3: what changes when a command becomes a normal method](docs/lessons/aside-commands-v3.md) —
-  the command framework WPILib is designing to replace the one this course
-  teaches, and what your own commands would look like written against it.
-  Readable any time after Lesson 9. **Deliberately ahead of this course's
-  target — it's a design document, not a library, so none of its code runs.**
 
 ## Skipping ahead to a lesson in the middle
 

@@ -159,33 +159,17 @@ never-rebase-shared-history rule justified by the commit hash visibly changing
 (`5adaa87` → `c7a003a`). It ships **no `code/` snapshot** and needs no
 `verify-lessons.sh` entry, same as aside-setup and aside-debugger.
 
-[aside-commands-v3.md](docs/lessons/aside-commands-v3.md) is the one page in the
-course whose code **deliberately does not compile**, and it is the reason the
-lead-in convention exists in the form it does: **every one of its fenced blocks
-carries an italic illustration marker and none carries a bold "type this"
-lead-in**, because Commands V3 is a design document rather than a library. Its §1
-says so before the reader reaches a single block — verified 2026-08-07 that
-`wpilibsuite/allwpilib` has `design-docs/commands-v3.md` but **no implementation**
-(probing `wpilibj3/command/`, `wpilibj2/command/v3/`, and `commandsv3/` all 404
-on `main`), that the doc is written throughout in proposal tense with no
-version or status marker, and that it calls the same object both
-`Scheduler.getInstance()` and `Scheduler.getDefault()` — which the aside cites as
-the cleanest available evidence the API is unsettled. Also confirmed by listing
-the shipped jar that `wpilibNewCommands-java-2026.2.1.jar` contains only
-`command`, `command/button`, and `command/sysid`. **The aside's spine is that
-all three of V3's headline problems are ones this course already hit for real**,
-with the four "code you already have" blocks verbatim from the snapshots:
-`Elevator.home()`'s procedure turned inside out into `run`/`until`/`finallyDo`,
-`Superstructure.handoff()` holding both mechanisms in an uncommanded state (plus
-L24's `requestIntake` forced into a sequence because `Commands.parallel` throws
-on shared requirements), and L25's static rotation override needing a
-hand-written `.finallyDo(FollowPath::clearRotationOverride)` because a cancelled
-auto never reaches its `release` marker. Two caveats are kept rather than
-smoothed over: V3's built-in `ParallelGroup`/`Sequence` still take full ownership
-for behavior parity, so narrower ownership is opt-in; and V3 would not
-retroactively fix BLine's own statics. **If you touch this page, re-verify the
-status first** — it is dated by construction, and its Try It #4 asks readers to
-do exactly that.
+`aside-commands-v3.md` — the page describing Commands V3 as a design document
+with no implementation — was **retired 2026-08-10**. Its own Try It #4 asked
+readers to check whether it had gone stale; it had. `org.wpilib.command3` now
+ships as real, compiled source in the 2027 alpha (`commandsv3/` in
+`wpilibsuite/allwpilib`, tag `v2027.0.0-alpha-6`), so "none of this code runs"
+stopped being true. Rather than rewrite the aside in place, its content moved
+to [docs/lesson-plan-opmode-restructure.md](docs/lesson-plan-opmode-restructure.md),
+which is where the actual (now-verified) V3 API notes and the real restructure
+plan live. See that doc's appendix for what changed between the design doc's
+speculation and the shipped API — mostly nothing; a couple of names moved
+(`whenCancelled` → `whenCanceled`, one `l`).
 
 ## Voice, structure, and style
 
@@ -332,10 +316,19 @@ a lesson as-is.
   not a numbered-lesson plan like the two above. A separate, optional
   restructure of the whole course onto `code/OpModeV3Robot` (WPILib's 2027
   alpha "OpModeRobot" template, on SystemCore instead of the roboRIO), using
-  the OpMode framework and coroutine-style Commands V3. Planning stage only —
-  no lesson work has started, and several blocking unknowns (chiefly whether
-  AdvantageKit integrates with `OpModeRobot`) are still open. Read this before
-  touching `code/OpModeV3Robot` or `docs/lessons/aside-commands-v3.md`.
+  the OpMode framework and coroutine-style Commands V3. `code/OpModeV3Robot`
+  now ships the `CommandsV3` vendordep (swapped from V2). Planning stage for
+  the lessons themselves — none have been written yet — and one blocking
+  unknown remains: AdvantageKit's 2027 alpha confirms it does not support
+  `OpModeRobot` yet, which gates Lesson 3 of the new track onward. Read this
+  before touching `code/OpModeV3Robot`.
+- [docs/lesson-plan-v3-0-3.md](docs/lesson-plan-v3-0-3.md) — continues the
+  doc above with a detailed plan for that track's first four lessons
+  (Orientation, first motor, joystick control, telemetry). Lessons 0–2 are
+  ready to write; Lesson 3 is blocked on the AdvantageKit gap above and the
+  doc explains why a workaround wasn't taken instead of waiting. When these
+  lessons are actually written, their prose goes under `docs/lessons/v3/`,
+  a sibling of `docs/lessons/`'s numbered files, not mixed into them.
 
 ## When adding or editing a lesson
 
