@@ -328,6 +328,14 @@ a lesson as-is.
   target — see the Asides section above for what shipped and what was verified.
   **Every open decision in this plan is now resolved**; the doc is kept as the
   record of what was decided and measured, not as outstanding work.
+- [docs/lesson-plan-opmode-restructure.md](docs/lesson-plan-opmode-restructure.md) —
+  not a numbered-lesson plan like the two above. A separate, optional
+  restructure of the whole course onto `code/OpModeV3Robot` (WPILib's 2027
+  alpha "OpModeRobot" template, on SystemCore instead of the roboRIO), using
+  the OpMode framework and coroutine-style Commands V3. Planning stage only —
+  no lesson work has started, and several blocking unknowns (chiefly whether
+  AdvantageKit integrates with `OpModeRobot`) are still open. Read this before
+  touching `code/OpModeV3Robot` or `docs/lessons/aside-commands-v3.md`.
 
 ## When adding or editing a lesson
 
