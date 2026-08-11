@@ -525,7 +525,7 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 3 | Telemetry & plots | Low | No longer blocked — uses plain `SmartDashboard.putNumber(...)` instead of AdvantageKit's `Logger` (Epilogue was considered, dropped as unnecessary machinery); see [Telemetry without AdvantageKit](#telemetry-without-advantagekit-smartdashboard-and-networktables) and the [detailed Lesson 3 plan](lesson-plan-v3-0-3.md#lesson-3-telemetry--plots) |
 | 4 | Simulation | Low–Medium | Written and compiled 2026-08-11. `simulationPeriodic()` exists, but only on `OpModeRobot`/`Robot` — `Mechanism` has no `simulationPeriodic()` hook of its own, so `DriveModule` exposes a plain public `simulatePeriodic()` method and `Robot.simulationPeriodic()` calls it (one line per mechanism, same shape as Lesson 1's scheduler tick). `LinearSystemId.createDCMotorSystem(...)` doesn't exist — real replacement is `org.wpilib.math.system.Models.singleJointedArmFromPhysicalConstants(DCMotor, J, gearing)` (same math, arm and generic-motor systems were always the same equation). `DCMotorSim.getAngularPosition()`/`.getAngularVelocity()` return **radians**/**radians per second**, not rotations/RPM — confirmed by an end-to-end `DriverStationSim`-backed test (`TalonFX.setThrottle(1.0)` through the real physics loop converges on ~100 rot/s, the Kraken X60's true free speed, only once the radians→rotations division is included). See the appendix and `code/v3/lesson-4/`. |
 | 5 | Steering P control | Medium | Written and compiled 2026-08-11. `CANcoder` needs a `CANBus` argument now too (`CANcoder(int, CANBus)`, no single-int overload — same shift as `TalonFX`), and `getAbsolutePosition()` needs `.getValue().in(Rotations)` like every other `StatusSignal` since Lesson 3. **The old lesson's `kP = 0.01` is unconditionally unstable against this Phoenix 6 alpha's `DCMotorSim`, confirmed with a real `DriverStationSim`-backed test — not a porting bug, a numeric one.** See [R8](#risks-and-blocking-unknowns) |
-| 6 | Distance & commands | Low–Medium | "Commands that finish" is now trivially a `while` loop + `coroutine.yield()` — arguably simpler to teach, not just portable |
+| 6 | Distance & commands | Medium | Written and compiled 2026-08-11. The predicted "trivially a `while` loop" landed even cleaner than expected: `coroutine.waitUntil(BooleanSupplier)` (confirmed present, and confirmed by test to be exactly a `while (!condition) yield();` loop) means a finishing command is just a coroutine body that runs out of lines — no `.until(...)`/`.andThen(...)` composition needed at all for the base case. **The real finding is R9**: `.whenCanceled(...)` does **not** fire when a command finishes its coroutine body naturally — confirmed with a real scheduler test — so `driveDistance` is the first command needing cleanup written twice, once inline after `waitUntil` and once in `.whenCanceled(...)`. See [R9](#risks-and-blocking-unknowns) |
 | 7 | Four modules | Medium | `DriveModule` → `SwerveModule` rename beat is unaffected; the aggregate `Drivetrain` joins `DriveModule`'s existing spot as a field on `Robot`, same pattern since Lesson 1 |
 | 8 | Gyro & heading | Low | Mechanically unaffected |
 | 9 | Autonomous | **High** | Recommended (but no longer technically forced) home for the MyTeleop/MyAuto → RobotTeleop/RobotAuto rename, now that hardware ownership is settled at Lesson 1; also where coroutine `await` vs. `.andThen` gets its dedicated contrast |
@@ -799,6 +799,28 @@ out badly.
   state-space math, so the same instability plausibly exists there too, but
   this was not run against the old course's own tooling to confirm — flagged
   for whoever owns that course's Lesson 5, not fixed here.
+- **R9 — new, found while verifying Lesson 6, confirmed with a real scheduler
+  test, not inferred from the name.** `Command.whenCanceled(Runnable)` does
+  **not** run when a command's coroutine body finishes on its own — only when
+  something external interrupts it first. A minimal scheduler test proved
+  this directly: a `noRequirements(...)` command whose body does nothing but
+  `coroutine.waitUntil(...)` and returns was confirmed `!isRunning()` the
+  tick its condition became true, while a `.whenCanceled(...)` callback
+  attached to an identical command **never fired** across the same run — no
+  external cancel ever happened, so the "canceled" hook stayed silent. This
+  is a real, sharp-edged divergence from V2's `Command.finallyDo(...)`, which
+  this course's existing lessons rely on firing "for any reason." Every
+  command through Lesson 5 (`driveAtSpeed`, `driveWithJoystick`,
+  `steerToAngle`) never finishes on its own, so this never mattered before —
+  they only have the "canceled" ending, and `.whenCanceled(...)` covers it
+  completely. Lesson 6's `driveDistance` is the first command with **two**
+  endings, and needs cleanup written at *both* the natural end of the
+  coroutine body and inside `.whenCanceled(...)` — the lesson teaches this
+  explicitly rather than letting a student discover a silent bug (a motor
+  that doesn't stop, exactly once, only on the interrupted path). Whoever
+  writes later lessons with finishing commands (autonomous routines, Lesson
+  9's equivalent) needs to carry this rule forward: **one cleanup path per
+  ending, not one cleanup path for "the command is over."**
 
 ---
 
@@ -859,6 +881,9 @@ appendices: verify before drafting, record what you verified.
 | `com.ctre.phoenix6.configs.{CANcoderConfiguration,MagnetSensorConfigs}` / `com.ctre.phoenix6.signals.SensorDirectionValue` — compiled, not guessed | Unchanged in shape from the pre-2027 API. `MagnetSensorConfigs.MagnetOffset` is still a plain public `double` field (directly assignable); `CANcoderConfiguration.MagnetSensor` is still a plain public field; `SensorDirectionValue.Clockwise_Positive`/`CounterClockwise_Positive` unchanged |
 | `TalonFX.setPosition(double)` (priming) — compiled, not guessed | Confirmed present and unchanged (plus new `setPosition(double, double)`/`setPosition(Angle)`/`setPosition(Angle, double)` overloads, not needed by Lesson 5) |
 | `Mechanism`'s `run`/`runRepeatedly` builder return type | **Confirmed identical** — both `run(Consumer<Coroutine>)` and `runRepeatedly(Runnable)` return `NeedsNameBuilderStage`, so `.whenCanceled(Runnable)`/`.withPriority(int)`/`.until(BooleanSupplier)`/`.named(String)` chain the same way regardless of which one started the command. Lesson 5's `steerToAngle` is the first command needing both `runRepeatedly`'s per-tick recompute (Lesson 2's shape) and `.whenCanceled`'s cleanup (Lesson 1's shape) together |
+| `Coroutine.waitUntil(BooleanSupplier)` — compiled and behavior-verified, not guessed from the name | Bytecode is exactly `while (!condition.getAsBoolean()) { yield(); }` — confirmed via `javap -c`. A `run(coroutine -> { ...; coroutine.waitUntil(cond); ...})` command finishes the instant `cond` goes true **without any `.until(...)` decorator** — proven with a real `Scheduler.createIndependentScheduler()` test: `scheduler.isRunning(command)` flips `false` the same tick the coroutine body's last line executes. This is Lesson 6's whole "commands that finish" mechanism |
+| `Command.whenCanceled(Runnable)` vs. a natural coroutine finish — **behavior-verified, not inferred**, see R9 | Does **not** fire when the coroutine body completes on its own — confirmed by a scheduler test where an identical command's `.whenCanceled(...)` callback never ran across a full natural-finish cycle. Only fires on external interruption (another command taking the mechanism, explicit cancel). A command with two possible endings needs cleanup written at both — inline after the body's wait, and in `.whenCanceled(...)` |
+| `Command.andThen(Command)` / `SequentialGroupBuilder` — compiled, not guessed | `andThen` returns `SequentialGroupBuilder` (also has its own `andThen(Command)`/`andThen(Command...)`/`until(BooleanSupplier)`), which itself needs `.named(String)` or `.withAutomaticName()` before it's a usable `Command` — same "needs a name" pattern as every other builder in this API. `Command.sequence(Command...)`/`Command.parallel(Command...)`/`Command.race(Command...)` return the analogous `SequentialGroupBuilder`/`ParallelGroupBuilder` types |
 | `org.wpilib.system.DataLogManager` — compiled, not guessed | Confirmed location (an earlier guess of `org.wpilib.datalog.DataLogManager` was wrong — that package holds the lower-level `DataLog`/log-entry classes `DataLogManager` wraps). `start()` is a plain static no-arg method, matching `LoggedRobot`-era usage exactly |
 | PhotonVision 2027 compatibility | Vendordep confirmed present: `photonlib-v2027.0.0-alpha-2.json`, same `vendor-json-repo/2027_alpha5/` bucket. `OpModeRobot`-specific integration unverified |
 | `vendor-json-repo` 2027 structure | Confirmed directories: `2027_alpha1`, `2027_alpha5` (the current active bucket — despite the name, it also holds newer per-vendor releases like `REVLib-2027.0.0-alpha6.json`, so the folder name marks the prerelease *channel*, not a hard per-vendor version ceiling). Also present in `2027_alpha5/`: `AmLib`, `DogLog`, `PathplannerLib-2027.0.0-alpha-3.json`, `ThriftyLib` — **no BLine, no maple-sim** (both distribute outside `vendor-json-repo`; see R2) |
@@ -985,3 +1010,17 @@ appendices: verify before drafting, record what you verified.
       and tuning guidance rewritten to match. Flagged as possibly affecting
       the existing 2026-track course's identical numbers too, not verified
       against that course's own tooling — see R8.
+- [x] Lesson 6 (Distance & commands) written and verified 2026-08-11 —
+      `docs/lessons/v3/06-distance-and-commands.md` and `code/v3/lesson-6/`,
+      compiling through `tools/verify-lessons-v3.sh 6`. Gear-ratio/wheel-
+      circumference math and the sim's rotor↔wheel conversion chain both
+      confirmed correct with a real `DriverStationSim`-backed end-to-end test
+      (`driveDistance(1.0, 0.4)`-equivalent stopped at 1.027 m after 0.64 s
+      simulated — no double-applied or missing gear ratio). **The one real
+      finding is R9**: `.whenCanceled(...)` does not fire on a natural
+      coroutine finish, confirmed with a scheduler test, not inferred — so
+      `driveDistance` needed cleanup written at both endings, and the lesson
+      teaches the split explicitly (including a Try It that has the student
+      confirm it by printing from both paths). `Coroutine.waitUntil(...)`
+      confirmed to be exactly a `while (!cond) yield();` loop, so "a command
+      that finishes" needed no new decorator at all — see R9.
