@@ -156,6 +156,7 @@ say "Applying the deletions the lessons instruct"
 # here — same rule and same mechanics as the main course's verify-lessons.sh.
 del() { [ "$THROUGH" -ge "$1" ] && shift && for f; do rm -f "$JAVA_DIR/$f"; done || true; }
 del 7  subsystems/DriveModule.java   # became SwerveModule
+del 9  opmode/MyTeleop.java opmode/MyAuto.java   # became RobotTeleop / RobotAuto
 echo "  done"
 fi
 

@@ -440,17 +440,24 @@ lesson boundary without breaking anything. Treat the rename as:
    cutover lesson, since earlier lessons reuse those names verbatim in code
    blocks.
 
-**One thing to verify empirically, not assume:** `BindingScope.createNarrowestScope`
+**Resolved, not just assumed — twice over.** `BindingScope.createNarrowestScope`
 picks an opmode-scoped binding by reading `OpModeFetcher.getFetcher().getOpModeId()`
-at the moment a trigger or command is scheduled. Whether that ID already
-reflects the *new* opmode while its constructor is still running (as opposed
-to only becoming visible once `start()` fires) determines whether trigger
-bindings belong in an opmode's constructor or its `start()` override — this
-already matters for `MyTeleop` today (Lesson 1's button binding lives in its
-constructor), not just from the rename lesson on. Get this from a real
-running sandbox, not from reading the source twice harder — it's exactly the
-kind of runtime fact this course's whole verification culture exists to
-catch instead of guess at.
+at the moment a trigger or command is scheduled, and whether that ID already
+reflects the *new* opmode while its constructor is still running determines
+whether bindings belong in a constructor or `start()`. First confirmed by
+tracing `loopFunc()`'s bytecode while writing Lesson 1 (see that lesson's
+housekeeping entry and R9's neighbor findings above). Confirmed a second,
+independent way while writing Lesson 9, with a real scheduler test rather
+than more bytecode reading: a `Trigger` bound inside one simulated opmode
+(via raw `DriverStationSim.setOpMode(long)`, not a full `OpModeRobot`) has
+its bound command **actually cancelled** — not just prevented from re-firing
+— the instant the simulated opmode ID changes, for both `.onTrue(...)` and
+`.whileTrue(...)`. This is what makes `RobotAuto` scheduling its own plan
+from its constructor (Lesson 9) safe: the scheduled auto sequence cannot
+outlive `RobotAuto` being the selected opmode. See R11 for the full test and
+a testing trap worth not rediscovering (`RobotState.getOpModeId()` silently
+reads `0` forever unless `DriverStationBackend.observeUserProgramStarting()`
+is called first in a bare test — no `OpModeRobot` instance to do it for you).
 
 ### Autonomous selection past Lesson 9
 
@@ -528,7 +535,7 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 6 | Distance & commands | Medium | Written and compiled 2026-08-11. The predicted "trivially a `while` loop" landed even cleaner than expected: `coroutine.waitUntil(BooleanSupplier)` (confirmed present, and confirmed by test to be exactly a `while (!condition) yield();` loop) means a finishing command is just a coroutine body that runs out of lines — no `.until(...)`/`.andThen(...)` composition needed at all for the base case. **The real finding is R9**: `.whenCanceled(...)` does **not** fire when a command finishes its coroutine body naturally — confirmed with a real scheduler test — so `driveDistance` is the first command needing cleanup written twice, once inline after `waitUntil` and once in `.whenCanceled(...)`. See [R9](#risks-and-blocking-unknowns) |
 | 7 | Four modules | **High** | Written and compiled 2026-08-11. `DriveModule` → `SwerveModule` rename beat lands as predicted, and the aggregate `Drivetrain` takes `DriveModule`'s old spot as a field on `Robot`. Two real API surprises: **`MathUtil.clamp` doesn't exist in this alpha** (no replacement found — the old lesson's "delete yours, use the library" beat is dropped; the hand-rolled `clamp` from Lesson 5 stays for good), and **`SwerveModuleState` doesn't exist** — renamed to `SwerveModuleVelocity` (same `(double, Rotation2d)` shape) as part of a bigger `*State`→`*Velocity`/`*Acceleration` split (`ChassisSpeeds`→`ChassisVelocities`, new `ChassisAccelerations`/`SwerveModuleAcceleration`). **The bigger finding: `SmartDashboard` has no struct/struct-array publish method at all**, so the Swerve-tab payoff needs real `NetworkTableInstance.getStructArrayTopic(...).publish()` — this is the "no `SmartDashboard` one-liner for struct types" gap the Lesson 3 plan doc flagged in advance, arriving here rather than at odometry. Verified end to end: rotate-in-place angles match the documented table exactly, and a real struct-array publish/set cycle doesn't throw. `tools/verify-lessons-v3.sh` needed its first deletion-replay entry (`DriveModule.java`, same file the main course's script already deletes at this exact lesson) — see [R10](#risks-and-blocking-unknowns) |
 | 8 | Gyro & heading | Low–Medium | Written and compiled 2026-08-11. `Pigeon2` needed the same `(int, CANBus)` constructor shift as every other Phoenix device since Lesson 1; `getYaw()` needed the same `.getValue().in(Degrees)` unpack as every `StatusSignal` since Lesson 3. No numeric surprise this time — the fake-gyro integration has no momentum to overshoot with, so Lesson 5's/7's kP-mismatch story doesn't repeat; the old lesson's `kP = 0.02` was verified to converge cleanly (well under a second, no overshoot) with a real end-to-end `DriverStationSim`-backed test. `turnToHeading` is the second finishing command (after Lesson 6's `driveDistance`) and the first one whose loop body does real per-tick work instead of just polling — written as an explicit `while` + `coroutine.yield()` rather than `coroutine.waitUntil(...)`, and the lesson explains why: `waitUntil` is exactly this loop shape with no work in the body |
-| 9 | Autonomous | **High** | Recommended (but no longer technically forced) home for the MyTeleop/MyAuto → RobotTeleop/RobotAuto rename, now that hardware ownership is settled at Lesson 1; also where coroutine `await` vs. `.andThen` gets its dedicated contrast |
+| 9 | Autonomous | **High** | Written and compiled 2026-08-11. The rename landed here as planned (`MyTeleop`→`RobotTeleop`, `MyAuto`→`RobotAuto`, both in place, `tools/verify-lessons-v3.sh` gained the matching deletion entries), and `coroutine.await(...)` got its dedicated contrast against `Command.sequence(...)`, per-mechanism-release explained honestly as "not demonstrable with one mechanism yet, but the shape to reach for." **The load-bearing finding is R11**: there is no `getAutonomousCommand()` hook in this framework at all — `RobotAuto` schedules its own plan via `RobotModeTriggers.autonomous().onTrue(...)` in its constructor, and a real scheduler test (after finding and fixing a test-setup trap, `DriverStationBackend.observeUserProgramStarting()`) confirms this is correctly opmode-scoped: the scheduled auto sequence is cancelled automatically the instant the DS selects a different opmode, the same scoping already protecting every button binding since Lesson 1. `Command.parallel`'s `.optional(...)`/`.requiring(...)` mix (confirmed via bytecode to unify V2's separate `parallel`/`race`/`deadline` into one mechanism) replaces the old lesson's `Commands.deadline`. OD3's Lesson 17-deferred multi-auto decision effectively also landed here in miniature — the old lesson's `LoggedDashboardChooser` bonus section is replaced by a second `@Autonomous` opmode, the framework's native mechanism, since AdvantageKit was never installed in this track to begin with |
 | 10 | Kinematics | Low | Mechanically unaffected |
 | 11 | Odometry & field view | Medium | `Field2d`/`SmartDashboard.putData` needs a live-sandbox check, not just a source read |
 | 12 | Model-based control | Low | Phoenix 6 config/control-request API; SystemCore Phoenix 6 alpha status noted in [R3](#risks-and-blocking-unknowns) |
@@ -868,6 +875,61 @@ out badly.
     matching `del()` mechanism to the v3 script rather than inventing a
     different shape, and updated the script's header comment, which had
     claimed "nothing has been deleted across Lessons 0-3 yet."
+- **R11 — new, found while writing Lesson 9, the single most safety-relevant
+  finding in this port so far.** This framework has **no `getAutonomousCommand()`
+  hook, no `TimedRobot`-style auto-scheduling of any kind** — confirmed by
+  the complete absence of anything like it anywhere in `OpModeRobot`'s
+  method list (already fully enumerated for R-earlier findings). An
+  `@Autonomous` opmode has to schedule its own plan itself. The obvious first
+  instinct — call `Scheduler.getDefault().schedule(cmd)` directly from
+  `start()` — is a real leak: `Scheduler.schedule(Command)` (confirmed via
+  `javap`) takes no scope parameter at all, and a scheduler test proved a
+  command scheduled that way keeps running (`isRunning() == true`)
+  indefinitely, with no automatic cancellation when the opmode that scheduled
+  it stops being selected. **The correct, verified-safe pattern**: bind the
+  plan through a `Trigger` — `RobotModeTriggers.autonomous().onTrue(plan)` —
+  created inside the opmode's own constructor. A real scheduler test
+  (`Scheduler.getDefault()`, an always-true `Trigger` bound with both
+  `.onTrue(...)` and separately `.whileTrue(...)`, opmode ID flipped via
+  `DriverStationSim.setOpMode(long)`) confirms the bound command is
+  **actually cancelled** — not merely prevented from re-firing — the instant
+  the opmode ID changes, for both binding types. This closes the loop this
+  plan doc's rename section flagged as still-open (see above) and is the
+  reason `RobotAuto` in Lesson 9 schedules its plan via
+  `RobotModeTriggers.autonomous().onTrue(...)` in its constructor rather than
+  a raw `.schedule(...)` call in `start()`.
+
+  **A real testing trap surfaced along the way, worth not rediscovering:**
+  the very first version of this test showed the command staying scheduled
+  *regardless* of the opmode-ID change — looking exactly like R11's danger
+  was real. The actual cause: `RobotState.getOpModeId()` silently returns
+  `0` forever, no matter what `DriverStationSim.setOpMode(long)` reports,
+  unless `org.wpilib.driverstation.internal.DriverStationBackend.observeUserProgramStarting()`
+  has been called first — a flag `OpModeRobot.startCompetition()` sets for
+  you on a real robot, with no equivalent in a bare `HAL.initialize(...)`
+  test. Once that one extra call was added, the opmode-ID change was
+  correctly observed and the scope-cancellation fired as expected. Any
+  future test that manipulates simulated opmode ID needs this call first, or
+  it will silently look like opmode scoping doesn't work at all.
+
+  **Also confirmed while building Lesson 9's `Autos.driveTurnDrive`:**
+  `Command.parallel(cmds...)` is exactly `new ParallelGroupBuilder().requiring(cmds)`
+  and `Command.race(cmds...)` is exactly `.optional(cmds)` (both confirmed by
+  `javap -c` disassembly of `Command`'s static factories) — `ParallelGroupBuilder`'s
+  `.optional(...)`/`.requiring(...)` split is the one real primitive
+  underneath, and V2's three-way `parallel`/`race`/`deadline` split
+  collapses into "required commands decide when the group ends; optional
+  commands just ride along and get cancelled when it does." Mixing
+  `Command.parallel(deadlineCmd).optional(others...)` reproduces V2's
+  `Commands.deadline(deadlineCmd, others...)` exactly, with no separate
+  method needed. Confirmed too: `coroutine.await(cmd)` inside a
+  `Command.noRequirements(...)` body runs steps in the same order a
+  `Command.sequence(...)` group would (verified with a real scheduler test
+  tracking execution order across two mechanism-requiring sub-commands), and
+  a default command bound to that mechanism does **not** sneak in during the
+  brief gap between one awaited step finishing and the next one starting —
+  also verified directly, not assumed from the "each mechanism released
+  between steps" design description.
 
 ---
 
@@ -937,6 +999,11 @@ appendices: verify before drafting, record what you verified.
 | `NetworkTableInstance.getStructTopic(String, Struct<T>)` / `StructTopic`/`StructPublisher` — compiled, not guessed | The singular sibling of Lesson 7's `getStructArrayTopic`/`StructArrayPublisher`, same shape: `.publish()` once → `StructPublisher<T>.set(T)` every tick. `Rotation2d.struct` (`public static final Rotation2dStruct`) confirmed present, used by Lesson 8 for the Swerve tab's Rotation slot |
 | `com.ctre.phoenix6.hardware.Pigeon2` — compiled, not guessed | **Constructor `Pigeon2(int, CANBus)` only** — the same two-arg shift `TalonFX`/`CANcoder` already got, no single-int overload. `getYaw()`/`getYaw(boolean)` (inherited from `CorePigeon2`) return `StatusSignal<Angle>`, same `.getValue().in(Unit)` unpack as every other Phoenix sensor since Lesson 3. `setYaw(double)` and 3 other overloads confirmed present (Try It #3). `Pigeon2SimState.setRawYaw(double)`/`addYaw(double)` (plus `Angle`-typed overloads) confirmed present, matching the old lesson's fake-gyro integration exactly |
 | `turnToHeading`'s fake-gyro stability — verified with a real end-to-end test, not assumed to carry over from Lesson 5/7's tuning story | The old lesson's `kP = 0.02` converges cleanly here (settled inside the 2° band in 0.7 s from a standing 90° error, no overshoot) — confirmed with a `DriverStationSim`-backed test driving a real `Pigeon2` through `setRawYaw`. Unlike Lessons 5 and 7, **no kP mismatch was found or expected**: the fake-gyro model is a pure rate integration with no momentum, so there is nothing for a P loop to overshoot against, and any reasonable gain converges by construction (confirmed algebraically: each tick's error multiplies by a fixed factor strictly between 0 and 1) |
+| No `getAutonomousCommand()` / no built-in auto-scheduling — **confirmed absent, and confirmed unsafe to work around naively**, see R11 | `OpModeRobot` has nothing resembling V2's `getAutonomousCommand()`/`autonomousInit()` auto-run hook. `Scheduler.schedule(Command)` (the only public scheduling entry point, confirmed via `javap`) carries **no scope parameter** — a command scheduled directly from an opmode's `start()` was confirmed by a real scheduler test to keep `isRunning() == true` forever, with no automatic cancellation when that opmode stops being selected. The verified-safe alternative: bind through a `Trigger` (`RobotModeTriggers.autonomous().onTrue(plan)`) created in the opmode's constructor — confirmed by a real test to be genuinely scope-cancelled (not just prevented from re-firing) the instant the opmode ID changes, for both `.onTrue(...)` and `.whileTrue(...)` |
+| `org.wpilib.command3.button.RobotModeTriggers` — compiled and behavior-verified via bytecode, not guessed | `autonomous()`/`teleop()`/`disabled()`/`utility()` confirmed to be exactly `new Trigger(RobotState::isAutonomousEnabled)` and its three siblings (`isTeleopEnabled`, `isDisabled`; `utility()`'s target not separately checked but same shape) — traced via the class's `BootstrapMethods` constant-pool entries, not inferred from the method name |
+| Opmode-ID test setup trap — **found and fixed, worth recording so it isn't rediscovered** | `RobotState.getOpModeId()` silently returns `0` forever in a bare `HAL.initialize(...)` test, regardless of `DriverStationSim.setOpMode(long)`, unless `org.wpilib.driverstation.internal.DriverStationBackend.observeUserProgramStarting()` is called first — a flag `OpModeRobot.startCompetition()` sets on a real robot with nothing to set it in a bare test. First attempt at the R11 scope-cancellation test showed the wrong result entirely because of this, before the fix was found |
+| `Command.parallel`/`Command.race` vs. `ParallelGroupBuilder.optional`/`.requiring` — confirmed by `javap -c` disassembly, not inferred | `Command.parallel(cmds...)` is exactly `new ParallelGroupBuilder().requiring(cmds)`; `Command.race(cmds...)` is exactly `.optional(cmds)`. `ParallelGroup.run(Coroutine)`'s own bytecode: fork all optional commands, then `awaitAll(required)` if any are required, else `awaitAny(optional)` — so V2's separate `parallel`/`race`/`deadline` collapse into one primitive (required commands decide the finish; optional ones ride along and get cancelled when it happens). Building `Command.parallel(a, b)` where `a` and `b` share a mechanism requirement throws `IllegalArgumentException: Commands running in parallel cannot share requirements` immediately at `.named(...)`-build time — confirmed with a real test, not just documented as "the scheduler will complain" |
+| `coroutine.await(...)`-based sequencing vs. `Command.sequence(...)` — functionally verified, not just described | A real scheduler test confirms `coroutine.await(cmd)` calls inside a `Command.noRequirements(...)` body run their sub-commands in the same order and to the same completion semantics as `Command.sequence(...)`. A second test confirms a mechanism's default command does **not** sneak in during the gap between one awaited step finishing and the next starting — the mechanism-release-between-steps behavior the master plan's coroutine-pedagogy section predicted is real, not just a design description |
 | `org.wpilib.system.DataLogManager` — compiled, not guessed | Confirmed location (an earlier guess of `org.wpilib.datalog.DataLogManager` was wrong — that package holds the lower-level `DataLog`/log-entry classes `DataLogManager` wraps). `start()` is a plain static no-arg method, matching `LoggedRobot`-era usage exactly |
 | PhotonVision 2027 compatibility | Vendordep confirmed present: `photonlib-v2027.0.0-alpha-2.json`, same `vendor-json-repo/2027_alpha5/` bucket. `OpModeRobot`-specific integration unverified |
 | `vendor-json-repo` 2027 structure | Confirmed directories: `2027_alpha1`, `2027_alpha5` (the current active bucket — despite the name, it also holds newer per-vendor releases like `REVLib-2027.0.0-alpha6.json`, so the folder name marks the prerelease *channel*, not a hard per-vendor version ceiling). Also present in `2027_alpha5/`: `AmLib`, `DogLog`, `PathplannerLib-2027.0.0-alpha-3.json`, `ThriftyLib` — **no BLine, no maple-sim** (both distribute outside `vendor-json-repo`; see R2) |
@@ -1111,3 +1178,28 @@ appendices: verify before drafting, record what you verified.
       other. `Rotation2d.struct` + `getStructTopic`/`StructPublisher`
       (Lesson 7's array publisher's singular sibling) confirmed present and
       used for the Swerve tab's Rotation slot.
+- [x] Lesson 9 (Autonomous) written and verified 2026-08-11 —
+      `docs/lessons/v3/09-autonomous.md` and `code/v3/lesson-9/`, compiling
+      through `tools/verify-lessons-v3.sh 9`. The rename (`MyTeleop`→`RobotTeleop`,
+      `MyAuto`→`RobotAuto`) landed here as the master plan recommended, with a
+      new `tools/verify-lessons-v3.sh` deletion entry for both old files.
+      **R11 is the headline finding**: this framework has no
+      `getAutonomousCommand()` hook at all, and the naive fix (schedule the
+      auto plan directly from `start()`) is a real, confirmed leak — a
+      scheduler test showed a directly-scheduled command never gets
+      cancelled when the opmode changes. The verified-safe pattern,
+      `RobotModeTriggers.autonomous().onTrue(plan)` bound in the
+      constructor, was confirmed by a real test to genuinely cancel on
+      opmode change (not just stop re-firing) — closing an item this plan
+      doc had flagged as still-open since the rename section was written.
+      Found and fixed a real test-setup trap along the way
+      (`DriverStationBackend.observeUserProgramStarting()` needed before
+      `RobotState.getOpModeId()` reflects `DriverStationSim.setOpMode(...)`
+      at all) — recorded so it isn't rediscovered. Also verified:
+      `Command.parallel`/`.race` reduce to `ParallelGroupBuilder`'s
+      `.requiring`/`.optional` split (unifying V2's three-way parallel/race/
+      deadline split into one primitive), building a parallel group with a
+      shared-mechanism conflict throws immediately with a clear message, and
+      `coroutine.await(...)`-based sequencing matches `Command.sequence(...)`'s
+      ordering with no default-command flicker in the gap between steps. See
+      R11 for the full writeup.
