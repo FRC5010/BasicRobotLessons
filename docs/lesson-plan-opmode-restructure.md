@@ -526,7 +526,7 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 4 | Simulation | Low–Medium | Written and compiled 2026-08-11. `simulationPeriodic()` exists, but only on `OpModeRobot`/`Robot` — `Mechanism` has no `simulationPeriodic()` hook of its own, so `DriveModule` exposes a plain public `simulatePeriodic()` method and `Robot.simulationPeriodic()` calls it (one line per mechanism, same shape as Lesson 1's scheduler tick). `LinearSystemId.createDCMotorSystem(...)` doesn't exist — real replacement is `org.wpilib.math.system.Models.singleJointedArmFromPhysicalConstants(DCMotor, J, gearing)` (same math, arm and generic-motor systems were always the same equation). `DCMotorSim.getAngularPosition()`/`.getAngularVelocity()` return **radians**/**radians per second**, not rotations/RPM — confirmed by an end-to-end `DriverStationSim`-backed test (`TalonFX.setThrottle(1.0)` through the real physics loop converges on ~100 rot/s, the Kraken X60's true free speed, only once the radians→rotations division is included). See the appendix and `code/v3/lesson-4/`. |
 | 5 | Steering P control | Medium | Written and compiled 2026-08-11. `CANcoder` needs a `CANBus` argument now too (`CANcoder(int, CANBus)`, no single-int overload — same shift as `TalonFX`), and `getAbsolutePosition()` needs `.getValue().in(Rotations)` like every other `StatusSignal` since Lesson 3. **The old lesson's `kP = 0.01` is unconditionally unstable against this Phoenix 6 alpha's `DCMotorSim`, confirmed with a real `DriverStationSim`-backed test — not a porting bug, a numeric one.** See [R8](#risks-and-blocking-unknowns) |
 | 6 | Distance & commands | Medium | Written and compiled 2026-08-11. The predicted "trivially a `while` loop" landed even cleaner than expected: `coroutine.waitUntil(BooleanSupplier)` (confirmed present, and confirmed by test to be exactly a `while (!condition) yield();` loop) means a finishing command is just a coroutine body that runs out of lines — no `.until(...)`/`.andThen(...)` composition needed at all for the base case. **The real finding is R9**: `.whenCanceled(...)` does **not** fire when a command finishes its coroutine body naturally — confirmed with a real scheduler test — so `driveDistance` is the first command needing cleanup written twice, once inline after `waitUntil` and once in `.whenCanceled(...)`. See [R9](#risks-and-blocking-unknowns) |
-| 7 | Four modules | Medium | `DriveModule` → `SwerveModule` rename beat is unaffected; the aggregate `Drivetrain` joins `DriveModule`'s existing spot as a field on `Robot`, same pattern since Lesson 1 |
+| 7 | Four modules | **High** | Written and compiled 2026-08-11. `DriveModule` → `SwerveModule` rename beat lands as predicted, and the aggregate `Drivetrain` takes `DriveModule`'s old spot as a field on `Robot`. Two real API surprises: **`MathUtil.clamp` doesn't exist in this alpha** (no replacement found — the old lesson's "delete yours, use the library" beat is dropped; the hand-rolled `clamp` from Lesson 5 stays for good), and **`SwerveModuleState` doesn't exist** — renamed to `SwerveModuleVelocity` (same `(double, Rotation2d)` shape) as part of a bigger `*State`→`*Velocity`/`*Acceleration` split (`ChassisSpeeds`→`ChassisVelocities`, new `ChassisAccelerations`/`SwerveModuleAcceleration`). **The bigger finding: `SmartDashboard` has no struct/struct-array publish method at all**, so the Swerve-tab payoff needs real `NetworkTableInstance.getStructArrayTopic(...).publish()` — this is the "no `SmartDashboard` one-liner for struct types" gap the Lesson 3 plan doc flagged in advance, arriving here rather than at odometry. Verified end to end: rotate-in-place angles match the documented table exactly, and a real struct-array publish/set cycle doesn't throw. `tools/verify-lessons-v3.sh` needed its first deletion-replay entry (`DriveModule.java`, same file the main course's script already deletes at this exact lesson) — see [R10](#risks-and-blocking-unknowns) |
 | 8 | Gyro & heading | Low | Mechanically unaffected |
 | 9 | Autonomous | **High** | Recommended (but no longer technically forced) home for the MyTeleop/MyAuto → RobotTeleop/RobotAuto rename, now that hardware ownership is settled at Lesson 1; also where coroutine `await` vs. `.andThen` gets its dedicated contrast |
 | 10 | Kinematics | Low | Mechanically unaffected |
@@ -821,6 +821,53 @@ out badly.
   writes later lessons with finishing commands (autonomous routines, Lesson
   9's equivalent) needs to carry this rule forward: **one cleanup path per
   ending, not one cleanup path for "the command is over."**
+- **R10 — new, found while verifying Lesson 7, includes one predicted
+  finding arriving early.** Three things, all confirmed by `javap` and/or a
+  real test, none guessed:
+  - **`MathUtil.clamp(double, double, double)` does not exist in this
+    alpha.** Confirmed via a full, unfiltered `javap -p` of `org.wpilib.math.util.MathUtil`
+    — `lerp`, `inverseLerp`, `applyDeadband` (still present, matching the
+    existing Lesson 2 callout), `copyDirectionPow`, `inputModulus`,
+    `angleModulus`, `isNear`, `slewRateLimit`, and nothing named `clamp`.
+    The old lesson's "delete your hand-rolled clamp, use the library" beat
+    doesn't have a library to point at here, so Lesson 7 keeps the private
+    `clamp` from Lesson 5 permanently rather than teaching a swap that isn't
+    available.
+  - **`SwerveModuleState` doesn't exist.** WPILib's 2027 alpha renamed the
+    whole family: `SwerveModuleState` → `SwerveModuleVelocity` (identical
+    `(double, Rotation2d)` constructor and field shape, confirmed via
+    `javap`), alongside a new `SwerveModuleAcceleration`, and `ChassisSpeeds`'s
+    presumed analog is `ChassisVelocities` with a sibling `ChassisAccelerations`
+    — acceleration tracking that didn't exist in the pre-2027 API at all.
+    `Translation2d`, `Rotation2d`, and `SwerveDriveKinematics` itself are all
+    confirmed present and unchanged in shape.
+  - **The real finding: `SmartDashboard` has no struct or struct-array
+    publish method** (`javap` shows only `putNumber`/`putBoolean`/`putString`/
+    three array-of-primitive overloads/`putRaw`/`putData` — nothing
+    struct-aware). This is exactly the gap `docs/lesson-plan-v3-0-3.md`'s
+    Lesson 3 section flagged in advance ("no `SmartDashboard` one-liner the
+    way AdvantageKit/Epilogue offered... flagged so it's not rediscovered as
+    a surprise when the odometry/field-view lessons arrive") — it arrived
+    one lesson earlier than predicted, at the Swerve-tab visualization
+    instead of odometry. The real fix, confirmed working end to end:
+    `NetworkTableInstance.getDefault().getStructArrayTopic(name, SwerveModuleVelocity.struct).publish()`
+    once, as a field, then `.set(array)` every tick — bypasses `SmartDashboard`
+    entirely, publishing at NT root rather than under `/SmartDashboard/`.
+    Verified with a real `StructArrayPublisher<SwerveModuleVelocity>` test
+    (`.set(...)` called twice with real values, no exception) and a separate
+    test confirming the `rotate()` angle math matches the lesson's own
+    documented table (135°/45°/-135°/-45°) exactly. **This same gap will
+    recur** at every future structured-telemetry point (`Pose2d` at Lesson 11's
+    equivalent, vision observations, etc.) — whoever plans those lessons
+    should reuse this pattern rather than rediscovering it.
+  - **Tooling note, not an API finding:** `tools/verify-lessons-v3.sh`
+    needed its first deletion-replay entry to handle `DriveModule.java`
+    being renamed to `SwerveModule.java` — the same file, at the same
+    lesson number, the main course's `verify-lessons.sh` already deletes
+    (`del 7 subsystems/DriveModule.java # became SwerveModule`). Added a
+    matching `del()` mechanism to the v3 script rather than inventing a
+    different shape, and updated the script's header comment, which had
+    claimed "nothing has been deleted across Lessons 0-3 yet."
 
 ---
 
@@ -884,6 +931,9 @@ appendices: verify before drafting, record what you verified.
 | `Coroutine.waitUntil(BooleanSupplier)` — compiled and behavior-verified, not guessed from the name | Bytecode is exactly `while (!condition.getAsBoolean()) { yield(); }` — confirmed via `javap -c`. A `run(coroutine -> { ...; coroutine.waitUntil(cond); ...})` command finishes the instant `cond` goes true **without any `.until(...)` decorator** — proven with a real `Scheduler.createIndependentScheduler()` test: `scheduler.isRunning(command)` flips `false` the same tick the coroutine body's last line executes. This is Lesson 6's whole "commands that finish" mechanism |
 | `Command.whenCanceled(Runnable)` vs. a natural coroutine finish — **behavior-verified, not inferred**, see R9 | Does **not** fire when the coroutine body completes on its own — confirmed by a scheduler test where an identical command's `.whenCanceled(...)` callback never ran across a full natural-finish cycle. Only fires on external interruption (another command taking the mechanism, explicit cancel). A command with two possible endings needs cleanup written at both — inline after the body's wait, and in `.whenCanceled(...)` |
 | `Command.andThen(Command)` / `SequentialGroupBuilder` — compiled, not guessed | `andThen` returns `SequentialGroupBuilder` (also has its own `andThen(Command)`/`andThen(Command...)`/`until(BooleanSupplier)`), which itself needs `.named(String)` or `.withAutomaticName()` before it's a usable `Command` — same "needs a name" pattern as every other builder in this API. `Command.sequence(Command...)`/`Command.parallel(Command...)`/`Command.race(Command...)` return the analogous `SequentialGroupBuilder`/`ParallelGroupBuilder` types |
+| `org.wpilib.math.util.MathUtil` — full unfiltered `javap -p`, not guessed | **No `clamp` method at all.** Real contents: `lerp`, `inverseLerp`, `applyDeadband` (matches the existing Lesson 2 callout), `copyDirectionPow`, `inputModulus`, `angleModulus`, `isNear`, `slewRateLimit`. This course's own hand-rolled `clamp` (Lesson 5) has no library replacement to graduate to in this alpha |
+| `SwerveModuleState` → `SwerveModuleVelocity` — compiled, not guessed | `SwerveModuleState` is **absent** from `wpimath-java-2027.0.0-alpha-6.jar`. Real replacement `org.wpilib.math.kinematics.SwerveModuleVelocity` has the identical `(double, Rotation2d)` constructor and `velocity`/`angle` field shape (field named `velocity`, not `speedMetersPerSecond`). Part of a wider rename: new `SwerveModuleAcceleration`, `ChassisVelocities`, `ChassisAccelerations` (acceleration tracking didn't exist pre-2027). `Translation2d`, `Rotation2d`, `SwerveDriveKinematics` all confirmed present, unchanged shape (`org.wpilib.math.geometry`/`org.wpilib.math.kinematics`) |
+| `SmartDashboard` struct support — **confirmed absent**, matches the Lesson 3 plan doc's advance flag | `javap` on `org.wpilib.smartdashboard.SmartDashboard` shows only `putBoolean`/`putNumber`/`putString`/`putBooleanArray`/`putNumberArray`/`putStringArray`/`putRaw`/`putData` — no struct or struct-array method. Real path for structured telemetry (a whole labeled object, or an array of them): `NetworkTableInstance.getDefault().getStructArrayTopic(String, Struct<T>).publish()` once (as a field) → `StructArrayPublisher<T>.set(T[])` every tick. `SwerveModuleVelocity.struct` (a `public static final SwerveModuleVelocityStruct`, confirmed `implements Struct<SwerveModuleVelocity>`) is the struct value Lesson 7 uses. Verified end to end with a real publish/set cycle (no exception) — publishes at NT root, not under `/SmartDashboard/` |
 | `org.wpilib.system.DataLogManager` — compiled, not guessed | Confirmed location (an earlier guess of `org.wpilib.datalog.DataLogManager` was wrong — that package holds the lower-level `DataLog`/log-entry classes `DataLogManager` wraps). `start()` is a plain static no-arg method, matching `LoggedRobot`-era usage exactly |
 | PhotonVision 2027 compatibility | Vendordep confirmed present: `photonlib-v2027.0.0-alpha-2.json`, same `vendor-json-repo/2027_alpha5/` bucket. `OpModeRobot`-specific integration unverified |
 | `vendor-json-repo` 2027 structure | Confirmed directories: `2027_alpha1`, `2027_alpha5` (the current active bucket — despite the name, it also holds newer per-vendor releases like `REVLib-2027.0.0-alpha6.json`, so the folder name marks the prerelease *channel*, not a hard per-vendor version ceiling). Also present in `2027_alpha5/`: `AmLib`, `DogLog`, `PathplannerLib-2027.0.0-alpha-3.json`, `ThriftyLib` — **no BLine, no maple-sim** (both distribute outside `vendor-json-repo`; see R2) |
@@ -1024,3 +1074,22 @@ appendices: verify before drafting, record what you verified.
       confirm it by printing from both paths). `Coroutine.waitUntil(...)`
       confirmed to be exactly a `while (!cond) yield();` loop, so "a command
       that finishes" needed no new decorator at all — see R9.
+- [x] Lesson 7 (Four modules) written and verified 2026-08-11 —
+      `docs/lessons/v3/07-four-modules.md` and `code/v3/lesson-7/`, compiling
+      through `tools/verify-lessons-v3.sh 7`. The biggest refactor lesson so
+      far: `DriveModule` → `SwerveModule` (drops `Mechanism`, gains
+      constructor parameters), new `Drivetrain extends Mechanism` owning a
+      four-element array. **Three real findings, all in R10**: no
+      `MathUtil.clamp` in this alpha (kept the hand-rolled one for good),
+      `SwerveModuleState` renamed to `SwerveModuleVelocity`, and —
+      the significant one — `SmartDashboard` has no struct-array publish
+      method at all, so the Swerve-tab payoff needed real
+      `NetworkTableInstance.getStructArrayTopic(...).publish()`/`.set(...)`,
+      verified end to end with no exception. This is the "no `SmartDashboard`
+      one-liner for struct types" gap the Lesson 3 plan doc flagged in
+      advance, arriving one lesson earlier than predicted. Also verified:
+      `rotate()`'s per-corner angles match the lesson's own documented table
+      exactly (135°/45°/-135°/-45°). `tools/verify-lessons-v3.sh` gained its
+      first deletion-replay entry (`del 7 subsystems/DriveModule.java`),
+      mirroring the main course's script at the identical lesson number —
+      see R10.

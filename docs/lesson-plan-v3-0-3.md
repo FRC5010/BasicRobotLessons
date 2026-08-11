@@ -637,10 +637,19 @@ jars rather than guessed:
   rule out of necessity, not choice.
 
 **Still open:**
-- Struct-valued logging (a `Pose2d`, later in the course) has no
+- ~~Struct-valued logging (a `Pose2d`, later in the course) has no
   `SmartDashboard` one-liner the way AdvantageKit/Epilogue offered — not a
   Lesson 3 problem, but flagged in the master plan so it's not rediscovered
-  as a surprise when the odometry/field-view lessons arrive.
+  as a surprise when the odometry/field-view lessons arrive.~~ **Resolved
+  2026-08-11, one lesson earlier than predicted** — Lesson 7's Swerve-tab
+  visualization hit exactly this gap first, not odometry. Confirmed
+  `SmartDashboard` truly has no struct/struct-array method (full `javap`),
+  and confirmed the real fix works end to end:
+  `NetworkTableInstance.getDefault().getStructArrayTopic(name, Struct<T>).publish()`
+  once, `StructArrayPublisher<T>.set(array)` every tick. See the master
+  plan's R10 for the full writeup — this pattern should be reused directly
+  for `Pose2d` and any other struct-serializable value in later lessons
+  rather than rediscovered.
 
 ---
 

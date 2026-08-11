@@ -6,14 +6,17 @@
 # original script because almost everything differs: the base project
 # (code/OpModeV3Robot, not code/ActualLessons), the package root
 # (first.robot, not frc.robot), the deploy target (SystemCore, not roboRIO),
-# the vendordep source (2027_alpha5, not the current season), and there is no
-# AdvantageKit build.gradle block or lesson-deletion replay to carry over —
-# nothing has been deleted across Lessons 0-3 yet.
+# and the vendordep source (2027_alpha5, not the current season). There is no
+# AdvantageKit build.gradle block to carry over, but lesson-deletion replay
+# does apply here too, the same way it does in the main script (see `del`
+# below) — the first one lands at Lesson 7, same rename as the main course.
 #
 # It works by rolling code/OpModeV3Robot (the pristine 2027 alpha OpMode
 # template, already carrying the CommandsV3 vendordep) forward through
 # code/v3/lesson-0 … code/v3/lesson-N, applying each snapshot in order the way
-# a student would, then running Gradle over the result.
+# a student would, then replaying any deletions the lessons instruct (a
+# snapshot can only add or replace files — see the `del` calls below), then
+# running Gradle over the result.
 #
 #   ./tools/verify-lessons-v3.sh          # roll through the highest lesson present
 #   ./tools/verify-lessons-v3.sh 2        # stop after Lesson 2
@@ -147,6 +150,13 @@ for n in $(seq 0 "$THROUGH" 2>/dev/null || true); do
   done)
   echo "  applied lesson-$n"
 done
+
+say "Applying the deletions the lessons instruct"
+# Snapshots can only add or replace files, so removals have to be replayed
+# here — same rule and same mechanics as the main course's verify-lessons.sh.
+del() { [ "$THROUGH" -ge "$1" ] && shift && for f; do rm -f "$JAVA_DIR/$f"; done || true; }
+del 7  subsystems/DriveModule.java   # became SwerveModule
+echo "  done"
 fi
 
 say "Gradle: $GRADLE_TASK"
