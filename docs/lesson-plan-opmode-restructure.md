@@ -301,8 +301,21 @@ Verified from `org.wpilib.opmode.OpMode`'s own lifecycle javadoc and
   field) picks them.
 - **`disabledPeriodic()` runs the whole time it's selected and the robot is
   disabled** — not on a fixed schedule, just "whenever the DS is disabled."
-- **`start()` runs exactly once**, the instant the DS transitions that opmode
-  from disabled to enabled.
+- **`start()` fires on *every* disabled → enabled transition, not once per
+  opmode lifetime — corrected 2026-08-11, read directly out of
+  `loopFunc()`'s bytecode and reproduced with `DriverStationSim`.** The
+  opmode *object* is still constructed exactly once, when it's selected —
+  that part above is right — but `loopFunc()` branches on whether the
+  enabled flag flipped since last tick, and calls `opMode.start()` every
+  time that branch is taken while entering enabled. Toggling **Robot
+  State** off and back on in SimGUI while the same opmode stays selected —
+  or, on a real field, disabling and re-enabling during pit testing — calls
+  `start()` again on the same object, with no intervening constructor call.
+  **This is the one fact that settles where one-time wiring goes**: button
+  bindings and `setDefaultCommand` calls belong in the constructor, which
+  really does run once, not `start()`, which doesn't. Full writeup with the
+  bytecode trace and the `DriverStationSim`-based confirmation is in
+  [lesson-plan-v3-0-3.md's Lesson 1 section](lesson-plan-v3-0-3.md#lesson-1-your-first-motor).
 - **`periodic()` runs every tick** while enabled, at `OpModeRobot`'s period
   (20 ms by default) — the same cadence students already know from
   `robotPeriodic()`.
@@ -315,6 +328,13 @@ Verified from `org.wpilib.opmode.OpMode`'s own lifecycle javadoc and
   subpackage, is found by scanning the classpath (`addAnnotatedOpModeClasses`)
   and shown on the DS by name — no manual registration call anywhere in
   `Robot.java`.
+- **Neither `OpMode` nor `OpModeRobot` ticks Commands V3's `Scheduler` for
+  you.** `Robot.robotPeriodic()` — which, per `loopFunc()`'s bytecode, runs
+  unconditionally every tick regardless of which opmode is selected or
+  whether the robot is enabled — is where `Scheduler.getDefault().run()`
+  belongs, added by hand. Found the hard way: the first lesson-1 draft
+  compiled clean with a `Trigger` binding wired and nothing ever ticking the
+  scheduler to run it. See the v3-0-3 doc for the full story.
 
 That last point is the one worth a dedicated teaching beat early: it's a
 genuinely different mental model from "one `Robot` class, `isAutonomous()`
@@ -762,10 +782,13 @@ appendices: verify before drafting, record what you verified.
 | Fact | Status |
 |---|---|
 | `org.wpilib.opmode` package contents | `OpMode` (interface), `PeriodicOpMode` (abstract base), `Teleop`/`Autonomous`/`Utility` (annotations, each with `name`/`group`/`description`/`textColor`/`backgroundColor`) |
-| `OpMode` lifecycle | `disabledPeriodic()` (while selected + DS disabled, not on a fixed interval) → `start()` (once, on disable→enable) → `periodic()` (every tick while enabled, at `OpModeRobot.getPeriod()`, default 20 ms) → `end()` (on enable→disable or opmode switch while enabled) → `close()` (always last; object never reused) |
+| `OpMode` lifecycle | `disabledPeriodic()` (while selected + DS disabled, not on a fixed interval) → `start()` (**on every disable→enable transition — corrected 2026-08-11, confirmed via `loopFunc()` bytecode + `DriverStationSim`; not once per opmode lifetime**) → `periodic()` (every tick while enabled, at `OpModeRobot.getPeriod()`, default 20 ms) → `end()` (on enable→disable or opmode switch while enabled) → `close()` (always last; object never reused). **`robotPeriodic()`/`disabledPeriodic()` on `Robot` itself run unconditionally every tick, regardless of opmode selection or enabled state** — confirmed the same way |
 | Opmode auto-registration | `OpModeRobot` scans `getClass().getPackage()` and subpackages for `@Teleop`/`@Autonomous`/`@Utility`-annotated `OpMode` subclasses at construction time (`addAnnotatedOpModeClasses`), no manual registration call needed |
 | Opmode construction | Constructed via reflection, preferring a constructor accepting the robot's own class (`Robot`) over a no-arg one; this is why `MyTeleop(Robot robot)` works out of the box |
-| Scheduler tick | `Scheduler.getDefault().run()` must be called by user code — confirmed **not** invoked automatically anywhere in `OpModeRobot`; `robotPeriodic()` (called every tick, any opmode state, per `loopFunc()`) is the documented hook point (per `Scheduler`'s own class javadoc, written against `TimedRobot` but the same hook exists on `OpModeRobot`) |
+| Scheduler tick | `Scheduler.getDefault().run()` must be called by user code — confirmed **not** invoked automatically anywhere in `OpModeRobot`; `robotPeriodic()` (called every tick, any opmode state, per `loopFunc()`) is the documented hook point (per `Scheduler`'s own class javadoc, written against `TimedRobot` but the same hook exists on `OpModeRobot`). **Implemented 2026-08-11** — `Robot.robotPeriodic()` overridden to call it, in `code/v3/lesson-1/Robot.java` onward; taught as Lesson 1 §5 |
+| `Scheduler`/`Trigger` and disabled state | **No built-in gating at all — confirmed empirically, not just by bytecode inspection.** A `DriverStationSim`-backed JUnit test (`Scheduler.createIndependentScheduler()`, an always-true `Trigger.whileTrue(...)`, `DriverStationSim.setEnabled(false)`) shows the bound command's `scheduler.isRunning(...)` reads `true` while `RobotState.isDisabled()` also reads `true`. Unlike V2's `CommandScheduler` (which this course's 2026 track documents as cancelling every running command while disabled), this scheduler does not consult the DS at all; ticking it from `robotPeriodic()` runs it identically enabled or disabled |
+| `RobotState` vs `DriverStation` | **The enabled/disabled check moved.** `org.wpilib.driverstation.RobotState.isEnabled()`/`.isDisabled()`/`.isEStopped()`/`.isAutonomous()`/etc. is the real home for these in this alpha. `org.wpilib.driverstation.DriverStation` itself — confirmed via unfiltered `javap` — exposes almost nothing besides `startDataLog(...)` and raw refresh-event-handle plumbing; the old V2 names `DriverStation.isDisabled()`/`DriverStation.refreshData()` don't exist on it. `DriverStationSim.notifyNewData()`'s own bytecode already ends by calling the internal cache's `refreshData()`, so no separate manual refresh call is needed in test code |
+| GradleRIO test-task JVM args | **`wpi.java.configureTestTasks(test)` does not add the `--add-opens`/`--enable-native-access` flags Commands V3's coroutines need at runtime — only `configureSimulationTask` (backing `simulateJava`) does.** Confirmed by `javap`-diffing `WPIJavaExtension`'s two methods and reproducing the failure (`IllegalAccessException` inside `Continuation`'s static initializer) in the sandbox. Any lesson shipping a test that touches `Scheduler`/`Trigger`/coroutines needs `jvmArgs '--add-opens', 'java.base/jdk.internal.vm=ALL-UNNAMED'`, `jvmArgs '--add-opens', 'java.base/java.lang=ALL-UNNAMED'`, and `jvmArgs '--enable-native-access=ALL-UNNAMED'` added to that lesson's `test { }` block by hand. Not yet applied to `code/OpModeV3Robot` — no lesson in scope ships a test yet |
 | `org.wpilib.command3` package contents | `Command`, `Coroutine`, `Mechanism`, `Scheduler`, `Trigger`, `BindingScope`, `StateMachine`, `StagedCommandBuilder` (+ `NeedsExecutionBuilderStage`/`NeedsNameBuilderStage`), `ParallelGroup`(`Builder`), `SequentialGroup`(`Builder`), `Binding`/`BindingType`, `SchedulerEvent`, `Continuation`/`ContinuationScope`, `OpModeFetcher` (package-private), plus `button/` and `proto/` subpackages |
 | `Command` interface | Single abstract method `void run(Coroutine coroutine)`; `default void onCancel() {}`; `name()`, `requirements()`, `priority()` (default `0`; `LOWEST_PRIORITY`/`HIGHEST_PRIORITY` = `Integer.MIN/MAX_VALUE`); statics `noRequirements(Consumer<Coroutine>)`, `requiring(Mechanism...)`, `parallel(Command...)`, `race(Command...)`, `sequence(Command...)`, `waitUntil(BooleanSupplier)`, `waitFor(Time)`; instance `.withTimeout(Time)`, `.until(BooleanSupplier)`, `.andThen(Command)`, `.alongWith(Command...)`, `.raceWith(Command...)` |
 | `Mechanism` | Constructor auto-registers with `Scheduler.getDefault()` and sets an `idle()` default command (`Coroutine::park`, `LOWEST_PRIORITY`); `.run(Consumer<Coroutine>)`, `.runRepeatedly(Runnable)`, `.setDefaultCommand(Command)`, `.idle()`, `.idleFor(Time)` — **no `periodic()` hook** |
@@ -847,10 +870,18 @@ appendices: verify before drafting, record what you verified.
       against the real pinned jars.
 - [ ] Resolve OD4 (StateMachine adoption) and OD6 (roboRIO → SystemCore
       terminology pass) with the user.
-- [ ] Confirm empirically (not by re-reading source) whether
-      `BindingScope.createNarrowestScope` sees the new opmode's ID during its
-      constructor or only from `start()` onward — this already matters for
-      Lesson 1's button binding, not just the later rename lesson.
+- [x] Resolved 2026-08-11 — `BindingScope.createNarrowestScope` sees the new
+      opmode's ID during its constructor, not just from `start()` onward.
+      Traced through `loopFunc()`'s bytecode: `refreshData()` and
+      `Robot`'s own `m_word` are refreshed from the *same* underlying cache
+      at the very top of the tick, before the "opmode changed" branch
+      constructs the new opmode later in that same call — and
+      `RobotState.getOpModeId()` → `DriverStationBackend.getOpModeId()`
+      reads that identical cache. So by the moment the constructor runs, the
+      DS-reported "current opmode" is already the one being built, and a
+      `Trigger` created right there scopes correctly. This is additional,
+      independent confirmation for the constructor-vs-`start()` finding
+      below, not just the `start()`-fires-repeatedly argument on its own.
 - [x] Corrected 2026-08-11: hardware ownership (`DriveModule`,
       `CommandGamepad`) moved from `MyTeleop` to `Robot`, effective Lesson 1,
       not Lesson 9 — see [the transition section](#the-myteleopmyauto--robotteleop-transition).
@@ -870,5 +901,20 @@ appendices: verify before drafting, record what you verified.
       on `PATH`/`JAVA_HOME` to run `tools/verify-lessons-v3.sh` — this
       sandbox only had Java 21 by default and needed
       `apt-get install openjdk-25-jdk-headless` first (R5, resolved).
+- [x] Resolved 2026-08-11 — the missing `Scheduler.getDefault().run()` tick,
+      the corrected `start()`-fires-on-every-re-enable timing, and the
+      confirmed lack of disabled-state gating on `Scheduler`/`Trigger`. Found
+      while answering a direct question about whether Lesson 1's bindings
+      belonged in the constructor or `start()` — turned out the more urgent
+      problem was that nothing ticked the scheduler at all, so no binding
+      anywhere would have run either way. All three are fixed/documented in
+      Lesson 1 and `code/v3/lesson-1/Robot.java` (cascaded to lesson-3); full
+      writeup with the bytecode traces and the `DriverStationSim`-based test
+      is in `docs/lesson-plan-v3-0-3.md`'s Lesson 1 section.
+- [ ] GradleRIO's `configureTestTasks(test)` doesn't add the JVM args
+      Commands V3's coroutines need at runtime (only `configureSimulationTask`
+      does) — flagged for whoever plans this track's testing lesson; see the
+      appendix row and `docs/lesson-plan-v3-0-3.md`'s housekeeping for the
+      exact `jvmArgs` to add.
 - [ ] See [docs/lesson-plan-v3-0-3.md](lesson-plan-v3-0-3.md) for the
       detailed Lessons 0–3 plan and its own open items.

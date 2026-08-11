@@ -4,6 +4,7 @@
 
 package first.robot;
 
+import org.wpilib.command3.Scheduler;
 import org.wpilib.command3.button.CommandGamepad;
 import org.wpilib.framework.OpModeRobot;
 import org.wpilib.system.DataLogManager;
@@ -35,6 +36,12 @@ public class Robot extends OpModeRobot {
   /** This function is called exactly once when the DS first connects. */
   @Override
   public void driverStationConnected() {}
+
+  /** Runs every tick, no matter which opmode is selected or whether the robot is enabled. */
+  @Override
+  public void robotPeriodic() {
+    Scheduler.getDefault().run();
+  }
 
   /**
    * This function is called periodically anytime when no opmode is selected, including when the

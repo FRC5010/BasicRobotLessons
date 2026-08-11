@@ -302,6 +302,107 @@ same rule this course already applies to its other vendor libraries:
 belongs on `Robot`, not `MyTeleop` — corrected above and reflected in
 `docs/lessons/v3/01-first-motor.md` §4, "Give the robot its hardware."
 
+**Resolved 2026-08-11 (found writing the lesson code, not by more source
+reading): nothing ticked the scheduler.** The first draft of the lesson
+wired a `Trigger` in `MyTeleop`'s constructor and stopped there — compiled
+clean, but `grep -rn "Scheduler.getDefault().run()"` across the whole `code/v3/`
+and `docs/lessons/v3/` trees came back empty. Confirmed from
+`javap`-disassembling `OpMode`/`PeriodicOpMode`: neither has any built-in
+call into `org.wpilib.command3.Scheduler` at all — `OpModeRobot` runs the
+opmode's own lifecycle methods, but ticking Commands V3's scheduler is
+entirely the student's responsibility, added once, by hand. Without it, the
+lesson's `whileTrue` binding would sit registered forever and never fire, on
+sim or on real hardware. **Fixed** by overriding `Robot.robotPeriodic()` to
+call `Scheduler.getDefault().run()` — `robotPeriodic()` is `OpModeRobot`'s
+one hook confirmed (from `loopFunc()`'s bytecode, see below) to run
+unconditionally on every tick, so it's the correct permanent home for this,
+not something that belongs inside an opmode. Now taught as Lesson 1 §5,
+"Keep the scheduler running," between giving `Robot` its hardware and wiring
+the first button — reflected in `code/v3/lesson-1/Robot.java` and cascaded
+to `code/v3/lesson-3/Robot.java`.
+
+**Resolved 2026-08-11: `OpModeRobot.loopFunc()`'s exact constructor/`start()`/`robotPeriodic()`
+timing, read directly out of its bytecode (not the javadoc) and then
+confirmed with a real `DriverStationSim` test.** This answers, precisely,
+where one-time opmode wiring (button bindings, `setDefaultCommand`) belongs:
+
+- **The opmode constructor runs exactly once** — only when the DS's selected
+  opmode ID changes (already known from the earlier ownership fix above),
+  not on every enable.
+- **`OpMode.start()` fires on every disabled → enabled transition**, not
+  once per opmode lifetime. `loopFunc()`'s bytecode branches on
+  `m_lastEnabledState != currentEnabled`, and the "just became enabled" arm
+  calls `opMode.start()` every time it takes that branch — toggling
+  **Robot State** off and back on in SimGUI while the same opmode stays
+  selected fires `start()` again, with no intervening call to the
+  constructor.
+- **`robotPeriodic()` (and `disabledPeriodic()`) run unconditionally, every
+  tick, enabled or not.** Confirmed directly in the bytecode — no
+  `isEnabled` check guards the call.
+
+  **Conclusion for the lesson, stated directly:** bindings and
+  `setDefaultCommand` calls belong in the constructor, not `start()`.
+  Putting them in `start()` would re-register a fresh `Trigger` binding on
+  top of the old one on every re-enable — a real, observable bug (repeated
+  button presses would eventually schedule the same command multiple times
+  concurrently), not a style preference. This is now stated directly in
+  Lesson 1 §6 ("Why the constructor, and not `start()`?"), grounded in the
+  SimGUI enable-toggle behavior a student can literally go reproduce.
+
+**Resolved 2026-08-11: Commands V3's `Scheduler`/`Trigger` have zero
+`DriverStation`-awareness — confirmed empirically, not just from
+`javap`-scanning the bytecode for a missing reference.** A throwaway JUnit
+test (`Scheduler.createIndependentScheduler()`, a `Trigger` wired
+`whileTrue` to an always-true condition, `DriverStationSim.setEnabled(false)`
++ `DriverStationSim.notifyNewData()`, then `scheduler.run()`) shows the bound
+command's `isRunning()` is `true` while `RobotState.isDisabled()` is also
+`true`. Unlike V2's `CommandScheduler`, which this course's existing 2026
+lessons document as cancelling every running command while disabled, this
+scheduler does not gate on enabled state at all — ticking it from
+`robotPeriodic()` (as the fix above does) means it runs identically whether
+the robot is enabled or disabled. **This is not treated as a lesson-1
+teaching topic in depth** — the actual safety net is Phoenix 6 hardware:
+a TalonFX refuses to output power while the robot is disabled regardless of
+what software commands, the same firmware-level cutoff this course's
+existing (2026-track) Lesson 29 notes already document. Lesson 1 §5 carries
+one short, honest callout stating this plainly rather than staying silent
+on it; nothing more elaborate is warranted this early.
+
+  Two API notes surfaced while building that test, both worth recording
+  since they contradict the old (V2/2026-era) names a contributor might
+  reach for by habit:
+  - **The disabled/enabled check moved to `org.wpilib.driverstation.RobotState`**
+    (`isEnabled()`, `isDisabled()`, `isEStopped()`, `isAutonomous()`, …).
+    `org.wpilib.driverstation.DriverStation` itself, confirmed via `javap`
+    with no filter, now exposes almost nothing besides `startDataLog(...)`
+    and the raw refresh-event-handle plumbing — `DriverStation.isDisabled()`
+    and `DriverStation.refreshData()` (both real V2 names) do not exist on
+    it in this alpha.
+  - **No manual "refresh" call is needed in test code at all.**
+    `DriverStationSim.notifyNewData()`'s own bytecode ends with a direct call
+    to `DriverStationBackend.refreshData()` — the internal cache backing
+    `RobotState`'s reads is refreshed as part of `notifyNewData()` itself.
+
+**Resolved 2026-08-11: `wpi.java.configureTestTasks(test)` does not add the
+JVM args Commands V3's coroutines need at runtime — a real GradleRIO gap for
+this alpha, not a project misconfiguration.** Running the `Scheduler`/`Trigger`
+test above through the sandbox's `test` task failed twice, in sequence, with
+`IllegalAccessException`s from `org.wpilib.command3.Continuation`/`ContinuationScope`'s
+static initializers, before it ever reached the test body. `javap`-diffing
+`WPIJavaExtension`'s two task-configuration methods shows why:
+`configureSimulationTask` (backing `simulateJava`) adds
+`--add-opens java.base/jdk.internal.vm=ALL-UNNAMED`,
+`--add-opens java.base/java.lang=ALL-UNNAMED`, and
+`--enable-native-access=ALL-UNNAMED`; `configureTestTasks` adds neither —
+it wires up the HAL/sim native libraries and nothing else. Any lesson that
+ever ships a JUnit test touching `Scheduler`, `Trigger`, or anything
+coroutine-backed will need those three `jvmArgs` added to the `test { }`
+block in `build.gradle` by hand. **Not fixed in `code/OpModeV3Robot` yet** —
+no lesson in this doc's scope (0–3) ships a test, so the base template is
+left untouched; whoever plans this track's testing lesson needs this note.
+Tracked as a new open item below and worth a line in the master plan's
+Appendix.
+
 ---
 
 ## Lesson 2: Joystick control
@@ -573,3 +674,32 @@ jars rather than guessed:
 - [ ] Track AdvantageKit's releases for `OpModeRobot` support, and plan the
       follow-up pass that retrofits real replay onto the IO-layer structure
       once it lands (Lesson 13's equivalent, and everything after it).
+- [x] Lesson 1: **the missing `Scheduler.getDefault().run()` tick** — found
+      while writing the lesson, not by more source reading (nothing anywhere
+      in `code/v3/` or `docs/lessons/v3/` ticked the scheduler, so no bound
+      command could ever have run). Fixed via `Robot.robotPeriodic()`,
+      re-verified compiling through Lesson 3. See Lesson 1's "Resolved"
+      entries above for the full bytecode- and test-backed writeup, including
+      the confirmed `start()`-fires-on-every-re-enable timing that settles
+      why bindings belong in the constructor.
+- [ ] **GradleRIO's `configureTestTasks(test)` doesn't add the `--add-opens`/
+      `--enable-native-access` JVM args Commands V3's coroutines need at
+      runtime** (only `configureSimulationTask` does). No lesson in scope
+      here ships a test, so `code/OpModeV3Robot`'s `build.gradle` is left
+      alone — but whoever plans this track's testing lesson (this course's
+      Lesson 32 equivalent) needs to add
+      `jvmArgs '--add-opens', 'java.base/jdk.internal.vm=ALL-UNNAMED'`,
+      `jvmArgs '--add-opens', 'java.base/java.lang=ALL-UNNAMED'`, and
+      `jvmArgs '--enable-native-access=ALL-UNNAMED'` to that lesson's
+      `test { }` block, or nothing touching `Scheduler`/`Trigger`/coroutines
+      will run under `./gradlew test`. Confirmed by `javap`-diffing
+      `WPIJavaExtension`'s two task-configuration methods and reproducing the
+      failure end to end in the sandbox.
+- [ ] Commands V3's `Scheduler` has no built-in disabled-state gating
+      (confirmed empirically with `DriverStationSim` — see Lesson 1's
+      "Resolved" entry above). Lesson 1 carries one short callout naming
+      Phoenix 6 hardware as the real safety net; flag for whoever plans
+      later lessons whether this needs a fuller treatment once the course
+      reaches mechanisms with real fall hazards (this course's elevator/arm
+      lessons, roughly Lessons 18–20 equivalent) — those are exactly the
+      mechanisms where "the scheduler doesn't stop for disable" matters most.

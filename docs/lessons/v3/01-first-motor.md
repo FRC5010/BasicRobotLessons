@@ -15,6 +15,7 @@ spin at a fixed speed while you hold a button.
 - The `TalonFX` motor object
 - Exposing behavior as a **command factory method**
 - `Robot` as the permanent home for hardware
+- The `Scheduler`, and ticking it every loop
 - Binding a controller button, and giving the simulator a joystick to read
 
 ---
@@ -331,7 +332,55 @@ shortcut will save you a thousand keystrokes over this course.
 
 ---
 
-## 5. Wire a button to it
+## 5. Keep the scheduler running
+
+You've heard "the scheduler" a few times now — it's the thing that manages
+commands so only one runs a mechanism at a time. Time to meet it directly,
+because it has one job nobody does for it automatically: something has to
+tell it to check its triggers and run its commands, every single tick.
+`extends Mechanism` back in `DriveModule` already registered your module
+with it; that registration doesn't make anything happen by itself.
+
+Lesson 0 introduced the **heartbeat**: `OpModeRobot` calls a fixed set of
+your methods on a schedule, forever, whether or not you've overridden them.
+One of those is `robotPeriodic()` — it runs every single tick, no matter
+which opmode is selected and whether the robot is enabled or disabled. That
+makes it exactly the right place for something that has to keep running no
+matter what.
+
+**Add to `Robot`, below the constructor:**
+
+```java
+  @Override
+  public void robotPeriodic() {
+    Scheduler.getDefault().run();
+  }
+```
+
+`Scheduler.getDefault()` is the one scheduler every mechanism and every
+trigger plugs into automatically — `DriveModule` joined it the moment
+`extends Mechanism` ran. Calling `.run()` on it is the tick: check every
+trigger, hand out and step every command that should be running right now.
+Skip this line and none of it moves — buttons would sit there fully wired
+and nothing would ever happen when you pressed one.
+
+**Add to `Robot`'s imports:**
+
+```java
+import org.wpilib.command3.Scheduler;
+```
+
+> **Watch out:** this scheduler doesn't check whether the robot is enabled
+> before it runs commands — `robotPeriodic()` fires on every tick,
+> disabled or not, and `Scheduler.run()` doesn't ask. What actually keeps a
+> disabled robot from moving is the motor hardware itself: a TalonFX
+> refuses to apply power while the robot is disabled, no matter what your
+> code commands. Real safety net, just not a software one — worth knowing
+> your code isn't the thing enforcing it.
+
+---
+
+## 6. Wire a button to it
 
 Open `MyTeleop.java`. It already has a `robot` field from the template —
 that's your way in.
@@ -363,9 +412,20 @@ worth noticing: this line runs *once*, when `MyTeleop` is constructed. It
 doesn't press anything — it registers the wiring, and the scheduler does the
 watching from then on, tick after tick, all match long.
 
+**Why the constructor, and not `start()`?** Bindings like this one belong in
+the constructor because the constructor itself only runs once — the instant
+`MyTeleop` is built, when you select it on the Driver Station. `start()`
+runs on a different schedule: every time the robot goes from disabled to
+enabled, which happens more than once per opmode — toggle **Robot State**
+off and back on in SimGUI and watch. Wire a button in `start()` and you'd
+register a fresh binding on top of the old one each time the robot
+re-enables. Put the wiring in the constructor instead, and it's registered
+exactly once, then just sits there working for as long as this opmode stays
+selected.
+
 ---
 
-## 6. Run it
+## 7. Run it
 
 **Start the simulator:**
 
@@ -458,8 +518,12 @@ value** you set — which is why a command that spins a motor pairs a start
 with a `.whenCanceled(...)` cleanup. You also learned where hardware
 belongs: on `Robot`, which is built once and lasts the whole time the robot
 runs, not on an opmode like `MyTeleop`, which gets rebuilt fresh every time
-it's selected. You wired a real button to real behavior, and learned that
-the simulator needs a joystick dragged into slot 0 before any of it
+it's selected. Right alongside that, you gave `Robot` one more permanent
+job: ticking the **`Scheduler`** from `robotPeriodic()`, the one call that
+makes every trigger and every command actually run. You wired a real button
+to real behavior — in the constructor, not `start()`, because the
+constructor runs once and `start()` runs on every re-enable — and learned
+that the simulator needs a joystick dragged into slot 0 before any of it
 responds — worth remembering, because that one bites people every season.
 Next up, that hard-coded `0.3` becomes a live joystick reading, and this
 starts feeling like driving.
