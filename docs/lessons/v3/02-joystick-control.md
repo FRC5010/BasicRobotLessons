@@ -46,8 +46,8 @@ You already used a lambda in Lesson 1 without us naming it.
 *Nothing to add — this is code you already have:*
 
 ```java
-.whenCanceled(() -> m_driveMotor.set(0))
-//             ^^^^^^^^^^^^^^^^^^^^^^^^
+.whenCanceled(() -> m_driveMotor.setThrottle(0))
+//             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //             this is a lambda
 ```
 
@@ -98,7 +98,7 @@ public class DriveModule extends Mechanism {
     return runRepeatedly(() -> {
       double raw = speedSupplier.getAsDouble();   // fetch fresh value this tick
       double speed = applyDeadband(raw, 0.1);     // clean it up (next section)
-      m_driveMotor.set(speed);
+      m_driveMotor.setThrottle(speed);
     }).named("Drive With Joystick");
   }
 ```

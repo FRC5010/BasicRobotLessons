@@ -56,10 +56,10 @@ You create an object with the keyword **`new`**.
 *Nothing to add — this is just an example, not code for any file:*
 
 ```java
-TalonFX driveMotor = new TalonFX(1, CANBus.systemCore(0));
+TalonFX driveMotor = new TalonFX(1, CANBus.systemcore(0));
 ```
 
-Read it right-to-left: `new TalonFX(1, CANBus.systemCore(0))` builds a
+Read it right-to-left: `new TalonFX(1, CANBus.systemcore(0))` builds a
 TalonFX object for the motor at CAN ID 1, on SystemCore's first CAN bus.
 `TalonFX driveMotor` declares a **variable** of type `TalonFX` named
 `driveMotor` to hold it. From here on, `driveMotor` is your handle to that
@@ -67,7 +67,7 @@ motor — when you want the physical thing to do something, you talk to this
 object.
 
 A robot can have more than one CAN bus, so a `TalonFX` needs to be told
-which one to listen on. `CANBus.systemCore(0)` picks the first one — the one
+which one to listen on. `CANBus.systemcore(0)` picks the first one — the one
 your motor is actually wired to.
 
 ---
@@ -123,7 +123,7 @@ Below the imports, open the class and give it its one piece of hardware.
 
 ```java
 public class DriveModule extends Mechanism {
-  private final TalonFX m_driveMotor = new TalonFX(1, CANBus.systemCore(0)); // CAN ID 1 — change to yours
+  private final TalonFX m_driveMotor = new TalonFX(1, CANBus.systemcore(0)); // CAN ID 1 — change to yours
 ```
 
 Two big ideas on two lines. **`extends Mechanism`** declares that our class
@@ -174,10 +174,10 @@ the whole class.
   /** Spins the drive motor at the given fraction of full power (-1.0 to 1.0). */
   public Command driveAtSpeed(double fraction) {
     return run(coroutine -> {
-      m_driveMotor.set(fraction);
+      m_driveMotor.setThrottle(fraction);
       coroutine.park();
     })
-        .whenCanceled(() -> m_driveMotor.set(0))
+        .whenCanceled(() -> m_driveMotor.setThrottle(0))
         .named("Drive At Speed");
   }
 }
@@ -197,13 +197,14 @@ scheduler calls it when the time comes. `coroutine` itself is a parameter
 you can treat as a hidden helper for now — a handle the scheduler gives your
 command so it can talk back. (You'll meet more of what it can do soon.)
 
-Inside, `m_driveMotor.set(fraction)` sets the motor once — `set(0.3)` means
-"50% power" — and `coroutine.park()` tells the scheduler "hold here — don't
-do anything else, just keep this command alive until something cancels it."
+Inside, `m_driveMotor.setThrottle(fraction)` sets the motor once —
+`setThrottle(0.3)` means "30% power" — and `coroutine.park()` tells the
+scheduler "hold here — don't do anything else, just keep this command alive
+until something cancels it."
 That's exactly what "spin while the button is held" needs: set the speed
 once, then wait.
 
-`.whenCanceled(() -> m_driveMotor.set(0))` is the other half. Whatever
+`.whenCanceled(() -> m_driveMotor.setThrottle(0))` is the other half. Whatever
 cancels this command — releasing the button, another command taking over
 the motor — this runs first, setting the motor back to zero. Why insist on
 that? Because motors **hold** whatever value you last set. Nothing stops
@@ -240,7 +241,7 @@ import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 
 public class DriveModule extends Mechanism {
-  private final TalonFX m_driveMotor = new TalonFX(1, CANBus.systemCore(0)); // CAN ID 1 — change to yours
+  private final TalonFX m_driveMotor = new TalonFX(1, CANBus.systemcore(0)); // CAN ID 1 — change to yours
 
   public DriveModule() {
     // Setup that should happen when the module is created goes here.
@@ -249,10 +250,10 @@ public class DriveModule extends Mechanism {
   /** Spins the drive motor at the given fraction of full power (-1.0 to 1.0). */
   public Command driveAtSpeed(double fraction) {
     return run(coroutine -> {
-      m_driveMotor.set(fraction);
+      m_driveMotor.setThrottle(fraction);
       coroutine.park();
     })
-        .whenCanceled(() -> m_driveMotor.set(0))
+        .whenCanceled(() -> m_driveMotor.setThrottle(0))
         .named("Drive At Speed");
   }
 }

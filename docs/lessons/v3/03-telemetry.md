@@ -6,7 +6,7 @@
 **New Java concepts**
 - Methods that **return values** you use, not just perform actions
 - Reading a value vs. commanding a value
-- Chaining calls (`getPosition().getValueAsDouble()`)
+- Chaining calls (`getPosition().getValue().in(Rotations)`)
 - Method references (`this::logTelemetry`)
 
 **New robot concepts**
@@ -34,26 +34,39 @@ You *read* these instead of *setting* them.
 *Nothing to add yet — this is how you'll read them, in section 4:*
 
 ```java
-double rotations = m_driveMotor.getPosition().getValueAsDouble();
-double rps       = m_driveMotor.getVelocity().getValueAsDouble();
+double rotations = m_driveMotor.getPosition().getValue().in(Rotations);
+double rps       = m_driveMotor.getVelocity().getValue().in(RotationsPerSecond);
 ```
 
-Two dots, two method calls in one expression — that's called **chaining**,
-and it reads left to right like a little assembly line.
+Three dots, three method calls in one expression — that's called
+**chaining**, and it reads left to right like a little assembly line.
 `m_driveMotor.getPosition()` doesn't return a plain number; it returns a
-*signal object*, Phoenix's wrapper that carries the value together with its
-units and a timestamp. Then `.getValueAsDouble()` is called on *that
-result* to pull the plain number out — rotations for position, rps for
-velocity. That's the general rule chaining runs on: whatever a method
-returns, you can immediately call methods on it, without parking it in a
-variable first.
+*signal object*, Phoenix's wrapper that carries the value together with a
+timestamp. `.getValue()` reads the signal's current value — but that value
+isn't a plain number either. It's a measurement that remembers its own
+unit, so it can't be silently misread as the wrong one. `.in(Rotations)`
+is where you say which unit you want it *as*: "give me this as rotations."
+Velocity works the same way, just with `RotationsPerSecond` instead. That's
+the general rule chaining runs on: whatever a method returns, you can
+immediately call methods on it, without parking it in a variable first.
+
+**Add to `DriveModule`'s imports:**
+
+```java
+import static org.wpilib.units.Units.Rotations;
+import static org.wpilib.units.Units.RotationsPerSecond;
+```
+
+`Rotations` and `RotationsPerSecond` aren't methods or variables you're
+calling — they're unit constants, and the `static import` is what lets you
+write `Rotations` instead of some longer, fully-qualified name.
 
 Which is a good moment to name a pattern you've been using without a name.
 You've already caught values that methods handed back —
 `robot.driverController.getLeftY()` gave you the stick position, and your
 own `applyDeadband` handed back a cleaned-up number. Here's the pattern: methods
-come in two flavors. Some are *actions* — `set(0.3)` means "do this," and
-nothing comes back. Some are *questions* — `getPosition()` means "what is
+come in two flavors. Some are *actions* — `setThrottle(0.3)` means "do this,"
+and nothing comes back. Some are *questions* — `getPosition()` means "what is
 this?", and the answer comes back as a **return value** for you to catch in
 a variable and act on. Most of programming is asking questions and acting
 on the answers, and from this lesson on, the question-methods start doing
@@ -98,7 +111,7 @@ public Robot() {
 **Add to `Robot.java`'s imports:**
 
 ```java
-import org.wpilib.datalog.DataLogManager;
+import org.wpilib.system.DataLogManager;
 ```
 
 On a real robot the file lands on SystemCore (or a USB stick plugged into
@@ -136,8 +149,8 @@ periodic task — this dot logTelemetry."
 
 ```java
 private void logTelemetry() {
-  double rotations = m_driveMotor.getPosition().getValueAsDouble();
-  double rps = m_driveMotor.getVelocity().getValueAsDouble();
+  double rotations = m_driveMotor.getPosition().getValue().in(Rotations);
+  double rps = m_driveMotor.getVelocity().getValue().in(RotationsPerSecond);
 
   SmartDashboard.putNumber("DriveModule/PositionRotations", rotations);
   SmartDashboard.putNumber("DriveModule/VelocityRotPerSec", rps);
@@ -230,11 +243,12 @@ robot drive around a virtual field.
 ## What you learned
 
 The theme of this lesson is asking instead of telling. Methods split into
-actions and questions: `set(...)` tells the motor what to do, while
+actions and questions: `setThrottle(...)` tells the motor what to do, while
 `getPosition()` and `getVelocity()` ask the TalonFX's **integrated
 encoder** what actually happened — position in rotations, velocity in rps —
-with `.getValueAsDouble()` **chained** on to unwrap the plain number from
-the signal object. And instead of scattering ad-hoc numbers around the
+with `.getValue().in(Rotations)` **chained** on to unwrap a plain number
+from a measurement that remembers its own unit. And instead of scattering
+ad-hoc numbers around the
 code, you set up real, organized **logging**: `DataLogManager.start()`
 turns the flight recorder on once in `Robot.java`, a mechanism registers a
 steady periodic callback with the scheduler using a **method reference**,

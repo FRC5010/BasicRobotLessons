@@ -26,7 +26,14 @@ for the full design this lesson's rewrite is built on.
 
 Each lesson section below was checked against the actual old-course lesson
 file it replaces (`docs/lessons/0N-*.md`), not written from a summary of it —
-same rule as everywhere else in this repo: verify before drafting.
+same rule as everywhere else in this repo: verify before drafting. As of
+2026-08-11, the written lessons (`docs/lessons/v3/00-orientation.md` through
+`03-telemetry.md`) and their `code/v3/lesson-0` … `lesson-3` snapshots are
+also **compiled for real** against the pinned 2027 alpha jars via
+`tools/verify-lessons-v3.sh` — not just written to look plausible. Several
+guessed API details turned out wrong and are corrected throughout this doc
+and the lesson files; see each lesson's "Verified" callout below for what
+changed and how it was found.
 
 ---
 
@@ -34,12 +41,14 @@ same rule as everywhere else in this repo: verify before drafting.
 
 | # | Working title | Builds on | Vendor deps | Status |
 |---|---|---|---|---|
-| 0 | Orientation | none | none | Ready to write |
-| 1 | Your first motor | L0 | Phoenix 6 (`Phoenix6-26.50.0-alpha-1.json`) | Ready to write — one API detail needs a live-jar check, see below |
-| 2 | Joystick control | L1 | none new | Ready to write |
-| 3 | Telemetry & plots | L2 | none (`SmartDashboard`/`NetworkTables` are core WPILib) | Ready to write — `SmartDashboard.putNumber(...)` directly; real replay deferred to a later pass |
+| 0 | Orientation | none | none | **Written, compiles** |
+| 1 | Your first motor | L0 | Phoenix 6 (`Phoenix6-26.50.0-alpha-1.json`) | **Written, compiles** — two API guesses corrected against the real jar, see below |
+| 2 | Joystick control | L1 | none new | **Written, compiles** |
+| 3 | Telemetry & plots | L2 | none (`SmartDashboard`/`NetworkTables` are core WPILib) | **Written, compiles** — `SmartDashboard.putNumber(...)` directly; real replay deferred to a later pass; one API guess corrected, see below |
 
-All four lessons are ready to write. Lesson 3 was blocked on AdvantageKit's
+All four lessons are written and verified compiling via
+`tools/verify-lessons-v3.sh 3` (or `0`/`1`/`2` to stop earlier). Lesson 3 was
+blocked on AdvantageKit's
 missing `OpModeRobot` support; the team decided (2026-08-10) to proceed
 without it, deferring real replay to a later pass. A same-day second look
 also dropped Epilogue (WPILib's own annotation-based telemetry system) as
@@ -260,15 +269,34 @@ command factory methods (now coroutine-bodied), binding a gamepad button.
 3. Move the CAN ID into `Constants.java` under a nested `DriveConstants`
    class — unchanged from old L1's habit-planting exercise.
 
+**Verified 2026-08-11 — compiled for real, not guessed.** `tools/verify-lessons-v3.sh`
+now exists (sibling of the main script — different base project, package
+root, and vendordep source, so not folded into the original) and rolls
+`code/v3/lesson-0` … `lesson-N` onto `code/OpModeV3Robot`, exactly like the
+main course's script does for `code/ActualLessons`. Lessons 0–3 all compile
+against the real `v2027.0.0-alpha-6` / `Phoenix6-26.50.0-alpha-1` jars.
+Two guesses from the first draft of this lesson turned out wrong, found by
+`javap`-inspecting the actual downloaded jar rather than reading docs —
+same rule this course already applies to its other vendor libraries:
+
+- **`CANBus.systemcore(int)` is lowercase** — not `systemCore`. Confirmed
+  from `com.ctre.phoenix6.CANBus`'s real class file. The `TalonFX(int, CANBus)`
+  two-arg constructor itself was a correct guess (no single-int overload
+  exists), just the exact bus-builder method name was wrong.
+- **`TalonFX` has no `.set(double)` method at all.** This is a real API
+  change, not a rename: `com.ctre.phoenix6.hardware.TalonFX` in this alpha
+  has `setThrottle(double)` (the direct duty-cycle replacement — this is
+  what the lesson uses) and `setVoltage(double)` / `setVoltage(Voltage)`,
+  but nothing named `set`. Every `m_driveMotor.set(...)` call in the lesson
+  became `m_driveMotor.setThrottle(...)`.
+
 **Open items:**
-- Exact `TalonFX` constructor overloads on SystemCore (flagged above) — the
-  single highest-priority thing to verify before writing this lesson for
-  real, since it's the first line of code the student types that touches
-  real hardware.
 - Whether the VS Code vendor-library manager surfaces alpha vendordeps by
-  default or needs a setting changed.
+  default or needs a setting changed — a UI question this sandbox can't
+  answer; needs a live VS Code session.
 - Whether `CommandGamepad`'s button-to-DS-index mapping matches old L1's
-  "A is button 1" framing or needs its own statement.
+  "A is button 1" framing or needs its own statement — same, needs a live
+  DS/SimGUI session.
 
 **Resolved 2026-08-11:** hardware ownership (`DriveModule`, `CommandGamepad`)
 belongs on `Robot`, not `MyTeleop` — corrected above and reflected in
@@ -478,12 +506,36 @@ lesson; state plainly that this is deferred, the same honest framing the
 team decision uses, and let the eventual replay-focused follow-up lesson
 (once AdvantageKit ships `OpModeRobot` support) own that payoff instead.
 
-### Open items
+### Verified 2026-08-11 — compiled for real
 
-- Confirm `DataLogManager`'s exact 2027 package (`org.wpilib.datalog` is a
-  reasonable guess from other confirmed imports in that package, not
-  directly verified for `DataLogManager` itself) and that it still
-  auto-mirrors NetworkTables the way it has for years.
+`tools/verify-lessons-v3.sh 3` compiles this lesson's `DriveModule.java` and
+`Robot.java` against the real `v2027.0.0-alpha-6` jars. Two things the
+walkthrough above already reflects, found by `javap`-inspecting the actual
+jars rather than guessed:
+
+- **`DataLogManager` lives at `org.wpilib.system.DataLogManager`**, not
+  `org.wpilib.datalog` — the guessed package was wrong; `org.wpilib.datalog`
+  turned out to hold the lower-level `DataLog`/log-entry classes
+  `DataLogManager` wraps, not `DataLogManager` itself. `start()` is
+  confirmed a plain static no-arg method, matching the lesson text exactly.
+- **`StatusSignal.getValueAsDouble()` does not exist in this alpha —
+  confirmed from `com.ctre.phoenix6.StatusSignal`'s real class file, which
+  has only `getValue()`, returning the signal's actual measure type
+  (`Angle` for position, `AngularVelocity` for velocity).** This is a bigger
+  finding than a rename: it means unpacking a WPILib `Measure` with
+  `.in(Unit)` — normally not taught in this course until roughly Lesson 10's
+  equivalent, well after the by-hand math — is now unavoidable as early as
+  Lesson 3, because Phoenix 6's own sensor API forces it. The walkthrough
+  above handles this directly rather than hiding it: `.getValue().in(Rotations)`
+  is taught as a small, self-contained idea ("a measurement that remembers
+  its own unit; `.in(Rotations)` says which unit you want it as") without
+  pulling in the rest of the Units philosophy the later lesson still owns.
+  Worth watching for downstream: this may mean the v3 track's Units-timing
+  decision needs revisiting more broadly once later lessons are drafted,
+  since Lesson 3 already breaks the "no `.in(...)` before by-hand math"
+  rule out of necessity, not choice.
+
+**Still open:**
 - Struct-valued logging (a `Pose2d`, later in the course) has no
   `SmartDashboard` one-liner the way AdvantageKit/Epilogue offered — not a
   Lesson 3 problem, but flagged in the master plan so it's not rediscovered
@@ -493,18 +545,31 @@ team decision uses, and let the eventual replay-focused follow-up lesson
 
 ## Housekeeping
 
-- [ ] Lessons 0–3: verify against a real running sandbox (SimGUI opmode
-      selection UI, `TalonFX`/`CANBus` constructor, vendor-manager alpha
-      visibility, `DataLogManager`'s exact package) before finalizing prose —
-      several details above are flagged as read-from-source-but-not-driven.
+- [x] Lessons 0–3: **compiled for real**, 2026-08-11, via
+      `tools/verify-lessons-v3.sh` against `code/OpModeV3Robot` and the
+      pinned `v2027.0.0-alpha-6` / `Phoenix6-26.50.0-alpha-1` jars — not just
+      read-from-source. `TalonFX`/`CANBus` constructor, `StatusSignal`'s real
+      API, and `DataLogManager`'s package all came from `javap`-inspecting
+      the downloaded jars directly, and each fix is recorded in the relevant
+      lesson's "Verified" callout above.
 - [x] Lesson 3: no longer blocked. Team decision (2026-08-10) — proceed using
       plain `SmartDashboard.putNumber(...)` (Epilogue investigated and found
       workable, dropped same day as unnecessary machinery), defer real replay
       to a later pass once AdvantageKit ships `OpModeRobot` support.
-- [ ] Once Lessons 0–3 are written, extend `tools/verify-lessons.sh` (or
-      build its v3-track sibling) to actually compile them against
-      `code/OpModeV3Robot` — per R6 in the master plan, nothing here should
-      be marked "done" on the strength of source-reading alone.
+- [x] `tools/verify-lessons-v3.sh` built and used — the v3-track sibling of
+      `tools/verify-lessons.sh` (R6 in the master plan). Rolls `code/v3/lesson-N`
+      onto `code/OpModeV3Robot`, mirroring the main script's mechanics with
+      the base project, package root (`first.robot`), and vendordep source
+      (`vendor-json-repo/2027_alpha5`) swapped in.
+- [ ] Still needs a live VS Code/SimGUI session, not just `compileJava`: the
+      opmode-selection UI, the vendor-library manager's alpha-vendordep
+      visibility, and `CommandGamepad`'s button-to-DS-index mapping. None of
+      these are compile-time facts a sandbox build can settle.
+- [ ] Revisit the v3 track's Units-introduction timing given Lesson 3's
+      finding that `StatusSignal` has no double-returning accessor anymore —
+      see that lesson's "Verified" callout. This may ripple into how later
+      lessons (today's Lesson 10 equivalent) introduce Units, since Lesson 3
+      already had to use `.in(Rotations)` out of necessity.
 - [ ] Track AdvantageKit's releases for `OpModeRobot` support, and plan the
       follow-up pass that retrofits real replay onto the IO-layer structure
       once it lands (Lesson 13's equivalent, and everything after it).

@@ -121,14 +121,16 @@ existing course — points 1 and 2 above (hardware swap, everything alpha) hold
 regardless of the telemetry decision. Per direction from the user, the new
 track's lesson prose lives under **`docs/lessons/v3/`** (e.g.
 `docs/lessons/v3/00-orientation.md`), a sibling of `docs/lessons/`'s numbered
-files rather than mixed into them, and its code side needs the same
-treatment: a `code/lesson-N` snapshot line for the v3 track and its own
-extension to `tools/verify-lessons.sh` (or a sibling script) that rolls those
-snapshots onto `code/OpModeV3Robot` and actually compiles them. Naming for
-both is an open item — see [the housekeeping checklist](#housekeeping-checklist).
-A lesson gets written and verified **one at a time**, same as every other
-pass this repo has done. Nothing in the existing 0–34 course should be
-deleted, retitled away from roboRIO, or treated as superseded by this track.
+files rather than mixed into them, and its code side mirrors that:
+**`code/v3/lesson-N`** holds the snapshots, and `tools/verify-lessons-v3.sh` —
+a sibling script, not an extension of the original, since almost everything
+differs (base project, package root, vendordep source) — rolls them onto
+`code/OpModeV3Robot` and actually compiles them. Both exist now, and Lessons
+0–3 compile through the script for real, against the pinned alpha jars, not
+just by inspection. A lesson gets written and verified **one at a time**,
+same as every other pass this repo has done. Nothing in the existing 0–34
+course should be deleted, retitled away from roboRIO, or treated as
+superseded by this track.
 With the `SmartDashboard` decision, **Lessons 0–3 can all be written and
 verified today** — nothing in this batch is blocked anymore.
 
@@ -698,30 +700,55 @@ out badly.
   `jitpack.io`), so their 2027/SystemCore status has to be checked at those
   hosts directly, not inferred from this search. Each gates a meaningful
   chunk of the back half of the course (Lessons 15–17, 22, 25–28).
-- **R3 — pin confirmed:** Phoenix 6's 2027 alpha vendordep for this
-  project's WPILib version is `Phoenix6-26.50.0-alpha-1.json` (with a
-  matching `Phoenix6-replay-26.50.0-alpha-1.json` for AdvantageKit-replay
-  support — encouraging, once R1 clears), both in `vendor-json-repo/2027_alpha5/`.
+- **R3 — pin confirmed, and API confirmed too, by actually compiling against
+  it.** Phoenix 6's 2027 alpha vendordep for this project's WPILib version is
+  `Phoenix6-26.50.0-alpha-1.json` (with a matching
+  `Phoenix6-replay-26.50.0-alpha-1.json` for AdvantageKit-replay support —
+  encouraging, once R1 clears), both in `vendor-json-repo/2027_alpha5/`.
   CTRE's own compatibility notes still list documented gaps: Motioncore CAN
   buses aren't supported yet (only SystemCore-native buses and CANivore), and
-  there's no Sendable replacement yet, pending WPILib's Telemetry API — now
-  identified: that's Epilogue (see
-  [Telemetry without AdvantageKit](#telemetry-without-advantagekit-smartdashboard-and-networktables)),
-  confirmed to exist for 2027 alpha-6. Neither gap appears to block this
-  course's TalonFX/Pigeon 2/CANcoder usage directly, but should be confirmed
-  against a real device before Lesson 1 is written.
+  there's no Sendable replacement yet, pending WPILib's Telemetry API —
+  identified as Epilogue (see
+  [Telemetry without AdvantageKit](#telemetry-without-advantagekit-smartdashboard-and-networktables)).
+  Neither gap blocks this course's TalonFX usage. **Real API changes found by
+  `javap`-inspecting the downloaded jar** (`tools/verify-lessons-v3.sh`,
+  2026-08-11) that Lessons 1–3 now reflect: `TalonFX` has **no `.set(double)`
+  method at all** — it's `setThrottle(double)` (duty cycle, what this course
+  uses) or `setVoltage(double)`/`setVoltage(Voltage)`; `CANBus.systemcore(int)`
+  is lowercase; and `StatusSignal.getValueAsDouble()` is gone, replaced by a
+  typed `getValue()` returning the signal's actual `Angle`/`AngularVelocity`
+  measure — see the appendix and R7 below for what that costs the syllabus.
 - **R4:** Everything cited in this plan is alpha software. An API fact
   verified today against `v2027.0.0-alpha-6` is not guaranteed to hold at
   alpha-7 or at a stable 2027 release.
-- **R5:** `code/OpModeV3Robot/build.gradle` targets `JavaVersion.VERSION_25`.
-  Whether `org.wpilib.command3.Continuation` needs `--enable-preview` or
-  equivalent JVM flags on that Java version is unverified — check against a
-  real build, not by re-reading the source harder.
-- **R6:** This course's whole verification culture
-  (`tools/verify-lessons.sh`) is built around rolling snapshots onto
-  `code/ActualLessons`. A parallel OpMode track needs its own equivalent
-  before any lesson in it can be called "verified" rather than "believed" —
-  building that tooling is itself a prerequisite task, not a byproduct.
+- **R5 — RESOLVED 2026-08-11.** `code/OpModeV3Robot/build.gradle` targets
+  `JavaVersion.VERSION_25`, confirmed load-bearing: this sandbox only had
+  Java 21 installed, and `compileJava` needs 25 specifically —
+  `apt-get install openjdk-25-jdk-headless` was required before anything
+  would build. Once installed, `run(coroutine -> { ...; coroutine.park(); })`
+  bodies from Lesson 1 **compiled clean with no `--enable-preview` flag and
+  no warning**, so whatever `org.wpilib.command3.Continuation` needs from the
+  JDK's continuation support, it's handled inside the library and doesn't
+  leak into how student/lesson code is written or compiled.
+- **R6 — RESOLVED 2026-08-11.** `tools/verify-lessons-v3.sh` now exists and
+  Lessons 0–3 compile through it against the real pinned jars. Kept here as
+  the record of what was required, matching this repo's convention of
+  keeping resolved risks rather than deleting them.
+- **R7 — new, found while verifying Lesson 3, not anticipated by this plan.**
+  `StatusSignal.getValueAsDouble()` doesn't exist in this Phoenix 6 alpha —
+  confirmed by `javap` against the real jar. Reading *any* Phoenix 6 sensor
+  now requires `.getValue().in(SomeUnit)`, which means a WPILib `Measure`
+  unpack is unavoidable as early as Lesson 3. This course's existing rule —
+  "Units get peppered in from Lesson 10 on, after the by-hand math has been
+  taught, never before" — was written for a stack where `getValueAsDouble()`
+  let students avoid `Measure`s until then. Lesson 3 handles this by teaching
+  `.in(Rotations)` as a small, self-contained idea ("a measurement that
+  remembers its own unit") without pulling in the rest of the Units
+  philosophy, but whoever drafts the v3 track's later lessons should
+  re-examine whether the whole "Units from Lesson 10" sequencing decision
+  needs to move earlier for this stack, now that the API itself forces a
+  taste of it well before then. Not resolved here — flagged for whoever
+  plans Lessons 4 onward.
 
 ---
 
@@ -765,7 +792,11 @@ appendices: verify before drafting, record what you verified.
 | Vendordep conflict | The old `CommandsV2.json` (`org.wpilib.commandsv2`) declared a `conflictsWith` entry naming `CommandsV3.json` by UUID — the two cannot be installed together. **Resolved**: `code/OpModeV3Robot` now ships `CommandsV3.json` only |
 | `commandsv3` module location | Confirmed present at `commandsv3/` in the `allwpilib` repo, with its own `CommandsV3.json`, `build.gradle`, `BUILD.bazel`, `CMakeLists.txt`. Its `CommandsV3.json` (`uuid` `4decdc05-a056-46cf-9561-39449bbb0130`, `javaDependencies` group `org.wpilib` artifact `commands3-java`) is now installed in `code/OpModeV3Robot/vendordeps/`, copied byte-for-byte from source at tag `v2027.0.0-alpha-6` |
 | AdvantageKit 2027 compatibility | **Confirmed blocked, not just unverified.** `v27.0.0-alpha-4` is the release paired with WPILib `2027.0.0-alpha-6` (this scaffold's pinned version), per `wpilibsuite/SystemCoreTesting/AdvantageKit.md`. That same doc states directly: `LoggedRobot` is supported, `OpModeRobot` support is "available in a future release." Its vendordep (`AdvantageKit-27.0.0-alpha-4.json`) is mirrored in `vendor-json-repo/2027_alpha5/` alongside the other 2027-alpha vendor files, for whenever it's needed |
-| Phoenix 6 2027 compatibility | Pin confirmed: `Phoenix6-26.50.0-alpha-1.json` (plus `Phoenix6-replay-26.50.0-alpha-1.json` for AdvantageKit-replay support) in `vendor-json-repo/2027_alpha5/`, CTRE's own compatibility doc pairs it with WPILib's `2027_alpha5` checkpoint (no `2027_alpha6`-specific row published yet — this is the most recent confirmed pairing, not a guess, but re-check before relying on it for a real device). `CANBus.systemCore(int busId)` for SystemCore CAN buses; documented gaps: Motioncore CAN buses unsupported, no Sendable replacement yet |
+| Phoenix 6 2027 compatibility | Pin confirmed: `Phoenix6-26.50.0-alpha-1.json` (plus `Phoenix6-replay-26.50.0-alpha-1.json` for AdvantageKit-replay support) in `vendor-json-repo/2027_alpha5/`, CTRE's own compatibility doc pairs it with WPILib's `2027_alpha5` checkpoint (no `2027_alpha6`-specific row published yet — this is the most recent confirmed pairing, not a guess, but re-check before relying on it for a real device). `CANBus.systemcore(int busId)` (lowercase `c`) for SystemCore CAN buses; documented gaps: Motioncore CAN buses unsupported, no Sendable replacement yet |
+| `com.ctre.phoenix6.hardware.TalonFX` — **compiled, not guessed** (`javap` against the real `wpiapi-java-26.50.0-alpha-1.jar`) | Constructor `TalonFX(int, CANBus)` only — no single-int overload. **No `.set(double)` method exists.** Real motor-output methods: `setThrottle(double)` (duty cycle, −1..1 — the direct `.set(double)` replacement), `setVoltage(double)`, `setVoltage(Voltage)`, `disable()`, `stopMotor()`. `getPosition()`/`getVelocity()` (inherited from `CoreTalonFX`) are unchanged in shape, returning `StatusSignal<Angle>`/`StatusSignal<AngularVelocity>` |
+| `com.ctre.phoenix6.StatusSignal<T>` — compiled, not guessed | **No `getValueAsDouble()`.** Only `T getValue()`, returning the signal's real measure type (`Angle`, `AngularVelocity`, etc.) — so reading any Phoenix 6 sensor now requires unpacking with `.in(Unit)` (e.g. `.getValue().in(Rotations)`). See R7 for the pedagogical-sequencing consequence |
+| `com.ctre.phoenix6.CANBus` — compiled, not guessed | Static factories `systemcore(int)` / `systemcore(int, String)` (lowercase `c` — confirmed from the class file, corrects an earlier guess) and `motioncore(int)` / `motioncore(int, String)`; plain constructors `CANBus()` / `CANBus(String)` / `CANBus(String, String)` also exist |
+| `org.wpilib.system.DataLogManager` — compiled, not guessed | Confirmed location (an earlier guess of `org.wpilib.datalog.DataLogManager` was wrong — that package holds the lower-level `DataLog`/log-entry classes `DataLogManager` wraps). `start()` is a plain static no-arg method, matching `LoggedRobot`-era usage exactly |
 | PhotonVision 2027 compatibility | Vendordep confirmed present: `photonlib-v2027.0.0-alpha-2.json`, same `vendor-json-repo/2027_alpha5/` bucket. `OpModeRobot`-specific integration unverified |
 | `vendor-json-repo` 2027 structure | Confirmed directories: `2027_alpha1`, `2027_alpha5` (the current active bucket — despite the name, it also holds newer per-vendor releases like `REVLib-2027.0.0-alpha6.json`, so the folder name marks the prerelease *channel*, not a hard per-vendor version ceiling). Also present in `2027_alpha5/`: `AmLib`, `DogLog`, `PathplannerLib-2027.0.0-alpha-3.json`, `ThriftyLib` — **no BLine, no maple-sim** (both distribute outside `vendor-json-repo`; see R2) |
 | SystemCore removed device classes | Relay, analog output, SPI (incl. SPI IMUs: ADIS16448, ADIS16470, ADXL345, ADXRS450), analog gyro, DMA, built-in accelerometer, digital glitch filter, interrupts, counter, ultrasonic, analog trigger, Nidec Brushless, `Servo`, `Jaguar` — none currently used by this course |
@@ -807,12 +838,13 @@ appendices: verify before drafting, record what you verified.
       (R2) before writing Lessons 16, 17, 22, 25–27 — PhotonVision's status is
       now confirmed better (vendordep exists), but its `OpModeRobot`
       integration is still unverified.
-- [ ] Verify `DataLogManager`'s exact 2027 package location (likely
-      `org.wpilib.datalog`, consistent with `FileBackend`'s imports, but not
-      directly confirmed) before writing Lesson 3 for real.
-- [ ] Stand up a `tools/verify-lessons.sh`-equivalent for the v3 track (R6)
-      before any lesson in it is marked done. Naming for the v3 track's
-      `code/lesson-N` snapshot line is still an open item.
+- [x] `DataLogManager`'s exact 2027 package — resolved 2026-08-11, compiled
+      not guessed: `org.wpilib.system.DataLogManager`. The earlier guess
+      (`org.wpilib.datalog`) was wrong.
+- [x] `tools/verify-lessons-v3.sh` built (R6) — the v3-track sibling of
+      `tools/verify-lessons.sh`, using `code/v3/lesson-N` as the snapshot
+      naming (resolving that open item too). Lessons 0–3 compile through it
+      against the real pinned jars.
 - [ ] Resolve OD4 (StateMachine adoption) and OD6 (roboRIO → SystemCore
       terminology pass) with the user.
 - [ ] Confirm empirically (not by re-reading source) whether
@@ -827,5 +859,16 @@ appendices: verify before drafting, record what you verified.
       and confirmed `Scheduler.addPeriodic(Runnable)` has no scope cleanup at
       all. `docs/lessons/v3/01-first-motor.md` and `02-joystick-control.md`
       already reflect the fix.
+- [x] Real Phoenix 6 API changes found and fixed by compiling, 2026-08-11
+      (R3): no `TalonFX.set(double)` (`setThrottle(double)` instead),
+      `CANBus.systemcore` is lowercase, `StatusSignal.getValueAsDouble()`
+      is gone (`getValue().in(Unit)` instead) — see the appendix.
+- [ ] R7 (new): the `StatusSignal` finding above means Units arrive by
+      Lesson 3, not Lesson 10 — revisit the v3 track's Units-sequencing plan
+      once later lessons are drafted.
+- [ ] A JDK matching `sourceCompatibility` (`VERSION_25` currently) must be
+      on `PATH`/`JAVA_HOME` to run `tools/verify-lessons-v3.sh` — this
+      sandbox only had Java 21 by default and needed
+      `apt-get install openjdk-25-jdk-headless` first (R5, resolved).
 - [ ] See [docs/lesson-plan-v3-0-3.md](lesson-plan-v3-0-3.md) for the
       detailed Lessons 0–3 plan and its own open items.
