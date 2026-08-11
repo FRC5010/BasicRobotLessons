@@ -524,7 +524,7 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 2 | Joystick control | Low | Same lambda-binding pattern, stays in `MyTeleop` |
 | 3 | Telemetry & plots | Low | No longer blocked — uses plain `SmartDashboard.putNumber(...)` instead of AdvantageKit's `Logger` (Epilogue was considered, dropped as unnecessary machinery); see [Telemetry without AdvantageKit](#telemetry-without-advantagekit-smartdashboard-and-networktables) and the [detailed Lesson 3 plan](lesson-plan-v3-0-3.md#lesson-3-telemetry--plots) |
 | 4 | Simulation | Low–Medium | Written and compiled 2026-08-11. `simulationPeriodic()` exists, but only on `OpModeRobot`/`Robot` — `Mechanism` has no `simulationPeriodic()` hook of its own, so `DriveModule` exposes a plain public `simulatePeriodic()` method and `Robot.simulationPeriodic()` calls it (one line per mechanism, same shape as Lesson 1's scheduler tick). `LinearSystemId.createDCMotorSystem(...)` doesn't exist — real replacement is `org.wpilib.math.system.Models.singleJointedArmFromPhysicalConstants(DCMotor, J, gearing)` (same math, arm and generic-motor systems were always the same equation). `DCMotorSim.getAngularPosition()`/`.getAngularVelocity()` return **radians**/**radians per second**, not rotations/RPM — confirmed by an end-to-end `DriverStationSim`-backed test (`TalonFX.setThrottle(1.0)` through the real physics loop converges on ~100 rot/s, the Kraken X60's true free speed, only once the radians→rotations division is included). See the appendix and `code/v3/lesson-4/`. |
-| 5 | Steering P control | Low | Mechanically unaffected |
+| 5 | Steering P control | Medium | Written and compiled 2026-08-11. `CANcoder` needs a `CANBus` argument now too (`CANcoder(int, CANBus)`, no single-int overload — same shift as `TalonFX`), and `getAbsolutePosition()` needs `.getValue().in(Rotations)` like every other `StatusSignal` since Lesson 3. **The old lesson's `kP = 0.01` is unconditionally unstable against this Phoenix 6 alpha's `DCMotorSim`, confirmed with a real `DriverStationSim`-backed test — not a porting bug, a numeric one.** See [R8](#risks-and-blocking-unknowns) |
 | 6 | Distance & commands | Low–Medium | "Commands that finish" is now trivially a `while` loop + `coroutine.yield()` — arguably simpler to teach, not just portable |
 | 7 | Four modules | Medium | `DriveModule` → `SwerveModule` rename beat is unaffected; the aggregate `Drivetrain` joins `DriveModule`'s existing spot as a field on `Robot`, same pattern since Lesson 1 |
 | 8 | Gyro & heading | Low | Mechanically unaffected |
@@ -769,6 +769,36 @@ out badly.
   needs to move earlier for this stack, now that the API itself forces a
   taste of it well before then. Not resolved here — flagged for whoever
   plans Lessons 4 onward.
+- **R8 — new, found while verifying Lesson 5, and possibly relevant to the
+  existing (2026, roboRIO) course too, not just this port.** The old Lesson
+  5's steering numbers — `kP = 0.01`, steering inertia `0.004 kg·m²`,
+  "pretend 1:1" gearing, direct-drive Kraken X60, a 20 ms control period —
+  are **unconditionally unstable** against this alpha's `DCMotorSim`, not
+  merely "aggressive." Confirmed with a real `DriverStationSim`-backed test
+  (real `Thread.sleep(20)` per tick, matching R3's/Lesson 4's finding that
+  Phoenix's simulated firmware runs in real time): commanding `steerToAngle(90)`
+  from rest never settles — position swings by thousands of degrees within
+  a few seconds, output pinned at ±100%, whether or not the error is wrapped
+  to ±180°. Binary-searching `kP` downward found a real stability boundary:
+  `kP = 0.0005` converges cleanly (settles within ~90° ± a few degrees by
+  5 s, ~90.0° by 9 s); `kP = 0.001` oscillates without settling; `kP = 0.002`
+  is clearly unstable. **The physics model itself is not the suspect** — it's
+  the same underlying state-space equations under a renamed factory (see the
+  Lesson 4 appendix rows), and a direct-drive Kraken X60 (100 rot/s free
+  speed, 7+ N·m stall torque) swinging a 0.004 kg·m² load is simply too fast
+  and too torque-dense for a P-only loop sampled at 50 Hz to tame at
+  `kP = 0.01` — a gain that was, empirically, already deep into "wildly
+  unstable" rather than at the "start here" edge the old lesson's tuning
+  ritual assumes. Lesson 5 as written here ships the empirically-verified
+  `kP = 0.0005`, with the walkthrough's worked numeric example and tuning
+  guidance rewritten to match (start at `0.0005`, doubling toward `0.001`
+  visibly oscillates, `0.002` is clearly too far). **Not verified against the
+  existing 2026-track course** — that course's `code/lesson-5/subsystems/DriveModule.java`
+  uses the identical `kP`, inertia, and 1:1-gearing numbers against
+  WPILib's older `DCMotorSim`/`LinearSystemId`, which use the same
+  state-space math, so the same instability plausibly exists there too, but
+  this was not run against the old course's own tooling to confirm — flagged
+  for whoever owns that course's Lesson 5, not fixed here.
 
 ---
 
@@ -825,6 +855,10 @@ appendices: verify before drafting, record what you verified.
 | `org.wpilib.simulation.DCMotorSim` — compiled, not guessed, **and unit-verified with a real test** | Package moved from `edu.wpi.first.wpilibj.simulation` to `org.wpilib.simulation` (same move as `DriverStationSim`). Constructor `DCMotorSim(LinearSystem<N2,N1,N2>, DCMotor, double...)`. **`getAngularPosition()`/`getAngularVelocity()` return radians / radians per second, not the old API's rotations / RPM** — confirmed empirically, not just by naming convention: a `DriverStationSim`-backed test drove a `TalonFX.setThrottle(1.0)` through the full sim loop (with `Thread.sleep(20)` between ticks — Phoenix's simulated firmware is real-time, so a tight loop without real sleeps undershoots) and `TalonFX.getVelocity()` converged on the Kraken X60's true 100 rot/s free speed only with a `/(2 * Math.PI)` conversion applied before `setRotorVelocity`; without it, the same test converged on ~630 (radians/s). See `code/v3/lesson-4/` |
 | `org.wpilib.system.RobotController` | Package moved from `edu.wpi.first.wpilibj` to `org.wpilib.system` (same tail as `DataLogManager`). `getBatteryVoltage()` confirmed present, unchanged signature |
 | `Mechanism` sim hook | **Confirmed absent** — `Mechanism` has no `simulationPeriodic()`/`simulationInit()` of its own (consistent with it having no `periodic()` hook at all, per the earlier finding used for Lesson 3's telemetry). The real hook is `OpModeRobot.simulationPeriodic()` (`Robot` overrides it), called by `loopFunc()` only when `isSimulation()`, unconditional on enabled state — same shape as `robotPeriodic()`. Lesson 4 has each mechanism expose a plain public `simulatePeriodic()` method for `Robot` to call, one line per mechanism |
+| `com.ctre.phoenix6.hardware.CANcoder` — compiled, not guessed | **Constructor `CANcoder(int, CANBus)` only — no single-int overload**, the same shift `TalonFX` already got. `getConfigurator()`, `getPosition()`/`getPosition(boolean)`, `getAbsolutePosition()`/`getAbsolutePosition(boolean)` (inherited from `CoreCANcoder`) all confirmed present and unchanged in shape, all returning `StatusSignal<Angle>` — same `.getValue().in(Unit)` unpack every other Phoenix sensor needs since Lesson 3 |
+| `com.ctre.phoenix6.configs.{CANcoderConfiguration,MagnetSensorConfigs}` / `com.ctre.phoenix6.signals.SensorDirectionValue` — compiled, not guessed | Unchanged in shape from the pre-2027 API. `MagnetSensorConfigs.MagnetOffset` is still a plain public `double` field (directly assignable); `CANcoderConfiguration.MagnetSensor` is still a plain public field; `SensorDirectionValue.Clockwise_Positive`/`CounterClockwise_Positive` unchanged |
+| `TalonFX.setPosition(double)` (priming) — compiled, not guessed | Confirmed present and unchanged (plus new `setPosition(double, double)`/`setPosition(Angle)`/`setPosition(Angle, double)` overloads, not needed by Lesson 5) |
+| `Mechanism`'s `run`/`runRepeatedly` builder return type | **Confirmed identical** — both `run(Consumer<Coroutine>)` and `runRepeatedly(Runnable)` return `NeedsNameBuilderStage`, so `.whenCanceled(Runnable)`/`.withPriority(int)`/`.until(BooleanSupplier)`/`.named(String)` chain the same way regardless of which one started the command. Lesson 5's `steerToAngle` is the first command needing both `runRepeatedly`'s per-tick recompute (Lesson 2's shape) and `.whenCanceled`'s cleanup (Lesson 1's shape) together |
 | `org.wpilib.system.DataLogManager` — compiled, not guessed | Confirmed location (an earlier guess of `org.wpilib.datalog.DataLogManager` was wrong — that package holds the lower-level `DataLog`/log-entry classes `DataLogManager` wraps). `start()` is a plain static no-arg method, matching `LoggedRobot`-era usage exactly |
 | PhotonVision 2027 compatibility | Vendordep confirmed present: `photonlib-v2027.0.0-alpha-2.json`, same `vendor-json-repo/2027_alpha5/` bucket. `OpModeRobot`-specific integration unverified |
 | `vendor-json-repo` 2027 structure | Confirmed directories: `2027_alpha1`, `2027_alpha5` (the current active bucket — despite the name, it also holds newer per-vendor releases like `REVLib-2027.0.0-alpha6.json`, so the folder name marks the prerelease *channel*, not a hard per-vendor version ceiling). Also present in `2027_alpha5/`: `AmLib`, `DogLog`, `PathplannerLib-2027.0.0-alpha-3.json`, `ThriftyLib` — **no BLine, no maple-sim** (both distribute outside `vendor-json-repo`; see R2) |
@@ -937,3 +971,17 @@ appendices: verify before drafting, record what you verified.
       that `Robot.simulationPeriodic()` calls — the same "Robot orchestrates,
       mechanism computes" shape Lesson 1 already established for the
       scheduler tick. See the appendix for the full API detail.
+- [x] Lesson 5 (Steering P control) written and verified 2026-08-11 —
+      `docs/lessons/v3/05-steering-p-control.md` and `code/v3/lesson-5/`,
+      compiling through `tools/verify-lessons-v3.sh 5`. `CANcoder` needed the
+      same `(int, CANBus)` constructor shift as `TalonFX`, and
+      `getAbsolutePosition()` needed the same `.getValue().in(Rotations)`
+      unpack every `StatusSignal` has needed since Lesson 3 — both
+      mechanical. **The one real finding is R8**: the old lesson's
+      `kP = 0.01` is unconditionally unstable here, not just aggressive —
+      empirically bisected to a real stability boundary (`0.0005` converges,
+      `0.001` oscillates, `0.002` diverges) with a `DriverStationSim`-backed
+      test, and the lesson ships the verified value with its worked example
+      and tuning guidance rewritten to match. Flagged as possibly affecting
+      the existing 2026-track course's identical numbers too, not verified
+      against that course's own tooling — see R8.
