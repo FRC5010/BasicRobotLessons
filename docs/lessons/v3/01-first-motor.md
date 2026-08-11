@@ -14,6 +14,7 @@ spin at a fixed speed while you hold a button.
 - Adding a vendor library (Phoenix 6)
 - The `TalonFX` motor object
 - Exposing behavior as a **command factory method**
+- `Robot` as the permanent home for hardware
 - Binding a controller button, and giving the simulator a joystick to read
 
 ---
@@ -267,22 +268,31 @@ public class DriveModule extends Mechanism {
 
 ---
 
-## 4. Wire a button to it
+## 4. Give the robot its hardware
 
-The mechanism exists, but nothing builds it or talks to it yet. Open
-`MyTeleop.java`. You're making three small edits, and where each one lands
-matters as much as what it says.
+The mechanism exists, but nothing builds it yet. It goes on `Robot`, not on
+`MyTeleop` — and that's worth pausing on, because it's a rule you'll use for
+every piece of real hardware from here on.
 
-**First, give `MyTeleop` a controller and the module, as fields.**
+**`Robot` is built exactly once**, the moment your program starts, and it
+stays alive for as long as the robot is running — through every opmode you
+select, one after another. An opmode like `MyTeleop`, on the other hand, is
+thrown away and **rebuilt fresh every time you pick it** on the Driver
+Station — including the ordinary switch from autonomous to teleop in a real
+match. A motor needs to exist exactly once, the same way `Robot` does. So
+the motor — and the controller you're about to add — belong on `Robot`, and
+opmodes just reach in and use them.
 
-**Add to `MyTeleop`, alongside the existing field:**
+Open `Robot.java`. You're making two small edits.
+
+**First, give `Robot` the controller and the module, as fields.**
+
+**Add to `Robot`, alongside the existing content:**
 
 ```java
-@Teleop
-public class MyTeleop extends PeriodicOpMode {
-  private final Robot robot;
-  private final CommandGamepad m_driverController = new CommandGamepad(0);
-  private final DriveModule m_module = new DriveModule();
+public class Robot extends OpModeRobot {
+  public final CommandGamepad driverController = new CommandGamepad(0);
+  public final DriveModule module = new DriveModule();
 ```
 
 Two new fields, both built with `new`, both handles to a real thing.
@@ -294,12 +304,20 @@ moment your mechanism actually gets built — it runs everything you wrote in
 section 3, including `new TalonFX(...)`, which brings the motor object to
 life. One `new` sets off the whole chain.
 
+Notice these fields are **public**, not `private` like `DriveModule`'s
+motor field was. That's deliberate, and it's the same encapsulation idea
+working in the opposite direction: nothing outside `DriveModule` ever needs
+to touch the motor directly, so it's hidden — but every opmode needs to
+*reach* the module and the controller, so `Robot` holds them out in the
+open. `Robot` is the robot's toolbox; opmodes are what you do with the
+tools.
+
 **Second, the imports.** `DriveModule` lives in the
 `first.robot.subsystems` package; `CommandGamepad` lives under
-`org.wpilib.command3.button`; `MyTeleop` lives in `first.robot.opmode`.
-Different packages, so this file needs imports.
+`org.wpilib.command3.button`. Different packages, so this file needs
+imports.
 
-**Add to `MyTeleop`'s imports, anywhere among them, below the `package` line:**
+**Add to `Robot`'s imports, below the `package` line:**
 
 ```java
 import org.wpilib.command3.button.CommandGamepad;
@@ -310,13 +328,20 @@ Or let the editor do it: the moment you typed `DriveModule` above, VS Code
 underlined it in red. Click it, press `Ctrl+.`, pick the import. That
 shortcut will save you a thousand keystrokes over this course.
 
-**Third, the binding.** `CommandGamepad` gives you a method per button —
-`southFace()`, `eastFace()`, `leftBumper()`, and so on, named by where the
-button sits on the pad rather than by letter. On a standard controller
-layout, `southFace()` is the bottom face button — the one an Xbox pad
-labels A. Each one hands back a **`Trigger`**: an object that knows how to
-answer "is that button down right now?" and, more usefully, lets you attach
-a command to it.
+---
+
+## 5. Wire a button to it
+
+Open `MyTeleop.java`. It already has a `robot` field from the template —
+that's your way in.
+
+`CommandGamepad` gives you a method per button — `southFace()`,
+`eastFace()`, `leftBumper()`, and so on, named by where the button sits on
+the pad rather than by letter. On a standard controller layout,
+`southFace()` is the bottom face button — the one an Xbox pad labels A.
+Each one hands back a **`Trigger`**: an object that knows how to answer "is
+that button down right now?" and, more usefully, lets you attach a command
+to it.
 
 **Add to `MyTeleop`'s constructor:**
 
@@ -325,7 +350,7 @@ a command to it.
     this.robot = robot;
 
     // Hold the bottom face button to drive forward at 30% power; release to stop.
-    m_driverController.southFace().whileTrue(m_module.driveAtSpeed(0.3));
+    robot.driverController.southFace().whileTrue(robot.module.driveAtSpeed(0.3));
   }
 ```
 
@@ -339,7 +364,7 @@ watching from then on, tick after tick, all match long.
 
 ---
 
-## 5. Run it
+## 6. Run it
 
 **Start the simulator:**
 
@@ -391,7 +416,7 @@ button. It counts.
 Three exercises. The third one plants a habit you'll lean on for the rest
 of the course.
 
-1. Add a **second** button (`m_driverController.eastFace()`) that drives at
+1. Add a **second** button (`robot.driverController.eastFace()`) that drives at
    `-0.3` (reverse). Confirm both buttons fight for the motor cleanly —
    press both; the scheduler lets the most-recently-scheduled one win.
 2. Change `m_driveMotor`'s CAN ID and rebuild. Nothing breaks in sim — IDs
@@ -429,10 +454,13 @@ every file you'll write from here on. On the robot side, mechanisms expose
 behavior as **command factory methods** that *return* commands, so the
 scheduler can manage who controls the hardware, and motors **hold the last
 value** you set — which is why a command that spins a motor pairs a start
-with a `.whenCanceled(...)` cleanup. You also wired a real button to real
-behavior, and learned that the simulator needs a joystick dragged into slot
-0 before any of it responds — worth remembering, because that one bites
-people every season. Next up, that hard-coded `0.3` becomes a live joystick
-reading, and this starts feeling like driving.
+with a `.whenCanceled(...)` cleanup. You also learned where hardware
+belongs: on `Robot`, which is built once and lasts the whole time the robot
+runs, not on an opmode like `MyTeleop`, which gets rebuilt fresh every time
+it's selected. You wired a real button to real behavior, and learned that
+the simulator needs a joystick dragged into slot 0 before any of it
+responds — worth remembering, because that one bites people every season.
+Next up, that hard-coded `0.3` becomes a live joystick reading, and this
+starts feeling like driving.
 
 Next: Lesson 2 — Joystick control.

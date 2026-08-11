@@ -50,8 +50,8 @@ variable first.
 
 Which is a good moment to name a pattern you've been using without a name.
 You've already caught values that methods handed back —
-`m_driverController.getLeftY()` gave you the stick position, and your own
-`applyDeadband` handed back a cleaned-up number. Here's the pattern: methods
+`robot.driverController.getLeftY()` gave you the stick position, and your
+own `applyDeadband` handed back a cleaned-up number. Here's the pattern: methods
 come in two flavors. Some are *actions* — `set(0.3)` means "do this," and
 nothing comes back. Some are *questions* — `getPosition()` means "what is
 this?", and the answer comes back as a **return value** for you to catch in

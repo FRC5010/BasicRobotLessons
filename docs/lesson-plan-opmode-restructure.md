@@ -145,7 +145,7 @@ Read this table with that in mind — it separates "the words change" from
 | Robot base class | `Robot extends TimedRobot`, one class, whole-match lifecycle | `Robot extends OpModeRobot`, thin; per-mode behavior lives in `OpMode` classes | `OpModeRobot` still has `robotPeriodic()`, `disabledInit/Periodic/Exit`, `simulationInit/Periodic` — same hook names students already know |
 | Scheduler tick | `CommandScheduler.getInstance().run()` in `robotPeriodic()` | `Scheduler.getDefault().run()` — **not called for you**, must be added the same way | `robotPeriodic()` runs every tick regardless of which opmode (if any) is selected — same hook point, same reason to use it |
 | Mode selection | One binary: teleop or autonomous, chosen by the field/DS, same `Robot` class either way | Discrete named **opmodes** — any number of `@Teleop`/`@Autonomous`/`@Utility` classes, auto-discovered by package scan, each shown by name on the DS | New concept, not just a rename — see [OpMode fundamentals](#opmode-fundamentals) |
-| Wiring class | `RobotContainer`: constructed once at boot, owns every subsystem and every binding for the robot's entire life | No such class exists in the template. `Robot` is the only thing constructed once at boot; opmodes receive it via constructor injection (`MyTeleop(Robot robot)`) already, in the stock scaffold | This is the crux of [the MyTeleop → RobotTeleop decision](#the-myteleopmyauto--robotteleop-transition) |
+| Wiring class | `RobotContainer`: constructed once at boot, owns every subsystem and every binding for the robot's entire life | No such class exists in the template. `Robot` is the only thing constructed once at boot; opmodes receive it via constructor injection (`MyTeleop(Robot robot)`) already, in the stock scaffold | `Robot` plays `RobotContainer`'s role starting **Lesson 1**, not Lesson 9 — see [the transition section](#the-myteleopmyauto--robotteleop-transition) for the correction |
 | Subsystem base | `SubsystemBase` (`periodic()` override, auto-registers with `CommandScheduler`) | `Mechanism` (constructor registers with `Scheduler.getDefault()`, auto-installs an idle default command) | No baked-in `periodic()` hook — see [Risk R1](#risks-and-blocking-unknowns) on where per-tick logging goes |
 | Command shape | `initialize/execute/isFinished/end`, or `run(Runnable).until(...).finallyDo(...)` | Single `run(Coroutine)` method; `Mechanism.run(Consumer<Coroutine>)....named(...)`, with `.until(...)`, `.whenCanceled(...)`, `.withPriority(...)` builder stages | `.named(...)` is now a **compiler-enforced** final step, not a convention |
 | Composition | `Commands.sequence/parallel/race/deadline`; `.andThen/.alongWith/.raceWith/.deadlineWith`; `Commands.defer(Supplier<Command>, Set<Subsystem>)` | `Command.sequence/parallel/race`; `.andThen/.alongWith/.raceWith/.until`; `coroutine.await(...)`/`coroutine.fork(...)` largely replace `defer` | See [the per-lesson impact table](#per-lesson-impact-assessment) (Lesson 27) |
@@ -325,86 +325,110 @@ filled in depends on what's selected on the DS."
 
 ## The MyTeleop/MyAuto → RobotTeleop transition
 
-This is the specific design question this plan was asked to answer, so it
-gets its own section with the reasoning shown, not just the conclusion.
+This is the specific design question this plan was asked to answer. It
+splits into two genuinely separate questions that an earlier draft of this
+plan wrongly treated as one: **where hardware lives** (a real, correctness
+question, resolved by writing Lessons 0–3 and finding out the hard way) and
+**when the class gets renamed** (a soft, editorial one). Keep them apart —
+conflating them is exactly the mistake this section corrects.
 
-### Why MyTeleop alone is right at the start
+### Corrected finding: hardware belongs on `Robot` from Lesson 1, not Lesson 9
 
-`MyTeleop` and `MyAuto` are already exactly the right shape for the earliest
-lessons. A single opmode with a constructor and four empty lifecycle methods
-is arguably a **gentler** on-ramp than today's Lesson 0/1, which introduces
-`Robot` and `RobotContainer` as two cooperating classes before the student has
-written a single line that does anything. "Open `MyTeleop.java`, put your code
-in `periodic()`, pick 'My Teleop' on the Driver Station" is one class, one
-job, visible immediately. Lessons that only ever need one mechanism and one
-set of bindings — the drive-motor-with-a-button lessons, joystick control,
-telemetry, simulation, steering, distance-and-commands, four modules, gyro
-heading — have no reason to leave `MyTeleop`. `MyAuto` sits untouched the
-whole time, still printing nothing, exactly as the scaffold ships it.
+An earlier draft of this plan argued mechanisms could stay owned by
+`MyTeleop` through Lesson 8, on the theory that the forcing function was
+"two opmodes needing the same hardware simultaneously" — and that doesn't
+happen until autonomous gets real content at Lesson 9. **That reasoning was
+wrong, and Lessons 0–3 exposed it directly**, not through more source
+reading: writing Lesson 1 with `DriveModule` owned by `MyTeleop` turned out
+to be a real bug, verified by tracing `OpModeRobot.loopFunc()` and
+`Scheduler`'s source rather than caught by a compiler.
 
-### What actually forces a change
+The actual forcing function is narrower and earlier than "two opmodes
+fighting over hardware" — it's **opmode reconstruction, full stop, with only
+one opmode involved:**
 
-The forcing function isn't "the course reaches command composition" or "the
-course reaches four modules" — it's more specific and mechanical than that:
-**the first moment two different opmodes need to drive the same physical
-hardware.**
+- Opmodes are reconstructed *every time they're re-selected* on the Driver
+  Station — confirmed from `OpModeRobot.loopFunc()`: any change in the
+  selected opmode ID tears down the current opmode (`end()`, `close()`) and
+  builds a fresh one from its factory. This isn't a rare event a student
+  might never trigger — it's exactly what happens at the **auto → teleop
+  transition of every real match**, and it's what a student naturally
+  triggers just working through Lesson 0's own Try It (select My Auto, then
+  come back to My Teleop for Lesson 1).
+- If `DriveModule` is a field on `MyTeleop`, every reconstruction builds a
+  **new** `DriveModule`, and nothing tears down the old one.
+  `Mechanism`'s own default-command binding is scope-aware and does get
+  cleaned up when the creating opmode's scope goes stale — but the
+  `Mechanism` object itself is never removed from `Scheduler`'s internal
+  `m_defaultCommandBindings` map, just left with an empty binding list.
+  That's a small, mostly harmless leak on its own.
+- **`Scheduler.getDefault().addPeriodic(Runnable)` — the exact mechanism
+  Lesson 3 uses for telemetry — has no scope tracking at all**, confirmed
+  from source: it wraps the callback in a bare `while (true)` sideload
+  coroutine, removed only via `Coroutine::isDone`, which a `while(true)` loop
+  never satisfies. Every reconstruction adds a new, permanent, never-cleaned
+  periodic callback still reading a now-orphaned `TalonFX` handle and writing
+  to `SmartDashboard`. This is a real, compounding, verified bug starting
+  the moment Lesson 3's `Scheduler.addPeriodic` call lands — not a
+  theoretical one, and not confined to a Lesson 9 scenario.
 
-Opmodes are constructed fresh every time they're selected (see above). If
-`MyTeleop` and `MyAuto` each independently constructed their own `Drivetrain`,
-each `Drivetrain` would try to own the same TalonFX CAN IDs — two `Mechanism`
-objects, each auto-registering an idle default command with
-`Scheduler.getDefault()` for hardware the other one also thinks it owns. That
-doesn't fail cleanly; it's the kind of bug this course has spent 34 lessons
-teaching students to avoid.
+`Robot`, by contrast, is constructed exactly once and never torn down. It's
+the only object in the whole scaffold with a lifetime long enough to safely
+own a `Mechanism`. **Lessons 1–3, as actually written, put `DriveModule` and
+`CommandGamepad` on `Robot` from Lesson 1** — see
+`docs/lessons/v3/01-first-motor.md` §4, "Give the robot its hardware." The
+teaching framing there is deliberately simple for a first-time reader:
+`Robot` is built once and lasts the whole time the robot runs; opmodes are
+rebuilt fresh every time they're picked; so hardware goes on `Robot`, and
+opmodes reach in and use it. No mention of the leak, the scheduler internals,
+or this correction belongs in the lesson text itself — that's for this plan
+doc, not the student.
 
-That collision doesn't exist yet at Lesson 7 (four modules), even though
-that's the lesson that *feels* like the natural moment — because at Lesson 7,
-`MyAuto` is still the empty stub the scaffold ships. `MyAuto.periodic()`
-doesn't touch a motor until the course teaches autonomous, which is today's
-**Lesson 9**. That's the actual, technically-grounded point where the
-scaffold's "each opmode is independent" default stops working, and it's the
-right lesson to spend the refactor on — same shape as Lesson 7's own
-motivation for `DriveModule` → `SwerveModule` (CLAUDE.md already documents
-that precedent; this is the same move, later).
+### The rename is a separate, later, softer decision
 
-### The recommended shape, at Lesson 9
+With hardware ownership resolved at Lesson 1, **`MyTeleop` → `RobotTeleop`
+no longer has a technical trigger at all** — it's purely about the name
+feeling like a permanent piece of the robot's control scheme rather than
+template example code, exactly as characterized when this was decided:
+"just a name that sounds less like example code." That's still a fine
+description, and Lesson 9 (autonomous) is still a reasonable, low-cost place
+to do it — a natural pause point, and it lines up with `MyAuto` finally
+getting real content instead of an empty stub, which is its own good reason
+to touch both files in the same pass. But it's no longer load-bearing the
+way the earlier draft claimed, and could just as easily happen at another
+lesson boundary without breaking anything. Treat the rename as:
 
-1. **`Robot` grows fields.** Every mechanism the course has built so far
-   (today, that's `Drivetrain`) becomes a field on `first.robot.Robot`,
-   constructed once in `Robot`'s own constructor — the same place students
-   already know things get created "at boot." `Robot` starts doing the job
-   `RobotContainer` does today: it's the one thing built once and alive for
-   the robot's whole life. It does *not* need to be renamed or turn into
-   anything fancier than that — it's already there, already injected into
-   every opmode's constructor, and it's the only object in the whole scaffold
-   with the right lifetime.
-2. **`MyTeleop.java` is renamed `RobotTeleop.java`, in place** — same move as
-   `DriveModule` → `SwerveModule`, not a new file added alongside the old one.
-   It keeps `@Teleop`, keeps the `Robot robot` constructor parameter it
-   already had, and its constructor (or `start()` — verify which; see the
-   open item on binding-scope timing below) is where trigger bindings move,
-   reading mechanisms off `robot` instead of owning them itself.
-3. **`MyAuto.java` is renamed `RobotAuto.java`** the same way, and finally
-   gets real content: the drive-turn-drive script this course has always
-   taught at this point, now driving `robot`'s actual `Drivetrain` instance
-   instead of a fresh, conflicting one.
-4. Every lesson **before** this one keeps saying "open `MyTeleop.java`."
-   Every lesson **from** this one on says "open `RobotTeleop.java`" /
-   `RobotAuto.java`. The rename is a single, dated, one-time editorial pass,
-   the same kind of pass `CLAUDE.md` already asks for on any symbol rename:
-   grep the whole `docs/lessons/` tree for `MyTeleop`/`MyAuto` before
-   committing to the cutover lesson, since earlier lessons reuse those names
-   verbatim in code blocks.
+1. **`MyTeleop.java` renamed `RobotTeleop.java`, in place** — same move as
+   `DriveModule` → `SwerveModule`, not a new file added alongside the old
+   one. It keeps `@Teleop`, keeps the `Robot robot` constructor parameter,
+   and continues reading mechanisms off `robot` exactly as it has since
+   Lesson 1 — nothing about *how* it reaches hardware changes here, only
+   the file and class name.
+2. **`MyAuto.java` renamed `RobotAuto.java`** the same way, and finally gets
+   real content: the drive-turn-drive script this course has always taught
+   at this point, reading `robot.module` (or `robot.drivetrain`, by then)
+   the same unremarkable way `RobotTeleop` already does. There's no
+   "avoiding a conflict" drama here anymore — that was the old, incorrect
+   framing. It's just `MyAuto` doing what `MyTeleop` already knows how to
+   do.
+3. Every lesson **before** the rename keeps saying "open `MyTeleop.java`."
+   Every lesson **from** the rename on says "open `RobotTeleop.java`" /
+   `RobotAuto.java`. Single, dated, one-time editorial pass — grep the whole
+   `docs/lessons/v3/` tree for `MyTeleop`/`MyAuto` before committing to the
+   cutover lesson, since earlier lessons reuse those names verbatim in code
+   blocks.
 
 **One thing to verify empirically, not assume:** `BindingScope.createNarrowestScope`
 picks an opmode-scoped binding by reading `OpModeFetcher.getFetcher().getOpModeId()`
 at the moment a trigger or command is scheduled. Whether that ID already
 reflects the *new* opmode while its constructor is still running (as opposed
 to only becoming visible once `start()` fires) determines whether trigger
-bindings belong in `RobotTeleop`'s constructor or its `start()` override.
-Get this from a real running sandbox, not from reading the source twice
-harder — it's exactly the kind of runtime fact this course's whole
-verification culture exists to catch instead of guess at.
+bindings belong in an opmode's constructor or its `start()` override — this
+already matters for `MyTeleop` today (Lesson 1's button binding lives in its
+constructor), not just from the rename lesson on. Get this from a real
+running sandbox, not from reading the source twice harder — it's exactly the
+kind of runtime fact this course's whole verification culture exists to
+catch instead of guess at.
 
 ### Autonomous selection past Lesson 9
 
@@ -474,15 +498,15 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | # | Lesson | Impact | Why |
 |---|---|---|---|
 | 0 | Orientation | **High** | Entry point itself changes — OpMode selection replaces "the one Robot class," see [OpMode fundamentals](#opmode-fundamentals) |
-| 1 | Your first motor | **High** | First real command, written directly in `MyTeleop`, no `RobotContainer` analog yet |
+| 1 | Your first motor | **High** | First real command; hardware (`DriveModule`, `CommandGamepad`) is owned by `Robot`, not `MyTeleop` — corrected from an earlier draft, see [the transition section](#the-myteleopmyauto--robotteleop-transition) |
 | 2 | Joystick control | Low | Same lambda-binding pattern, stays in `MyTeleop` |
 | 3 | Telemetry & plots | Low | No longer blocked — uses plain `SmartDashboard.putNumber(...)` instead of AdvantageKit's `Logger` (Epilogue was considered, dropped as unnecessary machinery); see [Telemetry without AdvantageKit](#telemetry-without-advantagekit-smartdashboard-and-networktables) and the [detailed Lesson 3 plan](lesson-plan-v3-0-3.md#lesson-3-telemetry--plots) |
 | 4 | Simulation | Low | `simulationInit()`/`simulationPeriodic()` still exist on `OpModeRobot` |
 | 5 | Steering P control | Low | Mechanically unaffected |
 | 6 | Distance & commands | Low–Medium | "Commands that finish" is now trivially a `while` loop + `coroutine.yield()` — arguably simpler to teach, not just portable |
-| 7 | Four modules | Medium | `DriveModule` → `SwerveModule` rename beat is unaffected; this is the lesson that *tempts* an early MyTeleop rename — resist it, see [the transition section](#the-myteleopmyauto--robotteleop-transition) |
+| 7 | Four modules | Medium | `DriveModule` → `SwerveModule` rename beat is unaffected; the aggregate `Drivetrain` joins `DriveModule`'s existing spot as a field on `Robot`, same pattern since Lesson 1 |
 | 8 | Gyro & heading | Low | Mechanically unaffected |
-| 9 | Autonomous | **High** | Recommended home for the MyTeleop/MyAuto → RobotTeleop/RobotAuto rename; also where coroutine `await` vs. `.andThen` gets its dedicated contrast |
+| 9 | Autonomous | **High** | Recommended (but no longer technically forced) home for the MyTeleop/MyAuto → RobotTeleop/RobotAuto rename, now that hardware ownership is settled at Lesson 1; also where coroutine `await` vs. `.andThen` gets its dedicated contrast |
 | 10 | Kinematics | Low | Mechanically unaffected |
 | 11 | Odometry & field view | Medium | `Field2d`/`SmartDashboard.putData` needs a live-sandbox check, not just a source read |
 | 12 | Model-based control | Low | Phoenix 6 config/control-request API; SystemCore Phoenix 6 alpha status noted in [R3](#risks-and-blocking-unknowns) |
@@ -793,7 +817,15 @@ appendices: verify before drafting, record what you verified.
       terminology pass) with the user.
 - [ ] Confirm empirically (not by re-reading source) whether
       `BindingScope.createNarrowestScope` sees the new opmode's ID during its
-      constructor or only from `start()` onward, before writing the
-      MyTeleop → RobotTeleop lesson (Lesson 9).
+      constructor or only from `start()` onward — this already matters for
+      Lesson 1's button binding, not just the later rename lesson.
+- [x] Corrected 2026-08-11: hardware ownership (`DriveModule`,
+      `CommandGamepad`) moved from `MyTeleop` to `Robot`, effective Lesson 1,
+      not Lesson 9 — see [the transition section](#the-myteleopmyauto--robotteleop-transition).
+      Found while writing Lessons 0–3, not by re-reading source alone: traced
+      through `OpModeRobot.loopFunc()`'s reconstruction-on-reselect behavior
+      and confirmed `Scheduler.addPeriodic(Runnable)` has no scope cleanup at
+      all. `docs/lessons/v3/01-first-motor.md` and `02-joystick-control.md`
+      already reflect the fix.
 - [ ] See [docs/lesson-plan-v3-0-3.md](lesson-plan-v3-0-3.md) for the
       detailed Lessons 0–3 plan and its own open items.

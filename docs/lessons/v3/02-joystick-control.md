@@ -26,7 +26,7 @@ WPILib hands it to you like this:
 *Nothing to add — this is just how you read one:*
 
 ```java
-double y = m_driverController.getLeftY();
+double y = robot.driverController.getLeftY();
 ```
 
 We want that number to become the motor's speed, and the obvious plan is to
@@ -68,7 +68,7 @@ lambda that takes no arguments and *returns a double*:
 *Nothing to add — this is just an example, not code for any file:*
 
 ```java
-DoubleSupplier stickReader = () -> m_driverController.getLeftY();
+DoubleSupplier stickReader = () -> robot.driverController.getLeftY();
 double position = stickReader.getAsDouble();  // runs the stored code right now
 ```
 
@@ -186,12 +186,12 @@ wiring.
 
     // ...the button binding from Lesson 1 can stay...
 
-    m_module.setDefaultCommand(
-        m_module.driveWithJoystick(() -> -m_driverController.getLeftY()));
+    robot.module.setDefaultCommand(
+        robot.module.driveWithJoystick(() -> -robot.driverController.getLeftY()));
   }
 ```
 
-Read the new statement inside-out. `() -> -m_driverController.getLeftY()`
+Read the new statement inside-out. `() -> -robot.driverController.getLeftY()`
 is a `DoubleSupplier` lambda — and it's re-asked every tick, so it always
 reflects where the stick is *right now*. And that **minus sign** is doing
 real work: on most sticks, pushing *forward* reads *negative*. Negating

@@ -145,12 +145,23 @@ into slot 0.
 
 **What changes structurally, piece by piece:**
 
-- **No `RobotContainer` to wire into.** Old L1's §4 ("wire a button to it")
-  edits a file the template already gave the student. The new scaffold has
-  no such file — `MyTeleop` itself is where the field, the import, and the
-  binding all go. This is actually a small simplification: one file instead
-  of two, and no "why does the module live in `RobotContainer` and not
-  `DriveModule.java`" question to defer.
+- **No `RobotContainer` to wire into — but the hardware still doesn't live in
+  the opmode.** Old L1's §4 ("wire a button to it") edits a file the
+  template already gave the student. The new scaffold has no such file, and
+  the first draft of this lesson put the module and controller directly on
+  `MyTeleop` as a shortcut — **that was wrong, found while actually writing
+  the lesson, not by more source reading.** Opmodes are reconstructed every
+  time they're re-selected (confirmed from `OpModeRobot.loopFunc()`),
+  including the ordinary auto → teleop transition of a real match, and
+  `Scheduler.getDefault().addPeriodic(Runnable)` (which Lesson 3 needs) has
+  no scope cleanup at all — so a mechanism living on an opmode leaks a fresh,
+  never-cleaned periodic callback on every reselection. `Robot` is
+  constructed exactly once and never torn down, so that's where the module
+  and controller go instead — see
+  [the corrected transition section](lesson-plan-opmode-restructure.md#the-myteleopmyauto--robotteleop-transition).
+  Net effect on the lesson: still one file's worth of wiring instead of two
+  (`Robot.java` gets the fields, `MyTeleop.java` gets the binding), just not
+  the same one file this bullet originally assumed.
 - **No pre-declared controller field to discover.** Old L1 meets
   `m_driverController` as something the *template* already wrote — the
   student's job is understanding it, not typing it. The new scaffold ships
@@ -233,8 +244,9 @@ command factory methods (now coroutine-bodied), binding a gamepad button.
    establishes), same four-piece build-up old L1 uses (imports → class line +
    field → constructor → behavior), with the `driveAtSpeed` rewrite above
    replacing old L1's `startEnd(...)` version.
-4. Wire it into `MyTeleop`: field, import, and the binding, all in one file
-   now instead of two. `m_driverController.southFace().whileTrue(m_module.driveAtSpeed(0.3))`
+4. Give `Robot` the module and controller as fields (not `MyTeleop` — see the
+   correction above), then wire the binding into `MyTeleop`'s constructor:
+   `robot.driverController.southFace().whileTrue(robot.module.driveAtSpeed(0.3))`
    replaces old L1's `m_driverController.a().whileTrue(...)`.
 5. Run it: same joystick-into-slot-0 SimGUI dance as old L1 §5. Whether the
    button-to-index mapping old L1 states ("A is button 1") holds the same
@@ -257,6 +269,10 @@ command factory methods (now coroutine-bodied), binding a gamepad button.
   default or needs a setting changed.
 - Whether `CommandGamepad`'s button-to-DS-index mapping matches old L1's
   "A is button 1" framing or needs its own statement.
+
+**Resolved 2026-08-11:** hardware ownership (`DriveModule`, `CommandGamepad`)
+belongs on `Robot`, not `MyTeleop` — corrected above and reflected in
+`docs/lessons/v3/01-first-motor.md` §4, "Give the robot its hardware."
 
 ---
 
@@ -295,16 +311,17 @@ this course teaches doesn't change." Two real differences:
 
 - **`setDefaultCommand` is identical.** `Mechanism.setDefaultCommand(Command)`
   is the same name, same signature, same "runs whenever nothing else claims
-  the mechanism" meaning as old L2's `SubsystemBase.setDefaultCommand`. The
-  wiring line doesn't change at all:
+  the mechanism" meaning as old L2's `SubsystemBase.setDefaultCommand`. Only
+  the `robot.`-prefixed field access is new — carried over from Lesson 1's
+  hardware-ownership correction, not something Lesson 2 introduces:
 
   ```java
-  m_module.setDefaultCommand(
-      m_module.driveWithJoystick(() -> -m_driverController.getLeftY()));
+  robot.module.setDefaultCommand(
+      robot.module.driveWithJoystick(() -> -robot.driverController.getLeftY()));
   ```
 
   Worth stating to the student plainly, since it's a good confidence-builder
-  after Lesson 1's real rewrite: *this line is exactly what you'd have
+  after Lesson 1's real rewrite: *this is exactly the shape you'd have
   written before.* `CommandGamepad.getLeftX/Y()`/`getRightX/Y()` keep the
   same names as `CommandXboxController`'s axis getters too — only the button
   methods changed names in Lesson 1, not the sticks.
