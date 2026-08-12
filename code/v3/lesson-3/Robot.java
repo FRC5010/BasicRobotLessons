@@ -4,10 +4,8 @@
 
 package first.robot;
 
-import java.util.List;
-
-import org.wpilib.command3.Command;
 import org.wpilib.command3.Scheduler;
+import org.wpilib.command3.SchedulerEvent;
 import org.wpilib.command3.button.CommandGamepad;
 import org.wpilib.framework.OpModeRobot;
 import org.wpilib.smartdashboard.SmartDashboard;
@@ -35,6 +33,7 @@ public class Robot extends OpModeRobot {
    */
   public Robot() {
     DataLogManager.start(); // saves every published value to a .wpilog file
+    Scheduler.getDefault().addEventListener(this::logCommandStart);
   }
 
   /** This function is called exactly once when the DS first connects. */
@@ -45,13 +44,12 @@ public class Robot extends OpModeRobot {
   @Override
   public void robotPeriodic() {
     Scheduler.getDefault().run();
-    logRunningCommand();
   }
 
-  private void logRunningCommand() {
-    List<Command> running = Scheduler.getDefault().getRunningCommandsFor(module);
-    Command current = running.get(0);
-    SmartDashboard.putString("DriveModule/CurrentCommand", current.name());
+  private void logCommandStart(SchedulerEvent event) {
+    if (event instanceof SchedulerEvent.Scheduled scheduled && scheduled.command().requires(module)) {
+      SmartDashboard.putString("DriveModule/CurrentCommand", scheduled.command().name());
+    }
   }
 
   /**

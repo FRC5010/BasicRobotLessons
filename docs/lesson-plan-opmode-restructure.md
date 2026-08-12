@@ -527,9 +527,9 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | # | Lesson | Impact | Why |
 |---|---|---|---|
 | 0 | Orientation | **High** | Entry point itself changes — OpMode selection replaces "the one Robot class," see [OpMode fundamentals](#opmode-fundamentals) |
-| 1 | Your first motor | **High** | First real command; hardware (`DriveModule`, `CommandGamepad`) is owned by `Robot`, not `MyTeleop` — corrected from an earlier draft, see [the transition section](#the-myteleopmyauto--robotteleop-transition). **Retrofitted 2026-08-12** — command-name logging (`getRunningCommandsFor(module).get(0).name()` → `SmartDashboard`), closing a promise the lesson text itself makes at `.named(...)` ("how you'll recognize your own commands later, in logs and on screen") that nothing delivered on through Lesson 9. See [R12](#risks-and-blocking-unknowns) |
+| 1 | Your first motor | **High** | First real command; hardware (`DriveModule`, `CommandGamepad`) is owned by `Robot`, not `MyTeleop` — corrected from an earlier draft, see [the transition section](#the-myteleopmyauto--robotteleop-transition). **Retrofitted 2026-08-12** — command-name logging (`getRunningCommandsFor(module).get(0).name()` → `SmartDashboard`), closing a promise the lesson text itself makes at `.named(...)` ("how you'll recognize your own commands later, in logs and on screen") that nothing delivered on through Lesson 9. See [R12](#risks-and-blocking-unknowns), and its supersession by R13 at Lesson 3 below — Lesson 1 keeps this version deliberately, as the honest (and, for everything taught by Lesson 2, genuinely safe) first pass |
 | 2 | Joystick control | Low | Same lambda-binding pattern, stays in `MyTeleop` |
-| 3 | Telemetry & plots | Low | No longer blocked — uses plain `SmartDashboard.putNumber(...)` instead of AdvantageKit's `Logger` (Epilogue was considered, dropped as unnecessary machinery); see [Telemetry without AdvantageKit](#telemetry-without-advantagekit-smartdashboard-and-networktables) and the [detailed Lesson 3 plan](lesson-plan-v3-0-3.md#lesson-3-telemetry--plots) |
+| 3 | Telemetry & plots | Low | No longer blocked — uses plain `SmartDashboard.putNumber(...)` instead of AdvantageKit's `Logger` (Epilogue was considered, dropped as unnecessary machinery); see [Telemetry without AdvantageKit](#telemetry-without-advantagekit-smartdashboard-and-networktables) and the [detailed Lesson 3 plan](lesson-plan-v3-0-3.md#lesson-3-telemetry--plots). **Updated 2026-08-12** — Lesson 1's command-name poll is replaced here with an `addEventListener`/`SchedulerEvent.Scheduled` listener, fixing a real crash R13 found in the polling version. See [R13](#risks-and-blocking-unknowns) |
 | 4 | Simulation | Low–Medium | Written and compiled 2026-08-11. `simulationPeriodic()` exists, but only on `OpModeRobot`/`Robot` — `Mechanism` has no `simulationPeriodic()` hook of its own, so `DriveModule` exposes a plain public `simulatePeriodic()` method and `Robot.simulationPeriodic()` calls it (one line per mechanism, same shape as Lesson 1's scheduler tick). `LinearSystemId.createDCMotorSystem(...)` doesn't exist — real replacement is `org.wpilib.math.system.Models.singleJointedArmFromPhysicalConstants(DCMotor, J, gearing)` (same math, arm and generic-motor systems were always the same equation). `DCMotorSim.getAngularPosition()`/`.getAngularVelocity()` return **radians**/**radians per second**, not rotations/RPM — confirmed by an end-to-end `DriverStationSim`-backed test (`TalonFX.setThrottle(1.0)` through the real physics loop converges on ~100 rot/s, the Kraken X60's true free speed, only once the radians→rotations division is included). See the appendix and `code/v3/lesson-4/`. |
 | 5 | Steering P control | Medium | Written and compiled 2026-08-11. `CANcoder` needs a `CANBus` argument now too (`CANcoder(int, CANBus)`, no single-int overload — same shift as `TalonFX`), and `getAbsolutePosition()` needs `.getValue().in(Rotations)` like every other `StatusSignal` since Lesson 3. **The old lesson's `kP = 0.01` is unconditionally unstable against this Phoenix 6 alpha's `DCMotorSim`, confirmed with a real `DriverStationSim`-backed test — not a porting bug, a numeric one.** See [R8](#risks-and-blocking-unknowns) |
 | 6 | Distance & commands | Medium | Written and compiled 2026-08-11. The predicted "trivially a `while` loop" landed even cleaner than expected: `coroutine.waitUntil(BooleanSupplier)` (confirmed present, and confirmed by test to be exactly a `while (!condition) yield();` loop) means a finishing command is just a coroutine body that runs out of lines — no `.until(...)`/`.andThen(...)` composition needed at all for the base case. **The real finding is R9**: `.whenCanceled(...)` does **not** fire when a command finishes its coroutine body naturally — confirmed with a real scheduler test — so `driveDistance` is the first command needing cleanup written twice, once inline after `waitUntil` and once in `.whenCanceled(...)`. See [R9](#risks-and-blocking-unknowns) |
@@ -986,6 +986,94 @@ out badly.
   taught yet. Revisit once there's a real telemetry story worth building it
   into, rather than bolting event-listener machinery onto Lesson 1.
 
+  **Superseded 2026-08-12 by R13, sooner than "revisit later" implied** —
+  the deferred event-listener approach turned out not to be a nicety, it
+  was fixing a real bug. See below.
+- **R13 — found and fixed 2026-08-12, following up on a user suggestion
+  ("the scheduler event listener is the right approach... it might be a
+  better beat to place in lesson 3... explain why it's better at catching
+  one-shot commands than what we did in lesson 1").** Went in expecting to
+  write a nicer pedagogical example. Came out finding that R12's polling
+  fix has a real, reproducible crash in code this track had already
+  shipped — not a hypothetical.
+
+  **The bug, confirmed with a real test against the actual Lesson 8/9
+  classes, not a contrived one.** Lesson 8 binds
+  `southFace().onTrue(turnToHeading(90))`. `turnToHeading`'s body is `while
+  (Math.abs(headingError(target)) >= 2.0) { ...; coroutine.yield(); }` — if
+  the heading error is already under 2° the instant the command is
+  promoted, the loop body never runs, so the coroutine finishes with
+  **zero** `yield()` calls, on the exact same `Scheduler.run()` tick it was
+  scheduled. The sim `Pigeon2` starts at 0°, so `turnToHeading(0)` (Lesson
+  8's `eastFace()` binding) hits this on a stock sim the very first time
+  it's pressed — not an edge case, the obvious first thing a student tries.
+  A real test scheduling that exact command and then calling
+  `robotPeriodic()` (i.e., R12's `logRunningCommand()`) reproduces
+  `ArrayIndexOutOfBoundsException` on `.get(0)`, every time.
+
+  **Root cause, and a correction to R12's own finding.** R12 claimed
+  `getRunningCommandsFor(mechanism)` is "always populated immediately after
+  any `run()`, including immediately after any cancellation" — true for
+  every case tested at the time (something else pre-empting the current
+  command), but **not general**. Traced via `javap -c` on `Scheduler.run()`:
+  the tick order is `cancelStaleBindings → unbindStaleTriggers →
+  runPeriodicSideloads → eventLoop.poll() (triggers fire here) →
+  scheduleDefaultCommands() → promoteScheduledCommands() → runCommands()`.
+  A trigger firing during `poll()` gets promoted and stepped later in that
+  *same* tick — so if it finishes with zero yields, `runCommands()` removes
+  it and nothing puts the idle default back until `scheduleDefaultCommands()`
+  runs again on the **next** tick, which already happened earlier in this
+  one. Net effect, confirmed with a real test: `getRunningCommandsFor` can
+  return a genuinely **empty** collection for one tick, not just a stale
+  one.
+
+  **A second correction, needed to design the real fix.** The first
+  instinct was to filter the event stream on `SchedulerEvent.Mounted`
+  (a command becoming the one actively stepped). Wrong signal — confirmed
+  with a real test logging every event across several ticks of an unchanged,
+  parked command: `Mounted` (and its `Yielded` counterpart) fire **every
+  single tick** a command is the one being stepped, changed or not. The
+  right signal is `SchedulerEvent.Scheduled`, confirmed with a dedicated
+  test holding a mechanism idle across several ticks then handing it to a
+  one-shot command and back: `Scheduled` fires exactly **once**, at the
+  instant a command — including the idle default re-taking over — begins
+  controlling a mechanism, and does not refire while it continues unchanged.
+
+  **The fix, landed at Lesson 3 instead of staying deferred, per the user's
+  suggestion.** `Robot`'s constructor registers
+  `Scheduler.getDefault().addEventListener(this::logCommandStart)`;
+  `logCommandStart(SchedulerEvent event)` does
+  `if (event instanceof SchedulerEvent.Scheduled scheduled && scheduled.command().requires(module))`
+  — new syntax (`instanceof` pattern matching) plus a previously-undocumented
+  `Command.requires(Mechanism)` default method, confirmed via `javap`, that
+  filters the scheduler's one shared, robot-wide event stream down to a
+  single mechanism. Same `SmartDashboard` key as before,
+  `getRunningCommandsFor`/`List<Command>`/`.get(0)` gone entirely — there is
+  nothing left that can be asked about an empty collection, because nothing
+  is asked at all.
+
+  **Verified beyond the unit scale, matching this track's own bar.** A real
+  `Trigger`-bound `whileTrue` press/hold/release cycle across many ticks
+  (mirroring Lesson 1's actual binding) shows no spurious re-announcements
+  while held or while idle, and correctly flips on press and release. The
+  turnToHeading(already-there) scenario was re-run against the **actual
+  rolled-forward Lesson 9 `Robot`/`Drivetrain` classes** produced by
+  `tools/verify-lessons-v3.sh 9`'s own sandbox — real constructor, real
+  registered listener, real `robotPeriodic()` call — and no longer throws.
+
+  **Cascade, narrower than R12's.** Lesson 1's code and text are
+  deliberately **unchanged** — its polling version is still the honest
+  first pass, and it's genuinely safe for everything taught through
+  Lesson 2 (every command either parks or loops forever). Lesson 1 gained
+  one blockquote naming Lesson 3 by number instead of "a later lesson."
+  The event-based version lands at Lesson 3 (new code, new lesson section)
+  and cascades through the two remaining `Robot.java` redefinition points,
+  Lessons 4 and 7 (Lesson 7's text also updates its `module`→`drivetrain`
+  rename callout, same as R12's cascade, just against the new method name).
+  Lessons 8 and 9 needed no changes — they inherit Lesson 7's `Robot.java`
+  unmodified, which is exactly what makes the fix land before Lesson 8's
+  `onTrue(turnToHeading(...))` ever ships with the crash-prone version.
+
 ---
 
 ## Appendix: verified API notes
@@ -1067,6 +1155,10 @@ appendices: verify before drafting, record what you verified.
 | `Scheduler.getRunningCommands()` / `getRunningCommandsFor(Mechanism)` — behavior-verified, not just typed, see R12 | Both return an empty collection before the scheduler's first `run()` call (confirmed with a real test) — calling `.get(0)` on that result throws. Confirmed safe immediately *after* any `run()` call, including the very first one: every mechanism's auto-installed `idle()` default is already populated by then, so exactly one entry is always present for a mechanism that's had at least one tick. This is why Lesson 1's `logRunningCommand()` has to run as the second statement in `robotPeriodic()`, never the first |
 | `Mechanism` idle-command name — confirmed end to end, corrects an earlier isolated-test guess, see R12 | The auto-installed default command's `name()` is `"<ClassName>[IDLE]"` — the mechanism's own `getClass().getSimpleName()` prefixed onto `[IDLE]`, confirmed with a real `Robot`/`DriveModule` end-to-end test (`"DriveModule[IDLE]"`). An earlier, isolated test using an anonymous `new Mechanism() {}` showed bare `"[IDLE]"`, which is consistent rather than contradictory: anonymous classes report an empty string from `getSimpleName()`. Lesson 1's text was corrected to the real, class-prefixed value before shipping |
 | `SchedulerEvent` — compiled, not guessed, deliberately unused so far, see R12 | Interface with seven concrete `record` subtypes: `Scheduled`, `Mounted`, `Yielded`, `Completed`, `CompletedWithError`, `Interrupted`, `Canceled`, each carrying the originating `Command` plus a timestamp. Consumed via `Scheduler.addEventListener(Consumer<SchedulerEvent>)`. Confirmed to exist and to be the real path to command *history* (start/end/why, not just a live snapshot) — intentionally not taught through Lesson 9; flagged in R12 as the future upgrade once a lesson exists to build it into |
+| `SchedulerEvent.Scheduled` vs. `.Mounted` firing frequency — behavior-verified with real tests, corrects an assumption made while designing R13's fix | `Mounted` (and its `Yielded` counterpart) fire on **every tick** a command is the one being stepped, whether anything changed or not — confirmed by logging a parked, unchanged command's events across several ticks. `Scheduled` fires **exactly once**, at the instant a command (including the idle default re-taking over) begins controlling a mechanism, and does not refire on later ticks while that command continues unchanged — confirmed the same way. `Scheduled` is the correct signal for "the current command just changed"; `Mounted` is not |
+| `getRunningCommandsFor(Mechanism)` can return **empty**, not just "always exactly one entry" — corrects part of the R12 appendix row above, see R13 | True only for the case R12 tested (something else pre-empting the currently-running command). **Not general**: if a freshly-promoted command finishes with zero `yield()` calls on the same tick it was promoted (traced via `javap -c` on `Scheduler.run()`: triggers fire during `eventLoop.poll()`, before that tick's `scheduleDefaultCommands()`/`promoteScheduledCommands()`/`runCommands()`), the mechanism has nothing running for the rest of that tick — the idle default isn't resynthesized until the *following* tick. Confirmed with a real test reproducing `ArrayIndexOutOfBoundsException` on `.get(0)` |
+| `Command.requires(Mechanism)` — compiled, not guessed | Default method on `Command`, confirmed via `javap`: `public default boolean requires(Mechanism)`. Answers whether the given mechanism is in the command's own `requirements()` set. Used to filter `Scheduler`'s one shared, robot-wide `SchedulerEvent` stream down to a single mechanism — without it, a listener registered for one mechanism would also fire for every other mechanism's commands |
+| Real crash scenario in previously-shipped lesson code, found and fixed by R13, not hypothetical | Lesson 8's `southFace().onTrue(turnToHeading(90))` (and `eastFace().onTrue(turnToHeading(0))`) can finish with zero coroutine yields if the robot is already within `turnToHeading`'s 2° tolerance when the button is pressed — the sim `Pigeon2` starts at 0°, so `turnToHeading(0)` hits this on the very first press on a stock sim. Verified this reproduces `ArrayIndexOutOfBoundsException` in R12's `logRunningCommand()` when bound exactly the way Lesson 8 binds it, and verified the R13 fix no longer throws, against the real rolled-forward Lesson 9 `Robot`/`Drivetrain` classes via `tools/verify-lessons-v3.sh 9`'s own sandbox |
 | Build target | `code/OpModeV3Robot/build.gradle`: `sourceCompatibility`/`targetCompatibility = JavaVersion.VERSION_25`, GradleRIO `2027.0.0-alpha-6`, shadow plugin `9.3.0`; deploys to a `SystemCore` target via `getTargetTypeClass('SystemCore')` |
 
 ---
@@ -1274,3 +1366,18 @@ appendices: verify before drafting, record what you verified.
       as interim, not final** — `SchedulerEvent`/`addEventListener` is the
       real history-capable path and is intentionally left for a later
       revisit. See R12 and the new appendix rows.
+- [x] R12's "revisit later" landed immediately, not deferred — done
+      2026-08-12, following a user suggestion to move the fix to Lesson 3.
+      Turned into a real bug find, not just a nicer example:
+      R12's polling-based `logRunningCommand()` throws
+      `ArrayIndexOutOfBoundsException` on a real, already-shipped scenario
+      (Lesson 8's `onTrue(turnToHeading(...))` finishing with zero yields
+      because the sim gyro starts already at 0°). Root cause traced via
+      `javap -c` on `Scheduler.run()`'s tick order; fix is an
+      `addEventListener`/`SchedulerEvent.Scheduled` listener filtered with
+      `Command.requires(Mechanism)`, landed at Lesson 3 and cascaded through
+      Lessons 4 and 7 (Lesson 1 deliberately unchanged — still safe for
+      everything it teaches, and now explicitly superseded two lessons
+      later instead of "eventually"). Verified with a real
+      `Trigger`-bound press/hold/release cycle and against the actual
+      rolled-forward Lesson 9 classes. See R13 and its appendix rows.

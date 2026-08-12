@@ -8,6 +8,8 @@
 - Reading a value vs. commanding a value
 - Chaining calls (`getPosition().getValue().in(Rotations)`)
 - Method references (`this::logTelemetry`)
+- `instanceof` **pattern matching** (checking what kind of value you have,
+  and unpacking it in the same breath)
 
 **New robot concepts**
 - The TalonFX **integrated encoder** (position & velocity for free)
@@ -15,6 +17,7 @@
   under an organized name
 - **Plotting** in **AdvantageScope**
 - **Units:** rotations and rotations-per-second
+- Reacting to the scheduler's own event stream instead of polling it
 
 ---
 
@@ -220,6 +223,122 @@ robot drive around a virtual field.
 
 ---
 
+## 6. Listening instead of asking
+
+Back in Lesson 1, `Robot` got a `logRunningCommand()` method: ask the
+scheduler what's running on `module` right now, read its name off entry
+zero. It works, and it'll keep working for everything you've built so
+far — `driveAtSpeed` parks until canceled, `driveWithJoystick` loops until
+canceled, so there's always *something* running whenever you ask. Every
+mechanism, every tick, guaranteed non-empty.
+
+That guarantee won't last forever. Later lessons build commands that
+finish on their own — and some of them can finish the instant they're
+asked to run, before a poll ever gets a chance to see them run at all.
+(Lesson 8 ships a real one: a "turn to heading" command bound to a button,
+already done if the robot happens to be facing that way already when you
+press it. Its entire lifetime — start and finish — can fit inside a single
+scheduler tick.) Ask `getRunningCommandsFor(module).get(0)` on a tick like
+that, at just the wrong moment, and you're not reading a stale answer —
+you're reading past the end of an empty list.
+
+The fix isn't a smarter poll. It's not polling at all. The scheduler
+doesn't just run commands quietly — every time it does something worth
+knowing, it announces it, as a `SchedulerEvent`. Instead of asking "what's
+running right now?" every tick, `Robot` can just listen, and find out the
+instant something changes.
+
+*Nothing to add yet — this is the shape of it:*
+
+```java
+Scheduler.getDefault().addEventListener(event -> { /* handle it */ });
+```
+
+`addEventListener` takes a lambda — one parameter this time, the event
+itself, unlike `addPeriodic`'s no-argument one from section 4. Every
+`SchedulerEvent` the scheduler ever fires gets handed to it: a command
+getting scheduled, one finishing on its own, one getting canceled or
+interrupted, and a few others besides. You only need to handle the one
+that answers "what's the current command" — the moment a command is
+scheduled onto a mechanism.
+
+**Edit `Robot`'s constructor:**
+
+```java
+public Robot() {
+  DataLogManager.start(); // saves every published value to a .wpilog file
+  Scheduler.getDefault().addEventListener(this::logCommandStart);
+}
+```
+
+Another method reference — the same shorthand as `this::logTelemetry` back
+in section 4, just pointing at a different method below.
+
+**Replace `logRunningCommand()` with:**
+
+```java
+private void logCommandStart(SchedulerEvent event) {
+  if (event instanceof SchedulerEvent.Scheduled scheduled && scheduled.command().requires(module)) {
+    SmartDashboard.putString("DriveModule/CurrentCommand", scheduled.command().name());
+  }
+}
+```
+
+That `if` line does two jobs in one breath, and it's worth slowing down
+for — `instanceof` **pattern matching** is brand-new syntax. `event
+instanceof SchedulerEvent.Scheduled scheduled` asks *is this particular
+event a `Scheduled` event* — one of several kinds a `SchedulerEvent` can
+be — *and if so, hand it to me as a variable named `scheduled`*, typed
+specifically as a `Scheduled` event rather than the more general
+`SchedulerEvent`. That distinction is why the check has to come first:
+only the specific kind has a `.command()` on it, and a plain
+`SchedulerEvent` doesn't say whose command it's about. The `&&` after it
+can use `scheduled` right away, because Java only evaluates the rest of
+the line once the check on the left has already passed.
+
+`scheduled.command().requires(module)` asks whether the command this event
+is about actually belongs to your module — the same event stream fires for
+every mechanism on the robot, so without that check you'd catch events for
+mechanisms you don't even have yet. `module` works as the argument here
+for the same reason it always has: `DriveModule extends Mechanism`.
+
+**Edit `Robot`'s `robotPeriodic()`, dropping the call to the old method:**
+
+```java
+@Override
+public void robotPeriodic() {
+  Scheduler.getDefault().run();
+}
+```
+
+Ticking the scheduler is still the only thing that has to happen every
+tick — the command log takes care of itself now.
+
+**Remove the now-unused imports** (`java.util.List` and
+`org.wpilib.command3.Command` — nothing here needs them anymore) **and
+add:**
+
+```java
+import org.wpilib.command3.SchedulerEvent;
+```
+
+Run it again and press the button — `DriveModule/CurrentCommand` on the
+dashboard still flips between `"DriveModule[IDLE]"` and `"Drive At Speed"`,
+exactly like before. What changed is *how* it knows. The old version
+asked, every tick, and got lucky every time, because nothing could finish
+between one ask and the next. The new version can't get unlucky, because
+it isn't asking anymore — it's told, the instant something happens, no
+matter how briefly "happens" lasts.
+
+> `Scheduled` isn't the only kind of `SchedulerEvent`. There's a
+> `Completed` for when a command finishes on its own, `Canceled` and
+> `Interrupted` for the other two ways a command's life can end, and a
+> couple more besides — a whole vocabulary for describing what the
+> scheduler is doing, not just what it's doing right now. You've only
+> reached for one piece of it here.
+
+---
+
 ## Try it
 
 1. Log the **commanded** speed too. Inside `driveWithJoystick`'s loop body,
@@ -237,6 +356,10 @@ robot drive around a virtual field.
    rebuild, and watch AdvantageScope: the old entry goes stale and a new
    folder appears in the tree. The slash really is a folder path, and the
    name really is the address. Change it back before moving on.
+4. Add a matching `SchedulerEvent.Completed` case — either inside
+   `logCommandStart` or as a second `addEventListener` call — that writes
+   the finishing command's name to `DriveModule/LastCompletedCommand`.
+   Watch it update the instant you release the button.
 
 ---
 
@@ -255,8 +378,14 @@ steady periodic callback with the scheduler using a **method reference**,
 and every value flows through `SmartDashboard.putNumber("Mechanism/Name",
 value)` from there. That naming discipline feels like overkill for two
 values — it stops being overkill around value twenty, and you'll get there
-sooner than you think. The plots look unimpressive while the sim motor
-stands still, but Lesson 4 turns the physics on, and these same plots come
-alive.
+sooner than you think. You also traded a poll for a listener: Lesson 1's
+`logRunningCommand()` asked the scheduler a question every tick, and it
+happened to always have an answer — but "happened to" isn't a guarantee.
+`logCommandStart()` doesn't ask at all; it registers with
+`addEventListener` once and reacts to a `SchedulerEvent.Scheduled`,
+unpacked with `instanceof` pattern matching, exactly when one actually
+occurs. Same dashboard key, same string showing up, but nothing left that
+can come up empty. The plots look unimpressive while the sim motor stands
+still, but Lesson 4 turns the physics on, and these same plots come alive.
 
 Next: Lesson 4 — Simulation.

@@ -539,11 +539,11 @@ to `"DriveModule[IDLE]"` the instant you let go. That's the payoff of
 debugger.
 
 > This is a small, direct version of something this course will keep
-> building on. Fuller command history — when something started, why it
-> ended, a real timeline instead of a snapshot — is possible too, through
-> the scheduler's own event system. That's for a later lesson, once there's
-> more worth logging and a better answer for where structured history like
-> that should live.
+> building on. It also has a quiet limitation: it only works because
+> everything you've built so far either parks or loops forever, so there's
+> always something running whenever you ask. Lesson 3 replaces the asking
+> with listening — the scheduler announces what it's doing as it happens,
+> instead of waiting to be polled.
 
 ---
 

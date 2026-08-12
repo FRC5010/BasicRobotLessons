@@ -535,16 +535,16 @@ public void simulationPeriodic() {
 }
 ```
 
-One more spot needs the same rename: `logRunningCommand()` from Lesson 1 still
-says `module`.
+One more spot needs the same rename: `logCommandStart()` from Lesson 3 still
+checks `module`.
 
-**Edit `Robot`'s `logRunningCommand()`:**
+**Edit `Robot`'s `logCommandStart()`:**
 
 ```java
-private void logRunningCommand() {
-  List<Command> running = Scheduler.getDefault().getRunningCommandsFor(drivetrain);
-  Command current = running.get(0);
-  SmartDashboard.putString("Drivetrain/CurrentCommand", current.name());
+private void logCommandStart(SchedulerEvent event) {
+  if (event instanceof SchedulerEvent.Scheduled scheduled && scheduled.command().requires(drivetrain)) {
+    SmartDashboard.putString("Drivetrain/CurrentCommand", scheduled.command().name());
+  }
 }
 ```
 
