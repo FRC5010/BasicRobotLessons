@@ -536,7 +536,7 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 7 | Four modules | **High** | Written and compiled 2026-08-11. `DriveModule` → `SwerveModule` rename beat lands as predicted, and the aggregate `Drivetrain` takes `DriveModule`'s old spot as a field on `Robot`. Two real API surprises: **`MathUtil.clamp` doesn't exist in this alpha** (no replacement found — the old lesson's "delete yours, use the library" beat is dropped; the hand-rolled `clamp` from Lesson 5 stays for good), and **`SwerveModuleState` doesn't exist** — renamed to `SwerveModuleVelocity` (same `(double, Rotation2d)` shape) as part of a bigger `*State`→`*Velocity`/`*Acceleration` split (`ChassisSpeeds`→`ChassisVelocities`, new `ChassisAccelerations`/`SwerveModuleAcceleration`). **The bigger finding: `SmartDashboard` has no struct/struct-array publish method at all**, so the Swerve-tab payoff needs real `NetworkTableInstance.getStructArrayTopic(...).publish()` — this is the "no `SmartDashboard` one-liner for struct types" gap the Lesson 3 plan doc flagged in advance, arriving here rather than at odometry. Verified end to end: rotate-in-place angles match the documented table exactly, and a real struct-array publish/set cycle doesn't throw. `tools/verify-lessons-v3.sh` needed its first deletion-replay entry (`DriveModule.java`, same file the main course's script already deletes at this exact lesson) — see [R10](#risks-and-blocking-unknowns) |
 | 8 | Gyro & heading | Low–Medium | Written and compiled 2026-08-11. `Pigeon2` needed the same `(int, CANBus)` constructor shift as every other Phoenix device since Lesson 1; `getYaw()` needed the same `.getValue().in(Degrees)` unpack as every `StatusSignal` since Lesson 3. No numeric surprise this time — the fake-gyro integration has no momentum to overshoot with, so Lesson 5's/7's kP-mismatch story doesn't repeat; the old lesson's `kP = 0.02` was verified to converge cleanly (well under a second, no overshoot) with a real end-to-end `DriverStationSim`-backed test. `turnToHeading` is the second finishing command (after Lesson 6's `driveDistance`) and the first one whose loop body does real per-tick work instead of just polling — written as an explicit `while` + `coroutine.yield()` rather than `coroutine.waitUntil(...)`, and the lesson explains why: `waitUntil` is exactly this loop shape with no work in the body |
 | 9 | Autonomous | **High** | Written and compiled 2026-08-11. The rename landed here as planned (`MyTeleop`→`RobotTeleop`, `MyAuto`→`RobotAuto`, both in place, `tools/verify-lessons-v3.sh` gained the matching deletion entries), and `coroutine.await(...)` got its dedicated contrast against `Command.sequence(...)`, per-mechanism-release explained honestly as "not demonstrable with one mechanism yet, but the shape to reach for." **The load-bearing finding is R11**: there is no `getAutonomousCommand()` hook in this framework at all — `RobotAuto` schedules its own plan via `RobotModeTriggers.autonomous().onTrue(...)` in its constructor, and a real scheduler test (after finding and fixing a test-setup trap, `DriverStationBackend.observeUserProgramStarting()`) confirms this is correctly opmode-scoped: the scheduled auto sequence is cancelled automatically the instant the DS selects a different opmode, the same scoping already protecting every button binding since Lesson 1. `Command.parallel`'s `.optional(...)`/`.requiring(...)` mix (confirmed via bytecode to unify V2's separate `parallel`/`race`/`deadline` into one mechanism) replaces the old lesson's `Commands.deadline`. OD3's Lesson 17-deferred multi-auto decision effectively also landed here in miniature — the old lesson's `LoggedDashboardChooser` bonus section is replaced by a second `@Autonomous` opmode, the framework's native mechanism, since AdvantageKit was never installed in this track to begin with |
-| 10 | Kinematics | Low | Mechanically unaffected |
+| 10 | Kinematics | Low | Written and verified 2026-08-12. `SwerveModuleState`→`SwerveModuleVelocity` and `ChassisSpeeds`→`ChassisVelocities` (fields `vx`/`vy`/`omega`, not the old `*MetersPerSecond`/`omegaRadiansPerSecond` names), `toSwerveModuleStates`→`toSwerveModuleVelocities`, `desaturateWheelSpeeds`→`desaturateWheelVelocities`. **`optimize` is now a pure function, not a mutator** — see [R14](#risks-and-blocking-unknowns) |
 | 11 | Odometry & field view | Medium | `Field2d`/`SmartDashboard.putData` needs a live-sandbox check, not just a source read |
 | 12 | Model-based control | Low | Phoenix 6 config/control-request API; SystemCore Phoenix 6 alpha status noted in [R3](#risks-and-blocking-unknowns) |
 | 13 | IO layers & replay | **High** | Structure (interfaces, Inputs classes, `Constants.Mode` switch, IO implementations) carries over; each IO implementation logs its own Inputs fields manually via `SmartDashboard.putNumber(...)` instead of `@AutoLog`/`Logger.processInputs`. **Actual replay is deferred** — `REPLAY` stays a dormant, unreachable switch arm until a follow-up pass — see [R1](#risks-and-blocking-unknowns) |
@@ -1096,6 +1096,75 @@ out badly.
   classes, same as the fix above: `robotPeriodic()` still doesn't throw on
   the instantly-finishing `turnToHeading(0)` scenario with the generic
   version in place.
+- **R14 — new, found while writing Lesson 10, all confirmed by `javap`/`javap -c`
+  and real tests, not ported unchecked from the old lesson.** The kinematics
+  family renamed harder than a simple `State`→`Velocity` swap:
+  `ChassisSpeeds` is gone too, replaced by `ChassisVelocities` — and its
+  fields are `vx`/`vy`/`omega` (plain, short names), not the old
+  `vxMetersPerSecond`/`vyMetersPerSecond`/`omegaRadiansPerSecond`. Method
+  names shifted to match: `SwerveDriveKinematics.toSwerveModuleStates` →
+  `toSwerveModuleVelocities`, `desaturateWheelSpeeds` →
+  `desaturateWheelVelocities` (confirmed to still have the `LinearVelocity`-
+  typed overload the old lesson relied on, so `kMaxSpeed` still passes
+  through as-is).
+
+  **The one finding that would have silently broken a faithful port:**
+  `SwerveModuleVelocity.optimize(Rotation2d)` is a **pure function** in this
+  alpha — confirmed via `javap -c` disassembly (`new SwerveModuleVelocity(...)`
+  then `areturn`, `this` never touched) and a real test (`original.velocity`/
+  `original.angle` unchanged after calling `.optimize(...)` on it). The old
+  lesson's code called `states[i].optimize(...)` and then used `states[i]` as
+  if the call had mutated it in place — that exact line, ported unchanged,
+  would compile, run, and silently do nothing (the optimized value discarded,
+  the module commanded with the un-optimized state). The correct call is
+  `states[i] = states[i].optimize(...)`, and Lesson 10's text calls this out
+  by name as "a real trap," not a drive-by mention. `optimize`'s actual logic
+  was also disassembled and confirmed to match the old lesson's description
+  exactly: flips both the drive sign and rotates the angle 180° when the
+  angle delta exceeds 90°, otherwise passes through unchanged.
+
+  **A second pure-function discovery, not used but recorded:**
+  `SwerveModuleVelocity.cosineScale(Rotation2d)` — confirmed via `javap -c`
+  to compute `velocity * cos(angle - currentAngle)` and return a new value —
+  is a native replacement for the hand-rolled cosine-compensation trick
+  Lesson 9 already built into `SwerveModule.setDesiredState`. Not adopted:
+  moving it would touch the P-control logic it sits beside for no real gain,
+  and the lesson says so directly rather than silently ignoring a real
+  library method a maintainer might later wonder about.
+
+  **Field-relative conversion also changed shape, not just name.** The old
+  `ChassisSpeeds.fromFieldRelativeSpeeds(fieldSpeeds, robotAngle)` (a static
+  factory) is gone; the replacement is `fieldSpeeds.toRobotRelative(Rotation2d)`
+  — an **instance** method on the field-relative value itself, also
+  confirmed pure (returns a new `ChassisVelocities`, per its own `javap -c`
+  disassembly, matching `optimize`'s and `cosineScale`'s shape). Verified
+  with a real test computing the hand-expected rotation (a robot facing 90°
+  converts field-forward `(1, 0, 0)` to robot-relative `(≈0, -1, 0)`,
+  confirmed algebraically and by the library call agreeing exactly), then
+  re-verified through the **entire real pipeline** — `Drivetrain`,
+  `SwerveModule`, TalonFX sim, Pigeon2 sim — with a `DriverStationSim`-backed
+  test forcing the gyro to 90° and confirming all four modules steer to
+  -90° after settling.
+
+  **A testing trap surfaced while building that last test, worth recording
+  so it isn't rediscovered:** forcing `Pigeon2SimState.setRawYaw(...)`
+  directly and then calling `Drivetrain.simulatePeriodic()` in the same test
+  loop doesn't hold — `simulatePeriodic()` re-derives the raw yaw every tick
+  from `m_simHeadingDegrees` (integrating `m_lastCommandedOmega`), so it
+  stomps the manually-forced value back toward wherever that shadow field
+  already was, the very next tick. A test that wants to force the gyro and
+  *also* run `simulatePeriodic()` afterward has to set both the sim state
+  and the private `m_simHeadingDegrees` field together, or the forced value
+  never survives past the first simulated tick. This is specific to test
+  methodology, not a lesson-code bug — `RobotTeleop`/match code never forces
+  the gyro this way.
+
+  Also reconfirmed rather than assumed: `MathUtil.inputModulus`'s exact
+  signature and wrap behavior (a real test double-checked the lesson's own
+  350°→0° example), and that `Rotation2d.fromDegrees(190).getDegrees()`
+  reports back `-170`, not `190` — `Rotation2d` normalizes internally,
+  which is `Rotation2d`'s own behavior and nearly read as a bug in
+  `optimize` during this investigation before the cause was traced.
 
 ---
 
@@ -1183,6 +1252,12 @@ appendices: verify before drafting, record what you verified.
 | `Command.requires(Mechanism)` — compiled, not guessed | Default method on `Command`, confirmed via `javap`: `public default boolean requires(Mechanism)`. Answers whether the given mechanism is in the command's own `requirements()` set. Used to filter `Scheduler`'s one shared, robot-wide `SchedulerEvent` stream down to a single mechanism — without it, a listener registered for one mechanism would also fire for every other mechanism's commands |
 | `Mechanism.getName()` — compiled and verified, used to make Lesson 7's `logCommandStart` mechanism-agnostic | Confirmed via `javap`: `public java.lang.String getName()`, backed by a private `m_name` field set from a `Mechanism(String)`/`Mechanism(String, Scheduler)` constructor, or defaulted by the protected no-arg constructor every `extends Mechanism` subtype in this course actually uses. Verified with a real test: `new Drivetrain().getName()` returns exactly `"Drivetrain"` — the plain class name, with no `[IDLE]` suffix — confirming it's the same string `idle()`'s command name (`"Drivetrain[IDLE]"`, see the R12 appendix row) is built from. Iterating `command.requirements()` and keying `SmartDashboard.putString(mechanism.getName() + "/CurrentCommand", ...)` per entry reproduces the exact same dashboard keys Lessons 3 and 7 had been hardcoding by hand, with no code left that names a mechanism explicitly |
 | Real crash scenario in previously-shipped lesson code, found and fixed by R13, not hypothetical | Lesson 8's `southFace().onTrue(turnToHeading(90))` (and `eastFace().onTrue(turnToHeading(0))`) can finish with zero coroutine yields if the robot is already within `turnToHeading`'s 2° tolerance when the button is pressed — the sim `Pigeon2` starts at 0°, so `turnToHeading(0)` hits this on the very first press on a stock sim. Verified this reproduces `ArrayIndexOutOfBoundsException` in R12's `logRunningCommand()` when bound exactly the way Lesson 8 binds it, and verified the R13 fix no longer throws, against the real rolled-forward Lesson 9 `Robot`/`Drivetrain` classes via `tools/verify-lessons-v3.sh 9`'s own sandbox |
+| `org.wpilib.math.kinematics.ChassisVelocities` — compiled, not guessed, see R14 | Replaces `ChassisSpeeds`. Public fields `vx`/`vy`/`omega` (plain `double`, not the old `*MetersPerSecond`/`omegaRadiansPerSecond` names). Constructors: no-arg (zero), `(double, double, double)`, `(LinearVelocity, LinearVelocity, AngularVelocity)`. Instance methods, all confirmed pure via `javap -c` (construct-and-return, never touch `this`): `toRobotRelative(Rotation2d)`, `toFieldRelative(Rotation2d)`, `discretize(double)`, `toTwist2d(double)`, `plus`/`minus`/`unaryMinus`/`times`/`div`. **No static `fromFieldRelativeSpeeds` factory** — that's the old API's shape; this one converts via the instance method `toRobotRelative` on a value already representing field-relative speeds |
+| `SwerveDriveKinematics` renamed methods — compiled, not guessed, see R14 | `toSwerveModuleStates(ChassisSpeeds)` → `toSwerveModuleVelocities(ChassisVelocities)` (also a 2-arg overload taking a center-of-rotation `Translation2d`, and a `toWheelVelocities` alias). `desaturateWheelSpeeds` → `desaturateWheelVelocities`, four overloads confirmed, including the `LinearVelocity`-typed one `(SwerveModuleVelocity[], LinearVelocity)` the lesson uses to avoid an early `.in(...)` unpack. Constructor `SwerveDriveKinematics(Translation2d...)` unchanged in shape |
+| `SwerveModuleVelocity.optimize(Rotation2d)` — disassembled via `javap -c`, not assumed to match the old mutating API, see R14 | **Pure function**, confirmed from bytecode: allocates and returns a new `SwerveModuleVelocity`, never writes back to `this`. Logic: if `|angle.minus(currentAngle).getDegrees()| > 90`, returns `(-velocity, angle.rotateBy(Rotation2d.kPi))`; otherwise returns `(velocity, angle)` unchanged. A verbatim port of the old lesson's mutating-call pattern (`states[i].optimize(...); use states[i];`) would compile and silently do nothing — confirmed with a real test that the receiver is genuinely untouched after the call |
+| `SwerveModuleVelocity.cosineScale(Rotation2d)` — disassembled via `javap -c`, discovered not ported from the old lesson (didn't exist in that API), see R14 | Pure function, confirmed from bytecode: returns `new SwerveModuleVelocity(velocity * angle.minus(currentAngle).getCos(), angle)` — the exact hand-rolled cosine-compensation trick Lesson 9 already built into `SwerveModule.setDesiredState`, now available as a one-line library call. Not adopted in Lesson 10 (see R14 for why), but recorded so a future maintainer doesn't rediscover it as a surprise |
+| `SwerveModuleVelocity`/`ChassisVelocities` field storage vs. constructor — compiled, not guessed | Both types accept a `LinearVelocity`/`AngularVelocity`-typed constructor, but the field actually stored (`velocity`, or `vx`/`vy`/`omega`) is a plain `double`, confirmed via `javap`. Units apply at the boundary where the value is built; once inside these particular kinematics types, the math is bare doubles — the same "Units at the edges, plain numbers in the middle" rule the course has followed since Lesson 3, now visible inside a library type instead of just user code |
+| `Rotation2d.fromDegrees(...).getDegrees()` normalizes — confirmed with a real test, worth recording so it isn't mistaken for a different method's bug | `Rotation2d.fromDegrees(190).getDegrees()` returns `-170.0`, not `190.0` — `Rotation2d` stores/reports angles normalized to (-180, 180], which is `Rotation2d`'s own long-standing behavior, not anything `optimize()` or `cosineScale()` do to it. Surfaced during R14's testing and initially looked like it might be an `optimize()` discrepancy before the actual source was traced |
 | Build target | `code/OpModeV3Robot/build.gradle`: `sourceCompatibility`/`targetCompatibility = JavaVersion.VERSION_25`, GradleRIO `2027.0.0-alpha-6`, shadow plugin `9.3.0`; deploys to a `SystemCore` target via `getTargetTypeClass('SystemCore')` |
 
 ---
@@ -1416,3 +1491,26 @@ appendices: verify before drafting, record what you verified.
       keep the simpler single-mechanism version deliberately). Verified
       with `javap` and a real test (`getName()` returns the plain class
       name) and re-confirmed against the rolled-forward Lesson 9 classes.
+- [x] Lesson 10 (Kinematics) written and verified 2026-08-12 —
+      `docs/lessons/v3/10-kinematics.md` and `code/v3/lesson-10/`, compiling
+      through `tools/verify-lessons-v3.sh 10`. **R14** covers the real
+      findings: the kinematics family renamed past a simple `State`→
+      `Velocity` swap (`ChassisSpeeds`→`ChassisVelocities`, fields `vx`/
+      `vy`/`omega`), and — the one that would have silently broken a
+      faithful port — `SwerveModuleVelocity.optimize(Rotation2d)` is a pure
+      function in this alpha, not the old mutating call, confirmed by
+      `javap -c` disassembly and a real test. The lesson text calls this
+      out as "a real trap," not a passing mention. Also found and
+      deliberately not adopted: a native `cosineScale(Rotation2d)` that
+      duplicates Lesson 9's hand-rolled cosine compensation. Field-relative
+      driving's shape changed too — `fieldSpeeds.toRobotRelative(Rotation2d)`
+      replaces the old static `fromFieldRelativeSpeeds` factory — verified
+      both algebraically (hand-computed rotation) and through the full real
+      pipeline (`Drivetrain`/`SwerveModule`/TalonFX sim/Pigeon2 sim) with a
+      `DriverStationSim`-backed test. Since Units already arrived at Lesson
+      3 in this track (R7), Lesson 10's concept list was rewritten to not
+      re-claim them as new — only the kinematics data types, the indexed
+      `for` loop, `MathUtil.inputModulus`, and `.times(...)` scaling are new
+      here. See R14 for the full writeup, including a real testing trap
+      (`simulatePeriodic()` overwriting a manually-forced sim gyro reading
+      unless its shadow field is kept in sync too).
