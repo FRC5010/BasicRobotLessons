@@ -535,8 +535,22 @@ public void simulationPeriodic() {
 }
 ```
 
-Nothing else about `Robot` changes — `robotPeriodic()` still just ticks the
-scheduler, same as every lesson since Lesson 1.
+One more spot needs the same rename: `logRunningCommand()` from Lesson 1 still
+says `module`.
+
+**Edit `Robot`'s `logRunningCommand()`:**
+
+```java
+private void logRunningCommand() {
+  List<Command> running = Scheduler.getDefault().getRunningCommandsFor(drivetrain);
+  Command current = running.get(0);
+  SmartDashboard.putString("Drivetrain/CurrentCommand", current.name());
+}
+```
+
+Same method, same idea — it just watches whichever mechanism is actually
+driving now. The log key moves from `DriveModule/` to `Drivetrain/` too, so
+it groups with the rest of this lesson's `Drivetrain/`-prefixed telemetry.
 
 **Delete from `MyTeleop`'s constructor the old wiring:** the A/B-face-button
 drive binds from Lesson 1, the right-bumper slow mode from Lesson 2, the

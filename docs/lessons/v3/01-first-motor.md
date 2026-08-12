@@ -9,6 +9,7 @@ spin at a fixed speed while you hold a button.
 - **Constructors** (the setup method that runs when an object is created)
 - **`import`** (borrowing classes from other packages)
 - **`private` / `public`** (encapsulation — who's allowed to touch what)
+- A **`List`**, and asking it for an item by number
 
 **New robot concepts**
 - Adding a vendor library (Phoenix 6)
@@ -17,6 +18,7 @@ spin at a fixed speed while you hold a button.
 - `Robot` as the permanent home for hardware
 - The `Scheduler`, and ticking it every loop
 - Binding a controller button, and giving the simulator a joystick to read
+- Asking the scheduler what's running right now
 
 ---
 
@@ -472,6 +474,79 @@ button. It counts.
 
 ---
 
+## 8. See what's running
+
+Back in section 3, `.named("Drive At Speed")` came with a promise: that name
+would show up "later, in logs and on screen." Time to cash that in — just
+enough to see it work, with the rest coming as this course builds up its
+telemetry.
+
+The scheduler already knows, at every instant, which command owns which
+mechanism — that's the "only one command controls a mechanism at a time"
+rule from section 3, and it means the scheduler can just be *asked*.
+
+**Add to `Robot`, below `robotPeriodic()`:**
+
+```java
+private void logRunningCommand() {
+  List<Command> running = Scheduler.getDefault().getRunningCommandsFor(module);
+  Command current = running.get(0);
+  SmartDashboard.putString("DriveModule/CurrentCommand", current.name());
+}
+```
+
+**Call it from `robotPeriodic()`, right after the scheduler tick:**
+
+```java
+@Override
+public void robotPeriodic() {
+  Scheduler.getDefault().run();
+  logRunningCommand();
+}
+```
+
+**Add to `Robot`'s imports:**
+
+```java
+import java.util.List;
+
+import org.wpilib.command3.Command;
+import org.wpilib.smartdashboard.SmartDashboard;
+```
+
+`getRunningCommandsFor(module)` hands back a **`List<Command>`** — a
+numbered collection, holding every command currently running on that
+mechanism. `.get(0)` asks for entry number zero. That only works because a
+mechanism can only ever have *one* command running on it at a time — the
+same rule you already learned in section 3. One owner, so entry zero is
+always the whole list.
+
+Order matters here, and it's worth being deliberate about: `logRunningCommand()`
+has to run *after* `Scheduler.getDefault().run()`, not before. The scheduler
+doesn't know anything is running until it's actually ticked once — ask
+beforehand, on the very first frame of the whole program, and the list would
+be empty. `robotPeriodic()` already ticks first and reads second here, so
+this just slots in.
+
+Run it again, hold the bottom face button, and open **NetworkTables →
+SmartDashboard → DriveModule** in SimGUI or AdvantageScope. `CurrentCommand`
+reads `"DriveModule[IDLE]"` at rest — `Mechanism`'s own name for the fallback
+command every mechanism starts with, built from the mechanism's own class
+name — and flips to `"Drive At Speed"` the instant you hold the button, back
+to `"DriveModule[IDLE]"` the instant you let go. That's the payoff of
+`.named(...)`: not decoration, an actual answer to
+"what is this thing doing right now," readable from a laptop instead of a
+debugger.
+
+> This is a small, direct version of something this course will keep
+> building on. Fuller command history — when something started, why it
+> ended, a real timeline instead of a snapshot — is possible too, through
+> the scheduler's own event system. That's for a later lesson, once there's
+> more worth logging and a better answer for where structured history like
+> that should live.
+
+---
+
 ## Try it
 
 Three exercises. The third one plants a habit you'll lean on for the rest
@@ -525,7 +600,11 @@ to real behavior — in the constructor, not `start()`, because the
 constructor runs once and `start()` runs on every re-enable — and learned
 that the simulator needs a joystick dragged into slot 0 before any of it
 responds — worth remembering, because that one bites people every season.
-Next up, that hard-coded `0.3` becomes a live joystick reading, and this
-starts feeling like driving.
+Last, you cashed in `.named(...)`'s promise: asking the scheduler for a
+mechanism's running command, with `getRunningCommandsFor(module).get(0)`,
+turns a name you typed once into a live answer on the dashboard — the first
+small piece of a habit this course keeps building on. Next up, that
+hard-coded `0.3` becomes a live joystick reading, and this starts feeling
+like driving.
 
 Next: Lesson 2 — Joystick control.

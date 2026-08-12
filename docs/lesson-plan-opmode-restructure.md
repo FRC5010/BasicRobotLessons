@@ -527,7 +527,7 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | # | Lesson | Impact | Why |
 |---|---|---|---|
 | 0 | Orientation | **High** | Entry point itself changes — OpMode selection replaces "the one Robot class," see [OpMode fundamentals](#opmode-fundamentals) |
-| 1 | Your first motor | **High** | First real command; hardware (`DriveModule`, `CommandGamepad`) is owned by `Robot`, not `MyTeleop` — corrected from an earlier draft, see [the transition section](#the-myteleopmyauto--robotteleop-transition) |
+| 1 | Your first motor | **High** | First real command; hardware (`DriveModule`, `CommandGamepad`) is owned by `Robot`, not `MyTeleop` — corrected from an earlier draft, see [the transition section](#the-myteleopmyauto--robotteleop-transition). **Retrofitted 2026-08-12** — command-name logging (`getRunningCommandsFor(module).get(0).name()` → `SmartDashboard`), closing a promise the lesson text itself makes at `.named(...)` ("how you'll recognize your own commands later, in logs and on screen") that nothing delivered on through Lesson 9. See [R12](#risks-and-blocking-unknowns) |
 | 2 | Joystick control | Low | Same lambda-binding pattern, stays in `MyTeleop` |
 | 3 | Telemetry & plots | Low | No longer blocked — uses plain `SmartDashboard.putNumber(...)` instead of AdvantageKit's `Logger` (Epilogue was considered, dropped as unnecessary machinery); see [Telemetry without AdvantageKit](#telemetry-without-advantagekit-smartdashboard-and-networktables) and the [detailed Lesson 3 plan](lesson-plan-v3-0-3.md#lesson-3-telemetry--plots) |
 | 4 | Simulation | Low–Medium | Written and compiled 2026-08-11. `simulationPeriodic()` exists, but only on `OpModeRobot`/`Robot` — `Mechanism` has no `simulationPeriodic()` hook of its own, so `DriveModule` exposes a plain public `simulatePeriodic()` method and `Robot.simulationPeriodic()` calls it (one line per mechanism, same shape as Lesson 1's scheduler tick). `LinearSystemId.createDCMotorSystem(...)` doesn't exist — real replacement is `org.wpilib.math.system.Models.singleJointedArmFromPhysicalConstants(DCMotor, J, gearing)` (same math, arm and generic-motor systems were always the same equation). `DCMotorSim.getAngularPosition()`/`.getAngularVelocity()` return **radians**/**radians per second**, not rotations/RPM — confirmed by an end-to-end `DriverStationSim`-backed test (`TalonFX.setThrottle(1.0)` through the real physics loop converges on ~100 rot/s, the Kraken X60's true free speed, only once the radians→rotations division is included). See the appendix and `code/v3/lesson-4/`. |
@@ -930,6 +930,61 @@ out badly.
   brief gap between one awaited step finishing and the next one starting —
   also verified directly, not assumed from the "each mechanism released
   between steps" design description.
+- **R12 — retrofitted 2026-08-12, prompted by a direct user question ("the
+  command names should be getting logged... are we missing something?"),
+  not found during a verification pass.** Lesson 1's text makes a promise at
+  `.named(...)` — "it's how you'll recognize your own commands later, in
+  logs and on screen" — and, through Lesson 9, nothing had ever delivered on
+  it. Root cause, confirmed via `javap`: unlike V2's `CommandScheduler`,
+  which implements `Sendable` and gets its running-command list published
+  to NetworkTables for free with one `SmartDashboard.putData(...)` call,
+  this alpha's `Scheduler` implements only `ProtobufSerializable` — no
+  Sendable, no free path to "what's running" anywhere.
+
+  **The fix, retrofitted at the point the promise is made rather than
+  deferred:** `Robot` gained a `logRunningCommand()` method —
+  `Scheduler.getDefault().getRunningCommandsFor(module).get(0).name()`
+  published via `SmartDashboard.putString(...)` — called from
+  `robotPeriodic()` immediately after `Scheduler.getDefault().run()`.
+  Verified two things empirically before shipping it, not assumed:
+  - **Call-order safety.** `getRunningCommandsFor(mechanism)` returns an
+    **empty** list before the scheduler has ever ticked (confirmed with a
+    real test) — `.get(0)` on that would throw. Confirmed separately that
+    calling it *immediately after* a single `Scheduler.run()` is always
+    safe: a mechanism's own auto-installed `idle()` default is already
+    populated by then, every time, including the very first tick and
+    immediately after any cancellation. This is why the method has to be
+    the second line of `robotPeriodic()`, never the first.
+  - **The idle command's real name.** `Mechanism`'s fallback command isn't
+    named bare `"[IDLE]"` — a real end-to-end test through `Robot` and the
+    actual `DriveModule` class showed `"DriveModule[IDLE]"`, i.e. the
+    mechanism's own class name prefixed. (An earlier test with an anonymous
+    `new Mechanism() {}` had shown bare `"[IDLE]"`, which is consistent
+    once you know anonymous classes have an empty simple name — worth
+    knowing so this isn't rediscovered as a discrepancy.) Lesson 1's text
+    was written and verified against the real value, not the
+    first-guessed one.
+
+  Because `Robot.java` is fully redefined at four points (Lessons 1, 3, 4,
+  7), the retrofit touched all four snapshots, plus Lesson 7's text (which
+  had claimed "nothing else about `Robot` changes" — no longer true, and now
+  also needs the `module`→`drivetrain` rename applied to this method, log
+  key included, matching that lesson's `Drivetrain/`-prefixed convention).
+
+  **Explicitly flagged for revisiting, per the user's request, not resolved
+  as a final design**: this is a small, direct, one-command-at-a-time
+  answer to "what's running right now," deliberately scoped to avoid
+  forward-referencing collections/streams machinery this early (only
+  `List<Command>` + `.get(0)`, no loop, no stream — safe because "one
+  command per mechanism" guarantees the list never holds more than one
+  entry). The scheduler's own richer event system (`SchedulerEvent`'s seven
+  subtypes — `Scheduled`/`Mounted`/`Yielded`/`Completed`/`CompletedWithError`/
+  `Canceled`/`Interrupted`, each carrying the `Command` and a timestamp, via
+  `Scheduler.addEventListener(...)`) is confirmed to exist and would support
+  real command *history* (when something started, why it ended) rather than
+  a live snapshot — intentionally not used here, and intentionally not
+  taught yet. Revisit once there's a real telemetry story worth building it
+  into, rather than bolting event-listener machinery onto Lesson 1.
 
 ---
 
@@ -1008,6 +1063,10 @@ appendices: verify before drafting, record what you verified.
 | PhotonVision 2027 compatibility | Vendordep confirmed present: `photonlib-v2027.0.0-alpha-2.json`, same `vendor-json-repo/2027_alpha5/` bucket. `OpModeRobot`-specific integration unverified |
 | `vendor-json-repo` 2027 structure | Confirmed directories: `2027_alpha1`, `2027_alpha5` (the current active bucket — despite the name, it also holds newer per-vendor releases like `REVLib-2027.0.0-alpha6.json`, so the folder name marks the prerelease *channel*, not a hard per-vendor version ceiling). Also present in `2027_alpha5/`: `AmLib`, `DogLog`, `PathplannerLib-2027.0.0-alpha-3.json`, `ThriftyLib` — **no BLine, no maple-sim** (both distribute outside `vendor-json-repo`; see R2) |
 | SystemCore removed device classes | Relay, analog output, SPI (incl. SPI IMUs: ADIS16448, ADIS16470, ADXL345, ADXRS450), analog gyro, DMA, built-in accelerometer, digital glitch filter, interrupts, counter, ultrasonic, analog trigger, Nidec Brushless, `Servo`, `Jaguar` — none currently used by this course |
+| `Scheduler` and `Sendable` — confirmed via `javap`, see R12 | `org.wpilib.command3.Scheduler` implements only `ProtobufSerializable`, **not** `Sendable`. V2's `edu.wpi.first.wpilibj2.command.CommandScheduler` implements `Sendable`, which is what lets `SmartDashboard.putData(CommandScheduler.getInstance())` publish a running-commands list to NetworkTables for free; this alpha has no equivalent one-liner. Command-name visibility has to be built by hand — see the `getRunningCommandsFor` row below and R12 |
+| `Scheduler.getRunningCommands()` / `getRunningCommandsFor(Mechanism)` — behavior-verified, not just typed, see R12 | Both return an empty collection before the scheduler's first `run()` call (confirmed with a real test) — calling `.get(0)` on that result throws. Confirmed safe immediately *after* any `run()` call, including the very first one: every mechanism's auto-installed `idle()` default is already populated by then, so exactly one entry is always present for a mechanism that's had at least one tick. This is why Lesson 1's `logRunningCommand()` has to run as the second statement in `robotPeriodic()`, never the first |
+| `Mechanism` idle-command name — confirmed end to end, corrects an earlier isolated-test guess, see R12 | The auto-installed default command's `name()` is `"<ClassName>[IDLE]"` — the mechanism's own `getClass().getSimpleName()` prefixed onto `[IDLE]`, confirmed with a real `Robot`/`DriveModule` end-to-end test (`"DriveModule[IDLE]"`). An earlier, isolated test using an anonymous `new Mechanism() {}` showed bare `"[IDLE]"`, which is consistent rather than contradictory: anonymous classes report an empty string from `getSimpleName()`. Lesson 1's text was corrected to the real, class-prefixed value before shipping |
+| `SchedulerEvent` — compiled, not guessed, deliberately unused so far, see R12 | Interface with seven concrete `record` subtypes: `Scheduled`, `Mounted`, `Yielded`, `Completed`, `CompletedWithError`, `Interrupted`, `Canceled`, each carrying the originating `Command` plus a timestamp. Consumed via `Scheduler.addEventListener(Consumer<SchedulerEvent>)`. Confirmed to exist and to be the real path to command *history* (start/end/why, not just a live snapshot) — intentionally not taught through Lesson 9; flagged in R12 as the future upgrade once a lesson exists to build it into |
 | Build target | `code/OpModeV3Robot/build.gradle`: `sourceCompatibility`/`targetCompatibility = JavaVersion.VERSION_25`, GradleRIO `2027.0.0-alpha-6`, shadow plugin `9.3.0`; deploys to a `SystemCore` target via `getTargetTypeClass('SystemCore')` |
 
 ---
@@ -1203,3 +1262,15 @@ appendices: verify before drafting, record what you verified.
       `coroutine.await(...)`-based sequencing matches `Command.sequence(...)`'s
       ordering with no default-command flicker in the gap between steps. See
       R11 for the full writeup.
+- [x] Command-name logging retrofitted into Lesson 1 and cascaded through
+      Lessons 3, 4, and 7 — done 2026-08-12, prompted by a direct user
+      question rather than found in a verification pass. `Scheduler` has no
+      `Sendable` free path the way V2's `CommandScheduler` does, so
+      `Robot.logRunningCommand()` (`getRunningCommandsFor(module).get(0).name()`
+      → `SmartDashboard.putString(...)`) was added by hand at the point
+      Lesson 1's text already promises it ("logs and on screen"). Verified
+      empty-before-first-tick and the real `"DriveModule[IDLE]"` idle name
+      before shipping either claim into lesson text. **Deliberately flagged
+      as interim, not final** — `SchedulerEvent`/`addEventListener` is the
+      real history-capable path and is intentionally left for a later
+      revisit. See R12 and the new appendix rows.
