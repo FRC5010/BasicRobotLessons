@@ -1165,6 +1165,44 @@ out badly.
   reports back `-170`, not `190` — `Rotation2d` normalizes internally,
   which is `Rotation2d`'s own behavior and nearly read as a bug in
   `optimize` during this investigation before the cause was traced.
+- **R15 — new, 2026-08-12, prompted by a user question about incorporating a
+  record-pattern `switch` over `SchedulerEvent` (attributed to a WPILib
+  developer recommendation) into the command logging from R12/R13.** Two
+  things confirmed, one a real compile bug in the suggested snippet as
+  given, not a style nitpick:
+  - **`SchedulerEvent` is genuinely `sealed`, not just "seven record
+    subtypes" as R12's appendix row phrased it.** Confirmed from the raw
+    classfile (`javap -v`), not inferred: a `PermittedSubclasses` attribute
+    lists all seven — `Scheduled`, `Mounted`, `Yielded`, `Completed`,
+    `CompletedWithError`, `Interrupted`, `Canceled` — exactly. `javap -p`'s
+    plain interface header doesn't print the `sealed`/`permits` keywords,
+    which is why R12's row undersold this; the attribute is definitive.
+  - **The suggested snippet — a `switch` covering only `Scheduled`/
+    `Mounted`/`Yielded`/`Completed`, no `default` — does not compile.**
+    Reproduced directly: `error: the switch statement does not cover all
+    possible input values`. Sealed-type exhaustiveness is real and the
+    compiler enforces it; a pattern `switch` over `SchedulerEvent` needs
+    either all seven `case` arms (record-deconstructed, and note
+    `CompletedWithError`/`Interrupted` have three components — an extra
+    `error`/`interrupter` — not two like the other five) or an explicit
+    `default -> {}`. Both fixes verified to compile. Also verified at
+    runtime with a real scheduler test: the deconstruction pattern
+    (`case Scheduled(var cmd, var time) -> ...`) correctly binds `cmd` and
+    `time` to the record's real components, including a genuine positive
+    microsecond timestamp — not a syntax risk, just the exhaustiveness gap.
+
+  **Assessment, not adopted into any shipped lesson:** the style itself is
+  good, idiomatic modern Java for a closed hierarchy of event records, and
+  runtime-verified correct. But it bundles several concepts this course
+  hasn't taught anywhere yet — `switch` as an expression/statement, record
+  deconstruction patterns, and sealed-type exhaustiveness — well past
+  Lesson 3's single `instanceof` check on one record type. It's exactly the
+  "richer event system" R12 already named and deferred ("once there's more
+  worth logging and a better answer for where structured history like that
+  should live"), not a drop-in replacement for the live-snapshot logging
+  Lessons 3–7 actually need. **Recorded here as the concrete recommended
+  shape for that already-deferred future lesson**, exhaustiveness caveat
+  included, rather than left as an abstract "revisit later."
 
 ---
 
@@ -1246,7 +1284,7 @@ appendices: verify before drafting, record what you verified.
 | `Scheduler` and `Sendable` — confirmed via `javap`, see R12 | `org.wpilib.command3.Scheduler` implements only `ProtobufSerializable`, **not** `Sendable`. V2's `edu.wpi.first.wpilibj2.command.CommandScheduler` implements `Sendable`, which is what lets `SmartDashboard.putData(CommandScheduler.getInstance())` publish a running-commands list to NetworkTables for free; this alpha has no equivalent one-liner. Command-name visibility has to be built by hand — see the `getRunningCommandsFor` row below and R12 |
 | `Scheduler.getRunningCommands()` / `getRunningCommandsFor(Mechanism)` — behavior-verified, not just typed, see R12 | Both return an empty collection before the scheduler's first `run()` call (confirmed with a real test) — calling `.get(0)` on that result throws. Confirmed safe immediately *after* any `run()` call, including the very first one: every mechanism's auto-installed `idle()` default is already populated by then, so exactly one entry is always present for a mechanism that's had at least one tick. This is why Lesson 1's `logRunningCommand()` has to run as the second statement in `robotPeriodic()`, never the first |
 | `Mechanism` idle-command name — confirmed end to end, corrects an earlier isolated-test guess, see R12 | The auto-installed default command's `name()` is `"<ClassName>[IDLE]"` — the mechanism's own `getClass().getSimpleName()` prefixed onto `[IDLE]`, confirmed with a real `Robot`/`DriveModule` end-to-end test (`"DriveModule[IDLE]"`). An earlier, isolated test using an anonymous `new Mechanism() {}` showed bare `"[IDLE]"`, which is consistent rather than contradictory: anonymous classes report an empty string from `getSimpleName()`. Lesson 1's text was corrected to the real, class-prefixed value before shipping |
-| `SchedulerEvent` — compiled, not guessed, deliberately unused so far, see R12 | Interface with seven concrete `record` subtypes: `Scheduled`, `Mounted`, `Yielded`, `Completed`, `CompletedWithError`, `Interrupted`, `Canceled`, each carrying the originating `Command` plus a timestamp. Consumed via `Scheduler.addEventListener(Consumer<SchedulerEvent>)`. Confirmed to exist and to be the real path to command *history* (start/end/why, not just a live snapshot) — intentionally not taught through Lesson 9; flagged in R12 as the future upgrade once a lesson exists to build it into |
+| `SchedulerEvent` — compiled, not guessed, deliberately unused so far, see R12 and R15 | **`sealed` interface** (confirmed from the raw classfile's `PermittedSubclasses` attribute via `javap -v` — not visible in `javap -p`'s plain header, which is why this was first recorded as just "seven record subtypes") permitting exactly seven concrete `record`s: `Scheduled`, `Mounted`, `Yielded`, `Completed` (each `(Command, long timestampMicros)`), `CompletedWithError` (`(Command, Throwable, long)`), `Interrupted` (`(Command, Command interrupter, long)`), `Canceled` (`(Command, long)`). Consumed via `Scheduler.addEventListener(Consumer<SchedulerEvent>)`. Confirmed to exist and to be the real path to command *history* (start/end/why, not just a live snapshot) — intentionally not taught through Lesson 10; flagged in R12/R15 as the future upgrade once a lesson exists to build it into. **Being sealed means a record-pattern `switch` over it is exhaustiveness-checked by the compiler** — a real, reproduced compile error (`the switch statement does not cover all possible input values`) results from covering fewer than all seven cases without a `default` — see R15 |
 | `SchedulerEvent.Scheduled` vs. `.Mounted` firing frequency — behavior-verified with real tests, corrects an assumption made while designing R13's fix | `Mounted` (and its `Yielded` counterpart) fire on **every tick** a command is the one being stepped, whether anything changed or not — confirmed by logging a parked, unchanged command's events across several ticks. `Scheduled` fires **exactly once**, at the instant a command (including the idle default re-taking over) begins controlling a mechanism, and does not refire on later ticks while that command continues unchanged — confirmed the same way. `Scheduled` is the correct signal for "the current command just changed"; `Mounted` is not |
 | `getRunningCommandsFor(Mechanism)` can return **empty**, not just "always exactly one entry" — corrects part of the R12 appendix row above, see R13 | True only for the case R12 tested (something else pre-empting the currently-running command). **Not general**: if a freshly-promoted command finishes with zero `yield()` calls on the same tick it was promoted (traced via `javap -c` on `Scheduler.run()`: triggers fire during `eventLoop.poll()`, before that tick's `scheduleDefaultCommands()`/`promoteScheduledCommands()`/`runCommands()`), the mechanism has nothing running for the rest of that tick — the idle default isn't resynthesized until the *following* tick. Confirmed with a real test reproducing `ArrayIndexOutOfBoundsException` on `.get(0)` |
 | `Command.requires(Mechanism)` — compiled, not guessed | Default method on `Command`, confirmed via `javap`: `public default boolean requires(Mechanism)`. Answers whether the given mechanism is in the command's own `requirements()` set. Used to filter `Scheduler`'s one shared, robot-wide `SchedulerEvent` stream down to a single mechanism — without it, a listener registered for one mechanism would also fire for every other mechanism's commands |
@@ -1514,3 +1552,20 @@ appendices: verify before drafting, record what you verified.
       here. See R14 for the full writeup, including a real testing trap
       (`simulatePeriodic()` overwriting a manually-forced sim gyro reading
       unless its shadow field is kept in sync too).
+- [x] R15, 2026-08-12: evaluated a suggested record-pattern `switch` over
+      `SchedulerEvent` for the R12/R13 command logging, attributed to a
+      WPILib developer recommendation. Confirmed `SchedulerEvent` is
+      genuinely `sealed` (classfile `PermittedSubclasses` attribute, not
+      previously recorded that precisely) and that the suggested snippet as
+      given does not compile — sealed-type switch exhaustiveness is real
+      and enforced, reproduced directly (`the switch statement does not
+      cover all possible input values`) with only 4 of 7 cases and no
+      `default`. Both fixes (all seven cases, or a `default`) verified to
+      compile, and the record-deconstruction binding itself verified
+      correct at runtime with a real scheduler test. **Not adopted into any
+      shipped lesson** — bundles `switch`, record patterns, and sealed
+      exhaustiveness, none taught anywhere in this track yet, well past
+      Lesson 3's single `instanceof` check. Recorded instead as the
+      concrete recommended shape for R12's already-deferred "richer event
+      system" revisit, exhaustiveness caveat included. See R15 and the
+      updated `SchedulerEvent` appendix row.
