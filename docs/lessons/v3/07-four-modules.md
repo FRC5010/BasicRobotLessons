@@ -535,22 +535,44 @@ public void simulationPeriodic() {
 }
 ```
 
-One more spot needs the same rename: `logCommandStart()` from Lesson 3 still
-checks `module`.
+One more spot benefits from the array you just built. `logCommandStart()`
+from Lesson 3 checks one mechanism by name — `requires(module)` — which was
+fine when `Robot` only ever had one to watch. You just renamed that
+mechanism once already, a few paragraphs up, and every mechanism this
+course adds from here on would mean coming back to this method again. The
+**enhanced `for`** you just learned fixes that for good.
 
-**Edit `Robot`'s `logCommandStart()`:**
+**Replace `Robot`'s `logCommandStart()`:**
 
 ```java
 private void logCommandStart(SchedulerEvent event) {
-  if (event instanceof SchedulerEvent.Scheduled scheduled && scheduled.command().requires(drivetrain)) {
-    SmartDashboard.putString("Drivetrain/CurrentCommand", scheduled.command().name());
+  if (event instanceof SchedulerEvent.Scheduled scheduled) {
+    for (Mechanism mechanism : scheduled.command().requirements()) {
+      SmartDashboard.putString(mechanism.getName() + "/CurrentCommand", scheduled.command().name());
+    }
   }
 }
 ```
 
-Same method, same idea — it just watches whichever mechanism is actually
-driving now. The log key moves from `DriveModule/` to `Drivetrain/` too, so
-it groups with the rest of this lesson's `Drivetrain/`-prefixed telemetry.
+`requirements()` is the data behind Lesson 3's `requires(...)` — the whole
+**set** of mechanisms a command needs, instead of a yes-or-no answer about
+just one. Every command in this course needs exactly one mechanism, so the
+loop runs once — but the method doesn't need to *know* that, which is the
+point. `mechanism.getName()` reads back the same name every `Mechanism`
+already carries — it's where the `"Drivetrain"` in `"Drivetrain[IDLE]"`
+comes from — so the dashboard key builds itself: `Drivetrain/CurrentCommand`
+for a command on `drivetrain`, whatever a future mechanism happens to be
+called for one of its own. Add a second mechanism to `Robot` someday, and
+this method won't need to hear about it.
+
+**Add to `Robot`'s imports:**
+
+```java
+import org.wpilib.command3.Mechanism;
+```
+
+Same dashboard key you've had since Lesson 3 — `Drivetrain/CurrentCommand`
+— just arrived at without `Robot` needing to be told what it was watching.
 
 **Delete from `MyTeleop`'s constructor the old wiring:** the A/B-face-button
 drive binds from Lesson 1, the right-bumper slow mode from Lesson 2, the
@@ -668,7 +690,11 @@ up.
 The Java half of this lesson was about *many of the same thing*: an **array**
 holds four same-typed modules, the **enhanced `for` loop** does the same work
 to each, and **constructor parameters** let one class describe four corners
-that differ only in their numbers. The robot half was an architecture
+that differ only in their numbers. That same loop paid for itself twice —
+once over `m_modules`, and again over `command.requirements()`, which
+turned Lesson 3's one-mechanism `logCommandStart()` into a version that
+needs no further edits no matter how many mechanisms `Robot` ends up with.
+The robot half was an architecture
 decision worth remembering the reasoning for: not every class should be a
 mechanism. `SwerveModule` became a plain **helper class** — the Drivetrain
 owns the array and holds the scheduler's one lock — and the module's job

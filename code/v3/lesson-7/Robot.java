@@ -4,6 +4,7 @@
 
 package first.robot;
 
+import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.command3.SchedulerEvent;
 import org.wpilib.command3.button.CommandGamepad;
@@ -47,8 +48,10 @@ public class Robot extends OpModeRobot {
   }
 
   private void logCommandStart(SchedulerEvent event) {
-    if (event instanceof SchedulerEvent.Scheduled scheduled && scheduled.command().requires(drivetrain)) {
-      SmartDashboard.putString("Drivetrain/CurrentCommand", scheduled.command().name());
+    if (event instanceof SchedulerEvent.Scheduled scheduled) {
+      for (Mechanism mechanism : scheduled.command().requirements()) {
+        SmartDashboard.putString(mechanism.getName() + "/CurrentCommand", scheduled.command().name());
+      }
     }
   }
 

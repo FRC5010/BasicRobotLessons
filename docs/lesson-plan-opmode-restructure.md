@@ -1074,6 +1074,29 @@ out badly.
   unmodified, which is exactly what makes the fix land before Lesson 8's
   `onTrue(turnToHeading(...))` ever ships with the crash-prone version.
 
+  **Addendum, 2026-08-12, same day — the per-lesson rename churn this
+  whole cascade kept hitting (R12 touched 4 files, R13 touched 3) is now
+  closed structurally, on user direction.** `logCommandStart` at Lesson 3
+  and 4 still checks one mechanism by name (`requires(module)`) — the
+  right call there, since no loop construct exists yet in the taught
+  vocabulary (confirmed: Lesson 5's Try It #1 is explicitly "your first
+  `while` loop," and Lesson 7 §3 explicitly introduces the array and the
+  enhanced `for` as new). But **at Lesson 7**, right where the enhanced
+  `for` is already being taught for `m_modules`, `logCommandStart` is
+  rewritten to loop over `scheduled.command().requirements()` (the `Set`
+  behind Lesson 3's `requires(...)`) and build its dashboard key from
+  `Mechanism.getName()` instead of a hardcoded string — confirmed via
+  `javap` (`public java.lang.String getName()`) and a real test
+  (`new Drivetrain().getName()` returns exactly `"Drivetrain"`, the same
+  prefix `idle()` already put in front of `"[IDLE]"`). From Lesson 7 on,
+  `Robot` never needs to be told about a mechanism by name again — the
+  method that used to need a rename cascade at every `Robot.java`
+  redefinition point now needs none, for however many mechanisms this
+  track ends up with. Verified against the real rolled-forward Lesson 9
+  classes, same as the fix above: `robotPeriodic()` still doesn't throw on
+  the instantly-finishing `turnToHeading(0)` scenario with the generic
+  version in place.
+
 ---
 
 ## Appendix: verified API notes
@@ -1158,6 +1181,7 @@ appendices: verify before drafting, record what you verified.
 | `SchedulerEvent.Scheduled` vs. `.Mounted` firing frequency — behavior-verified with real tests, corrects an assumption made while designing R13's fix | `Mounted` (and its `Yielded` counterpart) fire on **every tick** a command is the one being stepped, whether anything changed or not — confirmed by logging a parked, unchanged command's events across several ticks. `Scheduled` fires **exactly once**, at the instant a command (including the idle default re-taking over) begins controlling a mechanism, and does not refire on later ticks while that command continues unchanged — confirmed the same way. `Scheduled` is the correct signal for "the current command just changed"; `Mounted` is not |
 | `getRunningCommandsFor(Mechanism)` can return **empty**, not just "always exactly one entry" — corrects part of the R12 appendix row above, see R13 | True only for the case R12 tested (something else pre-empting the currently-running command). **Not general**: if a freshly-promoted command finishes with zero `yield()` calls on the same tick it was promoted (traced via `javap -c` on `Scheduler.run()`: triggers fire during `eventLoop.poll()`, before that tick's `scheduleDefaultCommands()`/`promoteScheduledCommands()`/`runCommands()`), the mechanism has nothing running for the rest of that tick — the idle default isn't resynthesized until the *following* tick. Confirmed with a real test reproducing `ArrayIndexOutOfBoundsException` on `.get(0)` |
 | `Command.requires(Mechanism)` — compiled, not guessed | Default method on `Command`, confirmed via `javap`: `public default boolean requires(Mechanism)`. Answers whether the given mechanism is in the command's own `requirements()` set. Used to filter `Scheduler`'s one shared, robot-wide `SchedulerEvent` stream down to a single mechanism — without it, a listener registered for one mechanism would also fire for every other mechanism's commands |
+| `Mechanism.getName()` — compiled and verified, used to make Lesson 7's `logCommandStart` mechanism-agnostic | Confirmed via `javap`: `public java.lang.String getName()`, backed by a private `m_name` field set from a `Mechanism(String)`/`Mechanism(String, Scheduler)` constructor, or defaulted by the protected no-arg constructor every `extends Mechanism` subtype in this course actually uses. Verified with a real test: `new Drivetrain().getName()` returns exactly `"Drivetrain"` — the plain class name, with no `[IDLE]` suffix — confirming it's the same string `idle()`'s command name (`"Drivetrain[IDLE]"`, see the R12 appendix row) is built from. Iterating `command.requirements()` and keying `SmartDashboard.putString(mechanism.getName() + "/CurrentCommand", ...)` per entry reproduces the exact same dashboard keys Lessons 3 and 7 had been hardcoding by hand, with no code left that names a mechanism explicitly |
 | Real crash scenario in previously-shipped lesson code, found and fixed by R13, not hypothetical | Lesson 8's `southFace().onTrue(turnToHeading(90))` (and `eastFace().onTrue(turnToHeading(0))`) can finish with zero coroutine yields if the robot is already within `turnToHeading`'s 2° tolerance when the button is pressed — the sim `Pigeon2` starts at 0°, so `turnToHeading(0)` hits this on the very first press on a stock sim. Verified this reproduces `ArrayIndexOutOfBoundsException` in R12's `logRunningCommand()` when bound exactly the way Lesson 8 binds it, and verified the R13 fix no longer throws, against the real rolled-forward Lesson 9 `Robot`/`Drivetrain` classes via `tools/verify-lessons-v3.sh 9`'s own sandbox |
 | Build target | `code/OpModeV3Robot/build.gradle`: `sourceCompatibility`/`targetCompatibility = JavaVersion.VERSION_25`, GradleRIO `2027.0.0-alpha-6`, shadow plugin `9.3.0`; deploys to a `SystemCore` target via `getTargetTypeClass('SystemCore')` |
 
@@ -1381,3 +1405,14 @@ appendices: verify before drafting, record what you verified.
       later instead of "eventually"). Verified with a real
       `Trigger`-bound press/hold/release cycle and against the actual
       rolled-forward Lesson 9 classes. See R13 and its appendix rows.
+- [x] R13 addendum, same day, on user direction: `logCommandStart` made
+      mechanism-agnostic at Lesson 7, closing the per-lesson rename churn
+      both R12 and R13 kept hitting for good. Rewritten to loop
+      `scheduled.command().requirements()` and key off
+      `Mechanism.getName()` instead of a hardcoded mechanism/string pair —
+      placed at Lesson 7 specifically because that's where the enhanced
+      `for` loop is actually taught (confirmed Lesson 5 and Lesson 7 both
+      still correctly claim their loop constructs as new, so Lessons 3–4
+      keep the simpler single-mechanism version deliberately). Verified
+      with `javap` and a real test (`getName()` returns the plain class
+      name) and re-confirmed against the rolled-forward Lesson 9 classes.
