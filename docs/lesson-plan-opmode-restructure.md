@@ -544,7 +544,8 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 15 | PhotonVision | ~~Medium~~ Low | Written and verified 2026-08-13. Vendordep fetches, compiles, and runtime-verifies clean — `OpModeRobot` integration confirmed working via a real `DriverStationSim`-backed multi-tag detection test, not just "the API compiles." Real finding, not anticipated by this plan: this course's vision-sim has no independent ground truth, so it can demonstrate accurate tracking but not recovering from a bad pose or exposing a miscalibrated camera — see [R20](#risks-and-blocking-unknowns), which also retires the old lesson's "mismeasure the camera" Try It (doesn't work here) with a corrected one that teaches the limitation directly |
 | 16 | Ground truth (interim, no maple-sim) | Medium | Written and verified 2026-08-13. **User decision (2026-08-13): write an interim lesson without maple-sim** rather than skip or wait — maple-sim remains confirmed structurally incompatible with this 2027 alpha (see R2). Ships a hand-built `ChassisSimulation` (grip-limited `a = μg` acceleration via `MathUtil.slewRateLimit` on a `Translation2d`, exact integration via `Twist2d.exp()`) as a shared, `static`, sim-only chassis body — giving the track real ground truth, a real gyro fed from it, and real (not faked) drift, without needing maple-sim at all. Closes Lesson 15's own admitted compromise by re-wiring both cameras' `poseSupplier` from `Localizer::getPose` to `Drivetrain::getSimulatedPose`. No walls, no collisions, no game pieces — those stay out of scope until maple-sim (or an equivalent) actually becomes available; see R21. Presented to students with zero mention of maple-sim or blockers, framed as "build the physics by hand first," matching this course's own established rhythm (P-control by hand before firmware, wrap-loops by hand before `ContinuousWrap`) |
 | 17 | BLine autos | **Skipped for now** | 2026-08-13: BLine confirmed structurally incompatible with this 2027 alpha by direct test — `FollowPath extends edu.wpi.first.wpilibj2.command.Command` (Commands V2's base class) and `FollowPath.Builder` requires an `edu.wpi.first.wpilibj2.command.Subsystem`; needs a rewrite against Commands V3, not a recompile. See [R2](#risks-and-blocking-unknowns). **User decision (2026-08-13): skip to Lesson 18 for now** rather than write an interim stand-in or wait — the mechanisms arc (18+) doesn't depend on BLine or maple-sim, so the track moves on and Lesson 17 stays a gap to revisit once BLine (or an equivalent) ships Commands V3 support. This is also where the resolved multi-`@Autonomous` selection decision (OD3) would land, whenever this unblocks |
-| 18–23 | Elevator … LEDs | Low | `SubsystemBase` → `Mechanism` rename; IO-layer pattern (Lesson 13's spine) is unaffected by this table's changes once Lesson 13 itself is resolved |
+| 18 | Scoring elevator | Low | Written and verified 2026-08-13. `SubsystemBase` → `Mechanism` rename landed exactly as predicted, with `ElevatorIO`/`ElevatorIOTalonFX`/`ElevatorIOSim` matching `ModuleIO`'s spine from Lesson 13 file-for-file. Phoenix's Motion Magic + full feedforward config surface (`MotionMagicVoltage`, `MotionMagicConfigs`, `Slot0Configs.kG/kV/kA/kP`, `GravityTypeValue.Elevator_Static`) and `org.wpilib.simulation.ElevatorSim` all confirmed via `javap` with unchanged signatures from pre-2027 WPILib/Phoenix 6. R3/R7's `StatusSignal.getValueAsDouble()` finding held again here, including on `getClosedLoopReference()`'s `Double`-typed signal. See [R22](#risks-and-blocking-unknowns) for measured (not reused) feedforward-term numbers from this alpha's own physics |
+| 19–23 | Mechanism2d … LEDs | Low | `SubsystemBase` → `Mechanism` rename; IO-layer pattern (Lesson 13's spine) is unaffected by this table's changes once Lesson 13 itself is resolved |
 | 24 | Superstructure | Medium | `StateMachine` library primitive now exists — recommend keep the hand-rolled enum, reference the library the way the course references `MathUtil.clamp` |
 | 25 | Path events | Medium | `Trigger`'s auto-scoping may let the manual `.finallyDo(FollowPath::clearRotationOverride)` handback shrink or disappear — depends on whether BLine v3 exposes a scoped registration path; needs the same source-jar verification this course already applies to BLine |
 | 26 | Drive to pose | Low | Mechanically unaffected |
@@ -1703,6 +1704,79 @@ out badly.
 
 ---
 
+- **R22 — new, found while writing and verifying Lesson 18's `Elevator`,
+  all confirmed by `javap` and real `DriverStationSim`-backed tests.** This
+  is the mechanisms arc's opening lesson — first `Mechanism` since
+  `Drivetrain` whose whole job is holding a position against a constant
+  disturbance, and the first to use Motion Magic and a full `kG`/`kV`/`kA`
+  feedforward set.
+
+  - **`StatusSignal<T>` still has no `getValueAsDouble()`** — already known
+    since R3/R7 (this alpha's `StatusSignal` has only `.getValue()`), and
+    that finding held here too, including on a signal type not exercised
+    by any earlier lesson: `getClosedLoopReference(): StatusSignal<Double>`
+    auto-unboxes its plain `.getValue()` straight to a `double`, same as
+    every measure-typed signal needs `.in(Unit)` instead.
+    `ElevatorIOTalonFX.updateInputs` unpacks every reading through
+    `.getValue()` accordingly — `.in(Volts)` for `getMotorVoltage()`,
+    `.in(Rotations)`/`.in(RotationsPerSecond)` for position/velocity, and a
+    bare `.getValue()` for `getClosedLoopReference()`'s `Double`.
+  - **`org.wpilib.simulation.ElevatorSim` — confirmed present via `javap`,
+    unchanged from pre-2027 WPILib.** Three constructor overloads exist;
+    the one this lesson uses (`DCMotor, gearing, carriageMassKg,
+    drumRadiusMeters, minHeightMeters, maxHeightMeters, simulateGravity,
+    startingHeightMeters, double... stdDevs`) matches the old course's
+    usage exactly, including the varargs measurement-noise tail. Extends
+    `LinearSystemSim<N2, N1, N2>`, same as pre-2027.
+  - **Slot0's `kV`/`kA`/`kP` gains are mechanism-side (drum rotations),
+    not rotor-side — confirmed by arithmetic, not assumed from the field
+    name.** `SensorToMechanismRatio = kGearRatio` scales the whole closed
+    loop, gains included, the same way Lesson 7's already-shipped
+    `DriveConstants.kDriveKV = 0.8` is commented "volts per wheel
+    rotation/sec," not rotor rotation/sec. Cross-check: rotor free speed
+    is 100 rot/s at 12 V (0.12 V/rotor-rot/s); one *drum* rotation/sec
+    needs `kGearRatio` (12) times that rotor speed, so
+    `kElevatorKV = 12 × 0.12 = 1.44` reproduces the shipped constant
+    exactly. The lesson states this explicitly rather than leaving the
+    unit ambiguous, since getting it backwards (rotor-side instead of
+    drum-side) would be off by a factor of 12 and easy to not notice in a
+    sim that still technically converges.
+  - **`Measure<U>`'s ordering methods (`.gt`/`.lt`/`.gte`/`.lte`) —
+    confirmed via `javap` on the `Measure` interface, not guessed from
+    convention.** `Distance implements Measure<DistanceUnit>` inherits
+    them for free, which is what makes `clampToTravel` readable as
+    typed comparisons instead of unpacking to `double` first — the natural
+    replacement now that there's no `MathUtil.clamp` (R10) to reach for.
+  - **Measured, not reused from the old course** (this alpha's Phoenix
+    simulated firmware and WPILib's `ElevatorSim` are the same physics as
+    the pre-2027 course runs, but nothing was assumed to transfer without
+    checking): holding `kScoreMid` with `kElevatorKG` zeroed settles
+    **≈1.6 mm** low, permanently; with the full model in place, the same
+    hold settles within **≈0.12 mm** of the profile's setpoint after
+    letting Motion Magic fully converge — close enough to the main
+    course's own independently-measured ~0.12 mm Motion Magic settle floor
+    (Lesson 33) to treat as the same underlying firmware behavior, not a
+    coincidence. A full-travel move (stowed to `kMaxHeight`) with
+    `kElevatorKV` zeroed peaks at **≈145 mm** of setpoint-vs-height lag
+    mid-cruise; with the model restored, the same move peaks at **≈34 mm**
+    — same order of magnitude as the old course's own ~23 mm figure for a
+    shorter move, not identical (different travel distance), but the same
+    finding: a missing `kV` produces lag that scales with how long the
+    profile spends at cruise speed, not a fixed error.
+  - **`CommandGamepad.dpadDown()/dpadRight()/dpadUp()`** — already
+    confirmed present in the appendix (Lesson 1 era verification of
+    `CommandGamepad`'s full button list); re-used here for the three
+    preset-height bindings without re-verifying, since nothing about that
+    API surface changes between lessons.
+  - **The jvmArgs finding reproduces a fifth time, unchanged**
+    (R18/R19/R20/R21) — `Elevator`'s own `DriverStationSim`-backed test
+    needed the same three `jvmArgs`; noted for completeness, not
+    re-derived.
+
+  No lesson code ships a test — same precedent as Lessons 13–16.
+
+---
+
 ## Appendix: verified API notes
 
 Read directly from `wpilibsuite/allwpilib` at tag `v2027.0.0-alpha-6` — the
@@ -1818,6 +1892,11 @@ appendices: verify before drafting, record what you verified.
 | `org.wpilib.math.util.MathUtil.slewRateLimit` — disassembled via `javap -c`, not guessed from the name, see R21 | Only `Translation2d`/`Translation3d` overloads exist, no bare-`double` one. Confirmed parameter order and behavior from the compiled method body: `slewRateLimit(current, target, maxRatePerSecond, dtSeconds)` — validates `dtSeconds >= 0`, returns `target` directly if already within `maxRatePerSecond * dtSeconds` of `current`, otherwise steps `current` toward `target` by exactly that much |
 | `org.wpilib.math.geometry.Pose2d.exp(Twist2d)` does NOT exist in this alpha — confirmed via a full unfiltered `javap` dump, a real difference from pre-2027 WPILib, see R21 | The exponential map moved: `Twist2d.exp()` (no argument, using its own `dx`/`dy`/`dtheta` fields) returns a `Transform2d`, composed onto a pose via the already-existing `Pose2d.plus(Transform2d)`. `ChassisVelocities.toTwist2d(double)` (R14) still produces the twist to feed it |
 | `Drivetrain.drive()`/`driveFieldRelative()` have no `.whenCanceled(...)` cleanup — a real, pre-existing gap found by testing, not by code review, see R21 | Every other `Drivetrain` command (`turnToHeading`, `driveDistance`, `driveToPose`) stops the wheels on cancellation; these two don't. Invisible in normal use (both are always immediately replaced by another command, never left canceled with nothing following), but a test that explicitly schedules-then-cancels `drive()` and moves on leaves the wheels running at their last commanded velocity forever, since Phoenix sim devices are keyed by CAN ID and outlive a test in the same JVM — reproduced a real, misleading test failure (expected error to shrink, it grew instead: 0.71 m → 1.02 m) before being traced to this cause. Not fixed in shipped `Drivetrain.java` — out of scope for Lesson 16's diff |
+| `com.ctre.phoenix6.controls.MotionMagicVoltage`/`configs.MotionMagicConfigs`/`configs.Slot0Configs`/`signals.GravityTypeValue` — compiled, not guessed, see R22 | All confirmed via `javap` with unchanged signatures from pre-2027 Phoenix 6 — none of this API sits inside the `org.wpilib` rename (same finding as R17's Lesson 12 config surface). `MotionMagicVoltage(double)`/`(Angle)` constructors, `.withPosition(double\|Angle)`. `MotionMagicConfigs.MotionMagicCruiseVelocity`/`MotionMagicAcceleration` (`double`, with `AngularVelocity`/`AngularAcceleration`-typed `with...`/`get...Measure()` overloads). `Slot0Configs.kP`/`kV`/`kA`/`kG`/`GravityType` all present as public fields. `GravityTypeValue.Elevator_Static`/`Arm_Cosine` both present. `getClosedLoopReference(): StatusSignal<Double>` confirmed present on `CoreTalonFX`, alongside the rest of the `getClosedLoop*`/`getDifferentialClosedLoop*` signal family |
+| `org.wpilib.simulation.ElevatorSim` — compiled, not guessed, see R22 | Confirmed present under the new package root, `extends LinearSystemSim<N2, N1, N2>`. Three constructor overloads; the `(DCMotor, double gearing, double carriageMassKg, double drumRadiusMeters, double minHeightMeters, double maxHeightMeters, boolean simulateGravity, double startingHeightMeters, double... stdDevs)` one matches the old course's usage with no changes needed |
+| `TalonFXConfiguration`'s `MotionMagic`/`Slot0` fields — compiled, not guessed, see R22 | Confirmed via `javap`: public fields `MotionMagic` (`MotionMagicConfigs`) and `Slot0`/`Slot1`/`Slot2` (`Slot0Configs`/etc.), same direct-field-assignment pattern already used for `Feedback` since Lesson 12 |
+| `org.wpilib.units.Measure<U>`'s ordering methods — compiled, not guessed, see R22 | `default boolean gt(Measure<U>)`/`gte(...)`/`lt(...)`/`lte(...)`, plus `isNear(Measure<?>, double)` (percent tolerance) and `isNear(Measure<U>, Measure<U>)` (absolute tolerance) and `compareTo`. All inherited by every measure type (`Distance`, `LinearVelocity`, ...) with no extra work |
+| `org.wpilib.units.measure.LinearAcceleration`/`Mass` and `Units.Kilograms`/`Centimeters`/`Inches`/`MetersPerSecondPerSecond` — compiled, not guessed, see R22 | All confirmed present in `wpiunits-java`, unchanged from pre-2027 naming |
 
 ---
 
@@ -2301,3 +2380,59 @@ appendices: verify before drafting, record what you verified.
       here and in R2/R21, not in the lesson prose. Full compile
       re-verified from a fresh sandbox (0–16), plus independent
       regression checkpoints at 1, 3, 4, 7, 9, 10, 11, 12, 13, 14, and 15.
+- [x] Lesson 17 (BLine autos) investigated and skipped, 2026-08-13 — no
+      `docs/lessons/v3/17-*.md`, no `code/v3/lesson-17/`. BLine `v0.9.1`
+      confirmed structurally incompatible with this 2027 alpha by direct
+      compile attempt, worse off than maple-sim: `FollowPath extends
+      edu.wpi.first.wpilibj2.command.Command` (Commands V2's own base
+      class) and `FollowPath.Builder`'s constructor requires an
+      `edu.wpi.first.wpilibj2.command.Subsystem` — a rewrite against
+      Commands V3, not a recompile, and JitPack's build history shows no
+      V3 work in progress. Presented to the user via `AskUserQuestion`
+      alongside the harder-to-build "interim hand-built stand-in" option
+      (explicitly framed as a bigger undertaking than Lesson 16's, not the
+      same easy path); **decision: skip to Lesson 18 for now** — the
+      mechanisms arc doesn't depend on BLine or maple-sim. Lesson 17
+      remains a recorded, explicit gap (see R2, and the per-lesson impact
+      table) to revisit once BLine — or an equivalent — ships Commands V3
+      support.
+- [x] Lesson 18 (Scoring elevator) written and verified 2026-08-13 —
+      `docs/lessons/v3/18-elevator.md` and `code/v3/lesson-18/`, compiling
+      through `tools/verify-lessons-v3.sh 18`. First lesson in the
+      mechanisms arc, and the first `Mechanism` whose whole job is holding
+      a position against a constant disturbance rather than reaching one
+      and stopping. Ports the old lesson's `ElevatorIO`/
+      `ElevatorIOTalonFX`/`ElevatorIOSim`/`Elevator` structure onto Lesson
+      13's IO-layer spine with no shape changes — `Elevator extends
+      Mechanism`, mode-switch construction, a hand-registered
+      `Scheduler.getDefault().addPeriodic(this::periodic)` (no
+      `Mechanism`-provided hook, same as `Drivetrain`/`Localizer` before
+      it), `SmartDashboard.putNumber` logging in place of `@AutoLog`.
+      Motion Magic (`MotionMagicVoltage`/`MotionMagicConfigs`) and the
+      full `kG`/`kV`/`kA`/`kP` feedforward set (`Slot0Configs`,
+      `GravityTypeValue.Elevator_Static`) and `org.wpilib.simulation.
+      ElevatorSim` all confirmed via `javap` with unchanged signatures
+      from pre-2027 WPILib/Phoenix 6 — none of this config surface sits
+      inside the `org.wpilib` rename, matching R17's Lesson 12 finding.
+      `clampToTravel` hand-rolled on typed `Distance` values via
+      `Measure<U>`'s `.gt`/`.lt` (confirmed present, R10's missing
+      `MathUtil.clamp` still holds). **R22** has the real findings:
+      Slot0's `kV`/`kA`/`kP` gains are mechanism-side (drum rotations),
+      not rotor-side, confirmed both by `javap` and by arithmetic
+      (`kElevatorKV = 1.44 = 0.12 × kGearRatio(12)`, cross-checked against
+      the already-shipped `DriveConstants.kDriveKV`'s own "volts per wheel
+      rotation/sec" convention); and every feedforward-term number in the
+      lesson's tuning section was independently measured against this
+      alpha's own simulated physics rather than reused from the old
+      course — steady-state hold sag with `kG` zeroed (≈1.6 mm), the
+      full-model settle floor (≈0.12 mm, closely matching the main
+      course's own independently-measured Lesson 33 figure), and
+      full-travel tracking lag with `kV` zeroed vs. restored (≈145 mm vs.
+      ≈34 mm). Verified end to end with a real `DriverStationSim`-backed
+      test: `goToHeight(kScoreMid)` converges within tolerance and the
+      command finishes once `atGoal()` is true, and a deliberately
+      out-of-range goal (`Meters.of(5.0)`) settles at `kMaxHeight`, not
+      the requested height, confirming the clamp runs before the request
+      ever reaches the motor. Full compile re-verified from a fresh
+      sandbox (0–18), plus an independent regression checkpoint at 16
+      (the highest prior lesson, since 17 doesn't exist).

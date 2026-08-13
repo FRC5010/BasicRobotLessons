@@ -478,5 +478,4 @@ guess — the same one-line supplier swap you'd make to point a real camera
 at a real robot's real position, because that's what a real camera was
 doing all along.
 
-Next: Lesson 17 — autonomous paths, aimed at a robot whose position you can
-finally trust.
+Next: [Lesson 18 — Scoring elevator: the first mechanism whose whole job is holding a position against gravity](18-elevator.md).
