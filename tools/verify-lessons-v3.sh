@@ -88,6 +88,7 @@ MARKETPLACE="https://raw.githubusercontent.com/wpilibsuite/vendor-json-repo/main
 # in code/OpModeV3Robot/vendordeps/, copied from wpilib source directly.
 VENDORDEPS=(
   "1|$MARKETPLACE/Phoenix6-26.50.0-alpha-1.json"
+  "15|$MARKETPLACE/photonlib-v2027.0.0-alpha-2.json"
 )
 
 say() { printf '\n\033[1m==> %s\033[0m\n' "$*"; }
@@ -157,6 +158,7 @@ say "Applying the deletions the lessons instruct"
 del() { [ "$THROUGH" -ge "$1" ] && shift && for f; do rm -f "$JAVA_DIR/$f"; done || true; }
 del 7  subsystems/DriveModule.java   # became SwerveModule
 del 9  opmode/MyTeleop.java opmode/MyAuto.java   # became RobotTeleop / RobotAuto
+del 15 subsystems/VisionPoseProvider.java   # became PhotonVisionPoseProvider
 echo "  done"
 fi
 

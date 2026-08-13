@@ -486,4 +486,4 @@ only reports what a button tells it to. A future lesson replaces it with the
 real thing: an actual camera reading actual AprilTags. Watch how much of
 `Localizer` would have to change to accept it. (Spoiler: none.)
 
-Next: Lesson 15 — Real vision.
+Next: [Lesson 15 — Real vision: PhotonVision and multi-camera simulation](15-photonvision.md).

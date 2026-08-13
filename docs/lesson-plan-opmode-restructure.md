@@ -541,7 +541,7 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 12 | Model-based control | Low | Written and verified 2026-08-13. Phoenix 6 config/control-request API ports essentially unchanged (not part of the `org.wpilib` 2027 rename) — `TalonFXConfiguration`, `PositionVoltage`/`VelocityVoltage`, `FeedbackSensorSourceValue.RemoteCANcoder` all confirmed via `javap`. Real end-to-end sim convergence verified for both loops — see [R17](#risks-and-blocking-unknowns) |
 | 13 | IO layers & replay | **High** | Written and verified 2026-08-13. Structure (interfaces, Inputs classes, `Constants.Mode` switch, IO implementations) ported clean, with the owning class (`SwerveModule`/`Drivetrain`) `SmartDashboard.putNumber`-ing its own Inputs fields manually instead of `@AutoLog`/`Logger.processInputs`. **Actual replay is deferred** — `REPLAY` stays a dormant, unreachable switch arm, verified via a real test to construct cleanly and leave every reading at its Inputs class's default — see [R1](#risks-and-blocking-unknowns). Also pays off Lesson 7's Try It 4 (named CAN ID/offset constants finally wired into the module array) and deletes `Drivetrain.simulatePeriodic()`/empties `Robot.simulationPeriodic()`, a v3-specific consequence of `Mechanism` having no `simulationPeriodic()` hook of its own — see [R18](#risks-and-blocking-unknowns) |
 | 14 | Pose estimator & localizer | Low | Written and verified 2026-08-13. Not a `SubsystemBase` → `Mechanism` rename after all — `Localizer` ships as a **plain class**, since it drives nothing and no command needs to require it; `Scheduler.addPeriodic(Runnable)` gives it a heartbeat with no `Mechanism`-ness needed. `SwerveDrivePoseEstimator`/`VecBuilder`/`Timer.getTimestamp()` all ported clean — see [R19](#risks-and-blocking-unknowns), which also corrects R18's retracted jvmArgs claim with a clean repro |
-| 15 | PhotonVision | Medium | Vendordep confirmed present for 2027 alpha (`photonlib-v2027.0.0-alpha-2.json`); `OpModeRobot`-specific integration still unverified — [R2](#risks-and-blocking-unknowns) |
+| 15 | PhotonVision | ~~Medium~~ Low | Written and verified 2026-08-13. Vendordep fetches, compiles, and runtime-verifies clean — `OpModeRobot` integration confirmed working via a real `DriverStationSim`-backed multi-tag detection test, not just "the API compiles." Real finding, not anticipated by this plan: this course's vision-sim has no independent ground truth, so it can demonstrate accurate tracking but not recovering from a bad pose or exposing a miscalibrated camera — see [R20](#risks-and-blocking-unknowns), which also retires the old lesson's "mismeasure the camera" Try It (doesn't work here) with a corrected one that teaches the limitation directly |
 | 16 | maple-sim | Medium | 2027/SystemCore status still unverified — [R2](#risks-and-blocking-unknowns). `Robot.simulationPeriodic()`'s "shared world state" exception still has a home on `OpModeRobot` |
 | 17 | BLine autos | **High** | BLine's 2027 status still unverified (R2) *and* this is where the resolved multi-`@Autonomous` selection decision (OD3) actually lands — `Autos.buildChooser` retires |
 | 18–23 | Elevator … LEDs | Low | `SubsystemBase` → `Mechanism` rename; IO-layer pattern (Lesson 13's spine) is unaffected by this table's changes once Lesson 13 itself is resolved |
@@ -716,17 +716,24 @@ out badly.
   support — track AdvantageKit's releases for that, the same way this entry
   originally recommended, just no longer as a precondition for writing
   lessons today.
-- **R2 — partially de-risked:** PhotonVision's 2027 alpha vendordep is
-  confirmed to exist (`photonlib-v2027.0.0-alpha-2.json`, in the same
-  `vendor-json-repo/2027_alpha5/` bucket as `AdvantageKit-27.0.0-alpha-4.json`
-  and `Phoenix6-26.50.0-alpha-1.json`) — its `OpModeRobot`-specific
-  integration is still unverified, but the library itself is real for this
-  season, unlike before. **maple-sim and BLine remain fully unverified** —
-  neither publishes through `vendor-json-repo` even in the current course
-  (maple-sim ships from `shenzhen-robotics-alliance.github.io`, BLine from
-  `jitpack.io`), so their 2027/SystemCore status has to be checked at those
-  hosts directly, not inferred from this search. Each gates a meaningful
-  chunk of the back half of the course (Lessons 15–17, 22, 25–28).
+- **R2 — PhotonVision arm fully de-risked as of Lesson 15, 2026-08-13; maple-sim
+  and BLine remain fully unverified.** PhotonVision's 2027 alpha vendordep
+  (`photonlib-v2027.0.0-alpha-2.json`, `vendor-json-repo/2027_alpha5/`) not
+  only fetches and compiles against `code/OpModeV3Robot` — its
+  `OpModeRobot`-specific integration is now runtime-verified: a real
+  `DriverStationSim`-backed test built an actual `VisionSystemSim`/
+  `PhotonCameraSim`/`PhotonPoseEstimator` pipeline and confirmed it produces
+  correct multi-tag pose observations through the full `Drivetrain` →
+  `Localizer` → `PhotonVisionPoseProvider` → `SwerveDrivePoseEstimator` stack.
+  See R20 for the full findings, including a real, non-obvious limitation of
+  this course's vision-sim architecture that was *not* anticipated by this
+  plan and was found only by testing, not by reading the API. **maple-sim and
+  BLine remain fully unverified** — neither publishes through
+  `vendor-json-repo` even in the current course (maple-sim ships from
+  `shenzhen-robotics-alliance.github.io`, BLine from `jitpack.io`), so their
+  2027/SystemCore status has to be checked at those hosts directly, not
+  inferred from this search. Each gates a meaningful chunk of the back half
+  of the course (Lessons 16–17, 22, 25–28).
 - **R3 — pin confirmed, and API confirmed too, by actually compiling against
   it.** Phoenix 6's 2027 alpha vendordep for this project's WPILib version is
   `Phoenix6-26.50.0-alpha-1.json` (with a matching
@@ -1477,6 +1484,76 @@ out badly.
     button in this lesson, exactly matching Lesson 11's original "sketch"
     framing and the old (2026) course's own precedent of leaving it
     unbound until a much later lesson.
+- **R20 — new, found while writing and verifying Lesson 15, all confirmed
+  by `javap` against the real jars and real `DriverStationSim`-backed
+  tests, not ported from the old lesson on trust.** PhotonLib's 2027 alpha
+  (`v2027.0.0-alpha-2`) API surface matches the old lesson's calls almost
+  exactly — `PhotonCamera(String)`, `PhotonCamera.getAllUnreadResults()`,
+  `PhotonPoseEstimator(AprilTagFieldLayout, Transform3d)`,
+  `.estimateCoprocMultiTagPose(...)`/`.estimateLowestAmbiguityPose(...)`
+  (both still present, alongside several new strategy methods this alpha
+  adds that the lesson doesn't need — `estimatePnpDistanceTrigSolvePose`,
+  `estimateConstrainedSolvepnpPose`, `estimateRioMultiTagPose`,
+  `estimateClosestToCameraHeightPose`, `estimateClosestToReferencePose`,
+  `estimateAverageBestTargetsPose`), `EstimatedRobotPose`'s three public
+  fields, `VisionSystemSim`/`PhotonCameraSim`/`SimCameraProperties`'
+  constructors and every method the lesson calls — all confirmed via
+  `javap`, all unchanged in name and shape. `org.photonvision.*` sits
+  outside the `org.wpilib` 2027 rename entirely, same as Phoenix 6 (R17);
+  only WPILib's own `AprilTagFieldLayout`/`AprilTagFields` moved packages,
+  to `org.wpilib.vision.apriltag` (confirmed via `javap`, not guessed from
+  the rename pattern holding elsewhere).
+
+  - **The vendordep itself is now proven, not just present.** R2 had only
+    confirmed `photonlib-v2027.0.0-alpha-2.json` exists in
+    `vendor-json-repo/2027_alpha5/`; this lesson actually fetched it (added
+    to `tools/verify-lessons-v3.sh`'s `VENDORDEPS` array at `15|...`),
+    resolved it through Gradle against `code/OpModeV3Robot`, and compiled
+    real code against the resulting jars — the first real evidence PhotonLib
+    installs cleanly on this alpha/SystemCore combination, not just that a
+    JSON file for it exists.
+  - **A real, non-obvious limitation of this course's vision-sim
+    architecture, found only by testing, not anticipated by this plan or
+    the old lesson's design.** `VisionIOPhotonVisionSim`'s `poseSupplier`
+    is `Localizer::getPose` — the *same* fused estimate vision then
+    corrects, per the lesson's own design (there's no independent ground
+    truth in this course's sim until maple-sim, Lesson 16). A first attempt
+    at an end-to-end test seeded the estimate 0.5 m off from a true pose
+    standing in front of a real tag and expected the simulated camera to
+    pull it back — it didn't; the error stayed flat across 150 ticks
+    (measured: 0.707 m → 0.719 m, no improvement). The mechanism, confirmed
+    by re-reading `VisionSystemSim.update(Pose2d)`'s contract: the fake
+    camera renders tag detections *as seen from the pose it's given*, so
+    when that pose is the (possibly wrong) current estimate, the resulting
+    correction is self-consistent with the wrong estimate, not pulled
+    toward the tag's real field position. **The same tautology defeats the
+    old lesson's Try It 3 too** ("mismeasure `kFrontRobotToCamera` by 0.3 m
+    and watch the fused pose skew") — a second real test proved it:
+    `robotToCamera` feeds both `VisionSystemSim.addCamera(cameraSim,
+    robotToCamera)` (placing the fake camera) and
+    `PhotonPoseEstimator`'s constructor (un-projecting detections back to a
+    robot pose), so a wrong value cancels against itself on both sides;
+    measured max error with a 0.3 m mismeasurement was 1.5 cm — indistinguishable
+    from ordinary simulated pixel noise, not the dramatic skew the old
+    lesson describes. **What *is* real and demonstrated:** with the
+    estimate correctly seeded, the fused pose stays within 15 cm of the
+    true pose across 150 ticks while a real multi-tag detection pipeline
+    runs (measured directly: raw per-frame observations landing within a
+    few centimeters of truth, `tagCount = 4` from a spot with four tags in
+    view) — confirming the pipeline itself is accurate; it just can't be
+    made to demonstrate *recovering from* an error, or exposing a
+    calibration mistake, until independent ground truth exists. Lesson 15's
+    prose and Try It 3 were written around this finding rather than
+    against it — see the lesson's section 10 callout.
+  - **The jvmArgs finding from R18/R19 reproduces a third time, unchanged.**
+    Every `Mechanism`-constructing test in this lesson's verification
+    needed the same three `jvmArgs` added to the sandbox's `test { }` block
+    before it would run past `Drivetrain`'s constructor; omitted again here
+    only for lessons already established, not re-litigated.
+
+  No lesson code ships a test — same precedent as Lessons 13–14. Every
+  finding above came from throwaway JUnit files in the verification
+  sandbox, written, run, and discarded.
 
 ---
 
@@ -1588,6 +1665,10 @@ appendices: verify before drafting, record what you verified.
 | `org.wpilib.math.linalg.VecBuilder`/`Vector<N>` — compiled, not guessed, see R19 | Moved from the pre-2027 `edu.wpi.first.math` root to `org.wpilib.math.linalg`. `Vector<R> extends Matrix<R, N1>`, confirmed via `javap`, so `VecBuilder.fill(double, double, double)`'s `Vector<N3>` result is assignment-compatible with a `Matrix<N3, N1>` parameter (e.g. `setVisionMeasurementStdDevs`) with no cast |
 | `org.wpilib.system.Timer` — compiled, not guessed, see R19 | No `getFPGATimestamp()` in this alpha (confirmed via full `javap` listing); renamed `getTimestamp()`. Consistent with the aside-odometry-thread appendix's already-recorded `Timer::getTimestamp` reference |
 | `Scheduler.addPeriodic(Runnable)` doesn't require a `Mechanism` — confirmed, used deliberately by Lesson 14's `Localizer`, see R19 | Takes a bare `java.lang.Runnable`, confirmed via `javap`. Any class can get a scheduler heartbeat this way, not just `Mechanism` subclasses — `Localizer` is the first class in the track to rely on `addPeriodic` as its *only* connection to the scheduler, with no `Mechanism`-ness alongside it, verified to tick correctly in a real test |
+| PhotonLib `v2027.0.0-alpha-2` — compiled against real jars, not guessed, see R20 | `org.photonvision.*` package names unchanged from pre-2027 PhotonLib (sits outside the `org.wpilib` rename, same as Phoenix 6). `PhotonCamera(String)`, `.getAllUnreadResults()`, `PhotonPoseEstimator(AprilTagFieldLayout, Transform3d)`, `.estimateCoprocMultiTagPose(PhotonPipelineResult)`/`.estimateLowestAmbiguityPose(PhotonPipelineResult)` all confirmed present with unchanged signatures. `EstimatedRobotPose`'s three public fields (`estimatedPose`, `timestampSeconds`, `targetsUsed`) confirmed unchanged. New in this alpha, not used by the lesson: `estimatePnpDistanceTrigSolvePose`, `estimateConstrainedSolvepnpPose`, `estimateRioMultiTagPose`, `estimateClosestToCameraHeightPose`, `estimateClosestToReferencePose`, `estimateAverageBestTargetsPose` |
+| `org.wpilib.vision.apriltag.AprilTagFieldLayout`/`AprilTagFields` — compiled, not guessed, see R20 | Moved from the pre-2027 `edu.wpi.first.apriltag` root. `AprilTagFieldLayout.loadField(AprilTagFields)` static factory confirmed present; `AprilTagFields.kDefaultField`/`k2026RebuiltWelded`/`k2026RebuiltAndymark` all confirmed present among the enum's values |
+| `org.photonvision.simulation.VisionSystemSim`/`PhotonCameraSim`/`SimCameraProperties` — compiled and end-to-end runtime-verified, see R20 | `VisionSystemSim(String)`, `.addAprilTags(AprilTagFieldLayout)`, `.getDebugField()` (returns `org.wpilib.smartdashboard.Field2d` — this track's own type, no cross-package mismatch), `.addCamera(PhotonCameraSim, Transform3d)`, `.update(Pose2d)` all confirmed present and, unlike most appendix rows, verified to actually *work*: a real test drove a simulated camera to correctly report a multi-tag pose within centimeters of a known true position |
+| `VisionSystemSim`'s vision-sim architecture has no independent ground truth — a real, tested limitation, not a guess, see R20 | `poseSupplier` (fed to `VisionIOPhotonVisionSim`) is the same fused `Localizer` estimate vision itself corrects. Confirmed by two failed-as-expected tests: seeding a deliberately wrong pose near a real tag never converged toward the tag's true position (error flat at ~0.71 m over 150 ticks), and mismeasuring `robotToCamera` by 0.3 m produced no detectable skew (max error 1.5 cm, indistinguishable from ordinary sim noise) — because that same transform is used to both place the fake camera and un-project its detections, canceling itself out. What *is* verified to work: the fused pose tracks a correctly-seeded true pose within 15 cm over 150 ticks of real multi-tag detections |
 
 ---
 
@@ -1982,3 +2063,32 @@ appendices: verify before drafting, record what you verified.
       original appendix claim was right, and the fix lives only in the
       verification sandbox since no lesson through 14 ships a test. Full
       compile re-verified from a fresh sandbox (0–14).
+- [x] Lesson 15 (Real vision: PhotonVision and multi-camera simulation)
+      written and verified 2026-08-13 — `docs/lessons/v3/15-photonvision.md`
+      and `code/v3/lesson-15/`, compiling through
+      `tools/verify-lessons-v3.sh 15` (which now fetches
+      `photonlib-v2027.0.0-alpha-2.json` at lesson 15+, added to the
+      script's `VENDORDEPS` array). **R2 fully de-risked for PhotonVision**:
+      not just "the vendordep exists," but a real `DriverStationSim`-backed
+      test built an actual `VisionSystemSim`/`PhotonCameraSim`/
+      `PhotonPoseEstimator` pipeline through the full `Drivetrain` →
+      `Localizer` → `PhotonVisionPoseProvider` → `SwerveDrivePoseEstimator`
+      stack and confirmed it produces accurate multi-tag detections (fused
+      pose within 15 cm of truth over 150 ticks). Ports `VisionIO`/
+      `VisionIOPhotonVision`/`VisionIOPhotonVisionSim`/
+      `PhotonVisionPoseProvider` with the Lesson 13 IO-layer pattern
+      (manual `StructArrayPublisher` logging in place of `@AutoLog`, a
+      dormant `REPLAY` arm, verified empty) and deletes the Lesson 14 fake
+      `VisionPoseProvider`/Start-button binding. **R20** is the real find:
+      two tests that were expected to pass — "vision corrects a
+      deliberately-wrong seeded pose" and the old lesson's own Try It 3
+      ("mismeasure the camera, watch the pose skew") — both failed as
+      written, and re-reading `VisionSystemSim.update(Pose2d)`'s contract
+      explained why: `VisionIOPhotonVisionSim`'s `poseSupplier` is the same
+      fused estimate vision then corrects, so both the sim's rendering and
+      the pose math are self-referential with no independent ground truth
+      to check against — a limitation neither this plan nor the old lesson
+      anticipated, found only by testing. Lesson 15's section 10 callout
+      and Try It 3 were rewritten around this finding rather than silently
+      dropped. Full compile re-verified from a fresh sandbox (0–15), plus
+      independent checkpoints at 1, 3, 4, 7, 9, 10, 11, 12, 13, and 14.
