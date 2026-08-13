@@ -537,7 +537,7 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 8 | Gyro & heading | Low–Medium | Written and compiled 2026-08-11. `Pigeon2` needed the same `(int, CANBus)` constructor shift as every other Phoenix device since Lesson 1; `getYaw()` needed the same `.getValue().in(Degrees)` unpack as every `StatusSignal` since Lesson 3. No numeric surprise this time — the fake-gyro integration has no momentum to overshoot with, so Lesson 5's/7's kP-mismatch story doesn't repeat; the old lesson's `kP = 0.02` was verified to converge cleanly (well under a second, no overshoot) with a real end-to-end `DriverStationSim`-backed test. `turnToHeading` is the second finishing command (after Lesson 6's `driveDistance`) and the first one whose loop body does real per-tick work instead of just polling — written as an explicit `while` + `coroutine.yield()` rather than `coroutine.waitUntil(...)`, and the lesson explains why: `waitUntil` is exactly this loop shape with no work in the body |
 | 9 | Autonomous | **High** | Written and compiled 2026-08-11. The rename landed here as planned (`MyTeleop`→`RobotTeleop`, `MyAuto`→`RobotAuto`, both in place, `tools/verify-lessons-v3.sh` gained the matching deletion entries), and `coroutine.await(...)` got its dedicated contrast against `Command.sequence(...)`, per-mechanism-release explained honestly as "not demonstrable with one mechanism yet, but the shape to reach for." **The load-bearing finding is R11**: there is no `getAutonomousCommand()` hook in this framework at all — `RobotAuto` schedules its own plan via `RobotModeTriggers.autonomous().onTrue(...)` in its constructor, and a real scheduler test (after finding and fixing a test-setup trap, `DriverStationBackend.observeUserProgramStarting()`) confirms this is correctly opmode-scoped: the scheduled auto sequence is cancelled automatically the instant the DS selects a different opmode, the same scoping already protecting every button binding since Lesson 1. `Command.parallel`'s `.optional(...)`/`.requiring(...)` mix (confirmed via bytecode to unify V2's separate `parallel`/`race`/`deadline` into one mechanism) replaces the old lesson's `Commands.deadline`. OD3's Lesson 17-deferred multi-auto decision effectively also landed here in miniature — the old lesson's `LoggedDashboardChooser` bonus section is replaced by a second `@Autonomous` opmode, the framework's native mechanism, since AdvantageKit was never installed in this track to begin with |
 | 10 | Kinematics | Low | Written and verified 2026-08-12. `SwerveModuleState`→`SwerveModuleVelocity` and `ChassisSpeeds`→`ChassisVelocities` (fields `vx`/`vy`/`omega`, not the old `*MetersPerSecond`/`omegaRadiansPerSecond` names), `toSwerveModuleStates`→`toSwerveModuleVelocities`, `desaturateWheelSpeeds`→`desaturateWheelVelocities`. **`optimize` is now a pure function, not a mutator** — see [R14](#risks-and-blocking-unknowns) |
-| 11 | Odometry & field view | Medium | `Field2d`/`SmartDashboard.putData` needs a live-sandbox check, not just a source read |
+| 11 | Odometry & field view | Medium | Written and verified 2026-08-12. `Field2d`/`SmartDashboard.putData` confirmed working, not just source-read. `Odometry.getPoseMeters()`→`getPose()`, no `periodic()` hook to add to (folded into the existing `logTelemetry()` callback instead). **`.until(...)` genuinely simplifies cleanup vs. Lesson 6's `driveDistance`** — see [R16](#risks-and-blocking-unknowns) |
 | 12 | Model-based control | Low | Phoenix 6 config/control-request API; SystemCore Phoenix 6 alpha status noted in [R3](#risks-and-blocking-unknowns) |
 | 13 | IO layers & replay | **High** | Structure (interfaces, Inputs classes, `Constants.Mode` switch, IO implementations) carries over; each IO implementation logs its own Inputs fields manually via `SmartDashboard.putNumber(...)` instead of `@AutoLog`/`Logger.processInputs`. **Actual replay is deferred** — `REPLAY` stays a dormant, unreachable switch arm until a follow-up pass — see [R1](#risks-and-blocking-unknowns) |
 | 14 | Pose estimator & localizer | Low | `SubsystemBase` → `Mechanism` rename only |
@@ -1203,6 +1203,57 @@ out badly.
   Lessons 3–7 actually need. **Recorded here as the concrete recommended
   shape for that already-deferred future lesson**, exhaustiveness caveat
   included, rather than left as an abstract "revisit later."
+- **R16 — new, found while writing Lesson 11, all confirmed by `javap` and
+  real tests, not ported unchecked from the old lesson.** Odometry itself
+  ported mechanically clean — `SwerveModulePosition`, `SwerveDriveOdometry`,
+  and `Pose2d` all exist under `org.wpilib.math.*` with the same shapes the
+  old lesson used. Three real findings, none of them "it just works":
+
+  **`Odometry<T>.getPoseMeters()` is gone — it's `getPose()` now.**
+  Confirmed via `javap` on the parent `Odometry<T>` class (`SwerveDriveOdometry`
+  extends it and inherits the getter unchanged). A verbatim port of the old
+  lesson's `m_odometry.getPoseMeters()` would fail to compile, not silently
+  misbehave — the safer kind of API break, but still one that had to be
+  caught before shipping.
+
+  **No `periodic()` to add odometry's per-tick update to.** This track's
+  `Mechanism` has never had one (established since Lesson 3/4) —
+  `Drivetrain` feeds everything through the `logTelemetry()` callback
+  already registered in its constructor. The old lesson's "add to
+  `Drivetrain.periodic()`" instructions don't have a literal target here;
+  Lesson 11 folds the odometry update into the existing `logTelemetry()`
+  instead and says so directly, rather than silently renaming the
+  instruction and hoping nobody notices the mismatch.
+
+  **`.until(BooleanSupplier)` genuinely simplifies cleanup, verified with a
+  real scheduler test, not assumed from the name.** Two things confirmed
+  that weren't obvious going in: (1) `NeedsNameBuilderStage.until(...)` (the
+  builder-stage overload, called before `.named(...)`) is a different method
+  from `Command.until(...)` (the already-built-`Command` overload, which
+  wraps in a `ParallelGroupBuilder` and needs a second `.named(...)`) — using
+  the builder-stage one lets `driveToPose` stay a single `.named(...)` call
+  at the end of one chain. (2) **`.whenCanceled(...)` fires every time
+  `.until(...)` stops a command** — confirmed with a real test tracking both
+  a tick counter and a `whenCanceled`-fired flag across the condition
+  flipping true — which is a genuine, useful contrast with R9's Lesson 6
+  finding (`.whenCanceled` does *not* fire when a coroutine body finishes
+  naturally on its own). `.until(...)`'s finish is implemented as an
+  interruption under the hood, not a natural finish, so it always fires the
+  cleanup — meaning `driveToPose` needs exactly one `.whenCanceled(...)`
+  callback covering both "reached the target" and "got interrupted," unlike
+  `driveDistance`'s two separate cleanup paths in Lesson 6. Also confirmed:
+  when the `.until(...)` condition is already true the instant the command
+  is scheduled, the body still runs one tick before finishing (checked
+  after each tick, not before) — not a zero-tick instant-complete case like
+  R14's `turnToHeading` finding.
+
+  **A real numeric correction to the old lesson's own Try It, not
+  carried over unchecked.** The old lesson's Try It #3 claims
+  `target.getRotation().minus(current.getRotation())` for a robot at −170°
+  with a target at +170° "should read about +20°." A real test of the exact
+  same expression in this alpha's `Rotation2d` gives **−20.0°**, not +20° —
+  confirmed numerically, not a sign-convention guess. Lesson 11's Try It
+  ships the verified value.
 
 ---
 
@@ -1296,6 +1347,11 @@ appendices: verify before drafting, record what you verified.
 | `SwerveModuleVelocity.cosineScale(Rotation2d)` — disassembled via `javap -c`, discovered not ported from the old lesson (didn't exist in that API), see R14 | Pure function, confirmed from bytecode: returns `new SwerveModuleVelocity(velocity * angle.minus(currentAngle).getCos(), angle)` — the exact hand-rolled cosine-compensation trick Lesson 9 already built into `SwerveModule.setDesiredState`, now available as a one-line library call. Not adopted in Lesson 10 (see R14 for why), but recorded so a future maintainer doesn't rediscover it as a surprise |
 | `SwerveModuleVelocity`/`ChassisVelocities` field storage vs. constructor — compiled, not guessed | Both types accept a `LinearVelocity`/`AngularVelocity`-typed constructor, but the field actually stored (`velocity`, or `vx`/`vy`/`omega`) is a plain `double`, confirmed via `javap`. Units apply at the boundary where the value is built; once inside these particular kinematics types, the math is bare doubles — the same "Units at the edges, plain numbers in the middle" rule the course has followed since Lesson 3, now visible inside a library type instead of just user code |
 | `Rotation2d.fromDegrees(...).getDegrees()` normalizes — confirmed with a real test, worth recording so it isn't mistaken for a different method's bug | `Rotation2d.fromDegrees(190).getDegrees()` returns `-170.0`, not `190.0` — `Rotation2d` stores/reports angles normalized to (-180, 180], which is `Rotation2d`'s own long-standing behavior, not anything `optimize()` or `cosineScale()` do to it. Surfaced during R14's testing and initially looked like it might be an `optimize()` discrepancy before the actual source was traced |
+| `org.wpilib.math.kinematics.SwerveModulePosition`/`SwerveDriveOdometry`/`org.wpilib.math.geometry.Pose2d` — compiled, not guessed, see R16 | All present under `org.wpilib.math.*` with the pre-2027 shapes intact. `SwerveModulePosition` fields `distance`/`angle` (plus a `Distance`-typed constructor overload). `SwerveDriveOdometry(SwerveDriveKinematics, Rotation2d, SwerveModulePosition[])` (3-arg, defaults to origin) and the 4-arg overload taking an initial `Pose2d`; `update(Rotation2d, SwerveModulePosition[])` returns the fresh `Pose2d` directly. `Pose2d` unchanged: `getX()`/`getY()`/`getRotation()`, `minus(Pose2d)` returning a `Transform2d` (`.getTranslation().getNorm()` for the scalar distance), `.struct` present |
+| `Odometry<T>.getPose()` — compiled, not guessed, corrects the old API's `getPoseMeters()`, see R16 | The parent class `SwerveDriveOdometry` extends, confirmed via `javap`: `getPose()`, not `getPoseMeters()`. A verbatim port of the old lesson's call fails to compile — the safe kind of break |
+| `NeedsNameBuilderStage.until(BooleanSupplier)` vs. `Command.until(BooleanSupplier)` — both compiled, behaviorally distinct, see R16 | Two different methods with the same name at different points in the builder chain. `NeedsNameBuilderStage.until(...)` (called on `run(...)`/`runRepeatedly(...)`'s return value, before `.named(...)`) returns `NeedsNameBuilderStage`, so the chain still finishes with one `.named(...)`. `Command.until(...)` (called on an already-built `Command`) returns a `ParallelGroupBuilder` that itself needs a *second* `.named(...)`/`.withAutomaticName()`. Using the builder-stage one keeps `driveToPose` a single chain |
+| `.until(...)`'s finish mechanism — behavior-verified with a real scheduler test, not inferred, see R16 | Ends the command via **interruption**, not a natural coroutine finish — confirmed by tracking a `.whenCanceled(...)` flag alongside a tick counter: the flag is set the same tick the condition flips true and the command stops. This is the deliberate contrast with R9 (Lesson 6): a coroutine body returning on its own does *not* fire `.whenCanceled(...)`, but `.until(...)` always does, because its stop mechanism is cancellation either way. Also confirmed: if the condition is already true at schedule time, the body still executes once before the command finishes (checked after each tick) — not a zero-tick case |
+| `Rotation2d.minus` sign, re-verified rather than trusted from the old lesson's Try It text, see R16 | `Rotation2d.fromDegrees(170).minus(Rotation2d.fromDegrees(-170))` returns **−20.0°** via a real test, not the old lesson's claimed "+20°". `Rotation2d`'s wrap-to-shortest-path behavior itself is correct and unchanged (confirmed magnitude is 20°, matching "turn the short way, not 340°") — only the sign printed in the old lesson's prose was wrong for this alpha, or possibly always was |
 | Build target | `code/OpModeV3Robot/build.gradle`: `sourceCompatibility`/`targetCompatibility = JavaVersion.VERSION_25`, GradleRIO `2027.0.0-alpha-6`, shadow plugin `9.3.0`; deploys to a `SystemCore` target via `getTargetTypeClass('SystemCore')` |
 
 ---
@@ -1569,3 +1625,25 @@ appendices: verify before drafting, record what you verified.
       concrete recommended shape for R12's already-deferred "richer event
       system" revisit, exhaustiveness caveat included. See R15 and the
       updated `SchedulerEvent` appendix row.
+- [x] Lesson 11 (Odometry & field view) written and verified 2026-08-12 —
+      `docs/lessons/v3/11-odometry-field.md` and `code/v3/lesson-11/`,
+      compiling through `tools/verify-lessons-v3.sh 11`. **R16** covers the
+      real findings: `Odometry<T>.getPoseMeters()` renamed to `getPose()`
+      (confirmed via `javap`, would have failed to compile ported
+      verbatim); no `periodic()` hook exists to add the odometry update to
+      (folded into the already-registered `logTelemetry()` callback
+      instead, with the lesson saying so directly rather than silently
+      papering over the old lesson's instructions); and — the one with
+      real teaching value — `.until(...)` reliably fires
+      `.whenCanceled(...)` on every ending (confirmed with a real scheduler
+      test), the deliberate contrast with R9's Lesson 6 finding that a
+      natural coroutine finish does *not* fire it, which lets
+      `driveToPose` use one cleanup path where `driveDistance` needed two.
+      Also caught and corrected a real numeric error in the old lesson's
+      own Try It text: `Rotation2d.fromDegrees(170).minus(Rotation2d.fromDegrees(-170))`
+      is verified **−20°**, not the old lesson's claimed "+20°". Verified
+      end to end with `DriverStationSim`-backed tests: driving forward
+      increases odometry's X, `resetPose` moves the tracked origin exactly,
+      and `driveToPose` converges to within its 5 cm tolerance and stops
+      cleanly. Full compile re-verified from a fresh sandbox (0–11) plus
+      independent checkpoints at 1, 3, 4, 7, 9, 10.
