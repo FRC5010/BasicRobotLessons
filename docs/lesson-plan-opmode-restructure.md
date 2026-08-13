@@ -543,7 +543,7 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 14 | Pose estimator & localizer | Low | Written and verified 2026-08-13. Not a `SubsystemBase` → `Mechanism` rename after all — `Localizer` ships as a **plain class**, since it drives nothing and no command needs to require it; `Scheduler.addPeriodic(Runnable)` gives it a heartbeat with no `Mechanism`-ness needed. `SwerveDrivePoseEstimator`/`VecBuilder`/`Timer.getTimestamp()` all ported clean — see [R19](#risks-and-blocking-unknowns), which also corrects R18's retracted jvmArgs claim with a clean repro |
 | 15 | PhotonVision | ~~Medium~~ Low | Written and verified 2026-08-13. Vendordep fetches, compiles, and runtime-verifies clean — `OpModeRobot` integration confirmed working via a real `DriverStationSim`-backed multi-tag detection test, not just "the API compiles." Real finding, not anticipated by this plan: this course's vision-sim has no independent ground truth, so it can demonstrate accurate tracking but not recovering from a bad pose or exposing a miscalibrated camera — see [R20](#risks-and-blocking-unknowns), which also retires the old lesson's "mismeasure the camera" Try It (doesn't work here) with a corrected one that teaches the limitation directly |
 | 16 | Ground truth (interim, no maple-sim) | Medium | Written and verified 2026-08-13. **User decision (2026-08-13): write an interim lesson without maple-sim** rather than skip or wait — maple-sim remains confirmed structurally incompatible with this 2027 alpha (see R2). Ships a hand-built `ChassisSimulation` (grip-limited `a = μg` acceleration via `MathUtil.slewRateLimit` on a `Translation2d`, exact integration via `Twist2d.exp()`) as a shared, `static`, sim-only chassis body — giving the track real ground truth, a real gyro fed from it, and real (not faked) drift, without needing maple-sim at all. Closes Lesson 15's own admitted compromise by re-wiring both cameras' `poseSupplier` from `Localizer::getPose` to `Drivetrain::getSimulatedPose`. No walls, no collisions, no game pieces — those stay out of scope until maple-sim (or an equivalent) actually becomes available; see R21. Presented to students with zero mention of maple-sim or blockers, framed as "build the physics by hand first," matching this course's own established rhythm (P-control by hand before firmware, wrap-loops by hand before `ContinuousWrap`) |
-| 17 | BLine autos | **High** | BLine's 2027 status still unverified (R2) *and* this is where the resolved multi-`@Autonomous` selection decision (OD3) actually lands — `Autos.buildChooser` retires |
+| 17 | BLine autos | **Blocking** | 2026-08-13: BLine confirmed structurally incompatible with this 2027 alpha by direct test — `FollowPath extends edu.wpi.first.wpilibj2.command.Command` (Commands V2's base class) and `FollowPath.Builder` requires an `edu.wpi.first.wpilibj2.command.Subsystem`; needs a rewrite against Commands V3, not a recompile. See [R2](#risks-and-blocking-unknowns). Awaiting user direction on how to proceed. This is also where the resolved multi-`@Autonomous` selection decision (OD3) lands, whenever this unblocks |
 | 18–23 | Elevator … LEDs | Low | `SubsystemBase` → `Mechanism` rename; IO-layer pattern (Lesson 13's spine) is unaffected by this table's changes once Lesson 13 itself is resolved |
 | 24 | Superstructure | Medium | `StateMachine` library primitive now exists — recommend keep the hand-rolled enum, reference the library the way the course references `MathUtil.clamp` |
 | 25 | Path events | Medium | `Trigger`'s auto-scoping may let the manual `.finallyDo(FollowPath::clearRotationOverride)` handback shrink or disappear — depends on whether BLine v3 exposes a scoped registration path; needs the same source-jar verification this course already applies to BLine |
@@ -717,7 +717,7 @@ out badly.
   originally recommended, just no longer as a precondition for writing
   lessons today.
 - **R2 — split three ways as of 2026-08-13: PhotonVision de-risked, maple-sim
-  now CONFIRMED BLOCKING (not just unverified), BLine still unchecked.**
+  and BLine both CONFIRMED BLOCKING (not just unverified).**
   PhotonVision's 2027 alpha vendordep (`photonlib-v2027.0.0-alpha-2.json`,
   `vendor-json-repo/2027_alpha5/`) not only fetches and compiles against
   `code/OpModeV3Robot` — its `OpModeRobot`-specific integration is now
@@ -757,11 +757,31 @@ out badly.
   the lesson for now / write a physics-free interim / wait and retry later)
   rather than resolved unilaterally.
 
-  **BLine remains fully unverified** — distributes from `jitpack.io`, not
-  `vendor-json-repo`, and wasn't checked this session (out of scope for the
-  maple-sim investigation; gates Lesson 17, immediately next). Each of
-  these two gates a meaningful chunk of the back half of the course
-  (Lessons 16–17, 22, 25–28).
+  **BLine moved from "unverified" to "confirmed structurally
+  incompatible" too, the same day, tested the same way — and it's worse
+  off than maple-sim, not just similarly blocked.** Its own vendordep
+  (`bline-metrics.edan-liahovetsky.workers.dev/vendor/BLine-Lib.json`) has
+  the identical `frcYear: "2026"` schema-key problem (patchable the same
+  way). But BLine's compiled API doesn't just *use* pre-rename WPILib data
+  types — `FollowPath` itself `extends edu.wpi.first.wpilibj2.command.Command`,
+  Commands **V2's** base class, and `FollowPath.Builder`'s constructor
+  requires an `edu.wpi.first.wpilibj2.command.Subsystem` as its first
+  argument. Confirmed by a real compile attempt: constructing a
+  `FollowPath.Builder` fails with `cannot access Subsystem: class file for
+  edu.wpi.first.wpilibj2.command.Subsystem not found`. This isn't a
+  namespace mismatch a recompile against `org.wpilib.*` types would fix —
+  BLine would need to be *rewritten* against Commands V3's `Command`
+  interface and coroutine model, an entirely different programming model
+  from the V2 base class it currently extends. JitPack's build history
+  (`jitpack.io/api/builds/...`) shows `v0.9.1` as the newest tag, same
+  version this track was already pinned to, with no indication of any V3
+  or 2027-targeted work in progress. **Neither maple-sim nor BLine can be
+  ported as designed on this alpha, for related but distinct reasons** —
+  maple-sim needs a recompile against renamed WPILib types; BLine needs a
+  rewrite against a different command framework entirely. Each gates a
+  meaningful chunk of the back half of the course (Lessons 16–17, 22,
+  25–28), and Lesson 17 (BLine autos) is next in line — flagged for a user
+  decision before writing it, the same way Lesson 16's was.
 - **R3 — pin confirmed, and API confirmed too, by actually compiling against
   it.** Phoenix 6's 2027 alpha vendordep for this project's WPILib version is
   `Phoenix6-26.50.0-alpha-1.json` (with a matching
@@ -1836,8 +1856,12 @@ appendices: verify before drafting, record what you verified.
       `edu.wpi.first.*` API, doesn't exist on this alpha's classpath at
       all), not just unverified. Lesson 16 ships as an interim, hand-built
       ground-truth lesson instead, per user decision — see R21.
-- [ ] Verify BLine's 2027-alpha status directly at its own host (R2) before
-      writing Lesson 17, immediately next — not yet checked this session.
+- [x] Verify BLine's 2027-alpha status directly at its own host (R2) —
+      resolved: confirmed structurally incompatible, worse off than
+      maple-sim — `FollowPath extends edu.wpi.first.wpilibj2.command.Command`
+      (Commands V2's base class, not just old data types), so this needs a
+      rewrite against Commands V3, not a recompile. Awaiting user decision
+      on Lesson 17 before proceeding, the same way Lesson 16's was.
       PhotonVision's status is fully resolved (R20): vendordep exists,
       compiles, and its `OpModeRobot` integration is runtime-verified.
 - [x] `DataLogManager`'s exact 2027 package — resolved 2026-08-11, compiled
