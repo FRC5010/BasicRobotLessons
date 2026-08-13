@@ -542,7 +542,7 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 13 | IO layers & replay | **High** | Written and verified 2026-08-13. Structure (interfaces, Inputs classes, `Constants.Mode` switch, IO implementations) ported clean, with the owning class (`SwerveModule`/`Drivetrain`) `SmartDashboard.putNumber`-ing its own Inputs fields manually instead of `@AutoLog`/`Logger.processInputs`. **Actual replay is deferred** — `REPLAY` stays a dormant, unreachable switch arm, verified via a real test to construct cleanly and leave every reading at its Inputs class's default — see [R1](#risks-and-blocking-unknowns). Also pays off Lesson 7's Try It 4 (named CAN ID/offset constants finally wired into the module array) and deletes `Drivetrain.simulatePeriodic()`/empties `Robot.simulationPeriodic()`, a v3-specific consequence of `Mechanism` having no `simulationPeriodic()` hook of its own — see [R18](#risks-and-blocking-unknowns) |
 | 14 | Pose estimator & localizer | Low | Written and verified 2026-08-13. Not a `SubsystemBase` → `Mechanism` rename after all — `Localizer` ships as a **plain class**, since it drives nothing and no command needs to require it; `Scheduler.addPeriodic(Runnable)` gives it a heartbeat with no `Mechanism`-ness needed. `SwerveDrivePoseEstimator`/`VecBuilder`/`Timer.getTimestamp()` all ported clean — see [R19](#risks-and-blocking-unknowns), which also corrects R18's retracted jvmArgs claim with a clean repro |
 | 15 | PhotonVision | ~~Medium~~ Low | Written and verified 2026-08-13. Vendordep fetches, compiles, and runtime-verifies clean — `OpModeRobot` integration confirmed working via a real `DriverStationSim`-backed multi-tag detection test, not just "the API compiles." Real finding, not anticipated by this plan: this course's vision-sim has no independent ground truth, so it can demonstrate accurate tracking but not recovering from a bad pose or exposing a miscalibrated camera — see [R20](#risks-and-blocking-unknowns), which also retires the old lesson's "mismeasure the camera" Try It (doesn't work here) with a corrected one that teaches the limitation directly |
-| 16 | maple-sim | Medium | 2027/SystemCore status still unverified — [R2](#risks-and-blocking-unknowns). `Robot.simulationPeriodic()`'s "shared world state" exception still has a home on `OpModeRobot` |
+| 16 | maple-sim | **Blocking** | 2026-08-13: no longer just unverified — confirmed structurally incompatible with this 2027 alpha by direct test. maple-sim `0.4.0-beta`'s entire public API is typed in the pre-rename `edu.wpi.first.*` namespace, which doesn't exist on this alpha's classpath at all (`org.wpilib.*` only, no compatibility shim); a real attempt to construct `SwerveDriveSimulation` fails with `class file for edu.wpi.first.math.geometry.Pose2d not found`. See [R2](#risks-and-blocking-unknowns). Awaiting user direction on how to proceed. `Robot.simulationPeriodic()`'s "shared world state" exception still has a home on `OpModeRobot`, whenever this unblocks |
 | 17 | BLine autos | **High** | BLine's 2027 status still unverified (R2) *and* this is where the resolved multi-`@Autonomous` selection decision (OD3) actually lands — `Autos.buildChooser` retires |
 | 18–23 | Elevator … LEDs | Low | `SubsystemBase` → `Mechanism` rename; IO-layer pattern (Lesson 13's spine) is unaffected by this table's changes once Lesson 13 itself is resolved |
 | 24 | Superstructure | Medium | `StateMachine` library primitive now exists — recommend keep the hand-rolled enum, reference the library the way the course references `MathUtil.clamp` |
@@ -716,24 +716,52 @@ out badly.
   support — track AdvantageKit's releases for that, the same way this entry
   originally recommended, just no longer as a precondition for writing
   lessons today.
-- **R2 — PhotonVision arm fully de-risked as of Lesson 15, 2026-08-13; maple-sim
-  and BLine remain fully unverified.** PhotonVision's 2027 alpha vendordep
-  (`photonlib-v2027.0.0-alpha-2.json`, `vendor-json-repo/2027_alpha5/`) not
-  only fetches and compiles against `code/OpModeV3Robot` — its
-  `OpModeRobot`-specific integration is now runtime-verified: a real
-  `DriverStationSim`-backed test built an actual `VisionSystemSim`/
-  `PhotonCameraSim`/`PhotonPoseEstimator` pipeline and confirmed it produces
-  correct multi-tag pose observations through the full `Drivetrain` →
-  `Localizer` → `PhotonVisionPoseProvider` → `SwerveDrivePoseEstimator` stack.
-  See R20 for the full findings, including a real, non-obvious limitation of
-  this course's vision-sim architecture that was *not* anticipated by this
-  plan and was found only by testing, not by reading the API. **maple-sim and
-  BLine remain fully unverified** — neither publishes through
-  `vendor-json-repo` even in the current course (maple-sim ships from
-  `shenzhen-robotics-alliance.github.io`, BLine from `jitpack.io`), so their
-  2027/SystemCore status has to be checked at those hosts directly, not
-  inferred from this search. Each gates a meaningful chunk of the back half
-  of the course (Lessons 16–17, 22, 25–28).
+- **R2 — split three ways as of 2026-08-13: PhotonVision de-risked, maple-sim
+  now CONFIRMED BLOCKING (not just unverified), BLine still unchecked.**
+  PhotonVision's 2027 alpha vendordep (`photonlib-v2027.0.0-alpha-2.json`,
+  `vendor-json-repo/2027_alpha5/`) not only fetches and compiles against
+  `code/OpModeV3Robot` — its `OpModeRobot`-specific integration is now
+  runtime-verified: a real `DriverStationSim`-backed test built an actual
+  `VisionSystemSim`/`PhotonCameraSim`/`PhotonPoseEstimator` pipeline and
+  confirmed it produces correct multi-tag pose observations through the full
+  `Drivetrain` → `Localizer` → `PhotonVisionPoseProvider` →
+  `SwerveDrivePoseEstimator` stack. See R20 for the full findings.
+
+  **maple-sim moved from "unverified" to "confirmed structurally
+  incompatible," tested directly against a real GradleRIO 2027 alpha
+  project, not inferred.** Its own published vendordep
+  (`shenzhen-robotics-alliance.github.io/maple-sim/vendordep/maple-sim.json`)
+  declares `frcYear: "2026"` using the *old* schema key — this alpha's
+  GradleRIO plugin looks for `wpilibYear` instead, so the unmodified JSON
+  fails at plugin-apply time with `Vendor Dependency maplesim has invalid
+  year null. Expected to be 2027_alpha5`, before dependency resolution even
+  starts. That much could plausibly be patched around (hand-editing in a
+  `wpilibYear` key does clear this specific gate, confirmed). **The real
+  blocker is one layer deeper and is not patchable**: maple-sim
+  `0.4.0-beta`'s compiled API (confirmed via `javap` — e.g.
+  `SwerveDriveSimulation`'s constructor, `getModules()`, `getGyroSimulation()`)
+  is typed entirely in the pre-rename `edu.wpi.first.*` namespace, and this
+  2027 alpha's WPILib distribution ships *only* the renamed `org.wpilib.*`
+  packages with no `edu.wpi.first.*` compatibility shim at all. A real
+  attempt to construct a `SwerveDriveSimulation` — the exact call this
+  lesson's design requires — fails to compile with `cannot access Pose2d:
+  class file for edu.wpi.first.math.geometry.Pose2d not found`, because that
+  package doesn't exist anywhere on this alpha's classpath, full stop. This
+  isn't a naming drift like Phoenix 6/PhotonLib needed; it's two type
+  systems that share no common classes for the exact objects (`Pose2d`,
+  kinematics types, `Distance`/`Mass` measures) every maple-sim call passes
+  across the boundary. **Lesson 16 cannot be ported as designed until
+  maple-sim publishes a build compiled against `org.wpilib.*`** — their
+  Maven metadata's last update (2026-01-17) predates any indication of
+  2027-alpha awareness. Flagged for a user decision on how to proceed (skip
+  the lesson for now / write a physics-free interim / wait and retry later)
+  rather than resolved unilaterally.
+
+  **BLine remains fully unverified** — distributes from `jitpack.io`, not
+  `vendor-json-repo`, and wasn't checked this session (out of scope for the
+  maple-sim investigation; gates Lesson 17, immediately next). Each of
+  these two gates a meaningful chunk of the back half of the course
+  (Lessons 16–17, 22, 25–28).
 - **R3 — pin confirmed, and API confirmed too, by actually compiling against
   it.** Phoenix 6's 2027 alpha vendordep for this project's WPILib version is
   `Phoenix6-26.50.0-alpha-1.json` (with a matching
