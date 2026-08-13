@@ -540,7 +540,7 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 11 | Odometry & field view | Medium | Written and verified 2026-08-12. `Field2d`/`SmartDashboard.putData` confirmed working, not just source-read. `Odometry.getPoseMeters()`→`getPose()`, no `periodic()` hook to add to (folded into the existing `logTelemetry()` callback instead). **`.until(...)` genuinely simplifies cleanup vs. Lesson 6's `driveDistance`** — see [R16](#risks-and-blocking-unknowns) |
 | 12 | Model-based control | Low | Written and verified 2026-08-13. Phoenix 6 config/control-request API ports essentially unchanged (not part of the `org.wpilib` 2027 rename) — `TalonFXConfiguration`, `PositionVoltage`/`VelocityVoltage`, `FeedbackSensorSourceValue.RemoteCANcoder` all confirmed via `javap`. Real end-to-end sim convergence verified for both loops — see [R17](#risks-and-blocking-unknowns) |
 | 13 | IO layers & replay | **High** | Written and verified 2026-08-13. Structure (interfaces, Inputs classes, `Constants.Mode` switch, IO implementations) ported clean, with the owning class (`SwerveModule`/`Drivetrain`) `SmartDashboard.putNumber`-ing its own Inputs fields manually instead of `@AutoLog`/`Logger.processInputs`. **Actual replay is deferred** — `REPLAY` stays a dormant, unreachable switch arm, verified via a real test to construct cleanly and leave every reading at its Inputs class's default — see [R1](#risks-and-blocking-unknowns). Also pays off Lesson 7's Try It 4 (named CAN ID/offset constants finally wired into the module array) and deletes `Drivetrain.simulatePeriodic()`/empties `Robot.simulationPeriodic()`, a v3-specific consequence of `Mechanism` having no `simulationPeriodic()` hook of its own — see [R18](#risks-and-blocking-unknowns) |
-| 14 | Pose estimator & localizer | Low | `SubsystemBase` → `Mechanism` rename only |
+| 14 | Pose estimator & localizer | Low | Written and verified 2026-08-13. Not a `SubsystemBase` → `Mechanism` rename after all — `Localizer` ships as a **plain class**, since it drives nothing and no command needs to require it; `Scheduler.addPeriodic(Runnable)` gives it a heartbeat with no `Mechanism`-ness needed. `SwerveDrivePoseEstimator`/`VecBuilder`/`Timer.getTimestamp()` all ported clean — see [R19](#risks-and-blocking-unknowns), which also corrects R18's retracted jvmArgs claim with a clean repro |
 | 15 | PhotonVision | Medium | Vendordep confirmed present for 2027 alpha (`photonlib-v2027.0.0-alpha-2.json`); `OpModeRobot`-specific integration still unverified — [R2](#risks-and-blocking-unknowns) |
 | 16 | maple-sim | Medium | 2027/SystemCore status still unverified — [R2](#risks-and-blocking-unknowns). `Robot.simulationPeriodic()`'s "shared world state" exception still has a home on `OpModeRobot` |
 | 17 | BLine autos | **High** | BLine's 2027 status still unverified (R2) *and* this is where the resolved multi-`@Autonomous` selection decision (OD3) actually lands — `Autos.buildChooser` retires |
@@ -1378,29 +1378,105 @@ out badly.
     heading to within 2° — both through the full IO-layer round trip
     (`ModuleIOSim`/`GyroIOSim` → `Inputs` → `SwerveModule`/`Drivetrain` →
     odometry), not asserted from the pieces working in isolation.
-  - **A discrepancy with an earlier appendix entry, surfaced but not
-    chased to a root cause.** The appendix's "GradleRIO test-task JVM
-    args" row claims `wpi.java.configureTestTasks(test)`'s missing
-    `--add-opens`/`--enable-native-access` flags make any JUnit test that
-    touches `Scheduler`/coroutines throw `IllegalAccessException` unless
-    added by hand, and notes "not yet applied to `code/OpModeV3Robot` — no
-    lesson in scope ships a test yet." This lesson's own verification test
-    is the first JUnit test in this track's history to actually schedule
-    coroutine-bodied commands (`run(coroutine -> { ...; coroutine.yield();
-    })`, not just `runRepeatedly`) through `Scheduler.getDefault()` — and
-    it ran clean via a bare `./gradlew test`, zero `jvmArgs` added to
-    `build.gradle`, no exception. Not reconciled: possibly an artifact of
-    the JDK-21-vs-25 `JAVA_HOME` inconsistency this same session hit for
-    `compileJava` (see R5), rather than a fact about the library itself.
-    Flagged here rather than silently editing that row, since it wasn't
-    re-derived from scratch — whoever next writes a lesson shipping a
-    coroutine-touching test should re-verify before trusting either claim.
+  - **A discrepancy with an earlier appendix entry, flagged at the time,
+    and now retracted — see R19 for the corrected, reproducible finding.**
+    This lesson's own verification test appeared to run clean with zero
+    `jvmArgs` added to `build.gradle`, seemingly contradicting the
+    appendix's "GradleRIO test-task JVM args" row. Lesson 14's testing
+    reproduced the *opposite* result under the exact same unmodified
+    `code/OpModeV3Robot/build.gradle`: a bare `new Drivetrain()` — no
+    coroutines, no `Scheduler.schedule(...)`, just construction — reliably
+    threw `IllegalAccessException` from `ContinuationScope.<clinit>` every
+    time, and adding the three `jvmArgs` reliably fixed it, every time.
+    The original appendix row was right; this entry's "ran clean" result
+    could not be reproduced and should be treated as an unreliable
+    artifact of that session's Gradle daemon state, not a fact about the
+    library. Left here rather than silently deleted, per this repo's
+    convention of keeping the record of what was actually observed.
 
   No lesson code ships a test — `code/v3/lesson-13/` has no `tests/`
   directory, matching this track's own precedent (and the main course's,
   which doesn't ship tests until its Lesson 32 equivalent). Every finding
   above came from a throwaway JUnit file in the verification sandbox,
   written, run, and discarded, per this repo's established convention.
+- **R19 — new, found while writing and verifying Lesson 14, all confirmed
+  by `javap` against the real jars and a real `DriverStationSim`-backed
+  test, not ported from the old lesson on trust.** The
+  `Localizer`/`PoseProvider`/`VisionPoseProvider` port itself needed no
+  behavioral changes from the old lesson — every API it calls exists here
+  with the same shape:
+
+  - **`org.wpilib.math.estimator.SwerveDrivePoseEstimator`**, confirmed via
+    `javap`, extends a generic `PoseEstimator<SwerveModulePosition[]>` base
+    class that actually declares `update`/`updateWithTime`/
+    `getEstimatedPosition`/`resetPosition`/`addVisionMeasurement`/
+    `setVisionMeasurementStdDevs` — the subclass itself only adds two
+    constructors and a typed `updateWithTime` overload. Doesn't change how
+    the lesson's code reads (Java resolves inherited methods
+    transparently), but worth knowing if a future maintainer goes
+    source-diving and can't find a method on the class they expected it on.
+  - **`VecBuilder` moved to `org.wpilib.math.linalg`** (not the pre-2027
+    `edu.wpi.first.math` root), confirmed via `javap`; `Vector<N3>`
+    confirmed to `extend Matrix<N3, N1>`, so `VecBuilder.fill(0.5, 0.5,
+    999999)` is assignment-compatible with `setVisionMeasurementStdDevs`'s
+    `Matrix<N3, N1>` parameter with no cast needed — same as the pre-2027
+    API's shape.
+  - **`Timer.getFPGATimestamp()` doesn't exist in this alpha** — confirmed
+    via `javap` on `org.wpilib.system.Timer`; renamed to
+    `Timer.getTimestamp()` (no `FPGA` in the name), consistent with the
+    aside-odometry-thread appendix's already-recorded `Timer::getTimestamp`
+    reference for BLine. `VisionPoseProvider` uses the renamed call.
+  - **A genuine, deliberate design decision this lesson makes that the old
+    lesson didn't need to: `Localizer` is a plain class, not a
+    `Mechanism`.** The old lesson's `Localizer extends SubsystemBase`
+    because that's V2's uniform "anything with a `periodic()`" convention.
+    This track doesn't have that pressure — `Mechanism` has no
+    `periodic()` hook of its own (the Lesson 4 finding this track has
+    carried since), so every periodic tick in this course already goes
+    through `Scheduler.getDefault().addPeriodic(Runnable)`, which takes a
+    bare `Runnable` and was confirmed via `javap` to need nothing
+    `Mechanism`-shaped. `Localizer` drives no motors and no command ever
+    needs to require it, so extending `Mechanism` would buy it an unused
+    `idle()` default command and scheduler registration for no reason.
+    This is the first class in the track to use `addPeriodic` as its
+    *only* connection to the scheduler, with no `Mechanism`-ness
+    alongside it — confirmed to compile and behave identically to the
+    `Mechanism`-extending alternative in a real test (the periodic tick
+    fires every `Scheduler.getDefault().run()` call either way).
+  - **The jvmArgs finding from R18 is corrected here — see R18's edited
+    entry.** A clean, deterministic repro (bare `new Drivetrain()`
+    construction, no coroutines scheduled, nothing else in the test)
+    reliably threw `IllegalAccessException` from
+    `ContinuationScope.<clinit>` under the unmodified
+    `code/OpModeV3Robot/build.gradle`, every time it was tried, and adding
+    `jvmArgs '--add-opens', 'java.base/jdk.internal.vm=ALL-UNNAMED'` /
+    `'java.base/java.lang=ALL-UNNAMED'` / `'--enable-native-access=ALL-UNNAMED'`
+    to the sandbox's `test { }` block fixed it, every time. The appendix's
+    original claim stands confirmed; R18's "ran clean" observation does
+    not reproduce and is retracted. The fix lives only in the verification
+    sandbox — not shipped to `code/OpModeV3Robot` or any `code/v3/lesson-N`,
+    since no lesson through 14 ships a test.
+  - **The vision correction is convergent, not a one-shot snap — measured,
+    not assumed from the old lesson's prose.** A single
+    `addVisionMeasurement` call against `SwerveDrivePoseEstimator`'s
+    default trust settings closed only a modest fraction of the error
+    (measured: 3.09 m → 2.79 m, about 10%, from one reported sighting).
+    Repeating the report 20 times in a row — standing in for a real
+    camera's dozens-of-frames-per-second — brought the error under half
+    its starting value, monotonically shrinking on every single frame
+    (confirmed by asserting the error strictly decreases each of the 20
+    frames, not just checking the final number). This matches the old
+    lesson's "not a teleport: a strong pull, blended over a few ticks"
+    description accurately as long as "a few ticks" is read as "a few
+    reported sightings," not one — a single button press nudges
+    noticeably but not dramatically, and it's holding the button/pressing
+    repeatedly that produces the decisive slide the lesson describes.
+  - **`driveToPose`'s new `Supplier<Pose2d> pose` parameter needed no new
+    import** — `Drivetrain.java` already imports `java.util.function.Supplier`
+    for `drive`/`driveFieldRelative`. `driveToPose` remains unbound to any
+    button in this lesson, exactly matching Lesson 11's original "sketch"
+    framing and the old (2026) course's own precedent of leaving it
+    unbound until a much later lesson.
 
 ---
 
@@ -1507,6 +1583,11 @@ appendices: verify before drafting, record what you verified.
 | `org.wpilib.framework.RobotBase.isReal()` — compiled, not guessed, see R18 | Present, same signature/behavior as the pre-2027 `edu.wpi.first.wpilibj.RobotBase.isReal()` — just moved packages. Used for `Constants.kCurrentMode = RobotBase.isReal() ? Mode.REAL : kSimMode;` |
 | IO-layer pattern in this alpha (`ModuleIO`/`GyroIO`) — compiled and end-to-end verified, see R18 | Interface with `public default void ...() {}` no-op methods, a nested `public static class ...Inputs` holding plain public fields (no codegen — this track's `SmartDashboard`-based logging, per R1, has each owning class `putNumber` its own Inputs fields manually instead of an `@AutoLog`-generated writer). One hardware `implements`, one sim class that `extends` the hardware class to reuse Phoenix's simulated firmware (`protected` fields on the hardware class are the seam), and one `new ModuleIO() {}`/`new GyroIO() {}` anonymous class for the dormant `REPLAY` arm — all selected once per instance via a `switch` expression over `Constants.Mode`, not re-checked per tick |
 | `DriverStationSim.setEnabled(boolean)` + `.notifyNewData()` — required for any test that drives Phoenix simulated firmware, see R18 | Without it, Phoenix's simulated motors output nothing — every control request silently produces 0 V and dependent sensor readings never move, with no exception thrown. Confirmed to reproduce in this alpha, matching the main 2026 course's own documented Lesson 29 finding |
+| GradleRIO test-task JVM args — **re-confirmed with a clean, deterministic repro**, see R19 | Corrects R18's retracted "ran clean" observation. A bare `new Drivetrain()` (a `Mechanism`, nothing else in the test) reliably throws `IllegalAccessException` from `ContinuationScope.<clinit>` under the unmodified `code/OpModeV3Robot/build.gradle`, every time; adding `jvmArgs '--add-opens', 'java.base/jdk.internal.vm=ALL-UNNAMED'` / `'java.base/java.lang=ALL-UNNAMED'` / `'--enable-native-access=ALL-UNNAMED'` to the sandbox's `test { }` block reliably fixes it, every time. The original appendix claim (`configureTestTasks(test)` does not add these) stands |
+| `org.wpilib.math.estimator.SwerveDrivePoseEstimator`/`PoseEstimator<T>` — compiled, not guessed, see R19 | `SwerveDrivePoseEstimator extends PoseEstimator<SwerveModulePosition[]>`; the real methods (`update`, `updateWithTime`, `getEstimatedPosition`, `resetPosition`, `addVisionMeasurement` (2 overloads), `setVisionMeasurementStdDevs`) live on the generic base class, confirmed via `javap` on both. Constructors: `(SwerveDriveKinematics, Rotation2d, SwerveModulePosition[], Pose2d)` and a 6-arg overload adding state/vision std-dev `Matrix<N3,N1>`s |
+| `org.wpilib.math.linalg.VecBuilder`/`Vector<N>` — compiled, not guessed, see R19 | Moved from the pre-2027 `edu.wpi.first.math` root to `org.wpilib.math.linalg`. `Vector<R> extends Matrix<R, N1>`, confirmed via `javap`, so `VecBuilder.fill(double, double, double)`'s `Vector<N3>` result is assignment-compatible with a `Matrix<N3, N1>` parameter (e.g. `setVisionMeasurementStdDevs`) with no cast |
+| `org.wpilib.system.Timer` — compiled, not guessed, see R19 | No `getFPGATimestamp()` in this alpha (confirmed via full `javap` listing); renamed `getTimestamp()`. Consistent with the aside-odometry-thread appendix's already-recorded `Timer::getTimestamp` reference |
+| `Scheduler.addPeriodic(Runnable)` doesn't require a `Mechanism` — confirmed, used deliberately by Lesson 14's `Localizer`, see R19 | Takes a bare `java.lang.Runnable`, confirmed via `javap`. Any class can get a scheduler heartbeat this way, not just `Mechanism` subclasses — `Localizer` is the first class in the track to rely on `addPeriodic` as its *only* connection to the scheduler, with no `Mechanism`-ness alongside it, verified to tick correctly in a real test |
 
 ---
 
@@ -1857,10 +1938,47 @@ appendices: verify before drafting, record what you verified.
       while the robot reads as disabled, the same fact the main course
       documents for its own Lesson 29); and the `REPLAY` arm constructs
       cleanly with every reading frozen at its Inputs class's default
-      through 25 ticks. Also surfaced, not resolved: a real discrepancy
-      with the appendix's "GradleRIO test-task JVM args" row — this
-      lesson's own coroutine-scheduling test ran clean with zero `jvmArgs`
-      added, contradicting that row's `IllegalAccessException` claim; not
-      chased to a root cause. Full compile re-verified from a fresh
-      sandbox (0–13), plus independent checkpoints at 1, 3, 4, 7, 9, 10,
-      11, and 12 to confirm nothing upstream regressed.
+      through 25 ticks. Also surfaced that day: this lesson's own
+      coroutine-scheduling test appeared to run clean with zero `jvmArgs`
+      added, seemingly contradicting the appendix's "GradleRIO test-task
+      JVM args" row — flagged rather than chased to a root cause at the
+      time. **Retracted in Lesson 14's entry below**: re-tested with a
+      clean, deterministic repro and found not to reproduce; the original
+      appendix claim was correct all along. Full compile re-verified from
+      a fresh sandbox (0–13), plus independent checkpoints at 1, 3, 4, 7,
+      9, 10, 11, and 12 to confirm nothing upstream regressed.
+- [x] Lesson 14 (Pose estimator & localizer) written and verified
+      2026-08-13 — `docs/lessons/v3/14-pose-estimator.md` and
+      `code/v3/lesson-14/`, compiling through `tools/verify-lessons-v3.sh
+      14`. Ports the old lesson's `PoseProvider`/`Localizer`/
+      `VisionPoseProvider` split with no behavioral surprises — every
+      `SwerveDrivePoseEstimator` method the old lesson calls exists here
+      with the same shape (see R19's appendix rows). **The one real
+      departure from the plan table's predicted "`SubsystemBase` →
+      `Mechanism` rename only": `Localizer` ships as a plain class, not a
+      `Mechanism`.** It drives no motors and no command ever requires it,
+      so `Scheduler.getDefault().addPeriodic(this::periodic)` — the same
+      call `Drivetrain` has used for its own tick since Lesson 11 — gives
+      it a scheduler heartbeat with none of `Mechanism`'s unused baggage
+      (an `idle()` default command, requirement-tracking). `Drivetrain`
+      itself drops `m_odometry`/`Field2d`/its pose `StructPublisher`
+      entirely, gains `getKinematics()`/`getRotation()`/public
+      `getModulePositions()`, and `implements PoseProvider` — confirmed
+      via a real `DriverStationSim`-backed test that the fused pose still
+      starts at exactly `(0, 0, 0°)` before any tick and still advances
+      correctly when the drivetrain drives, now flowing through
+      `Localizer` instead of `Drivetrain`'s own retired odometry field.
+      The vision half is measured, not assumed from the old lesson's
+      prose: one `addVisionMeasurement` call against the estimator's
+      default trust settings closes only ~10% of a 3 m error, but 20
+      repeated "camera frames" (standing in for a real camera's frame
+      rate) monotonically shrink the error past 50% — confirming "a
+      strong pull, blended over a few ticks" describes *repeated*
+      sightings, not one button press. **R19** also corrects R18's
+      retracted jvmArgs claim with a clean, deterministic repro: a bare
+      `new Drivetrain()` reliably throws `IllegalAccessException` without
+      the three `--add-opens`/`--enable-native-access` flags, every time,
+      under the unmodified `code/OpModeV3Robot/build.gradle` — the
+      original appendix claim was right, and the fix lives only in the
+      verification sandbox since no lesson through 14 ships a test. Full
+      compile re-verified from a fresh sandbox (0–14).

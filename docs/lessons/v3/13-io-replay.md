@@ -720,4 +720,4 @@ it. One upgrade remains before you'd want to trust that heading and pose
 any further: the pose odometry dead-reckons still drifts, uncorrected, and
 Lesson 14 teaches the robot to fix it.
 
-Next: Lesson 14 — The pose estimator.
+Next: [Lesson 14 — The pose estimator](14-pose-estimator.md).
