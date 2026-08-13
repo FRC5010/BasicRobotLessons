@@ -437,7 +437,8 @@ fix didn't replace a mistake; it replaced a *placeholder*, and the
 difference between those two things is worth being able to tell apart.
 
 Your code got shorter, your control got tighter, and `Drivetrain` never
-noticed a thing. Next, the biggest architectural idea of the course:
-restructuring the code so that a log file can *drive* it.
+noticed a thing. Next, one of the biggest architectural ideas of the
+course: restructuring the code so hardware sits behind a door your logic
+never has to open.
 
-Next: Lesson 13 — IO layers & replay.
+Next: [Lesson 13 — IO layers: hardware behind an interface](13-io-replay.md).

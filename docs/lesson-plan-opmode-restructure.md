@@ -539,7 +539,7 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 10 | Kinematics | Low | Written and verified 2026-08-12. `SwerveModuleState`→`SwerveModuleVelocity` and `ChassisSpeeds`→`ChassisVelocities` (fields `vx`/`vy`/`omega`, not the old `*MetersPerSecond`/`omegaRadiansPerSecond` names), `toSwerveModuleStates`→`toSwerveModuleVelocities`, `desaturateWheelSpeeds`→`desaturateWheelVelocities`. **`optimize` is now a pure function, not a mutator** — see [R14](#risks-and-blocking-unknowns) |
 | 11 | Odometry & field view | Medium | Written and verified 2026-08-12. `Field2d`/`SmartDashboard.putData` confirmed working, not just source-read. `Odometry.getPoseMeters()`→`getPose()`, no `periodic()` hook to add to (folded into the existing `logTelemetry()` callback instead). **`.until(...)` genuinely simplifies cleanup vs. Lesson 6's `driveDistance`** — see [R16](#risks-and-blocking-unknowns) |
 | 12 | Model-based control | Low | Written and verified 2026-08-13. Phoenix 6 config/control-request API ports essentially unchanged (not part of the `org.wpilib` 2027 rename) — `TalonFXConfiguration`, `PositionVoltage`/`VelocityVoltage`, `FeedbackSensorSourceValue.RemoteCANcoder` all confirmed via `javap`. Real end-to-end sim convergence verified for both loops — see [R17](#risks-and-blocking-unknowns) |
-| 13 | IO layers & replay | **High** | Structure (interfaces, Inputs classes, `Constants.Mode` switch, IO implementations) carries over; each IO implementation logs its own Inputs fields manually via `SmartDashboard.putNumber(...)` instead of `@AutoLog`/`Logger.processInputs`. **Actual replay is deferred** — `REPLAY` stays a dormant, unreachable switch arm until a follow-up pass — see [R1](#risks-and-blocking-unknowns) |
+| 13 | IO layers & replay | **High** | Written and verified 2026-08-13. Structure (interfaces, Inputs classes, `Constants.Mode` switch, IO implementations) ported clean, with the owning class (`SwerveModule`/`Drivetrain`) `SmartDashboard.putNumber`-ing its own Inputs fields manually instead of `@AutoLog`/`Logger.processInputs`. **Actual replay is deferred** — `REPLAY` stays a dormant, unreachable switch arm, verified via a real test to construct cleanly and leave every reading at its Inputs class's default — see [R1](#risks-and-blocking-unknowns). Also pays off Lesson 7's Try It 4 (named CAN ID/offset constants finally wired into the module array) and deletes `Drivetrain.simulatePeriodic()`/empties `Robot.simulationPeriodic()`, a v3-specific consequence of `Mechanism` having no `simulationPeriodic()` hook of its own — see [R18](#risks-and-blocking-unknowns) |
 | 14 | Pose estimator & localizer | Low | `SubsystemBase` → `Mechanism` rename only |
 | 15 | PhotonVision | Medium | Vendordep confirmed present for 2027 alpha (`photonlib-v2027.0.0-alpha-2.json`); `OpModeRobot`-specific integration still unverified — [R2](#risks-and-blocking-unknowns) |
 | 16 | maple-sim | Medium | 2027/SystemCore status still unverified — [R2](#risks-and-blocking-unknowns). `Robot.simulationPeriodic()`'s "shared world state" exception still has a home on `OpModeRobot` |
@@ -1307,6 +1307,100 @@ out badly.
   re-reading every caller of the touched `SwerveModule` methods, matching
   the old lesson's own claim that encapsulation absorbs the whole
   refactor at the boundary.
+- **R18 — new, found while writing and verifying Lesson 13, all confirmed
+  by real compiles and a `DriverStationSim`-backed end-to-end test, not
+  ported from the old lesson on trust.** The IO-layer restructuring itself
+  (`ModuleIO`/`ModuleIOTalonFX`/`ModuleIOSim`, `GyroIO`/`GyroIOPigeon2`/
+  `GyroIOSim`, the `Constants.Mode` enum and its two `switch` expressions)
+  ported onto this alpha with no API surprises — every method used
+  (`.getValue().in(...)`, `CANBus.systemcore(0)` constructors,
+  `RobotBase.isReal()`) was already established by earlier lessons. What
+  needed real work was everything downstream of R1's team decision to defer
+  replay:
+
+  - **`RobotBase.isReal()` confirmed present** at
+    `org.wpilib.framework.RobotBase` via `javap` — same signature and
+    behavior as the pre-2027 API, just moved packages like everything else
+    `org.wpilib`-renamed. Used unchanged for `Constants.kCurrentMode`'s
+    ternary.
+  - **A genuine v3-specific structural consequence the old (2026,
+    `RobotContainer`) lesson never had to make**: because `Mechanism` has
+    no `simulationPeriodic()` hook of its own (the Lesson 4 finding this
+    track has carried since), every lesson through 11 gave `Drivetrain` a
+    hand-rolled public `simulatePeriodic()` method that `Robot.
+    simulationPeriodic()` called directly. Lesson 13's IO-layer switch
+    makes that method's entire body dead: sim physics now runs as a side
+    effect of *which class got constructed* (`ModuleIOSim`/`GyroIOSim`,
+    only ever built when `Constants.kCurrentMode == SIM`), invoked
+    transparently through the `updateInputs()` calls `logTelemetry()`
+    already makes every tick. `Drivetrain.simulatePeriodic()` is deleted
+    outright, and `Robot.simulationPeriodic()`'s override body is emptied
+    to `{}` — the first lesson since 7 to touch `Robot.java` at all. The
+    old lesson never needed an equivalent change because `SubsystemBase`'s
+    real `simulationPeriodic()` hook doesn't disappear just because the
+    class stops needing it; this track's hand-rolled stand-in does.
+  - **The `getHeadingDegrees()` live-read-to-cached-read change is
+    harmless, confirmed rather than assumed.** Before this lesson,
+    `getHeadingDegrees()` read `m_gyro.getYaw()` live, every call; after,
+    it reads `m_gyroInputs.yawDegrees`, a field only refreshed once a tick
+    by `logTelemetry()`. Since `m_odometry`'s field initializer calls
+    `getHeadingDegrees()` at construction — before any tick, and before
+    `logTelemetry()` has ever run — the seed heading is now always the
+    `GyroIOInputs` class's default `0.0`, not a live boot-time reading. A
+    real `DriverStationSim`-backed test constructs a fresh `Drivetrain` and
+    asserts `getPose()` reads exactly `(0, 0, 0°)` *before* the scheduler
+    has ticked even once, confirming the seed is correct — matching both
+    `GyroIOSim`'s own initial `m_simHeadingDegrees = 0.0` and this course's
+    established "robot boots facing 0°" convention. Worth remembering if a
+    future lesson ever seeds odometry from a sensor whose real boot-time
+    value *isn't* its type's zero default.
+  - **The `REPLAY` arm's honesty is verified, not asserted.** With
+    `Constants.kSimMode` temporarily hand-edited to `Mode.REPLAY`, a real
+    `DriverStationSim`-backed test constructs `Drivetrain` (both
+    `switch` expressions resolve to the `new ModuleIO() {}`/`new GyroIO()
+    {}` anonymous-class arms), ticks the scheduler 25 times, and confirms
+    `getPose()` and `getHeadingDegrees()` still read exactly `(0, 0, 0°)`
+    the whole time — the dormant doorway compiles, constructs, and truly
+    does nothing, rather than silently working by accident or throwing.
+  - **A testing trap worth not rediscovering, found while writing this
+    lesson's own verification, not carried over from an earlier lesson's
+    notes:** the first attempt at a `Drivetrain`-driving end-to-end test
+    (schedule a `drive(...)` command, tick the scheduler, expect the
+    module's velocity reading to converge) read `0.0` forever with no
+    error, because the test never called `DriverStationSim.setEnabled(true)`.
+    Phoenix's simulated motors output nothing while the robot reads as
+    disabled — the same fact the main 2026 course already documents for
+    its own Lesson 29 SysId testing, now confirmed to reproduce identically
+    in this alpha. Adding `DriverStationSim.setEnabled(true)` +
+    `DriverStationSim.notifyNewData()` before constructing `Drivetrain`
+    fixed it: module velocity converged to within 0.2 m/s of a commanded
+    2.0 m/s, and a following `turnToHeading(90)` converged the gyro-fed
+    heading to within 2° — both through the full IO-layer round trip
+    (`ModuleIOSim`/`GyroIOSim` → `Inputs` → `SwerveModule`/`Drivetrain` →
+    odometry), not asserted from the pieces working in isolation.
+  - **A discrepancy with an earlier appendix entry, surfaced but not
+    chased to a root cause.** The appendix's "GradleRIO test-task JVM
+    args" row claims `wpi.java.configureTestTasks(test)`'s missing
+    `--add-opens`/`--enable-native-access` flags make any JUnit test that
+    touches `Scheduler`/coroutines throw `IllegalAccessException` unless
+    added by hand, and notes "not yet applied to `code/OpModeV3Robot` — no
+    lesson in scope ships a test yet." This lesson's own verification test
+    is the first JUnit test in this track's history to actually schedule
+    coroutine-bodied commands (`run(coroutine -> { ...; coroutine.yield();
+    })`, not just `runRepeatedly`) through `Scheduler.getDefault()` — and
+    it ran clean via a bare `./gradlew test`, zero `jvmArgs` added to
+    `build.gradle`, no exception. Not reconciled: possibly an artifact of
+    the JDK-21-vs-25 `JAVA_HOME` inconsistency this same session hit for
+    `compileJava` (see R5), rather than a fact about the library itself.
+    Flagged here rather than silently editing that row, since it wasn't
+    re-derived from scratch — whoever next writes a lesson shipping a
+    coroutine-touching test should re-verify before trusting either claim.
+
+  No lesson code ships a test — `code/v3/lesson-13/` has no `tests/`
+  directory, matching this track's own precedent (and the main course's,
+  which doesn't ship tests until its Lesson 32 equivalent). Every finding
+  above came from a throwaway JUnit file in the verification sandbox,
+  written, run, and discarded, per this repo's established convention.
 
 ---
 
@@ -1410,6 +1504,9 @@ appendices: verify before drafting, record what you verified.
 | `com.ctre.phoenix6.sim.CANcoderSimState` — compiled, not guessed | `setRawPosition(double)`/`(Angle)`, `setVelocity(double)`/`(AngularVelocity)`, both confirmed present, plain-rotation semantics matching the CANcoder's own native unit (no gear multiply needed, since the CANcoder sits directly on the wheel) |
 | `Rotation2d.getMeasure()` — compiled, not guessed | Returns `Angle`, confirmed via `javap`. This is what lets `PositionVoltage.withPosition(state.angle.getMeasure())` take a `SwerveModuleVelocity`'s `angle` field directly with no degrees-to-rotations conversion written by hand — Phoenix's control requests and WPILib's geometry types share the same `Angle`/`AngularVelocity` measure types |
 | Build target | `code/OpModeV3Robot/build.gradle`: `sourceCompatibility`/`targetCompatibility = JavaVersion.VERSION_25`, GradleRIO `2027.0.0-alpha-6`, shadow plugin `9.3.0`; deploys to a `SystemCore` target via `getTargetTypeClass('SystemCore')` |
+| `org.wpilib.framework.RobotBase.isReal()` — compiled, not guessed, see R18 | Present, same signature/behavior as the pre-2027 `edu.wpi.first.wpilibj.RobotBase.isReal()` — just moved packages. Used for `Constants.kCurrentMode = RobotBase.isReal() ? Mode.REAL : kSimMode;` |
+| IO-layer pattern in this alpha (`ModuleIO`/`GyroIO`) — compiled and end-to-end verified, see R18 | Interface with `public default void ...() {}` no-op methods, a nested `public static class ...Inputs` holding plain public fields (no codegen — this track's `SmartDashboard`-based logging, per R1, has each owning class `putNumber` its own Inputs fields manually instead of an `@AutoLog`-generated writer). One hardware `implements`, one sim class that `extends` the hardware class to reuse Phoenix's simulated firmware (`protected` fields on the hardware class are the seam), and one `new ModuleIO() {}`/`new GyroIO() {}` anonymous class for the dormant `REPLAY` arm — all selected once per instance via a `switch` expression over `Constants.Mode`, not re-checked per tick |
+| `DriverStationSim.setEnabled(boolean)` + `.notifyNewData()` — required for any test that drives Phoenix simulated firmware, see R18 | Without it, Phoenix's simulated motors output nothing — every control request silently produces 0 V and dependent sensor readings never move, with no exception thrown. Confirmed to reproduce in this alpha, matching the main 2026 course's own documented Lesson 29 finding |
 
 ---
 
@@ -1730,3 +1827,40 @@ appendices: verify before drafting, record what you verified.
       +20° step, not a −340° one) in the real simulated firmware. Confirmed
       no `Drivetrain.java` changes were needed. Full compile re-verified
       from a fresh sandbox (0–12).
+- [x] Lesson 13 (IO layers: hardware behind an interface) written and
+      verified 2026-08-13 — `docs/lessons/v3/13-io-replay.md` and
+      `code/v3/lesson-13/`, compiling through `tools/verify-lessons-v3.sh
+      13`. Per R1's already-standing team decision, ships the full
+      IO-layer *structure* — `ModuleIO`/`ModuleIOTalonFX`/`ModuleIOSim`,
+      `GyroIO`/`GyroIOPigeon2`/`GyroIOSim`, a `Constants.Mode` enum with two
+      `switch` expressions — while actual replay stays deferred, `REPLAY`
+      a dormant, verified-empty arm. **R18** covers the real findings: the
+      port itself had no API surprises (`RobotBase.isReal()` confirmed
+      present, everything else already established by earlier lessons),
+      but the restructuring forced two genuine v3-specific changes the old
+      lesson never needed — `Drivetrain.simulatePeriodic()` deleted and
+      `Robot.simulationPeriodic()` emptied to `{}`, since sim physics now
+      runs as a side effect of which `ModuleIO`/`GyroIO` class got
+      constructed rather than a hand-rolled per-tick method call (the
+      consequence of `Mechanism` having no `simulationPeriodic()` hook of
+      its own, carried since Lesson 4) — and finally paid off Lesson 7's
+      Try It 4, wiring `DriveConstants`' named per-corner CAN ID/offset
+      constants into the module array for the first time since they were
+      added. Verified end to end with `DriverStationSim`-backed tests
+      against the real shipped snapshot: `getPose()` reads exactly
+      `(0, 0, 0°)` before the scheduler has ticked even once (confirming
+      the live-read-to-cached-read change in `getHeadingDegrees()` is
+      harmless); driving and `turnToHeading` both converge correctly
+      through the full `ModuleIOSim`/`GyroIOSim` round trip once
+      `DriverStationSim.setEnabled(true)` is set (a real testing trap hit
+      and fixed along the way — Phoenix's simulated motors output nothing
+      while the robot reads as disabled, the same fact the main course
+      documents for its own Lesson 29); and the `REPLAY` arm constructs
+      cleanly with every reading frozen at its Inputs class's default
+      through 25 ticks. Also surfaced, not resolved: a real discrepancy
+      with the appendix's "GradleRIO test-task JVM args" row — this
+      lesson's own coroutine-scheduling test ran clean with zero `jvmArgs`
+      added, contradicting that row's `IllegalAccessException` claim; not
+      chased to a root cause. Full compile re-verified from a fresh
+      sandbox (0–13), plus independent checkpoints at 1, 3, 4, 7, 9, 10,
+      11, and 12 to confirm nothing upstream regressed.
