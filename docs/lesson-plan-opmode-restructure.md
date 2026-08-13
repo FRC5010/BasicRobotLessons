@@ -538,7 +538,7 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 9 | Autonomous | **High** | Written and compiled 2026-08-11. The rename landed here as planned (`MyTeleop`→`RobotTeleop`, `MyAuto`→`RobotAuto`, both in place, `tools/verify-lessons-v3.sh` gained the matching deletion entries), and `coroutine.await(...)` got its dedicated contrast against `Command.sequence(...)`, per-mechanism-release explained honestly as "not demonstrable with one mechanism yet, but the shape to reach for." **The load-bearing finding is R11**: there is no `getAutonomousCommand()` hook in this framework at all — `RobotAuto` schedules its own plan via `RobotModeTriggers.autonomous().onTrue(...)` in its constructor, and a real scheduler test (after finding and fixing a test-setup trap, `DriverStationBackend.observeUserProgramStarting()`) confirms this is correctly opmode-scoped: the scheduled auto sequence is cancelled automatically the instant the DS selects a different opmode, the same scoping already protecting every button binding since Lesson 1. `Command.parallel`'s `.optional(...)`/`.requiring(...)` mix (confirmed via bytecode to unify V2's separate `parallel`/`race`/`deadline` into one mechanism) replaces the old lesson's `Commands.deadline`. OD3's Lesson 17-deferred multi-auto decision effectively also landed here in miniature — the old lesson's `LoggedDashboardChooser` bonus section is replaced by a second `@Autonomous` opmode, the framework's native mechanism, since AdvantageKit was never installed in this track to begin with |
 | 10 | Kinematics | Low | Written and verified 2026-08-12. `SwerveModuleState`→`SwerveModuleVelocity` and `ChassisSpeeds`→`ChassisVelocities` (fields `vx`/`vy`/`omega`, not the old `*MetersPerSecond`/`omegaRadiansPerSecond` names), `toSwerveModuleStates`→`toSwerveModuleVelocities`, `desaturateWheelSpeeds`→`desaturateWheelVelocities`. **`optimize` is now a pure function, not a mutator** — see [R14](#risks-and-blocking-unknowns) |
 | 11 | Odometry & field view | Medium | Written and verified 2026-08-12. `Field2d`/`SmartDashboard.putData` confirmed working, not just source-read. `Odometry.getPoseMeters()`→`getPose()`, no `periodic()` hook to add to (folded into the existing `logTelemetry()` callback instead). **`.until(...)` genuinely simplifies cleanup vs. Lesson 6's `driveDistance`** — see [R16](#risks-and-blocking-unknowns) |
-| 12 | Model-based control | Low | Phoenix 6 config/control-request API; SystemCore Phoenix 6 alpha status noted in [R3](#risks-and-blocking-unknowns) |
+| 12 | Model-based control | Low | Written and verified 2026-08-13. Phoenix 6 config/control-request API ports essentially unchanged (not part of the `org.wpilib` 2027 rename) — `TalonFXConfiguration`, `PositionVoltage`/`VelocityVoltage`, `FeedbackSensorSourceValue.RemoteCANcoder` all confirmed via `javap`. Real end-to-end sim convergence verified for both loops — see [R17](#risks-and-blocking-unknowns) |
 | 13 | IO layers & replay | **High** | Structure (interfaces, Inputs classes, `Constants.Mode` switch, IO implementations) carries over; each IO implementation logs its own Inputs fields manually via `SmartDashboard.putNumber(...)` instead of `@AutoLog`/`Logger.processInputs`. **Actual replay is deferred** — `REPLAY` stays a dormant, unreachable switch arm until a follow-up pass — see [R1](#risks-and-blocking-unknowns) |
 | 14 | Pose estimator & localizer | Low | `SubsystemBase` → `Mechanism` rename only |
 | 15 | PhotonVision | Medium | Vendordep confirmed present for 2027 alpha (`photonlib-v2027.0.0-alpha-2.json`); `OpModeRobot`-specific integration still unverified — [R2](#risks-and-blocking-unknowns) |
@@ -1254,6 +1254,59 @@ out badly.
   same expression in this alpha's `Rotation2d` gives **−20.0°**, not +20° —
   confirmed numerically, not a sign-convention guess. Lesson 11's Try It
   ships the verified value.
+- **R17 — new, found while writing Lesson 12, verified against real jars
+  and real simulated convergence, not ported from the old lesson on
+  trust.** Phoenix 6 sits outside the `org.wpilib` 2027 rename entirely —
+  `com.ctre.phoenix6.*` package names are untouched — so `TalonFXConfiguration`,
+  `FeedbackConfigs` (`FeedbackRemoteSensorID`/`FeedbackSensorSource`/
+  `RotorToSensorRatio`/`SensorToMechanismRatio`), `ClosedLoopGeneralConfigs.ContinuousWrap`,
+  `Slot0Configs` (`kP`/`kV`), `PositionVoltage`/`VelocityVoltage`, and
+  `FeedbackSensorSourceValue.RemoteCANcoder` all confirmed via `javap` to
+  match the old lesson's API shape exactly — the config/control-request
+  story ports essentially unchanged. What needed real work was everything
+  that touches this track's own established conventions rather than
+  Phoenix directly:
+
+  - **The old lesson's `getValueAsDouble()`/`getAngularPositionRotations()`/
+    `getAngularVelocityRPM()` calls don't exist in this alpha.** The first
+    was already retired track-wide since Lesson 3 (`.getValue().in(Unit)`
+    instead); the latter two are old-API `DCMotorSim` convenience methods
+    that were never carried into `org.wpilib.simulation.DCMotorSim`
+    (confirmed via `javap` — only `getAngularPosition()`/`getAngularVelocity()`,
+    both in radians/rad-per-sec, per the Lesson 4 finding). The CANcoder's
+    sim feed uses the same `/(2 * Math.PI)` conversion the rotor feed
+    already uses two lines above it, rather than a same-named convenience
+    method that isn't there.
+  - **A real, additional deletion the old lesson didn't need**: because
+    this alpha has no `MathUtil.clamp` to graduate to (R10), `SwerveModule`
+    had its own private `clamp` (separate from `Drivetrain`'s copy) since
+    Lesson 5. Once `setDesiredState`'s software P math moves into firmware,
+    that `clamp` and its `MathUtil` import become genuinely dead code —
+    caught by re-deriving what's actually still called, not assumed from
+    the old lesson's smaller diff. Lesson 12 deletes both explicitly, and
+    is explicit that `Drivetrain`'s own `clamp` is untouched (different
+    class, different copy, still load-bearing for `turnToHeading`/`driveToPose`).
+  - **Both closed loops verified to actually converge in sim, with the
+    real firmware doing the work, not asserted from Phoenix's reputation.**
+    A `DriverStationSim`-backed test drives a real `SwerveModule` end to
+    end: steering (fed *only* by the CANcoder's own sim state, confirming
+    remote sensor fusion genuinely works and not just "should") converges
+    from 0° to a commanded 90° within 3°; drive velocity converges from
+    rest to a commanded 2.0 m/s within 0.3 m/s using `kV = 0.8`/`kP = 0.1`
+    unchanged from the old lesson's numbers (and cross-checked against this
+    track's own Lesson 10 free-speed arithmetic, not just copied — `100
+    rot/s ÷ 6.75 × 0.319 m ≈ 4.7 m/s` at 12 V implies `kV ≈ 12/14.7 ≈ 0.8`,
+    matching). A third test drives a module to +170° then commands −170°
+    (20° away the short way, across the wrap seam) and confirms the raw
+    accumulated position moves to ≈190° (a +20° step) rather than ≈−170°
+    the long way round (a −340° step) — `ContinuousWrap` verified to
+    actually take the short path in this alpha's simulated firmware, not
+    just configured and trusted.
+
+  No `Drivetrain.java` changes were needed this lesson — confirmed by
+  re-reading every caller of the touched `SwerveModule` methods, matching
+  the old lesson's own claim that encapsulation absorbs the whole
+  refactor at the boundary.
 
 ---
 
@@ -1352,6 +1405,10 @@ appendices: verify before drafting, record what you verified.
 | `NeedsNameBuilderStage.until(BooleanSupplier)` vs. `Command.until(BooleanSupplier)` — both compiled, behaviorally distinct, see R16 | Two different methods with the same name at different points in the builder chain. `NeedsNameBuilderStage.until(...)` (called on `run(...)`/`runRepeatedly(...)`'s return value, before `.named(...)`) returns `NeedsNameBuilderStage`, so the chain still finishes with one `.named(...)`. `Command.until(...)` (called on an already-built `Command`) returns a `ParallelGroupBuilder` that itself needs a *second* `.named(...)`/`.withAutomaticName()`. Using the builder-stage one keeps `driveToPose` a single chain |
 | `.until(...)`'s finish mechanism — behavior-verified with a real scheduler test, not inferred, see R16 | Ends the command via **interruption**, not a natural coroutine finish — confirmed by tracking a `.whenCanceled(...)` flag alongside a tick counter: the flag is set the same tick the condition flips true and the command stops. This is the deliberate contrast with R9 (Lesson 6): a coroutine body returning on its own does *not* fire `.whenCanceled(...)`, but `.until(...)` always does, because its stop mechanism is cancellation either way. Also confirmed: if the condition is already true at schedule time, the body still executes once before the command finishes (checked after each tick) — not a zero-tick case |
 | `Rotation2d.minus` sign, re-verified rather than trusted from the old lesson's Try It text, see R16 | `Rotation2d.fromDegrees(170).minus(Rotation2d.fromDegrees(-170))` returns **−20.0°** via a real test, not the old lesson's claimed "+20°". `Rotation2d`'s wrap-to-shortest-path behavior itself is correct and unchanged (confirmed magnitude is 20°, matching "turn the short way, not 340°") — only the sign printed in the old lesson's prose was wrong for this alpha, or possibly always was |
+| Phoenix 6 config/control API — compiled against the real `wpiapi-java-26.50.0-alpha-1.jar`, confirmed unchanged by the 2027 rename, see R17 | `com.ctre.phoenix6.*` stays as-is (the `org.wpilib` rename only touched first-party WPILib packages). `TalonFXConfiguration.Feedback` (`FeedbackConfigs`: `FeedbackRemoteSensorID` int, `FeedbackSensorSource` enum, `RotorToSensorRatio`/`SensorToMechanismRatio` doubles), `.ClosedLoopGeneral.ContinuousWrap` boolean, `.Slot0` (`Slot0Configs`: `kP`/`kV`/etc. doubles) all confirmed present with these exact field names via `javap`. `PositionVoltage(double)`/`(Angle)` and `VelocityVoltage(double)`/`(AngularVelocity)` constructors, `.withPosition(...)`/`.withVelocity(...)` overloads (double and measure-typed) all confirmed. `FeedbackSensorSourceValue.RemoteCANcoder` confirmed present among the enum's values |
+| `org.wpilib.simulation.DCMotorSim` has no `getAngularPositionRotations()`/`getAngularVelocityRPM()` — confirmed absent, not just unneeded, see R17 | Full `javap` listing shows only `getAngularPosition()`/`getAngularVelocity()`, both in radians / radians-per-second (the Lesson 4 finding). The old lesson's CANcoder sim-feed code names methods that don't exist on this class at all; the fix reuses the same `/(2 * Math.PI)` conversion already sitting two lines above it in `simulatePeriodic()`, not a same-named replacement |
+| `com.ctre.phoenix6.sim.CANcoderSimState` — compiled, not guessed | `setRawPosition(double)`/`(Angle)`, `setVelocity(double)`/`(AngularVelocity)`, both confirmed present, plain-rotation semantics matching the CANcoder's own native unit (no gear multiply needed, since the CANcoder sits directly on the wheel) |
+| `Rotation2d.getMeasure()` — compiled, not guessed | Returns `Angle`, confirmed via `javap`. This is what lets `PositionVoltage.withPosition(state.angle.getMeasure())` take a `SwerveModuleVelocity`'s `angle` field directly with no degrees-to-rotations conversion written by hand — Phoenix's control requests and WPILib's geometry types share the same `Angle`/`AngularVelocity` measure types |
 | Build target | `code/OpModeV3Robot/build.gradle`: `sourceCompatibility`/`targetCompatibility = JavaVersion.VERSION_25`, GradleRIO `2027.0.0-alpha-6`, shadow plugin `9.3.0`; deploys to a `SystemCore` target via `getTargetTypeClass('SystemCore')` |
 
 ---
@@ -1647,3 +1704,29 @@ appendices: verify before drafting, record what you verified.
       and `driveToPose` converges to within its 5 cm tolerance and stops
       cleanly. Full compile re-verified from a fresh sandbox (0–11) plus
       independent checkpoints at 1, 3, 4, 7, 9, 10.
+- [x] Lesson 12 (Model-based control) written and verified 2026-08-13 —
+      `docs/lessons/v3/12-model-based-control.md` and `code/v3/lesson-12/`,
+      compiling through `tools/verify-lessons-v3.sh 12`. **R17** covers the
+      real findings: Phoenix 6's config/control-request API ports
+      essentially unchanged (it sits outside the `org.wpilib` 2027 rename
+      entirely, confirmed via `javap`), but two things needed real
+      correction rather than a straight port — the old lesson's
+      `DCMotorSim.getAngularPositionRotations()`/`getAngularVelocityRPM()`
+      calls for the CANcoder's sim feed don't exist on this alpha's
+      `DCMotorSim` at all (only radian-based `getAngularPosition()`/
+      `getAngularVelocity()`, the Lesson 4 finding), so the fix reuses the
+      same `/(2 * Math.PI)` conversion already in `simulatePeriodic()`; and
+      `SwerveModule`'s own private `clamp` (a separate copy from
+      `Drivetrain`'s, existing only because this alpha has no
+      `MathUtil.clamp` to graduate to, per R10) becomes genuinely dead code
+      once the software steering P math moves into firmware, so Lesson 12
+      deletes it explicitly — an extra deletion the old lesson's diff
+      didn't need. Verified end to end with `DriverStationSim`-backed
+      tests against the real shipped snapshot: steering converges 0°→90°
+      fed *only* by the CANcoder's own sim state (confirming remote sensor
+      fusion genuinely works, not just configured), drive velocity
+      converges to a commanded 2.0 m/s via `kV`/`kP`, and `ContinuousWrap`
+      confirmed to take the actual short path across the wrap seam (a
+      +20° step, not a −340° one) in the real simulated firmware. Confirmed
+      no `Drivetrain.java` changes were needed. Full compile re-verified
+      from a fresh sandbox (0–12).
