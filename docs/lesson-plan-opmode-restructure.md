@@ -542,7 +542,7 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 13 | IO layers & replay | **High** | Written and verified 2026-08-13. Structure (interfaces, Inputs classes, `Constants.Mode` switch, IO implementations) ported clean, with the owning class (`SwerveModule`/`Drivetrain`) `SmartDashboard.putNumber`-ing its own Inputs fields manually instead of `@AutoLog`/`Logger.processInputs`. **Actual replay is deferred** — `REPLAY` stays a dormant, unreachable switch arm, verified via a real test to construct cleanly and leave every reading at its Inputs class's default — see [R1](#risks-and-blocking-unknowns). Also pays off Lesson 7's Try It 4 (named CAN ID/offset constants finally wired into the module array) and deletes `Drivetrain.simulatePeriodic()`/empties `Robot.simulationPeriodic()`, a v3-specific consequence of `Mechanism` having no `simulationPeriodic()` hook of its own — see [R18](#risks-and-blocking-unknowns) |
 | 14 | Pose estimator & localizer | Low | Written and verified 2026-08-13. Not a `SubsystemBase` → `Mechanism` rename after all — `Localizer` ships as a **plain class**, since it drives nothing and no command needs to require it; `Scheduler.addPeriodic(Runnable)` gives it a heartbeat with no `Mechanism`-ness needed. `SwerveDrivePoseEstimator`/`VecBuilder`/`Timer.getTimestamp()` all ported clean — see [R19](#risks-and-blocking-unknowns), which also corrects R18's retracted jvmArgs claim with a clean repro |
 | 15 | PhotonVision | ~~Medium~~ Low | Written and verified 2026-08-13. Vendordep fetches, compiles, and runtime-verifies clean — `OpModeRobot` integration confirmed working via a real `DriverStationSim`-backed multi-tag detection test, not just "the API compiles." Real finding, not anticipated by this plan: this course's vision-sim has no independent ground truth, so it can demonstrate accurate tracking but not recovering from a bad pose or exposing a miscalibrated camera — see [R20](#risks-and-blocking-unknowns), which also retires the old lesson's "mismeasure the camera" Try It (doesn't work here) with a corrected one that teaches the limitation directly |
-| 16 | maple-sim | **Blocking** | 2026-08-13: no longer just unverified — confirmed structurally incompatible with this 2027 alpha by direct test. maple-sim `0.4.0-beta`'s entire public API is typed in the pre-rename `edu.wpi.first.*` namespace, which doesn't exist on this alpha's classpath at all (`org.wpilib.*` only, no compatibility shim); a real attempt to construct `SwerveDriveSimulation` fails with `class file for edu.wpi.first.math.geometry.Pose2d not found`. See [R2](#risks-and-blocking-unknowns). Awaiting user direction on how to proceed. `Robot.simulationPeriodic()`'s "shared world state" exception still has a home on `OpModeRobot`, whenever this unblocks |
+| 16 | Ground truth (interim, no maple-sim) | Medium | Written and verified 2026-08-13. **User decision (2026-08-13): write an interim lesson without maple-sim** rather than skip or wait — maple-sim remains confirmed structurally incompatible with this 2027 alpha (see R2). Ships a hand-built `ChassisSimulation` (grip-limited `a = μg` acceleration via `MathUtil.slewRateLimit` on a `Translation2d`, exact integration via `Twist2d.exp()`) as a shared, `static`, sim-only chassis body — giving the track real ground truth, a real gyro fed from it, and real (not faked) drift, without needing maple-sim at all. Closes Lesson 15's own admitted compromise by re-wiring both cameras' `poseSupplier` from `Localizer::getPose` to `Drivetrain::getSimulatedPose`. No walls, no collisions, no game pieces — those stay out of scope until maple-sim (or an equivalent) actually becomes available; see R21. Presented to students with zero mention of maple-sim or blockers, framed as "build the physics by hand first," matching this course's own established rhythm (P-control by hand before firmware, wrap-loops by hand before `ContinuousWrap`) |
 | 17 | BLine autos | **High** | BLine's 2027 status still unverified (R2) *and* this is where the resolved multi-`@Autonomous` selection decision (OD3) actually lands — `Autos.buildChooser` retires |
 | 18–23 | Elevator … LEDs | Low | `SubsystemBase` → `Mechanism` rename; IO-layer pattern (Lesson 13's spine) is unaffected by this table's changes once Lesson 13 itself is resolved |
 | 24 | Superstructure | Medium | `StateMachine` library primitive now exists — recommend keep the hand-rolled enum, reference the library the way the course references `MathUtil.clamp` |
@@ -1582,6 +1582,104 @@ out badly.
   No lesson code ships a test — same precedent as Lessons 13–14. Every
   finding above came from throwaway JUnit files in the verification
   sandbox, written, run, and discarded.
+- **R21 — new, found while writing and verifying Lesson 16's hand-built
+  `ChassisSimulation`, all confirmed by `javap`/bytecode disassembly and
+  real `DriverStationSim`-backed tests, not ported from any prior lesson
+  (this content doesn't exist in the old course at all — maple-sim's real
+  physics engine fills this role there).** Written per the user's explicit
+  2026-08-13 decision to ship an interim, hand-built ground-truth lesson
+  rather than skip Lesson 16 or wait on maple-sim (see R2).
+
+  - **The physics derivation is real, not decorative**: `a = μg` for
+    translation (mass cancels out of `F = μmg` and `a = F/m`), and the same
+    limit divided by the corner-to-center radius
+    (`Math.hypot(kHalfLength, kHalfWidth)`) for rotation, treating each
+    wheel's tangential force at that radius as bound by the identical grip
+    limit. This is a first-order simplification (no coupled "friction
+    circle" between simultaneous translation and rotation, no per-wheel
+    normal-force redistribution under acceleration) and is presented to
+    students as exactly that — good enough to produce real, physically
+    motivated drift, not a claim of full rigid-body accuracy.
+  - **`org.wpilib.math.util.MathUtil.slewRateLimit` — confirmed via `javap
+    -c` bytecode disassembly, not guessed from the name.** Only
+    `Translation2d`/`Translation3d` overloads exist (no bare-`double`
+    overload in this alpha). Disassembly of the compiled method body
+    confirms parameter order and semantics: `slewRateLimit(current, target,
+    maxRatePerSecond, dtSeconds)` — validates `dtSeconds >= 0` (reports and
+    returns `target` unmodified if negative), returns `target` directly if
+    `current` is already within `maxRatePerSecond * dtSeconds` of it,
+    otherwise moves `current` toward `target` by exactly that much. Reusing
+    `Translation2d` to hold a `(vx, vy)` velocity pair (not a position) is a
+    deliberate, honest repurposing — the lesson names it as such rather
+    than pretending it's a coincidence.
+  - **`Pose2d.exp(Twist2d)` does NOT exist in this alpha — confirmed via a
+    full unfiltered `javap` dump, a real difference from pre-2027 WPILib**,
+    where that method is the standard way to integrate a twist onto a pose.
+    The equivalent here is `Twist2d.exp()` (no argument — it returns a
+    `Transform2d` computed from its own `dx`/`dy`/`dtheta` fields), composed
+    with `Pose2d.plus(Transform2d)`. Behaviorally identical, just relocated:
+    the exponential map moved from a `Pose2d` instance method taking a
+    `Twist2d` to a `Twist2d` instance method producing a `Transform2d`.
+    `ChassisVelocities.toTwist2d(double)` (already confirmed present, R14)
+    still works as the first step.
+  - **A real, reproducible testing-infrastructure bug found and fixed, not
+    a flaw in the shipped lesson code**: `Drivetrain.drive()`/
+    `driveFieldRelative()` have **no `.whenCanceled(...)` cleanup**, unlike
+    every other command on `Drivetrain` — a pre-existing characteristic
+    since Lesson 10, invisible until now because in normal use `drive()` is
+    always immediately replaced by another command, never left canceled
+    with nothing following it. A first attempt at this lesson's own
+    two-part verification test scheduled `drive()`, canceled it, and moved
+    on to a second scenario in the same JVM — the wheels kept running at
+    their last commanded velocity *forever* (Phoenix sim devices are keyed
+    by CAN ID and outlive a test), corrupting the next scenario's baseline
+    and producing a real, misleading failure (measured: expected error to
+    *shrink*, it *grew*, 0.71 m → 1.02 m). Fixed at the test level — an
+    explicit zero-velocity `drive()` held for 100 ticks before the next
+    scenario begins — and, per this repo's established convention, the two
+    scenarios were merged into one sequential test method rather than left
+    as two independent ones sharing `Drivetrain`'s `static` `m_chassisSim`
+    field and CAN-ID-keyed hardware. **Not fixed in the shipped
+    `Drivetrain.java`** — out of scope for this lesson's diff, flagged here
+    so it isn't rediscovered as a surprise by whoever next writes a test
+    that cancels `drive()` mid-scenario.
+  - **Measured, not assumed:** aggressive alternating full-forward/full-reverse
+    driving (4 reps, 0.3 s each) produced real, measurable divergence
+    between `Localizer/Pose` (built from wheel encoders, which respond to
+    Phoenix's own velocity closed loop with no knowledge of chassis mass)
+    and `Drivetrain/SimulatedPose` (grip-limited to `kMaxAccelMps2`) —
+    confirmed via a real end-to-end test, divergence measured in the
+    centimeters, not the fractions-of-a-millimeter range that would
+    indicate numerical noise rather than real drift. Separately, vision fed
+    from an independent fixed pose (standing in for `getSimulatedPose()`,
+    since driving the real chassis sim to an exact tag-adjacent spot in a
+    short test isn't practical) pulled a deliberately-seeded 0.5 m-off
+    estimate to under half that error within 20 simulated camera frames —
+    the correction Lesson 15's own test could not produce, now genuinely
+    demonstrated because the camera's rendered pose is independent of the
+    estimate it corrects.
+  - **A known, accepted scope gap, not silently glossed over**:
+    `Drivetrain.driveDistance` commands per-module `SwerveModuleVelocity`s
+    directly rather than going through `applyChassisSpeeds`, a leftover
+    from Lesson 9 (before `ChassisVelocities` existed) that Lesson 12–15
+    never had reason to touch. `ChassisSimulation.update(...)` is only
+    called from inside `applyChassisSpeeds`, so `driveDistance` does not
+    advance the chassis sim — acceptable because the lesson's entire
+    demonstration (teleop driving via `drive()`/`driveFieldRelative()`,
+    both of which do route through `applyChassisSpeeds` every tick as
+    persistent default/bound commands) never depends on it. Not mentioned
+    in the student-facing lesson, since it isn't visible in the intended
+    usage and calling it out would raise a non-issue.
+  - **No walls, no collisions, no game pieces** — this hand-built
+    `ChassisSimulation` has no notion of the field boundary or other rigid
+    bodies, unlike maple-sim's real physics engine. Deliberately out of
+    scope; the lesson doesn't claim otherwise, and doesn't mention why.
+  - **The jvmArgs finding reproduces a fourth time, unchanged** (R18/R19/R20)
+    — every `Mechanism`-constructing test in this lesson's verification
+    needed the same three `jvmArgs`; noted here for completeness, not
+    re-derived.
+
+  No lesson code ships a test — same precedent as Lessons 13–15.
 
 ---
 
@@ -1696,7 +1794,10 @@ appendices: verify before drafting, record what you verified.
 | PhotonLib `v2027.0.0-alpha-2` — compiled against real jars, not guessed, see R20 | `org.photonvision.*` package names unchanged from pre-2027 PhotonLib (sits outside the `org.wpilib` rename, same as Phoenix 6). `PhotonCamera(String)`, `.getAllUnreadResults()`, `PhotonPoseEstimator(AprilTagFieldLayout, Transform3d)`, `.estimateCoprocMultiTagPose(PhotonPipelineResult)`/`.estimateLowestAmbiguityPose(PhotonPipelineResult)` all confirmed present with unchanged signatures. `EstimatedRobotPose`'s three public fields (`estimatedPose`, `timestampSeconds`, `targetsUsed`) confirmed unchanged. New in this alpha, not used by the lesson: `estimatePnpDistanceTrigSolvePose`, `estimateConstrainedSolvepnpPose`, `estimateRioMultiTagPose`, `estimateClosestToCameraHeightPose`, `estimateClosestToReferencePose`, `estimateAverageBestTargetsPose` |
 | `org.wpilib.vision.apriltag.AprilTagFieldLayout`/`AprilTagFields` — compiled, not guessed, see R20 | Moved from the pre-2027 `edu.wpi.first.apriltag` root. `AprilTagFieldLayout.loadField(AprilTagFields)` static factory confirmed present; `AprilTagFields.kDefaultField`/`k2026RebuiltWelded`/`k2026RebuiltAndymark` all confirmed present among the enum's values |
 | `org.photonvision.simulation.VisionSystemSim`/`PhotonCameraSim`/`SimCameraProperties` — compiled and end-to-end runtime-verified, see R20 | `VisionSystemSim(String)`, `.addAprilTags(AprilTagFieldLayout)`, `.getDebugField()` (returns `org.wpilib.smartdashboard.Field2d` — this track's own type, no cross-package mismatch), `.addCamera(PhotonCameraSim, Transform3d)`, `.update(Pose2d)` all confirmed present and, unlike most appendix rows, verified to actually *work*: a real test drove a simulated camera to correctly report a multi-tag pose within centimeters of a known true position |
-| `VisionSystemSim`'s vision-sim architecture has no independent ground truth — a real, tested limitation, not a guess, see R20 | `poseSupplier` (fed to `VisionIOPhotonVisionSim`) is the same fused `Localizer` estimate vision itself corrects. Confirmed by two failed-as-expected tests: seeding a deliberately wrong pose near a real tag never converged toward the tag's true position (error flat at ~0.71 m over 150 ticks), and mismeasuring `robotToCamera` by 0.3 m produced no detectable skew (max error 1.5 cm, indistinguishable from ordinary sim noise) — because that same transform is used to both place the fake camera and un-project its detections, canceling itself out. What *is* verified to work: the fused pose tracks a correctly-seeded true pose within 15 cm over 150 ticks of real multi-tag detections |
+| `VisionSystemSim`'s vision-sim architecture has no independent ground truth — a real, tested limitation, not a guess, see R20 | `poseSupplier` (fed to `VisionIOPhotonVisionSim`) is the same fused `Localizer` estimate vision itself corrects. Confirmed by two failed-as-expected tests: seeding a deliberately wrong pose near a real tag never converged toward the tag's true position (error flat at ~0.71 m over 150 ticks), and mismeasuring `robotToCamera` by 0.3 m produced no detectable skew (max error 1.5 cm, indistinguishable from ordinary sim noise) — because that same transform is used to both place the fake camera and un-project its detections, canceling itself out. What *is* verified to work: the fused pose tracks a correctly-seeded true pose within 15 cm over 150 ticks of real multi-tag detections. **Resolved by Lesson 16** — see R21; `poseSupplier` now points at `Drivetrain::getSimulatedPose`, an independent ground truth, not the estimate |
+| `org.wpilib.math.util.MathUtil.slewRateLimit` — disassembled via `javap -c`, not guessed from the name, see R21 | Only `Translation2d`/`Translation3d` overloads exist, no bare-`double` one. Confirmed parameter order and behavior from the compiled method body: `slewRateLimit(current, target, maxRatePerSecond, dtSeconds)` — validates `dtSeconds >= 0`, returns `target` directly if already within `maxRatePerSecond * dtSeconds` of `current`, otherwise steps `current` toward `target` by exactly that much |
+| `org.wpilib.math.geometry.Pose2d.exp(Twist2d)` does NOT exist in this alpha — confirmed via a full unfiltered `javap` dump, a real difference from pre-2027 WPILib, see R21 | The exponential map moved: `Twist2d.exp()` (no argument, using its own `dx`/`dy`/`dtheta` fields) returns a `Transform2d`, composed onto a pose via the already-existing `Pose2d.plus(Transform2d)`. `ChassisVelocities.toTwist2d(double)` (R14) still produces the twist to feed it |
+| `Drivetrain.drive()`/`driveFieldRelative()` have no `.whenCanceled(...)` cleanup — a real, pre-existing gap found by testing, not by code review, see R21 | Every other `Drivetrain` command (`turnToHeading`, `driveDistance`, `driveToPose`) stops the wheels on cancellation; these two don't. Invisible in normal use (both are always immediately replaced by another command, never left canceled with nothing following), but a test that explicitly schedules-then-cancels `drive()` and moves on leaves the wheels running at their last commanded velocity forever, since Phoenix sim devices are keyed by CAN ID and outlive a test in the same JVM — reproduced a real, misleading test failure (expected error to shrink, it grew instead: 0.71 m → 1.02 m) before being traced to this cause. Not fixed in shipped `Drivetrain.java` — out of scope for Lesson 16's diff |
 
 ---
 
@@ -1730,10 +1831,15 @@ appendices: verify before drafting, record what you verified.
 - [ ] Track AdvantageKit's releases for `OpModeRobot` support landing (R1) —
       no longer blocking, but is the trigger for the follow-up pass that adds
       real replay back to the IO layers built in this track.
-- [ ] Verify maple-sim / BLine 2027-alpha status directly at their own hosts
-      (R2) before writing Lessons 16, 17, 22, 25–27 — PhotonVision's status is
-      now confirmed better (vendordep exists), but its `OpModeRobot`
-      integration is still unverified.
+- [x] Verify maple-sim's 2027-alpha status directly at its own host (R2) —
+      resolved 2026-08-13: confirmed structurally incompatible (pre-rename
+      `edu.wpi.first.*` API, doesn't exist on this alpha's classpath at
+      all), not just unverified. Lesson 16 ships as an interim, hand-built
+      ground-truth lesson instead, per user decision — see R21.
+- [ ] Verify BLine's 2027-alpha status directly at its own host (R2) before
+      writing Lesson 17, immediately next — not yet checked this session.
+      PhotonVision's status is fully resolved (R20): vendordep exists,
+      compiles, and its `OpModeRobot` integration is runtime-verified.
 - [x] `DataLogManager`'s exact 2027 package — resolved 2026-08-11, compiled
       not guessed: `org.wpilib.system.DataLogManager`. The earlier guess
       (`org.wpilib.datalog`) was wrong.
@@ -2120,3 +2226,54 @@ appendices: verify before drafting, record what you verified.
       and Try It 3 were rewritten around this finding rather than silently
       dropped. Full compile re-verified from a fresh sandbox (0–15), plus
       independent checkpoints at 1, 3, 4, 7, 9, 10, 11, 12, 13, and 14.
+- [x] Lesson 16 (Ground truth, interim — no maple-sim) investigated,
+      decided, written, and verified 2026-08-13. **maple-sim confirmed
+      structurally incompatible with this 2027 alpha by direct test, not
+      left as "unverified"**: its published vendordep uses the pre-2027
+      `frcYear` schema key instead of this alpha's `wpilibYear` (patchable
+      by hand), but the real blocker is one layer deeper and not patchable
+      — maple-sim `0.4.0-beta`'s entire compiled API is typed in the
+      pre-rename `edu.wpi.first.*` namespace, which does not exist
+      anywhere on this alpha's classpath (confirmed: constructing a
+      `SwerveDriveSimulation` fails with `class file for
+      edu.wpi.first.math.geometry.Pose2d not found`). Presented to the
+      user via `AskUserQuestion`; **decision: write an interim lesson
+      without maple-sim**, covering the same ground-truth concept with a
+      hand-built stand-in rather than skipping the lesson or pausing the
+      track. Shipped `docs/lessons/v3/16-ground-truth.md` and
+      `code/v3/lesson-16/`: a new `ChassisSimulation` class (shared,
+      `static`, sim-only) moves under a real, physically-derived
+      acceleration limit (`a = μg`, mass cancels out of the derivation) via
+      `MathUtil.slewRateLimit` on a `Translation2d` (translation) and a
+      hand-written scalar chaser (rotation, since no bare-`double` overload
+      exists), integrated exactly via `Twist2d.exp()` (discovered
+      `Pose2d.exp(Twist2d)` does not exist in this alpha — see R21).
+      `GyroIOSim` now reads the chassis sim's own heading instead of
+      integrating a commanded rate by hand, retiring
+      `GyroIO.setSimRotationRate` entirely — the same "the gyro stops
+      pretending" beat the old lesson uses, backed by the hand-built
+      chassis instead of maple-sim's `GyroSimulation`. Closes Lesson 15's
+      own admitted compromise: both cameras' `poseSupplier` now points at
+      `Drivetrain::getSimulatedPose` (independent ground truth) instead of
+      `Localizer::getPose` (the estimate being corrected). No walls, no
+      collisions, no game pieces — out of scope until a real physics engine
+      is actually available. Verified end to end with real
+      `DriverStationSim`-backed tests: acceleration is provably gradual,
+      not instant (measured against the predicted `v/a` tick count);
+      `Twist2d.exp()` integration tracks a steady turn rate exactly;
+      aggressive alternating full-forward/full-reverse driving produces
+      real, centimeter-scale divergence between the wheel-encoder estimate
+      and grip-limited ground truth; and vision fed from an independent
+      true pose pulls a deliberately-seeded 0.5 m-off estimate to under
+      half that error within 20 simulated frames — the correction Lesson
+      15 could not demonstrate. A real testing-infrastructure bug was
+      found and fixed along the way (`drive()`'s missing
+      `.whenCanceled(...)` left wheels running across tests in the same
+      JVM, corrupting a second scenario's baseline) — see R21 for the full
+      writeup. The student-facing lesson names none of this: it presents
+      the hand-built chassis as pedagogically deliberate ("build it by
+      hand first"), matching this course's own established rhythm, with
+      zero mention of maple-sim, alphas, or blockers — that story lives
+      here and in R2/R21, not in the lesson prose. Full compile
+      re-verified from a fresh sandbox (0–16), plus independent
+      regression checkpoints at 1, 3, 4, 7, 9, 10, 11, 12, 13, 14, and 15.

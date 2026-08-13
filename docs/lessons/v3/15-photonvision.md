@@ -641,4 +641,4 @@ simulation you've run since Lesson 4 has been motors spinning in an empty
 void. A future lesson hands the whole thing a physics engine, and with it,
 the ground truth this lesson's callouts kept pointing toward.
 
-Next: Lesson 16 — a simulated field with a ground truth of its own.
+Next: [Lesson 16 — Ground truth: give the simulation a body](16-ground-truth.md).
