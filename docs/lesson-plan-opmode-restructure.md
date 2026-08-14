@@ -547,7 +547,8 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 18 | Scoring elevator | Low | Written and verified 2026-08-13. `SubsystemBase` → `Mechanism` rename landed exactly as predicted, with `ElevatorIO`/`ElevatorIOTalonFX`/`ElevatorIOSim` matching `ModuleIO`'s spine from Lesson 13 file-for-file. Phoenix's Motion Magic + full feedforward config surface (`MotionMagicVoltage`, `MotionMagicConfigs`, `Slot0Configs.kG/kV/kA/kP`, `GravityTypeValue.Elevator_Static`) and `org.wpilib.simulation.ElevatorSim` all confirmed via `javap` with unchanged signatures from pre-2027 WPILib/Phoenix 6. R3/R7's `StatusSignal.getValueAsDouble()` finding held again here, including on `getClosedLoopReference()`'s `Double`-typed signal. See [R22](#risks-and-blocking-unknowns) for measured (not reused) feedforward-term numbers from this alpha's own physics |
 | 19 | Mechanism2d | Low | Written and verified 2026-08-13. **Real, load-bearing departure from the old lesson: no AdvantageKit means no `LoggedMechanism2d`/`LoggedMechanismRoot2d`/`LoggedMechanismLigament2d`** — this course uses WPILib's own `org.wpilib.smartdashboard.Mechanism2d`/`MechanismRoot2d`/`MechanismLigament2d` instead (confirmed via `javap`, same package as `Field2d`/`SmartDashboard`). Two real consequences, not cosmetic renames: (1) these classes are plain-`double` constructors with no `Distance`/`Angle`-typed overloads at all, so every measure gets unpacked with `.in(Meters)` right at the call site — a new instance of the course's own "unpack only at a genuine double-only boundary" rule, not an exception to it; (2) `Mechanism2d implements NTSendable` (confirmed `extends Sendable`), so it's a **live** object — `SmartDashboard.putData(...)` publishes it exactly once, in the constructor, mirroring Lesson 14's already-shipped `Field2d` precedent, and `setLength`/`setColor` push straight to NetworkTables from `periodic()` with no `Logger.recordOutput`-style "must republish every tick" step. This is a genuinely simpler story than the old lesson's, not a downgrade. See [R23](#risks-and-blocking-unknowns) for the `Color`/`Color8Bit` naming-convention finding and the real NT-backed verification |
 | 20 | Intake arm | Low | Written and verified 2026-08-13. `SubsystemBase` → `Mechanism` rename landed exactly as predicted, and `Arm(Elevator elevator)` — a `Mechanism` constructor taking another `Mechanism` — is the first of its kind in this track, mirroring `Robot.java`'s own already-established "later field reads an earlier one" ordering rule (Lesson 14). `GravityTypeValue.Arm_Cosine`, `SoftwareLimitSwitchConfigs`, and `SingleJointedArmSim` (including `estimateMOI`) all confirmed via `javap` with unchanged signatures from pre-2027 WPILib/Phoenix 6. Real finding: `TalonFX.setThrottle(double)` (not `.set(double)`, per R3) is what the roller's plain percent-output write needed — R3 held four lessons after it was first found. See [R24](#risks-and-blocking-unknowns) for that and for the measured, exact match to the old course's own 5-point `kG × cos θ` table (0.25/0.18/0.00/−0.18/−0.25 V at 0°/45°/90°/135°/180°) and the real firmware-soft-limit verification |
-| 21–23 | Limit sensors … LEDs | Low | `SubsystemBase` → `Mechanism` rename; IO-layer pattern (Lesson 13's spine) is unaffected by this table's changes once Lesson 13 itself is resolved |
+| 21 | Limit sensors (homing) | Low | Written and verified 2026-08-13. `DigitalInput` confirmed present (moved to `org.wpilib.hardware.discrete.DigitalInput`), `VoltageOut`/`TalonFX.setPosition` unchanged from pre-2027 Phoenix 6. **Real, load-bearing finding, not anticipated by this plan: this framework's `Scheduler` does not auto-cancel commands while the robot is disabled at all** — confirmed by a real test that schedules a `Trigger`-bound, no-requirements command with the robot deliberately left disabled and watches it fire — so `rezeroAtBottom()` needs no `ignoringDisable`-equivalent (none exists) where the old lesson needed one. Second finding, verified rather than assumed from `Drivetrain.driveToPose`'s own comment: `.whenCanceled(...)` genuinely fires whether a `runRepeatedly(...).until(...)` command was interrupted *or* finished on its own, confirmed by an isolated scheduler test before trusting it for `home()`'s cleanup. See [R25](#risks-and-blocking-unknowns) for both, plus measured numbers matching the old course's almost exactly (3.88 s to home, ≈120.7 A stalled) |
+| 22–23 | Light sensors, LEDs | Low | `SubsystemBase` → `Mechanism` rename; IO-layer pattern (Lesson 13's spine) is unaffected by this table's changes once Lesson 13 itself is resolved |
 | 24 | Superstructure | Medium | `StateMachine` library primitive now exists — recommend keep the hand-rolled enum, reference the library the way the course references `MathUtil.clamp` |
 | 25 | Path events | Medium | `Trigger`'s auto-scoping may let the manual `.finallyDo(FollowPath::clearRotationOverride)` handback shrink or disappear — depends on whether BLine v3 exposes a scoped registration path; needs the same source-jar verification this course already applies to BLine |
 | 26 | Drive to pose | Low | Mechanically unaffected |
@@ -1911,6 +1912,74 @@ out badly.
 
 ---
 
+- **R25 — new, found while writing and verifying Lesson 21's homing
+  routine, all confirmed by `javap` and real `DriverStationSim`-backed
+  tests.** The lesson closes the "relative encoder lies at boot" gap
+  every mechanism has quietly had since Lesson 18.
+
+  - **`org.wpilib.hardware.discrete.DigitalInput` — compiled, not
+    guessed.** Moved package (was `edu.wpi.first.wpilibj.DigitalInput`
+    pre-2027); constructor, `get()`, `getChannel()` all unchanged in
+    shape. `com.ctre.phoenix6.controls.VoltageOut` and
+    `TalonFX.setPosition(double)` confirmed present and unchanged — the
+    same finding as every other Phoenix control-request class this track
+    has checked (R17/R22/R24): none of it sits inside the `org.wpilib`
+    rename.
+  - **The headline finding: this framework's `Scheduler` does not
+    auto-cancel commands while the robot is disabled, at all — confirmed
+    empirically, not inferred from the absence of an
+    `ignoringDisable`-shaped method.** The classic WPILib `CommandScheduler`
+    cancels every running command the instant the robot goes disabled, so
+    a command that must keep working needs an explicit opt-out
+    (`.ignoringDisable(true)`); this alpha's `Scheduler` has no such
+    method to opt out of in the first place, and a full `javap -c`
+    disassembly of `Scheduler` turns up zero references to
+    `isDisabled`/`isEnabled`/`DriverStation` anywhere in its bytecode. A
+    real test proves the behavior rather than the absence of a method
+    name: with the robot left deliberately disabled
+    (`DriverStationSim.setEnabled` never called), a `Trigger`-bound,
+    `Command.noRequirements(...)`-built command still fires and runs.
+    Enable/disable state in this framework is exposed as
+    `RobotModeTriggers.disabled()` (a `Trigger` you can build behavior
+    *around*, confirmed present) and `RobotState.isEnabled()`/
+    `isDisabled()` (confirmed present, moved from the old
+    `DriverStation.isEnabled()`/`isDisabled()` static methods, which no
+    longer exist — `org.wpilib.driverstation.DriverStation` in this alpha
+    only has `startDataLog`/event-handle methods now), not something the
+    scheduler enforces by default. `Elevator.rezeroAtBottom()` therefore
+    needs no disabled-handling step at all — the lesson states this as a
+    genuine simplification versus the old course, not a gap.
+  - **`.whenCanceled(...)` firing on a `.until(...)`'s natural completion
+    — verified with an isolated test before trusting it for `home()`'s
+    cleanup, not assumed from `Drivetrain.driveToPose`'s own "reached it
+    or interrupted — stop" comment.** A minimal `runRepeatedly(...)
+    .whenCanceled(...).until(...)` command on a throwaway `Mechanism`
+    confirms `whenCanceled` runs in both cases. The first attempt at
+    `ElevatorHomingTest` read the post-`home()` height in the same tick
+    the command finished and got the *uncorrected* encoder value
+    (`heightMeters ≈ −0.34`, matching what the raw relative encoder would
+    read after descending from zero for ~3.9 s) — not a `whenCanceled`
+    failure, but `setPositionMeters` needing a couple of ticks to
+    propagate through Phoenix's simulated firmware before a read reflects
+    it, the same fact the main course's own Lesson 32 appendix already
+    documents. Reading the height a few ticks later resolved it cleanly.
+  - **Measured, not reused from the old course** (same physics — a Kraken
+    X60 elevator homing at −0.7 V from 35 cm — only the API differs, so
+    this confirms the port carried the numbers correctly): homing from
+    `kSimStartHeight` takes **3.88 s** to trip the switch (old course:
+    "about 3.9 seconds"), landing the corrected height at **0.009 m**
+    against a `kBottomLimitHeight` of 0.01 m. A separate stall test
+    (continuous −3 V against the physical floor, never releasing) reads
+    **120.7 A** stator current at **0.000 m/s** velocity — the old
+    course's own "about 120 amps"/"0.000 m/s" pair, reproduced almost
+    exactly. A full sequential scenario also confirmed the `Trigger`-bound
+    auto-rezero fires correctly on a *second*, later trip of the switch,
+    not just the one `home()` itself handles.
+
+  No lesson code ships a test — same precedent as Lessons 13–16, 18–20.
+
+---
+
 ## Appendix: verified API notes
 
 Read directly from `wpilibsuite/allwpilib` at tag `v2027.0.0-alpha-6` — the
@@ -2038,6 +2107,11 @@ appendices: verify before drafting, record what you verified.
 | `com.ctre.phoenix6.signals.GravityTypeValue.Arm_Cosine`/`configs.SoftwareLimitSwitchConfigs` — compiled, not guessed, see R24 | Both confirmed via `javap`, unchanged from pre-2027 Phoenix 6 — same finding as R22's Lesson 18 config surface, none of this sits inside the `org.wpilib` rename. `SoftwareLimitSwitchConfigs`: `ForwardSoftLimitEnable`/`ReverseSoftLimitEnable` (`boolean`), `ForwardSoftLimitThreshold`/`ReverseSoftLimitThreshold` (`double`, mechanism rotations, plus `Angle`-typed `with...`/`get...Measure()` overloads) |
 | `org.wpilib.simulation.SingleJointedArmSim` — compiled, not guessed, see R24 | Confirmed present under the new package root, `extends LinearSystemSim<N2, N1, N2>`, unchanged constructor shape from pre-2027 WPILib: `(DCMotor, gearing, moiKgMetersSquared, armLengthMeters, minAngleRad, maxAngleRad, simulateGravity, startingAngleRad, double... stdDevs)`. Static `estimateMOI(double armLengthMeters, double massKg)` confirmed present |
 | `org.wpilib.math.system.Models.flywheelFromPhysicalConstants` returns a 1-state system, incompatible with `DCMotorSim` — confirmed via a real compile failure, not guessed, see R24 | Returns `LinearSystem<N1,N1,N1>` (velocity only); `DCMotorSim`'s constructor wants `LinearSystem<N2,N1,N2>` (position + velocity). `Models.singleJointedArmFromPhysicalConstants(DCMotor, J, gearing)` — the same call `ModuleIOSim` already uses for the drive/steer motors — is the correct generic 2-state system for any `DCMotorSim`-driven mechanism with no gravity term, arm or not |
+| `org.wpilib.hardware.discrete.DigitalInput` — compiled, not guessed, see R25 | Moved from the pre-2027 `edu.wpi.first.wpilibj.DigitalInput` root. Constructor `(int channel)`, `get()`, `getChannel()`, `setSimDevice(SimDevice)` all confirmed unchanged in shape |
+| `com.ctre.phoenix6.controls.VoltageOut`/`TalonFX.setPosition(double)` — compiled, not guessed, see R25 | Both confirmed via `javap`, unchanged from pre-2027 Phoenix 6 — same "none of this sits inside the `org.wpilib` rename" finding as every other Phoenix control-request class checked so far (R17/R22/R24) |
+| `org.wpilib.command3.Scheduler` does not auto-cancel commands on disable — confirmed via a full `javap -c` disassembly (zero references to `isDisabled`/`isEnabled`/`DriverStation`) and a real test, not guessed, see R25 | A `Trigger`-bound `Command.noRequirements(...)` command fires and runs with the robot deliberately left disabled. A real, load-bearing behavioral difference from the classic WPILib `CommandScheduler`, which cancels every running command on disable and needs an explicit `.ignoringDisable(true)` opt-out — this alpha's builder chain (`NeedsNameBuilderStage`/`NeedsExecutionBuilderStage`) has no such method at all, because there's nothing to opt out of |
+| `org.wpilib.command3.button.RobotModeTriggers.disabled()`/`org.wpilib.driverstation.RobotState.isEnabled()`/`isDisabled()` — compiled, not guessed, see R25 | `RobotModeTriggers` exposes `autonomous()`/`teleop()`/`disabled()`/`utility()`, all `Trigger`s, confirmed present. `org.wpilib.driverstation.DriverStation` in this alpha has **no** `isEnabled()`/`isDisabled()` at all (confirmed via the full `javap` listing — only `startDataLog`/refresh-handle methods remain); that query moved to `org.wpilib.driverstation.RobotState`, confirmed present there instead |
+| `NeedsNameBuilderStage.whenCanceled(...)` fires on a `.until(...)`'s natural completion, not just on interruption — verified with an isolated scheduler test, not assumed from a comment, see R25 | A minimal `Mechanism.runRepeatedly(...).whenCanceled(...).until(...)` command, run to its `.until(...)` condition tripping naturally (no interruption involved), confirms the `whenCanceled` callback still runs. Backs up `Drivetrain.driveToPose`'s own "reached it or interrupted — stop" comment (R16) with an actual test rather than trusting the comment as written |
 
 ---
 
@@ -2643,3 +2717,39 @@ appendices: verify before drafting, record what you verified.
       and decays fully once `.whenCanceled(...)` fires. Full compile
       re-verified from a fresh sandbox (0–20), plus an independent
       regression checkpoint at 19.
+- [x] Lesson 21 (Homing: finding out where you actually are) written and
+      verified 2026-08-13 — `docs/lessons/v3/21-limit-sensors.md` and
+      `code/v3/lesson-21/`, compiling through
+      `tools/verify-lessons-v3.sh 21`. Closes the "relative encoder lies
+      at boot" gap every mechanism has quietly had since Lesson 18.
+      `DigitalInput` (moved to `org.wpilib.hardware.discrete`),
+      `VoltageOut`, and `TalonFX.setPosition` all confirmed via `javap`
+      with unchanged shapes from pre-2027 WPILib/Phoenix 6. **The
+      headline finding, empirically confirmed rather than inferred from a
+      missing method: this framework's `Scheduler` does not auto-cancel
+      commands on disable at all**, unlike the classic WPILib
+      `CommandScheduler` — a `Trigger`-bound `Command.noRequirements(...)`
+      command fires and runs with the robot deliberately left disabled, a
+      full `javap -c` disassembly of `Scheduler` turns up zero references
+      to `isDisabled`/`isEnabled`/`DriverStation`, and enable state is
+      exposed instead as `RobotModeTriggers.disabled()` (a `Trigger`) and
+      `RobotState.isEnabled()`/`isDisabled()` (`DriverStation` itself lost
+      those methods entirely in this alpha). `Elevator.rezeroAtBottom()`
+      therefore needs no `ignoringDisable`-equivalent — there isn't one to
+      need. **R25** also verified, with an isolated test rather than by
+      trusting a comment, that `.whenCanceled(...)` fires whether a
+      `runRepeatedly(...).until(...)` command was interrupted or finished
+      naturally — the same guarantee `Drivetrain.driveToPose` (R16) has
+      quietly relied on since Lesson 17, now confirmed rather than
+      assumed — which is what lets `home()`'s single cleanup block cover
+      both "the switch tripped" and "the driver let go mid-descent."
+      Measured, and matching the old course's own numbers closely (same
+      physics, only the API differs): homing from `kSimStartHeight` takes
+      **3.88 s** (old course: "about 3.9 seconds") and lands at 0.009 m
+      against a 0.01 m target; a stall test at −3 V against the physical
+      floor reads **120.7 A** at **0.000 m/s** velocity, reproducing the
+      old course's own "about 120 amps"/"0.000 m/s" pair almost exactly.
+      A full sequential test also confirmed the `Trigger`-bound auto-rezero
+      fires correctly on a second, later trip of the switch, not just the
+      one `home()` itself handles. Full compile re-verified from a fresh
+      sandbox (0–21), plus an independent regression checkpoint at 20.
