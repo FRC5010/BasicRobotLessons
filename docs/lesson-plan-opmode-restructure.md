@@ -548,7 +548,8 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 19 | Mechanism2d | Low | Written and verified 2026-08-13. **Real, load-bearing departure from the old lesson: no AdvantageKit means no `LoggedMechanism2d`/`LoggedMechanismRoot2d`/`LoggedMechanismLigament2d`** — this course uses WPILib's own `org.wpilib.smartdashboard.Mechanism2d`/`MechanismRoot2d`/`MechanismLigament2d` instead (confirmed via `javap`, same package as `Field2d`/`SmartDashboard`). Two real consequences, not cosmetic renames: (1) these classes are plain-`double` constructors with no `Distance`/`Angle`-typed overloads at all, so every measure gets unpacked with `.in(Meters)` right at the call site — a new instance of the course's own "unpack only at a genuine double-only boundary" rule, not an exception to it; (2) `Mechanism2d implements NTSendable` (confirmed `extends Sendable`), so it's a **live** object — `SmartDashboard.putData(...)` publishes it exactly once, in the constructor, mirroring Lesson 14's already-shipped `Field2d` precedent, and `setLength`/`setColor` push straight to NetworkTables from `periodic()` with no `Logger.recordOutput`-style "must republish every tick" step. This is a genuinely simpler story than the old lesson's, not a downgrade. See [R23](#risks-and-blocking-unknowns) for the `Color`/`Color8Bit` naming-convention finding and the real NT-backed verification |
 | 20 | Intake arm | Low | Written and verified 2026-08-13. `SubsystemBase` → `Mechanism` rename landed exactly as predicted, and `Arm(Elevator elevator)` — a `Mechanism` constructor taking another `Mechanism` — is the first of its kind in this track, mirroring `Robot.java`'s own already-established "later field reads an earlier one" ordering rule (Lesson 14). `GravityTypeValue.Arm_Cosine`, `SoftwareLimitSwitchConfigs`, and `SingleJointedArmSim` (including `estimateMOI`) all confirmed via `javap` with unchanged signatures from pre-2027 WPILib/Phoenix 6. Real finding: `TalonFX.setThrottle(double)` (not `.set(double)`, per R3) is what the roller's plain percent-output write needed — R3 held four lessons after it was first found. See [R24](#risks-and-blocking-unknowns) for that and for the measured, exact match to the old course's own 5-point `kG × cos θ` table (0.25/0.18/0.00/−0.18/−0.25 V at 0°/45°/90°/135°/180°) and the real firmware-soft-limit verification |
 | 21 | Limit sensors (homing) | Low | Written and verified 2026-08-13. `DigitalInput` confirmed present (moved to `org.wpilib.hardware.discrete.DigitalInput`), `VoltageOut`/`TalonFX.setPosition` unchanged from pre-2027 Phoenix 6. **Real, load-bearing finding, not anticipated by this plan: this framework's `Scheduler` does not auto-cancel commands while the robot is disabled at all** — confirmed by a real test that schedules a `Trigger`-bound, no-requirements command with the robot deliberately left disabled and watches it fire — so `rezeroAtBottom()` needs no `ignoringDisable`-equivalent (none exists) where the old lesson needed one. Second finding, verified rather than assumed from `Drivetrain.driveToPose`'s own comment: `.whenCanceled(...)` genuinely fires whether a `runRepeatedly(...).until(...)` command was interrupted *or* finished on its own, confirmed by an isolated scheduler test before trusting it for `home()`'s cleanup. See [R25](#risks-and-blocking-unknowns) for both, plus measured numbers matching the old course's almost exactly (3.88 s to home, ≈120.7 A stalled) |
-| 22–23 | Light sensors, LEDs | Low | `SubsystemBase` → `Mechanism` rename; IO-layer pattern (Lesson 13's spine) is unaffected by this table's changes once Lesson 13 itself is resolved |
+| 22 | Light sensors (beam break) | **Skipped for now** | 2026-08-13: needs maple-sim's `IntakeSimulation` to give the beam-break sensor an independent "is a piece really there" signal — maple-sim remains confirmed structurally incompatible with this 2027 alpha (see R2). **User decision (2026-08-13): skip to Lesson 23 for now** rather than write an interim hand-built stand-in — LEDs (23) doesn't depend on a beam break or maple-sim, so the track moves on and Lesson 22 stays a gap alongside Lesson 17 to revisit once maple-sim ships `org.wpilib.*`-compatible support |
+| 23 | LEDs | Low | `SubsystemBase` → `Mechanism` rename; IO-layer pattern (Lesson 13's spine) is unaffected by this table's changes once Lesson 13 itself is resolved |
 | 24 | Superstructure | Medium | `StateMachine` library primitive now exists — recommend keep the hand-rolled enum, reference the library the way the course references `MathUtil.clamp` |
 | 25 | Path events | Medium | `Trigger`'s auto-scoping may let the manual `.finallyDo(FollowPath::clearRotationOverride)` handback shrink or disappear — depends on whether BLine v3 exposes a scoped registration path; needs the same source-jar verification this course already applies to BLine |
 | 26 | Drive to pose | Low | Mechanically unaffected |
@@ -784,8 +785,19 @@ out badly.
   maple-sim needs a recompile against renamed WPILib types; BLine needs a
   rewrite against a different command framework entirely. Each gates a
   meaningful chunk of the back half of the course (Lessons 16–17, 22,
-  25–28), and Lesson 17 (BLine autos) is next in line — flagged for a user
-  decision before writing it, the same way Lesson 16's was.
+  25–28). Lesson 17 (BLine autos) hit this first — **user decision
+  2026-08-13: skip to Lesson 18** rather than write an interim or wait,
+  since the mechanisms arc doesn't depend on either library. **Lesson 22
+  (beam breaks) hit it next**, needing maple-sim's `IntakeSimulation` to
+  give the beam-break sensor an independent "is a piece really there"
+  signal (the old lesson's own point: a simulated sensor that just follows
+  the roller has proven nothing). Presented with the same two options
+  Lesson 16 got — write an interim hand-built stand-in (a fake-injection
+  signal decoupled from roller state, same spirit as Lesson 14's fake
+  camera sighting) or skip — **user decision 2026-08-13: skip to Lesson 23
+  for now**, leaving Lesson 22 a recorded gap alongside Lesson 17 rather
+  than building a stand-in. Both stay open until maple-sim (or BLine, for
+  Lesson 17/25–28) actually ships `org.wpilib.*`-compatible support.
 - **R3 — pin confirmed, and API confirmed too, by actually compiling against
   it.** Phoenix 6's 2027 alpha vendordep for this project's WPILib version is
   `Phoenix6-26.50.0-alpha-1.json` (with a matching
@@ -2753,3 +2765,18 @@ appendices: verify before drafting, record what you verified.
       fires correctly on a second, later trip of the switch, not just the
       one `home()` itself handles. Full compile re-verified from a fresh
       sandbox (0–21), plus an independent regression checkpoint at 20.
+- [x] Lesson 22 (Beam breaks) investigated and skipped, 2026-08-13 — no
+      `docs/lessons/v3/22-*.md`, no `code/v3/lesson-22/`. Needs maple-sim's
+      `IntakeSimulation` to give the beam-break sensor an "is a piece
+      really there" signal independent of the roller — the old lesson's
+      own central point is that a simulated sensor which just follows the
+      roller has proven nothing, so a hand-built stand-in has to
+      genuinely decouple the two, not fake it. maple-sim remains confirmed
+      structurally incompatible with this 2027 alpha (see R2, R21).
+      Presented to the user via `AskUserQuestion` with the same two
+      options Lesson 16 got — write an interim hand-built stand-in (a
+      fake-injection signal, same spirit as Lesson 14's fake camera
+      sighting) or skip; **decision: skip to Lesson 23 for now**. Lesson
+      22 stays a recorded gap alongside Lesson 17, both to revisit once
+      maple-sim (or an equivalent) ships `org.wpilib.*`-compatible
+      support.

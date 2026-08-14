@@ -573,6 +573,7 @@ limit switches either. Sensor readings, computed conditions, whether the
 arm is stowed, whether you have a game piece — the scheduler will watch
 any of them for you.
 
-That last one is going to be useful immediately. Next up is a sensor
-whose entire job is answering one boolean question — do I have the game
-piece? — and by now you already know what to do with an answer like that.
+That last one is going to be useful immediately. The robot can now sense
+its own state with real confidence — a height it trusts, an angle it
+trusts, a switch it can build behavior around. Time to start showing some
+of that state to the humans standing around it.
