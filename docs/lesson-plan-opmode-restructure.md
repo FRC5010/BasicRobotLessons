@@ -664,14 +664,42 @@ whatever teaching value that factory-lambda pattern carried needs a new home
 elsewhere in the syllabus (candidate: the coroutine `await`/`fork` material at
 Lesson 9, which already needs a `Supplier`-shaped example).
 
-### OD4: `StateMachine` adoption at Lesson 24 — still open
+### OD4: `StateMachine` adoption at Lesson 24 — resolved 2026-08-14
 
-Recommend **keep the hand-rolled `SuperstructureState` enum** — it's the
-course's first enum-with-fields-and-methods-and-exhaustive-`switch` lesson,
-and that compiler-enforced-exhaustiveness payoff ("adding a seventh constant
-stops the build") is worth protecting. Reference `org.wpilib.command3.StateMachine`
-the way the course already references `MathUtil.clamp` after teaching the
-by-hand version: "now that you've built one, here's the library's version."
+Investigated for real via `javap` before deciding (not from the earlier
+guess above): `org.wpilib.command3.StateMachine` is a command-per-state
+*behavior graph* — `addState(Command)` returns a `State` whose command
+runs while that state is active, transitions are wired with
+`state.switchTo(other).when(condition)` / `.whenComplete()` /
+`.whenCompleteAnd(condition)`, and the whole thing is itself a `Command`
+you schedule. That shape genuinely mismatches three of the old lesson's
+specific teaching points, not cosmetically: (1) the lesson's actual
+payoff is the **legality-vs-readiness split** — `canGoTo`, a pure
+`switch` a button-bound command consults, versus automatic sensor-driven
+progression in `periodic()` that deliberately does *not* consult it —
+and `StateMachine` has exactly one transition mechanism
+(`.when(condition)`) for both cases, no separate "is this request legal"
+concept to teach from; (2) the old `Superstructure` **requires nothing**
+on purpose, so a driver's manual override can interrupt a mechanism
+mid-state without fighting the state tracker (Try It #4) — since
+`StateMachine`'s states are real commands with real requirements,
+scheduling it would actually contend for the Elevator/Arm, a materially
+different interruption story; (3) `StateMachine`'s states are `State`
+objects returned by `addState(...)`, not enum constants, so the
+enum-with-a-constructor-and-methods Java lesson has nothing to attach to.
+
+Presented to the user as a real design choice (not a blocker) via
+`AskUserQuestion`: hand-rolled enum as the lesson with `StateMachine` as
+a Try It, or redesign the lesson around the library primarily. **User
+decision (2026-08-14): leave Lesson 24 exactly as planned (hand-rolled
+enum, no `StateMachine` Try It folded in) and design a separate, later
+lesson in the series specifically for `StateMachine` used the way it's
+actually meant to be used** — a command-per-state behavior graph is a
+real, different teaching subject from a legality-tracking classification
+enum, and deserves its own lesson rather than a rushed Try It bolted onto
+this one. That lesson is not yet planned in detail; flagged here as
+future work, the same way R1 tracks AdvantageKit's `OpModeRobot` support
+landing.
 
 ### OD5: use CommandGamepad (resolved)
 
@@ -2245,8 +2273,12 @@ appendices: verify before drafting, record what you verified.
       `tools/verify-lessons.sh`, using `code/v3/lesson-N` as the snapshot
       naming (resolving that open item too). Lessons 0–3 compile through it
       against the real pinned jars.
-- [ ] Resolve OD4 (StateMachine adoption) and OD6 (roboRIO → SystemCore
-      terminology pass) with the user.
+- [x] Resolve OD4 (StateMachine adoption) — resolved 2026-08-14, see OD4
+      above. Lesson 24 stays the hand-rolled enum as planned; a
+      dedicated future lesson on `org.wpilib.command3.StateMachine` used
+      properly (a command-per-state behavior graph, not a classification
+      enum) is now tracked as future work, not yet planned in detail.
+- [ ] Resolve OD6 (roboRIO → SystemCore terminology pass) with the user.
 - [x] Resolved 2026-08-11 — `BindingScope.createNarrowestScope` sees the new
       opmode's ID during its constructor, not just from `start()` onward.
       Traced through `loopFunc()`'s bytecode: `refreshData()` and
