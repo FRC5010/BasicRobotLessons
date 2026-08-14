@@ -545,7 +545,8 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 16 | Ground truth (interim, no maple-sim) | Medium | Written and verified 2026-08-13. **User decision (2026-08-13): write an interim lesson without maple-sim** rather than skip or wait — maple-sim remains confirmed structurally incompatible with this 2027 alpha (see R2). Ships a hand-built `ChassisSimulation` (grip-limited `a = μg` acceleration via `MathUtil.slewRateLimit` on a `Translation2d`, exact integration via `Twist2d.exp()`) as a shared, `static`, sim-only chassis body — giving the track real ground truth, a real gyro fed from it, and real (not faked) drift, without needing maple-sim at all. Closes Lesson 15's own admitted compromise by re-wiring both cameras' `poseSupplier` from `Localizer::getPose` to `Drivetrain::getSimulatedPose`. No walls, no collisions, no game pieces — those stay out of scope until maple-sim (or an equivalent) actually becomes available; see R21. Presented to students with zero mention of maple-sim or blockers, framed as "build the physics by hand first," matching this course's own established rhythm (P-control by hand before firmware, wrap-loops by hand before `ContinuousWrap`) |
 | 17 | BLine autos | **Skipped for now** | 2026-08-13: BLine confirmed structurally incompatible with this 2027 alpha by direct test — `FollowPath extends edu.wpi.first.wpilibj2.command.Command` (Commands V2's base class) and `FollowPath.Builder` requires an `edu.wpi.first.wpilibj2.command.Subsystem`; needs a rewrite against Commands V3, not a recompile. See [R2](#risks-and-blocking-unknowns). **User decision (2026-08-13): skip to Lesson 18 for now** rather than write an interim stand-in or wait — the mechanisms arc (18+) doesn't depend on BLine or maple-sim, so the track moves on and Lesson 17 stays a gap to revisit once BLine (or an equivalent) ships Commands V3 support. This is also where the resolved multi-`@Autonomous` selection decision (OD3) would land, whenever this unblocks |
 | 18 | Scoring elevator | Low | Written and verified 2026-08-13. `SubsystemBase` → `Mechanism` rename landed exactly as predicted, with `ElevatorIO`/`ElevatorIOTalonFX`/`ElevatorIOSim` matching `ModuleIO`'s spine from Lesson 13 file-for-file. Phoenix's Motion Magic + full feedforward config surface (`MotionMagicVoltage`, `MotionMagicConfigs`, `Slot0Configs.kG/kV/kA/kP`, `GravityTypeValue.Elevator_Static`) and `org.wpilib.simulation.ElevatorSim` all confirmed via `javap` with unchanged signatures from pre-2027 WPILib/Phoenix 6. R3/R7's `StatusSignal.getValueAsDouble()` finding held again here, including on `getClosedLoopReference()`'s `Double`-typed signal. See [R22](#risks-and-blocking-unknowns) for measured (not reused) feedforward-term numbers from this alpha's own physics |
-| 19–23 | Mechanism2d … LEDs | Low | `SubsystemBase` → `Mechanism` rename; IO-layer pattern (Lesson 13's spine) is unaffected by this table's changes once Lesson 13 itself is resolved |
+| 19 | Mechanism2d | Low | Written and verified 2026-08-13. **Real, load-bearing departure from the old lesson: no AdvantageKit means no `LoggedMechanism2d`/`LoggedMechanismRoot2d`/`LoggedMechanismLigament2d`** — this course uses WPILib's own `org.wpilib.smartdashboard.Mechanism2d`/`MechanismRoot2d`/`MechanismLigament2d` instead (confirmed via `javap`, same package as `Field2d`/`SmartDashboard`). Two real consequences, not cosmetic renames: (1) these classes are plain-`double` constructors with no `Distance`/`Angle`-typed overloads at all, so every measure gets unpacked with `.in(Meters)` right at the call site — a new instance of the course's own "unpack only at a genuine double-only boundary" rule, not an exception to it; (2) `Mechanism2d implements NTSendable` (confirmed `extends Sendable`), so it's a **live** object — `SmartDashboard.putData(...)` publishes it exactly once, in the constructor, mirroring Lesson 14's already-shipped `Field2d` precedent, and `setLength`/`setColor` push straight to NetworkTables from `periodic()` with no `Logger.recordOutput`-style "must republish every tick" step. This is a genuinely simpler story than the old lesson's, not a downgrade. See [R23](#risks-and-blocking-unknowns) for the `Color`/`Color8Bit` naming-convention finding and the real NT-backed verification |
+| 20–23 | Intake arm … LEDs | Low | `SubsystemBase` → `Mechanism` rename; IO-layer pattern (Lesson 13's spine) is unaffected by this table's changes once Lesson 13 itself is resolved |
 | 24 | Superstructure | Medium | `StateMachine` library primitive now exists — recommend keep the hand-rolled enum, reference the library the way the course references `MathUtil.clamp` |
 | 25 | Path events | Medium | `Trigger`'s auto-scoping may let the manual `.finallyDo(FollowPath::clearRotationOverride)` handback shrink or disappear — depends on whether BLine v3 exposes a scoped registration path; needs the same source-jar verification this course already applies to BLine |
 | 26 | Drive to pose | Low | Mechanically unaffected |
@@ -1777,6 +1778,77 @@ out badly.
 
 ---
 
+- **R23 — new, found while writing and verifying Lesson 19's `Mechanism2d`
+  drawing, all confirmed by `javap` and a real NT-backed test.** The
+  headline finding isn't a porting hazard — it's that this track's missing
+  AdvantageKit (R1) makes this particular lesson *simpler* than the old
+  one, not harder.
+
+  - **No `LoggedMechanism2d`/`LoggedMechanismRoot2d`/`LoggedMechanismLigament2d`
+    exist here — confirmed by their absence in `wpilibj-java`'s class
+    listing, and there is no AdvantageKit dependency in this track to
+    provide them anyway.** The lesson uses WPILib's own
+    `org.wpilib.smartdashboard.Mechanism2d`/`MechanismRoot2d`/
+    `MechanismLigament2d` — same package as `Field2d` and `SmartDashboard`
+    itself, confirmed via `javap`. Constructors:
+    `Mechanism2d(double, double)` / `(double, double, Color8Bit)`;
+    `Mechanism2d.getRoot(String, double, double)`;
+    `MechanismLigament2d(String, double, double)` /
+    `(String, double, double, double, Color8Bit)` (the 5-arg form adds
+    line weight and color); `MechanismObject2d.append(T)` — generic,
+    hands back exactly what was appended, confirmed present on the shared
+    base class both `MechanismRoot2d` and `MechanismLigament2d` extend, so
+    the same `append` call chains off either one.
+  - **None of the three constructors above take a `Distance` or `Angle` —
+    confirmed by the full `javap` signature list, not assumed from the old
+    lesson's AdvantageKit-based measure-typed calls.** Every measure this
+    lesson touches (`kDisplayWidth`, `kDisplayHeight`, `kEffectorLength`)
+    gets unpacked with `.in(Meters)` at the construction site. This isn't
+    an exception carved out for this lesson — it's the same "unpack only
+    at a genuine double-only boundary" rule the course has followed since
+    Lesson 10, just arriving at a boundary that happens to predate the
+    Units library.
+  - **`Mechanism2d implements NTSendable`, confirmed `extends Sendable` —
+    so it behaves like `Field2d`, not like `Logger.recordOutput`.**
+    `SmartDashboard.putData(String, Sendable)` accepts it directly (no
+    cast, no adapter). `MechanismLigament2d`'s setters
+    (`setLength`/`setAngle`/`setColor`) write straight through
+    NT-backed `DoubleEntry`/`StringEntry` fields (confirmed via `javap`'s
+    field listing), so calling them mutates NetworkTables state
+    immediately — the object doesn't need to be re-published to reflect a
+    change. This is the exact shape `Localizer`'s `Field2d` already uses
+    (R14/Lesson 14: `putData` once in the constructor, `setRobotPose(...)`
+    every tick), so the lesson names that precedent directly rather than
+    treating the pattern as new.
+  - **`org.wpilib.util.Color`'s named constants are `SCREAMING_SNAKE_CASE`
+    (`Color.ORANGE`, `Color.LIME_GREEN`), not the pre-2027 `kOrange`/
+    `kLimeGreen` convention — confirmed via the full `javap` constant
+    listing, a real naming difference worth a callout.** This breaks the
+    `k`-prefix habit the course has built into every one of its own
+    constants since Lesson 1, which is precisely why it's worth flagging
+    rather than letting a student hit `cannot find symbol: kOrange` cold.
+  - **Verified end to end with a real `DriverStationSim`-backed test that
+    reads NetworkTables directly, not just that the code compiles**: after
+    `putData`, the topic
+    `SmartDashboard/Elevator/Mechanism/Base/Carriage/length` exists and
+    reads `kStowed` (≈0.019 m); after commanding `goToHeight(kScoreMid)`
+    and running the scheduler to convergence, the same topic reads
+    ≈0.73 m — confirming `setLength` genuinely propagates to NetworkTables
+    with no additional publish step. A second read confirms the
+    **untouched** `.../Carriage/Effector/length` topic still reads exactly
+    `kEffectorLength` (0.25 m) after the carriage move, the NT-level proof
+    that nothing in `periodic()` moves the effector directly — it only
+    *looks* like it moved because it's attached to something that did.
+  - **The old lesson's Try It 5 ("replay the picture") has no v3
+    equivalent yet** — `REPLAY` is still the dormant arm from Lesson 13
+    (R1), so there's no recorded match to replay a drawing against. Left
+    out of this lesson's Try It list rather than adapted into something
+    that doesn't actually demonstrate anything.
+
+  No lesson code ships a test — same precedent as Lessons 13–16, 18.
+
+---
+
 ## Appendix: verified API notes
 
 Read directly from `wpilibsuite/allwpilib` at tag `v2027.0.0-alpha-6` — the
@@ -1897,6 +1969,9 @@ appendices: verify before drafting, record what you verified.
 | `TalonFXConfiguration`'s `MotionMagic`/`Slot0` fields — compiled, not guessed, see R22 | Confirmed via `javap`: public fields `MotionMagic` (`MotionMagicConfigs`) and `Slot0`/`Slot1`/`Slot2` (`Slot0Configs`/etc.), same direct-field-assignment pattern already used for `Feedback` since Lesson 12 |
 | `org.wpilib.units.Measure<U>`'s ordering methods — compiled, not guessed, see R22 | `default boolean gt(Measure<U>)`/`gte(...)`/`lt(...)`/`lte(...)`, plus `isNear(Measure<?>, double)` (percent tolerance) and `isNear(Measure<U>, Measure<U>)` (absolute tolerance) and `compareTo`. All inherited by every measure type (`Distance`, `LinearVelocity`, ...) with no extra work |
 | `org.wpilib.units.measure.LinearAcceleration`/`Mass` and `Units.Kilograms`/`Centimeters`/`Inches`/`MetersPerSecondPerSecond` — compiled, not guessed, see R22 | All confirmed present in `wpiunits-java`, unchanged from pre-2027 naming |
+| `org.wpilib.smartdashboard.Mechanism2d`/`MechanismRoot2d`/`MechanismLigament2d`/`MechanismObject2d` — compiled, not guessed, see R23 | No `Logged*` AdvantageKit variants exist in this track — these are WPILib's own classes, same package as `Field2d`. `Mechanism2d(double, double)`/`(double, double, Color8Bit)`, `.getRoot(String, double, double)`. `MechanismObject2d.append(T)` is `public final <T extends MechanismObject2d> T append(T)`, shared by both `MechanismRoot2d` and `MechanismLigament2d`. `MechanismLigament2d(String, double, double)`/5-arg with line weight + `Color8Bit`; `setLength(double)`, `setAngle(double)`/`setAngle(Rotation2d)`, `setColor(Color8Bit)`. **No `Distance`/`Angle`-typed overloads anywhere in this family** — confirmed by the complete `javap` signature list, not an oversight in the lesson |
+| `Mechanism2d implements org.wpilib.networktables.NTSendable`, confirmed `extends org.wpilib.util.sendable.Sendable` — compiled, not guessed, see R23 | `SmartDashboard.putData(String, Sendable)` accepts it with no cast. `MechanismLigament2d`'s setters write through NT-backed `DoubleEntry`/`StringEntry` fields directly (confirmed via `javap`'s private-field listing), so mutating the object after one `putData` call is sufficient — no `Logger.recordOutput`-style re-publish needed, and none exists to call anyway (R1) |
+| `org.wpilib.util.Color`'s named constants — compiled, not guessed, see R23 | `SCREAMING_SNAKE_CASE` (`ORANGE`, `LIME_GREEN`, `DENIM`, `FIRST_BLUE`, ...), not the pre-2027 `kOrange`/`kLimeGreen` convention. `Color8Bit` unchanged: `()`, `(int, int, int)`, `(Color)`, `(String)` constructors, public `red`/`green`/`blue` `int` fields |
 
 ---
 
@@ -2436,3 +2511,31 @@ appendices: verify before drafting, record what you verified.
       ever reaches the motor. Full compile re-verified from a fresh
       sandbox (0–18), plus an independent regression checkpoint at 16
       (the highest prior lesson, since 17 doesn't exist).
+- [x] Lesson 19 (Mechanism2d: a picture of the elevator) written and
+      verified 2026-08-13 — `docs/lessons/v3/19-mechanism2d.md` and
+      `code/v3/lesson-19/`, compiling through
+      `tools/verify-lessons-v3.sh 19`. **The headline finding is that
+      missing AdvantageKit (R1) makes this lesson simpler than the old
+      one, not harder** — no `LoggedMechanism2d`/`LoggedMechanismRoot2d`/
+      `LoggedMechanismLigament2d` exist in this track, so it uses WPILib's
+      own `Mechanism2d`/`MechanismRoot2d`/`MechanismLigament2d`
+      (`org.wpilib.smartdashboard`, same package as `Field2d`), publishing
+      once via `SmartDashboard.putData` in the constructor — the exact
+      `Field2d` pattern Lesson 14 already taught — instead of the old
+      lesson's "call `Logger.recordOutput` every tick or the picture
+      freezes" story. `append`'s composition-as-attachment idea (the
+      lesson's one real Java concept) ports with zero changes. See
+      [R23](#risks-and-blocking-unknowns) for the full API findings — none
+      of the three mechanism-drawing classes take a `Distance`/`Angle`
+      (plain `double`s only, unpacked with `.in(Meters)` at the
+      construction site), `Color`'s named constants are
+      `SCREAMING_SNAKE_CASE` (`Color.ORANGE`, not `Color.kOrange`), and a
+      real NT-backed test confirms `setLength` propagates to
+      NetworkTables live with no republish step, while the untouched
+      effector ligament's own length entry stays exactly `kEffectorLength`
+      after the carriage moves — the NT-level proof that the effector
+      rides along rather than being redrawn. The old lesson's Try It 5
+      ("replay the picture") was dropped rather than adapted, since
+      `REPLAY` is still the dormant arm from Lesson 13 with nothing to
+      replay yet. Full compile re-verified from a fresh sandbox (0–19),
+      plus an independent regression checkpoint at 18.
