@@ -549,7 +549,7 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 20 | Intake arm | Low | Written and verified 2026-08-13. `SubsystemBase` → `Mechanism` rename landed exactly as predicted, and `Arm(Elevator elevator)` — a `Mechanism` constructor taking another `Mechanism` — is the first of its kind in this track, mirroring `Robot.java`'s own already-established "later field reads an earlier one" ordering rule (Lesson 14). `GravityTypeValue.Arm_Cosine`, `SoftwareLimitSwitchConfigs`, and `SingleJointedArmSim` (including `estimateMOI`) all confirmed via `javap` with unchanged signatures from pre-2027 WPILib/Phoenix 6. Real finding: `TalonFX.setThrottle(double)` (not `.set(double)`, per R3) is what the roller's plain percent-output write needed — R3 held four lessons after it was first found. See [R24](#risks-and-blocking-unknowns) for that and for the measured, exact match to the old course's own 5-point `kG × cos θ` table (0.25/0.18/0.00/−0.18/−0.25 V at 0°/45°/90°/135°/180°) and the real firmware-soft-limit verification |
 | 21 | Limit sensors (homing) | Low | Written and verified 2026-08-13. `DigitalInput` confirmed present (moved to `org.wpilib.hardware.discrete.DigitalInput`), `VoltageOut`/`TalonFX.setPosition` unchanged from pre-2027 Phoenix 6. **Real, load-bearing finding, not anticipated by this plan: this framework's `Scheduler` does not auto-cancel commands while the robot is disabled at all** — confirmed by a real test that schedules a `Trigger`-bound, no-requirements command with the robot deliberately left disabled and watches it fire — so `rezeroAtBottom()` needs no `ignoringDisable`-equivalent (none exists) where the old lesson needed one. Second finding, verified rather than assumed from `Drivetrain.driveToPose`'s own comment: `.whenCanceled(...)` genuinely fires whether a `runRepeatedly(...).until(...)` command was interrupted *or* finished on its own, confirmed by an isolated scheduler test before trusting it for `home()`'s cleanup. See [R25](#risks-and-blocking-unknowns) for both, plus measured numbers matching the old course's almost exactly (3.88 s to home, ≈120.7 A stalled) |
 | 22 | Light sensors (beam break) | **Skipped for now** | 2026-08-13: needs maple-sim's `IntakeSimulation` to give the beam-break sensor an independent "is a piece really there" signal — maple-sim remains confirmed structurally incompatible with this 2027 alpha (see R2). **User decision (2026-08-13): skip to Lesson 23 for now** rather than write an interim hand-built stand-in — LEDs (23) doesn't depend on a beam break or maple-sim, so the track moves on and Lesson 22 stays a gap alongside Lesson 17 to revisit once maple-sim ships `org.wpilib.*`-compatible support |
-| 23 | LEDs | Low | `SubsystemBase` → `Mechanism` rename; IO-layer pattern (Lesson 13's spine) is unaffected by this table's changes once Lesson 13 itself is resolved |
+| 23 | LEDs | Low | Written and verified 2026-08-13. Not a `SubsystemBase` → `Mechanism` rename after all — `Leds` ships as a **plain class**, the same call R19 made for Lesson 14's `Localizer` and for the identical reason (drives nothing, no command ever requires it). Priority chain drops from the old lesson's four conditions to **three**, since it depended on the skipped Lesson 22's `Arm.hasGamePiece()` — the "two things true at once" teaching moment moves to something this track actually has: every robot boots simultaneously disabled *and* unhomed, and the strip correctly shows red (not-homed) rather than breathing blue (disabled) at that exact moment, verified by a real test. `LEDPattern`/`AddressableLED`/`AddressableLEDBuffer` all confirmed via `javap`, moved to `org.wpilib.hardware.led`. See [R26](#risks-and-blocking-unknowns) for three real findings: `AddressableLED` has no `.start()` at all in this alpha, its channel numbering collided with a `DigitalInput`'s in a real test (not guessed), and `DriverStation.getAlliance()` moved to `MatchState.getAlliance()` |
 | 24 | Superstructure | Medium | `StateMachine` library primitive now exists — recommend keep the hand-rolled enum, reference the library the way the course references `MathUtil.clamp` |
 | 25 | Path events | Medium | `Trigger`'s auto-scoping may let the manual `.finallyDo(FollowPath::clearRotationOverride)` handback shrink or disappear — depends on whether BLine v3 exposes a scoped registration path; needs the same source-jar verification this course already applies to BLine |
 | 26 | Drive to pose | Low | Mechanically unaffected |
@@ -1992,6 +1992,70 @@ out badly.
 
 ---
 
+- **R26 — new, found while writing and verifying Lesson 23's `Leds`, all
+  confirmed by `javap` and a real `DriverStationSim`-backed test.** The
+  first lesson since Lesson 19 to deliberately skip both the IO layer and
+  `Mechanism` — a write-only device with no inputs to replay and no
+  requirements to enforce.
+
+  - **The old lesson's four-condition priority chain drops to three**,
+    because its second condition (`Arm.hasGamePiece()`) belongs to the
+    skipped Lesson 22. Rather than inventing a stand-in boolean with
+    nothing real behind it, the "two things true at once" teaching moment
+    moved to state this track genuinely has: every robot boots disabled
+    *and* unhomed simultaneously, and the chain has to pick one. Verified
+    with a real test rather than asserted: constructing `Elevator` and
+    `Leds` fresh (disabled, never homed) reads `Leds/Showing == "NotHomed"`,
+    not `"Disabled"`, confirming priority order 1 (not homed) genuinely
+    outranks order 2 (disabled) when both are true — the same test then
+    homes the elevator (enabled, matching R18's "Phoenix sim motors do
+    nothing while disabled" finding — homing has to run enabled) and
+    confirms the chain falls through correctly to `"Idle"`, then to
+    `"Disabled"` once disabled again with homing already done.
+  - **`org.wpilib.hardware.led.AddressableLED` has no `.start()`/`.stop()`
+    method at all — confirmed via the complete `javap` listing, not an
+    omission in the port.** `setStart(int)`/`getStart()` exist but set a
+    *buffer offset*, not a lifecycle state — a real naming collision with
+    the pre-2027 API's `start()` worth flagging explicitly, since a
+    student half-remembering the old method name would reach for the
+    wrong thing. `setLength(int)` plus a `setData(AddressableLEDBuffer)`
+    call every tick is the complete lifecycle on this platform; nothing
+    else is needed to make output happen.
+  - **A real, previously-unknown channel-numbering collision, found by a
+    startup exception, not guessed:** constructing `Leds`'s
+    `AddressableLED(0)` alongside `Elevator`'s already-existing
+    `DigitalInput(kBottomLimitChannel = 0)` throws
+    `AllocationException: AddressableLED 0 previously allocated`, with
+    the exception's own recorded allocation site pointing at
+    `ElevatorIOTalonFX`'s `DigitalInput` construction. **DIO and
+    LED/PWM channel numbers are not independent pools on this alpha's
+    simulated HAL** — directly contradicting the old lesson's own
+    explicit claim that they're "different connectors on the roboRIO with
+    separate numbering, so there's no clash." Whether this is a real
+    SystemCore hardware property or a simulation-layer quirk was not
+    isolated (no real hardware available to test against); the lesson
+    states the safe, verified fact either way — pick a channel number
+    nothing else has claimed — rather than repeating the old lesson's
+    now-contradicted confidence. Fixed by moving `kPwmPort` to `5`,
+    clear of every DIO channel this robot uses.
+  - **`DriverStation.getAlliance()` does not exist in this alpha —
+    confirmed via the complete `javap` listing of `org.wpilib.driverstation.DriverStation`,
+    which (per R25) already has almost nothing on it.** The query moved
+    to `org.wpilib.driverstation.MatchState.getAlliance()`, confirmed
+    present with the identical `Optional<Alliance>` return shape. The
+    `Alliance` enum itself is also no longer nested inside
+    `DriverStation` — it's the top-level `org.wpilib.driverstation.Alliance`,
+    with constants `RED`/`BLUE` (not `Alliance.Red`/`Alliance.Blue`,
+    matching this alpha's general shift toward `SCREAMING_SNAKE_CASE`
+    enum constants already seen in `Color`, R23).
+  - **The old lesson's Try It 5 ("replay it") has no v3 equivalent yet**,
+    dropped for the same reason Lesson 19's did — `REPLAY` is still the
+    dormant arm from Lesson 13 (R1).
+
+  No lesson code ships a test — same precedent as Lessons 13–16, 18–21.
+
+---
+
 ## Appendix: verified API notes
 
 Read directly from `wpilibsuite/allwpilib` at tag `v2027.0.0-alpha-6` — the
@@ -2124,6 +2188,10 @@ appendices: verify before drafting, record what you verified.
 | `org.wpilib.command3.Scheduler` does not auto-cancel commands on disable — confirmed via a full `javap -c` disassembly (zero references to `isDisabled`/`isEnabled`/`DriverStation`) and a real test, not guessed, see R25 | A `Trigger`-bound `Command.noRequirements(...)` command fires and runs with the robot deliberately left disabled. A real, load-bearing behavioral difference from the classic WPILib `CommandScheduler`, which cancels every running command on disable and needs an explicit `.ignoringDisable(true)` opt-out — this alpha's builder chain (`NeedsNameBuilderStage`/`NeedsExecutionBuilderStage`) has no such method at all, because there's nothing to opt out of |
 | `org.wpilib.command3.button.RobotModeTriggers.disabled()`/`org.wpilib.driverstation.RobotState.isEnabled()`/`isDisabled()` — compiled, not guessed, see R25 | `RobotModeTriggers` exposes `autonomous()`/`teleop()`/`disabled()`/`utility()`, all `Trigger`s, confirmed present. `org.wpilib.driverstation.DriverStation` in this alpha has **no** `isEnabled()`/`isDisabled()` at all (confirmed via the full `javap` listing — only `startDataLog`/refresh-handle methods remain); that query moved to `org.wpilib.driverstation.RobotState`, confirmed present there instead |
 | `NeedsNameBuilderStage.whenCanceled(...)` fires on a `.until(...)`'s natural completion, not just on interruption — verified with an isolated scheduler test, not assumed from a comment, see R25 | A minimal `Mechanism.runRepeatedly(...).whenCanceled(...).until(...)` command, run to its `.until(...)` condition tripping naturally (no interruption involved), confirms the `whenCanceled` callback still runs. Backs up `Drivetrain.driveToPose`'s own "reached it or interrupted — stop" comment (R16) with an actual test rather than trusting the comment as written |
+| `org.wpilib.hardware.led.LEDPattern`/`AddressableLED`/`AddressableLEDBuffer` — compiled, not guessed, see R26 | Moved to `org.wpilib.hardware.led` (not `edu.wpi.first.wpilibj`). `LEDPattern` is an interface now (was a class pre-2027); `solid(Color)`, `.blink(Time)`/`.blink(Time,Time)`, `.breathe(Time)`, `.atBrightness(Dimensionless)`, `.applyTo(LEDReader, LEDWriter)` and the convenience `.applyTo(T)` for any type implementing both, all confirmed present with matching signatures. `AddressableLEDBuffer implements LEDReader, LEDWriter`, so `pattern.applyTo(buffer)` resolves to the convenience overload |
+| `org.wpilib.hardware.led.AddressableLED` has no `.start()`/`.stop()` — confirmed via the complete `javap` listing, see R26 | Full method list: constructor `(int)`, `close()`, `getChannel()`, `setColorOrder(...)`, `setStart(int)`/`getStart()` (a buffer offset, not a lifecycle call — a real naming trap for anyone half-remembering the pre-2027 API), `setLength(int)`, `setData(AddressableLEDBuffer)`, static `setGlobalData(...)`. No arm-then-start step exists; `setData` alone drives output |
+| `AddressableLED` and `DigitalInput` channel numbers are not independent pools on this alpha's simulated HAL — confirmed by a real `AllocationException`, not guessed, see R26 | Constructing `AddressableLED(0)` after a `DigitalInput(0)` already exists throws `AllocationException: AddressableLED 0 previously allocated`, with the recorded allocation site pointing at the `DigitalInput` construction — a genuine cross-peripheral-type collision. Contradicts the old lesson's own explicit claim ("different connectors on the roboRIO with separate numbering"). Not isolated as simulation-only vs. real SystemCore hardware behavior (no real hardware to test against) — treated as a platform fact either way: pick channel numbers that don't collide with anything else on the robot, not just other LED strips |
+| `org.wpilib.driverstation.MatchState.getAlliance()`/`org.wpilib.driverstation.Alliance` — compiled, not guessed, see R26 | `DriverStation.getAlliance()` does not exist in this alpha (confirmed via the complete `javap` listing of `DriverStation`, which per R25 already has almost nothing on it). The query moved to `MatchState.getAlliance()`, confirmed present, identical `Optional<Alliance>` return shape. `Alliance` is no longer nested inside `DriverStation` — it's the top-level `org.wpilib.driverstation.Alliance` enum, with `SCREAMING_SNAKE_CASE` constants `RED`/`BLUE` (not `Alliance.Red`/`Alliance.Blue`), matching the naming convention R23 already found on `Color` |
 
 ---
 
@@ -2780,3 +2848,35 @@ appendices: verify before drafting, record what you verified.
       22 stays a recorded gap alongside Lesson 17, both to revisit once
       maple-sim (or an equivalent) ships `org.wpilib.*`-compatible
       support.
+- [x] Lesson 23 (LEDs: showing what the robot is thinking) written and
+      verified 2026-08-13 — `docs/lessons/v3/23-leds.md` and
+      `code/v3/lesson-23/`, compiling through
+      `tools/verify-lessons-v3.sh 23`. **Not a `SubsystemBase` →
+      `Mechanism` rename after all** — `Leds` ships as a plain class, the
+      same call R19 made for `Localizer` and for the identical reason (it
+      drives nothing, no command ever requires it). The old lesson's
+      four-condition priority chain drops to **three**, since its second
+      condition depended on the skipped Lesson 22's `Arm.hasGamePiece()`
+      — rather than inventing a fake stand-in boolean, the "two things
+      true at once" teaching moment moved to state this track genuinely
+      has: every robot boots disabled *and* unhomed simultaneously, and a
+      real test confirms the chain correctly shows `"NotHomed"` rather
+      than `"Disabled"` at that exact moment, then falls through
+      correctly to `"Idle"` once homed-and-enabled and back to
+      `"Disabled"` once disabled again. `LEDPattern`/`AddressableLED`/
+      `AddressableLEDBuffer` all confirmed via `javap`, moved to
+      `org.wpilib.hardware.led`. **R26** has three real findings, none
+      guessed: `AddressableLED` has no `.start()`/`.stop()` at all in this
+      alpha (`setLength` + `setData` every tick is the complete
+      lifecycle); a real `AllocationException` proved `AddressableLED`
+      and `DigitalInput` channel numbers are **not** independent pools on
+      this alpha's simulated HAL, directly contradicting the old lesson's
+      own claim that PWM and DIO "have separate numbering, so there's no
+      clash" — fixed by moving `kPwmPort` off channel 0; and
+      `DriverStation.getAlliance()` doesn't exist here, moved to
+      `MatchState.getAlliance()` with `Alliance` now a top-level enum
+      using `SCREAMING_SNAKE_CASE` constants (`RED`/`BLUE`). The old
+      lesson's Try It 5 ("replay it") was dropped, same reason as Lesson
+      19's. Full compile re-verified from a fresh sandbox (0–23, correctly
+      skipping the absent 22), plus an independent regression checkpoint
+      at 21.
