@@ -82,6 +82,14 @@ dependencies {
 test {
     useJUnitPlatform()
     systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
+    // Commands V3 runs each command body as a coroutine on top of
+    // jdk.internal.vm.Continuation. simulateJava/deploy get the module
+    // access they need from GradleRIO's own JavaSimulationTask config, but
+    // wpi.java.configureTestTasks(test) below does not add it — any test
+    // that schedules a Command (directly or via a Mechanism) needs it here,
+    // or it fails with IllegalAccessException before your test even runs.
+    jvmArgs '--add-opens', 'java.base/jdk.internal.vm=ALL-UNNAMED'
+    jvmArgs '--add-opens', 'java.base/java.lang=ALL-UNNAMED'
 }
 
 // Simulation configuration (e.g. environment variables).

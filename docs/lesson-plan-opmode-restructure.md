@@ -154,7 +154,7 @@ Read this table with that in mind — it separates "the words change" from
 | Controller | `CommandXboxController` — `a()/b()/x()/y()` | `CommandGamepad` — `southFace()/eastFace()/westFace()/northFace()` | On a standard Xbox pad: south=A, east=B, west=X, north=Y. Generic naming, FTC-style — no `CommandXboxController` equivalent shipped |
 | Triggers | `edu.wpi.first.wpilibj2.command.button.Trigger`; lives until the program restarts | `org.wpilib.command3.Trigger`; **same** `and/or/negate/debounce`, **same** `onTrue/onFalse/whileTrue/whileFalse`, plus new `risingEdge()/fallingEdge()`; auto-torn-down when its creation scope (an opmode or a command) goes inactive | Direct vocabulary win for Lesson 22; real simplification opportunity for Lesson 25 — see below |
 | Autonomous selection | Hand-built `LoggedDashboardChooser<Supplier<Command>>` (`Autos.buildChooser`) | Every `@Autonomous` class is automatically listed and grouped on the DS — no chooser code at all | **Decided:** lean into multiple `@Autonomous` classes, not a single routine-selecting `RobotAuto` — see [OD3](#od3-multiple-autonomous-opmodes-resolved) |
-| State machines | Hand-rolled enum (`SuperstructureState`) + exhaustive `switch` | Library primitive: `org.wpilib.command3.StateMachine` (states, `switchFromAny`, `onEnter/onExit`, `when`/`whenComplete`) | Recommend keep the hand-rolled version for the teaching payoff, reference `StateMachine` the way the course already references `MathUtil.clamp` — see [the per-lesson impact table](#per-lesson-impact-assessment) (Lesson 24) |
+| State machines | Hand-rolled enum (`SuperstructureState`) + exhaustive `switch` | Library primitive: `org.wpilib.command3.StateMachine` (states, `switchFromAny`, `onEnter/onExit`, `when`/`whenComplete`) | **Decided (OD4):** Lesson 24 keeps the hand-rolled enum, with no `StateMachine` reference at all — a command-per-state behavior graph turned out to be a different teaching subject, not a drop-in library upgrade, so it's deferred to its own future lesson rather than a Try It here — see [the per-lesson impact table](#per-lesson-impact-assessment) (Lesson 24) |
 | Telemetry widgets | `SmartDashboard.putData` (the one sanctioned use) | `org.wpilib.smartdashboard.SmartDashboard` — same class name, confirmed present (`OpModeRobot.loopFunc()` calls `SmartDashboard.updateValues()` itself) | Low risk |
 | Telemetry logging | `Logger.recordOutput(...)` from every subsystem's `periodic()`, hooked into `LoggedRobot`'s lifecycle | **Decided:** plain `SmartDashboard.putNumber(...)`/`putBoolean(...)`, called from a manually-registered `Scheduler.addPeriodic(...)` callback — see [Telemetry without AdvantageKit](#telemetry-without-advantagekit-smartdashboard-and-networktables). Replay is deferred, not replaced — see R1 | AdvantageKit itself is confirmed blocked on `OpModeRobot`; Epilogue was investigated and would have worked, but was dropped as more machinery than the decision needed (see R1's history) |
 | Hardware target | roboRIO | SystemCore | Removes device classes this course never used; CAN devices (TalonFX, Pigeon 2, CANcoder) unaffected in principle, pending Phoenix 6 SystemCore verification |
@@ -550,7 +550,7 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 21 | Limit sensors (homing) | Low | Written and verified 2026-08-13. `DigitalInput` confirmed present (moved to `org.wpilib.hardware.discrete.DigitalInput`), `VoltageOut`/`TalonFX.setPosition` unchanged from pre-2027 Phoenix 6. **Real, load-bearing finding, not anticipated by this plan: this framework's `Scheduler` does not auto-cancel commands while the robot is disabled at all** — confirmed by a real test that schedules a `Trigger`-bound, no-requirements command with the robot deliberately left disabled and watches it fire — so `rezeroAtBottom()` needs no `ignoringDisable`-equivalent (none exists) where the old lesson needed one. Second finding, verified rather than assumed from `Drivetrain.driveToPose`'s own comment: `.whenCanceled(...)` genuinely fires whether a `runRepeatedly(...).until(...)` command was interrupted *or* finished on its own, confirmed by an isolated scheduler test before trusting it for `home()`'s cleanup. See [R25](#risks-and-blocking-unknowns) for both, plus measured numbers matching the old course's almost exactly (3.88 s to home, ≈120.7 A stalled) |
 | 22 | Light sensors (beam break) | **Skipped for now** | 2026-08-13: needs maple-sim's `IntakeSimulation` to give the beam-break sensor an independent "is a piece really there" signal — maple-sim remains confirmed structurally incompatible with this 2027 alpha (see R2). **User decision (2026-08-13): skip to Lesson 23 for now** rather than write an interim hand-built stand-in — LEDs (23) doesn't depend on a beam break or maple-sim, so the track moves on and Lesson 22 stays a gap alongside Lesson 17 to revisit once maple-sim ships `org.wpilib.*`-compatible support |
 | 23 | LEDs | Low | Written and verified 2026-08-13. Not a `SubsystemBase` → `Mechanism` rename after all — `Leds` ships as a **plain class**, the same call R19 made for Lesson 14's `Localizer` and for the identical reason (drives nothing, no command ever requires it). Priority chain drops from the old lesson's four conditions to **three**, since it depended on the skipped Lesson 22's `Arm.hasGamePiece()` — the "two things true at once" teaching moment moves to something this track actually has: every robot boots simultaneously disabled *and* unhomed, and the strip correctly shows red (not-homed) rather than breathing blue (disabled) at that exact moment, verified by a real test. `LEDPattern`/`AddressableLED`/`AddressableLEDBuffer` all confirmed via `javap`, moved to `org.wpilib.hardware.led`. See [R26](#risks-and-blocking-unknowns) for three real findings: `AddressableLED` has no `.start()` at all in this alpha, its channel numbering collided with a `DigitalInput`'s in a real test (not guessed), and `DriverStation.getAlliance()` moved to `MatchState.getAlliance()` |
-| 24 | Superstructure | Medium | `StateMachine` library primitive now exists — recommend keep the hand-rolled enum, reference the library the way the course references `MathUtil.clamp` |
+| 24 | Superstructure | Medium | Written and verified 2026-08-14. Hand-rolled enum kept per OD4's resolution — `StateMachine` deferred to a future dedicated lesson, not folded in here even as a Try It. Redesigned to a 4-state machine (`UNHOMED`/`IDLE`/`INTAKING`/`SCORING`) since the old lesson's piece-driven `HANDOFF`/`HOLDING` states depended on the skipped Lesson 22's `hasGamePiece()` — framed honestly as "the operator is the sensor" rather than faked. Real finding, not anticipated by this plan: `Command` has no `onlyIf`-equivalent anywhere in the package (confirmed by an exhaustive `javap` sweep), replaced by a hand-built guard inside `Command.noRequirements(...)`; a second, separate finding along the way — JUnit tests touching `Scheduler` need two `--add-opens` flags `configureTestTasks` doesn't add, now fixed in the base template's `build.gradle`. See [R27](#risks-and-blocking-unknowns) for both plus the full verified end-to-end test |
 | 25 | Path events | Medium | `Trigger`'s auto-scoping may let the manual `.finallyDo(FollowPath::clearRotationOverride)` handback shrink or disappear — depends on whether BLine v3 exposes a scoped registration path; needs the same source-jar verification this course already applies to BLine |
 | 26 | Drive to pose | Low | Mechanically unaffected |
 | 27 | Object detection | Medium | `Commands.defer` likely retires in favor of inline coroutine build-then-await — see [Coroutine pedagogy](#coroutine-style-commands-where-they-enter-the-syllabus) |
@@ -2082,6 +2082,104 @@ out badly.
 
   No lesson code ships a test — same precedent as Lessons 13–16, 18–21.
 
+- **R27 — new, found while writing and verifying Lesson 24's `Superstructure`,
+  all confirmed by exhaustive `javap` search and real `DriverStationSim`-backed
+  integration tests against the actual `Elevator`/`Arm` sim IO.**
+
+  - **`org.wpilib.command3.Command` has no `onlyIf`/`unless`-style guard
+    method anywhere in the package — confirmed by `javap`-ing every single
+    class in the `commands3` jar and grep-ing case-insensitively for both
+    names, not just the `Command` interface itself.** The old lesson's
+    entire `requestIntake()`/`requestScore()`/`requestIdle()` pattern
+    depends on `Commands.sequence(...).onlyIf(() -> allow(...))`; this
+    framework has nothing that plays the same role. Replaced with a
+    hand-built guard: `Command.noRequirements(coroutine -> { if
+    (!allow(next)) { return; } m_state = next; })`. Verified, not assumed,
+    with a throwaway `JavaExec` harness (see below) checking three
+    properties: a false guard never runs the body past the check: a true
+    guard runs the body and can `coroutine.await(...)` a sub-command; and
+    the guard is evaluated exactly once, at the moment the command starts
+    (flipping the guarded flag *after* a false-guard command has already
+    ended and re-running the scheduler does not re-trigger the body) —
+    matching old WPILib `onlyIf`'s "checked once, at schedule time"
+    semantics closely enough to teach as the same idea.
+  - **JUnit tests that schedule anything through `Scheduler`/`Command`
+    (directly or via a `Mechanism`) fail before the test body ever runs,
+    with `IllegalAccessException: module java.base does not open
+    jdk.internal.vm to unnamed module`, unless the project's `test { }`
+    block adds two JVM flags GradleRIO does not add for you.** Root
+    cause, confirmed by decompiling `WPIJavaExtension.class` from the
+    `GradleRIO-2027.0.0-alpha-6.jar`: `configureSimulationTask` (backing
+    `simulateJava`) and the deploy artifact both inject `--add-opens
+    java.base/jdk.internal.vm=ALL-UNNAMED` because `org.wpilib.command3`
+    runs every command body as a coroutine on top of
+    `jdk.internal.vm.Continuation`, but `configureTestTasks(test)` — the
+    one line `build.gradle` already calls for JUnit — injects neither that
+    flag nor the second one actually needed,
+    `--add-opens java.base/java.lang=ALL-UNNAMED` (found by hitting a
+    *second*, different `IllegalAccessException` — this time from
+    `Continuation`'s own `<clinit>`, not `ContinuationScope`'s — after
+    adding only the first flag). **Both are now baked into
+    `code/OpModeV3Robot/build.gradle`'s `test { }` block directly**, so no
+    future lesson that ships a JUnit test needs to discover this — unlike
+    the main course, where L32's whole point is that the WPILib template
+    needs zero `build.gradle` changes for JUnit to work. This track's
+    template needed one, and it's done now rather than left for whichever
+    lesson first ships a test to trip over.
+  - **The old lesson's piece-driven `INTAKING → HANDOFF → HOLDING →
+    SCORING` cycle has no v3 equivalent, because `Arm.hasGamePiece()`
+    belongs to the skipped Lesson 22 (R2).** Redesigned as a 4-state
+    machine (`UNHOMED`/`IDLE`/`INTAKING`/`SCORING`, down from the old
+    lesson's 6) rather than trying to fake a sensor reading that doesn't
+    exist. The workflow-ordering rule that made `IDLE.canGoTo` exclude
+    `SCORING` in the old lesson survives untouched — "you must go collect
+    before you may claim to be ready to score" is a legality rule, not a
+    sensor reading, so it costs nothing to keep. What's genuinely gone is
+    automatic, sensor-confirmed entry into `HOLDING`; the lesson states
+    this honestly as **"the operator is the sensor"** rather than
+    papering over it, and keeps `UNHOMED.canGoTo(*) == false` /
+    `periodic()`'s single `UNHOMED → IDLE` transition as the load-bearing
+    example — that part of the old lesson never depended on Lesson 22 at
+    all, and ports with zero adaptation. `ArmConstants.kEjectSpeed`, sitting
+    unused since Lesson 20 (originally written for the skipped lesson's
+    capture/score cycle), gets a real purpose back in `scoreMotion()`.
+    The D-pad's raw `elevator.goToHeight(...)` bindings from Lesson 18 were
+    kept as a deliberate, uncorrected bypass of `canGoTo` — the same "leave
+    it as a rough edge, name it, make it a Try It" move the old lesson's own
+    Try It 4 made — and doubled as this lesson's opening hook: it is a
+    real, live, demonstrable bug in the project as it already stood
+    (`dpadUp` swings the elevator to full height before homing, on the
+    actual code from Lesson 18 onward), not a hypothetical.
+  - **Verified end to end against real `Elevator`/`Arm` sim IO, not just
+    compiled**, via a throwaway `JavaExec` main (not a shipped JUnit test —
+    see the flag finding above for why that path needed extra setup this
+    lesson didn't need to ship): boots `UNHOMED`; refuses every request
+    while `UNHOMED`; running `elevator.home()` to completion and ticking
+    once more flips to `IDLE` automatically with no request involved;
+    `IDLE` refuses `requestScore` and allows `requestIntake`; the arm
+    genuinely drives to `kIntake` and reaches it once `inState(INTAKING)`
+    schedules `intakeMotion()`; `INTAKING` allows `requestScore`;
+    `SCORING` refuses `requestIntake` and allows `requestIdle`. All ten
+    checks pass.
+  - **`Command.parallel(...)` throwing on two commands that require the
+    same `Mechanism` is real and reused deliberately**, not just
+    described: `intakeMotion()` needs `Command.sequence(...)` because
+    Lesson 20 made `Arm`'s pivot and roller one `Mechanism`, while
+    `idleMotion()`/`scoreMotion()` use `Command.parallel(...)` freely
+    because `Elevator` and `Arm` are different `Mechanism`s — confirmed by
+    the same `javap`-verified `ParallelGroupBuilder`/`SequentialGroupBuilder`
+    surface used since Lesson 9, both requiring a terminal `.named(...)`
+    (or `.withAutomaticName()`) to produce a `Command`.
+  - **`Superstructure` ships as a plain class, not a `Mechanism`** — same
+    call R19/R26 made for `Localizer`/`Leds`, for the same reason (needs
+    the scheduler for `periodic()`'s one automatic transition, but nothing
+    ever requires it). The old lesson's framing ("what makes something a
+    subsystem isn't owning hardware, it's needing the scheduler") still
+    lands, just sharper: this framework separates "needs the scheduler"
+    from "is a `Mechanism`" as two genuinely independent questions, and
+    `Superstructure` is the clearest example yet of a class that needs
+    only the first.
+
 ---
 
 ## Appendix: verified API notes
@@ -2278,6 +2376,12 @@ appendices: verify before drafting, record what you verified.
       dedicated future lesson on `org.wpilib.command3.StateMachine` used
       properly (a command-per-state behavior graph, not a classification
       enum) is now tracked as future work, not yet planned in detail.
+- [x] Lesson 24 written and verified 2026-08-14 — see [R27](#risks-and-blocking-unknowns)
+      and the [per-lesson impact table](#per-lesson-impact-assessment) row.
+      `code/OpModeV3Robot/build.gradle`'s `test { }` block now carries the
+      two `--add-opens` flags every future Scheduler-touching JUnit test in
+      this track will need (R27) — a one-time base-template fix, not
+      something left for the next lesson that ships a test to rediscover.
 - [ ] Resolve OD6 (roboRIO → SystemCore terminology pass) with the user.
 - [x] Resolved 2026-08-11 — `BindingScope.createNarrowestScope` sees the new
       opmode's ID during its constructor, not just from `start()` onward.

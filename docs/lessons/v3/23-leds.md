@@ -455,3 +455,5 @@ branches and you can already feel where it goes. Some of what you'll
 want the robot to show isn't a condition at all — "mid-handoff" isn't a
 thing that's true or false about a sensor, it's a thing the robot *is*.
 Conditions can't express that, and stacking more of them won't help.
+
+Next: [Lesson 24 — Superstructure: one thing that says yes or no](24-superstructure.md)
