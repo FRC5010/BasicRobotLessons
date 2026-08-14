@@ -546,7 +546,8 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 17 | BLine autos | **Skipped for now** | 2026-08-13: BLine confirmed structurally incompatible with this 2027 alpha by direct test — `FollowPath extends edu.wpi.first.wpilibj2.command.Command` (Commands V2's base class) and `FollowPath.Builder` requires an `edu.wpi.first.wpilibj2.command.Subsystem`; needs a rewrite against Commands V3, not a recompile. See [R2](#risks-and-blocking-unknowns). **User decision (2026-08-13): skip to Lesson 18 for now** rather than write an interim stand-in or wait — the mechanisms arc (18+) doesn't depend on BLine or maple-sim, so the track moves on and Lesson 17 stays a gap to revisit once BLine (or an equivalent) ships Commands V3 support. This is also where the resolved multi-`@Autonomous` selection decision (OD3) would land, whenever this unblocks |
 | 18 | Scoring elevator | Low | Written and verified 2026-08-13. `SubsystemBase` → `Mechanism` rename landed exactly as predicted, with `ElevatorIO`/`ElevatorIOTalonFX`/`ElevatorIOSim` matching `ModuleIO`'s spine from Lesson 13 file-for-file. Phoenix's Motion Magic + full feedforward config surface (`MotionMagicVoltage`, `MotionMagicConfigs`, `Slot0Configs.kG/kV/kA/kP`, `GravityTypeValue.Elevator_Static`) and `org.wpilib.simulation.ElevatorSim` all confirmed via `javap` with unchanged signatures from pre-2027 WPILib/Phoenix 6. R3/R7's `StatusSignal.getValueAsDouble()` finding held again here, including on `getClosedLoopReference()`'s `Double`-typed signal. See [R22](#risks-and-blocking-unknowns) for measured (not reused) feedforward-term numbers from this alpha's own physics |
 | 19 | Mechanism2d | Low | Written and verified 2026-08-13. **Real, load-bearing departure from the old lesson: no AdvantageKit means no `LoggedMechanism2d`/`LoggedMechanismRoot2d`/`LoggedMechanismLigament2d`** — this course uses WPILib's own `org.wpilib.smartdashboard.Mechanism2d`/`MechanismRoot2d`/`MechanismLigament2d` instead (confirmed via `javap`, same package as `Field2d`/`SmartDashboard`). Two real consequences, not cosmetic renames: (1) these classes are plain-`double` constructors with no `Distance`/`Angle`-typed overloads at all, so every measure gets unpacked with `.in(Meters)` right at the call site — a new instance of the course's own "unpack only at a genuine double-only boundary" rule, not an exception to it; (2) `Mechanism2d implements NTSendable` (confirmed `extends Sendable`), so it's a **live** object — `SmartDashboard.putData(...)` publishes it exactly once, in the constructor, mirroring Lesson 14's already-shipped `Field2d` precedent, and `setLength`/`setColor` push straight to NetworkTables from `periodic()` with no `Logger.recordOutput`-style "must republish every tick" step. This is a genuinely simpler story than the old lesson's, not a downgrade. See [R23](#risks-and-blocking-unknowns) for the `Color`/`Color8Bit` naming-convention finding and the real NT-backed verification |
-| 20–23 | Intake arm … LEDs | Low | `SubsystemBase` → `Mechanism` rename; IO-layer pattern (Lesson 13's spine) is unaffected by this table's changes once Lesson 13 itself is resolved |
+| 20 | Intake arm | Low | Written and verified 2026-08-13. `SubsystemBase` → `Mechanism` rename landed exactly as predicted, and `Arm(Elevator elevator)` — a `Mechanism` constructor taking another `Mechanism` — is the first of its kind in this track, mirroring `Robot.java`'s own already-established "later field reads an earlier one" ordering rule (Lesson 14). `GravityTypeValue.Arm_Cosine`, `SoftwareLimitSwitchConfigs`, and `SingleJointedArmSim` (including `estimateMOI`) all confirmed via `javap` with unchanged signatures from pre-2027 WPILib/Phoenix 6. Real finding: `TalonFX.setThrottle(double)` (not `.set(double)`, per R3) is what the roller's plain percent-output write needed — R3 held four lessons after it was first found. See [R24](#risks-and-blocking-unknowns) for that and for the measured, exact match to the old course's own 5-point `kG × cos θ` table (0.25/0.18/0.00/−0.18/−0.25 V at 0°/45°/90°/135°/180°) and the real firmware-soft-limit verification |
+| 21–23 | Limit sensors … LEDs | Low | `SubsystemBase` → `Mechanism` rename; IO-layer pattern (Lesson 13's spine) is unaffected by this table's changes once Lesson 13 itself is resolved |
 | 24 | Superstructure | Medium | `StateMachine` library primitive now exists — recommend keep the hand-rolled enum, reference the library the way the course references `MathUtil.clamp` |
 | 25 | Path events | Medium | `Trigger`'s auto-scoping may let the manual `.finallyDo(FollowPath::clearRotationOverride)` handback shrink or disappear — depends on whether BLine v3 exposes a scoped registration path; needs the same source-jar verification this course already applies to BLine |
 | 26 | Drive to pose | Low | Mechanically unaffected |
@@ -1849,6 +1850,67 @@ out badly.
 
 ---
 
+- **R24 — new, found while writing and verifying Lesson 20's `Arm`, all
+  confirmed by `javap` and real `DriverStationSim`-backed tests.** The
+  third mechanism on Lesson 13's spine, and the first with two motors and
+  a `Mechanism` constructor that reads another `Mechanism`.
+
+  - **`TalonFX.setThrottle(double)`, not `.set(double)` — this is R3
+    (Lesson 1) recurring, not a new discovery, but it's the first mechanism
+    lesson to actually need a plain open-loop motor write.** The roller has
+    no goal to profile, so `ArmIOTalonFX.setRollerOutput` is the first
+    place since the drive motor's Lesson 1-era `.setThrottle` call that
+    this track writes a bare percent-output command instead of a Phoenix
+    control request — confirming R3's finding still holds four lessons of
+    Motion Magic later.
+  - **`GravityTypeValue.Arm_Cosine`, `SoftwareLimitSwitchConfigs`
+    (`ForwardSoftLimitEnable`/`ForwardSoftLimitThreshold`/
+    `ReverseSoftLimitEnable`/`ReverseSoftLimitThreshold`, all `double`
+    thresholds in mechanism rotations, plus `Angle`-typed `with...`
+    overloads) — confirmed via `javap`, unchanged from pre-2027 Phoenix 6.**
+    Same finding as R22's Lesson 18 config surface: none of Phoenix's
+    config/control-request API sits inside the `org.wpilib` rename.
+  - **`org.wpilib.simulation.SingleJointedArmSim` — confirmed present,
+    unchanged constructor shape, including the static `estimateMOI(double,
+    double)` helper.** `Models.singleJointedArmFromPhysicalConstants(DCMotor,
+    J, gearing)` — already used for the drive/steer motors since Lesson 4 —
+    is also the right system to hand `DCMotorSim` for the roller, despite
+    the "arm" in its name: it's the generic 2-state (position + velocity)
+    motor system with no gravity term, which is exactly what a roller is. A
+    first attempt reached for `Models.flywheelFromPhysicalConstants`
+    instead, on the (reasonable-looking) theory that "no gravity" means
+    "flywheel" — that returns a 1-state `LinearSystem<N1,N1,N1>` (velocity
+    only), which does not compile against `DCMotorSim`'s
+    `LinearSystem<N2,N1,N2>` constructor parameter. Recorded here so a
+    future mechanism with a spinning-but-ungoverned motor doesn't
+    re-attempt the same dead end.
+  - **Measured, and an exact match to the old course's own table, not a
+    coincidence** — the physics (Kraken X60, 50:1 gear ratio, 3 kg / 20"
+    uniform-rod arm) is identical between courses, only the API surface
+    differs, so this is what confirms the port carried the numbers
+    correctly rather than silently drifting: holding the arm at
+    0°/45°/90°/135°/180° settles `Arm/AppliedVolts` at
+    **+0.25 / +0.18 / 0.00 / −0.18 / −0.25 V**, reproducing
+    `kArmKG × cos θ` exactly at all five points, sign flip past vertical
+    included.
+  - **Verified end to end with a real `DriverStationSim`-backed test that
+    bypasses `Arm.clampToTravel` entirely**: constructing an `ArmIOSim`
+    directly and calling `setGoalAngleDegrees(270)` — 90° past
+    `kMaxAngle` — settles the simulated arm at ≈179.8°, confirming the
+    firmware's own `SoftwareLimitSwitch` is what actually stops it, not
+    just the Java-side clamp the rest of the lesson also has. A second
+    test confirmed the roller: commanded output spins it to ≈60 rot/s
+    (matching the old lesson's own "around 60" claim), and canceling the
+    command (`.whenCanceled(...)`) fully decays it back toward zero.
+  - **The jvmArgs finding reproduces a sixth time, unchanged**
+    (R18/R19/R20/R21/R22) — `Arm`'s own `DriverStationSim`-backed tests
+    needed the same three `jvmArgs`; noted for completeness, not
+    re-derived.
+
+  No lesson code ships a test — same precedent as Lessons 13–16, 18–19.
+
+---
+
 ## Appendix: verified API notes
 
 Read directly from `wpilibsuite/allwpilib` at tag `v2027.0.0-alpha-6` — the
@@ -1972,6 +2034,10 @@ appendices: verify before drafting, record what you verified.
 | `org.wpilib.smartdashboard.Mechanism2d`/`MechanismRoot2d`/`MechanismLigament2d`/`MechanismObject2d` — compiled, not guessed, see R23 | No `Logged*` AdvantageKit variants exist in this track — these are WPILib's own classes, same package as `Field2d`. `Mechanism2d(double, double)`/`(double, double, Color8Bit)`, `.getRoot(String, double, double)`. `MechanismObject2d.append(T)` is `public final <T extends MechanismObject2d> T append(T)`, shared by both `MechanismRoot2d` and `MechanismLigament2d`. `MechanismLigament2d(String, double, double)`/5-arg with line weight + `Color8Bit`; `setLength(double)`, `setAngle(double)`/`setAngle(Rotation2d)`, `setColor(Color8Bit)`. **No `Distance`/`Angle`-typed overloads anywhere in this family** — confirmed by the complete `javap` signature list, not an oversight in the lesson |
 | `Mechanism2d implements org.wpilib.networktables.NTSendable`, confirmed `extends org.wpilib.util.sendable.Sendable` — compiled, not guessed, see R23 | `SmartDashboard.putData(String, Sendable)` accepts it with no cast. `MechanismLigament2d`'s setters write through NT-backed `DoubleEntry`/`StringEntry` fields directly (confirmed via `javap`'s private-field listing), so mutating the object after one `putData` call is sufficient — no `Logger.recordOutput`-style re-publish needed, and none exists to call anyway (R1) |
 | `org.wpilib.util.Color`'s named constants — compiled, not guessed, see R23 | `SCREAMING_SNAKE_CASE` (`ORANGE`, `LIME_GREEN`, `DENIM`, `FIRST_BLUE`, ...), not the pre-2027 `kOrange`/`kLimeGreen` convention. `Color8Bit` unchanged: `()`, `(int, int, int)`, `(Color)`, `(String)` constructors, public `red`/`green`/`blue` `int` fields |
+| `TalonFX.setThrottle(double)`, still no `.set(double)` — R3 reconfirmed, see R24 | First reconfirmation since R3 (Lesson 1) that this alpha's `TalonFX` has no `set(double)` at all, only `setThrottle(double)` for open-loop percent output — needed here for the roller, the first plain (non-Motion-Magic) motor write since the mechanisms arc began |
+| `com.ctre.phoenix6.signals.GravityTypeValue.Arm_Cosine`/`configs.SoftwareLimitSwitchConfigs` — compiled, not guessed, see R24 | Both confirmed via `javap`, unchanged from pre-2027 Phoenix 6 — same finding as R22's Lesson 18 config surface, none of this sits inside the `org.wpilib` rename. `SoftwareLimitSwitchConfigs`: `ForwardSoftLimitEnable`/`ReverseSoftLimitEnable` (`boolean`), `ForwardSoftLimitThreshold`/`ReverseSoftLimitThreshold` (`double`, mechanism rotations, plus `Angle`-typed `with...`/`get...Measure()` overloads) |
+| `org.wpilib.simulation.SingleJointedArmSim` — compiled, not guessed, see R24 | Confirmed present under the new package root, `extends LinearSystemSim<N2, N1, N2>`, unchanged constructor shape from pre-2027 WPILib: `(DCMotor, gearing, moiKgMetersSquared, armLengthMeters, minAngleRad, maxAngleRad, simulateGravity, startingAngleRad, double... stdDevs)`. Static `estimateMOI(double armLengthMeters, double massKg)` confirmed present |
+| `org.wpilib.math.system.Models.flywheelFromPhysicalConstants` returns a 1-state system, incompatible with `DCMotorSim` — confirmed via a real compile failure, not guessed, see R24 | Returns `LinearSystem<N1,N1,N1>` (velocity only); `DCMotorSim`'s constructor wants `LinearSystem<N2,N1,N2>` (position + velocity). `Models.singleJointedArmFromPhysicalConstants(DCMotor, J, gearing)` — the same call `ModuleIOSim` already uses for the drive/steer motors — is the correct generic 2-state system for any `DCMotorSim`-driven mechanism with no gravity term, arm or not |
 
 ---
 
@@ -2539,3 +2605,41 @@ appendices: verify before drafting, record what you verified.
       `REPLAY` is still the dormant arm from Lesson 13 with nothing to
       replay yet. Full compile re-verified from a fresh sandbox (0–19),
       plus an independent regression checkpoint at 18.
+- [x] Lesson 20 (Intake arm: a mechanism that swings) written and
+      verified 2026-08-13 — `docs/lessons/v3/20-intake-arm.md` and
+      `code/v3/lesson-20/`, compiling through
+      `tools/verify-lessons-v3.sh 20`. Third mechanism on Lesson 13's
+      spine (`ArmIO`/`ArmIOTalonFX`/`ArmIOSim`/`Arm`), and the first with
+      two motors in one `Mechanism` and a constructor that reads another
+      `Mechanism` (`Arm(Elevator elevator)`, appending its ligament onto
+      `elevator.getCarriage()` — Lesson 19's placeholder stub finally
+      replaced). `GravityTypeValue.Arm_Cosine`, `SoftwareLimitSwitchConfigs`,
+      and `SingleJointedArmSim`/`estimateMOI` all confirmed via `javap`
+      with unchanged signatures from pre-2027 WPILib/Phoenix 6 — none of
+      it sits inside the `org.wpilib` rename, same finding as R17/R22's
+      config-surface lessons. Real finding: the roller's plain
+      percent-output write needed `TalonFX.setThrottle(double)`, not
+      `.set(double)` — R3 (Lesson 1) reconfirmed four lessons into the
+      mechanisms arc, the first place since then this track has written a
+      bare open-loop motor command instead of a Phoenix control request.
+      **R24** has the rest: a first attempt at the roller's `DCMotorSim`
+      model reached for `Models.flywheelFromPhysicalConstants` (a
+      reasonable-looking fit for "no gravity") and failed to compile — it
+      returns a 1-state system, but `DCMotorSim` needs 2-state, so
+      `Models.singleJointedArmFromPhysicalConstants` (the same call
+      `ModuleIOSim` already uses for the drive/steer motors) is the
+      correct generic choice regardless of whether the mechanism is
+      actually an arm. Measured, and an **exact match to the old course's
+      own 5-point table** (same physics, only the API differs): holding at
+      0°/45°/90°/135°/180° settles `Arm/AppliedVolts` at
+      +0.25/+0.18/0.00/−0.18/−0.25 V, reproducing `kArmKG × cos θ`
+      precisely, sign flip past vertical included. Verified end to end
+      with a real `DriverStationSim`-backed test that bypasses
+      `Arm.clampToTravel` entirely and commands `ArmIOSim` directly at
+      270° (90° past `kMaxAngle`) — the arm settles at ≈179.8°, confirming
+      the *firmware's* soft limit stops it, not just the Java-side clamp —
+      and a second test confirming the roller spins to ≈60 rot/s under
+      sustained throttle (matching the old lesson's own "around 60" claim)
+      and decays fully once `.whenCanceled(...)` fires. Full compile
+      re-verified from a fresh sandbox (0–20), plus an independent
+      regression checkpoint at 19.
