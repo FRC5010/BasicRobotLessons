@@ -555,3 +555,5 @@ If the guard in section 5 felt like more machinery than you'd expect for
 early `return`, because this framework doesn't hand you a shortcut for
 it. Now that you've built it once, you'll recognize the shape instantly
 next time you need it.
+
+Next: [Lesson 26 — Getting there exactly](26-drive-to-pose.md).

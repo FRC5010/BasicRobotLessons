@@ -551,8 +551,8 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 22 | Light sensors (beam break) | **Skipped for now** | 2026-08-13: needs maple-sim's `IntakeSimulation` to give the beam-break sensor an independent "is a piece really there" signal — maple-sim remains confirmed structurally incompatible with this 2027 alpha (see R2). **User decision (2026-08-13): skip to Lesson 23 for now** rather than write an interim hand-built stand-in — LEDs (23) doesn't depend on a beam break or maple-sim, so the track moves on and Lesson 22 stays a gap alongside Lesson 17 to revisit once maple-sim ships `org.wpilib.*`-compatible support |
 | 23 | LEDs | Low | Written and verified 2026-08-13. Not a `SubsystemBase` → `Mechanism` rename after all — `Leds` ships as a **plain class**, the same call R19 made for Lesson 14's `Localizer` and for the identical reason (drives nothing, no command ever requires it). Priority chain drops from the old lesson's four conditions to **three**, since it depended on the skipped Lesson 22's `Arm.hasGamePiece()` — the "two things true at once" teaching moment moves to something this track actually has: every robot boots simultaneously disabled *and* unhomed, and the strip correctly shows red (not-homed) rather than breathing blue (disabled) at that exact moment, verified by a real test. `LEDPattern`/`AddressableLED`/`AddressableLEDBuffer` all confirmed via `javap`, moved to `org.wpilib.hardware.led`. See [R26](#risks-and-blocking-unknowns) for three real findings: `AddressableLED` has no `.start()` at all in this alpha, its channel numbering collided with a `DigitalInput`'s in a real test (not guessed), and `DriverStation.getAlliance()` moved to `MatchState.getAlliance()` |
 | 24 | Superstructure | Medium | Written and verified 2026-08-14. Hand-rolled enum kept per OD4's resolution — `StateMachine` deferred to a future dedicated lesson, not folded in here even as a Try It. Redesigned to a 4-state machine (`UNHOMED`/`IDLE`/`INTAKING`/`SCORING`) since the old lesson's piece-driven `HANDOFF`/`HOLDING` states depended on the skipped Lesson 22's `hasGamePiece()` — framed honestly as "the operator is the sensor" rather than faked. Real finding, not anticipated by this plan: `Command` has no `onlyIf`-equivalent anywhere in the package (confirmed by an exhaustive `javap` sweep), replaced by a hand-built guard inside `Command.noRequirements(...)`; a second, separate finding along the way — JUnit tests touching `Scheduler` need two `--add-opens` flags `configureTestTasks` doesn't add, now fixed in the base template's `build.gradle`. See [R27](#risks-and-blocking-unknowns) for both plus the full verified end-to-end test |
-| 25 | Path events | Medium | `Trigger`'s auto-scoping may let the manual `.finallyDo(FollowPath::clearRotationOverride)` handback shrink or disappear — depends on whether BLine v3 exposes a scoped registration path; needs the same source-jar verification this course already applies to BLine |
-| 26 | Drive to pose | Low | Mechanically unaffected |
+| 25 | Path events | **Skipped for now** | 2026-08-15: same root cause as Lesson 17 (R2) — this lesson's entire content is BLine event-marker/`overrideRotation` machinery layered on `FollowPath`, which is already confirmed structurally incompatible with this alpha's Commands V3. **User decision (2026-08-15): skip, no interim, same call as 17** — proceed to Lesson 26, which doesn't need BLine's generated-path machinery for its own teaching content. Stays a gap alongside 17 and 22 until BLine ships `org.wpilib.*`-compatible support |
+| 26 | Drive to pose | Low | Written and verified 2026-08-15. **Not actually BLine-free by luck — verified before writing a line of prose**, since the old lesson's stage one used BLine's generated-`Path` machinery, the same dependency that blocked 17/25. Redesigned so stage one is just Lesson 11's already-shipped `driveToPose` sketch reused as-is (no staging-pose offset needed — it hands off to stage two wherever its own 5cm check trips, which bounds `alignToPose`'s un-clamped top speed the same way the old lesson's `kStagingDistance` did), and stage two (`alignToPose`, three `PIDController` fields, `PIDController` introduced as this lesson's one new Java concept) is entirely hand-rolled — no library path following anywhere. `Autos.driveToScoringPose` composes both with `coroutine.await(...)` chaining, matching `driveTurnDrive`'s established Lesson 9 shape; wired as a third `@Autonomous` opmode (`RobotAutoDriveToPose`, matching OD3's multi-opmode pattern) and a teleop left-bumper hold. See [R28](#risks-and-blocking-unknowns) for the two real measurement-methodology findings this lesson's numbers depend on |
 | 27 | Object detection | Medium | `Commands.defer` likely retires in favor of inline coroutine build-then-await — see [Coroutine pedagogy](#coroutine-style-commands-where-they-enter-the-syllabus) |
 | 28 | Aim at tag | Low | Mechanically unaffected |
 | 29 | Flywheel | Low | Mechanically unaffected |
@@ -824,8 +824,17 @@ out badly.
   signal decoupled from roller state, same spirit as Lesson 14's fake
   camera sighting) or skip — **user decision 2026-08-13: skip to Lesson 23
   for now**, leaving Lesson 22 a recorded gap alongside Lesson 17 rather
-  than building a stand-in. Both stay open until maple-sim (or BLine, for
-  Lesson 17/25–28) actually ships `org.wpilib.*`-compatible support.
+  than building a stand-in. **Lesson 25 (path events) hit it third, and
+  for the identical reason as Lesson 17 — it's the old lesson's own
+  `FollowPath`/event-marker machinery, one lesson layer further out, not a
+  new dependency — user decision 2026-08-15: skip it too, no interim,
+  same call as 17.** Three of this course's remaining lessons are gated on
+  it directly (17, 25, and by inheritance 26–28, since each of those
+  builds autos on top of what 17/25 would have shipped); proceed with
+  Lesson 26 next, per the same "the rest of the arc doesn't strictly need
+  it yet" logic that let 18 and 23 proceed past 17 and 22. All three stay
+  open until maple-sim or BLine actually ships `org.wpilib.*`-compatible
+  support.
 - **R3 — pin confirmed, and API confirmed too, by actually compiling against
   it.** Phoenix 6's 2027 alpha vendordep for this project's WPILib version is
   `Phoenix6-26.50.0-alpha-1.json` (with a matching
@@ -2180,6 +2189,76 @@ out badly.
     `Superstructure` is the clearest example yet of a class that needs
     only the first.
 
+- **R28 — new, found while writing and verifying Lesson 26's `alignToPose`,
+  all confirmed by real measurement against actual sim IO, not estimated.**
+
+  - **Lesson 26 is not automatically BLine-free just because it's a
+    mechanisms-adjacent topic — checked directly, not assumed.** The old
+    lesson's stage one built a generated one-waypoint `Path` and ran it
+    through `FollowPath`, the exact machinery R2/R17/R25 already confirmed
+    structurally incompatible with this alpha. Redesigned so stage one is
+    Lesson 11's already-shipped `driveToPose` sketch, completely
+    unmodified, reused as-is for the coarse approach — its own known flaw
+    (finishes on translation alone, ignoring rotation) stops being a
+    liability once it's guaranteed to be followed by a stage that does
+    check rotation. This also meant dropping the old lesson's
+    `stagingPose()` offset math entirely: it existed to give BLine's
+    `FollowPath` a clean approach vector, and without BLine there's nothing
+    for it to serve — `alignToPose`'s un-clamped top speed is bounded just
+    as safely by `driveToPose`'s own 5 cm handoff distance (`kAlignP ×
+    0.05 m` ≈ 0.15 m/s, tighter than the old lesson's `kAlignP ×
+    kStagingDistance` ≈ 1.2 m/s) as it was by an explicit staging pose.
+  - **`org.wpilib.math.controller.PIDController` needed no port work at
+    all** — confirmed via `javap` against `wpimath-java-2027.0.0-alpha-6.jar`
+    (package `org.wpilib.math.controller`, not `org.wpilib.wpimath` —
+    worth noting since it's a separate jar from `wpilibj-java`, the one
+    most other `org.wpilib.*` classes in this course live in): identical
+    constructors, `setTolerance`/`atSetpoint`/`enableContinuousInput`/
+    `calculate(measurement, setpoint)` all present with unchanged
+    signatures from pre-2027 WPILib. Zero API drift, the rare finding in
+    this plan that needed no adaptation once it was checked.
+  - **Two real measurement-methodology traps found while getting honest
+    numbers for the lesson's comparison table, both worth not
+    rediscovering.** First: a bare tick loop (`for (...) { Scheduler.run(); }`
+    with no sleep) produced a *different, nondeterministic* result on every
+    run of the identical scenario — oscillating around 20–40 cm of
+    steady-state error instead of converging, sometimes finishing around
+    3 s, sometimes never finishing in 8 s. Root cause is the same one
+    CLAUDE.md already documents for Lessons 20–22 and this session's own
+    Lesson 21 work: **Phoenix's simulated TalonFX firmware runs in real
+    time**, on `TalonFX`-backed `SwerveModule`s same as everywhere else in
+    this course, so a tick loop that executes faster than 20 ms of real
+    time per iteration desyncs the module physics from the logical tick
+    count. Adding `Thread.sleep(20)` per tick made the result perfectly
+    reproducible across repeated runs — this is a **measurement-harness
+    fix only**; a student's actual `simulateJava` session runs in real
+    time already and was never affected. Second, and specific to this
+    lesson: **`Drivetrain.m_chassisSim` is `private static final`**, so
+    constructing a second `Drivetrain` in the *same JVM process* silently
+    reuses the first scenario's chassis physics state instead of getting
+    fresh ground truth — running two comparison scenarios back-to-back in
+    one `main()` produced a nonsensical 6.5 m error on the second one. Same
+    root cause and same fix as this course's own documented "give each
+    test its own CAN IDs" / "one sequential scenario per subsystem" rule —
+    one scenario per JVM process (`-Pscenario=...` selecting which one via
+    a system property), not multiple scenarios sharing a process.
+  - **Verified end to end, numbers below are measured, not estimated,
+    from (1,1)→(5,4) facing 90°, matching the old lesson's own example
+    coordinates:** `driveToPose` alone finishes at 3.02 s, 49 mm out,
+    rotation unchecked (matches the old lesson's own **3.02 s** almost
+    exactly, despite a different chassis physics model underneath — the
+    two sketches share the same P-gains against the same target, so the
+    first-order dynamics come out nearly identical). The two-stage
+    composition finishes at 3.30 s, 20 mm / 0.003° — **slower by about a
+    quarter second, not faster**, unlike the old lesson's own measured
+    "both faster and more accurate" result. The lesson states this
+    honestly rather than forcing the old framing: the real trade is a
+    quarter second of extra time for more than double the position
+    accuracy and a rotation guarantee that never existed at all, not a
+    strictly-dominant win. The backwards-facing demo (start pose = target
+    position, 180° rotated) reproduces the old lesson's "declares arrival
+    instantly while facing the wrong way" finding exactly, on tick 0.
+
 ---
 
 ## Appendix: verified API notes
@@ -3016,3 +3095,68 @@ appendices: verify before drafting, record what you verified.
       19's. Full compile re-verified from a fresh sandbox (0–23, correctly
       skipping the absent 22), plus an independent regression checkpoint
       at 21.
+- [x] Lesson 24 (Superstructure) written and verified 2026-08-14 —
+      `docs/lessons/v3/24-superstructure.md` and `code/v3/lesson-24/`,
+      compiling through `tools/verify-lessons-v3.sh 24`. OD4 resolved
+      first: the hand-rolled enum stays, `StateMachine` deferred entirely
+      to a future dedicated lesson. Redesigned to a 4-state machine
+      (`UNHOMED`/`IDLE`/`INTAKING`/`SCORING`, down from the old lesson's
+      6) since the piece-driven `HANDOFF`/`HOLDING` states depended on the
+      skipped Lesson 22's `hasGamePiece()` — framed honestly as "the
+      operator is the sensor" rather than faking a reading, while the
+      load-bearing `UNHOMED.canGoTo(*) == false` / automatic
+      `UNHOMED → IDLE` transition ported with zero adaptation, since it
+      never depended on Lesson 22 at all. Two real findings, both found
+      before writing lesson prose, not after: **`org.wpilib.command3.Command`
+      has no `onlyIf`/`unless`-style guard method anywhere in the
+      package** (confirmed by `javap`-ing every class in the `commands3`
+      jar), replaced by a hand-built `Command.noRequirements(coroutine ->
+      { if (!allow(next)) return; ... })` guard, verified with a
+      throwaway `JavaExec` harness to check the condition exactly once, at
+      schedule time; and **JUnit tests touching `Scheduler`/`Command` fail
+      with `IllegalAccessException` unless `test { }` adds two
+      `--add-opens` flags `configureTestTasks` doesn't add**, now fixed
+      once in `code/OpModeV3Robot/build.gradle` so no future lesson
+      rediscovers it. See [R27](#risks-and-blocking-unknowns) for the full
+      writeup, including the 10-check end-to-end verification against
+      real `Elevator`/`Arm` sim IO. Full compile re-verified from a fresh
+      sandbox (0–24), plus an independent regression checkpoint at 23.
+- [x] Lesson 25 (Path events) investigated and skipped, 2026-08-15 — no
+      `docs/lessons/v3/25-*.md`, no `code/v3/lesson-25/`. Same root cause
+      as Lesson 17, not a new one: the old lesson's entire content is
+      BLine's event-marker registration and `FollowPath.overrideRotation`
+      layered on top of the `FollowPath`/`Path` machinery R2 already
+      confirmed structurally incompatible with this alpha's Commands V3.
+      Nothing new needed verifying — this is Lesson 17's blocker one
+      lesson further downstream, not an independent compatibility
+      question. **User decision (2026-08-15): skip, no interim, same call
+      as 17** — proceed directly to Lesson 26, which doesn't need BLine's
+      generated-path machinery for its own teaching content (to confirm
+      before writing it, not assumed). Lesson 25 stays a recorded gap
+      alongside 17 and 22 (see R2 and the per-lesson impact table) to
+      revisit once BLine ships Commands V3 support.
+- [x] Lesson 26 (Drive to pose) written and verified 2026-08-15 —
+      `docs/lessons/v3/26-drive-to-pose.md` and `code/v3/lesson-26/`,
+      compiling through `tools/verify-lessons-v3.sh 26` from a fresh
+      sandbox that correctly skips 17/22/25. Confirmed BLine-free before
+      writing any prose, not assumed from the "mechanically unaffected"
+      guess in the comparison table — the old lesson's stage one used
+      BLine's generated `Path`, so it was redesigned to reuse Lesson 11's
+      `driveToPose` sketch unmodified as stage one (its finish-on-
+      translation-alone flaw stops mattering once stage two is guaranteed
+      to run after it) and drop the staging-pose offset entirely (nothing
+      left to serve it without a path follower; `alignToPose`'s un-clamped
+      top speed is bounded by `driveToPose`'s own 5 cm handoff instead).
+      `PIDController` needed zero porting — confirmed via `javap` against
+      `wpimath-java`, identical API. See [R28](#risks-and-blocking-unknowns)
+      for two real measurement-methodology traps (Phoenix's simulated
+      firmware running in real time, same as this session's Lesson 21
+      finding — a bare tick loop without `Thread.sleep(20)` gave
+      nondeterministic results; `Drivetrain.m_chassisSim` being `static`
+      meant one scenario per JVM process, not several in one `main()`)
+      and the measured comparison table this lesson's numbers come from
+      (3.02 s/49 mm single-stage vs. 3.30 s/20 mm/0.003° two-stage —
+      presented honestly as a quarter-second cost for much better
+      accuracy, not the old lesson's "strictly faster" framing, since
+      that's what was actually measured here). Full compile re-verified
+      from a fresh sandbox (0–26, correctly skipping 17/22/25).
