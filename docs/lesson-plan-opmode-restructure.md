@@ -553,7 +553,7 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 24 | Superstructure | Medium | Written and verified 2026-08-14. Hand-rolled enum kept per OD4's resolution — `StateMachine` deferred to a future dedicated lesson, not folded in here even as a Try It. Redesigned to a 4-state machine (`UNHOMED`/`IDLE`/`INTAKING`/`SCORING`) since the old lesson's piece-driven `HANDOFF`/`HOLDING` states depended on the skipped Lesson 22's `hasGamePiece()` — framed honestly as "the operator is the sensor" rather than faked. Real finding, not anticipated by this plan: `Command` has no `onlyIf`-equivalent anywhere in the package (confirmed by an exhaustive `javap` sweep), replaced by a hand-built guard inside `Command.noRequirements(...)`; a second, separate finding along the way — JUnit tests touching `Scheduler` need two `--add-opens` flags `configureTestTasks` doesn't add, now fixed in the base template's `build.gradle`. See [R27](#risks-and-blocking-unknowns) for both plus the full verified end-to-end test |
 | 25 | Path events | **Skipped for now** | 2026-08-15: same root cause as Lesson 17 (R2) — this lesson's entire content is BLine event-marker/`overrideRotation` machinery layered on `FollowPath`, which is already confirmed structurally incompatible with this alpha's Commands V3. **User decision (2026-08-15): skip, no interim, same call as 17** — proceed to Lesson 26, which doesn't need BLine's generated-path machinery for its own teaching content. Stays a gap alongside 17 and 22 until BLine ships `org.wpilib.*`-compatible support |
 | 26 | Drive to pose | Low | Written and verified 2026-08-15. **Not actually BLine-free by luck — verified before writing a line of prose**, since the old lesson's stage one used BLine's generated-`Path` machinery, the same dependency that blocked 17/25. Redesigned so stage one is just Lesson 11's already-shipped `driveToPose` sketch reused as-is (no staging-pose offset needed — it hands off to stage two wherever its own 5cm check trips, which bounds `alignToPose`'s un-clamped top speed the same way the old lesson's `kStagingDistance` did), and stage two (`alignToPose`, three `PIDController` fields, `PIDController` introduced as this lesson's one new Java concept) is entirely hand-rolled — no library path following anywhere. `Autos.driveToScoringPose` composes both with `coroutine.await(...)` chaining, matching `driveTurnDrive`'s established Lesson 9 shape; wired as a third `@Autonomous` opmode (`RobotAutoDriveToPose`, matching OD3's multi-opmode pattern) and a teleop left-bumper hold. See [R28](#risks-and-blocking-unknowns) for the two real measurement-methodology findings this lesson's numbers depend on |
-| 27 | Object detection | Medium | `Commands.defer` likely retires in favor of inline coroutine build-then-await — see [Coroutine pedagogy](#coroutine-style-commands-where-they-enter-the-syllabus) |
+| 27 | Object detection | Medium | Written and verified 2026-08-16. `Commands.defer` retired as predicted, replaced by `Command.requiring(Mechanism...).executing(Consumer<Coroutine>)` — verified this actually defers the body to schedule time, not just assumed from the type signature. **Real, unplanned redesign**: the old lesson's simulated camera pulled game piece positions from maple-sim's physics arena, unavailable on this alpha (R2) — replaced with a small fixed list of field positions (`kSimGamePiecePositions`), no physics. `fetchPiece` reuses Lesson 24's `Superstructure.requestIntake()` instead of commanding Arm directly, which turned out to simplify the port relative to the old lesson (no `Commands.parallel` needed inside `fetchPiece` at all — the intake motion is already wired independently via `inState(INTAKING)`). See [R29](#risks-and-blocking-unknowns) for the maple-sim substitute, a genuinely surprising finding that this alpha's simulated object-detection pipeline injects no camera noise at all (unlike its AprilTag corner path), and the measured end-to-end verification |
 | 28 | Aim at tag | Low | Mechanically unaffected |
 | 29 | Flywheel | Low | Mechanically unaffected |
 | 30 | Current limits | Low | `Robot.simulationPeriodic()` still hosts the battery-sim exception |
@@ -2259,6 +2259,99 @@ out badly.
     position, 180° rotated) reproduces the old lesson's "declares arrival
     instantly while facing the wrong way" finding exactly, on tick 0.
 
+- **R29 — new, found while writing and verifying Lesson 27's
+  `GamePieceDetector`/`fetchPiece`, all confirmed by real measurement, not
+  estimated.**
+
+  - **`Commands.defer` retired exactly as OD-adjacent notes predicted,
+    confirmed by actually testing it, not just reading the type
+    signature.** `Command.requiring(Mechanism, Mechanism...).executing(
+    Consumer<Coroutine>)` (`NeedsExecutionBuilderStage`/`NeedsNameBuilderStage`,
+    both confirmed via `javap`) declares required Mechanisms up front —
+    unavoidable, since the eventual command doesn't exist for the scheduler
+    to inspect — and defers building the body to the moment the command is
+    scheduled. Verified this is a *real* defer, not just a same-signature
+    coincidence, the same way R27's guard pattern was verified: a fresh
+    `JavaExec` harness confirmed `fetchPiece` reads `detector.bestPiece()`
+    at schedule time and correctly finds nothing if scheduled before any
+    detection exists.
+  - **The old lesson's simulated camera needed a source of moving game
+    pieces it does not have here — maple-sim's physics arena, the same
+    dependency R2/R21 already confirmed structurally incompatible with
+    this alpha.** Not a new compatibility question, the same wall Lesson 16
+    hit, one layer further downstream. Redesigned: `ObjectDetectionIOPhotonVisionSim`
+    seeds its fake camera from a small fixed list of field positions
+    (`VisionConstants.kSimGamePiecePositions`), added once at construction,
+    not physics — the pieces don't move, get intake-consumed, or get
+    re-spawned. Everything downstream of the camera (the angle math, the
+    field-position conversion, the driving, the intake request) is real
+    and exercised identically either way; only "something knocked the
+    piece since you looked" is unavailable to demonstrate in this sim,
+    same limitation as Lesson 16's ground-truth swap.
+  - **A genuinely surprising finding, not anticipated by the old lesson or
+    this plan: this alpha's simulated object-detection pipeline injects
+    essentially no camera noise at all**, unlike its AprilTag corner-based
+    path (`VisionIOPhotonVisionSim`, which does use `setCalibError` via
+    corner-noise estimation for tag pose solving). Measured directly:
+    placing the robot at 1 m, 1.5 m, 2 m, 2.5 m, 3 m, 3.5 m, and 4 m from a
+    fixed piece and sampling `bestPiece()` across 150 ticks (3 s) at each
+    distance gave average position error of 0.7–5.2 mm at every distance,
+    with no meaningful growth trend — a flat noise floor, not the old
+    lesson's measured 10–150 mm error-grows-with-distance curve. Root
+    cause, confirmed by inspecting `SimCameraProperties`: `setCalibError`
+    feeds a corner-reprojection noise model (`estPixelNoise`) that the
+    object-detection path's bounding-box math never calls into — a
+    detection target's projected box comes from its exact 3D model with no
+    noise injected at all. **The lesson does not repeat the old lesson's
+    distance/error table**, since doing so with different, unmeasured
+    numbers would be inventing data — it states the real measured
+    flatness plainly, credits it to the simulator rather than the
+    technique, and pivots the "shelf life" argument onto something that
+    *is* real and measured in this sim: `ObjectDetection/HasTarget`
+    flickering because the camera's simulated 20 fps and the 50 Hz
+    scheduler tick fall out of phase (confirmed: roughly 46% of ticks
+    report a detection while the robot sits stationary facing a piece,
+    not the 100% a naive reading of "the camera can see it" would
+    suggest).
+  - **Confirmed at close range, not just far: below roughly 0.5–1 m the
+    conversion becomes unstable**, producing wildly wrong positions
+    (measured: 1.5 m of error at a true 0.5 m range, on a target the exact
+    same geometry handled to sub-centimeter accuracy from 1–4 m). Plausible
+    cause is the steep viewing angle at very short range combined with the
+    camera's fixed vertical field of view, not investigated further since
+    it's outside the lesson's normal operating range and doesn't affect
+    any claim the lesson actually makes — flagged here rather than in the
+    lesson prose, since the lesson never asks the student to test that
+    close.
+  - **`fetchPiece` needed less machinery than the old lesson's version, a
+    real simplification made possible by Lesson 24 already existing in
+    this track (which the old course's own Lesson 24 — piece-sensor-driven
+    — could not offer the same way).** The old lesson's `Commands.parallel(
+    approach, Commands.sequence(arm.goToAngle(...), arm.runRoller(...).until(
+    arm::hasGamePiece)))` is gone entirely; `fetchPiece` calls
+    `coroutine.await(superstructure.requestIntake())` — a guarded,
+    zero-requirement state flip — and the actual arm/roller motion runs
+    independently via `RobotTeleop`'s already-existing
+    `inState(INTAKING).whileTrue(intakeMotion())` binding from Lesson 24.
+    `fetchPiece` itself only ever requires `Drivetrain`. This also means a
+    request to fetch a piece is subject to `SuperstructureState.canGoTo`
+    exactly like any other button-bound request — pressing the fetch
+    button while `SCORING`, for instance, drives to the piece but the
+    intake request is silently refused, logged the same way every other
+    refusal is.
+  - **Verified end to end, not just compiled**: a fresh `JavaExec` harness
+    built `Elevator`/`Arm`/`Superstructure`/`Drivetrain`/`Localizer`/
+    `GamePieceDetector` together, homed the elevator for real (confirmed
+    ~4.2 s, consistent with R25's own measurement), scheduled `fetchPiece`,
+    and confirmed the robot drove to within 6 cm of the fixed piece at
+    (4.5, 3.2) and ended in `SuperstructureState.INTAKING` — the full
+    detect → convert → defer-build → drive → request-intake pipeline,
+    exercised together, not lesson-by-lesson in isolation. The
+    empty-field case (robot facing away from every fixed piece) was
+    separately confirmed to report `hasTarget() == false` and
+    `bestPiece() == Optional.empty()`, matching the "undramatic no-op"
+    behavior the lesson describes.
+
 ---
 
 ## Appendix: verified API notes
@@ -3160,3 +3253,35 @@ appendices: verify before drafting, record what you verified.
       accuracy, not the old lesson's "strictly faster" framing, since
       that's what was actually measured here). Full compile re-verified
       from a fresh sandbox (0–26, correctly skipping 17/22/25).
+- [x] Lesson 27 (Object detection) written and verified 2026-08-16 —
+      `docs/lessons/v3/27-object-detection.md` and `code/v3/lesson-27/`,
+      compiling through `tools/verify-lessons-v3.sh 27` from a fresh
+      sandbox correctly skipping 17/22/25. `Commands.defer` retired to
+      `Command.requiring(Mechanism...).executing(Consumer<Coroutine>)`,
+      verified as a real defer (not just a matching signature) with a
+      throwaway harness. Real, unplanned redesign: the old lesson's
+      simulated camera needed maple-sim's physics arena (R2/R21's already-
+      confirmed blocker, hit here one layer downstream, not a new
+      question) — replaced with a small fixed list of field positions,
+      no physics, everything downstream of the camera exercised
+      identically. `fetchPiece` reuses Lesson 24's
+      `Superstructure.requestIntake()` rather than commanding Arm
+      directly, which needed *less* machinery than the old lesson's
+      version (no `Commands.parallel` inside `fetchPiece` at all — intake
+      motion already runs independently off `inState(INTAKING)`), and
+      means a fetch request is subject to `canGoTo` like any other
+      request. See [R29](#risks-and-blocking-unknowns) for the genuinely
+      surprising finding that this alpha's simulated object-detection
+      pipeline injects no camera noise at all (a flat 0.7–5.2 mm error
+      floor from 1–4 m, not the old lesson's measured error-grows-with-
+      distance curve) — the lesson does not repeat the old lesson's
+      numbers, since that would mean inventing data, and instead pivots
+      the "shelf life" argument onto something real and measured in this
+      sim: `ObjectDetection/HasTarget` flickering at ~46% because the
+      camera's 20 fps and the 50 Hz scheduler tick drift in and out of
+      phase. Full end-to-end verification (detect → convert → defer-build
+      → drive → request-intake, together, not lesson-by-lesson) confirmed
+      via a throwaway harness: homed the elevator for real, scheduled
+      `fetchPiece`, and the robot drove to within 6 cm of a fixed piece
+      and ended in `INTAKING`. Full compile re-verified from a fresh
+      sandbox (0–27), plus an independent regression checkpoint at 26.
