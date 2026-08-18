@@ -522,3 +522,5 @@ and the only time you'll ever get to do it without a crowd watching.
 
 Notice, though, that finding it took a laptop, a graph, and someone who
 knew which three keys to plot. In a queue line you have none of those.
+
+Next: [Lesson 31 — The robot tells you what's wrong](31-alerts.md).

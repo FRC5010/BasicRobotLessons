@@ -557,7 +557,7 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 28 | Aim at tag | Low | Written and verified 2026-08-16. Confirmed "mechanically unaffected" was right for the core `Aim` arithmetic (no BLine/maple-sim dependency anywhere in it), but the old lesson's §6 ("aiming during an auto") used BLine's `FollowPath.registerEventTrigger`/`overrideRotation` — unavailable here (R2) — so it was replaced with a second `@Autonomous` opmode (`RobotAutoAimWhileDriving`) calling the identical `Aim.omegaTowardTag`, preserving the lesson's real point (one static method, two independent callers) without inventing an event-marker system that doesn't exist yet. `Drivetrain.getChassisSpeeds()` — "the door Lesson 17 opened," per the old lesson's own text — didn't exist here since Lesson 17 was skipped; added directly in this lesson instead, as `getChassisVelocities()` (kinematics run backward via `toChassisVelocities`, matching this alpha's renamed type). See [R30](#risks-and-blocking-unknowns) for the verified tracking-lag numbers, including a genuinely nice finding: `ChassisVelocities.toFieldRelative(Rotation2d)` is a cleaner instance-method replacement for the old `ChassisSpeeds.fromRobotRelativeSpeeds` static call |
 | 29 | Flywheel | Low | Written and verified 2026-08-17. Confirmed "mechanically unaffected" was right — no BLine/maple-sim dependency anywhere, the first mechanism lesson in this track's back half not gated by either. `Models.flywheelFromPhysicalConstants(DCMotor, J, gearing)` is the correct factory for `FlywheelSim`'s `LinearSystem<N1,N1,N1>` (unlike Lesson 20's roller, which needed the arm-shaped factory instead — different physics shape, different factory, both now confirmed). A genuinely nice find: overriding `Mechanism.idle()` gets installed as the default command automatically by the (virtual-call) constructor, so this lesson needed no explicit `setDefaultCommand` wiring at all, unlike the old lesson's `RobotContainer` line. See [R31](#risks-and-blocking-unknowns) for the confirmed absence of `MathUtil.clamp` in this alpha (any overload, any type) and the measured kV/kA numbers, including one honest small discrepancy (43.27 vs. the predicted 42.86, reported as measured rather than force-matched) |
 | 30 | Current limits | Low | Written and verified 2026-08-18. Confirmed genuinely free of both BLine and maple-sim. `Robot.simulationPeriodic()` — empty since Lesson 13 — hosts the battery-sim exception as predicted, but the logging itself moved to `robotPeriodic()` instead (it's meaningful on real hardware too, not just in sim). `RobotController.isBrownedOut()` doesn't work in this alpha's simulation, measured over a sustained 2 s hold — see [R32](#risks-and-blocking-unknowns) for that and the rest of the measured current/voltage numbers, some close to the old course's and some honestly not |
-| 31 | Alerts | Low | `org.wpilib.driverstation.Alert` confirmed present (imported directly by `OpModeRobot` itself) |
+| 31 | Alerts | Low | Written and verified 2026-08-18. Confirmed genuinely free of both BLine and maple-sim. `org.wpilib.driverstation.Alert` confirmed present (imported directly by `OpModeRobot` itself, for its own loop-overrun warning) — but the enum is renamed `Alert.Level.HIGH/MEDIUM/LOW`, not `AlertType.kError/kWarning/kInfo`, and the whole publishing mechanism moved off NetworkTables onto the new 2027 Driver Station app. See [R33](#risks-and-blocking-unknowns) for both findings and for why the old lesson's camera-rename demo doesn't reproduce in this port |
 | 32 | Testing | Medium | Test harness patterns (`DriverStationSim`, stepping the scheduler) need re-verification against `OpMode`/`Scheduler` instead of `TimedRobot`/`CommandScheduler` |
 | 33 | Reading a log | Low | Technique-only lesson, no new Java, but depends on Lesson 13's resolution |
 | 34 | SysId | Medium | `SysIdRoutine`'s new package location is unverified |
@@ -2542,6 +2542,91 @@ out badly.
     42 A / 11.16 V. The no-limits case diverged more (365.6 A / 4.69 V
     measured vs. the old lesson's 490 A / 2.09 V) but stayed in the same
     "severe brownout" category — reported as measured, not adjusted.
+- **R33 — new, found while writing and verifying Lesson 31's alerts, and
+  the largest confirmed API-and-architecture drift found in this track
+  since R2 (BLine/maple-sim).**
+
+  - **Confirmed genuinely free of both BLine and maple-sim.** `Alert`,
+    `AlertSim`, `TalonFX.isConnected()`, and `PhotonCamera.isConnected()`
+    touch neither.
+  - **The enum is renamed, not just repackaged: `AlertType.kError/
+    kWarning/kInfo` is `Alert.Level.HIGH/MEDIUM/LOW`** — confirmed by
+    reading `Alert.java` directly from `wpilibsuite/allwpilib` at the
+    pinned tag, including its javadoc's own description of when to use
+    each level (matching the old course's kError/kWarning/kInfo
+    descriptions almost word for word, which is what makes the mapping
+    confident rather than positional guesswork). `Alert` itself is no
+    longer `Sendable` — it's `AutoCloseable` only, backed by a native
+    `AlertJNI` handle (`createAlert`/`setAlertActive`/`isAlertActive`/...).
+  - **The bigger finding: this alpha's `Alert` does not publish to
+    NetworkTables at all, confirmed empirically, not inferred from the
+    rewrite alone.** A throwaway `JavaExec` harness created three alerts,
+    called `set(true)` on all three, ran 10 ticks, then dumped every
+    NetworkTables key recursively from the root: nothing under
+    `SmartDashboard`, nothing under `Alerts`, nothing anywhere — the only
+    topics that exist at all are `FMSInfo` and the control-word schema.
+    Confirmed architecturally too, from a primary source matching this
+    plan's existing R1 citation pattern: `wpilibsuite/SystemcoreTesting`'s
+    `README.md` states plainly that *"newer Driver Station features (for
+    example, OpMode selection and Alerts) are only available in the 2027
+    Driver Station and require Systemcore images >= 10 and WPILib >=
+    v2027.0.0-alpha-5."* Alerts moved from a NetworkTables/dashboard
+    mechanism to a native Driver Station feature — a deliberate
+    architecture change, not an unfinished corner.
+  - **SimGUI's own Alerts window can't show these either, confirmed by
+    inspecting the shipped native library rather than assumed from "no
+    NT topic."** `strings`/`nm` on `libhalsim_gui.so` show exactly one
+    alerts model, `wpi::glass::NTAlertsModel`, reading `GetErrors`/
+    `GetWarnings`/`GetInfos` off NetworkTables — the *old* WPILib
+    mechanism, not updated for this alpha's HAL-native alert path. No
+    `HALSIM`-prefixed alerts symbol exists anywhere in the library. So
+    this course's own `simulateJava`/SimGUI workflow cannot display
+    alerts at all right now, independent of whether the harness that
+    creates them is a bare `JavaExec` process or the full simulated
+    robot.
+  - **The confirmed, working substitute for this course's environment is
+    `AlertSim`** (`org.wpilib.simulation.AlertSim`, `getActive()`/
+    `getAll()`/`resetData()`, returning `AlertInfo` records with
+    `handle`/`group`/`text`/`activeStartTime`/`level`/`isActive()`) —
+    verified end to end: creating three alerts at different levels,
+    activating all three, then deactivating one, and `AlertSim.getActive()`
+    tracked the transition correctly every time. Lesson 31 uses it as a
+    temporary diagnostic loop in `robotPeriodic()` rather than shipped
+    production code, since a real 2027-DS-connected robot needs no such
+    bridge.
+  - **The old lesson's "rename the camera to break it" demo does not
+    reproduce in this port's simulated vision, verified by actually
+    building the full `Robot` and trying it, not by reasoning about it
+    abstractly (which the first pass got wrong — worth recording as a
+    reminder that this course's own "verify, don't guess" rule applies to
+    its own author too).** `VisionIOPhotonVisionSim` builds its
+    `PhotonCameraSim` from the exact same `PhotonCamera` object it reads
+    from (`PhotonCameraSim(PhotonCamera, ...)`, confirmed via `javap`),
+    so the name the code listens on and the name the simulated
+    coprocessor publishes under are structurally the same value — renaming
+    `kFrontCameraName` moves both together. Confirmed by constructing the
+    real `Robot` in a `SIM`-mode harness both before and after the
+    rename: `AlertSim.getActive()` showed only the elevator's
+    not-homed warning in both cases, no camera alert either time. This
+    is a real difference from the old (2026) course's architecture, not
+    a bug in this lesson's port — the lesson explains why and moves the
+    demo to a Try It instead of presenting something that doesn't work.
+  - **Also verified, smaller findings:** a fresh `TalonFX.isConnected()`
+    reads false for roughly 300–336 ms after construction in this
+    alpha's Phoenix (26.50.0-alpha-1) before connecting and staying
+    connected — same phenomenon as the old course's ~240 ms, different
+    number, reported as measured. A simulated `PhotonCamera` shows no
+    equivalent startup flicker at all — `cameraConnected` read `true`
+    from tick zero in every run, because `PhotonCameraSim` establishes an
+    initial heartbeat synchronously at construction rather than needing a
+    real link-up delay. And `PhotonCamera` already carries its own
+    internal `Alert` for disconnection (confirmed reading photonlib's
+    source: `"PhotonCamera '" + name + "' is disconnected."`, `Alert.
+    Level.MEDIUM`) — this lesson's own camera alert is still worth having
+    for its per-camera, log-key-specific message (`"Localizer/Front
+    camera is not connected"` vs. photonlib's generic one), but the
+    redundancy is real and worth knowing about rather than discovering
+    it by surprise later.
 
 ---
 
@@ -3553,3 +3638,31 @@ appendices: verify before drafting, record what you verified.
       [R32](#risks-and-blocking-unknowns) for the full comparison. Full
       compile re-verified from a fresh sandbox (0–30), plus an independent
       regression checkpoint at 29.
+- [x] Lesson 31 (Alerts) written and verified 2026-08-18 —
+      `docs/lessons/v3/31-alerts.md` and `code/v3/lesson-31/`, compiling
+      through `tools/verify-lessons-v3.sh 31` from a fresh sandbox
+      correctly skipping 17/22/25. Confirmed genuinely BLine/maple-sim-free.
+      The largest confirmed drift since R2: `AlertType.kError/kWarning/
+      kInfo` renamed to `Alert.Level.HIGH/MEDIUM/LOW` (confirmed reading
+      `Alert.java` from source), and — much bigger — this alpha's `Alert`
+      no longer publishes to NetworkTables at all, confirmed empirically
+      (a full NT dump after activating alerts showed nothing) and
+      architecturally (`wpilibsuite/SystemcoreTesting`'s README: alerts
+      require the new 2027 Driver Station app). SimGUI's own Alerts
+      window is confirmed still NT-backed (`libhalsim_gui.so` only has
+      the old `NTAlertsModel`), so this course's sim workflow can't
+      display alerts either way; the lesson uses `AlertSim.getActive()`
+      as a temporary diagnostic instead, verified end to end. The old
+      lesson's camera-rename demo does not reproduce here — verified by
+      actually building the real `Robot` and trying it (the first,
+      abstract-reasoning pass got this wrong, corrected before writing
+      anything down) — because `VisionIOPhotonVisionSim` reads and
+      publishes through the identical `PhotonCamera` object, so renaming
+      one constant can't desync them; the lesson explains why and moves
+      the demo to a Try It. Smaller measured findings: motor connection
+      flicker is ~300–336 ms here (was ~240 ms), and simulated cameras
+      show no equivalent flicker at all (connected from tick zero). See
+      [R33](#risks-and-blocking-unknowns) for the complete findings,
+      including that `PhotonCamera` already carries its own internal
+      disconnect alert. Full compile re-verified from a fresh sandbox
+      (0–31), plus an independent regression checkpoint at 30.
