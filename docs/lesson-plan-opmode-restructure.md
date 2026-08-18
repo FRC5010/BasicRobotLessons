@@ -555,7 +555,7 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 26 | Drive to pose | Low | Written and verified 2026-08-15. **Not actually BLine-free by luck — verified before writing a line of prose**, since the old lesson's stage one used BLine's generated-`Path` machinery, the same dependency that blocked 17/25. Redesigned so stage one is just Lesson 11's already-shipped `driveToPose` sketch reused as-is (no staging-pose offset needed — it hands off to stage two wherever its own 5cm check trips, which bounds `alignToPose`'s un-clamped top speed the same way the old lesson's `kStagingDistance` did), and stage two (`alignToPose`, three `PIDController` fields, `PIDController` introduced as this lesson's one new Java concept) is entirely hand-rolled — no library path following anywhere. `Autos.driveToScoringPose` composes both with `coroutine.await(...)` chaining, matching `driveTurnDrive`'s established Lesson 9 shape; wired as a third `@Autonomous` opmode (`RobotAutoDriveToPose`, matching OD3's multi-opmode pattern) and a teleop left-bumper hold. See [R28](#risks-and-blocking-unknowns) for the two real measurement-methodology findings this lesson's numbers depend on |
 | 27 | Object detection | Medium | Written and verified 2026-08-16. `Commands.defer` retired as predicted, replaced by `Command.requiring(Mechanism...).executing(Consumer<Coroutine>)` — verified this actually defers the body to schedule time, not just assumed from the type signature. **Real, unplanned redesign**: the old lesson's simulated camera pulled game piece positions from maple-sim's physics arena, unavailable on this alpha (R2) — replaced with a small fixed list of field positions (`kSimGamePiecePositions`), no physics. `fetchPiece` reuses Lesson 24's `Superstructure.requestIntake()` instead of commanding Arm directly, which turned out to simplify the port relative to the old lesson (no `Commands.parallel` needed inside `fetchPiece` at all — the intake motion is already wired independently via `inState(INTAKING)`). See [R29](#risks-and-blocking-unknowns) for the maple-sim substitute, a genuinely surprising finding that this alpha's simulated object-detection pipeline injects no camera noise at all (unlike its AprilTag corner path), and the measured end-to-end verification |
 | 28 | Aim at tag | Low | Written and verified 2026-08-16. Confirmed "mechanically unaffected" was right for the core `Aim` arithmetic (no BLine/maple-sim dependency anywhere in it), but the old lesson's §6 ("aiming during an auto") used BLine's `FollowPath.registerEventTrigger`/`overrideRotation` — unavailable here (R2) — so it was replaced with a second `@Autonomous` opmode (`RobotAutoAimWhileDriving`) calling the identical `Aim.omegaTowardTag`, preserving the lesson's real point (one static method, two independent callers) without inventing an event-marker system that doesn't exist yet. `Drivetrain.getChassisSpeeds()` — "the door Lesson 17 opened," per the old lesson's own text — didn't exist here since Lesson 17 was skipped; added directly in this lesson instead, as `getChassisVelocities()` (kinematics run backward via `toChassisVelocities`, matching this alpha's renamed type). See [R30](#risks-and-blocking-unknowns) for the verified tracking-lag numbers, including a genuinely nice finding: `ChassisVelocities.toFieldRelative(Rotation2d)` is a cleaner instance-method replacement for the old `ChassisSpeeds.fromRobotRelativeSpeeds` static call |
-| 29 | Flywheel | Low | Mechanically unaffected |
+| 29 | Flywheel | Low | Written and verified 2026-08-17. Confirmed "mechanically unaffected" was right — no BLine/maple-sim dependency anywhere, the first mechanism lesson in this track's back half not gated by either. `Models.flywheelFromPhysicalConstants(DCMotor, J, gearing)` is the correct factory for `FlywheelSim`'s `LinearSystem<N1,N1,N1>` (unlike Lesson 20's roller, which needed the arm-shaped factory instead — different physics shape, different factory, both now confirmed). A genuinely nice find: overriding `Mechanism.idle()` gets installed as the default command automatically by the (virtual-call) constructor, so this lesson needed no explicit `setDefaultCommand` wiring at all, unlike the old lesson's `RobotContainer` line. See [R31](#risks-and-blocking-unknowns) for the confirmed absence of `MathUtil.clamp` in this alpha (any overload, any type) and the measured kV/kA numbers, including one honest small discrepancy (43.27 vs. the predicted 42.86, reported as measured rather than force-matched) |
 | 30 | Current limits | Low | `Robot.simulationPeriodic()` still hosts the battery-sim exception |
 | 31 | Alerts | Low | `org.wpilib.driverstation.Alert` confirmed present (imported directly by `OpModeRobot` itself) |
 | 32 | Testing | Medium | Test harness patterns (`DriverStationSim`, stepping the scheduler) need re-verification against `OpMode`/`Scheduler` instead of `TimedRobot`/`CommandScheduler` |
@@ -2405,6 +2405,77 @@ out badly.
     faster than a 50 Hz scheduler tick) — reported honestly as measured
     here (>10×), not force-matched to the old number.
 
+- **R31 — new, found while writing and verifying Lesson 29's `Flywheel`,
+  all confirmed by real measurement, not estimated.**
+
+  - **The first mechanism lesson in this track's back half confirmed
+    genuinely free of both BLine and maple-sim** — no path following, no
+    physics arena, nothing this alpha lacks. `Models.flywheelFromPhysicalConstants(
+    DCMotor, momentOfInertia, gearing)` (confirmed via `javap` against
+    `wpimath-java`) is the correct factory for `FlywheelSim`'s
+    `LinearSystem<N1,N1,N1>` — a genuinely different case from Lesson 20's
+    roller, which needed `Models.singleJointedArmFromPhysicalConstants`
+    instead because `DCMotorSim` wants the two-state `N2,N1,N2` shape.
+    Both factories are now confirmed correct for their respective sim
+    classes, closing out the "which `Models` factory for which physics
+    class" question this track kept re-deriving lesson to lesson.
+  - **`MathUtil.clamp` does not exist anywhere in this alpha's
+    `org.wpilib.math.util.MathUtil`, for any type, confirmed by dumping
+    the complete class via `javap`** — not a gap specific to one numeric
+    type, a straight removal (`lerp`/`inverseLerp`/`applyDeadband`/
+    `copyDirectionPow`/`inputModulus`/`angleModulus`/`isNear`/
+    `slewRateLimit` are all still there; `clamp` just isn't). This
+    confirms, rather than merely repeats, the flavor text already sitting
+    in `Elevator.clampToTravel`/`Arm.clampToTravel`'s doc comments from
+    earlier lessons ("there's no `MathUtil.clamp` to reach for here") —
+    those were right, and this is the first time in this session's own
+    work that claim was checked against the actual jar rather than taken
+    on faith from earlier, unlogged work. `Flywheel.toDialAngle` needed
+    its own hand-rolled `clamp(value, min, max)`, same shape as
+    `Drivetrain`'s.
+  - **`FlywheelSim.getAngularVelocity()` returns radians per second, not
+    RPM** — the old lesson's `getAngularVelocityRPM()` doesn't exist in
+    this alpha at all, only the renamed, unit-shifted `getAngularVelocity()`.
+    Confirmed empirically, not assumed from the name change: ran a Kraken
+    X60 at 12 V to steady state and read back 631.77 — matching
+    100.5 rot/s / 6033 RPM (the Kraken's known free speed) only once
+    divided by `2π`, not by 60. `FlywheelIOSim.stepSim()` converts
+    accordingly (`/ (2 * Math.PI)`), matching the exact pattern
+    `ArmIOSim` already established for `SingleJointedArmSim` ("the model
+    speaks radians").
+  - **A genuinely nice, verified simplification: overriding `Mechanism.idle()`
+    gets auto-installed as the default command, with no explicit
+    `setDefaultCommand` call needed anywhere.** Decompiled `Mechanism`'s
+    constructor (both the no-arg and one-arg forms, which is what matters
+    since every `Mechanism` subclass in this track relies on the implicit
+    no-arg one): it calls `this.idle()` **virtually** and passes the
+    result straight to `setDefaultCommand`. Verified this is genuinely
+    safe despite running before any subclass field initializer has —
+    `idle()`'s override only needs to *build* a `Command` (a lazy closure
+    capturing `this`), never *execute* one, and the closure's body
+    doesn't run until the scheduler ticks it, long after construction
+    finishes. Confirmed with a throwaway `Mechanism` subclass before
+    trusting it for the real `Flywheel`: goal field reads its
+    placeholder value immediately after construction, then flips to the
+    overridden `idle()`'s value after a few scheduler ticks, exactly as
+    predicted. `Flywheel` is the first mechanism in this track to use
+    this — the old lesson needed an explicit `m_flywheel.setDefaultCommand(
+    m_flywheel.idle())` line in `RobotContainer` that this port simply
+    doesn't need.
+  - **Verified end to end, not just compiled**, via a throwaway `JavaExec`
+    harness, one scenario per process: constructing a bare `Flywheel`
+    with zero explicit wiring settles at 30.40 rot/s against a 30 rot/s
+    idle goal (the auto-installed default, confirmed live); commanding
+    60 rot/s settles at 60.43 rot/s holding 7.22 V (predicted 7.2 V);
+    zeroing `kFlywheelKV`/`kFlywheelKA` produces a fixed point at
+    43.27 rot/s against the old lesson's own predicted-and-measured
+    42.86/42.9 — close enough to confirm the arithmetic, not identical,
+    and reported as measured rather than adjusted to match; the recovery-time
+    table (idle at 0/15/30/45 rot/s → 2.32/1.76/1.24/0.70 s to reach
+    60 rot/s) reproduced the old lesson's own numbers to the hundredth of
+    a second, unlike the fixed-point case — both are reported as found,
+    with no attempt to explain away the one that didn't match as closely.
+
 ---
 
 ## Appendix: verified API notes
@@ -3360,3 +3431,31 @@ appendices: verify before drafting, record what you verified.
       control rate measures 13.2°/1.1°, both reported honestly rather than
       picking one). Full compile re-verified from a fresh sandbox (0–28),
       plus an independent regression checkpoint at 27.
+- [x] Lesson 29 (Flywheel) written and verified 2026-08-17 —
+      `docs/lessons/v3/29-flywheel.md` and `code/v3/lesson-29/`,
+      compiling through `tools/verify-lessons-v3.sh 29` from a fresh
+      sandbox correctly skipping 17/22/25. First mechanism lesson in this
+      track's back half confirmed genuinely BLine/maple-sim-free — no
+      redesign needed anywhere. `Models.flywheelFromPhysicalConstants`
+      confirmed as the correct `FlywheelSim` factory (distinct from
+      Lesson 20's arm-shaped factory, closing out which `Models` method
+      pairs with which sim class). Two real findings along the way:
+      `MathUtil.clamp` confirmed absent from this alpha entirely (any
+      type, any overload — not guessed, the whole class was dumped via
+      `javap`), matching flavor text already sitting in earlier lessons'
+      code comments that had never actually been checked against the jar
+      until now; and `FlywheelSim.getAngularVelocity()` returns rad/s, not
+      RPM (the old lesson's `getAngularVelocityRPM()` doesn't exist),
+      confirmed empirically by running a Kraken to steady state and
+      reading back the raw number. A genuinely nice verified
+      simplification: overriding `Mechanism.idle()` gets auto-installed
+      as the default command by the constructor's own virtual call, so
+      this lesson needed no explicit `setDefaultCommand` wiring at all —
+      verified safe with a throwaway `Mechanism` subclass before trusting
+      it for the real `Flywheel`. See [R31](#risks-and-blocking-unknowns)
+      for the full measured comparison table, including one honest small
+      discrepancy (43.27 vs. the predicted/old-lesson 42.86/42.9) reported
+      as measured rather than adjusted to match, alongside a recovery-time
+      table that reproduced the old lesson's numbers to the hundredth of
+      a second. Full compile re-verified from a fresh sandbox (0–29),
+      plus an independent regression checkpoint at 28.

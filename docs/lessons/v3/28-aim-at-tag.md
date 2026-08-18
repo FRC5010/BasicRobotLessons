@@ -571,3 +571,5 @@ would have served one caller and forced the other to duplicate the maths.
 Hold that left trigger and drive a few loops around the tag. Watching the
 nose stay locked on while the chassis slides around underneath it is the
 most satisfying thing on this robot.
+
+Next: [Lesson 29 — A wheel that holds a speed](29-flywheel.md).
