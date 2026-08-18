@@ -554,7 +554,7 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 25 | Path events | **Skipped for now** | 2026-08-15: same root cause as Lesson 17 (R2) — this lesson's entire content is BLine event-marker/`overrideRotation` machinery layered on `FollowPath`, which is already confirmed structurally incompatible with this alpha's Commands V3. **User decision (2026-08-15): skip, no interim, same call as 17** — proceed to Lesson 26, which doesn't need BLine's generated-path machinery for its own teaching content. Stays a gap alongside 17 and 22 until BLine ships `org.wpilib.*`-compatible support |
 | 26 | Drive to pose | Low | Written and verified 2026-08-15. **Not actually BLine-free by luck — verified before writing a line of prose**, since the old lesson's stage one used BLine's generated-`Path` machinery, the same dependency that blocked 17/25. Redesigned so stage one is just Lesson 11's already-shipped `driveToPose` sketch reused as-is (no staging-pose offset needed — it hands off to stage two wherever its own 5cm check trips, which bounds `alignToPose`'s un-clamped top speed the same way the old lesson's `kStagingDistance` did), and stage two (`alignToPose`, three `PIDController` fields, `PIDController` introduced as this lesson's one new Java concept) is entirely hand-rolled — no library path following anywhere. `Autos.driveToScoringPose` composes both with `coroutine.await(...)` chaining, matching `driveTurnDrive`'s established Lesson 9 shape; wired as a third `@Autonomous` opmode (`RobotAutoDriveToPose`, matching OD3's multi-opmode pattern) and a teleop left-bumper hold. See [R28](#risks-and-blocking-unknowns) for the two real measurement-methodology findings this lesson's numbers depend on |
 | 27 | Object detection | Medium | Written and verified 2026-08-16. `Commands.defer` retired as predicted, replaced by `Command.requiring(Mechanism...).executing(Consumer<Coroutine>)` — verified this actually defers the body to schedule time, not just assumed from the type signature. **Real, unplanned redesign**: the old lesson's simulated camera pulled game piece positions from maple-sim's physics arena, unavailable on this alpha (R2) — replaced with a small fixed list of field positions (`kSimGamePiecePositions`), no physics. `fetchPiece` reuses Lesson 24's `Superstructure.requestIntake()` instead of commanding Arm directly, which turned out to simplify the port relative to the old lesson (no `Commands.parallel` needed inside `fetchPiece` at all — the intake motion is already wired independently via `inState(INTAKING)`). See [R29](#risks-and-blocking-unknowns) for the maple-sim substitute, a genuinely surprising finding that this alpha's simulated object-detection pipeline injects no camera noise at all (unlike its AprilTag corner path), and the measured end-to-end verification |
-| 28 | Aim at tag | Low | Mechanically unaffected |
+| 28 | Aim at tag | Low | Written and verified 2026-08-16. Confirmed "mechanically unaffected" was right for the core `Aim` arithmetic (no BLine/maple-sim dependency anywhere in it), but the old lesson's §6 ("aiming during an auto") used BLine's `FollowPath.registerEventTrigger`/`overrideRotation` — unavailable here (R2) — so it was replaced with a second `@Autonomous` opmode (`RobotAutoAimWhileDriving`) calling the identical `Aim.omegaTowardTag`, preserving the lesson's real point (one static method, two independent callers) without inventing an event-marker system that doesn't exist yet. `Drivetrain.getChassisSpeeds()` — "the door Lesson 17 opened," per the old lesson's own text — didn't exist here since Lesson 17 was skipped; added directly in this lesson instead, as `getChassisVelocities()` (kinematics run backward via `toChassisVelocities`, matching this alpha's renamed type). See [R30](#risks-and-blocking-unknowns) for the verified tracking-lag numbers, including a genuinely nice finding: `ChassisVelocities.toFieldRelative(Rotation2d)` is a cleaner instance-method replacement for the old `ChassisSpeeds.fromRobotRelativeSpeeds` static call |
 | 29 | Flywheel | Low | Mechanically unaffected |
 | 30 | Current limits | Low | `Robot.simulationPeriodic()` still hosts the battery-sim exception |
 | 31 | Alerts | Low | `org.wpilib.driverstation.Alert` confirmed present (imported directly by `OpModeRobot` itself) |
@@ -2352,6 +2352,59 @@ out badly.
     `bestPiece() == Optional.empty()`, matching the "undramatic no-op"
     behavior the lesson describes.
 
+- **R30 — new, found while writing and verifying Lesson 28's `Aim`, all
+  confirmed by real measurement, not estimated.**
+
+  - **`k2026RebuiltWelded` (`AprilTagFields.kDefaultField` on this alpha)
+    is the identical field the old course was written against — checked
+    directly, not assumed.** Dumped every tag pose via a throwaway
+    `JavaExec` harness: tag 20 sits at exactly `(5.23, 4.03)`, matching the
+    old lesson's own stated coordinate to the centimeter. `kAimTagId = 20`
+    needed zero adjustment.
+  - **`Drivetrain.getChassisSpeeds()` — "the door Lesson 17 opened," in the
+    old lesson's own words — did not exist in this track, because Lesson 17
+    was skipped (R2).** Not a blocker, just a small scope pickup: added
+    directly in Lesson 28 as `getChassisVelocities()`, kinematics run
+    backward via `SwerveDriveKinematics.toChassisVelocities(SwerveModuleVelocity...)`
+    (confirmed present via `javap`, matching this alpha's `ChassisSpeeds` →
+    `ChassisVelocities` rename throughout). A genuinely nicer find along the
+    way: `ChassisVelocities.toFieldRelative(Rotation2d)` is an **instance**
+    method, replacing the old course's static `ChassisSpeeds.fromRobotRelativeSpeeds(...)`
+    call with something that reads left-to-right the same direction
+    `driveFieldRelative`'s existing `.toRobotRelative(...)` already does.
+  - **The old lesson's §6 ("aiming during an auto") is BLine event-marker
+    machinery (`FollowPath.registerEventTrigger`/`overrideRotation`) —
+    unavailable here, same root cause as R2/R17/R25/R28, not a new
+    question.** Replaced with a second `@Autonomous` opmode
+    (`RobotAutoAimWhileDriving`) calling the *identical*
+    `Aim.omegaTowardTag(...)` the teleop binding uses, preserving the
+    lesson's actual structural point — one static method, two independent
+    callers, retune once and both improve — without inventing an
+    event-marker system this track doesn't have yet.
+  - **The tracking-lag numbers are verified two ways, and the two ways
+    disagree slightly, which turned out to be its own real finding, not a
+    bug.** Driving `Aim`'s actual `error`/`bearingRate` methods through a
+    scripted 3 m/s, 3 m-radius orbit around tag 20 (matching the old
+    lesson's exact scenario) via simple Euler integration: at a fine
+    timestep (down to 0.2 ms) the steady-state heading error converges to
+    **14.31°** for P-only and **0.01°** for P + feedforward — matching the
+    continuous-time analytical prediction (`1.0 rad/s ÷ 4.0 = 0.25 rad =
+    14.32°`) almost exactly, confirming the math is right. At this
+    project's actual 50 Hz scheduler rate, the same code measures **13.2°**
+    (P-only) and **1.1°** (P + feedforward) — lower than the continuous
+    prediction, because a coarser control update reacts to a moving target
+    a beat later than a continuous loop would. **The lesson reports the
+    50 Hz numbers as "measured" (since that's this project's real control
+    rate) and the fine-timestep numbers as the analytical limit the
+    50 Hz version is converging toward**, rather than picking one and
+    hiding the other — both are real, and the gap between them is itself
+    a fact about discretization worth having, not noise to average away.
+    This is a smaller improvement factor than the old lesson's own
+    "70×" claim (which was presumably measured at a much higher control
+    rate, or possibly on real 2026-era hardware whose closed loop runs
+    faster than a 50 Hz scheduler tick) — reported honestly as measured
+    here (>10×), not force-matched to the old number.
+
 ---
 
 ## Appendix: verified API notes
@@ -3285,3 +3338,25 @@ appendices: verify before drafting, record what you verified.
       `fetchPiece`, and the robot drove to within 6 cm of a fixed piece
       and ended in `INTAKING`. Full compile re-verified from a fresh
       sandbox (0–27), plus an independent regression checkpoint at 26.
+- [x] Lesson 28 (Aim at tag) written and verified 2026-08-16 —
+      `docs/lessons/v3/28-aim-at-tag.md` and `code/v3/lesson-28/`,
+      compiling through `tools/verify-lessons-v3.sh 28` from a fresh
+      sandbox correctly skipping 17/22/25. `Aim` ported with zero
+      structural changes — no camera in any signature, same design as the
+      old lesson. Confirmed `k2026RebuiltWelded` (this alpha's default
+      field) is the identical field the old course was written against by
+      dumping every tag pose directly; tag 20 sits at the old lesson's
+      exact `(5.23, 4.03)`. Two real gaps needed filling, both because
+      Lesson 17 was skipped, not new questions: `Drivetrain.getChassisVelocities()`
+      didn't exist (added here, kinematics run backward via
+      `toChassisVelocities`), and the old lesson's BLine event-marker
+      auto integration doesn't apply — replaced with a second
+      `@Autonomous` opmode (`RobotAutoAimWhileDriving`) calling the
+      identical `Aim.omegaTowardTag`, preserving the "one static method,
+      two callers" point without inventing event markers this track
+      doesn't have. See [R30](#risks-and-blocking-unknowns) for the
+      tracking-lag numbers, verified two ways (fine-timestep converges to
+      the exact 14.32° analytical prediction; this project's real 50 Hz
+      control rate measures 13.2°/1.1°, both reported honestly rather than
+      picking one). Full compile re-verified from a fresh sandbox (0–28),
+      plus an independent regression checkpoint at 27.

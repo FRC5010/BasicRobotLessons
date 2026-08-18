@@ -901,3 +901,5 @@ almost perfectly accurate, which is a fact about the simulator, not a promise
 about your robot. What's real in every case — sim or hardware — is that
 `fetchPiece` commits once and doesn't look back, and knowing that is what
 separates an auto that works in the pit from one that works on the field.
+
+Next: [Lesson 28 — Keeping the nose on the target](28-aim-at-tag.md).
