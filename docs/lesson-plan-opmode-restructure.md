@@ -556,7 +556,7 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 27 | Object detection | Medium | Written and verified 2026-08-16. `Commands.defer` retired as predicted, replaced by `Command.requiring(Mechanism...).executing(Consumer<Coroutine>)` — verified this actually defers the body to schedule time, not just assumed from the type signature. **Real, unplanned redesign**: the old lesson's simulated camera pulled game piece positions from maple-sim's physics arena, unavailable on this alpha (R2) — replaced with a small fixed list of field positions (`kSimGamePiecePositions`), no physics. `fetchPiece` reuses Lesson 24's `Superstructure.requestIntake()` instead of commanding Arm directly, which turned out to simplify the port relative to the old lesson (no `Commands.parallel` needed inside `fetchPiece` at all — the intake motion is already wired independently via `inState(INTAKING)`). See [R29](#risks-and-blocking-unknowns) for the maple-sim substitute, a genuinely surprising finding that this alpha's simulated object-detection pipeline injects no camera noise at all (unlike its AprilTag corner path), and the measured end-to-end verification |
 | 28 | Aim at tag | Low | Written and verified 2026-08-16. Confirmed "mechanically unaffected" was right for the core `Aim` arithmetic (no BLine/maple-sim dependency anywhere in it), but the old lesson's §6 ("aiming during an auto") used BLine's `FollowPath.registerEventTrigger`/`overrideRotation` — unavailable here (R2) — so it was replaced with a second `@Autonomous` opmode (`RobotAutoAimWhileDriving`) calling the identical `Aim.omegaTowardTag`, preserving the lesson's real point (one static method, two independent callers) without inventing an event-marker system that doesn't exist yet. `Drivetrain.getChassisSpeeds()` — "the door Lesson 17 opened," per the old lesson's own text — didn't exist here since Lesson 17 was skipped; added directly in this lesson instead, as `getChassisVelocities()` (kinematics run backward via `toChassisVelocities`, matching this alpha's renamed type). See [R30](#risks-and-blocking-unknowns) for the verified tracking-lag numbers, including a genuinely nice finding: `ChassisVelocities.toFieldRelative(Rotation2d)` is a cleaner instance-method replacement for the old `ChassisSpeeds.fromRobotRelativeSpeeds` static call |
 | 29 | Flywheel | Low | Written and verified 2026-08-17. Confirmed "mechanically unaffected" was right — no BLine/maple-sim dependency anywhere, the first mechanism lesson in this track's back half not gated by either. `Models.flywheelFromPhysicalConstants(DCMotor, J, gearing)` is the correct factory for `FlywheelSim`'s `LinearSystem<N1,N1,N1>` (unlike Lesson 20's roller, which needed the arm-shaped factory instead — different physics shape, different factory, both now confirmed). A genuinely nice find: overriding `Mechanism.idle()` gets installed as the default command automatically by the (virtual-call) constructor, so this lesson needed no explicit `setDefaultCommand` wiring at all, unlike the old lesson's `RobotContainer` line. See [R31](#risks-and-blocking-unknowns) for the confirmed absence of `MathUtil.clamp` in this alpha (any overload, any type) and the measured kV/kA numbers, including one honest small discrepancy (43.27 vs. the predicted 42.86, reported as measured rather than force-matched) |
-| 30 | Current limits | Low | `Robot.simulationPeriodic()` still hosts the battery-sim exception |
+| 30 | Current limits | Low | Written and verified 2026-08-18. Confirmed genuinely free of both BLine and maple-sim. `Robot.simulationPeriodic()` — empty since Lesson 13 — hosts the battery-sim exception as predicted, but the logging itself moved to `robotPeriodic()` instead (it's meaningful on real hardware too, not just in sim). `RobotController.isBrownedOut()` doesn't work in this alpha's simulation, measured over a sustained 2 s hold — see [R32](#risks-and-blocking-unknowns) for that and the rest of the measured current/voltage numbers, some close to the old course's and some honestly not |
 | 31 | Alerts | Low | `org.wpilib.driverstation.Alert` confirmed present (imported directly by `OpModeRobot` itself) |
 | 32 | Testing | Medium | Test harness patterns (`DriverStationSim`, stepping the scheduler) need re-verification against `OpMode`/`Scheduler` instead of `TimedRobot`/`CommandScheduler` |
 | 33 | Reading a log | Low | Technique-only lesson, no new Java, but depends on Lesson 13's resolution |
@@ -2475,6 +2475,73 @@ out badly.
     60 rot/s) reproduced the old lesson's own numbers to the hundredth of
     a second, unlike the fixed-point case — both are reported as found,
     with no attempt to explain away the one that didn't match as closely.
+- **R32 — new, found while writing and verifying Lesson 30's current
+  limits, all confirmed by real measurement, not carried over from the
+  old lesson's numbers.**
+
+  - **Confirmed genuinely free of both BLine and maple-sim** — current
+    limits and battery simulation touch neither. `CurrentLimitsConfigs`
+    (`StatorCurrentLimit(Enable)`/`SupplyCurrentLimit(Enable)`/
+    `SupplyCurrentLowerLimit`/`SupplyCurrentLowerTime`) and
+    `TalonFX.getSupplyCurrent()`/`getStatorCurrent()` (both
+    `StatusSignal<Current>`, on `CoreTalonFX`, confirmed via `javap`
+    against `wpiapi-java-26.50.0-alpha-1.jar`) are unchanged from the old
+    course. `org.wpilib.simulation.RoboRioSim`/`BatterySim` are exact
+    package-renamed matches of their old-course counterparts (`javap`
+    against `wpilibj-java-2027.0.0-alpha-6.jar`): same method signatures,
+    including `BatterySim.calculateDefaultBatteryLoadedVoltage(double...)`.
+  - **Phoenix's factory defaults are bit-for-bit identical to the old
+    course's**, confirmed by constructing a bare `TalonFXConfiguration()`
+    and reading it back rather than trusting the doc comment: stator
+    120 A (enabled), supply 70 A (enabled), supply lower limit 40 A after
+    1.0 s. Nothing drifted between WPILib 2026 and this 2027 alpha here.
+  - **`RobotController.isBrownedOut()` does not work in this alpha's
+    simulation — measured, not assumed.** Held `RoboRioSim.setVInVoltage(4.0)`
+    for a full 2 seconds (100 ticks, `DriverStationSim.notifyNewData()`
+    called every tick) and `isBrownedOut()` read `false` throughout,
+    despite `RoboRioSim.getBrownoutVoltage()` correctly reporting its
+    6.75 V default. `RoboRioSim` exposes a setter for the *threshold*
+    but none for the resulting boolean, meaning the simulated HAL isn't
+    wiring `VInVoltage` to the brownout flag at all in this alpha. Unlike
+    the old lesson (which logged `RobotController.isBrownedOut()`
+    directly), this port computes `Power/BrownedOut` by comparing
+    `RobotController.getBatteryVoltage()` against `PowerConstants.
+    kBrownoutVoltage` itself — which also promotes that constant from the
+    old lesson's unused/reference-only role (never actually consumed by
+    code there) to load-bearing here.
+  - **The supply-vs-stator divergence during spin-up reproduces the old
+    course's numbers almost exactly**, via a throwaway `JavaExec` harness
+    (one Kraken X60, `Models.flywheelFromPhysicalConstants` load, `VoltageOut(12)`
+    open loop, real 20 ms ticks): stator pinned 116–121 A while supply
+    climbed 30.3 → 69.2 A as applied voltage rose 3.04 → 7.11 V — matching
+    `supply ≈ stator × (applied/battery)` to within 1% at every sampled
+    point, and close in absolute terms to the old lesson's own 30 → 58 A
+    table despite a different (lighter, direct-drive) load model.
+  - **The N-motors-stalled brownout table only partially reproduces the
+    old course's numbers, and the honest difference is itself a finding.**
+    Same methodology as the old lesson (N Krakens jammed at rotor velocity
+    zero, defaults, averaged over a settled 400 ms window after a 1 s
+    settle-in to kill run-to-run timing jitter from Phoenix's real-time
+    simulated firmware): 3 motors measured 107 A / 9.86 V and 6 motors
+    measured 328 A / 5.44 V, both within 1–2% of the old lesson's 108 A /
+    9.84 V and 332 A / 5.37 V. But 9 and 12 motors measured 335 A / 5.30 V
+    and 339 A / 5.23 V — plateauing, not the old lesson's escalating
+    552 A / 0.96 V and 751 A / 0.00 V. The plateau is physically
+    consistent with the rest of the model: as the rail sags further, each
+    motor's own duty cycle throttles back with it (the same
+    supply-scales-with-applied-voltage relationship measured above), so
+    total draw self-limits once the rail is already deep in brownout —
+    reported as measured rather than force-matched to the old numbers,
+    and it doesn't weaken the lesson's point (6 motors alone already
+    browns out).
+  - **The three-way limit-configuration comparison (no limits / Phoenix
+    defaults / this lesson's budget) reproduces the old course's numbers
+    almost exactly** on the same 3-motor jammed scenario: defaults
+    measured 107.1 A / 9.86 V against the old lesson's 108 A / 9.84 V;
+    budget (80 A stator / 40 A supply) measured 41.6 A / 11.17 V against
+    42 A / 11.16 V. The no-limits case diverged more (365.6 A / 4.69 V
+    measured vs. the old lesson's 490 A / 2.09 V) but stayed in the same
+    "severe brownout" category — reported as measured, not adjusted.
 
 ---
 
@@ -3459,3 +3526,30 @@ appendices: verify before drafting, record what you verified.
       table that reproduced the old lesson's numbers to the hundredth of
       a second. Full compile re-verified from a fresh sandbox (0–29),
       plus an independent regression checkpoint at 28.
+- [x] Lesson 30 (Current limits) written and verified 2026-08-18 —
+      `docs/lessons/v3/30-current-limits.md` and `code/v3/lesson-30/`,
+      compiling through `tools/verify-lessons-v3.sh 30` from a fresh
+      sandbox correctly skipping 17/22/25. Confirmed genuinely
+      BLine/maple-sim-free. `CurrentLimitsConfigs`, `TalonFX.getSupplyCurrent()`/
+      `getStatorCurrent()`, and `RoboRioSim`/`BatterySim` are all unchanged
+      from the old course (confirmed via `javap`), and Phoenix's factory
+      defaults read back bit-for-bit identical (120 A stator / 70 A supply /
+      40 A after 1.0 s). One real gap found: `RobotController.isBrownedOut()`
+      never reports true in this alpha's simulation no matter how low or
+      how long `RoboRioSim.setVInVoltage` holds the rail down (measured over
+      a sustained 2 s hold) — so `Power/BrownedOut` compares the battery
+      voltage against `PowerConstants.kBrownoutVoltage` directly instead,
+      which also makes that constant load-bearing here rather than the old
+      lesson's unused reference-only value. `Robot.simulationPeriodic()` —
+      empty since Lesson 13 — turned out to be the right home for the
+      battery-sim side effect exactly as the impact table predicted, but the
+      logging itself moved to `robotPeriodic()` since it means something on
+      real hardware too. Measured current/voltage numbers on a throwaway
+      `JavaExec` harness reproduced the old course's closely at low motor
+      counts (3 and 6 motors, and the three-way limit-configuration
+      comparison, all within 1–2%) and diverged honestly at higher ones (9
+      and 12 motors plateau in this alpha's model rather than escalating,
+      a real and explicable difference, not a bug) — see
+      [R32](#risks-and-blocking-unknowns) for the full comparison. Full
+      compile re-verified from a fresh sandbox (0–30), plus an independent
+      regression checkpoint at 29.

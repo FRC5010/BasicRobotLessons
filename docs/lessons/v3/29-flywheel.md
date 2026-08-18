@@ -813,3 +813,5 @@ the intake and spin the flywheel up together. Every one of those
 mechanisms was tuned on its own, and every one of them draws from the same
 battery. The next lesson is about what happens when they all ask at the
 same moment.
+
+Next: [Lesson 30 — One battery, everything on it](30-current-limits.md).
