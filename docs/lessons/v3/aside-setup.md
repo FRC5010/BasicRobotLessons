@@ -117,14 +117,15 @@ track builds forward from.
 ```bash
 git clone https://github.com/FRC5010/BasicRobotLessons.git
 cd BasicRobotLessons
-VERIFY_SANDBOX=~/dev/MyOpModeRobot ./tools/verify-lessons-v3.sh -1
+./tools/verify-lessons-v3.sh -1 --sandbox ~/dev/MyOpModeRobot
 ```
 
 That third command is doing real work, so read it once before you run it.
-`VERIFY_SANDBOX` names where your project lands — pick anywhere outside
+`--sandbox` names where your project lands — pick anywhere outside
 `BasicRobotLessons` itself, because that folder gets deleted and rebuilt
 every time the script runs. The `-1` means "no lessons rolled forward, just
-build the template as it stands" — exactly Lesson 0's starting point.
+build the template as it stands" — exactly Lesson 0's starting point. (Order
+doesn't matter — `--sandbox ~/dev/MyOpModeRobot -1` works the same.)
 
 *Nothing to add — what you'll see, roughly:*
 
@@ -147,7 +148,7 @@ takes a few minutes — normal, not broken. Later runs are seconds.
 - `BasicRobotLessons` — the course repo you just cloned. It has its own
   `.git` history that belongs to this course, not you. You'll come back to
   it if a lesson is unclear, but you never commit *your* work into it.
-- `~/dev/MyOpModeRobot` (or wherever you pointed `VERIFY_SANDBOX`) — **your**
+- `~/dev/MyOpModeRobot` (or wherever you pointed `--sandbox`) — **your**
   project. The script stripped its `.git`, `build`, and `.gradle` folders on
   the way out, so it's a clean, ordinary, git-less folder, exactly the shape
   a wizard-generated project would be. This is what the rest of this page —
@@ -341,7 +342,7 @@ either track.)
    The `build/` and `.gradle/` folders Gradle just wrote should **not**
    appear. If they do, your `.gitignore` isn't doing its job.
 4. **Regenerate and diff.** Back in `BasicRobotLessons`, run section 3's
-   command again with a *different* `VERIFY_SANDBOX` folder. Diff it against
+   command again with a *different* `--sandbox` folder. Diff it against
    your actual project (`diff -rq ~/dev/MyOpModeRobot ~/dev/CheckAgain`,
    ignoring `.git`). They should match exactly, except for whatever you've
    changed since section 4's first commit — proof that your starting point

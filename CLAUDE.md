@@ -13,19 +13,22 @@ There is Java here, though, in two forms under `code/`:
 
 ## Verifying lesson code
 
-**`./tools/verify-lessons.sh [N] [test] [aside-<slug>]`** compile-checks the lessons for real. It copies `ActualLessons` to a scratch sandbox (never touching the repo copy), fetches pinned vendordeps, rolls `code/lesson-0` … `code/lesson-N` forward in order, replays the deletions the lessons instruct, appends Lesson 13's AdvantageKit `build.gradle` blocks, and runs Gradle. First run takes a few minutes to fill the Gradle cache; later runs are seconds.
+**`./tools/verify-lessons.sh [N] [test] [aside-<slug>] [--base PATH] [--sandbox PATH]`** compile-checks the lessons for real. It copies `ActualLessons` to a scratch sandbox (never touching the repo copy), fetches pinned vendordeps, rolls `code/lesson-0` … `code/lesson-N` forward in order, replays the deletions the lessons instruct, appends Lesson 13's AdvantageKit `build.gradle` blocks, and runs Gradle. First run takes a few minutes to fill the Gradle cache; later runs are seconds.
 
-**`VERIFY_BASE` swaps the project the snapshots roll onto** (default
+**`--base` swaps the project the snapshots roll onto** (default
 `code/ActualLessons`), so the same script can check a student's own repo:
-`VERIFY_BASE=~/dev/MyRobot ./tools/verify-lessons.sh 7`. Pass `-1` to roll no
+`./tools/verify-lessons.sh 7 --base ~/dev/MyRobot`. Pass `-1` to roll no
 snapshots and fetch no vendordeps — that just builds the base as it stands.
-The sandbox is `rm -rf`'d every run, so the script refuses a `VERIFY_SANDBOX`
+The sandbox is `rm -rf`'d every run, so the script refuses a `--sandbox`
 that names the base or anything inside this repo, and it drops the base's
 `.git`/`build`/`.gradle` from the copy rather than building on stale state.
 [README.md](README.md)'s "Skipping ahead to a lesson in the middle" section
-points students at `VERIFY_SANDBOX` for the other direction — generating a
+points students at `--sandbox` for the other direction — generating a
 keepable project in the state a lesson expects, so they can start mid-course.
-Keep the two in sync if the script's interface changes.
+Both flags also work as environment variables (`VERIFY_BASE`/`VERIFY_SANDBOX`)
+for backward compatibility — a flag wins if both are given. Keep the two
+scripts (`verify-lessons.sh` and `verify-lessons-v3.sh`) in sync if the
+interface changes.
 
 **Use it instead of reasoning about whether a snippet compiles.** Current state: lessons 0–34 all compile, at every intermediate stopping point, with zero warnings. A regression is therefore a real result, not noise. Run the specific lesson you touched plus the highest one.
 

@@ -86,7 +86,7 @@ Lesson 18, build the state as of the end of Lesson 17:
 ```bash
 git clone https://github.com/FRC5010/BasicRobotLessons.git
 cd BasicRobotLessons
-VERIFY_SANDBOX=~/dev/MyRobot ./tools/verify-lessons.sh 17
+./tools/verify-lessons.sh 17 --sandbox ~/dev/MyRobot
 ```
 
 On Windows, run that in **Git Bash** (the WPILib/Git installers from

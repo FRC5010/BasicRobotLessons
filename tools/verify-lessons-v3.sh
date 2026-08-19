@@ -22,20 +22,32 @@
 #   ./tools/verify-lessons-v3.sh 2        # stop after Lesson 2
 #   ./tools/verify-lessons-v3.sh 32 test  # also run any src/test/java you dropped in
 #
-# The project the snapshots are rolled onto is code/OpModeV3Robot by default.
-# Point VERIFY_BASE at any other GradleRIO-2027-alpha project to use that
-# instead:
+# Pass --sandbox to keep the result as a real project instead of a throwaway
+# scratch build — this is how you'd hand yourself a fresh, buildable folder
+# to actually work in:
 #
-#   VERIFY_BASE=~/dev/MyOpModeRobot ./tools/verify-lessons-v3.sh 1
-#   VERIFY_BASE=~/dev/MyOpModeRobot ./tools/verify-lessons-v3.sh -1   # no lessons, just build it
+#   ./tools/verify-lessons-v3.sh -1 --sandbox ~/dev/MyOpModeRobot
 #
 # -1 rolls no snapshots at all and fetches no vendordeps, so the project is
-# built exactly as it stands, with whatever vendordeps it already carries.
+# built exactly as it stands, with whatever vendordeps it already carries —
+# --sandbox with -1 is how you get a fresh Lesson-0 starting point.
+#
+# The project the snapshots are rolled onto is code/OpModeV3Robot by default.
+# Pass --base to point at any other GradleRIO-2027-alpha project instead:
+#
+#   ./tools/verify-lessons-v3.sh 1 --base ~/dev/MyOpModeRobot
+#
+# Both flags take the path as the next argument (--sandbox PATH) or joined
+# with = (--sandbox=PATH), and can go anywhere on the command line, before
+# or after the lesson number. The environment variables VERIFY_SANDBOX and
+# VERIFY_BASE still work too, for scripts that already set them — a flag
+# wins if both are given for the same one.
 #
 # The sandbox is a scratch copy and is DELETED at the start of every run, so
 # the base project is never modified — neither code/OpModeV3Robot nor
-# whatever VERIFY_BASE names. Never point VERIFY_SANDBOX at anything you want
-# to keep; the script refuses the obvious mistakes but cannot catch every one.
+# whatever --base names. Never point --sandbox at anything you want to keep
+# that isn't already this kind of throwaway folder; the script refuses the
+# obvious mistakes but cannot catch every one.
 #
 # This needs a JDK matching build.gradle's sourceCompatibility (VERSION_25 as
 # of this writing) on PATH or pointed at via JAVA_HOME/ORG_GRADLE_JAVA_HOME —
@@ -48,6 +60,26 @@
 # Later runs are seconds.
 
 set -euo pipefail
+
+# --sandbox/--base pull out of the argument list here, before anything below
+# ever looks at $1 — everything left over (the lesson number, "test",
+# "aside-*") lands back in the positional parameters exactly as before, in
+# whatever order it was given, so a flag can go anywhere on the line.
+POSITIONAL=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --sandbox=*) VERIFY_SANDBOX="${1#*=}"; shift ;;
+    --sandbox)
+      [ $# -ge 2 ] || { echo "--sandbox needs a path argument" >&2; exit 1; }
+      VERIFY_SANDBOX="$2"; shift 2 ;;
+    --base=*) VERIFY_BASE="${1#*=}"; shift ;;
+    --base)
+      [ $# -ge 2 ] || { echo "--base needs a path argument" >&2; exit 1; }
+      VERIFY_BASE="$2"; shift 2 ;;
+    *) POSITIONAL+=("$1"); shift ;;
+  esac
+done
+set -- "${POSITIONAL[@]}"
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BASE="${VERIFY_BASE:-$REPO/code/OpModeV3Robot}"
@@ -69,10 +101,18 @@ case "$SANDBOX" in
     exit 1 ;;
 esac
 
-# Highest lesson-N directory present, unless the caller names one.
+# Highest lesson-N directory present, unless the caller names one. The first
+# remaining argument is the lesson number only if it actually looks like one
+# (or -1) — that way "test" on its own (no number given, --sandbox already
+# pulled out above) still means "the latest lesson, and run tests" instead of
+# being mistaken for the lesson number itself.
 LATEST="$(ls -d "$REPO"/code/v3/lesson-* 2>/dev/null | sed 's/.*lesson-//' | sort -n | tail -1)"
-THROUGH="${1:-$LATEST}"
-for arg in "${@:2}"; do
+if [ $# -gt 0 ] && [[ "$1" =~ ^-?[0-9]+$ ]]; then
+  THROUGH="$1"; shift
+else
+  THROUGH="$LATEST"
+fi
+for arg in "$@"; do
   case "$arg" in
     test)     GRADLE_TASK="compileJava test" ;;
     *) echo "unknown argument: $arg" >&2; exit 1 ;;
