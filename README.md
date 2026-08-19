@@ -47,6 +47,53 @@ let you see everything working on your laptop. Device IDs in the examples
 | Deploy to the roboRIO | `./gradlew deploy` |
 | Live console from the robot | `./gradlew riolog` |
 
+## How the lessons are verified
+
+This course is written with AI assistance, so it's fair to ask: does the code
+actually work, or does it just read like it does? Here's exactly what backs
+that up.
+
+- **Every lesson compiles for real, not "should compile."**
+  [`tools/verify-lessons.sh`](tools/verify-lessons.sh) (classic track) and
+  [`tools/verify-lessons-v3.sh`](tools/verify-lessons-v3.sh) (OpMode track)
+  roll each lesson's reference code — the same code shown in the lesson
+  text — forward through a real GradleRIO project and run `./gradlew build`
+  against it: lesson 0, then lessons 0–1, then 0–2, and so on through the
+  newest lesson. From the point each track introduces JUnit, the actual
+  tests run too, not just a compile check. Every lesson, at every
+  intermediate stopping point, builds clean — this is checked after every
+  change, and a regression is treated as a real bug, not noise.
+- **You can run the exact same check yourself:**
+  ```bash
+  git clone https://github.com/FRC5010/BasicRobotLessons.git
+  cd BasicRobotLessons
+  ./tools/verify-lessons.sh      # classic track, every lesson
+  ./tools/verify-lessons-v3.sh   # OpMode track, every lesson
+  ```
+  There's no separate "for real" version of this check — it's the one this
+  repo runs on itself.
+- **Numbers in the text are measured, not guessed.** A stated settle time,
+  tolerance, or gain came from a real test harness run in a throwaway
+  sandbox, not from memory or from copying the other track's figure. Where
+  the two tracks' own measurements genuinely disagreed, the lesson says so
+  rather than picking whichever number sounded better.
+- **API claims are checked against the real library, not assumed.** This
+  matters most on the OpMode track, which targets a WPILib alpha with no
+  stable documentation yet — method names and class shapes are confirmed
+  with `javap` against the actual downloaded jars, or read directly from
+  [`wpilibsuite/allwpilib`](https://github.com/wpilibsuite/allwpilib)'s
+  source at the exact pinned version, before they're written into a lesson.
+- **Gaps are labeled, not hidden.** A few OpMode-track lessons depend on
+  third-party libraries that haven't caught up to this WPILib alpha yet;
+  those are marked openly as skipped, or as hand-built stand-ins with the
+  reason stated, rather than quietly faked to look complete. See
+  [the OpMode track's page](docs/lessons/v3/README.md) and
+  [the restructure plan](docs/lesson-plan-opmode-restructure.md) for the
+  full, itemized list of what's verified, what's a stand-in, and why.
+
+If you ever find a lesson that doesn't build as written, that's a real bug —
+please [open an issue](https://github.com/FRC5010/BasicRobotLessons/issues).
+
 ## The lessons
 
 This course has two tracks. They teach the same Java and the same robot,
