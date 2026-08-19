@@ -560,7 +560,7 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 31 | Alerts | Low | Written and verified 2026-08-18. Confirmed genuinely free of both BLine and maple-sim. `org.wpilib.driverstation.Alert` confirmed present (imported directly by `OpModeRobot` itself, for its own loop-overrun warning) — but the enum is renamed `Alert.Level.HIGH/MEDIUM/LOW`, not `AlertType.kError/kWarning/kInfo`, and the whole publishing mechanism moved off NetworkTables onto the new 2027 Driver Station app. See [R33](#risks-and-blocking-unknowns) for both findings and for why the old lesson's camera-rename demo doesn't reproduce in this port |
 | 32 | Testing | Medium | Written and verified 2026-08-19. Confirmed genuinely free of both BLine and maple-sim. Test harness patterns re-verified against `Scheduler`/`RobotState` instead of `CommandScheduler`/`DriverStation` — both shipped tests actually run and pass through `tools/verify-lessons-v3.sh 32 test`, not just compile. `SuperstructureState`'s 4-state graph (Lesson 24 dropped `HANDOFF`/`HOLDING`) needed genuinely different test cases than the old lesson's, not a search-and-replace port. See [R34](#risks-and-blocking-unknowns) for the real-time trap's measured, cliff-shaped (not gradual) behavior in this port |
 | 33 | Reading a log | **Medium → resolved.** | Written and verified 2026-08-19. Confirmed genuinely free of both BLine and maple-sim. The "depends on Lesson 13's resolution" flag was right to raise and worse than it looked: section 6, the old lesson's centerpiece (replay an exact recorded match through fixed code), cannot be demonstrated at all — `Mode.REPLAY` is confirmed still the literal empty doorway Lesson 13 shipped, not just unverified. Resolved by keeping the technique (sections 1–5, 7 port directly onto `SmartDashboard`-mirrored `DataLogManager` logs) and rewriting section 6 to state the gap honestly, with a named, weaker substitute (re-run the same script, not the same match) rather than either faking replay or cutting the section. Section 8's second example (BLine `lib_key` typo) has no equivalent at all in this track and was replaced with a fully analogous, verified-real bug native to this port: an invalid `PathConstants.kAimTagId`, which `Aim.tagPosition`'s own javadoc already calls "what a typo looks like." See [R35](#risks-and-blocking-unknowns) for the complete findings, including that `Elevator/AtGoal` had never actually been logged in this track before this lesson added it |
-| 34 | SysId | Medium | `SysIdRoutine`'s new package location is unverified |
+| 34 | SysId | Medium | Written and verified 2026-08-19. Confirmed genuinely free of both BLine and maple-sim. **`SysIdRoutine` is confirmed absent from this alpha entirely, not relocated** — only its logging primitive, `org.wpilib.sysid.SysIdRoutineLog`, exists. Following the Lesson 16 precedent, this lesson hand-builds a real V3-native replacement (`first.robot.commands.SysIdRoutine`) against that same logging primitive, verified end to end (ramp/step mechanics, cancellation cleanup, natural-completion cleanup) and readable by the real SysId analysis GUI. Genuine correction to the old lesson's "second `.wpilog` file" claim: this track never had a separate `Logger`, so SysId data lands in the same single log everything else does. Real regression found and fixed along the way: adding the elevator's reverse soft limit (old lesson section 7) broke the already-shipped `ElevatorHomingTest`, because the threshold is measured from the boot-time relative-encoder zero that `home()` hasn't yet made meaningful — resolved by shipping the forward limit only, confirmed by a controlled A/B test and a full regression re-run. See [R36](#risks-and-blocking-unknowns) for the complete findings, including the measured percent-of-steady-state kS metric and the elevator travel-budget numbers, both close to the old course's own |
 | aside-setup | Low | Installer/imaging steps change (SystemCore, not roboRIO) — real but mechanical, not urgent |
 | aside-git-branching | None | Tool-based, no framework dependency |
 | aside-debugger | Low | Breakpoints/stepping unaffected; worked example's lesson reference may need updating |
@@ -2781,6 +2781,114 @@ out badly.
     safety net than the one it replaced, which the lesson says outright
     rather than implying parity.
 
+- **R36 — new, found while writing and verifying Lesson 34's SysId lesson.
+  The largest single class this track has had to hand-build from scratch,
+  and the port's first genuine, previously-undiscovered regression rather
+  than an API or numeric surprise.**
+
+  - **`SysIdRoutine` is confirmed absent from this alpha in its entirety,
+    not just moved** — exhaustively checked: not in `command3.jar`, not in
+    `wpilibj.jar`, not in any jar in the Gradle cache (`unzip -l | grep
+    -qi SysIdRoutine`, no hits anywhere), and not at any plausible GitHub
+    path in `wpilibsuite/allwpilib` at `v2027.0.0-alpha-6` (tried under
+    both `command3`'s and the old `wpilibj2.command`'s package trees).
+    Only `org.wpilib.sysid.SysIdRoutineLog` — the logging primitive the
+    real class writes through, not the routine itself — exists, confirmed
+    directly on GitHub at `wpilibj/src/main/java/org/wpilib/sysid/
+    SysIdRoutineLog.java`. Same shape of gap as R2 (BLine/maple-sim), but
+    resolved differently: rather than skip or write an interim lesson
+    (the R16/22/25 pattern), this lesson **hand-builds a real replacement**
+    against `SysIdRoutineLog`, following the precedent Lesson 16 already
+    set (a hand-built stand-in, presented to students with no meta-
+    narration about the gap). The replacement's `.wpilog` output is
+    genuinely readable by the real SysId analysis GUI, since it writes
+    through the same logging primitive the real class would have used.
+  - **The reference algorithm was read from the real V2-era
+    `SysIdRoutine.java` source** (`wpilibsuite/allwpilib` tag `v2025.3.2`,
+    `wpilibNewCommands/src/main/java/edu/wpi/first/wpilibj2/command/
+    sysid/SysIdRoutine.java`) rather than guessed: `quasistatic()` ramps
+    voltage as `sign * timer.get() * rampRate`, `dynamic()` snaps to a
+    fixed step, and both record a `SysIdRoutineLog.State` every tick.
+  - **A real, load-bearing V3 semantic, confirmed by a dedicated
+    scheduler test before being trusted for cleanup: a `Mechanism.run(...)`
+    coroutine's `.whenCanceled(...)` does NOT fire on natural completion —
+    only on external `Scheduler.cancel(...)`.** This is the same shape of
+    finding as R9 (Lesson 6) and R25 (Lesson 21) arriving a third time,
+    now against a hand-built class rather than a ported one: `stop()`
+    (zero volts, record `State.NONE`) has to be called both after the
+    routine's own loop *and* inside `.whenCanceled(this::stop)`, because
+    there is still no unified `finally`-equivalent across every exit path.
+  - **A genuine correction to the old lesson's claim of "a second
+    `.wpilog` file": in this track, SysId data lands in the SAME single
+    log as everything else.** The old lesson's claim was true for
+    AdvantageKit-based tracks, where `Logger` and `DataLogManager` are
+    genuinely two different logging paths. This track never installed
+    AdvantageKit's `Logger` at all (R1) — every `SmartDashboard.put*` call
+    since Lesson 3 has always gone through `DataLogManager` (confirmed in
+    R35) — so `SysIdRoutineLog`'s own `DataLogManager.getLog()` call lands
+    in the exact same file, distinguished only by its own key prefixes.
+    One log, not two; the lesson says so explicitly rather than repeating
+    a claim that stopped being true for a reason specific to this port.
+  - **A same-JVM CAN-ID-aliasing bug corrupted an early attempt at
+    reproducing the old lesson's `kS` numbers via a hand-rolled OLS fit**,
+    diagnosed and fixed the same way R25/R34's testing traps were: two
+    scenarios run sequentially in one `main()` shared one simulated
+    `Flywheel`'s CAN ID, so the second scenario's readings were corrupted
+    by the first instance's still-running `idle()` default command.
+    Fixed by dispatching each scenario to its own `./gradlew ... -P...`
+    invocation (a fresh JVM per scenario) — the same "one scenario, one
+    process" rule R32 already established for `ElevatorHomingTest`.
+    Switched to a more robust percent-of-steady-state-speed metric anyway
+    rather than trusting a fragile regression fit, since this port has no
+    access to the real SysId GUI's own analysis to cross-check against:
+    measured 42.5%–80.6% of steady-state speed reached across 1.0–5.0 V at
+    the default 1 V/s ramp, and 75.4%–95.6% across the same range at the
+    slower 0.25 V/s ramp — the same direction of effect the old lesson's
+    voltage-based `kS` numbers show, confirmed by an independently-chosen
+    metric rather than reused.
+  - **The real regression: adding the elevator's firmware soft limits
+    (old lesson section 7) broke the already-shipped, previously-passing
+    `ElevatorHomingTest` from Lesson 32.** Diagnosed with a throwaway
+    diagnostic harness rather than guessed: the carriage did not stop at
+    the reverse threshold, it just moved roughly 4× slower, continuing
+    well past it (to −0.32 m by t = 18 s in a widened observation window)
+    — which ruled out the first, more obvious hypothesis (a hard block)
+    before the real cause was found. **Root cause, confirmed by a
+    controlled A/B test (comment out just the four `SoftwareLimitSwitch`
+    config lines, re-run, compare): the reverse threshold is registered
+    against the elevator's *boot-time* relative-encoder zero, which is
+    arbitrary until `home()` actually runs — and `kMinHeight = 0` happens
+    to coincide with that arbitrary boot zero, so the reverse limit
+    engages immediately and fights the very routine meant to establish
+    what "zero" really means.** The old lesson's own measured demo (6 V
+    for 4 s stopping at 1.505 m against a 1.5 m limit) only ever exercised
+    the *forward* limit — an upward drive — so the old lesson's own
+    content never actually required a reverse limit on the shipped file.
+    **Resolved by shipping the forward limit only**, with `homing itself
+    already has its own stopping mechanism, the bottom limit switch`
+    stated directly in the code comment rather than left implicit. Full
+    regression check re-run after the fix: `ElevatorHomingTest` completes
+    in 4.58–4.70 s, matching the pre-Lesson-34 baseline, across both the
+    scratch sandbox and a fresh `tools/verify-lessons-v3.sh 34 test` run
+    of the real rolled-forward snapshot chain.
+  - **The elevator's widened-bounds travel-budget numbers, measured with a
+    separate rig bypassing the shipped IO class (so unaffected by the
+    regression above), land close to the old course's own figures in
+    every case**, reinforcing R35's finding that the elevator's physics
+    and control loop are numerically unchanged by the OpMode/Commands V3
+    restructuring: soft-limit stop 2.355 m / 1.501 m (old: 2.503 m /
+    1.505 m); ramp-vs-distance 1.517 / 3.041 / 6.284 m (old: 1.568 / 3.158
+    / 6.469 m); step-vs-distance 1.010 / 0.578 / 0.268 m (old: 1.010 /
+    0.561 / 0.268 m).
+  - **`Trigger.and(BooleanSupplier)` is this track's first actual use of
+    the combinator, not a reuse.** The old lesson calls it "`Trigger.and`
+    from Lesson 22"; this track's Lesson 22 (beam-break sensors) was
+    skipped for the same maple-sim gap as R2, so this lesson introduces
+    `.and(...)` on its own rather than pointing back at a lesson that
+    doesn't exist here — confirmed present on `org.wpilib.command3.Trigger`
+    via `javap` before being used.
+  - Confirmed genuinely free of both BLine and maple-sim.
+
 ---
 
 ## Appendix: verified API notes
@@ -3873,3 +3981,31 @@ appendices: verify before drafting, record what you verified.
       Full compile and test pass re-verified from a fresh sandbox (0–33,
       with and without `test`), plus an independent regression checkpoint
       at 32.
+- [x] Lesson 34 (SysId) written and verified 2026-08-19 —
+      `docs/lessons/v3/34-tuning-with-sysid.md` and
+      `code/v3/lesson-34/`. Confirmed genuinely BLine/maple-sim-free.
+      `SysIdRoutine` is confirmed absent from this alpha entirely (not
+      just relocated — exhaustively checked against every jar in the
+      Gradle cache and against `wpilibsuite/allwpilib` source at multiple
+      plausible paths); only `SysIdRoutineLog`, the logging primitive it
+      writes through, exists. Hand-built a real V3-native replacement
+      (`first.robot.commands.SysIdRoutine`) against that primitive,
+      following the Lesson 16 precedent for hand-building a missing
+      class rather than skipping or waiting — its recorded `.wpilog` is
+      genuinely readable by the real SysId analysis GUI. Found and fixed
+      a real regression along the way: adding the elevator's reverse
+      soft limit (old lesson section 7) broke the already-shipped
+      `ElevatorHomingTest`, because the threshold is measured from a
+      boot-time relative-encoder zero that homing hasn't yet made
+      meaningful, and `kMinHeight = 0` happens to coincide with that
+      arbitrary zero — confirmed by a controlled A/B test, resolved by
+      shipping the forward soft limit only. Also corrected the old
+      lesson's "second `.wpilog` file" claim (this track has only ever
+      had one log, since it never installed a separate `Logger`) and
+      independently re-measured the elevator's travel-budget numbers
+      with a widened-bounds rig bypassing the shipped IO class, landing
+      close to the old course's own figures in every case. See
+      [R36](#risks-and-blocking-unknowns) for the complete findings.
+      Full compile and test pass re-verified from a fresh sandbox (0–34,
+      with and without `test`), plus an independent regression checkpoint
+      at 33.

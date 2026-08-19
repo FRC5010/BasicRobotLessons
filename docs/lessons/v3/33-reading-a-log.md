@@ -375,3 +375,5 @@ both were sitting in a log the whole time, waiting to be read.
 
 Every gain this reading skill has ever pointed at came from a spec
 sheet, not a real motor. The next lesson is where that finally changes.
+
+Next: [Lesson 34 — Tuning your robot when build team hands it over](34-tuning-with-sysid.md)
