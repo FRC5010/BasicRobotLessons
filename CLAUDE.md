@@ -52,7 +52,7 @@ Lessons 0–34 form a single build. Each one:
 
 Consequences when editing:
 - Changing a class name, field name, method signature, CAN ID convention, or constant introduced early ripples through every later lesson. Search the whole [docs/lessons/](docs/lessons/) tree before renaming anything.
-- Do not forward-reference a concept that hasn't been introduced yet. If a lesson needs `MathUtil.clamp`, `Translation2d`, kinematics, etc., check the lesson where it's first taught (see the table in [README.md](README.md)) and stay within what the student has seen.
+- Do not forward-reference a concept that hasn't been introduced yet. If a lesson needs `MathUtil.clamp`, `Translation2d`, kinematics, etc., check the lesson where it's first taught (see the table in [docs/lessons/README.md](docs/lessons/README.md)) and stay within what the student has seen.
 - The `SwerveModule` / `Drivetrain` refactor happens in [Lesson 7](docs/lessons/07-four-modules.md) — before that the single-module class is called `DriveModule` and is itself a subsystem. Match whichever name the current lesson is at.
 - Simulation is introduced in [Lesson 4](docs/lessons/04-simulation.md); lessons 1–3 must not depend on sim plumbing.
 - Telemetry is AdvantageKit-style logging, introduced in [Lesson 3](docs/lessons/03-telemetry.md): every value goes through `Logger.recordOutput("SubsystemName/ValueName", value)` from the subsystem's `periodic()` — never bare `SmartDashboard.putNumber`. All numbered lessons now follow this style; the auto chooser in [Lesson 9](docs/lessons/09-autonomous.md) uses AdvantageKit's `LoggedDashboardChooser`, and [Lesson 11](docs/lessons/11-odometry-field.md) draws the robot by logging a `Pose2d` to AdvantageScope's Odometry tab, plus a `Field2d` widget for viewing inside SimGUI (`SmartDashboard.putData` for a widget is the one sanctioned SmartDashboard use; per-value `putNumber` is not).
@@ -95,11 +95,12 @@ voice and template as numbered lessons but:
 - Do **not** have a `Next:` link at the bottom (they're not in a chain).
 - **May reference numbered lessons for examples** — treat those as "you can
   read this any time after Lesson N," not "this must come before Lesson N+1."
-- Are linked from the **Asides** section in [README.md](README.md), not the
-  main lessons table.
+- Are linked from the **Asides** section in
+  [docs/lessons/README.md](docs/lessons/README.md), not the main lessons
+  table.
 
 When adding a new aside, use the `aside-<slug>.md` prefix and add it to the
-README's Asides list.
+Asides list in [docs/lessons/README.md](docs/lessons/README.md).
 
 **An aside may ship code**, in `code/aside-<slug>/`, applied *on top of* a named
 lesson rather than rolled through in order:
@@ -332,7 +333,9 @@ a lesson as-is.
 
 ## When adding or editing a lesson
 
-- Update the lessons table in [README.md](README.md) if the number, title, or "You'll build" summary changes.
+- Update the lessons table in [docs/lessons/README.md](docs/lessons/README.md)
+  (or [docs/lessons/v3/README.md](docs/lessons/v3/README.md) for the OpMode
+  track) if the number, title, or "You'll build" summary changes.
 - Fix the `Next:` link on the previous lesson and the intro back-reference on the next lesson.
 - If you rename a symbol, `grep` the whole [docs/lessons/](docs/lessons/) tree for the old name — later lessons often reuse it verbatim.
 - Prefer editing an existing lesson over inserting a new one; inserting shifts every downstream lesson number and every cross-link.

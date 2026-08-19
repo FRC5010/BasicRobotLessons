@@ -54,125 +54,17 @@ lesson for lesson, but they're built on different WPILib generations and
 live in different files — **pick one and stay on it**; don't mix code from
 the two.
 
-- **Classic** (below) — the roboRIO, WPILib 2026, and Commands V2, the
-  version this course has always taught. Lesson files live under
-  [`docs/lessons/`](docs/lessons/), reference code under
-  [`code/lesson-N/`](code/), and it rolls forward with
-  `./tools/verify-lessons.sh`. **Start here unless you specifically want the
-  track below.**
-- **OpMode** (further down) — SystemCore and the 2027 alpha's OpMode
-  framework with coroutine-style Commands V3, a newer and still-settling
-  target. Lesson files live under [`docs/lessons/v3/`](docs/lessons/v3/),
-  reference code under [`code/v3/lesson-N/`](code/v3/), and it rolls forward
-  with `./tools/verify-lessons-v3.sh`. Three lessons (17, 22, 25) are gaps
-  for now — their old-course content leans on third-party libraries
-  (BLine, maple-sim) that don't yet run on this alpha — and one (16) is a
-  genuinely different, hand-built lesson rather than a straight port. See
-  [the restructure plan](docs/lesson-plan-opmode-restructure.md) for the
-  full status of every lesson, including what changed and why.
-
-### Classic track — roboRIO, WPILib 2026, Commands V2
-
-| # | Lesson | You'll build | Key Java ideas |
-|---|--------|--------------|----------------|
-| 0 | [Orientation](docs/lessons/00-orientation.md) | Run the template, print a message | Classes, packages, methods, the loop |
-| 1 | [Your first motor](docs/lessons/01-first-motor.md) | Spin a drive motor with a button | Objects, fields, constructors, `import` |
-| 2 | [Joystick control](docs/lessons/02-joystick-control.md) | Drive the motor with a joystick | Methods, parameters, `double`, lambdas |
-| 3 | [Telemetry & plots](docs/lessons/03-telemetry.md) | Plot position & velocity live | Return values, sensors, AdvantageKit logging |
-| 4 | [Simulation](docs/lessons/04-simulation.md) | Make it move on your laptop | `simulationPeriodic`, physics models |
-| 5 | [Steering with P control](docs/lessons/05-steering-p-control.md) | Point the module to an angle, primed from a CANcoder at boot | `if`, arithmetic, error, setpoints |
-| 6 | [Distance & commands](docs/lessons/06-distance-and-commands.md) | Drive an exact distance | Unit conversion, commands that finish |
-| 7 | [Four modules](docs/lessons/07-four-modules.md) | Assemble a 4-module chassis you can translate and rotate | Arrays, `for` loops, helper classes |
-| 8 | [Gyro & heading](docs/lessons/08-gyro-heading.md) | Turn the chassis to a compass heading | Reusing patterns, extracting helpers |
-| 9 | [Autonomous](docs/lessons/09-autonomous.md) | Compose a drive-turn-drive auto | Command composition, sequences & groups |
-| 10 | [Full swerve — kinematics](docs/lessons/10-kinematics.md) | Drive-and-rotate at once with `SwerveDriveKinematics` | Data-carrier types, indexed loops |
-| 11 | [Odometry & the field view](docs/lessons/11-odometry-field.md) | Track and draw the robot on a virtual field | Building arrays in loops, small bundle types |
-| 12 | [Model-based control](docs/lessons/12-model-based-control.md) | Onboard 1 kHz closed loop with feedforward, replacing boot-time CANcoder priming with continuous remote-sensor feedback | Config objects, control requests |
-| 13 | [IO layers & replay](docs/lessons/13-io-replay.md) | Re-run a logged session through changed code | Interfaces, enums, subclassing, annotations |
-| 14 | [Pose estimator & localizer](docs/lessons/14-pose-estimator.md) | A localization subsystem fused from pluggable pose providers | Interfaces, registries, timestamps |
-| 15 | [Real vision — PhotonVision](docs/lessons/15-photonvision.md) | A real, replay-capable PhotonVision pose provider, plus simulated multi-camera coverage | `Optional`, `static` fields, `record` |
-| 16 | [maple-sim — a world to drive in](docs/lessons/16-maple-sim-field.md) | Physics-engine simulation with mass, tire grip, walls, and game pieces | Callbacks, anonymous class bodies |
-| 17 | [B-Line autos](docs/lessons/17-bline-autos.md) | Follow a drawn path against the fused pose, with event markers | `PIDController`, method refs as actions |
-| 18 | [Scoring elevator](docs/lessons/18-elevator.md) | A second mechanism on the same IO spine, profiled and gravity-compensated | Clamping a goal, reuse over novelty |
-| 19 | [A picture of the elevator](docs/lessons/19-mechanism2d.md) | A live stick figure of the mechanism, with a second piece riding on it | Composition as attachment |
-| 20 | [Intake arm](docs/lessons/20-intake-arm.md) | A swinging arm with a roller, mounted on the elevator, gravity-compensated by angle | Two motors in one subsystem |
-| 21 | [Homing & limit sensors](docs/lessons/21-limit-sensors.md) | A limit switch that tells the elevator where zero actually is | `Trigger` from any boolean |
-| 22 | [Beam breaks & the handoff](docs/lessons/22-light-sensors.md) | A sensor that knows you caught a game piece, driving both mechanisms at once | `Trigger` combinators |
-| 23 | [LEDs](docs/lessons/23-leds.md) | A strip that shows what the robot knows, and a priority order you chose | Combinator methods |
-| 24 | [A superstructure](docs/lessons/24-superstructure.md) | One named state the whole robot reads, with the illegal moves made impossible | Enums with fields and methods, exhaustive `switch` |
-| 25 | [Doing two things at once](docs/lessons/25-path-events.md) | Autos that intake, stow and aim *while* they drive, instead of after | Composition applied, not new syntax |
-| 26 | [Getting there exactly](docs/lessons/26-drive-to-pose.md) | A two-stage drive-to-pose: fast across the field, then precise onto the spot | Building a `Path` in code |
-| 27 | [Going to get something you just saw](docs/lessons/27-object-detection.md) | A camera that finds a game piece, and an approach built while the robot runs | `Commands.defer` |
-| 28 | [Keeping the nose on the target](docs/lessons/28-aim-at-tag.md) | Aim assist that holds while you drive, shared by the driver and by autos | None — the point is that it needs none |
-| 29 | [A wheel that holds a speed](docs/lessons/29-flywheel.md) | A shooter flywheel with a speedometer, and the first mechanism with no destination | None — the spine repeats |
-| 30 | [One battery, everything on it](docs/lessons/30-current-limits.md) | Current limits chosen as a budget, and a brownout you cause on purpose | None |
-| 31 | [The robot tells you what's wrong](docs/lessons/31-alerts.md) | A pre-match checklist the robot runs on itself, surfaced where a human looks | None |
-| 32 | [Tests that catch what a plot won't](docs/lessons/32-testing.md) | JUnit tests against your own subsystems, with the simulation running inside them | JUnit, arrange/act/assert |
-| 33 | [Reading a match log](docs/lessons/33-reading-a-log.md) | Diagnose a failure that already happened, from the log alone, and prove the fix by replaying the match | None |
-| 34 | [Tuning your robot when build team hands it over](docs/lessons/34-tuning-with-sysid.md) | Measure a real machine's gains with `SysIdRoutine`, and find out how close the computed ones were | None |
-
-### OpMode track — SystemCore, WPILib 2027 alpha, Commands V3
-
-| # | Lesson | You'll build | Key Java ideas |
-|---|--------|--------------|----------------|
-| 0 | [Orientation](docs/lessons/v3/00-orientation.md) | Run the template, print a message | Classes, packages, methods, annotations |
-| 1 | [Your first motor](docs/lessons/v3/01-first-motor.md) | Spin a drive motor with a button | Objects, fields, constructors, `import` |
-| 2 | [Joystick control](docs/lessons/v3/02-joystick-control.md) | Drive the motor with a joystick | Parameters, return values, lambdas, suppliers |
-| 3 | [Telemetry](docs/lessons/v3/03-telemetry.md) | Plot position & velocity live | Return values, `instanceof` pattern matching, `SmartDashboard`/`DataLogManager` logging |
-| 4 | [Simulation](docs/lessons/v3/04-simulation.md) | Make it move on your laptop | `simulationPeriodic()`, physics models, composition |
-| 5 | [Steering with P control](docs/lessons/v3/05-steering-p-control.md) | Point the module to an angle, primed from a CANcoder at boot | `if`/`else`, arithmetic, error, setpoints |
-| 6 | [Distance & commands](docs/lessons/v3/06-distance-and-commands.md) | Drive an exact distance | Unit conversion, coroutine bodies that run out, finished vs. canceled |
-| 7 | [Four modules](docs/lessons/v3/07-four-modules.md) | Assemble a 4-module chassis you can translate and rotate | Arrays, `for` loops, per-module constructor args |
-| 8 | [Gyro & heading](docs/lessons/v3/08-gyro-heading.md) | Turn the chassis to a compass heading | Reusing patterns, extracting helpers |
-| 9 | [Autonomous](docs/lessons/v3/09-autonomous.md) | Compose a drive-turn-drive auto | `coroutine.await(...)`, sequential vs. parallel |
-| 10 | [Full swerve — kinematics](docs/lessons/v3/10-kinematics.md) | Drive-and-rotate at once with `SwerveDriveKinematics` | Data-carrier types (`ChassisVelocities`), indexed loops |
-| 11 | [Odometry & the field view](docs/lessons/v3/11-odometry-field.md) | Track and draw the robot on a virtual field | Building arrays in loops, small bundle types |
-| 12 | [Model-based control](docs/lessons/v3/12-model-based-control.md) | Onboard closed loop with feedforward, replacing boot-time CANcoder priming with continuous remote-sensor feedback | Config objects, control requests |
-| 13 | [IO layers](docs/lessons/v3/13-io-replay.md) | Every sensor behind a clean `ModuleIO`/`GyroIO` — the doors real replay will use once this framework's tooling catches up, not replay itself yet | Interfaces & default methods, anonymous classes, enums, `switch` expressions |
-| 14 | [Pose estimator & localizer](docs/lessons/v3/14-pose-estimator.md) | A localization subsystem fused from pluggable pose providers | Interfaces, registries, timestamps |
-| 15 | [Real vision — PhotonVision](docs/lessons/v3/15-photonvision.md) | A real PhotonVision pose provider, plus simulated multi-camera coverage | `Optional`, `static` fields, `record` |
-| 16 | [Ground truth — a hand-built stand-in](docs/lessons/v3/16-ground-truth.md) | A hand-built chassis body with friction-limited acceleration, standing in for maple-sim until it supports this framework | Friction-limited acceleration, `MathUtil.slewRateLimit`, `Twist2d.exp()` |
-| 17 | — | *Gap for now* — the old lesson's BLine path-following library doesn't run on Commands V3 yet. See the plan doc. | — |
-| 18 | [Scoring elevator](docs/lessons/v3/18-elevator.md) | A second mechanism on the same IO spine, profiled and gravity-compensated | Comparing measures directly (`Distance.gt`/`.lt`) |
-| 19 | [A picture of the elevator](docs/lessons/v3/19-mechanism2d.md) | A live stick figure of the mechanism, with a second piece riding on it | Composition as attachment |
-| 20 | [Intake arm](docs/lessons/v3/20-intake-arm.md) | A swinging arm with a roller, mounted on the elevator, gravity-compensated by angle | Two motors in one subsystem, a `Mechanism` that takes a `Mechanism` |
-| 21 | [Homing & limit sensors](docs/lessons/v3/21-limit-sensors.md) | A limit switch that tells the elevator where zero actually is | `Trigger` from any `BooleanSupplier`, no-requirements commands |
-| 22 | — | *Gap for now* — the old lesson's beam-break sim needs maple-sim's intake simulation. See the plan doc. | — |
-| 23 | [LEDs](docs/lessons/v3/23-leds.md) | A strip that shows what the robot knows, and a priority order you chose | Combinator methods |
-| 24 | [A superstructure](docs/lessons/v3/24-superstructure.md) | One named state the whole robot reads, with the illegal moves made impossible | Enums with fields and methods, exhaustive `switch`, a hand-built guard |
-| 25 | — | *Gap for now* — same BLine dependency as 17. See the plan doc. | — |
-| 26 | [Getting there exactly](docs/lessons/v3/26-drive-to-pose.md) | A two-stage drive-to-pose: fast across the field, then precise onto the spot | `PIDController`, controller objects as fields |
-| 27 | [Going to get something you just saw](docs/lessons/v3/27-object-detection.md) | A camera that finds a game piece, and an approach built while the robot runs | `Command.requiring(...).executing(...)` |
-| 28 | [Keeping the nose on the target](docs/lessons/v3/28-aim-at-tag.md) | Aim assist that holds while you drive, shared by the driver and by autos | None — the point is that it needs none |
-| 29 | [A wheel that holds a speed](docs/lessons/v3/29-flywheel.md) | A shooter flywheel with a speedometer, and the first mechanism with no destination | None — the spine repeats |
-| 30 | [One battery, everything on it](docs/lessons/v3/30-current-limits.md) | Current limits chosen as a budget, and a brownout you cause on purpose | None |
-| 31 | [The robot tells you what's wrong](docs/lessons/v3/31-alerts.md) | A pre-match checklist the robot runs on itself, surfaced where a human looks | None |
-| 32 | [Tests that catch what a plot won't](docs/lessons/v3/32-testing.md) | JUnit tests against your own subsystems, with the simulation running inside them | JUnit, arrange/act/assert |
-| 33 | [Reading a match log](docs/lessons/v3/33-reading-a-log.md) | Diagnose a failure that already happened, from the log alone — real replay isn't available on this track yet, so the fix is proven by re-running the same script instead | None |
-| 34 | [Tuning your robot when build team hands it over](docs/lessons/v3/34-tuning-with-sysid.md) | Measure a real machine's gains with a hand-built `SysIdRoutine`, since WPILib's own isn't ported to this framework yet | `Trigger.and(...)` |
-
-### Asides (classic track — out of order, read when you need them)
-
-The OpMode track has no asides of its own yet.
-
-- [Setting up the project and connecting it to GitHub](docs/lessons/aside-setup.md) —
-  installing WPILib, Git, and the GitHub CLI; creating the project from the
-  template; the daily `add`/`commit`/`push` loop. **Start here before Lesson 0
-  if you're new to any of it.**
-- [Branches: one per lesson, merged into a `main` that always works](docs/lessons/aside-git-branching.md) —
-  branching, merging, and the day two lessons touch the same file. Reads on from
-  the setup aside, so you can start using it from Lesson 1. Covers merge
-  conflicts (and why "keep both" is usually the answer), pull requests, and when
-  `rebase` beats `merge`.
-- [Debugging in VSCode and reading stack traces](docs/lessons/aside-debugger.md) —
-  breakpoints, stepping, watches, conditional breakpoints, and how to read the
-  error trail Java prints when something crashes. Useful from Lesson 1 onward;
-  the worked example uses Lesson 5's P control.
-- [A second thread: sampling odometry faster than the robot loop](docs/lessons/aside-odometry-thread.md) —
-  the AdvantageKit odometry thread, and the Java it needs: threads, locks, and
-  `waitForAll`. Readable any time after Lesson 16, and genuinely optional —
-  Lessons 17–34 neither need it nor break with it. Includes the measurement of
-  what 250 Hz odometry actually buys, which is less than you'd think.
+- **[Classic track](docs/lessons/README.md)** — the roboRIO, WPILib 2026,
+  and Commands V2, the version this course has always taught. **Start here
+  unless you specifically want the track below.** Includes the asides
+  (setup, branching, the debugger, the odometry thread).
+- **[OpMode track](docs/lessons/v3/README.md)** — SystemCore and the 2027
+  alpha's OpMode framework with coroutine-style Commands V3, a newer and
+  still-settling target. Three lessons (17, 22, 25) are gaps for now, and
+  one (16) is a hand-built stand-in rather than a straight port — the
+  track's own page explains why, and
+  [the restructure plan](docs/lesson-plan-opmode-restructure.md) has the
+  full per-lesson status.
 
 ## Skipping ahead to a lesson in the middle
 
@@ -228,7 +120,8 @@ Three things to know before you do this:
 - **You're skipping the explanations, not just the typing.** The snapshots are
   reference code, and the reasoning behind them lives in the lesson text. If you
   jump to Lesson 18, at least skim the lessons that introduced the patterns
-  you're about to build on — the table above says what each one added.
+  you're about to build on — [the classic track's table](docs/lessons/README.md)
+  says what each one added.
 
 The same trick works when you're stuck rather than ahead: generate a known-good
 state as of the last lesson you finished and diff it against your own project to
