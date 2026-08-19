@@ -12,6 +12,10 @@ measure what a spec sheet can't tell you.
 - **`SysIdRoutine`** — a tool that drives a mechanism open loop in two
   deliberate patterns and logs exactly what it needs to fit `kS`/`kV`/`kA`
   from the result, instead of you computing them.
+- **`@Utility`** — a third opmode category, alongside `@Teleop` and
+  `@Autonomous`, for things a robot does that aren't driving or an
+  autonomous plan. Characterization lives here, in its own opmode, not
+  bolted onto teleop.
 - **A safe first power-on**, as a procedure, not a piece of code.
 - **A test can lie about the mechanism if the test is wrong for it** — the
   same ramp rate that's fine for one mechanism can quietly corrupt another.
@@ -84,6 +88,11 @@ hair, and shoelaces, current limits protect windings but not people, and
 "it worked in sim" has never once meant "it's safe to stand next to." Before
 you send voltage into a real motor for the first time:
 
+- **Know which opmode you're in.** Section 5 puts every characterization
+  binding in its own opmode, selected separately from Teleop on the driver
+  station. That's the first guard, not a formality — nobody drives a match
+  with the characterization opmode selected, so nobody can reach these
+  buttons by accident while actually playing.
 - **Confirm the CAN ID matches `Constants.java`.** Characterizing the wrong
   motor because two devices share an ID is a Week 1 story every team has.
 - **Confirm the current limits from Lesson 30 are actually in the config that
@@ -366,45 +375,99 @@ public Command sysIdDynamic(SysIdRoutine.Direction direction) {
 Two commands, but four ways to run them: `SysIdRoutine.Direction.kForward`
 and `kReverse`, on each.
 
-**Add to `RobotTeleop`'s imports:**
+Now the button bindings — and here's a real choice worth making deliberately.
+Every opmode you've built so far has been Teleop or Autonomous, and it would
+be easy to just add these bindings to `RobotTeleop` alongside everything
+else. Don't. Section 2 already named the reason: characterization is
+something you do deliberately, at the bench, never in the middle of a match.
+Putting it in `RobotTeleop` means the only thing standing between "driving"
+and "sending a ramping voltage into a motor" is remembering not to press two
+particular buttons — a *behavioral* guard. This framework hands you a
+*structural* one instead.
+
+**`@Utility`** is a third opmode category, alongside `@Teleop` and
+`@Autonomous` — for exactly this: something the robot does that isn't
+driving and isn't an autonomous plan. A `@Utility` opmode is selected
+separately on the driver station, the same way switching between `RobotAuto`
+and `RobotAutoBox` back in Lesson 9 was — which means Lesson 9's own finding
+applies here for free: selecting a different opmode cancels whatever the
+previous one bound, automatically. Put characterization in its own opmode
+and there is no button combination on `RobotTeleop`, however unlikely, that
+can reach it. You'd have to select "characterize" on purpose first.
+
+**Create `src/main/java/first/robot/opmode/RobotUtility.java`:**
 
 ```java
+package first.robot.opmode;
+
+import org.wpilib.opmode.PeriodicOpMode;
+import org.wpilib.opmode.Utility;
+
+import first.robot.Robot;
 import first.robot.commands.SysIdRoutine;
+
+/**
+ * A separate opmode for characterization, deliberately reachable only from
+ * here — see Lesson 34.
+ */
+@Utility
+public class RobotUtility extends PeriodicOpMode {
+  private final Robot robot;
+
+  /** The Robot instance is passed into the opmode via the constructor. */
+  public RobotUtility(Robot robot) {
+    this.robot = robot;
+
+    // Four two-button combinations, so nobody trips a characterization run
+    // reaching for a single button by accident — the same "hard to do by
+    // accident" reasoning that put homing on its own button back in
+    // Lesson 21, one guard further out than that.
+    robot.driverController.back().and(robot.driverController.northFace())
+        .whileTrue(robot.flywheel.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
+    robot.driverController.back().and(robot.driverController.southFace())
+        .whileTrue(robot.flywheel.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
+    robot.driverController.start().and(robot.driverController.northFace())
+        .whileTrue(robot.flywheel.sysIdDynamic(SysIdRoutine.Direction.kForward));
+    robot.driverController.start().and(robot.driverController.southFace())
+        .whileTrue(robot.flywheel.sysIdDynamic(SysIdRoutine.Direction.kReverse));
+  }
+
+  @Override
+  public void periodic() {}
+}
 ```
 
-**Add to `RobotTeleop`'s constructor, below the homing binding:**
+Nothing here is new syntax — it's built the exact same way `RobotTeleop` and
+`RobotAuto` are: extend `PeriodicOpMode`, take the shared `Robot` in your
+constructor, wire bindings there. `@Utility` is annotated bare, no
+`name`/`group`, because there's only one of them, same as `@Teleop` — you'd
+only need to name it if this project grew a second characterization opmode
+the way Lesson 9 grew a second autonomous.
 
-```java
-// Four two-button combinations, so nobody trips a characterization run
-// reaching for a single button mid-match — the same "hard to do by
-// accident" reasoning that put homing on its own button back in Lesson 21.
-robot.driverController.back().and(robot.driverController.northFace())
-    .whileTrue(robot.flywheel.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
-robot.driverController.back().and(robot.driverController.southFace())
-    .whileTrue(robot.flywheel.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
-robot.driverController.start().and(robot.driverController.northFace())
-    .whileTrue(robot.flywheel.sysIdDynamic(SysIdRoutine.Direction.kForward));
-robot.driverController.start().and(robot.driverController.southFace())
-    .whileTrue(robot.flywheel.sysIdDynamic(SysIdRoutine.Direction.kReverse));
-```
-
-**`Trigger.and(...)`** is doing real work here, not just saving buttons. Every
-`Trigger` you've built since Lesson 21 has answered one boolean question;
-`.and(...)` combines two of them into a `Trigger` that's only true while
-*both* are. Four two-button combinations means nobody trips a
-characterization run reaching for a single button mid-match — the same
-"hard to do by accident" reasoning that put homing on its own button back in
-Lesson 21, one step further.
+**`Trigger.and(...)`** is doing real work here too, not just saving buttons.
+Every `Trigger` you've built since Lesson 21 has answered one boolean
+question; `.and(...)` combines two of them into a `Trigger` that's only true
+while *both* are. Four two-button combinations, inside an opmode you already
+can't reach by accident, means nobody trips a characterization run without
+clearing two separate hurdles on purpose.
 
 ---
 
 ## 6. Run it, and read what happened
 
-`./gradlew simulateJava`, **Teleoperated**. Hold **Back + North face** for a
-few seconds — the wheel should spin up slowly and smoothly. Let go, let it
-coast, then hold **Start + North face** — this time it should snap forward
-hard. Both directions work the same in reverse with the **south face**
-button instead.
+`./gradlew simulateJava`. In SimGUI, pick **RobotUtility** from the opmode
+selector — same move as picking **My Teleop** back in Lesson 1, just a
+different opmode — then set Robot State to enabled. Hold **Back + North
+face** for a few seconds — the wheel should spin up slowly and smoothly.
+Let go, let it coast, then hold **Start + North face** — this time it should
+snap forward hard. Both directions work the same in reverse with the
+**south face** button instead.
+
+Notice what *isn't* happening: nothing about `RobotTeleop` changed, and
+nothing in it needed to know characterization exists. Reselect **My
+Teleop** afterward and drive normally — the flywheel's `idle()` default
+command is still there, untouched, because `RobotUtility` never touched it
+either.
 
 Every run writes to the same `.wpilog` file `DataLogManager.start()` already
 opens in `Robot()`'s constructor — the one this whole track's `SmartDashboard.
@@ -734,6 +797,13 @@ just guessing at.
    reverse limit only after `isHomed()` returns true? (`TalonFXConfigurator.
    apply(...)` can be called more than once — it isn't limited to
    construction time.)
+6. **Watch the opmode guard actually work.** Start a `sysIdQuasistatic` run
+   in `RobotUtility`, then switch back to **My Teleop** (disabling first, if
+   your driver station's UI insists on that before it lets you switch).
+   Confirm the wheel stops and stays stopped once you re-enable in Teleop —
+   there's no `sysIdQuasistatic` command left running to fight your normal
+   driving. That's the same opmode-scoping Lesson 9 found protecting
+   `RobotAuto`'s plan, doing the identical job here.
 
 ---
 
@@ -747,6 +817,14 @@ Since the framework hadn't shipped that tool yet, you built it — a small
 `SysIdRoutineLog`, reproducing the real routine's two shapes: a slow ramp for
 `kS`/`kV`, a fast step for `kA`, both landing in the same log this whole
 track has been writing to since Lesson 3.
+
+Section 5 added a structural habit worth keeping past this lesson:
+**`@Utility`** gave characterization its own opmode instead of a corner of
+`RobotTeleop`, which turns "don't press these buttons during a match" from
+something you have to remember into something that's true by construction —
+you'd have to select the wrong opmode on purpose. The same opmode-scoping
+Lesson 9 found protecting `RobotAuto`'s plan turned out to protect this too,
+for free.
 
 The harder lesson sat in section 7: **a characterization is only as
 trustworthy as the test that produced it**, and a mechanism that never gets

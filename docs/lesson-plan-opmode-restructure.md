@@ -560,7 +560,7 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 31 | Alerts | Low | Written and verified 2026-08-18. Confirmed genuinely free of both BLine and maple-sim. `org.wpilib.driverstation.Alert` confirmed present (imported directly by `OpModeRobot` itself, for its own loop-overrun warning) — but the enum is renamed `Alert.Level.HIGH/MEDIUM/LOW`, not `AlertType.kError/kWarning/kInfo`, and the whole publishing mechanism moved off NetworkTables onto the new 2027 Driver Station app. See [R33](#risks-and-blocking-unknowns) for both findings and for why the old lesson's camera-rename demo doesn't reproduce in this port |
 | 32 | Testing | Medium | Written and verified 2026-08-19. Confirmed genuinely free of both BLine and maple-sim. Test harness patterns re-verified against `Scheduler`/`RobotState` instead of `CommandScheduler`/`DriverStation` — both shipped tests actually run and pass through `tools/verify-lessons-v3.sh 32 test`, not just compile. `SuperstructureState`'s 4-state graph (Lesson 24 dropped `HANDOFF`/`HOLDING`) needed genuinely different test cases than the old lesson's, not a search-and-replace port. See [R34](#risks-and-blocking-unknowns) for the real-time trap's measured, cliff-shaped (not gradual) behavior in this port |
 | 33 | Reading a log | **Medium → resolved.** | Written and verified 2026-08-19. Confirmed genuinely free of both BLine and maple-sim. The "depends on Lesson 13's resolution" flag was right to raise and worse than it looked: section 6, the old lesson's centerpiece (replay an exact recorded match through fixed code), cannot be demonstrated at all — `Mode.REPLAY` is confirmed still the literal empty doorway Lesson 13 shipped, not just unverified. Resolved by keeping the technique (sections 1–5, 7 port directly onto `SmartDashboard`-mirrored `DataLogManager` logs) and rewriting section 6 to state the gap honestly, with a named, weaker substitute (re-run the same script, not the same match) rather than either faking replay or cutting the section. Section 8's second example (BLine `lib_key` typo) has no equivalent at all in this track and was replaced with a fully analogous, verified-real bug native to this port: an invalid `PathConstants.kAimTagId`, which `Aim.tagPosition`'s own javadoc already calls "what a typo looks like." See [R35](#risks-and-blocking-unknowns) for the complete findings, including that `Elevator/AtGoal` had never actually been logged in this track before this lesson added it |
-| 34 | SysId | Medium | Written and verified 2026-08-19. Confirmed genuinely free of both BLine and maple-sim. **`SysIdRoutine` is confirmed absent from this alpha entirely, not relocated** — only its logging primitive, `org.wpilib.sysid.SysIdRoutineLog`, exists. Following the Lesson 16 precedent, this lesson hand-builds a real V3-native replacement (`first.robot.commands.SysIdRoutine`) against that same logging primitive, verified end to end (ramp/step mechanics, cancellation cleanup, natural-completion cleanup) and readable by the real SysId analysis GUI. Genuine correction to the old lesson's "second `.wpilog` file" claim: this track never had a separate `Logger`, so SysId data lands in the same single log everything else does. Real regression found and fixed along the way: adding the elevator's reverse soft limit (old lesson section 7) broke the already-shipped `ElevatorHomingTest`, because the threshold is measured from the boot-time relative-encoder zero that `home()` hasn't yet made meaningful — resolved by shipping the forward limit only, confirmed by a controlled A/B test and a full regression re-run. See [R36](#risks-and-blocking-unknowns) for the complete findings, including the measured percent-of-steady-state kS metric and the elevator travel-budget numbers, both close to the old course's own |
+| 34 | SysId | Medium | Written and verified 2026-08-19, revised 2026-08-19. Confirmed genuinely free of both BLine and maple-sim. **`SysIdRoutine` is confirmed absent from this alpha entirely, not relocated** — only its logging primitive, `org.wpilib.sysid.SysIdRoutineLog`, exists. Following the Lesson 16 precedent, this lesson hand-builds a real V3-native replacement (`first.robot.commands.SysIdRoutine`) against that same logging primitive, verified end to end (ramp/step mechanics, cancellation cleanup, natural-completion cleanup) and readable by the real SysId analysis GUI. Genuine correction to the old lesson's "second `.wpilog` file" claim: this track never had a separate `Logger`, so SysId data lands in the same single log everything else does. Real regression found and fixed along the way: adding the elevator's reverse soft limit (old lesson section 7) broke the already-shipped `ElevatorHomingTest`, because the threshold is measured from the boot-time relative-encoder zero that `home()` hasn't yet made meaningful — resolved by shipping the forward limit only, confirmed by a controlled A/B test and a full regression re-run. **Revised at the user's direction: the four characterization bindings now live on a dedicated `@Utility` opmode (`RobotUtility`) instead of two-button combos inside `RobotTeleop`** — a genuine v3-native improvement the old course has no equivalent for, since it has no third opmode category, relying on Lesson 9's already-verified opmode-scoping (a de-selected opmode's bindings are auto-cancelled) for the actual guarantee. `RobotTeleop.java` no longer changes at this lesson. See [R36](#risks-and-blocking-unknowns) for the complete findings, including the measured percent-of-steady-state kS metric and the elevator travel-budget numbers, both close to the old course's own |
 | aside-setup | Low | Installer/imaging steps change (SystemCore, not roboRIO) — real but mechanical, not urgent |
 | aside-git-branching | None | Tool-based, no framework dependency |
 | aside-debugger | Low | Breakpoints/stepping unaffected; worked example's lesson reference may need updating |
@@ -2887,6 +2887,30 @@ out badly.
     `.and(...)` on its own rather than pointing back at a lesson that
     doesn't exist here — confirmed present on `org.wpilib.command3.Trigger`
     via `javap` before being used.
+  - **Revised 2026-08-19, at the user's direction: the four characterization
+    bindings moved off `RobotTeleop` onto a new `@Utility` opmode,
+    `RobotUtility`, instead of staying two-button combos inside teleop.**
+    This is a genuine, v3-native improvement over the old lesson's own
+    design, not just a port choice — the old course has no third opmode
+    category to reach for, so its two-button combo was the *only* guard
+    available. `@Utility` (alongside `@Teleop`/`@Autonomous`) was already
+    on record in this doc's own API appendix, unused until now. Confirmed
+    `RobotState.isUtility()`/`isUtilityEnabled()` exist with the same shape
+    as their Teleop/Autonomous counterparts, and that a bare `@Utility`
+    (no `name`/`group`) is consistent with this track's existing rule —
+    explicit names only appear once a category has more than one opmode
+    (`RobotAuto` vs. `RobotAutoBox`, Lesson 9). The opmode-scoping fact
+    that makes this a real guard, not just a relabeling, was already
+    established and verified in Lesson 9 (`BindingScope.ForOpmode`
+    auto-cancels a de-selected opmode's bindings) — this lesson cites it
+    rather than re-deriving it. Net effect on the shipped files:
+    `code/v3/lesson-34/opmode/RobotTeleop.java` is removed from the
+    snapshot entirely (it reverts to whatever Lesson 33 already shipped,
+    since it no longer changes at this lesson) and
+    `code/v3/lesson-34/opmode/RobotUtility.java` is added. Re-verified
+    end to end: a fresh `tools/verify-lessons-v3.sh 34 test` run (all four
+    tests passing, `RobotTeleop.java` confirmed to carry zero SysId
+    references) plus a regression checkpoint at 33.
   - Confirmed genuinely free of both BLine and maple-sim.
 
 ---
@@ -4004,8 +4028,18 @@ appendices: verify before drafting, record what you verified.
       had one log, since it never installed a separate `Logger`) and
       independently re-measured the elevator's travel-budget numbers
       with a widened-bounds rig bypassing the shipped IO class, landing
-      close to the old course's own figures in every case. See
-      [R36](#risks-and-blocking-unknowns) for the complete findings.
+      close to the old course's own figures in every case. **Revised
+      2026-08-19 at the user's direction**: moved the four
+      characterization bindings off `RobotTeleop` onto a new `@Utility`
+      opmode, `RobotUtility` — a real third opmode category this
+      framework has and the old course doesn't, so selecting the wrong
+      opmode, not just avoiding two buttons, is now what stands between
+      teleop and a characterization run. Relies on Lesson 9's already-
+      verified opmode-scoping (`BindingScope.ForOpmode`) for the actual
+      guarantee rather than re-deriving it. `RobotTeleop.java` no longer
+      changes at this lesson — removed from the snapshot; `RobotUtility.
+      java` added in its place. See [R36](#risks-and-blocking-unknowns)
+      for the complete findings, including this revision.
       Full compile and test pass re-verified from a fresh sandbox (0–34,
       with and without `test`), plus an independent regression checkpoint
       at 33.
