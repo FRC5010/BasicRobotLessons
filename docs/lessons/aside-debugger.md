@@ -28,6 +28,16 @@ they look.
   that P-control code has moved into the motor firmware — set your breakpoints
   in `setDesiredState`, where the target-setting and cosine math now live,
   instead.)
+- **On [the OpMode track](v3/README.md), everything here still applies** —
+  breakpoints and stepping are a VSCode feature, not a WPILib one. Three
+  things differ, called out inline below: the code lives under
+  `first.robot`, not `frc.robot`; SimGUI has an extra opmode-selector step;
+  and the framework rewrites a thrown exception's stack trace before Java
+  prints it, which changes what section 4's reading applies to. (This
+  course hasn't verified whether the WPILib VSCode extension's launch
+  configs recognize a 2027-alpha OpMode project yet — if `F5` doesn't do
+  anything, `./gradlew simulateJava` from a terminal is the fallback path
+  every lesson in that track was actually built and checked against.)
 
 ---
 
@@ -43,9 +53,10 @@ The WPILib VSCode extension adds a debug launch. Two ways to start it:
 Either way, sim starts up the same as `./gradlew simulateJava` — except VSCode
 is now watching the JVM and will pause it the moment a breakpoint hits.
 
-There's an equivalent **Debug Robot Code** command that deploys to a roboRIO
-with the debugger attached. You'll rarely need it — sim covers 90% of debugging
-— but it's there if a bug only shows up on real hardware.
+There's an equivalent **Debug Robot Code** command that deploys with the
+debugger attached — to a roboRIO on the classic track, to a SystemCore on
+the OpMode track. You'll rarely need it — sim covers 90% of debugging — but
+it's there if a bug only shows up on real hardware.
 
 If a Java process starts but the SimGUI window never appears, look at the
 **Debug Console** panel at the bottom of VSCode for a stack trace from startup
@@ -89,9 +100,10 @@ is exactly why debugging in sim is almost always safer.
 
 ## 3. Worked example: watching Lesson 5's P control tick by tick
 
-Open [`SwerveModule.java`](../../src/main/java/frc/robot/subsystems/SwerveModule.java)
-(or `DriveModule.java` if you're still on Lesson 5). Find the line inside
-`steerToAngle` that computes `error`.
+Open `SwerveModule.java` — under `src/main/java/frc/robot/subsystems/` on the
+classic track, `src/main/java/first/robot/subsystems/` on the OpMode track
+(or `DriveModule.java` in either one if you're still on Lesson 5). Find the
+line inside `steerToAngle` that computes `error`.
 
 *Nothing to add — this is code you already have:*
 
@@ -101,8 +113,12 @@ double error = targetDegrees - measurement;
 
 1. Click the gutter next to that line. Red dot.
 2. Press `F5` to launch the debugger. In SimGUI, drag **Robot State** to
-   **Teleoperated**.
-3. Press **X** on the controller (from Lesson 5, that's `steerToAngle(90)`).
+   **Teleoperated**. On the OpMode track, pick the opmode from the selector
+   first (**My Teleop**), *then* set Robot State — there's no code to run
+   until an opmode is actually selected.
+3. Press **X** on the controller (from Lesson 5, that's `steerToAngle(90)`
+   either way — it's bound to `westFace()` on the OpMode track, which is
+   the same physical button).
    Execution hits the breakpoint and VSCode steals focus.
 4. Look at the **Variables** panel:
    - `targetDegrees` = `90.0`
@@ -187,6 +203,54 @@ The frames below (`FunctionalCommand.execute` → `CommandScheduler.run` →
 lambda. That's the mental model from Lesson 0 — you rarely need to look below
 the topmost `frc.robot.*` frame.
 
+### The same trace on the OpMode track
+
+Same mistake, same two passes — but the framework does you a real favor here
+that's worth knowing about before you meet it cold. Coroutine-style commands
+run on top of `jdk.internal.vm.Continuation`, and a raw trace through that
+machinery is unreadable — dozens of frames of continuation plumbing between
+your code and the exception. Commands V3 doesn't hand you that trace; it
+rewrites it first, through a class actually named `CommandTraceHelper` —
+confirmed by decompiling it, not guessed. It **strips every internal
+`Coroutine`/`Continuation`/`Scheduler` frame out**, and then does something
+the classic track's trace can't: it **splices in a second stack trace**,
+captured back when the command was originally scheduled, so you can see
+*both* where it broke *and* which button bound it — separated by a literal
+marker frame. Verified by forcing the identical `m_driveMotor` mistake in a
+`Mechanism.run(...)` command and reading what actually printed:
+
+*Nothing to add — the top three frames are exactly what printed; the bottom
+two are relabeled to show what they'd read in a deployed robot instead of
+the bare test harness that produced this:*
+
+```
+Exception in thread "main" java.lang.NullPointerException: Cannot invoke
+"com.ctre.phoenix6.hardware.TalonFX.setThrottle(double)" because "this.m_driveMotor" is null
+        at first.robot.subsystems.DriveModule.lambda$driveForward$0(DriveModule.java:13)
+        at org.wpilib.command3.Mechanism.lambda$runRepeatedly$0(Mechanism.java:118)
+        at first.robot.Robot.robotPeriodic(Robot.java:53)
+        at === Command Binding Trace ===.()
+        at first.robot.opmode.RobotTeleop.<init>(RobotTeleop.java:41)
+```
+
+Read it the same two-pass way. Pass one, the first line, is identical —
+`setThrottle` is this track's version of `.set(...)`, and the diagnosis is
+the same uninitialized field. Pass two, the first frame you own, is also
+where you'd expect it: `DriveModule.lambda$driveForward$0`, same meaning as
+before — the lambda you passed to `run(...)`/`runRepeatedly(...)` inside
+`driveForward()`.
+
+What's new is everything from `=== Command Binding Trace ===` down. That
+line isn't a bug in the printout — it's the framework telling you "the
+frames above this are where the exception happened; the frames below it are
+where the command that threw it was scheduled from." Here that's
+`RobotTeleop.<init>`, meaning the button binding that scheduled
+`driveForward()` in the first place. On a real robot with a dozen bindings,
+that second half is the fast way to answer "which button did this?" without
+guessing — a question the classic track's trace can't answer at all, because
+it only ever shows you the scheduler tick that happened to run when things
+broke, not who asked for the command to begin with.
+
 ### Other common shapes
 
 - **`ArrayIndexOutOfBoundsException: Index 4 out of bounds for length 4`** —
@@ -211,17 +275,19 @@ of the real thing.
 
 1. **Force an NPE on purpose.** In a subsystem you have, add a new field:
    `private TalonFX m_bogus;` — don't initialize it. Then call
-   `m_bogus.set(0.1)` inside `periodic()`. Run sim, read the trace, note the
-   exact `file:line` it points to, Ctrl+click it. Then delete the bogus code.
+   `m_bogus.set(0.1)` (`m_bogus.setThrottle(0.1)` on the OpMode track) inside
+   `periodic()`. Run sim, read the trace, note the exact `file:line` it
+   points to, Ctrl+click it. Then delete the bogus code.
 2. **Conditional breakpoint.** On your `steerToAngle`'s `error` line, set a
    conditional breakpoint with `Math.abs(error) > 180`. Verify it fires on the
    long-way-around case and stays quiet on normal moves. If your Lesson 5 fix
    already wraps `error` to `[-180, 180]`, temporarily comment the fix out to
    see the breakpoint catch what the fix prevents.
-3. **Step Into a WPILib method.** Set a breakpoint on `m_steerMotor.set(output)`.
-   When it hits, press **Step Into** (`F11`) instead of **Step Over**. You'll
-   land inside CTRE's library code. Look around for one screen — you don't need
-   to understand it — then press **Step Out** (`Shift+F11`) to bounce back to
+3. **Step Into a WPILib method.** Set a breakpoint on `m_steerMotor.set(output)`
+   (`m_steerMotor.setThrottle(output)` on the OpMode track). When it hits,
+   press **Step Into** (`F11`) instead of **Step Over**. You'll land inside
+   CTRE's library code. Look around for one screen — you don't need to
+   understand it — then press **Step Out** (`Shift+F11`) to bounce back to
    your code. Doing this once demystifies "what's inside a library call."
 
 ---
@@ -235,7 +301,9 @@ panels show you what the robot was thinking, one tick at a time — with **Step
 Over / Into / Out** to walk forward line by line, and **conditional
 breakpoints** to catch the rare bad tick without pounding Continue. The second
 is the **stack trace**, which is a receipt, not gibberish: the first line says
-*what* broke, the first `frc.robot.*` frame says *where*, and Ctrl+clicking
-the `file:line` takes you straight there. Next time something goes sideways,
+*what* broke, the first `frc.robot.*` frame (`first.robot.*` on the OpMode
+track, which also hands you a second trace showing which button scheduled
+the command in the first place) says *where*, and Ctrl+clicking the
+`file:line` takes you straight there. Next time something goes sideways,
 reach for these *before* you spend twenty minutes staring at code — that's the
 whole reason this aside exists.

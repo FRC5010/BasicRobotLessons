@@ -1,0 +1,383 @@
+# Lesson 11 — Odometry & field view
+
+**Goal:** Track where the robot is on the field over time — its **pose** (x, y,
+heading) — by combining the gyro and how far each wheel has rolled. Then log
+that pose and watch the robot drive around a real field in AdvantageScope's
+**Odometry** tab.
+
+**New Java concepts**
+- Small data-carrier types that bundle a couple of values
+  (`SwerveModulePosition`, `Pose2d`)
+- Building an array in a loop — you half-met this in Lesson 7's `states`
+  array; here it is as a full standalone pattern
+
+**New robot concepts**
+- **Odometry** — dead-reckoning the chassis pose from wheel motion + heading
+- **`SwerveModulePosition`** — the "how far and in what direction" report each
+  wheel owes odometry every tick
+- **`SwerveDriveOdometry`** — the accumulator that turns those reports into a
+  pose
+- Logging a **`Pose2d`** so AdvantageScope can draw the robot on a field
+- **`Field2d`** — the same pose drawn inside SimGUI, no extra tool needed
+- **`.until(...)`** — finish a command early once a condition becomes true
+- Why the same setup upgrades cleanly to **`SwerveDrivePoseEstimator`** when
+  you add vision
+
+---
+
+## 1. Why odometry?
+
+Right now the logs tell you `getHeadingDegrees()` and each module's
+`getDistanceMeters()` — useful, but each is a *scalar*. You can't tell from
+those numbers alone that the robot is at (2.3 m, 1.1 m) facing 35°. That's a
+**pose**, and knowing it unlocks:
+
+- Field-relative visualizations (watch the robot move on a field).
+- Auto routines that say "drive to (5, 3)" instead of "drive forward 2 m."
+- Vision fusion (a future lesson — align odometry with camera-based
+  measurements).
+
+The idea itself is old — sailors called it **dead reckoning**: no GPS, but if
+you know your heading and how far you've traveled each hour, you can plot
+your position on the chart. Our version just samples fifty times a second:
+`SwerveDriveOdometry` combines **wheel motion** (how far each wheel rolled
+and in which direction) with **gyro heading**, integrates the change every
+tick, and answers `getPose()` any time you ask.
+
+---
+
+## 2. Have each module report its position
+
+Odometry needs a `SwerveModulePosition` per corner: the wheel's accumulated
+distance and its current steer angle. Both halves are question-methods you
+already have — this just bundles them.
+
+**Add to `SwerveModule.java`'s imports:**
+
+```java
+import org.wpilib.math.geometry.Rotation2d;
+import org.wpilib.math.kinematics.SwerveModulePosition;
+```
+
+**Add to `SwerveModule`, with the other public methods:**
+
+```java
+/** How far this wheel has rolled and where it's pointing — for odometry. */
+public SwerveModulePosition getPosition() {
+  return new SwerveModulePosition(
+      getDistanceMeters(), Rotation2d.fromDegrees(getSteerAngleDegrees()));
+}
+```
+
+**`SwerveModulePosition`** is another lightweight data carrier — no behavior,
+just two values riding together. By now you've met the whole family
+(`ChassisVelocities`, `SwerveModuleVelocity`, and now `Pose2d` in a moment),
+and the pattern behind them should be visible: WPILib bundles related
+numbers into little named types because a `SwerveModulePosition` in a method
+signature says *meters and an angle, in that order* — where two bare
+`double`s say nothing and let you swap them silently.
+
+---
+
+## 3. Add odometry to the Drivetrain
+
+Odometry needs the kinematics you built in Lesson 10, the current heading,
+and the initial wheel positions. The field goes *below* `m_gyro`, because
+its construction reads all three — same ordering rule as always:
+dependencies first.
+
+**Add to `Drivetrain.java`'s imports:**
+
+```java
+import org.wpilib.math.geometry.Pose2d;
+import org.wpilib.math.kinematics.SwerveDriveOdometry;
+import org.wpilib.math.kinematics.SwerveModulePosition;
+```
+
+**Add to `Drivetrain`, below `m_gyro`:**
+
+```java
+// Odometry reads the kinematics, the gyro, and the modules' starting
+// positions — everything above this line has to exist first.
+private final SwerveDriveOdometry m_odometry = new SwerveDriveOdometry(
+    m_kinematics,
+    Rotation2d.fromDegrees(getHeadingDegrees()),
+    modulePositions());
+```
+
+**Add to `Drivetrain`** — a private helper and the public getter that uses it:
+
+```java
+/** Snapshot the four modules' positions into one array — used by odometry. */
+private SwerveModulePosition[] modulePositions() {
+  SwerveModulePosition[] positions = new SwerveModulePosition[m_modules.length];
+  for (int i = 0; i < m_modules.length; i++) {
+    positions[i] = m_modules[i].getPosition();
+  }
+  return positions;
+}
+
+/** Where odometry currently believes the robot is. */
+public Pose2d getPose() {
+  return m_odometry.getPose();
+}
+```
+
+`modulePositions()` **builds an array in a loop**: `new
+SwerveModulePosition[m_modules.length]` allocates the empty slots, the loop
+fills each one, and the method hands back the finished array. You did
+almost this exact thing back in Lesson 7's `logTelemetry()` — allocate,
+loop, fill — this is that same shape pulled out as its own reusable method,
+because odometry needs a fresh snapshot on more than one occasion: once
+right here to seed `m_odometry`, again every tick in a moment, and once
+more in section 5. Reach for this shape any time a library wants an array
+whose contents change every tick. (Sizing it with `m_modules.length`
+instead of a literal `4` means one less place to fix if the module count
+ever changes.)
+
+Odometry needs feeding every tick, same as everything else `logTelemetry()`
+already does. There's no separate `periodic()` to hook here — you already
+know why: `Mechanism` doesn't have one, which is exactly why
+`logTelemetry()` exists as a periodic callback in the first place.
+
+**Add to `Drivetrain.logTelemetry()`, after the heading log:**
+
+```java
+Pose2d pose = m_odometry.update(Rotation2d.fromDegrees(getHeadingDegrees()), modulePositions());
+```
+
+That's the whole loop: `update(newHeading, newPositions)` integrates the
+change since the last call *and* hands back the fresh pose — one call does
+both jobs, which is why you don't see a separate `getPose()` call right
+here.
+
+---
+
+## 4. Draw the robot: log the pose
+
+Here's where the logging discipline you've kept since Lesson 3 pays off in
+full. Drawing the robot on a field takes exactly one more publisher, the
+same shape as every structured value since Lesson 7.
+
+**Add to `Drivetrain`, alongside the other structured-telemetry publishers:**
+
+```java
+private final StructPublisher<Pose2d> m_posePublisher =
+    NetworkTableInstance.getDefault()
+        .getStructTopic("Drivetrain/Pose", Pose2d.struct)
+        .publish();
+```
+
+**Add to `Drivetrain.logTelemetry()`, right after the odometry update:**
+
+```java
+m_posePublisher.set(pose);
+```
+
+`Pose2d` is a structured value, like the module states from Lesson 7 — and
+AdvantageScope knows how to *draw* a logged pose, not just plot it. Run
+`./gradlew simulateJava`, then in AdvantageScope:
+
+1. Connect to the sim (**File → Connect to Simulator**).
+2. Add an **📐 Odometry** tab and drag `Drivetrain/Pose` onto it.
+3. Pick a field image (e.g., the current game) from the source dropdown.
+4. Drive with the joysticks. The little robot moves and rotates on the field.
+
+If everything is wired right, driving forward moves the robot along +X,
+strafing slides it along +Y, and spinning rotates it — the coordinate
+convention you memorized in Lesson 7, now visible as motion on a map.
+Driving in the sim officially looks like a game. Take a lap.
+
+### The same view inside SimGUI: `Field2d`
+
+AdvantageScope is the full-featured viewer, but sometimes you just want the
+field right inside the sim window — no second tool. WPILib's **`Field2d`**
+is a dashboard *widget* that does exactly that. It's the one place this
+course touches the `SmartDashboard` class directly, and the distinction
+matters: `putData` publishes a **widget** (a thing dashboards know how to
+draw), which is a different job from the per-value `putNumber` spam we
+swore off in Lesson 3.
+
+**Add to `Drivetrain.java`'s imports:**
+
+```java
+import org.wpilib.smartdashboard.Field2d;
+```
+
+**Add to `Drivetrain`, alongside the other fields:**
+
+```java
+private final Field2d m_field = new Field2d();
+```
+
+**Add to `Drivetrain`'s constructor, alongside the periodic registration from Lesson 7:**
+
+```java
+public Drivetrain() {
+  SmartDashboard.putData("Field", m_field);
+  Scheduler.getDefault().addPeriodic(this::logTelemetry);
+}
+```
+
+**Add to `Drivetrain.logTelemetry()`, right after the pose publish:**
+
+```java
+m_field.setRobotPose(pose);
+```
+
+Now in **SimGUI**: menu **NetworkTables → SmartDashboard → Field**, and a
+top-down field pane opens right in the sim window, robot moving as you
+drive. Same pose, two viewers: `Field2d` for the quick glance while sim is
+already open, the logged `Pose2d` for AdvantageScope's field images,
+replays, and everything else.
+
+---
+
+## 5. Reset and starting pose
+
+Autos usually start from a known place.
+
+**Add to `Drivetrain`:**
+
+```java
+/** Tell odometry the robot is actually at 'pose' right now. */
+public void resetPose(Pose2d pose) {
+  m_odometry.resetPosition(
+      Rotation2d.fromDegrees(getHeadingDegrees()), modulePositions(), pose);
+}
+```
+
+That's `modulePositions()`'s second job — build-in-a-loop paying rent twice
+in one lesson.
+
+Call `resetPose` at the top of an auto factory so odometry starts at, say,
+`new Pose2d(2, 5, Rotation2d.fromDegrees(0))`. Everything the auto reports
+from then on is anchored to that origin.
+
+---
+
+## 6. Field-relative auto with a real pose
+
+Once odometry works, auto routines can talk in field coordinates.
+
+This minimal `driveToPose` drives toward a target pose using P control on
+the position error, with `applyChassisSpeeds` from Lesson 10 doing the
+actuation.
+
+**Add to `Drivetrain`:**
+
+```java
+/** Drive straight toward 'target' using P control, field-relative. Finishes within 5 cm. */
+public Command driveToPose(Pose2d target) {
+  double maxMps = DriveConstants.kMaxSpeed.in(MetersPerSecond); // convert once, reuse
+  return runRepeatedly(() -> {
+        Pose2d current = getPose();
+        double dx = target.getX() - current.getX();
+        double dy = target.getY() - current.getY();
+        double vx = clamp(1.5 * dx, -maxMps, maxMps);
+        double vy = clamp(1.5 * dy, -maxMps, maxMps);
+        double omega = clamp(
+            3.0 * target.getRotation().minus(current.getRotation()).getRadians(),
+            -Math.PI, Math.PI);
+        ChassisVelocities fieldSpeeds = new ChassisVelocities(vx, vy, omega);
+        applyChassisSpeeds(fieldSpeeds.toRobotRelative(current.getRotation()));
+      })
+      .whenCanceled(() -> applyChassisSpeeds(new ChassisVelocities())) // reached it or interrupted — stop
+      .until(() -> getPose().minus(target).getTranslation().getNorm() < 0.05)
+      .named("Drive To Pose");
+}
+```
+
+**Add to `Drivetrain.java`'s imports:**
+
+```java
+import static org.wpilib.units.Units.MetersPerSecond;
+```
+
+Squint at it and you'll see three copies of Lesson 5 stacked up — one P
+controller for x, one for y, one for heading, each doing
+measure-subtract-multiply-clamp, with `applyChassisSpeeds` as the shared
+"command" step. Robotics really is one idea reused with different sensors.
+Two details worth naming: `kMaxSpeed` is the typed `LinearVelocity` from
+Lesson 10, unpacked to a `double` **once** with `.in(MetersPerSecond)`
+before the lambda — same convert-once habit as the joystick bindings. And
+the `1.5`/`3.0` gains are inlined because this is a sketch; if it graduates
+into your real robot they belong in `Constants.java` like every other
+tuning number. The heading term needs no wrap helper —
+`Rotation2d.minus` already returns the shortest angle, and there's no
+`MathUtil.clamp` to reach for here either — that's still `Drivetrain`'s own
+private `clamp` from Lesson 5, same as everywhere else in this file.
+
+`vx`/`vy` are computed straight from field-frame position error, so
+they're field-relative speeds — the same shape `driveFieldRelative` builds
+from joystick input in Lesson 10. `fieldSpeeds.toRobotRelative(...)` is
+the identical conversion, just fed by a P controller instead of a stick.
+
+**`.until(...)` is new**, and it's worth being precise about what it does.
+Called on a builder stage — before `.named(...)` — it wraps the command so
+that, after each tick, the scheduler checks the condition and stops the
+command the moment it's true. It's not the same as a command finishing its
+own coroutine body naturally (the way `driveDistance`'s `while` loop does
+in Lesson 6) — under the hood, `.until(...)` ends the command by
+interrupting it, which means **`.whenCanceled(...)` fires every time
+`.until(...)` stops it**, reached-target or not. That's simpler than
+`driveDistance`'s two separate cleanup paths back in Lesson 6: one
+`.whenCanceled(...)` here covers both "got there" and "got interrupted,"
+because as far as the scheduler's concerned, both endings are the same
+kind of ending.
+
+> **When you outgrow odometry:** wheels slip, wheels drift, and after a
+> minute of driving the pose can be meters off from reality.
+> **`SwerveDrivePoseEstimator`** is a drop-in replacement that fuses
+> odometry with camera measurements (AprilTags, etc.) to keep the pose
+> honest. Same `update` shape; extra `addVisionMeasurement(...)` calls when
+> you have a camera pose.
+
+---
+
+## Try it
+
+1. Reset the pose at the start of teleop
+   (`robot.drivetrain.resetPose(new Pose2d())` from a button) and confirm
+   the robot on the field jumps back to (0, 0, 0°).
+2. Drive a square with the sticks — forward a meter or so, strafe, back,
+   strafe — and try to end exactly where you started. Watch how far off
+   the field view says you are. That accumulating error is *drift*, and
+   it's why teams add vision.
+3. **Watch `Rotation2d` do the wrap for you.** `driveToPose`'s heading
+   term, `target.getRotation().minus(current.getRotation()).getRadians()`,
+   never needs the ±180° trick you wrote by hand — `Rotation2d` already
+   knows angles live on a circle. Prove it: log that value, point the
+   robot near −170°, and call `driveToPose` with a target facing +170°.
+   The logged error should read about **−20°** (turn the short way), not
+   +340°. `minus` always hands back the shortest turn, so the pose
+   controller can't take the long way around.
+
+---
+
+## What you learned
+
+Odometry closed the last gap between "the robot can move" and "the robot
+knows where it is": each module reports a **`SwerveModulePosition`**,
+**`SwerveDriveOdometry`** integrates those reports with the gyro heading
+into a running **`Pose2d`**, and one logged pose turns AdvantageScope's
+field view into a live map. The Java pattern to keep is **building an
+array in a loop** — allocate the slots, fill them, hand it off —
+`modulePositions()` reused it three times over in this lesson alone:
+once to construct `m_odometry`, once every tick inside `logTelemetry()`,
+and once in `resetPose()`. The deeper pattern is the one you spotted in
+`driveToPose`: everything in
+this course has been measure-subtract-multiply-clamp-command wearing
+different sensors. You also picked up **`.until(...)`**, and with it a
+genuinely simpler cleanup story than Lesson 6's `driveDistance` needed —
+one `.whenCanceled(...)` covers every way `.until(...)` can end a command,
+because that's the only way it *does* end one.
+
+The *robot* is now complete — but the *programming* has one more act. Your
+control loops are still 50 Hz software P, your log files can only be
+watched, and the pose you just built drifts (Try it #2 made you watch it
+happen). The next lessons fix all three, and they're where your code
+starts looking like what the top teams run: Lesson 12 moves control into
+the motor controllers themselves.
+
+Next: Lesson 12 — Model-based control.

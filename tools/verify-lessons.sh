@@ -15,12 +15,18 @@
 #   ./tools/verify-lessons.sh 13       # stop after Lesson 13
 #   ./tools/verify-lessons.sh 17 test  # also run any src/test/java you dropped in
 #
-# The project the snapshots are rolled onto is code/ActualLessons by default.
-# Point VERIFY_BASE at any other GradleRIO project to use that instead — a
-# student's own repo, say, to check their work against a lesson's snapshot:
+# Pass --sandbox to keep the result as a real project instead of a throwaway
+# scratch build — this is how you'd hand yourself a keepable project in the
+# state a lesson expects, to start mid-course:
 #
-#   VERIFY_BASE=~/dev/MyRobot ./tools/verify-lessons.sh 7
-#   VERIFY_BASE=~/dev/MyRobot ./tools/verify-lessons.sh -1   # no lessons, just build it
+#   ./tools/verify-lessons.sh 17 --sandbox ~/dev/MyRobot
+#
+# The project the snapshots are rolled onto is code/ActualLessons by default.
+# Pass --base to point at any other GradleRIO project instead — a student's
+# own repo, say, to check their work against a lesson's snapshot:
+#
+#   ./tools/verify-lessons.sh 7 --base ~/dev/MyRobot
+#   ./tools/verify-lessons.sh -1 --base ~/dev/MyRobot   # no lessons, just build it
 #
 # -1 rolls no snapshots at all and fetches no vendordeps, so the project is
 # built exactly as it stands, with whatever vendordeps it already carries.
@@ -34,10 +40,17 @@
 # top of a LATER lesson would revert everything that lesson changed in the same
 # files, which is why the base lesson is explicit rather than guessed.
 #
+# Both --sandbox and --base take the path as the next argument (--base PATH)
+# or joined with = (--base=PATH), and can go anywhere on the command line,
+# before or after the lesson number and "test"/"aside-*". The environment
+# variables VERIFY_SANDBOX and VERIFY_BASE still work too, for scripts that
+# already set them — a flag wins if both are given for the same one.
+#
 # The sandbox is a scratch copy and is DELETED at the start of every run, so the
 # base project is never modified — neither code/ActualLessons nor whatever
-# VERIFY_BASE names. Never point VERIFY_SANDBOX at anything you want to keep;
-# the script refuses the obvious mistakes but cannot catch every one.
+# --base names. Never point --sandbox at anything you want to keep that isn't
+# already this kind of throwaway folder; the script refuses the obvious
+# mistakes but cannot catch every one.
 #
 # code/ActualLessons in particular is expected to stay at pristine template
 # state: it is the students' starting point.
@@ -47,6 +60,26 @@
 # maven, and jitpack.io. Later runs are seconds.
 
 set -euo pipefail
+
+# --sandbox/--base pull out of the argument list here, before anything below
+# ever looks at $1 — everything left over (the lesson number, "test",
+# "aside-*") lands back in the positional parameters exactly as before, in
+# whatever order it was given, so a flag can go anywhere on the line.
+POSITIONAL=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --sandbox=*) VERIFY_SANDBOX="${1#*=}"; shift ;;
+    --sandbox)
+      [ $# -ge 2 ] || { echo "--sandbox needs a path argument" >&2; exit 1; }
+      VERIFY_SANDBOX="$2"; shift 2 ;;
+    --base=*) VERIFY_BASE="${1#*=}"; shift ;;
+    --base)
+      [ $# -ge 2 ] || { echo "--base needs a path argument" >&2; exit 1; }
+      VERIFY_BASE="$2"; shift 2 ;;
+    *) POSITIONAL+=("$1"); shift ;;
+  esac
+done
+set -- "${POSITIONAL[@]}"
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BASE="${VERIFY_BASE:-$REPO/code/ActualLessons}"
@@ -68,11 +101,19 @@ case "$SANDBOX" in
     exit 1 ;;
 esac
 
-# Highest lesson-N directory present, unless the caller names one.
+# Highest lesson-N directory present, unless the caller names one. The first
+# remaining argument is the lesson number only if it actually looks like one
+# (or -1) — that way "test"/"aside-*" on their own (no number given,
+# --sandbox/--base already pulled out above) still mean "the latest lesson,
+# plus this" instead of being mistaken for the lesson number itself.
 LATEST="$(ls -d "$REPO"/code/lesson-* 2>/dev/null | sed 's/.*lesson-//' | sort -n | tail -1)"
-THROUGH="${1:-$LATEST}"
+if [ $# -gt 0 ] && [[ "$1" =~ ^-?[0-9]+$ ]]; then
+  THROUGH="$1"; shift
+else
+  THROUGH="$LATEST"
+fi
 ASIDE=""
-for arg in "${@:2}"; do
+for arg in "$@"; do
   case "$arg" in
     test)     GRADLE_TASK="compileJava test" ;;
     aside-*)  ASIDE="$arg" ;;

@@ -13,19 +13,22 @@ There is Java here, though, in two forms under `code/`:
 
 ## Verifying lesson code
 
-**`./tools/verify-lessons.sh [N] [test] [aside-<slug>]`** compile-checks the lessons for real. It copies `ActualLessons` to a scratch sandbox (never touching the repo copy), fetches pinned vendordeps, rolls `code/lesson-0` … `code/lesson-N` forward in order, replays the deletions the lessons instruct, appends Lesson 13's AdvantageKit `build.gradle` blocks, and runs Gradle. First run takes a few minutes to fill the Gradle cache; later runs are seconds.
+**`./tools/verify-lessons.sh [N] [test] [aside-<slug>] [--base PATH] [--sandbox PATH]`** compile-checks the lessons for real. It copies `ActualLessons` to a scratch sandbox (never touching the repo copy), fetches pinned vendordeps, rolls `code/lesson-0` … `code/lesson-N` forward in order, replays the deletions the lessons instruct, appends Lesson 13's AdvantageKit `build.gradle` blocks, and runs Gradle. First run takes a few minutes to fill the Gradle cache; later runs are seconds.
 
-**`VERIFY_BASE` swaps the project the snapshots roll onto** (default
+**`--base` swaps the project the snapshots roll onto** (default
 `code/ActualLessons`), so the same script can check a student's own repo:
-`VERIFY_BASE=~/dev/MyRobot ./tools/verify-lessons.sh 7`. Pass `-1` to roll no
+`./tools/verify-lessons.sh 7 --base ~/dev/MyRobot`. Pass `-1` to roll no
 snapshots and fetch no vendordeps — that just builds the base as it stands.
-The sandbox is `rm -rf`'d every run, so the script refuses a `VERIFY_SANDBOX`
+The sandbox is `rm -rf`'d every run, so the script refuses a `--sandbox`
 that names the base or anything inside this repo, and it drops the base's
 `.git`/`build`/`.gradle` from the copy rather than building on stale state.
 [README.md](README.md)'s "Skipping ahead to a lesson in the middle" section
-points students at `VERIFY_SANDBOX` for the other direction — generating a
+points students at `--sandbox` for the other direction — generating a
 keepable project in the state a lesson expects, so they can start mid-course.
-Keep the two in sync if the script's interface changes.
+Both flags also work as environment variables (`VERIFY_BASE`/`VERIFY_SANDBOX`)
+for backward compatibility — a flag wins if both are given. Keep the two
+scripts (`verify-lessons.sh` and `verify-lessons-v3.sh`) in sync if the
+interface changes.
 
 **Use it instead of reasoning about whether a snippet compiles.** Current state: lessons 0–34 all compile, at every intermediate stopping point, with zero warnings. A regression is therefore a real result, not noise. Run the specific lesson you touched plus the highest one.
 
@@ -52,7 +55,7 @@ Lessons 0–34 form a single build. Each one:
 
 Consequences when editing:
 - Changing a class name, field name, method signature, CAN ID convention, or constant introduced early ripples through every later lesson. Search the whole [docs/lessons/](docs/lessons/) tree before renaming anything.
-- Do not forward-reference a concept that hasn't been introduced yet. If a lesson needs `MathUtil.clamp`, `Translation2d`, kinematics, etc., check the lesson where it's first taught (see the table in [README.md](README.md)) and stay within what the student has seen.
+- Do not forward-reference a concept that hasn't been introduced yet. If a lesson needs `MathUtil.clamp`, `Translation2d`, kinematics, etc., check the lesson where it's first taught (see the table in [docs/lessons/README.md](docs/lessons/README.md)) and stay within what the student has seen.
 - The `SwerveModule` / `Drivetrain` refactor happens in [Lesson 7](docs/lessons/07-four-modules.md) — before that the single-module class is called `DriveModule` and is itself a subsystem. Match whichever name the current lesson is at.
 - Simulation is introduced in [Lesson 4](docs/lessons/04-simulation.md); lessons 1–3 must not depend on sim plumbing.
 - Telemetry is AdvantageKit-style logging, introduced in [Lesson 3](docs/lessons/03-telemetry.md): every value goes through `Logger.recordOutput("SubsystemName/ValueName", value)` from the subsystem's `periodic()` — never bare `SmartDashboard.putNumber`. All numbered lessons now follow this style; the auto chooser in [Lesson 9](docs/lessons/09-autonomous.md) uses AdvantageKit's `LoggedDashboardChooser`, and [Lesson 11](docs/lessons/11-odometry-field.md) draws the robot by logging a `Pose2d` to AdvantageScope's Odometry tab, plus a `Field2d` widget for viewing inside SimGUI (`SmartDashboard.putData` for a widget is the one sanctioned SmartDashboard use; per-value `putNumber` is not).
@@ -95,11 +98,24 @@ voice and template as numbered lessons but:
 - Do **not** have a `Next:` link at the bottom (they're not in a chain).
 - **May reference numbered lessons for examples** — treat those as "you can
   read this any time after Lesson N," not "this must come before Lesson N+1."
-- Are linked from the **Asides** section in [README.md](README.md), not the
-  main lessons table.
+- Are linked from the **Asides** section in
+  [docs/lessons/README.md](docs/lessons/README.md), not the main lessons
+  table.
+- **An aside that has nothing WPILib-version-specific in it (git-branching,
+  debugger) is shared between both tracks** — one file, lives under
+  `docs/lessons/`, linked from both `docs/lessons/README.md`'s and
+  `docs/lessons/v3/README.md`'s Asides sections. An aside whose content
+  genuinely differs per track (setup: different install/project-creation
+  steps; odometry-thread: needs AdvantageKit, which the OpMode track
+  doesn't have) gets its own `docs/lessons/v3/aside-<slug>.md`, linked only
+  from that track's page, and should reuse as much of the classic version's
+  text as still applies rather than rewriting it from scratch.
 
-When adding a new aside, use the `aside-<slug>.md` prefix and add it to the
-README's Asides list.
+When adding a new aside, use the `aside-<slug>.md` prefix. Add a
+track-agnostic one to the Asides list in
+[docs/lessons/README.md](docs/lessons/README.md) and link it from
+[docs/lessons/v3/README.md](docs/lessons/v3/README.md) too; add a
+track-specific one only to its own track's page.
 
 **An aside may ship code**, in `code/aside-<slug>/`, applied *on top of* a named
 lesson rather than rolled through in order:
@@ -159,33 +175,17 @@ never-rebase-shared-history rule justified by the commit hash visibly changing
 (`5adaa87` → `c7a003a`). It ships **no `code/` snapshot** and needs no
 `verify-lessons.sh` entry, same as aside-setup and aside-debugger.
 
-[aside-commands-v3.md](docs/lessons/aside-commands-v3.md) is the one page in the
-course whose code **deliberately does not compile**, and it is the reason the
-lead-in convention exists in the form it does: **every one of its fenced blocks
-carries an italic illustration marker and none carries a bold "type this"
-lead-in**, because Commands V3 is a design document rather than a library. Its §1
-says so before the reader reaches a single block — verified 2026-08-07 that
-`wpilibsuite/allwpilib` has `design-docs/commands-v3.md` but **no implementation**
-(probing `wpilibj3/command/`, `wpilibj2/command/v3/`, and `commandsv3/` all 404
-on `main`), that the doc is written throughout in proposal tense with no
-version or status marker, and that it calls the same object both
-`Scheduler.getInstance()` and `Scheduler.getDefault()` — which the aside cites as
-the cleanest available evidence the API is unsettled. Also confirmed by listing
-the shipped jar that `wpilibNewCommands-java-2026.2.1.jar` contains only
-`command`, `command/button`, and `command/sysid`. **The aside's spine is that
-all three of V3's headline problems are ones this course already hit for real**,
-with the four "code you already have" blocks verbatim from the snapshots:
-`Elevator.home()`'s procedure turned inside out into `run`/`until`/`finallyDo`,
-`Superstructure.handoff()` holding both mechanisms in an uncommanded state (plus
-L24's `requestIntake` forced into a sequence because `Commands.parallel` throws
-on shared requirements), and L25's static rotation override needing a
-hand-written `.finallyDo(FollowPath::clearRotationOverride)` because a cancelled
-auto never reaches its `release` marker. Two caveats are kept rather than
-smoothed over: V3's built-in `ParallelGroup`/`Sequence` still take full ownership
-for behavior parity, so narrower ownership is opt-in; and V3 would not
-retroactively fix BLine's own statics. **If you touch this page, re-verify the
-status first** — it is dated by construction, and its Try It #4 asks readers to
-do exactly that.
+`aside-commands-v3.md` — the page describing Commands V3 as a design document
+with no implementation — was **retired 2026-08-10**. Its own Try It #4 asked
+readers to check whether it had gone stale; it had. `org.wpilib.command3` now
+ships as real, compiled source in the 2027 alpha (`commandsv3/` in
+`wpilibsuite/allwpilib`, tag `v2027.0.0-alpha-6`), so "none of this code runs"
+stopped being true. Rather than rewrite the aside in place, its content moved
+to [docs/lesson-plan-opmode-restructure.md](docs/lesson-plan-opmode-restructure.md),
+which is where the actual (now-verified) V3 API notes and the real restructure
+plan live. See that doc's appendix for what changed between the design doc's
+speculation and the shipped API — mostly nothing; a couple of names moved
+(`whenCancelled` → `whenCanceled`, one `l`).
 
 ## Voice, structure, and style
 
@@ -328,10 +328,29 @@ a lesson as-is.
   target — see the Asides section above for what shipped and what was verified.
   **Every open decision in this plan is now resolved**; the doc is kept as the
   record of what was decided and measured, not as outstanding work.
+- [docs/lesson-plan-opmode-restructure.md](docs/lesson-plan-opmode-restructure.md) —
+  not a numbered-lesson plan like the two above. A separate, optional
+  restructure of the whole course onto `code/OpModeV3Robot` (WPILib's 2027
+  alpha "OpModeRobot" template, on SystemCore instead of the roboRIO), using
+  the OpMode framework and coroutine-style Commands V3. `code/OpModeV3Robot`
+  now ships the `CommandsV3` vendordep (swapped from V2). Planning stage for
+  the lessons themselves — none have been written yet — and one blocking
+  unknown remains: AdvantageKit's 2027 alpha confirms it does not support
+  `OpModeRobot` yet, which gates Lesson 3 of the new track onward. Read this
+  before touching `code/OpModeV3Robot`.
+- [docs/lesson-plan-v3-0-3.md](docs/lesson-plan-v3-0-3.md) — continues the
+  doc above with a detailed plan for that track's first four lessons
+  (Orientation, first motor, joystick control, telemetry). Lessons 0–2 are
+  ready to write; Lesson 3 is blocked on the AdvantageKit gap above and the
+  doc explains why a workaround wasn't taken instead of waiting. When these
+  lessons are actually written, their prose goes under `docs/lessons/v3/`,
+  a sibling of `docs/lessons/`'s numbered files, not mixed into them.
 
 ## When adding or editing a lesson
 
-- Update the lessons table in [README.md](README.md) if the number, title, or "You'll build" summary changes.
+- Update the lessons table in [docs/lessons/README.md](docs/lessons/README.md)
+  (or [docs/lessons/v3/README.md](docs/lessons/v3/README.md) for the OpMode
+  track) if the number, title, or "You'll build" summary changes.
 - Fix the `Next:` link on the previous lesson and the intro back-reference on the next lesson.
 - If you rename a symbol, `grep` the whole [docs/lessons/](docs/lessons/) tree for the old name — later lessons often reuse it verbatim.
 - Prefer editing an existing lesson over inserting a new one; inserting shifts every downstream lesson number and every cross-link.
