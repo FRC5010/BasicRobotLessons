@@ -504,3 +504,5 @@ about; that unease is usually right.
 Tests catch what you already thought to check. The next lesson is for
 the failure nobody thought to write a test for — the one you only find
 out about from a log, after the fact.
+
+Next: [Lesson 33 — Reading a match log](33-reading-a-log.md).

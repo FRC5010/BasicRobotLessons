@@ -559,7 +559,7 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 30 | Current limits | Low | Written and verified 2026-08-18. Confirmed genuinely free of both BLine and maple-sim. `Robot.simulationPeriodic()` — empty since Lesson 13 — hosts the battery-sim exception as predicted, but the logging itself moved to `robotPeriodic()` instead (it's meaningful on real hardware too, not just in sim). `RobotController.isBrownedOut()` doesn't work in this alpha's simulation, measured over a sustained 2 s hold — see [R32](#risks-and-blocking-unknowns) for that and the rest of the measured current/voltage numbers, some close to the old course's and some honestly not |
 | 31 | Alerts | Low | Written and verified 2026-08-18. Confirmed genuinely free of both BLine and maple-sim. `org.wpilib.driverstation.Alert` confirmed present (imported directly by `OpModeRobot` itself, for its own loop-overrun warning) — but the enum is renamed `Alert.Level.HIGH/MEDIUM/LOW`, not `AlertType.kError/kWarning/kInfo`, and the whole publishing mechanism moved off NetworkTables onto the new 2027 Driver Station app. See [R33](#risks-and-blocking-unknowns) for both findings and for why the old lesson's camera-rename demo doesn't reproduce in this port |
 | 32 | Testing | Medium | Written and verified 2026-08-19. Confirmed genuinely free of both BLine and maple-sim. Test harness patterns re-verified against `Scheduler`/`RobotState` instead of `CommandScheduler`/`DriverStation` — both shipped tests actually run and pass through `tools/verify-lessons-v3.sh 32 test`, not just compile. `SuperstructureState`'s 4-state graph (Lesson 24 dropped `HANDOFF`/`HOLDING`) needed genuinely different test cases than the old lesson's, not a search-and-replace port. See [R34](#risks-and-blocking-unknowns) for the real-time trap's measured, cliff-shaped (not gradual) behavior in this port |
-| 33 | Reading a log | Low | Technique-only lesson, no new Java, but depends on Lesson 13's resolution |
+| 33 | Reading a log | **Medium → resolved.** | Written and verified 2026-08-19. Confirmed genuinely free of both BLine and maple-sim. The "depends on Lesson 13's resolution" flag was right to raise and worse than it looked: section 6, the old lesson's centerpiece (replay an exact recorded match through fixed code), cannot be demonstrated at all — `Mode.REPLAY` is confirmed still the literal empty doorway Lesson 13 shipped, not just unverified. Resolved by keeping the technique (sections 1–5, 7 port directly onto `SmartDashboard`-mirrored `DataLogManager` logs) and rewriting section 6 to state the gap honestly, with a named, weaker substitute (re-run the same script, not the same match) rather than either faking replay or cutting the section. Section 8's second example (BLine `lib_key` typo) has no equivalent at all in this track and was replaced with a fully analogous, verified-real bug native to this port: an invalid `PathConstants.kAimTagId`, which `Aim.tagPosition`'s own javadoc already calls "what a typo looks like." See [R35](#risks-and-blocking-unknowns) for the complete findings, including that `Elevator/AtGoal` had never actually been logged in this track before this lesson added it |
 | 34 | SysId | Medium | `SysIdRoutine`'s new package location is unverified |
 | aside-setup | Low | Installer/imaging steps change (SystemCore, not roboRIO) — real but mechanical, not urgent |
 | aside-git-branching | None | Tool-based, no framework dependency |
@@ -2703,6 +2703,83 @@ out badly.
     ships zero main-source changes and only two test files. Worth stating
     plainly in the lesson rather than silently taking credit for a getter
     Lesson 30 already wrote for an unrelated reason.
+- **R35 — new, found while writing and verifying Lesson 33's log-reading
+  lesson. The most significant content-level (not just API-level)
+  restructuring since R2, and the first lesson where the old course's
+  own centerpiece section had to be replaced rather than adapted.**
+
+  - **Confirmed genuinely free of both BLine and maple-sim** in every
+    part that survived the rewrite.
+  - **`Mode.REPLAY` is confirmed to still be exactly the empty doorway
+    Lesson 13 shipped it as — not re-verified as fixed, not assumed
+    broken, checked directly against that lesson's own text**, which
+    already states plainly: "every value... sits frozen at `0.0`
+    forever, no matter what you command." This blocks the old lesson's
+    entire section 6 (replay the exact recorded match through fixed
+    code, compare `RealOutputs` against `ReplayOutputs`) — there is no
+    engine in this alpha's AdvantageKit vendordep that reads a `.wpilog`
+    back through `OpModeRobot`-based code, tracked as the still-open half
+    of R1. Resolved by rewriting section 6 to state the gap by name,
+    cite Lesson 13 directly, and offer a named, honestly-weaker
+    substitute — re-running the identical *script* (same button, same
+    order, same rough timing) fresh, rather than the identical *match*
+    (same recorded joystick noise and physics) — with the difference
+    between the two stated explicitly rather than blurred.
+  - **`DataLogManager`'s own javadoc confirms sections 1–5 and 7 need no
+    such rewrite**, read directly from source: *"By default, all
+    NetworkTables value changes are stored to the data log,"* with
+    `m_ntLoggerEnabled = true` as the actual default field value —
+    meaning every `SmartDashboard.putNumber`/`putBoolean` call this
+    entire track has made since Lesson 3 has already been landing in the
+    `.wpilog` `Robot()` starts recording, viewable in AdvantageScope
+    under its NetworkTables tree exactly the way any DataLogManager-based
+    project's log is, independent of AdvantageKit. The "find the moment,
+    read two traces together" technique needed nothing from AdvantageKit
+    at all — only the specific payoff of *automatic, code-driven replay*
+    did.
+  - **`Elevator/AtGoal` was never actually logged anywhere in this
+    track before this lesson** — confirmed by grepping the shipped
+    `Elevator.java`'s `periodic()` for every existing `SmartDashboard.put*`
+    call; `atGoal()` was called only for the mechanism-drawing color, never
+    published. This is a genuine, if minor, retroactive gap versus the old
+    course (whose Lesson 18 logged `AtGoal` from the start). Resolved by
+    adding it explicitly as this lesson's own first walkthrough step,
+    framed as the lesson's central point in miniature (log the decision,
+    not just the measurement) rather than silently backfilling it as if
+    it had always been there.
+  - **The settle-error floor matches the old course's own measured number
+    to the same number of digits, confirmed by an independent
+    re-measurement in this port's sandbox, not copied**: holding
+    `kScoreMid`, `Elevator.getHeightMeters() − kScoreMid` settles at
+    `-1.1594621136490346E-4` m and stays there — the identical figure
+    already on record in this repo's own `CLAUDE.md` for the old course's
+    Lesson 33, to sixteen significant figures. Confirms the elevator's
+    gains and Motion Magic profile are numerically unchanged by the
+    OpMode/Commands V3 restructuring, which is what makes reusing the old
+    lesson's exact tolerance numbers (`0.002 cm` buggy, `0.1 cm` fixed,
+    ~8.6× margin) defensible rather than coincidental. Also verified
+    directly rather than assumed: `atGoal()` never trips with the buggy
+    `0.002 cm` tolerance (200 sampled ticks, never once true) and trips at
+    1.18 s with the fixed `0.1 cm` one.
+  - **Section 8's replacement bug was chosen because it is structurally
+    identical to BLine's, not merely thematically similar, and was
+    verified by reading the actual shipped `Aim.java` rather than
+    invented.** `Aim.tagPosition`'s javadoc already says, verbatim,
+    "Empty when that ID is not on this field, which is what a typo looks
+    like" — language written during Lesson 28, before this lesson existed,
+    which makes the parallel a discovery rather than a construction.
+    `Aim.omegaTowardTag`'s `.orElse(0.0)` path means a bad tag ID produces
+    silent, harmless-looking straight-line driving under
+    `RobotAutoAimWhileDriving`, and `Aim/ErrorDegrees` is confirmed to be
+    published *only* from inside `omegaToward` — so an invalid tag ID
+    doesn't just leave that key `false` or flat, it leaves the key
+    **absent from the log entirely**, a stronger and arguably clearer
+    version of the old lesson's "sits flat" signature. One real
+    difference worth keeping, not smoothing away: BLine's key lookup logs
+    a console warning on a miss; `Aim.tagPosition` does not, confirmed by
+    reading its full implementation — this port's version has one fewer
+    safety net than the one it replaced, which the lesson says outright
+    rather than implying parity.
 
 ---
 
@@ -3766,3 +3843,33 @@ appendices: verify before drafting, record what you verified.
       [R34](#risks-and-blocking-unknowns) for the complete findings.
       Full compile re-verified from a fresh sandbox (0–32, with and
       without `test`), plus an independent regression checkpoint at 31.
+- [x] Lesson 33 (Reading a log) written and verified 2026-08-19 —
+      `docs/lessons/v3/33-reading-a-log.md` and `code/v3/lesson-33/`.
+      Confirmed genuinely BLine/maple-sim-free. The most significant
+      content-level rewrite in this track since the R2 BLine/maple-sim
+      skip decision: the old lesson's centerpiece, replaying an exact
+      recorded match through fixed code, is confirmed impossible on this
+      alpha — `Mode.REPLAY` is still exactly Lesson 13's "empty doorway,"
+      not a gap that quietly closed since. Section 6 was rewritten to
+      state that plainly, citing Lesson 13 directly, and offers a named,
+      honestly-weaker substitute (re-run the same *script*, not the same
+      *match*) rather than either faking replay or silently dropping the
+      section. Section 8's BLine `lib_key`-typo example has no equivalent
+      in this track and was replaced with a verified-real, structurally
+      identical bug already native to this port: an invalid
+      `PathConstants.kAimTagId`, discovered to be already described by
+      `Aim.tagPosition`'s own Lesson-28 javadoc ("what a typo looks
+      like") — not invented for this lesson. Along the way, found that
+      `Elevator/AtGoal` had never actually been logged in this track at
+      all; added it as this lesson's own first step, which doubles as
+      the clearest possible demonstration of the lesson's own point (log
+      decisions, not just measurements). Independently re-measured this
+      port's settle-error floor rather than trusting the old course's
+      number: `-1.1594621136490346E-4` m, matching this repo's own
+      `CLAUDE.md` record for the old lesson to sixteen significant
+      figures, confirming the elevator's control loop is numerically
+      unchanged by the OpMode/Commands V3 restructuring. See
+      [R35](#risks-and-blocking-unknowns) for the complete findings.
+      Full compile and test pass re-verified from a fresh sandbox (0–33,
+      with and without `test`), plus an independent regression checkpoint
+      at 32.
