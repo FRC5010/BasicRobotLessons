@@ -474,3 +474,5 @@ purpose, and enjoy being told about it for once.
 Alerts tell you when something is wrong *now*. There's a third question
 neither they nor the logs answer: is the thing that worked last Tuesday
 still working? The next lesson gets a machine to check.
+
+Next: [Lesson 32 — Tests that catch what a plot won't](32-testing.md).

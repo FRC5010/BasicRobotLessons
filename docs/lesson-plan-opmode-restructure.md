@@ -558,7 +558,7 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 29 | Flywheel | Low | Written and verified 2026-08-17. Confirmed "mechanically unaffected" was right — no BLine/maple-sim dependency anywhere, the first mechanism lesson in this track's back half not gated by either. `Models.flywheelFromPhysicalConstants(DCMotor, J, gearing)` is the correct factory for `FlywheelSim`'s `LinearSystem<N1,N1,N1>` (unlike Lesson 20's roller, which needed the arm-shaped factory instead — different physics shape, different factory, both now confirmed). A genuinely nice find: overriding `Mechanism.idle()` gets installed as the default command automatically by the (virtual-call) constructor, so this lesson needed no explicit `setDefaultCommand` wiring at all, unlike the old lesson's `RobotContainer` line. See [R31](#risks-and-blocking-unknowns) for the confirmed absence of `MathUtil.clamp` in this alpha (any overload, any type) and the measured kV/kA numbers, including one honest small discrepancy (43.27 vs. the predicted 42.86, reported as measured rather than force-matched) |
 | 30 | Current limits | Low | Written and verified 2026-08-18. Confirmed genuinely free of both BLine and maple-sim. `Robot.simulationPeriodic()` — empty since Lesson 13 — hosts the battery-sim exception as predicted, but the logging itself moved to `robotPeriodic()` instead (it's meaningful on real hardware too, not just in sim). `RobotController.isBrownedOut()` doesn't work in this alpha's simulation, measured over a sustained 2 s hold — see [R32](#risks-and-blocking-unknowns) for that and the rest of the measured current/voltage numbers, some close to the old course's and some honestly not |
 | 31 | Alerts | Low | Written and verified 2026-08-18. Confirmed genuinely free of both BLine and maple-sim. `org.wpilib.driverstation.Alert` confirmed present (imported directly by `OpModeRobot` itself, for its own loop-overrun warning) — but the enum is renamed `Alert.Level.HIGH/MEDIUM/LOW`, not `AlertType.kError/kWarning/kInfo`, and the whole publishing mechanism moved off NetworkTables onto the new 2027 Driver Station app. See [R33](#risks-and-blocking-unknowns) for both findings and for why the old lesson's camera-rename demo doesn't reproduce in this port |
-| 32 | Testing | Medium | Test harness patterns (`DriverStationSim`, stepping the scheduler) need re-verification against `OpMode`/`Scheduler` instead of `TimedRobot`/`CommandScheduler` |
+| 32 | Testing | Medium | Written and verified 2026-08-19. Confirmed genuinely free of both BLine and maple-sim. Test harness patterns re-verified against `Scheduler`/`RobotState` instead of `CommandScheduler`/`DriverStation` — both shipped tests actually run and pass through `tools/verify-lessons-v3.sh 32 test`, not just compile. `SuperstructureState`'s 4-state graph (Lesson 24 dropped `HANDOFF`/`HOLDING`) needed genuinely different test cases than the old lesson's, not a search-and-replace port. See [R34](#risks-and-blocking-unknowns) for the real-time trap's measured, cliff-shaped (not gradual) behavior in this port |
 | 33 | Reading a log | Low | Technique-only lesson, no new Java, but depends on Lesson 13's resolution |
 | 34 | SysId | Medium | `SysIdRoutine`'s new package location is unverified |
 | aside-setup | Low | Installer/imaging steps change (SystemCore, not roboRIO) — real but mechanical, not urgent |
@@ -2627,6 +2627,82 @@ out badly.
     camera is not connected"` vs. photonlib's generic one), but the
     redundancy is real and worth knowing about rather than discovering
     it by surprise later.
+- **R34 — new, found while writing and verifying Lesson 32's tests, all
+  confirmed by actually running `./gradlew test` against the real alpha,
+  not just written by analogy to the old lesson.**
+
+  - **Confirmed genuinely free of both BLine and maple-sim.** Both
+    shipped tests (`SuperstructureStateTest`, `ElevatorHomingTest`) touch
+    neither.
+  - **The harness API moved, confirmed via `javap`:** `DriverStation.
+    isDisabled()`/`refreshData()` don't exist on this alpha's
+    `org.wpilib.driverstation.DriverStation` at all — that class shrank
+    to just data-log wiring (`startDataLog`, two refresh-handle methods).
+    The query methods live on a new class, `org.wpilib.driverstation.
+    RobotState` (`isEnabled`/`isDisabled`/`isEStopped`/`getRobotMode`/
+    `isAutonomous`/`isTeleop`/`isUtility`/opmode registration/`isDSAttached`/
+    `isFMSAttached`) — and no explicit "refresh" call was needed in
+    practice; `DriverStationSim.notifyNewData()` alone was sufficient in
+    every test run, matching the pattern this session has used in every
+    prior lesson's verification harness without incident.
+    `CommandScheduler.getInstance().schedule(...)/.cancelAll()` are
+    `Scheduler.getDefault().schedule(...)/.cancelAll()` (`javap`-confirmed
+    alongside `Scheduler`'s other methods, already used correctly in
+    every prior lesson).
+  - **`SuperstructureState`'s transition rules are genuinely different
+    from the old course's, not just renamed — the old lesson's example
+    tests could not be ported by search-and-replace.** This port's
+    Lesson 24 has four states (`UNHOMED`/`IDLE`/`INTAKING`/`SCORING`),
+    not six — no `HANDOFF`/`HOLDING`, since those existed only to gate
+    scoring behind a beam-break sensor from the skipped Lesson 22. Here
+    `INTAKING.canGoTo(SCORING)` is `true` (the old course's exact test
+    asserted the equivalent transition `false`, gated behind `HOLDING`
+    instead). New tests were written directly against this port's real
+    `canGoTo` switch rather than adapted from the old ones.
+  - **The real-time trap reproduces, but its shape is different, and
+    that shape needed measuring, not assuming.** Old lesson: shortening
+    `Thread.sleep(20)` to `Thread.sleep(4)` alone produced a −0.34 m
+    final height. In this port, `sleep(4)` barely moves the number at
+    all (0.0092–0.0095 m vs. the correct run's 0.0092 m) — only
+    `sleep(0)` (removing the sleep entirely) reproduces a dramatic wrong
+    answer, and it lands at **−0.3313 to −0.3415 m**, matching the old
+    lesson's reported −0.34 m almost exactly once the right threshold is
+    found. The trap isn't smaller here — Lesson 21's homing routine is
+    open-loop voltage control in both courses, and the underlying
+    physics-model-vs-firmware mismatch mechanism is identical — but this
+    port's specific numbers only diverge past a much narrower margin,
+    which is itself a useful thing to have measured rather than assumed
+    transfers unchanged: a trap's exact trigger threshold is specific to
+    the exact routine and physics constants involved, not a fixed
+    property of "the trap."
+  - **The DIO-reuse trap (`AllocationException: Code: -1029`, "DIO 0
+    previously allocated") reproduces exactly, byte for byte** — verified
+    by actually constructing a second `Elevator` in a second test method
+    in the same JVM and reading the real exception message, not assumed
+    unchanged from the old course.
+  - **The "delete `setEnabled(true)`" Try It was verified to still make
+    the point it's supposed to**, via a throwaway test: with the robot
+    left disabled, `elevator.home()` never progresses at all
+    (`isHomed()` stays `false`, height barely moves from its starting
+    encoder value) — `Scheduler.run()` refuses to run scheduled commands
+    while disabled here exactly as `CommandScheduler.run()` did in the
+    old framework, so this specific test fails loudly rather than
+    silently passing, and the Try It's own framing (a *differently
+    written* test might not) still holds.
+  - **`tools/verify-lessons-v3.sh` needed a real change, not just new
+    lesson content**: it had no mechanism for shipping test sources at
+    all before this lesson. Added the same `./tests/` → `src/test/java/
+    first/robot/` mapping the main course's script has used since its
+    own Lesson 32, plus the matching `-not -path './tests/*'` exclusion
+    from the main Java copy loop. Verified with `./tools/verify-lessons-v3.sh
+    32 test`, which now rolls forward, drops both test files in place,
+    and actually runs `./gradlew test` — all four tests pass end to end,
+    not just compile.
+  - **`Elevator.getHeightMeters()` needed no new code** — Lesson 30
+    already added it, for the current-total calculation, so this lesson
+    ships zero main-source changes and only two test files. Worth stating
+    plainly in the lesson rather than silently taking credit for a getter
+    Lesson 30 already wrote for an unrelated reason.
 
 ---
 
@@ -3666,3 +3742,27 @@ appendices: verify before drafting, record what you verified.
       including that `PhotonCamera` already carries its own internal
       disconnect alert. Full compile re-verified from a fresh sandbox
       (0–31), plus an independent regression checkpoint at 30.
+- [x] Lesson 32 (Testing) written and verified 2026-08-19 —
+      `docs/lessons/v3/32-testing.md` and `code/v3/lesson-32/tests/`
+      (this port's first lesson to ship test sources; no main-source
+      changes at all, since `Elevator.getHeightMeters()` already existed
+      from Lesson 30). Confirmed genuinely BLine/maple-sim-free.
+      `tools/verify-lessons-v3.sh` gained the `./tests/` →
+      `src/test/java/first/robot/` mapping it needed (mirroring the main
+      course's own Lesson 32 addition), verified with
+      `./tools/verify-lessons-v3.sh 32 test` — all four tests actually
+      run and pass, not just compile. `DriverStation.isDisabled()`/
+      `refreshData()` don't exist in this alpha; disabled/enabled state
+      moved to a new `RobotState` class, confirmed via `javap`.
+      `SuperstructureState`'s tests needed to be genuinely rewritten, not
+      ported — this port's 4-state graph (no `HANDOFF`/`HOLDING`) makes
+      `INTAKING.canGoTo(SCORING)` true where the old course's equivalent
+      was false. The real-time trap reproduces but is cliff-shaped here:
+      `sleep(4)` barely moves the result, only `sleep(0)` does (landing
+      at −0.33 to −0.34 m, matching the old lesson's −0.34 m almost
+      exactly) — measured across several runs, not assumed to transfer
+      unchanged. The DIO-reuse `AllocationException: Code: -1029` trap
+      reproduces byte for byte. See
+      [R34](#risks-and-blocking-unknowns) for the complete findings.
+      Full compile re-verified from a fresh sandbox (0–32, with and
+      without `test`), plus an independent regression checkpoint at 31.

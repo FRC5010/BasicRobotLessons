@@ -20,6 +20,7 @@
 #
 #   ./tools/verify-lessons-v3.sh          # roll through the highest lesson present
 #   ./tools/verify-lessons-v3.sh 2        # stop after Lesson 2
+#   ./tools/verify-lessons-v3.sh 32 test  # also run any src/test/java you dropped in
 #
 # The project the snapshots are rolled onto is code/OpModeV3Robot by default.
 # Point VERIFY_BASE at any other GradleRIO-2027-alpha project to use that
@@ -145,10 +146,17 @@ for n in $(seq 0 "$THROUGH" 2>/dev/null || true); do
   # Java: code/v3/lesson-N/**.java mirrors the first/robot package tree
   # (root classes at the top, then opmode/, subsystems/). Last writer wins,
   # which is what makes "apply in order" equal "the state after Lesson N".
-  (cd "$d" && find . -name '*.java' -print0 | while IFS= read -r -d '' f; do
+  # ./tests/* is excluded here — see below, it maps to src/test/java instead.
+  (cd "$d" && find . -name '*.java' -not -path './tests/*' -print0 | while IFS= read -r -d '' f; do
       mkdir -p "$JAVA_DIR/$(dirname "$f")"
       cp "$f" "$JAVA_DIR/$f"
   done)
+  # code/v3/lesson-N/tests/** maps to src/test/java/first/robot/, not the
+  # main Java tree — same rule as the main course's Lesson 32.
+  if [ -d "$d/tests" ]; then
+    mkdir -p "$SANDBOX/src/test/java/first/robot"
+    cp -r "$d/tests/." "$SANDBOX/src/test/java/first/robot/"
+  fi
   echo "  applied lesson-$n"
 done
 
