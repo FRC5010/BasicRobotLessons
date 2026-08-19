@@ -98,9 +98,21 @@ voice and template as numbered lessons but:
 - Are linked from the **Asides** section in
   [docs/lessons/README.md](docs/lessons/README.md), not the main lessons
   table.
+- **An aside that has nothing WPILib-version-specific in it (git-branching,
+  debugger) is shared between both tracks** — one file, lives under
+  `docs/lessons/`, linked from both `docs/lessons/README.md`'s and
+  `docs/lessons/v3/README.md`'s Asides sections. An aside whose content
+  genuinely differs per track (setup: different install/project-creation
+  steps; odometry-thread: needs AdvantageKit, which the OpMode track
+  doesn't have) gets its own `docs/lessons/v3/aside-<slug>.md`, linked only
+  from that track's page, and should reuse as much of the classic version's
+  text as still applies rather than rewriting it from scratch.
 
-When adding a new aside, use the `aside-<slug>.md` prefix and add it to the
-Asides list in [docs/lessons/README.md](docs/lessons/README.md).
+When adding a new aside, use the `aside-<slug>.md` prefix. Add a
+track-agnostic one to the Asides list in
+[docs/lessons/README.md](docs/lessons/README.md) and link it from
+[docs/lessons/v3/README.md](docs/lessons/v3/README.md) too; add a
+track-specific one only to its own track's page.
 
 **An aside may ship code**, in `code/aside-<slug>/`, applied *on top of* a named
 lesson rather than rolled through in order:

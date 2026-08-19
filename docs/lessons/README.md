@@ -53,20 +53,25 @@ on SystemCore and coroutine-style Commands V3.
 - [Setting up the project and connecting it to GitHub](aside-setup.md) —
   installing WPILib, Git, and the GitHub CLI; creating the project from the
   template; the daily `add`/`commit`/`push` loop. **Start here before Lesson 0
-  if you're new to any of it.**
+  if you're new to any of it.** (On [the OpMode track](v3/README.md)? Use
+  [its own setup aside](v3/aside-setup.md) instead — the WPILib-install and
+  project-creation steps are genuinely different there.)
 - [Branches: one per lesson, merged into a `main` that always works](aside-git-branching.md) —
   branching, merging, and the day two lessons touch the same file. Reads on from
   the setup aside, so you can start using it from Lesson 1. Covers merge
   conflicts (and why "keep both" is usually the answer), pull requests, and when
-  `rebase` beats `merge`.
+  `rebase` beats `merge`. **Shared with the OpMode track** — nothing on this
+  page is WPILib-version-specific.
 - [Debugging in VSCode and reading stack traces](aside-debugger.md) —
   breakpoints, stepping, watches, conditional breakpoints, and how to read the
   error trail Java prints when something crashes. Useful from Lesson 1 onward;
-  the worked example uses Lesson 5's P control.
+  the worked example uses Lesson 5's P control. **Shared with the OpMode
+  track**, including a dedicated section on how that track's stack traces
+  differ (and what they can tell you the classic track's can't).
 - [A second thread: sampling odometry faster than the robot loop](aside-odometry-thread.md) —
   the AdvantageKit odometry thread, and the Java it needs: threads, locks, and
   `waitForAll`. Readable any time after Lesson 16, and genuinely optional —
   Lessons 17–34 neither need it nor break with it. Includes the measurement of
   what 250 Hz odometry actually buys, which is less than you'd think.
-
-The OpMode track has no asides of its own yet.
+  **Classic track only for now** — it leans on AdvantageKit, which the
+  OpMode track doesn't have; porting it is still open.

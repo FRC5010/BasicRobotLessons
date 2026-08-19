@@ -55,7 +55,20 @@ status of every lesson, including what changed and why.
 
 ## Asides
 
-None yet — see [the classic track's asides](../README.md#asides-out-of-order--read-when-you-need-them)
-for setup, branching, debugging, and the odometry-thread topics; most of
-that guidance (Git, the debugger, the daily commit loop) applies here
-unchanged, only the robot code itself differs.
+- [Setting up the OpMode track and connecting it to GitHub](aside-setup.md) —
+  this track's own version: Git, a JDK 25, and pulling your starting project
+  out of this course's repo (there's no installer wizard for this alpha yet),
+  then the same GitHub/`gh` setup and daily `add`/`commit`/`push` loop as the
+  classic track. **Start here before Lesson 0.**
+- [Branches: one per lesson, merged into a `main` that always works](../aside-git-branching.md) —
+  shared with the classic track as-is; nothing in it is WPILib-version-specific.
+- [Debugging in VSCode and reading stack traces](../aside-debugger.md) —
+  shared with the classic track, with its own section on how this track's
+  stack traces differ: the framework strips internal coroutine frames and
+  splices in a second trace showing which button scheduled the failing
+  command, which the classic track's traces can't show you at all.
+
+**Not yet ported:** [the odometry-thread aside](../aside-odometry-thread.md)
+leans on AdvantageKit's `Logger`/`@AutoLog`, which this track doesn't have —
+porting it needs a real rewrite of its logging and replay sections, not a
+rename, and it's still open.
