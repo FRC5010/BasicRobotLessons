@@ -4,18 +4,25 @@
 project you can build, run in simulation, and back up to GitHub. Do this
 **before [Lesson 0](00-orientation.md)**. If you already did
 [the classic track's setup aside](../aside-setup.md), you already have Git,
-a GitHub account, and `gh` — skip straight to section 3.
+a GitHub account, and `gh` — you can skip sections 2 and 6, but still work
+through section 1 (this alpha's tools install side-by-side with any earlier
+season, not on top of it) and section 3 (the classic track's JDK is a
+different, older version than this one needs).
 
 **New concepts**
+- **The WPILib installer** — same tool the classic track uses, pointed at
+  this season's alpha instead of the released version
 - **Git** — local repository, commits, `.gitignore`
 - **GitHub** — the remote copy of your repo, and how you connect them
 - **GitHub CLI** (`gh`) — the friction-free path to authentication
-- This track's own way of handing you a starting project — there's no
-  installer wizard for it yet, so you'll meet the tool this whole course
-  uses to check its own lessons before you ever write a line of code
+- This track's own way of handing you a starting project — WPILib's New
+  Project wizard has an OpMode template too, but it doesn't come with
+  Commands V3 built in, so this course hands you a starting project that
+  already has it, via the same tool this whole course uses to check its own
+  lessons
 
 **When you can use this**
-- One-time setup before starting the course. You'll come back to section 7
+- One-time setup before starting the course. You'll come back to section 8
   ("the everyday loop") after every lesson.
 
 Fair warning, same as the classic track's version of this page: this is the
@@ -26,21 +33,60 @@ when you get there. macOS/Linux flows are similar throughout; the paths
 differ.
 
 One honest thing to know going in, so it doesn't feel like something's
-missing: **this track is a 2027 alpha, and it isn't in the stable WPILib
-installer.** The classic track's setup aside hands you a polished wizard —
-Template → Java → Command Robot — because that season is officially
-released. This one doesn't have that yet. What it has instead is a starting
-project checked directly into this course's own repo, and a script this
-course already uses on itself to hand you a clean copy of it. That's not a
-downgrade so much as a different shape — you'll see the same tool the whole
-course was verified with, on your very first day.
+missing: **this track targets a 2027 alpha**, so its starting project isn't
+quite what the stable WPILib installer's wizard generates. The installer
+itself is real, though — you'll install it in section 1 below, same tool
+the classic track uses, just pointed at the alpha instead of the released
+season — and its New Project wizard even has an OpMode template. What that
+template doesn't have is **Commands V3**, the coroutine-style command
+framework this whole track is built around — it's a separate add-on
+vendordep, not something the wizard wires in for you. So instead of
+generating a project and then hand-adding that piece yourself, this course
+hands you a starting project with it already in place, using a script this
+course already uses on itself. That's not a downgrade so much as a
+different shape — you'll see the same tool the whole course was verified
+with, on your very first day.
 
 ---
 
-## 1. Install Git
+## 1. Install WPILib's tools
 
-Git comes first here, not second — you'll need it in the very next section,
-to get your starting project at all.
+This is the same installer the classic track uses — same tool, just pointed
+at this season's alpha instead of the officially released one. It's worth
+doing first: it hands you VS Code, a JDK, Gradle, and the WPILib extension
+all in one pass, so nothing later in this page has to ask you to install
+those separately.
+
+**Download it:** [the allwpilib releases page on
+GitHub](https://github.com/wpilibsuite/allwpilib/releases). Grab
+**v2027.0.0-alpha-6** — the current top alpha for this season — and pick
+the file for your OS (`.iso` for Windows, `.dmg` for macOS, `.tar.gz` for
+Linux).
+
+**Run it.** On Windows, right-click the downloaded `.iso` and choose
+**Mount**, then launch `WPILibInstaller.exe` (7-Zip's "Extract to..." works
+too, if nothing offers to mount it). Press **Start**, then choose
+**Everything** — not **Tools Only** — so you get VS Code, the JDK, Gradle,
+and the extension in one pass instead of just the standalone dashboards.
+**Install for this User** is the option that doesn't need administrator
+access.
+
+When the installer reaches the VS Code step, pick **"Download for this
+computer only."** VS Code can't be bundled directly into the installer for
+licensing reasons, so this step fetches it separately — it's a ~300MB
+download. The installer keeps its own copy of VS Code per season (you'll
+see it as **WPILib VS Code 2027**), so it won't touch any VS Code you
+already have installed for other work.
+
+Once it finishes, launch **WPILib VS Code 2027** — not any other VS Code
+shortcut on your machine — to confirm it opens.
+
+---
+
+## 2. Install Git
+
+You'll need Git in section 4, to pull your starting project — get it out of
+the way now.
 
 Get Git from **git-scm.com/download/win**, or install it from the command
 line.
@@ -63,21 +109,21 @@ git config --global user.name  "Your Name"
 git config --global user.email "you@example.com"
 ```
 
-Use the same email you'll use on GitHub (section 5). GitHub matches commits
+Use the same email you'll use on GitHub (section 6). GitHub matches commits
 to your account by email — different addresses means your commits won't show
 up under your profile.
 
 ---
 
-## 2. Get a JDK 25
+## 3. Confirm your JDK
 
-The classic track's WPILib installer bundles the exact JDK its season needs.
-This alpha's build targets **Java 25** (`build.gradle` says so directly:
-`sourceCompatibility = JavaVersion.VERSION_25`), and this course hasn't
-verified an installer that bundles it for you — so get one yourself.
-
-Any JDK 25 distribution works (Eclipse Temurin is a common free one). Install
-it, then confirm it's really what runs.
+Section 1's installer already gave you a JDK — this alpha bundles **Eclipse
+Temurin 25**, matching what this course's `build.gradle` targets directly
+(`sourceCompatibility = JavaVersion.VERSION_25`). You don't need to install
+one yourself. This section is just making sure Gradle actually finds it,
+which matters most if you also did the classic track's setup — that one
+runs on **Java 17**, a different JDK entirely, so you'll have two JDKs on
+this machine and Gradle needs to pick the right one.
 
 **Sanity check — run:**
 
@@ -98,13 +144,15 @@ now.
 
 ---
 
-## 3. Clone the course repo and pull out your starting project
+## 4. Clone the course repo and pull out your starting project
 
-Here's the step that's genuinely different from the classic track. There's
-no wizard, so instead of generating a fresh project, you're going to ask this
-course's own repository for a clean copy of the one it already ships:
-`code/OpModeV3Robot`, the pristine 2027 alpha template every lesson in this
-track builds forward from.
+Here's the step that's genuinely different from the classic track. Section
+1's wizard could generate you a fresh OpMode-style project, but it wouldn't
+carry Commands V3 — so instead of generating one and then hand-adding that
+piece, you're going to ask this course's own repository for a clean copy of
+the one it already ships: `code/OpModeV3Robot`, the pristine 2027 alpha
+template every lesson in this track builds forward from, Commands V3
+already wired in.
 
 > **Run this part in Git Bash, not PowerShell.** The script that does the
 > extraction needs `bash`, `curl`, and `python3` — the same requirement the
@@ -165,23 +213,21 @@ cd ~/dev/MyOpModeRobot
 Same first-build patience as any Gradle project — dependencies download once,
 then it's fast.
 
-One more thing worth naming honestly: the classic track's setup happens
-entirely inside **WPILib VS Code**, a specific bundled editor with a specific
-extension. This course hasn't verified that extension against this alpha's
-project shape, so this page doesn't assume it. Everything above and below
-works from a plain terminal, in whatever editor you like — VS Code, a
-different editor, even a different one than the classic track uses. If you
-do have the WPILib extension installed and it recognizes this project,
-great, use it; if `F5` doesn't do anything, `./gradlew simulateJava` from a
-terminal is the path every lesson in this track was actually verified
-against.
+One more thing worth naming honestly: you have **WPILib VS Code** and its
+extension from section 1, same as the classic track — but this course
+hasn't verified that extension's buttons (Build, Deploy, Simulate, `F5`
+debugging) against this alpha's project shape, so this page doesn't rely on
+them. Everything above and below works from a plain terminal, in whatever
+editor you like. If the extension's buttons do work for you, great, use
+them; if `F5` doesn't do anything, `./gradlew simulateJava` from a terminal
+is the path every lesson in this track was actually verified against.
 
 Set your team number in `.wpilib/wpilib_preferences.json` — the template
 ships `5010`, same as the classic track's.
 
 ---
 
-## 4. Make it its own Git repo
+## 5. Make it its own Git repo
 
 **From the project folder in PowerShell, run:**
 
@@ -212,11 +258,11 @@ git commit -m "Initial commit from the OpMode template"
 
 That's your first snapshot. If your laptop caught fire right now, you could
 recover the project from this commit — assuming it lives somewhere other
-than this laptop. Which brings us to section 5.
+than this laptop. Which brings us to section 6.
 
 ---
 
-## 5. Get a GitHub account and install `gh`
+## 6. Get a GitHub account and install `gh`
 
 Sign up at **github.com** with the same email you used in `git config` above.
 
@@ -248,7 +294,7 @@ in place of the commands below.)
 
 ---
 
-## 6. Create the remote and push
+## 7. Create the remote and push
 
 **From inside the project folder, run:**
 
@@ -268,7 +314,7 @@ gh repo view --web
 opens the repo in your browser. You should see every file from your
 project — and none of `BasicRobotLessons`, the course repo. If you see the
 whole course in there instead, you pushed from the wrong folder; go back to
-section 3's warning about the two folders.
+section 4's warning about the two folders.
 
 Prefer to do it in two steps? Create the repo on github.com first — **+**
 menu → **New repository**, **Private**, do **not** add a README or
@@ -286,7 +332,7 @@ this branch, this is where you send it."
 
 ---
 
-## 7. The everyday loop
+## 8. The everyday loop
 
 Everything above was one-time setup. This section is the part you'll
 actually live in. Once a day, or every time you finish a lesson, or every
@@ -341,11 +387,11 @@ either track.)
 3. **`.gitignore` sanity check.** Run `./gradlew build`, then `git status`.
    The `build/` and `.gradle/` folders Gradle just wrote should **not**
    appear. If they do, your `.gitignore` isn't doing its job.
-4. **Regenerate and diff.** Back in `BasicRobotLessons`, run section 3's
+4. **Regenerate and diff.** Back in `BasicRobotLessons`, run section 4's
    command again with a *different* `--sandbox` folder. Diff it against
    your actual project (`diff -rq ~/dev/MyOpModeRobot ~/dev/CheckAgain`,
    ignoring `.git`). They should match exactly, except for whatever you've
-   changed since section 4's first commit — proof that your starting point
+   changed since section 5's first commit — proof that your starting point
    was never a one-off, it's reproducible from this repo any time you need
    it again.
 
@@ -360,13 +406,15 @@ login` meaning neither will ever bug you for a password. The one thing to
 carry forward is the daily rhythm: **pull → edit → add → commit → push**.
 
 The real difference from the classic track's version of this page was
-section 3, and it's worth naming plainly rather than smoothing over: this
-alpha doesn't have a polished installer yet, so instead of a wizard handing
-you a fresh project, you got one from this course's own repository, using
-the exact tool (`tools/verify-lessons-v3.sh`) every lesson in this track was
-checked with before it was ever written down. That's not a workaround bolted
-on for setup — it's the real tool, used the way it's meant to be used, on
-day one instead of lesson eighteen. The boring part is over.
+section 4, and it's worth naming plainly rather than smoothing over: the
+installer and its wizard are real for this alpha too, but the wizard's
+OpMode template doesn't come with Commands V3 — so instead of generating a
+project and then hand-adding that piece, you got one from this course's own
+repository with it already in place, using the exact tool
+(`tools/verify-lessons-v3.sh`) every lesson in this track was checked with
+before it was ever written down. That's not a workaround bolted on for
+setup — it's the real tool, used the way it's meant to be used, on day one
+instead of lesson eighteen. The boring part is over.
 
 ---
 
