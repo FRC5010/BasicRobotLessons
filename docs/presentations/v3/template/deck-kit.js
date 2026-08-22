@@ -210,13 +210,25 @@ function addNumberedSteps(slide, {
 }
 
 /** Grid of numbered navy cards for a "Try it" slide. Lays out 1 or 2 columns
- *  depending on how many cards are given. */
-function addTryItGrid(slide, { cards, x = 0.7, y = 2.45, totalW = 11.9, h, gap = 0.3, cols }) {
+ *  depending on how many cards are given.
+ *
+ *  Geometry note (this was a real, bad bug once — don't reintroduce it):
+ *  the number badge and the title share ONE row (title vertically centered
+ *  beside the badge, not stacked under it), and the body's y/h are *derived*
+ *  from that row's actual height, never hardcoded independently of it. A
+ *  4-card (2-row) grid has real vertical pressure — at `bodyFontSize` (20pt
+ *  minimum, matching every other body text in these decks) a card needs
+ *  roughly 100–110 characters of body text per 3 lines it can hold, so keep
+ *  a 2-row grid's item text terse, or pass a larger `h`/`y` budget. */
+function addTryItGrid(slide, { cards, x = 0.7, y = 2.45, totalW = 11.9, h, gap = 0.3, cols, bodyFontSize = 20 }) {
   const n = cards.length;
   const nCols = cols || (n <= 2 ? n : 2);
   const nRows = Math.ceil(n / nCols);
   const cardW = (totalW - gap * (nCols - 1)) / nCols;
-  const cardH = h || (nRows === 1 ? 4.15 : 2.0);
+  const cardH = h || (nRows === 1 ? 4.15 : 2.5);
+  const badgeD = 0.5, topPad = 0.25, rowGap = 0.15, bottomPad = 0.3;
+  const bodyY = topPad + badgeD + rowGap;   // offset from cy, not an absolute constant
+  const bodyH = cardH - bodyY - bottomPad;
   cards.forEach((c, i) => {
     const col = i % nCols, row = Math.floor(i / nCols);
     const cx = x + col * (cardW + gap);
@@ -225,18 +237,20 @@ function addTryItGrid(slide, { cards, x = 0.7, y = 2.45, totalW = 11.9, h, gap =
       x: cx, y: cy, w: cardW, h: cardH, rectRadius: 0.12,
       fill: { color: NAVY2 }, line: { type: 'none' },
     });
-    slide.addShape('ellipse', { x: cx + 0.35, y: cy + 0.3, w: 0.55, h: 0.55, fill: { color: TEAL }, line: { type: 'none' } });
+    slide.addShape('ellipse', {
+      x: cx + 0.35, y: cy + topPad, w: badgeD, h: badgeD, fill: { color: TEAL }, line: { type: 'none' },
+    });
     slide.addText(String(i + 1), {
-      x: cx + 0.35, y: cy + 0.3, w: 0.55, h: 0.55, align: 'center', valign: 'middle',
+      x: cx + 0.35, y: cy + topPad, w: badgeD, h: badgeD, align: 'center', valign: 'middle',
       fontFace: FONT_HEAD, bold: true, fontSize: 22, color: WHITE, margin: 0,
     });
     slide.addText(c.title, {
-      x: cx + 0.35, y: cy + 1.05, w: cardW - 0.7, h: 0.8,
-      fontFace: FONT_HEAD, bold: true, fontSize: 21, color: WHITE, valign: 'top', margin: 0, lineSpacingMultiple: 1.1,
+      x: cx + 0.35 + badgeD + 0.2, y: cy + topPad, w: cardW - 0.7 - badgeD - 0.2, h: badgeD,
+      fontFace: FONT_HEAD, bold: true, fontSize: 20, color: WHITE, valign: 'middle', margin: 0, lineSpacingMultiple: 1.1,
     });
     slide.addText(c.body, {
-      x: cx + 0.35, y: cy + 1.05 + (nRows === 1 ? 0.85 : 0.7), w: cardW - 0.7, h: cardH - (nRows === 1 ? 2.0 : 1.85),
-      fontFace: FONT_BODY, fontSize: nRows === 1 ? 20 : 18, color: 'CADCE8', valign: 'top', margin: 0, lineSpacingMultiple: 1.2,
+      x: cx + 0.35, y: cy + bodyY, w: cardW - 0.7, h: bodyH,
+      fontFace: FONT_BODY, fontSize: bodyFontSize, color: 'CADCE8', valign: 'top', margin: 0, lineSpacingMultiple: 1.25,
     });
   });
 }

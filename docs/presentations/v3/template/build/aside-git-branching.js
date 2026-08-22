@@ -45,7 +45,7 @@ function buildDeck() {
         { text: 'git rebase — replaying your commits onto a newer base', options: { bullet: true, breakLine: false } },
       ],
       {
-        x: 0.75, y: 4.1, w: 11.2, h: 2.4,
+        x: 0.75, y: 4.05, w: 11.2, h: 2.75,
         fontFace: FONT_BODY, fontSize: 20, color: INK, valign: 'top', margin: 0, paraSpaceAfter: 8, lineSpacingMultiple: 1.1,
       }
     );
@@ -86,7 +86,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'codebranch_white.png', eyebrow: 'Section 2 · Start a lesson', title: 'One new branch, every lesson' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.65, w: 11.9, h: 2.85, fontSize: 18,
+      x: 0.7, y: 1.65, w: 11.9, h: 3.0, fontSize: 14,
       lines: [
         { text: 'git switch -c lesson-01', color: '9EF01A' },
         { text: "Switched to a new branch 'lesson-01'", color: '7FA8C9' },
@@ -100,10 +100,10 @@ function buildDeck() {
     });
 
     K.addCard(s, {
-      x: 0.7, y: 4.65, w: 11.9, h: 2.25,
+      x: 0.7, y: 4.8, w: 11.9, h: 2.1,
       heading: 'switch -c creates the branch and moves you onto it in one step.',
       headingSize: 21,
-      body: 'Nothing about your files changes yet — main and lesson-01 point at the same commit until you make one. Commit as often as you like here; none of it touches main until you say so. The * in git branch\'s output marks the one you\'re standing on.',
+      body: 'Nothing changes yet — main and lesson-01 point at the same commit until you commit. The * in git branch\'s output marks the one you\'re standing on.',
       pad: 0.25,
     });
 
@@ -117,7 +117,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'compressarrowsalt_white.png', eyebrow: 'Section 3 · Merge it back', title: 'A lesson joins main once it runs' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.6, w: 11.9, h: 2.5, fontSize: 18,
+      x: 0.7, y: 1.6, w: 11.9, h: 2.9, fontSize: 15,
       lines: [
         { text: 'git switch main', color: 'D7E3F4' },
         { text: 'git merge lesson-01', color: '9EF01A' },
@@ -130,8 +130,8 @@ function buildDeck() {
     });
 
     K.addCard(s, {
-      x: 0.7, y: 4.3, w: 11.9, h: 2.3,
-      body: 'main hadn\'t moved, so merging just slides its label up to where lesson-01 already was — no new commit, no thinking required. Deleting the branch afterward only removes the label; Git refuses if the branch\'s work hasn\'t actually merged anywhere, so it\'s a free safety check.',
+      x: 0.7, y: 4.7, w: 11.9, h: 1.9,
+      body: 'main hadn\'t moved, so merging slides its label forward — no new commit needed. Deleting the branch only removes the label; Git refuses if it hasn\'t actually merged, so it\'s a free safety check.',
       pad: 0.3,
     });
 
@@ -153,7 +153,7 @@ function buildDeck() {
     );
 
     K.addCodeCard(s, {
-      x: 0.7, y: 2.5, w: 11.9, h: 2.1, fontSize: 18,
+      x: 0.7, y: 2.5, w: 11.9, h: 2.1, fontSize: 15,
       lines: [
         { text: 'git merge lesson-20', color: '9EF01A' },
         { text: 'Auto-merging Constants.java', color: '7FA8C9' },
@@ -178,7 +178,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'checkcircle_white.png', eyebrow: 'Section 4 · Resolving it', title: 'The answer is almost never "pick a side"' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.5, w: 11.9, h: 3.3, fontSize: 17,
+      x: 0.7, y: 1.5, w: 11.9, h: 3.3, fontSize: 13,
       lines: [
         { text: 'public final class Constants {', color: 'D7E3F4' },
         { text: '<<<<<<< HEAD', color: 'FF8B8B' },
@@ -194,8 +194,8 @@ function buildDeck() {
     });
 
     K.addCard(s, {
-      x: 0.7, y: 4.95, w: 11.9, h: 1.95,
-      body: 'You want the elevator and the arm — both belong in the finished robot. Edit until both blocks are there and the markers are gone, then stage the file and commit. Most conflicts here are two additions landing close together — the fix is keep both, not choose one.',
+      x: 0.7, y: 4.95, w: 11.9, h: 2.05,
+      body: 'You want the elevator and the arm — both belong in the robot. Edit until both blocks remain and the markers are gone, then stage and commit. Most conflicts here are two additions landing close together — keep both, don\'t choose.',
       pad: 0.25,
     });
 
@@ -209,11 +209,11 @@ function buildDeck() {
     K.addHeader(s, { icon: 'github_white.png', eyebrow: 'Section 5 · On GitHub', title: 'A pull request is a merge with a conversation' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 5.7, h: 1.35, fontSize: 19,
+      x: 0.7, y: 1.75, w: 5.7, h: 1.35, fontSize: 16,
       lines: [{ text: 'git push -u origin lesson-20', color: '9EF01A' }],
     });
     s.addText('-u links your branch to GitHub, once — after that, plain push and pull know where to go.', {
-      x: 0.7, y: 3.3, w: 5.7, h: 1.1,
+      x: 0.7, y: 3.3, w: 5.7, h: 1.3,
       fontFace: FONT_BODY, italic: true, fontSize: 20, color: MUTED, valign: 'top', margin: 0, lineSpacingMultiple: 1.25,
     });
 
@@ -221,7 +221,7 @@ function buildDeck() {
       x: 6.75, y: 1.75, w: 5.85, h: 4.65,
       heading: 'GitHub offers to open a pull request: a description, a diff, a comment thread.',
       headingSize: 21,
-      body: 'Merging the PR merges the branch on GitHub — your laptop doesn\'t know yet. After it merges:\n\ngit switch main\ngit pull\n\nNow main matches GitHub, and your next branch starts from the real, current state everyone agrees on.',
+      body: 'Merging the PR merges the branch on GitHub — your laptop doesn\'t know yet.\n\ngit switch main\ngit pull\n\nNow main matches GitHub, so your next branch starts from the current, agreed-on state.',
     });
 
     K.addFooter(s, { pageNum: 8, label: 'Branches' });
@@ -234,7 +234,7 @@ function buildDeck() {
     K.addSectionHeader(s, { icon: 'history_white.png', eyebrow: 'Section 6 · When merge isn\'t what you want', title: 'rebase replays your commits on a newer base' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 5.9, h: 2.5, fontSize: 16,
+      x: 0.7, y: 1.75, w: 5.9, h: 2.5, fontSize: 13,
       lines: [
         { text: 'git switch lesson-21', color: 'D7E3F4' },
         { text: 'git rebase main', color: '9EF01A' },
@@ -251,26 +251,26 @@ function buildDeck() {
       x: 7.15, y: 1.98, w: 5.15, h: 0.4,
       fontFace: FONT_BODY, bold: true, fontSize: 20, color: ORANGE, charSpacing: 0.3, margin: 0,
     });
-    s.addText('HEAD is main here — not you. Rebase already moved you onto main and is replaying your commit as the incoming change. Read the labels, not the positions.', {
+    s.addText('HEAD is main here, not you — rebase already moved you onto main and replays your commit as the incoming side.', {
       x: 7.15, y: 2.5, w: 5.15, h: 1.65,
       fontFace: FONT_BODY, fontSize: 20, color: 'CADCE8', valign: 'top', margin: 0, lineSpacingMultiple: 1.25,
     });
 
     s.addShape('roundRect', {
-      x: 0.7, y: 4.5, w: 11.9, h: 2.15, rectRadius: 0.12,
+      x: 0.7, y: 4.4, w: 11.9, h: 2.55, rectRadius: 0.12,
       fill: { color: NAVY2 }, line: { type: 'none' },
     });
     s.addText(
       'Resolve it the same way — edit, keep both, git add, then git rebase --continue. Notice the commit hash changes when it\'s done.',
       {
-        x: 1.0, y: 4.7, w: 11.3, h: 0.7,
+        x: 1.0, y: 4.6, w: 11.3, h: 0.9,
         fontFace: FONT_BODY, fontSize: 21, color: 'D7E3F4', valign: 'top', margin: 0, lineSpacingMultiple: 1.25,
       }
     );
     s.addText(
       'Never rebase commits you\'ve already pushed and someone else has pulled — the rewritten hashes leave anyone who has the old ones with a history that disagrees with yours.',
       {
-        x: 1.0, y: 5.45, w: 11.3, h: 1.05,
+        x: 1.0, y: 5.55, w: 11.3, h: 1.4,
         fontFace: FONT_HEAD, italic: true, fontSize: 21, color: ORANGE, valign: 'top', margin: 0, lineSpacingMultiple: 1.25,
       }
     );
@@ -311,12 +311,12 @@ function buildDeck() {
     K.addSectionHeader(s, { icon: 'clipboardcheck_white.png', eyebrow: 'Before you move on', title: 'Try it' });
 
     K.addTryItGrid(s, {
-      cols: 2,
+      y: 1.6, cols: 2,
       cards: [
-        { title: 'Cause a conflict on purpose', body: 'Two branches off main, both changing the same line. Merge the first, then the second — read the markers before resolving.' },
-        { title: 'Then abort one', body: 'Do it again, but run git merge --abort at the conflict. Confirm with git status that nothing happened at all.' },
-        { title: 'Rebase the same scenario', body: 'Set it up a third time, but rebase instead of merging. Compare the graph — same files, a different story about how they got there.' },
-        { title: 'Do a real lesson on a branch', body: 'switch -c, work, commit, switch main, merge, branch -d. Push it and open a pull request against your own repo before merging.' },
+        { title: 'Cause a conflict on purpose', body: 'Two branches off main change the same line. Merge the first, then the second — read the markers first.' },
+        { title: 'Then abort one', body: 'Run git merge --abort at the conflict instead of resolving. Confirm nothing happened.' },
+        { title: 'Rebase the same scenario', body: 'Set it up again, but rebase instead of merging. Compare the graph to what merging gave you.' },
+        { title: 'Do a real lesson on a branch', body: 'switch -c, work, commit, merge, delete the branch. Push it and open a pull request first.' },
       ],
     });
 
@@ -344,7 +344,7 @@ function buildDeck() {
     s.addText(
       'rebase replays commits onto a newer base; merge records that two lines of work joined. Rebase your own; merge what\'s shared.',
       {
-        x: 0.7, y: 5.6, w: 6.9, h: 1.1,
+        x: 0.7, y: 5.75, w: 6.9, h: 1.25,
         fontFace: FONT_HEAD, italic: true, fontSize: 20, color: MUTED, valign: 'top', margin: 0, lineSpacingMultiple: 1.25,
       }
     );

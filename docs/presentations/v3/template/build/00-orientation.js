@@ -25,7 +25,7 @@ function buildDeck() {
     s.addText(
       'Get the template building in simulation, see how the pieces fit together, and make your first code change — print a message the moment teleop wakes up.',
       {
-        x: 1.05, y: 1.95, w: 11.2, h: 1.35,
+        x: 1.05, y: 1.9, w: 11.2, h: 1.5,
         fontFace: FONT_HEAD, italic: true, fontSize: 22, color: INK, valign: 'middle', margin: 0,
         lineSpacingMultiple: 1.25,
       }
@@ -80,7 +80,7 @@ function buildDeck() {
     s.addText(
       "Half the folder tree won't matter yet. Open src/main/java/first/robot/ and you'll find these four.",
       {
-        x: 0.7, y: 1.55, w: 11.9, h: 0.85,
+        x: 0.7, y: 1.5, w: 11.9, h: 1.0,
         fontFace: FONT_BODY, italic: true, fontSize: 22, color: MUTED, valign: 'top', margin: 0, lineSpacingMultiple: 1.2,
       }
     );
@@ -355,7 +355,7 @@ function buildDeck() {
     s.addText(
       "The real learning happens when you have to think, not when you're copying the walkthrough. Don't skip these.",
       {
-        x: 1.5, y: 1.55, w: 10.8, h: 0.7,
+        x: 1.5, y: 1.55, w: 10.8, h: 0.85,
         fontFace: FONT_BODY, italic: true, fontSize: 20, color: 'B8CBE3', valign: 'top', margin: 0, lineSpacingMultiple: 1.2,
       }
     );
@@ -384,14 +384,14 @@ function buildDeck() {
     s.addText(
       points.map((t, i) => ({ text: t, options: { bullet: true, breakLine: i < points.length - 1, paraSpaceAfter: 14 } })),
       {
-        x: 0.7, y: 1.75, w: 6.9, h: 3.5,
+        x: 0.7, y: 1.75, w: 6.9, h: 3.7,
         fontFace: FONT_BODY, fontSize: 21, color: INK, valign: 'top', margin: 0, lineSpacingMultiple: 1.2,
       }
     );
     s.addText(
       'Picking an opmode is what decides which code the heartbeat drives.',
       {
-        x: 0.7, y: 5.4, w: 6.9, h: 1.2,
+        x: 0.7, y: 5.55, w: 6.9, h: 1.2,
         fontFace: FONT_HEAD, italic: true, fontSize: 20, color: MUTED, valign: 'top', margin: 0, lineSpacingMultiple: 1.25,
       }
     );

@@ -50,11 +50,31 @@ regardless of which one you run.
    wrong color for that background and go unreadable. This was a real bug in
    the first pass of this deck, not a hypothetical one.
 6. There's no automated overflow check — `pptxgenjs` will happily place text
-   that doesn't fit its box. Estimate line-wrap by hand for anything code-like
-   (`~0.6 × fontSize` points per character for Courier New; proportional text
-   in Cambria/Calibri runs narrower, closer to `~0.5`/`~0.52 × fontSize`) and
-   leave a visible margin — a card that's a hair too small is invisible until
-   someone opens it in PowerPoint.
+   that doesn't fit its box, and this has caused real, visible overflow in
+   shipped decks twice (a hardcoded-offset bug in `addTryItGrid`'s 2-row case,
+   and several code/text boxes sized against too-optimistic line-height math).
+   Estimate line-wrap by hand for anything you add or resize:
+   - **Width**: `~0.6 × fontSize` points per character for Courier New;
+     proportional text in Cambria/Calibri runs narrower, `~0.5`–`~0.52 × fontSize`.
+   - **Height**: assume each line costs `~1.3 × fontSize` points, even where
+     `lineSpacingMultiple` is set lower — PowerPoint's actual per-line height
+     appears to run higher than a naive `fontSize × lineSpacingMultiple`
+     estimate, and trusting the lower number is exactly how the two bugs above
+     happened.
+   - Require the estimate to fit in **at most 85% of the box's height/width**
+     (i.e. at least 15% slack) before calling a box "fine" — a number that
+     merely fits with 2–5% to spare is a future overflow report, not a pass.
+   - Whenever you resize one element in a stacked column, re-derive the
+     sibling below it — a code card that grows by 0.3in and an info card
+     that isn't shifted/shrunk to match is how a body paragraph ends up
+     overflowing its own box even though the *code* card looks fine.
+   - Run `docs/presentations/v3/template/audit-overflow.js` (Node, no deps
+     beyond what's already installed) after any layout change — it parses
+     every `addCodeCard`/`addCard`/`s.addText` call in `build/*.js` and flags
+     anything failing the 15%-margin rule above. It's a heuristic scan, not a
+     real layout engine — treat a clean report as "no known problem," not
+     "definitely fine," especially since visual rendering isn't available in
+     this environment (see below).
 7. Validate before calling it done:
    ```
    python3 <path-to-pptx-skill>/scripts/office/validate.py ../<name>.pptx

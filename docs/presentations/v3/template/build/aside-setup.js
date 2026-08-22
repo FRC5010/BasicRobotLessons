@@ -150,15 +150,15 @@ function buildDeck() {
     });
 
     s.addShape('roundRect', {
-      x: 6.75, y: 4.1, w: 5.85, h: 2.3, rectRadius: 0.1,
+      x: 6.75, y: 4.1, w: 5.85, h: 2.5, rectRadius: 0.1,
       fill: { color: ORANGE }, line: { type: 'none' },
     });
     s.addText('RUN THIS ONE IN GIT BASH, NOT POWERSHELL', {
-      x: 7.05, y: 4.3, w: 5.25, h: 0.5,
-      fontFace: FONT_BODY, bold: true, fontSize: 20, color: WHITE, charSpacing: 0.3, margin: 0,
+      x: 7.05, y: 4.3, w: 5.25, h: 0.8,
+      fontFace: FONT_BODY, bold: true, fontSize: 20, color: WHITE, charSpacing: 0.3, margin: 0, valign: 'top', lineSpacingMultiple: 1.15,
     });
     s.addText('The script needs bash, curl, and python3. Git Bash — installed alongside Git — is in your Start menu.', {
-      x: 7.05, y: 4.85, w: 5.25, h: 1.45,
+      x: 7.05, y: 5.15, w: 5.25, h: 1.35,
       fontFace: FONT_BODY, fontSize: 20, color: WHITE, valign: 'top', margin: 0, lineSpacingMultiple: 1.2,
     });
 
@@ -298,11 +298,11 @@ function buildDeck() {
       fill: { color: NAVY2 }, line: { type: 'none' },
     });
     s.addText('PULL → EDIT → ADD → COMMIT → PUSH', {
-      x: 7.9, y: 2.0, w: 4.4, h: 0.9,
+      x: 7.9, y: 2.0, w: 4.4, h: 1.0,
       fontFace: FONT_HEAD, bold: true, fontSize: 22, color: ORANGE, valign: 'top', margin: 0, lineSpacingMultiple: 1.15,
     });
     s.addText('Do it once a day, or every time something works that didn\'t before. Write commit messages that say what changed and why.', {
-      x: 7.9, y: 2.95, w: 4.4, h: 1.75,
+      x: 7.9, y: 3.1, w: 4.4, h: 1.65,
       fontFace: FONT_BODY, fontSize: 20, color: 'CADCE8', valign: 'top', margin: 0, lineSpacingMultiple: 1.25,
     });
 
@@ -328,12 +328,12 @@ function buildDeck() {
     K.addSectionHeader(s, { icon: 'clipboardcheck_white.png', eyebrow: 'Before you move on', title: 'Try it' });
 
     K.addTryItGrid(s, {
-      cols: 2,
+      y: 1.6, cols: 2,
       cards: [
         { title: 'Prove the round trip', body: 'Add a line to README.md, then add → commit → push. Confirm the change shows up on github.com.' },
-        { title: 'Simulate a dead laptop', body: 'From a different folder, clone your own repo fresh and run ./gradlew build. If it builds, your GitHub copy really is a full backup.' },
-        { title: '.gitignore sanity check', body: 'Run ./gradlew build, then git status. The build/ and .gradle/ folders it just created should not show up as untracked.' },
-        { title: 'Regenerate and compare', body: 'Back in BasicRobotLessons, run the setup command again into a new --sandbox folder. It should match your real project exactly, except for what you\'ve changed since.' },
+        { title: 'Simulate a dead laptop', body: 'Clone your own repo into a fresh folder and build it. If it builds, GitHub really is a full backup.' },
+        { title: '.gitignore sanity check', body: "Run a build, then git status. build/ and .gradle/ shouldn't show up as untracked." },
+        { title: 'Regenerate and compare', body: 'Run the setup command again into a new folder. It should match your real project exactly.' },
       ],
     });
 
