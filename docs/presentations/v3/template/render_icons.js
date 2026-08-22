@@ -42,6 +42,16 @@ const jobs = [
   ['FaCompressArrowsAlt', 'FFFFFF', 'compressarrowsalt_white'],
   ['FaHistory', 'FFFFFF', 'history_white'],
   ['FaSitemap', 'FFFFFF', 'sitemap_white'],
+  // lessons 1-5 specific
+  ['FaPlug', 'FFFFFF', 'plug_white'],
+  ['FaCog', 'FFFFFF', 'cog_white'],
+  ['FaGamepad', 'FFFFFF', 'gamepad_white'],
+  ['FaListOl', 'FFFFFF', 'listol_white'],
+  ['FaChartLine', 'FFFFFF', 'chartline_white'],
+  ['FaBroadcastTower', 'FFFFFF', 'broadcasttower_white'],
+  ['FaFlask', 'FFFFFF', 'flask_white'],
+  ['FaCompass', 'FFFFFF', 'compass_white'],
+  ['FaBolt', 'FFFFFF', 'bolt_white'],
 ];
 
 async function main() {

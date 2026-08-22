@@ -187,7 +187,10 @@ function addCard(slide, {
 function addNumberedSteps(slide, {
   steps, x = 0.7, startY = 1.7, rowH = 1.0,
   numberColor = TEAL, highlight = {}, // highlight: { [index]: color }
+  dark = false, // pass true on a NAVY-background slide, or title/detail render unreadably dark-on-dark
 }) {
+  const titleColor = dark ? WHITE : INK;
+  const detailColor = dark ? 'CADCE8' : MUTED;
   steps.forEach((st, i) => {
     const y = startY + i * rowH;
     const color = highlight[i] || numberColor;
@@ -200,11 +203,11 @@ function addNumberedSteps(slide, {
     });
     slide.addText(st.title, {
       x: x + 0.8, y: y - 0.06, w: 10.8, h: 0.42,
-      fontFace: FONT_HEAD, bold: true, fontSize: 20, color: INK, margin: 0,
+      fontFace: FONT_HEAD, bold: true, fontSize: 20, color: titleColor, margin: 0,
     });
     slide.addText(st.detail, {
       x: x + 0.8, y: y + 0.36, w: 10.8, h: 0.55,
-      fontFace: FONT_BODY, fontSize: 20, color: MUTED, margin: 0, lineSpacingMultiple: 1.1,
+      fontFace: FONT_BODY, fontSize: 20, color: detailColor, margin: 0, lineSpacingMultiple: 1.1,
     });
   });
 }

@@ -48,7 +48,13 @@ regardless of which one you run.
    flag picks the right one automatically — **always pass it on a slide whose
    `background` is `NAVY`**, or the logo (and the footer text) render in the
    wrong color for that background and go unreadable. This was a real bug in
-   the first pass of this deck, not a hypothetical one.
+   the first pass of this deck, not a hypothetical one. `addNumberedSteps`
+   has the identical hazard and the identical fix (`dark: true`) — its
+   title/detail text defaults to colors meant for a white background, and
+   the "Run it" pattern gets reused on navy section slides often enough
+   that this actually happened once (Lesson 5's "walk through one tick").
+   Check every helper you call on a `NAVY` slide, not just the ones this
+   note happens to name.
 6. There's no automated overflow check — `pptxgenjs` will happily place text
    that doesn't fit its box, and this has caused real, visible overflow in
    shipped decks twice (a hardcoded-offset bug in `addTryItGrid`'s 2-row case,
@@ -74,7 +80,14 @@ regardless of which one you run.
      anything failing the 15%-margin rule above. It's a heuristic scan, not a
      real layout engine — treat a clean report as "no known problem," not
      "definitely fine," especially since visual rendering isn't available in
-     this environment (see below).
+     this environment (see below). Its block-extraction is string-literal-aware
+     (a `(` or `)` inside a quoted heading/body — `"getPosition()"`, very
+     common in this content — no longer miscounts as real nesting); an
+     earlier version wasn't, and silently mis-scanned any `addCard` whose
+     prose quoted a Java method call. Don't regress that if you touch the
+     script — verify the fix still holds by checking that a body like
+     `'new TalonFX(...) builds one specific motor'` gets scanned as one
+     block, not truncated at the first `)`.
 7. Validate before calling it done:
    ```
    python3 <path-to-pptx-skill>/scripts/office/validate.py ../<name>.pptx

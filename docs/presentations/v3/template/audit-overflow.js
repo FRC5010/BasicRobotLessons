@@ -29,9 +29,22 @@ function findBlocks(src, call) {
     if (at < 0) break;
     let i = at + needle.length - 1; // at the '('
     let depth = 0;
+    let quote = null; // null, "'", or '"' — tracks whether we're inside a string literal
     for (; i < src.length; i++) {
-      if (src[i] === '(') depth++;
-      else if (src[i] === ')') { depth--; if (depth === 0) break; }
+      const c = src[i];
+      if (quote) {
+        if (c === '\\') { i++; continue; } // skip the escaped character entirely
+        if (c === quote) quote = null;
+        continue;
+      }
+      if (c === "'" || c === '"') { quote = c; continue; }
+      // Parens/braces INSIDE a string literal (e.g. "getPosition()" in prose)
+      // must not affect depth — that was a real bug here, caught while auditing
+      // Lesson 5's deck: several addCard bodies quote Java method calls, and
+      // the naive version silently truncated those blocks before reaching
+      // fields like bodyColor, producing false "missing" reports.
+      if (c === '(') depth++;
+      else if (c === ')') { depth--; if (depth === 0) break; }
     }
     const block = src.slice(at + call.length, i + 1); // starts at '('
     const lineno = src.slice(0, at).split('\n').length;
