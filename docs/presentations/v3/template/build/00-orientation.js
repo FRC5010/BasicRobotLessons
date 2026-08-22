@@ -270,7 +270,7 @@ function buildDeck() {
       }
     );
 
-    K.addFooter(s, { pageNum: 7, label: 'Orientation' });
+    K.addFooter(s, { pageNum: 7, label: 'Orientation', dark: true });
   }
 
   // ============================================================ SLIDE 8 — run it
@@ -367,7 +367,7 @@ function buildDeck() {
       ],
     });
 
-    K.addFooter(s, { pageNum: 10, label: 'Orientation' });
+    K.addFooter(s, { pageNum: 10, label: 'Orientation', dark: true });
   }
 
   // ============================================================ SLIDE 11 — what you learned + next

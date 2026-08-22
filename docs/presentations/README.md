@@ -48,7 +48,10 @@ consistent series:
   (an icon + an eyebrow label) beside its title.
 - **Team branding:** the full Team 5010 logo appears large on every deck's
   title slide, and a small watermark version of it sits in the top-right
-  corner of every other slide.
+  corner of every other slide. The logo has a light variant (white tiger
+  head, for navy slides) and a dark variant (black tiger head, for white
+  slides) — see [v3/template/README.md](v3/template/README.md) for which
+  helper picks which one.
 
 ## Regenerating or editing a deck
 

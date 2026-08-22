@@ -20,7 +20,12 @@ const path = require('path');
 
 const ASSETS = path.join(__dirname, 'assets');
 const ICON = name => path.join(ASSETS, 'icons', name);
-const LOGO = path.join(ASSETS, 'logo', 'team5010-logo.png');
+// The mark has a light (white tiger head) and a dark (black tiger head) variant —
+// same geometry, same aspect ratio, recolored for whichever background it sits on.
+// Using the wrong one is invisible-logo-on-white-slide bug waiting to happen, so
+// every call site below picks by background rather than hardcoding one file.
+const LOGO_ON_NAVY = path.join(ASSETS, 'logo', 'team5010-logo-onnavy.png'); // white head, for dark bg
+const LOGO_ON_WHITE = path.join(ASSETS, 'logo', 'team5010-logo-onwhite.png'); // black head, for light bg
 const LOGO_ASPECT = 2000 / 1559; // width / height of the source mark
 
 // ---- Palette: "Circuit Night" — built for a Java + FRC robotics course ----
@@ -49,25 +54,29 @@ function newDeck({ title, author = 'Learn Java + Robot Programming' } = {}) {
 }
 
 /** Small team-logo watermark, top-right corner. Used on every slide via addFooter,
- *  but exported separately in case a slide needs it without the rest of the footer. */
-function addCornerLogo(slide, { w = 0.85 } = {}) {
+ *  but exported separately in case a slide needs it without the rest of the footer.
+ *  Pass `dark: true` on a navy-background slide — otherwise the black-headed
+ *  on-white variant renders invisibly-close-to-white-on-navy instead of readable. */
+function addCornerLogo(slide, { w = 0.85, dark = false } = {}) {
   const h = w / LOGO_ASPECT;
-  slide.addImage({ path: LOGO, x: W - 0.5 - w, y: 0.18, w, h });
+  slide.addImage({ path: dark ? LOGO_ON_NAVY : LOGO_ON_WHITE, x: W - 0.5 - w, y: 0.18, w, h });
 }
 
 /** Bottom chrome for every content slide: footer label, page number, corner logo.
  *  `label` is short and lesson-specific, e.g. "SETUP" or "GIT BRANCHING" — no
- *  track name, no lesson-number-vs-other-track framing. */
-function addFooter(slide, { pageNum, label }) {
+ *  track name, no lesson-number-vs-other-track framing. Pass `dark: true` on a
+ *  navy-background slide so both the footer text and the logo variant switch. */
+function addFooter(slide, { pageNum, label, dark = false }) {
+  const textColor = dark ? '7A93B8' : MUTED;
   slide.addText(`LEARN JAVA + ROBOT PROGRAMMING · ${label.toUpperCase()}`, {
     x: 0.7, y: 7.05, w: 9, h: 0.4,
-    fontFace: FONT_BODY, fontSize: 20, color: MUTED, charSpacing: 1, margin: 0,
+    fontFace: FONT_BODY, fontSize: 20, color: textColor, charSpacing: 1, margin: 0,
   });
   slide.addText(String(pageNum), {
     x: W - 1.3, y: 7.05, w: 0.6, h: 0.4,
-    fontFace: FONT_BODY, fontSize: 20, color: MUTED, align: 'right', margin: 0,
+    fontFace: FONT_BODY, fontSize: 20, color: textColor, align: 'right', margin: 0,
   });
-  addCornerLogo(slide);
+  addCornerLogo(slide, { dark });
 }
 
 /** Standard content-slide header for a WHITE-background slide: circular icon
@@ -241,7 +250,7 @@ function addTitleSlide(deck, { tag, title, subtitle, versionTag }) {
   s.background = { color: NAVY };
 
   const logoW = 3.6, logoH = logoW / LOGO_ASPECT;
-  s.addImage({ path: LOGO, x: W - 0.6 - logoW, y: H - 0.5 - logoH, w: logoW, h: logoH });
+  s.addImage({ path: LOGO_ON_NAVY, x: W - 0.6 - logoW, y: H - 0.5 - logoH, w: logoW, h: logoH });
 
   s.addText('LEARN JAVA + ROBOT PROGRAMMING', {
     x: 0.9, y: 1.5, w: 10, h: 0.4,
@@ -269,7 +278,7 @@ function addTitleSlide(deck, { tag, title, subtitle, versionTag }) {
 module.exports = {
   NAVY, NAVY2, TEAL, ORANGE, WHITE, INK, MUTED, CARDBG,
   FONT_HEAD, FONT_BODY, FONT_CODE, W, H,
-  ICON, LOGO,
+  ICON, LOGO_ON_NAVY, LOGO_ON_WHITE,
   newDeck, addCornerLogo, addFooter, addHeader, addSectionHeader,
   addCodeCard, addCard, addNumberedSteps, addTryItGrid, addTitleSlide,
 };

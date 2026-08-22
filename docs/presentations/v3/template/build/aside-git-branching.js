@@ -275,7 +275,7 @@ function buildDeck() {
       }
     );
 
-    K.addFooter(s, { pageNum: 9, label: 'Branches' });
+    K.addFooter(s, { pageNum: 9, label: 'Branches', dark: true });
   }
 
   // ============================================================ SLIDE 10 — which do I use?
@@ -320,7 +320,7 @@ function buildDeck() {
       ],
     });
 
-    K.addFooter(s, { pageNum: 11, label: 'Branches' });
+    K.addFooter(s, { pageNum: 11, label: 'Branches', dark: true });
   }
 
   // ============================================================ SLIDE 12 — what you learned + next

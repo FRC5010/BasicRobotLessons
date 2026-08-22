@@ -41,6 +41,14 @@ regardless of which one you run.
    smaller than 20pt except code-card text; the three status dots on a code
    card stack at its top-right, not across the top; every slide gets the
    small logo watermark via `addFooter`; the title slide gets the full logo.
+   The logo comes in two recolored variants of the same mark —
+   `team5010-logo-onnavy.png` (white tiger head, for the navy title slide and
+   any navy content slide) and `team5010-logo-onwhite.png` (black tiger head,
+   for the far more common white-background slide). `addFooter`'s `dark: true`
+   flag picks the right one automatically — **always pass it on a slide whose
+   `background` is `NAVY`**, or the logo (and the footer text) render in the
+   wrong color for that background and go unreadable. This was a real bug in
+   the first pass of this deck, not a hypothetical one.
 6. There's no automated overflow check — `pptxgenjs` will happily place text
    that doesn't fit its box. Estimate line-wrap by hand for anything code-like
    (`~0.6 × fontSize` points per character for Courier New; proportional text

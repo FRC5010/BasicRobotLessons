@@ -318,7 +318,7 @@ function buildDeck() {
       }
     );
 
-    K.addFooter(s, { pageNum: 10, label: 'Setup' });
+    K.addFooter(s, { pageNum: 10, label: 'Setup', dark: true });
   }
 
   // ============================================================ SLIDE 11 — try it
@@ -337,7 +337,7 @@ function buildDeck() {
       ],
     });
 
-    K.addFooter(s, { pageNum: 11, label: 'Setup' });
+    K.addFooter(s, { pageNum: 11, label: 'Setup', dark: true });
   }
 
   // ============================================================ SLIDE 12 — what you learned + ready
