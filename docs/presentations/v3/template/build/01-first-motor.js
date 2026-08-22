@@ -63,7 +63,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'plug_white.png', eyebrow: 'Section 1 · Add Phoenix 6', title: 'Motors need their maker\'s code, too' });
 
     K.addNumberedSteps(s, {
-      startY: 1.85, rowH: 1.15,
+      startY: 1.85, rowH: 1.05,
       steps: [
         { title: 'Open WPILib: Manage Vendor Libraries', detail: 'The WPILib icon in VS Code, or Ctrl+Shift+P and search for it.' },
         { title: 'Find Phoenix 6 in the list, and install it', detail: 'CTRE ships TalonFX support this way — it\'s not part of WPILib itself.' },
@@ -72,7 +72,7 @@ function buildDeck() {
     });
 
     K.addCard(s, {
-      x: 0.7, y: 5.35, w: 11.9, h: 1.35,
+      x: 0.7, y: 5.05, w: 11.9, h: 1.9,
       body: 'WPILib ships the core framework; hardware makers ship their own code separately so they can update on their own schedule. The vendordep file is just a JSON pointer telling Gradle where to fetch it.',
       pad: 0.25,
     });
@@ -87,21 +87,21 @@ function buildDeck() {
     K.addHeader(s, { icon: 'cube_white.png', eyebrow: 'Section 2 · Objects', title: 'A class is a blueprint; an object is one built from it' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.85, w: 11.9, h: 1.5, fontSize: 24,
+      x: 0.7, y: 1.85, w: 11.9, h: 1.5, fontSize: 19,
       lines: [{ text: 'TalonFX driveMotor = new TalonFX(1, CANBus.systemcore(0));', color: '9EF01A' }],
     });
 
     K.addCard(s, {
-      x: 0.7, y: 3.7, w: 5.85, h: 2.7, bg: CARDBG,
+      x: 0.7, y: 3.7, w: 5.85, h: 3.0, bg: CARDBG,
       heading: 'Read it right to left.',
       headingSize: 22,
       body: 'new TalonFX(1, CANBus.systemcore(0)) builds the object for CAN ID 1, on SystemCore\'s first CAN bus. driveMotor is your handle to it from here on.',
     });
     K.addCard(s, {
-      x: 6.75, y: 3.7, w: 5.85, h: 2.7, bg: NAVY,
+      x: 6.75, y: 3.7, w: 5.85, h: 3.0, bg: NAVY,
       heading: 'One blueprint, as many objects as you need.',
       headingColor: WHITE, headingSize: 22,
-      body: 'TalonFX describes what any TalonFX can do. new TalonFX(...) builds one specific motor — the one bolted to CAN ID 1.',
+      body: 'TalonFX describes what any TalonFX can do — new TalonFX(...) builds the one specific motor bolted to CAN ID 1.',
       bodyColor: 'CADCE8',
     });
 
@@ -115,7 +115,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'filecode_teal.png', eyebrow: 'Section 3 · DriveModule.java', title: 'The package, the imports, the field' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 3.9, fontSize: 17,
+      x: 0.7, y: 1.75, w: 11.9, h: 3.4, fontSize: 14,
       lines: [
         { text: 'package first.robot.subsystems;', color: '7FD1D9' },
         { text: '', color: 'D7E3F4' },
@@ -124,7 +124,6 @@ function buildDeck() {
         { text: '', color: 'D7E3F4' },
         { text: 'import org.wpilib.command3.Command;', color: 'D7E3F4' },
         { text: 'import org.wpilib.command3.Mechanism;', color: 'D7E3F4' },
-        { text: '', color: 'D7E3F4' },
         { text: 'public class DriveModule extends Mechanism {', color: 'FFD166' },
         { text: '  private final TalonFX m_driveMotor =', color: 'D7E3F4' },
         { text: '      new TalonFX(1, CANBus.systemcore(0)); // CAN ID 1', color: 'D7E3F4' },
@@ -132,7 +131,7 @@ function buildDeck() {
     });
 
     K.addCard(s, {
-      x: 0.7, y: 5.85, w: 11.9, h: 1.0,
+      x: 0.7, y: 5.35, w: 11.9, h: 1.65,
       body: 'extends Mechanism plugs this class into the scheduler. private hides the field from other classes; final means it always points at the same motor. m_ marks a field, by convention.',
       pad: 0.2, bodySize: 20,
     });
@@ -147,7 +146,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'filecode_teal.png', eyebrow: 'Section 3 · DriveModule.java', title: 'The constructor, and the first command' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 4.55, fontSize: 16,
+      x: 0.7, y: 1.75, w: 11.9, h: 4.4, fontSize: 14,
       lines: [
         { text: 'public DriveModule() {', color: 'FFD166' },
         { text: '  // Setup that should happen when the module is created goes here.', color: '7FA8C9' },
@@ -196,7 +195,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'cog_white.png', eyebrow: 'Section 4 · Robot.java', title: 'Hardware lives on Robot, not on an opmode' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 2.1, fontSize: 19,
+      x: 0.7, y: 1.75, w: 11.9, h: 2.1, fontSize: 16,
       lines: [
         { text: 'public class Robot extends OpModeRobot {', color: 'FFD166' },
         { text: '  public final CommandGamepad driverController = new CommandGamepad(0);', color: 'D7E3F4' },
@@ -205,7 +204,7 @@ function buildDeck() {
     });
 
     K.addCard(s, {
-      x: 0.7, y: 4.1, w: 11.9, h: 2.75,
+      x: 0.7, y: 4.1, w: 11.9, h: 2.85,
       heading: 'Robot is built once and lasts the whole run. An opmode is rebuilt fresh every time you select it.',
       headingSize: 22,
       body: 'A motor has to exist exactly once, same as Robot — so it (and the controller) live here, public, and every opmode just reaches in and uses them. Robot is the toolbox; opmodes are what you do with the tools.',
@@ -221,7 +220,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'heartbeat_white.png', eyebrow: 'Section 5 · The scheduler', title: 'Someone has to tick it, every tick' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 6.6, h: 1.9, fontSize: 19,
+      x: 0.7, y: 1.75, w: 6.6, h: 2.1, fontSize: 19,
       lines: [
         { text: '@Override', color: 'FFD166' },
         { text: 'public void robotPeriodic() {', color: 'D7E3F4' },
@@ -237,9 +236,9 @@ function buildDeck() {
       body: '.run() is the tick: check every trigger, hand out and step every command that should be running. Skip this and buttons sit there fully wired, doing nothing.',
     });
 
-    s.addShape('roundRect', { x: 0.7, y: 3.85, w: 6.6, h: 2.55, rectRadius: 0.1, fill: { color: CARDBG }, line: { type: 'none' } });
+    s.addShape('roundRect', { x: 0.7, y: 4.05, w: 6.6, h: 2.45, rectRadius: 0.1, fill: { color: CARDBG }, line: { type: 'none' } });
     s.addText('Watch out: this scheduler doesn\'t check whether the robot is enabled. What actually stops a disabled robot is the TalonFX itself refusing to apply power — a hardware safety net, not a software one.', {
-      x: 1.0, y: 4.05, w: 6.0, h: 2.15, fontFace: FONT_HEAD, italic: true, fontSize: 20, color: INK, valign: 'top', margin: 0, lineSpacingMultiple: 1.3,
+      x: 1.0, y: 4.25, w: 6.0, h: 2.05, fontFace: FONT_HEAD, italic: true, fontSize: 20, color: INK, valign: 'top', margin: 0, lineSpacingMultiple: 1.3,
     });
 
     K.addFooter(s, { pageNum: 9, label: 'First Motor' });
@@ -252,7 +251,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'gamepad_white.png', eyebrow: 'Section 6 · MyTeleop.java', title: 'Hold a button, drive a motor' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 2.0, fontSize: 18,
+      x: 0.7, y: 1.75, w: 11.9, h: 1.85, fontSize: 14,
       lines: [
         { text: 'public MyTeleop(Robot robot) {', color: 'FFD166' },
         { text: '  this.robot = robot;', color: 'D7E3F4' },
@@ -263,7 +262,7 @@ function buildDeck() {
     });
 
     K.addCard(s, {
-      x: 0.7, y: 4.05, w: 11.9, h: 2.85,
+      x: 0.7, y: 3.9, w: 11.9, h: 3.0,
       heading: 'Why the constructor, and not start()?',
       headingSize: 22,
       body: 'The constructor runs once, the instant MyTeleop is built. start() runs on every re-enable — wire a button there and you\'d register a fresh binding on top of the old one each time. Put wiring in the constructor and it\'s registered exactly once.',
@@ -299,7 +298,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'listol_white.png', eyebrow: 'Section 8 · Ask the scheduler', title: 'What is this mechanism doing right now?' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 2.4, fontSize: 18,
+      x: 0.7, y: 1.75, w: 11.9, h: 1.9, fontSize: 14,
       lines: [
         { text: 'private void logRunningCommand() {', color: 'FFD166' },
         { text: '  List<Command> running = Scheduler.getDefault().getRunningCommandsFor(module);', color: 'D7E3F4' },
@@ -310,7 +309,7 @@ function buildDeck() {
     });
 
     K.addCard(s, {
-      x: 0.7, y: 4.35, w: 11.9, h: 2.55,
+      x: 0.7, y: 3.85, w: 11.9, h: 3.05,
       heading: 'getRunningCommandsFor(module) hands back a List<Command> — a numbered collection.',
       headingSize: 21,
       body: '.get(0) asks for entry zero — safe here because a mechanism can only ever have one command running on it. Read it after Scheduler.run(), never before, or the list is still empty.',

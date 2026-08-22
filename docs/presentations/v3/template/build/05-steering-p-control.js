@@ -85,7 +85,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'cog_white.png', eyebrow: 'Section 2 · DriveModule.java', title: 'A second motor, the same sim pattern' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 3.2, fontSize: 16,
+      x: 0.7, y: 1.75, w: 11.9, h: 2.75, fontSize: 12,
       lines: [
         { text: 'private final TalonFX m_steerMotor =', color: 'D7E3F4' },
         { text: '    new TalonFX(Constants.DriveConstants.kSteerMotorPort, CANBus.systemcore(0));', color: 'D7E3F4' },
@@ -140,7 +140,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'filecode_teal.png', eyebrow: 'Section 3 · Priming, in code', title: 'One reading, right at the start' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.7, w: 11.9, h: 4.6, fontSize: 15,
+      x: 0.7, y: 1.6, w: 11.9, h: 4.6, fontSize: 12,
       lines: [
         { text: 'private final CANcoder m_steerEncoder =', color: 'D7E3F4' },
         { text: '    new CANcoder(Constants.DriveConstants.kCancoderPort, CANBus.systemcore(0));', color: 'D7E3F4' },
@@ -169,7 +169,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'code_white.png', eyebrow: 'Section 4 · The heart of the lesson', title: 'Measure, subtract, multiply, clamp, command' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.7, w: 11.9, h: 4.65, fontSize: 15,
+      x: 0.7, y: 1.6, w: 11.9, h: 4.9, fontSize: 14,
       lines: [
         { text: 'public Command steerToAngle(double targetDegrees) {', color: 'FFD166' },
         { text: '  return runRepeatedly(() -> {', color: 'D7E3F4' },
@@ -220,7 +220,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'cog_white.png', eyebrow: 'Section 4 · Two supporting pieces', title: 'A safety clamp, and one named constant' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 6.6, h: 2.6, fontSize: 17,
+      x: 0.7, y: 1.75, w: 11.9, h: 2.9, fontSize: 13,
       lines: [
         { text: 'private double clamp(double value, double min, double max) {', color: 'FFD166' },
         { text: '  if (value > max) {', color: 'D7E3F4' },
@@ -235,14 +235,8 @@ function buildDeck() {
     });
 
     K.addCard(s, {
-      x: 7.5, y: 1.75, w: 5.1, h: 4.65,
-      heading: 'kP is a tuning constant — a number you\'ll adjust over and over.',
-      headingSize: 21,
-      body: 'public static final SteerConstants.kP = 0.0005 lives in Constants.java: anyone can see it, exactly one of it, never reassigned.',
-    });
-
-    s.addText('if / else if / else — one decision, three branches, exactly one runs. Without clamp, a large error could compute an output the motor can\'t do.', {
-      x: 0.7, y: 4.55, w: 6.6, h: 1.85, fontFace: FONT_HEAD, italic: true, fontSize: 20, color: MUTED, valign: 'top', margin: 0, lineSpacingMultiple: 1.3,
+      x: 0.7, y: 4.8, w: 11.9, h: 2.25,
+      body: 'kP is a tuning constant — SteerConstants.kP = 0.0005, in Constants.java: one named number, never reassigned. clamp is if / else if / else, one decision with three branches; without it, a large error could ask the motor for more power than it has.',
     });
 
     K.addFooter(s, { pageNum: 9, label: 'Steering P Control' });
@@ -255,7 +249,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'gamepad_white.png', eyebrow: 'Section 5 · MyTeleop.java', title: 'onTrue: schedule once, and walk away' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 1.75, fontSize: 18,
+      x: 0.7, y: 1.75, w: 11.9, h: 1.75, fontSize: 15,
       lines: [
         { text: '// Tap the left face button to steer to 90° and hold it there.', color: '7FA8C9' },
         { text: 'robot.driverController.westFace().onTrue(robot.module.steerToAngle(90));', color: '9EF01A' },

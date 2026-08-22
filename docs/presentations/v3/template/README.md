@@ -87,7 +87,24 @@ regardless of which one you run.
      prose quoted a Java method call. Don't regress that if you touch the
      script — verify the fix still holds by checking that a body like
      `'new TalonFX(...) builds one specific motor'` gets scanned as one
-     block, not truncated at the first `)`.
+     block, not truncated at the first `)`. **A second, worse bug shipped
+     alongside the first one**: the two call sites that matter most —
+     `findBlocks(src, 'addCodeCard(s')` and `findBlocks(src, 'addCard(s')`
+     — passed a needle with the `(` in the wrong place, so the function
+     appended a *second* `(` and then searched for a string
+     (`"addCodeCard(s("`) that never occurs in real source. Every
+     `addCodeCard`/`addCard` check silently matched **zero** blocks and
+     reported nothing, for as long as that code stood — only the
+     `s.addText` check (whose needle happened to be built correctly) was
+     ever real. Lessons 1–5 were built and "cleared" against that broken
+     tool, and shipped with real, visible overflow the tool should have
+     caught. The fix: `call` is now just the bare identifier (`'addCodeCard'`,
+     `'addCard'`), and `findBlocks` appends the one `(` itself. If you ever
+     add a new call site, sanity-check it the same way: run
+     `node -e "console.log(require('fs').readFileSync('build/X.js','utf8').includes('addCodeCard('))"`-style
+     smoke test, or just confirm the tool's report changes when you
+     deliberately break a real card's size — a report that never changes
+     no matter what you do to the source is the tell.
 7. Validate before calling it done:
    ```
    python3 <path-to-pptx-skill>/scripts/office/validate.py ../<name>.pptx

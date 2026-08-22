@@ -77,7 +77,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'cog_white.png', eyebrow: 'Section 2 · DriveModule.java', title: 'Two objects do the work' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 4.2, fontSize: 15,
+      x: 0.7, y: 1.75, w: 11.9, h: 3.2, fontSize: 12,
       lines: [
         { text: 'private final TalonFX m_driveMotor =', color: 'D7E3F4' },
         { text: '    new TalonFX(Constants.DriveConstants.kDriveMotorPort, CANBus.systemcore(0));', color: 'D7E3F4' },
@@ -126,7 +126,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'syncalt_white.png', eyebrow: 'Section 3 · DriveModule.java', title: 'Four steps, once per tick, sim only' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 4.5, fontSize: 15,
+      x: 0.7, y: 1.6, w: 11.9, h: 4.7, fontSize: 13,
       lines: [
         { text: 'public void simulatePeriodic() {', color: 'FFD166' },
         { text: '  // 1. Tell the sim the battery voltage available.', color: '7FA8C9' },
@@ -180,7 +180,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'plug_white.png', eyebrow: 'Section 4 · Robot.java', title: 'A sim-only sibling of robotPeriodic()' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 2.0, fontSize: 20,
+      x: 0.7, y: 1.75, w: 11.9, h: 2.2, fontSize: 20,
       lines: [
         { text: '@Override', color: 'FFD166' },
         { text: 'public void simulationPeriodic() {', color: 'D7E3F4' },
@@ -190,7 +190,7 @@ function buildDeck() {
     });
 
     K.addCard(s, {
-      x: 0.7, y: 4.0, w: 11.9, h: 2.9,
+      x: 0.7, y: 4.0, w: 11.9, h: 3.0,
       heading: 'Called on the same schedule as robotPeriodic() — except only in simulation.',
       headingSize: 22,
       body: 'On a real robot it never runs, so nothing inside it can ever leak onto the field. As more mechanisms arrive, this is where each one\'s simulatePeriodic() gets called from — one obvious place.',

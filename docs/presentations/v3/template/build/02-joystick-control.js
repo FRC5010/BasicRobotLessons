@@ -81,7 +81,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'code_white.png', eyebrow: 'Section 2 · Lambdas', title: 'Code, stored as data' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 2.1, fontSize: 19,
+      x: 0.7, y: 1.75, w: 11.9, h: 2.1, fontSize: 15,
       lines: [
         { text: 'DoubleSupplier stickReader = () -> robot.driverController.getLeftY();', color: '9EF01A' },
         { text: 'double position = stickReader.getAsDouble();  // runs the stored code now', color: 'D7E3F4' },
@@ -105,7 +105,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'filecode_teal.png', eyebrow: 'Section 2 · DriveModule.java', title: 'A command that reads the stick every tick' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 3.1, fontSize: 18,
+      x: 0.7, y: 1.75, w: 11.9, h: 2.9, fontSize: 14,
       lines: [
         { text: '/** Drives continuously using a live speed source (e.g. a joystick axis). */', color: '7FA8C9' },
         { text: 'public Command driveWithJoystick(DoubleSupplier speedSupplier) {', color: 'FFD166' },
@@ -134,7 +134,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'cog_white.png', eyebrow: 'Section 3 · Deadband', title: 'A resting stick should mean a resting motor' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 6.6, h: 3.0, fontSize: 18,
+      x: 0.7, y: 1.7, w: 11.9, h: 2.7, fontSize: 16,
       lines: [
         { text: '/** 0 when |value| is within band, else passes value through. */', color: '7FA8C9' },
         { text: 'private double applyDeadband(double value, double band) {', color: 'FFD166' },
@@ -147,14 +147,10 @@ function buildDeck() {
     });
 
     K.addCard(s, {
-      x: 7.5, y: 1.75, w: 5.1, h: 4.65,
+      x: 0.7, y: 4.55, w: 11.9, h: 2.45,
       heading: 'Three new pieces in six lines.',
       headingSize: 22,
       body: 'if (condition) { ... } runs its block only when true. Math.abs(value) drops the sign, so one check covers forward and reverse. return hands a value back and stops the method on the spot.',
-    });
-
-    s.addText('WPILib ships MathUtil.applyDeadband(value, band) that does this. You wrote your own so you\'d know exactly what\'s inside it.', {
-      x: 0.7, y: 4.95, w: 6.6, h: 1.6, fontFace: FONT_HEAD, italic: true, fontSize: 20, color: MUTED, valign: 'top', margin: 0, lineSpacingMultiple: 1.3,
     });
 
     K.addFooter(s, { pageNum: 6, label: 'Joystick Control' });
@@ -167,7 +163,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'gamepad_white.png', eyebrow: 'Section 4 · MyTeleop.java', title: 'What the module does when nothing else asks' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 1.75, fontSize: 18,
+      x: 0.7, y: 1.75, w: 11.9, h: 1.75, fontSize: 14,
       lines: [
         { text: 'robot.module.setDefaultCommand(', color: 'D7E3F4' },
         { text: '    robot.module.driveWithJoystick(() -> -robot.driverController.getLeftY()));', color: '9EF01A' },
@@ -178,7 +174,7 @@ function buildDeck() {
       x: 0.7, y: 3.75, w: 11.9, h: 3.05,
       heading: 'A default command runs automatically whenever no other command is using the mechanism.',
       headingSize: 21,
-      body: 'The minus sign matters: on most sticks, pushing forward reads negative. Negating makes "push forward" mean "drive forward." When some other command takes over the module, the default steps aside — and resumes on its own the instant that command finishes. You never write that hand-off.',
+      body: 'The minus sign matters: on most sticks, pushing forward reads negative. Negating makes "push forward" mean "drive forward." When another command takes the module, the default steps aside, and resumes the instant it finishes.',
     });
 
     K.addFooter(s, { pageNum: 7, label: 'Joystick Control' });

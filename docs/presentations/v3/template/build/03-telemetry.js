@@ -61,7 +61,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'cog_white.png', eyebrow: 'Section 1 · The encoder', title: 'Three dots, three method calls, one chain' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 1.9, fontSize: 19,
+      x: 0.7, y: 1.75, w: 11.9, h: 1.9, fontSize: 14,
       lines: [
         { text: 'double rotations = m_driveMotor.getPosition().getValue().in(Rotations);', color: '9EF01A' },
         { text: 'double rps       = m_driveMotor.getVelocity().getValue().in(RotationsPerSecond);', color: '9EF01A' },
@@ -69,7 +69,7 @@ function buildDeck() {
     });
 
     K.addCard(s, {
-      x: 0.7, y: 3.9, w: 11.9, h: 2.5,
+      x: 0.7, y: 3.9, w: 11.9, h: 2.65,
       heading: 'getPosition() returns a signal object, not a plain number.',
       headingSize: 22,
       body: '.getValue() reads a measurement that remembers its own unit; .in(Rotations) says which unit you want it as. Whatever a method returns, you can call methods on it immediately — that\'s chaining.',
@@ -85,7 +85,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'broadcasttower_white.png', eyebrow: 'Section 2 · Telemetry', title: 'The name is the address' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 1.35, fontSize: 20,
+      x: 0.7, y: 1.75, w: 11.9, h: 1.35, fontSize: 16,
       lines: [{ text: 'SmartDashboard.putNumber("DriveModule/PositionRotations", rotations);', color: '9EF01A' }],
     });
 
@@ -106,7 +106,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'flask_white.png', eyebrow: 'Section 3 · Robot.java', title: 'Every published value, saved automatically' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 1.6, fontSize: 20,
+      x: 0.7, y: 1.75, w: 11.9, h: 1.5, fontSize: 15,
       lines: [
         { text: 'public Robot() {', color: 'FFD166' },
         { text: '  DataLogManager.start(); // saves every published value to a .wpilog file', color: '9EF01A' },
@@ -131,7 +131,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'filecode_teal.png', eyebrow: 'Section 4 · DriveModule.java', title: 'A standing callback, not a one-off poll' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 3.55, fontSize: 18,
+      x: 0.7, y: 1.75, w: 11.9, h: 3.7, fontSize: 14,
       lines: [
         { text: 'public DriveModule() {', color: 'FFD166' },
         { text: '  Scheduler.getDefault().addPeriodic(this::logTelemetry);', color: '9EF01A' },
@@ -148,7 +148,7 @@ function buildDeck() {
     });
 
     K.addCard(s, {
-      x: 0.7, y: 5.5, w: 11.9, h: 1.35,
+      x: 0.7, y: 5.65, w: 11.9, h: 1.25,
       body: 'this::logTelemetry is a method reference — shorthand for () -> this.logTelemetry(). addPeriodic runs it every tick, forever, with no command required.',
       pad: 0.2, bodySize: 20,
     });
@@ -183,7 +183,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'lightbulb_white.png', eyebrow: 'Section 6 · Robot.java', title: 'Told, not asked' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 2.5, fontSize: 16,
+      x: 0.7, y: 1.75, w: 11.9, h: 2.5, fontSize: 12,
       lines: [
         { text: 'Scheduler.getDefault().addEventListener(this::logCommandStart);', color: '9EF01A' },
         { text: '', color: 'D7E3F4' },
@@ -197,8 +197,8 @@ function buildDeck() {
     });
 
     K.addCard(s, {
-      x: 0.7, y: 4.5, w: 11.9, h: 2.2,
-      heading: 'instanceof pattern matching: is this a Scheduled event, and if so, hand it to me typed as one.',
+      x: 0.7, y: 4.4, w: 11.9, h: 2.6,
+      heading: 'Is this a Scheduled event? Type it as one.',
       headingSize: 20,
       body: 'Only the specific kind has .command() on it. The old version polled every tick and got lucky every time; this version can\'t get unlucky, because it isn\'t asking — it\'s told.',
     });

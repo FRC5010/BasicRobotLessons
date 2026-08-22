@@ -73,7 +73,7 @@ function allQuoted(block, key) {
 }
 
 function checkCodeCards(fname, src, report) {
-  for (const { lineno, block } of findBlocks(src, 'addCodeCard(s')) {
+  for (const { lineno, block } of findBlocks(src, 'addCodeCard')) {
     const w = getNum(block, 'w'), h = getNum(block, 'h'), fs_ = getNum(block, 'fontSize', 18);
     const texts = allQuoted(block, 'text');
     const nlines = texts.length;
@@ -90,7 +90,7 @@ function checkCodeCards(fname, src, report) {
 }
 
 function checkAddCards(fname, src, report) {
-  for (const { lineno, block } of findBlocks(src, 'addCard(s')) {
+  for (const { lineno, block } of findBlocks(src, 'addCard')) {
     const w = getNum(block, 'w'), h = getNum(block, 'h');
     const pad = getNum(block, 'pad', 0.3);
     const eyebrow = getStr(block, 'eyebrow');
