@@ -71,11 +71,31 @@ function buildDeck() {
     K.addFooter(s, { pageNum: 2, label: 'Setup' });
   }
 
-  // ============================================================ SLIDE 3 — install Git
+  // ============================================================ SLIDE 3 — install WPILib's tools (VS Code)
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
-    K.addHeader(s, { icon: 'download_white.png', eyebrow: 'Section 1 · Install Git', title: 'Get Git, and tell it who you are' });
+    K.addHeader(s, { icon: 'code_white.png', eyebrow: "Section 1 · Install WPILib's Tools", title: 'One installer sets up VS Code and everything else' });
+
+    K.addNumberedSteps(s, {
+      startY: 1.75, rowH: 1.0,
+      steps: [
+        { title: 'Get the installer for this season', detail: 'wpilibsuite/allwpilib releases → v2027.0.0-alpha-6 for your OS.' },
+        { title: 'Run it, and choose "Everything"', detail: 'Not "Tools Only" — this pulls in VS Code, the JDK, and Gradle too.' },
+        { title: 'Pick "Download for this computer only"', detail: "VS Code isn't bundled — licensing — so the installer fetches it." },
+        { title: 'Finish, then launch WPILib VS Code', detail: 'A separate copy for this year, not any VS Code already installed.' },
+        { title: 'Look for the WPILib icon in the sidebar', detail: "That confirms the extension installed — you'll use it all course." },
+      ],
+    });
+
+    K.addFooter(s, { pageNum: 3, label: 'Setup' });
+  }
+
+  // ============================================================ SLIDE 4 — install Git
+  {
+    const s = p.addSlide();
+    s.background = { color: WHITE };
+    K.addHeader(s, { icon: 'download_white.png', eyebrow: 'Section 2 · Install Git', title: 'Get Git, and tell it who you are' });
 
     K.addCodeCard(s, {
       x: 0.7, y: 1.75, w: 11.9, h: 1.15, fontSize: 20,
@@ -96,14 +116,14 @@ function buildDeck() {
       headingSize: 21, pad: 0.25,
     });
 
-    K.addFooter(s, { pageNum: 3, label: 'Setup' });
+    K.addFooter(s, { pageNum: 4, label: 'Setup' });
   }
 
-  // ============================================================ SLIDE 4 — get a JDK
+  // ============================================================ SLIDE 5 — get a JDK
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
-    K.addHeader(s, { icon: 'coffee_white.png', eyebrow: 'Section 2 · Get a JDK', title: 'This course builds against Java 25' });
+    K.addHeader(s, { icon: 'coffee_white.png', eyebrow: 'Section 3 · Get a JDK', title: 'This course builds against Java 25' });
 
     K.addCodeCard(s, {
       x: 0.7, y: 1.75, w: 5.7, h: 1.35, fontSize: 20,
@@ -122,14 +142,14 @@ function buildDeck() {
       body: 'Set JAVA_HOME to your JDK 25 install — or set ORG_GRADLE_JAVA_HOME instead, which points Gradle there without touching JAVA_HOME everywhere else. Gradle fails loudly if this is wrong, so it\'s worth checking now.',
     });
 
-    K.addFooter(s, { pageNum: 4, label: 'Setup' });
+    K.addFooter(s, { pageNum: 5, label: 'Setup' });
   }
 
-  // ============================================================ SLIDE 5 — get your starting project
+  // ============================================================ SLIDE 6 — get your starting project
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
-    K.addHeader(s, { icon: 'folderopen_white.png', eyebrow: 'Section 3 · Your starting project', title: 'Pull your project from the course repo' });
+    K.addHeader(s, { icon: 'folderopen_white.png', eyebrow: 'Section 4 · Your starting project', title: 'Pull your project from the course repo' });
 
     K.addCodeCard(s, {
       x: 0.7, y: 1.7, w: 11.9, h: 2.15, fontSize: 18,
@@ -162,14 +182,14 @@ function buildDeck() {
       fontFace: FONT_BODY, fontSize: 20, color: WHITE, valign: 'top', margin: 0, lineSpacingMultiple: 1.2,
     });
 
-    K.addFooter(s, { pageNum: 5, label: 'Setup' });
+    K.addFooter(s, { pageNum: 6, label: 'Setup' });
   }
 
-  // ============================================================ SLIDE 6 — two folders + verify it builds
+  // ============================================================ SLIDE 7 — two folders + verify it builds
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
-    K.addHeader(s, { icon: 'sitemap_white.png', eyebrow: 'Section 3 · Two folders now exist', title: "Don't confuse them" });
+    K.addHeader(s, { icon: 'sitemap_white.png', eyebrow: 'Section 4 · Two folders now exist', title: "Don't confuse them" });
 
     K.addCard(s, {
       x: 0.7, y: 1.75, w: 5.85, h: 4.65, bg: CARDBG,
@@ -189,14 +209,14 @@ function buildDeck() {
       bodyColor: 'CADCE8',
     });
 
-    K.addFooter(s, { pageNum: 6, label: 'Setup' });
+    K.addFooter(s, { pageNum: 7, label: 'Setup' });
   }
 
-  // ============================================================ SLIDE 7 — verify it builds + make it a repo
+  // ============================================================ SLIDE 8 — verify it builds + make it a repo
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
-    K.addHeader(s, { icon: 'checkcircle_white.png', eyebrow: 'Section 4 · Make it your own repo', title: 'Build it, then start tracking it' });
+    K.addHeader(s, { icon: 'checkcircle_white.png', eyebrow: 'Section 5 · Make it your own repo', title: 'Build it, then start tracking it' });
 
     K.addCodeCard(s, {
       x: 0.7, y: 1.7, w: 5.7, h: 2.05, fontSize: 17,
@@ -223,14 +243,14 @@ function buildDeck() {
       body: 'Confirm with git status that every untracked file belongs in the repo. That first commit is your recovery point — if your laptop died right now, you could rebuild from it, as long as it lives on GitHub too.',
     });
 
-    K.addFooter(s, { pageNum: 7, label: 'Setup' });
+    K.addFooter(s, { pageNum: 8, label: 'Setup' });
   }
 
-  // ============================================================ SLIDE 8 — GitHub + gh
+  // ============================================================ SLIDE 9 — GitHub + gh
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
-    K.addHeader(s, { icon: 'key_white.png', eyebrow: 'Section 5 · GitHub', title: 'An account, and a login that never nags you' });
+    K.addHeader(s, { icon: 'key_white.png', eyebrow: 'Section 6 · GitHub', title: 'An account, and a login that never nags you' });
 
     K.addCodeCard(s, {
       x: 0.7, y: 1.75, w: 5.7, h: 1.35, fontSize: 18,
@@ -251,14 +271,14 @@ function buildDeck() {
       bodyColor: 'CADCE8',
     });
 
-    K.addFooter(s, { pageNum: 8, label: 'Setup' });
+    K.addFooter(s, { pageNum: 9, label: 'Setup' });
   }
 
-  // ============================================================ SLIDE 9 — create the remote & push
+  // ============================================================ SLIDE 10 — create the remote & push
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
-    K.addHeader(s, { icon: 'clouduploadalt_white.png', eyebrow: 'Section 6 · Push it', title: 'One command makes the remote and sends your code' });
+    K.addHeader(s, { icon: 'clouduploadalt_white.png', eyebrow: 'Section 7 · Push it', title: 'One command makes the remote and sends your code' });
 
     K.addCodeCard(s, {
       x: 0.7, y: 1.75, w: 11.9, h: 1.35, fontSize: 16,
@@ -272,14 +292,14 @@ function buildDeck() {
       body: 'Check it landed right: gh repo view --web opens the repo in your browser. You should see every file from your project — and nothing from BasicRobotLessons. If the whole course shows up instead, you ran it from the wrong folder.',
     });
 
-    K.addFooter(s, { pageNum: 9, label: 'Setup' });
+    K.addFooter(s, { pageNum: 10, label: 'Setup' });
   }
 
-  // ============================================================ SLIDE 10 — the everyday loop
+  // ============================================================ SLIDE 11 — the everyday loop
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
-    K.addSectionHeader(s, { icon: 'syncalt_white.png', eyebrow: 'Section 7 · The everyday loop', title: 'The one cycle you\'ll run constantly' });
+    K.addSectionHeader(s, { icon: 'syncalt_white.png', eyebrow: 'Section 8 · The everyday loop', title: 'The one cycle you\'ll run constantly' });
 
     K.addCodeCard(s, {
       x: 0.7, y: 1.75, w: 6.7, h: 3.1, fontSize: 18,
@@ -318,10 +338,10 @@ function buildDeck() {
       }
     );
 
-    K.addFooter(s, { pageNum: 10, label: 'Setup', dark: true });
+    K.addFooter(s, { pageNum: 11, label: 'Setup', dark: true });
   }
 
-  // ============================================================ SLIDE 11 — try it
+  // ============================================================ SLIDE 12 — try it
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
@@ -337,10 +357,10 @@ function buildDeck() {
       ],
     });
 
-    K.addFooter(s, { pageNum: 11, label: 'Setup', dark: true });
+    K.addFooter(s, { pageNum: 12, label: 'Setup', dark: true });
   }
 
-  // ============================================================ SLIDE 12 — what you learned + ready
+  // ============================================================ SLIDE 13 — what you learned + ready
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -389,7 +409,7 @@ function buildDeck() {
     s.addShape('ellipse', { x: 8.3, y: 5.6, w: 0.55, h: 0.55, fill: { color: TEAL }, line: { type: 'none' } });
     s.addImage({ path: K.ICON('arrowright_white.png'), x: 8.43, y: 5.73, w: 0.29, h: 0.29 });
 
-    K.addFooter(s, { pageNum: 12, label: 'Setup' });
+    K.addFooter(s, { pageNum: 13, label: 'Setup' });
   }
 
   return p;
