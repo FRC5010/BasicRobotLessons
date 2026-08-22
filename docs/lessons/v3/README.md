@@ -56,10 +56,12 @@ status of every lesson, including what changed and why.
 ## Asides
 
 - [Setting up the OpMode track and connecting it to GitHub](aside-setup.md) —
-  this track's own version: Git, a JDK 25, and pulling your starting project
-  out of this course's repo (there's no installer wizard for this alpha yet),
-  then the same GitHub/`gh` setup and daily `add`/`commit`/`push` loop as the
-  classic track. **Start here before Lesson 0.**
+  this track's own version: the WPILib installer (2027 alpha), Git, a JDK 25,
+  and pulling your starting project out of this course's repo (the wizard's
+  OpMode template doesn't come with Commands V3, so this course hands you one
+  that already does), then the same GitHub/`gh` setup and daily
+  `add`/`commit`/`push` loop as the classic track. **Start here before
+  Lesson 0.**
 - [Branches: one per lesson, merged into a `main` that always works](../aside-git-branching.md) —
   shared with the classic track as-is; nothing in it is WPILib-version-specific.
 - [Debugging in VSCode and reading stack traces](../aside-debugger.md) —

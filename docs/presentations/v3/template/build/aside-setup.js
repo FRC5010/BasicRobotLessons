@@ -123,7 +123,7 @@ function buildDeck() {
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
-    K.addHeader(s, { icon: 'coffee_white.png', eyebrow: 'Section 3 · Get a JDK', title: 'This course builds against Java 25' });
+    K.addHeader(s, { icon: 'coffee_white.png', eyebrow: 'Section 3 · Confirm your JDK', title: 'This course builds against Java 25' });
 
     K.addCodeCard(s, {
       x: 0.7, y: 1.75, w: 5.7, h: 1.35, fontSize: 20,
@@ -137,9 +137,9 @@ function buildDeck() {
     K.addCard(s, {
       x: 6.75, y: 1.75, w: 5.85, h: 4.65,
       eyebrow: 'Pointing Gradle at it',
-      heading: 'Install a JDK 25, then point Gradle at it.',
+      heading: "This alpha's installer already gave you one.",
       headingSize: 22,
-      body: 'Set JAVA_HOME to your JDK 25 install — or set ORG_GRADLE_JAVA_HOME instead, which points Gradle there without touching JAVA_HOME everywhere else. Gradle fails loudly if this is wrong, so it\'s worth checking now.',
+      body: "Section 1's installer bundles JDK 25 — no need to install your own. A different JDK on PATH (say, Java 17 from the classic track) just means pointing Gradle at this one with JAVA_HOME or ORG_GRADLE_JAVA_HOME.",
     });
 
     K.addFooter(s, { pageNum: 5, label: 'Setup' });
