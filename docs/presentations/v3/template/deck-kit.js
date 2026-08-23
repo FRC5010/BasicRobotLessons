@@ -8,6 +8,14 @@
 //   - Nothing reads smaller than 20pt except code-card text.
 //   - Code cards carry their three status dots stacked at the TOP-RIGHT, so the
 //     code itself starts almost at the card's top edge.
+//   - Every addCodeCard passes a `fileLabel` — the same "what file, and where"
+//     job the lessons' bold action lead-ins do. See addCodeCard's own comment.
+//   - When a lesson section creates a brand-new file (not just edits one that
+//     already exists), the deck gets its own slide for that — numbered steps
+//     showing the actual right-click-through-VS-Code sequence, matching the
+//     lesson's own instructions — BEFORE any slide shows that file's contents.
+//     Never let a code card be the first the audience hears of a file that
+//     doesn't exist yet.
 //   - Every slide gets the small team-logo watermark in its top-right corner
 //     (addFooter draws it); the title slide gets the full logo, large.
 //   - Decks are student-facing and v3-only. Never write a slide that assumes
@@ -114,8 +122,22 @@ function addSectionHeader(slide, { icon, eyebrow, title, badgeColor = ORANGE, x 
 }
 
 /** Code-editor card: navy rounded rect, three status dots stacked at the TOP-RIGHT
- *  (not across the top), so code starts almost at the top edge and gets the space. */
-function addCodeCard(slide, { x, y, w, h, lines, fontSize = 18 }) {
+ *  (not across the top), so code starts almost at the top edge and gets the space.
+ *
+ *  `fileLabel` is this card's answer to "what file, and where" — the same job the
+ *  lessons' bold action lead-ins do ("Add to `DriveModule`, below the imports:").
+ *  EVERY code card should carry one; there is no such thing as a code card with
+ *  nothing to say about where it goes. For a real edit, phrase it the way the
+ *  lesson does — verb first ("Add to X, below Y", "Edit X's constructor",
+ *  "Replace X with", "Delete from X") — so a skimmer gets the same instruction
+ *  either way. For an illustration the lesson itself marks "Nothing to add" (an
+ *  API example, code the student already has, a wrong version being set up for
+ *  rejection), pass `example: true` instead and phrase `fileLabel` to match —
+ *  it renders muted and italic instead of the bold orange "type this" treatment,
+ *  the same visual opposite the lessons use bold vs. italic for.
+ *  Reserves extra height inside the card for the label — see LABEL_H below, and
+ *  keep audit-overflow.js's own copy of that number in sync if it changes. */
+function addCodeCard(slide, { x, y, w, h, lines, fontSize = 18, fileLabel, example = false }) {
   slide.addShape('roundRect', {
     x, y, w, h, rectRadius: 0.12,
     fill: { color: NAVY }, line: { type: 'none' },
@@ -128,12 +150,22 @@ function addCodeCard(slide, { x, y, w, h, lines, fontSize = 18 }) {
       fill: { color: c }, line: { type: 'none' },
     });
   });
+  let codeY = y + 0.22, codeH = h - 0.4;
+  if (fileLabel) {
+    slide.addText(fileLabel, {
+      x: x + 0.3, y: y + 0.14, w: w - 0.75, h: 0.32,
+      fontFace: FONT_BODY, bold: !example, italic: example,
+      fontSize: 15, color: example ? '7FA8C9' : ORANGE, margin: 0,
+    });
+    codeY = y + 0.5;   // 0.14 + label's 0.32 + a small gap
+    codeH = h - 0.72;  // same 0.18 bottom pad addCodeCard always used, plus the label's room
+  }
   const body = lines.map((l, i) => ({
     text: l.text,
     options: { color: l.color || 'D7E3F4', breakLine: i < lines.length - 1, bold: !!l.bold },
   }));
   slide.addText(body, {
-    x: x + 0.3, y: y + 0.22, w: w - 0.75, h: h - 0.4,
+    x: x + 0.3, y: codeY, w: w - 0.75, h: codeH,
     fontFace: FONT_CODE, fontSize, valign: 'top', margin: 0, lineSpacingMultiple: 1.2,
   });
 }

@@ -121,14 +121,16 @@ function buildDeck() {
     K.addHeader(s, { icon: 'cube_white.png', eyebrow: 'Section 1 · Classes and packages', title: 'A class is a blueprint' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 5.7, h: 1.9, fontSize: 26,
+      x: 0.7, y: 1.75, w: 5.7, h: 2.1, fontSize: 24,
+      fileLabel: 'Nothing to add — code you already have',
+      example: true,
       lines: [{ text: 'package first.robot;', color: '7FD1D9' }],
     });
 
     s.addText(
       'Packages keep class names from colliding — first.robot mirrors the folder first/robot.',
       {
-        x: 0.7, y: 3.9, w: 5.7, h: 2.2,
+        x: 0.7, y: 4.05, w: 5.7, h: 2.05,
         fontFace: FONT_BODY, fontSize: 22, color: INK, valign: 'top', margin: 0, lineSpacingMultiple: 1.3,
       }
     );
@@ -150,7 +152,9 @@ function buildDeck() {
     K.addHeader(s, { icon: 'listul_white.png', eyebrow: 'Section 1 · Methods', title: 'Five homes, each named for its moment' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 6.3, h: 3.55, fontSize: 19,
+      x: 0.7, y: 1.75, w: 6.3, h: 4.3, fontSize: 17,
+      fileLabel: 'Nothing to add — code you already have',
+      example: true,
       lines: [
         { text: '@Override', color: 'FFD166' },
         { text: 'public void start() {', color: 'D7E3F4' },
@@ -182,7 +186,9 @@ function buildDeck() {
     K.addHeader(s, { icon: 'tag_white.png', eyebrow: 'Section 1 · Annotations', title: '@Teleop is a tag, not a method' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 5.9, h: 1.9, fontSize: 20,
+      x: 0.7, y: 1.75, w: 5.9, h: 2.15, fontSize: 18,
+      fileLabel: 'Nothing to add — code you already have',
+      example: true,
       lines: [
         { text: '@Teleop', color: 'FFD166' },
         { text: 'public class MyTeleop', color: 'D7E3F4' },
@@ -192,7 +198,7 @@ function buildDeck() {
     s.addText(
       '@Teleop sits above the whole class — a tag the framework reads before your code ever runs. It says: offer this on the Driver Station as "My Teleop."',
       {
-        x: 0.7, y: 3.9, w: 5.9, h: 2.2,
+        x: 0.7, y: 4.1, w: 5.9, h: 2.0,
         fontFace: FONT_BODY, fontSize: 20, color: INK, valign: 'top', margin: 0, lineSpacingMultiple: 1.25,
       }
     );
@@ -301,7 +307,8 @@ function buildDeck() {
     K.addHeader(s, { icon: 'commentdots_white.png', eyebrow: 'Section 4 · Your first change', title: 'Say hello, and watch it show up' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 7.1, h: 2.5, fontSize: 19,
+      x: 0.7, y: 1.75, w: 7.1, h: 2.8, fontSize: 17,
+      fileLabel: 'Back in MyTeleop.java, find start() and drop this in',
       lines: [
         { text: '@Override', color: 'FFD166' },
         { text: 'public void start() {', color: 'D7E3F4' },
@@ -314,7 +321,7 @@ function buildDeck() {
     s.addText(
       "start() runs once — the instant the opmode is enabled. periodic() would print this fifty times a second and flood your terminal.",
       {
-        x: 0.7, y: 4.45, w: 7.1, h: 1.9,
+        x: 0.7, y: 4.7, w: 7.1, h: 1.65,
         fontFace: FONT_HEAD, italic: true, fontSize: 21, color: INK, valign: 'top', margin: 0, lineSpacingMultiple: 1.3,
       }
     );

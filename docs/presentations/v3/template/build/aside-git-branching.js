@@ -178,7 +178,9 @@ function buildDeck() {
     K.addHeader(s, { icon: 'checkcircle_white.png', eyebrow: 'Section 4 · Resolving it', title: 'The answer is almost never "pick a side"' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.5, w: 11.9, h: 3.3, fontSize: 13,
+      x: 0.7, y: 1.5, w: 11.9, h: 3.6, fontSize: 12,
+      fileLabel: 'Open Constants.java — this is what Git wrote into it',
+      example: true,
       lines: [
         { text: 'public final class Constants {', color: 'D7E3F4' },
         { text: '<<<<<<< HEAD', color: 'FF8B8B' },
@@ -194,9 +196,9 @@ function buildDeck() {
     });
 
     K.addCard(s, {
-      x: 0.7, y: 4.95, w: 11.9, h: 2.05,
-      body: 'You want the elevator and the arm — both belong in the robot. Edit until both blocks remain and the markers are gone, then stage and commit. Most conflicts here are two additions landing close together — keep both, don\'t choose.',
-      pad: 0.25,
+      x: 0.7, y: 5.25, w: 11.9, h: 1.75,
+      body: 'You want the elevator and the arm — both belong in the robot. Edit until both blocks remain and the markers are gone. Most conflicts here are two additions landing close together — keep both, don\'t choose.',
+      pad: 0.2,
     });
 
     K.addFooter(s, { pageNum: 7, label: 'Branches' });

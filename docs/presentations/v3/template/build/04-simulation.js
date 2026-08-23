@@ -77,7 +77,8 @@ function buildDeck() {
     K.addHeader(s, { icon: 'cog_white.png', eyebrow: 'Section 2 · DriveModule.java', title: 'Two objects do the work' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 3.2, fontSize: 12,
+      x: 0.7, y: 1.75, w: 11.9, h: 3.5, fontSize: 11,
+      fileLabel: 'Add to DriveModule, directly below m_driveMotor',
       lines: [
         { text: 'private final TalonFX m_driveMotor =', color: 'D7E3F4' },
         { text: '    new TalonFX(Constants.DriveConstants.kDriveMotorPort, CANBus.systemcore(0));', color: 'D7E3F4' },
@@ -126,7 +127,8 @@ function buildDeck() {
     K.addHeader(s, { icon: 'syncalt_white.png', eyebrow: 'Section 3 · DriveModule.java', title: 'Four steps, once per tick, sim only' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.6, w: 11.9, h: 4.7, fontSize: 13,
+      x: 0.7, y: 1.6, w: 11.9, h: 4.9, fontSize: 12,
+      fileLabel: 'Add to DriveModule, below getPositionRotations()',
       lines: [
         { text: 'public void simulatePeriodic() {', color: 'FFD166' },
         { text: '  // 1. Tell the sim the battery voltage available.', color: '7FA8C9' },
@@ -155,19 +157,22 @@ function buildDeck() {
     s.background = { color: NAVY };
     K.addSectionHeader(s, { icon: 'syncalt_white.png', eyebrow: 'Section 3 · The picture to keep', title: 'Command out as voltage, motion back as sensor reads' });
 
-    s.addShape('roundRect', { x: 0.7, y: 1.9, w: 11.9, h: 2.4, rectRadius: 0.12, fill: { color: NAVY2 }, line: { type: 'none' } });
+    s.addShape('roundRect', { x: 0.7, y: 1.9, w: 11.9, h: 2.75, rectRadius: 0.12, fill: { color: NAVY2 }, line: { type: 'none' } });
+    s.addText('Nothing to add — a picture of the loop, not code', {
+      x: 1.0, y: 2.05, w: 11.3, h: 0.32, fontFace: FONT_BODY, italic: true, fontSize: 15, color: '7FA8C9', margin: 0,
+    });
     s.addText('setThrottle(0.3)  →  TalonFX applies volts  →  getMotorVoltage()', {
-      x: 1.0, y: 2.15, w: 11.3, h: 0.55, fontFace: 'Courier New', bold: true, fontSize: 20, color: '9EF01A', align: 'center', margin: 0,
+      x: 1.0, y: 2.5, w: 11.3, h: 0.55, fontFace: 'Courier New', bold: true, fontSize: 20, color: '9EF01A', align: 'center', margin: 0,
     });
     s.addText('↑                                                                    ↓', {
-      x: 1.0, y: 2.7, w: 11.3, h: 0.4, fontFace: 'Courier New', fontSize: 20, color: TEAL, align: 'center', margin: 0,
+      x: 1.0, y: 3.05, w: 11.3, h: 0.4, fontFace: 'Courier New', fontSize: 20, color: TEAL, align: 'center', margin: 0,
     });
     s.addText('setRawRotorPosition  ←  DCMotorSim computes motion (update)', {
-      x: 1.0, y: 3.15, w: 11.3, h: 0.55, fontFace: 'Courier New', bold: true, fontSize: 20, color: '9EF01A', align: 'center', margin: 0,
+      x: 1.0, y: 3.5, w: 11.3, h: 0.55, fontFace: 'Courier New', bold: true, fontSize: 20, color: '9EF01A', align: 'center', margin: 0,
     });
 
     s.addText('One unit note: DCMotorSim reports radians and radians/sec, but setRawRotorPosition and setRotorVelocity want rotations. Skip the ÷ 2π and your plots lie by a factor of about 6.3.', {
-      x: 0.7, y: 4.6, w: 11.9, h: 1.9, fontFace: FONT_BODY, italic: true, fontSize: 21, color: 'D7E3F4', valign: 'top', margin: 0, lineSpacingMultiple: 1.3,
+      x: 0.7, y: 4.85, w: 11.9, h: 1.65, fontFace: FONT_BODY, italic: true, fontSize: 21, color: 'D7E3F4', valign: 'top', margin: 0, lineSpacingMultiple: 1.3,
     });
 
     K.addFooter(s, { pageNum: 7, label: 'Simulation', dark: true });
@@ -180,7 +185,8 @@ function buildDeck() {
     K.addHeader(s, { icon: 'plug_white.png', eyebrow: 'Section 4 · Robot.java', title: 'A sim-only sibling of robotPeriodic()' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 2.2, fontSize: 20,
+      x: 0.7, y: 1.75, w: 11.9, h: 2.5, fontSize: 18,
+      fileLabel: 'Add to Robot, below robotPeriodic()',
       lines: [
         { text: '@Override', color: 'FFD166' },
         { text: 'public void simulationPeriodic() {', color: 'D7E3F4' },
@@ -190,10 +196,10 @@ function buildDeck() {
     });
 
     K.addCard(s, {
-      x: 0.7, y: 4.0, w: 11.9, h: 3.0,
+      x: 0.7, y: 4.3, w: 11.9, h: 2.7,
       heading: 'Called on the same schedule as robotPeriodic() — except only in simulation.',
       headingSize: 22,
-      body: 'On a real robot it never runs, so nothing inside it can ever leak onto the field. As more mechanisms arrive, this is where each one\'s simulatePeriodic() gets called from — one obvious place.',
+      body: 'On a real robot it never runs, so nothing inside can leak onto the field. As more mechanisms arrive, each one\'s simulatePeriodic() gets called from here.',
     });
 
     K.addFooter(s, { pageNum: 8, label: 'Simulation' });

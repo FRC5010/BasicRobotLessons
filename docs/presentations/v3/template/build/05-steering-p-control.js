@@ -85,7 +85,8 @@ function buildDeck() {
     K.addHeader(s, { icon: 'cog_white.png', eyebrow: 'Section 2 · DriveModule.java', title: 'A second motor, the same sim pattern' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 2.75, fontSize: 12,
+      x: 0.7, y: 1.75, w: 11.9, h: 3.0, fontSize: 11,
+      fileLabel: "Add to DriveModule, below the drive motor's fields",
       lines: [
         { text: 'private final TalonFX m_steerMotor =', color: 'D7E3F4' },
         { text: '    new TalonFX(Constants.DriveConstants.kSteerMotorPort, CANBus.systemcore(0));', color: 'D7E3F4' },
@@ -140,7 +141,8 @@ function buildDeck() {
     K.addHeader(s, { icon: 'filecode_teal.png', eyebrow: 'Section 3 · Priming, in code', title: 'One reading, right at the start' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.6, w: 11.9, h: 4.6, fontSize: 12,
+      x: 0.7, y: 1.5, w: 11.9, h: 5.2, fontSize: 11,
+      fileLabel: 'Add the CANcoder field, then fill in the constructor',
       lines: [
         { text: 'private final CANcoder m_steerEncoder =', color: 'D7E3F4' },
         { text: '    new CANcoder(Constants.DriveConstants.kCancoderPort, CANBus.systemcore(0));', color: 'D7E3F4' },
@@ -169,7 +171,8 @@ function buildDeck() {
     K.addHeader(s, { icon: 'code_white.png', eyebrow: 'Section 4 · The heart of the lesson', title: 'Measure, subtract, multiply, clamp, command' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.6, w: 11.9, h: 4.9, fontSize: 14,
+      x: 0.7, y: 1.5, w: 11.9, h: 5.2, fontSize: 13,
+      fileLabel: 'Add to DriveModule, below your other command factories',
       lines: [
         { text: 'public Command steerToAngle(double targetDegrees) {', color: 'FFD166' },
         { text: '  return runRepeatedly(() -> {', color: 'D7E3F4' },
@@ -220,7 +223,8 @@ function buildDeck() {
     K.addHeader(s, { icon: 'cog_white.png', eyebrow: 'Section 4 · Two supporting pieces', title: 'A safety clamp, and one named constant' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 2.9, fontSize: 13,
+      x: 0.7, y: 1.75, w: 11.9, h: 3.15, fontSize: 12,
+      fileLabel: 'Add to DriveModule, right after steerToAngle',
       lines: [
         { text: 'private double clamp(double value, double min, double max) {', color: 'FFD166' },
         { text: '  if (value > max) {', color: 'D7E3F4' },
@@ -235,8 +239,8 @@ function buildDeck() {
     });
 
     K.addCard(s, {
-      x: 0.7, y: 4.8, w: 11.9, h: 2.25,
-      body: 'kP is a tuning constant — SteerConstants.kP = 0.0005, in Constants.java: one named number, never reassigned. clamp is if / else if / else, one decision with three branches; without it, a large error could ask the motor for more power than it has.',
+      x: 0.7, y: 5.1, w: 11.9, h: 1.85,
+      body: 'kP is a tuning constant — SteerConstants.kP = 0.0005 in Constants.java, never reassigned. clamp is if / else if / else: without it, a large error could ask for more power than the motor has.',
     });
 
     K.addFooter(s, { pageNum: 9, label: 'Steering P Control' });
@@ -249,7 +253,8 @@ function buildDeck() {
     K.addHeader(s, { icon: 'gamepad_white.png', eyebrow: 'Section 5 · MyTeleop.java', title: 'onTrue: schedule once, and walk away' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 1.75, fontSize: 15,
+      x: 0.7, y: 1.75, w: 11.9, h: 2.05, fontSize: 15,
+      fileLabel: "Add to MyTeleop's constructor, with the rest of the wiring",
       lines: [
         { text: '// Tap the left face button to steer to 90° and hold it there.', color: '7FA8C9' },
         { text: 'robot.driverController.westFace().onTrue(robot.module.steerToAngle(90));', color: '9EF01A' },
@@ -258,7 +263,7 @@ function buildDeck() {
     });
 
     K.addCard(s, {
-      x: 0.7, y: 3.75, w: 11.9, h: 3.05,
+      x: 0.7, y: 4.0, w: 11.9, h: 2.8,
       heading: 'whileTrue held; onTrue fires once and lets go.',
       headingSize: 22,
       body: 'Since steerToAngle never finishes on its own, one tap sends the module to 90° and holds it — no need to keep the button down. Tap the other button and the scheduler swaps commands, firing the old one\'s whenCanceled cleanup on the way out.',

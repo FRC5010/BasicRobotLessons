@@ -61,7 +61,9 @@ function buildDeck() {
     K.addHeader(s, { icon: 'cog_white.png', eyebrow: 'Section 1 · The encoder', title: 'Three dots, three method calls, one chain' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 1.9, fontSize: 14,
+      x: 0.7, y: 1.75, w: 11.9, h: 2.2, fontSize: 14,
+      fileLabel: "Nothing to add yet — this is how you'll read them, in section 4",
+      example: true,
       lines: [
         { text: 'double rotations = m_driveMotor.getPosition().getValue().in(Rotations);', color: '9EF01A' },
         { text: 'double rps       = m_driveMotor.getVelocity().getValue().in(RotationsPerSecond);', color: '9EF01A' },
@@ -69,7 +71,7 @@ function buildDeck() {
     });
 
     K.addCard(s, {
-      x: 0.7, y: 3.9, w: 11.9, h: 2.65,
+      x: 0.7, y: 4.1, w: 11.9, h: 2.45,
       heading: 'getPosition() returns a signal object, not a plain number.',
       headingSize: 22,
       body: '.getValue() reads a measurement that remembers its own unit; .in(Rotations) says which unit you want it as. Whatever a method returns, you can call methods on it immediately — that\'s chaining.',
@@ -85,12 +87,14 @@ function buildDeck() {
     K.addHeader(s, { icon: 'broadcasttower_white.png', eyebrow: 'Section 2 · Telemetry', title: 'The name is the address' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 1.35, fontSize: 16,
+      x: 0.7, y: 1.75, w: 11.9, h: 1.6, fontSize: 16,
+      fileLabel: 'Nothing to add — just the general shape',
+      example: true,
       lines: [{ text: 'SmartDashboard.putNumber("DriveModule/PositionRotations", rotations);', color: '9EF01A' }],
     });
 
     K.addCard(s, {
-      x: 0.7, y: 3.35, w: 11.9, h: 3.4,
+      x: 0.7, y: 3.6, w: 11.9, h: 3.15,
       heading: 'Every value goes under an organized name, one branch per mechanism.',
       headingSize: 22,
       body: 'A hundred values from now, you can still find the one you want. Names carry their units too — PositionRotations, not Position — so nobody has to guess what a number means later.',
@@ -106,7 +110,8 @@ function buildDeck() {
     K.addHeader(s, { icon: 'flask_white.png', eyebrow: 'Section 3 · Robot.java', title: 'Every published value, saved automatically' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 1.5, fontSize: 15,
+      x: 0.7, y: 1.75, w: 11.9, h: 1.8, fontSize: 15,
+      fileLabel: "Edit Robot.java's constructor",
       lines: [
         { text: 'public Robot() {', color: 'FFD166' },
         { text: '  DataLogManager.start(); // saves every published value to a .wpilog file', color: '9EF01A' },
@@ -115,7 +120,7 @@ function buildDeck() {
     });
 
     K.addCard(s, {
-      x: 0.7, y: 3.65, w: 11.9, h: 3.1,
+      x: 0.7, y: 3.9, w: 11.9, h: 2.85,
       heading: 'The logger runs before anything else is set up — top of the constructor.',
       headingSize: 22,
       body: 'On a real robot the file lands on SystemCore; in sim it lands in a logs/ folder in your project. A session you can scrub through later is how you answer "what just happened?" without making it happen again.',
@@ -131,7 +136,8 @@ function buildDeck() {
     K.addHeader(s, { icon: 'filecode_teal.png', eyebrow: 'Section 4 · DriveModule.java', title: 'A standing callback, not a one-off poll' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 3.7, fontSize: 14,
+      x: 0.7, y: 1.75, w: 11.9, h: 3.7, fontSize: 12,
+      fileLabel: "Edit DriveModule's constructor",
       lines: [
         { text: 'public DriveModule() {', color: 'FFD166' },
         { text: '  Scheduler.getDefault().addPeriodic(this::logTelemetry);', color: '9EF01A' },
@@ -183,7 +189,8 @@ function buildDeck() {
     K.addHeader(s, { icon: 'lightbulb_white.png', eyebrow: 'Section 6 · Robot.java', title: 'Told, not asked' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 2.5, fontSize: 12,
+      x: 0.7, y: 1.75, w: 11.9, h: 2.8, fontSize: 12,
+      fileLabel: 'Edit Robot: add the listener, then replace logRunningCommand()',
       lines: [
         { text: 'Scheduler.getDefault().addEventListener(this::logCommandStart);', color: '9EF01A' },
         { text: '', color: 'D7E3F4' },
@@ -197,10 +204,10 @@ function buildDeck() {
     });
 
     K.addCard(s, {
-      x: 0.7, y: 4.4, w: 11.9, h: 2.6,
+      x: 0.7, y: 4.7, w: 11.9, h: 2.3,
       heading: 'Is this a Scheduled event? Type it as one.',
       headingSize: 20,
-      body: 'Only the specific kind has .command() on it. The old version polled every tick and got lucky every time; this version can\'t get unlucky, because it isn\'t asking — it\'s told.',
+      body: 'Only the specific kind has .command() on it. The old version polled and got lucky every time; this one can\'t get unlucky — it isn\'t asking, it\'s told.',
     });
 
     K.addFooter(s, { pageNum: 8, label: 'Telemetry' });
