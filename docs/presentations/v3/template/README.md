@@ -14,6 +14,8 @@ npm install
 node build/00-orientation.js          # writes ../00-orientation.pptx
 node build/aside-setup.js             # writes ../aside-setup.pptx
 node build/aside-git-branching.js     # writes ../aside-git-branching.pptx
+node build/01-first-motor.js          # writes ../01-first-motor.pptx
+# ...same pattern through build/10-kinematics.js
 ```
 
 Each build script's `outPath` writes two directories up, into
