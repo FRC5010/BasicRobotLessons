@@ -5,12 +5,15 @@ const { NAVY, NAVY2, TEAL, ORANGE, WHITE, INK, MUTED, CARDBG, FONT_HEAD, FONT_BO
 function buildDeck() {
   const p = K.newDeck({ title: 'Lesson 2 — Joystick Control' });
 
-  K.addTitleSlide(p, {
+  const titleSlide = K.addTitleSlide(p, {
     tag: 'LESSON 2',
     title: 'Joystick Control',
     subtitle: 'Drive the motor with a stick, not a button',
     versionTag: 'WPILib 2027 Alpha  ·  Commands V3',
   });
+  titleSlide.addNotes(
+    'This lesson replaces Lesson 1\'s fixed 0.3 with a live joystick reading — the first time a command reads something that changes continuously instead of a value baked in at compile time.'
+  );
 
   // ============================================================ SLIDE 2 — goal + concepts
   {
@@ -51,6 +54,9 @@ function buildDeck() {
     );
 
     K.addFooter(s, { pageNum: 2, label: 'Joystick Control' });
+    s.addNotes(
+      'Lesson 1 spun the motor at a fixed 0.3 on a button press — the number never changed. This lesson replaces that constant with whatever the joystick axis reads right now, so the motor speed tracks the stick continuously instead of snapping to one value. The deadband exists because a real joystick almost never reports exactly 0.0 at rest — a tiny bit of drift or noise would otherwise make the motor creep even when the driver isn\'t touching the stick.'
+    );
   }
 
   // ============================================================ SLIDE 3 — an axis is a number, but a live one
@@ -74,6 +80,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 3, label: 'Joystick Control' });
+    s.addNotes(
+      'getLeftY() returns a double — whatever the stick position was at the exact instant you called it. If you grab that value once when the command is built, it\'s frozen forever at that reading; the motor would run at whatever speed the stick happened to be at when the code first ran, never updating again. What a repeating command actually needs is a way to ask "what is it right now?" on every single tick — that\'s the problem a supplier solves, and it\'s the reason the next two slides build up to DoubleSupplier before touching DriveModule at all.'
+    );
   }
 
   // ============================================================ SLIDE 4 — lambdas and suppliers
@@ -100,6 +109,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 4, label: 'Joystick Control' });
+    s.addNotes(
+      'A lambda — the () -> ... syntax — packages up a little bit of code and hands it around like any other value, the same way 3.7 or a TalonFX object is a value. Nothing inside the lambda runs when you write stickReader = () -> ...; that line just stores the code for later. Calling .getAsDouble() is the moment it actually runs, and it runs fresh every time you call it — that\'s exactly the "ask again right now" behavior the previous slide was missing. DoubleSupplier is the specific type for "a lambda with no arguments that returns a double"; there are other Supplier types for other return types, but this is the one the joystick axis needs.'
+    );
   }
 
   // ============================================================ SLIDE 5 — driveWithJoystick
@@ -130,6 +142,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 5, label: 'Joystick Control' });
+    s.addNotes(
+      'driveWithJoystick takes a DoubleSupplier as its parameter instead of a fixed double — that\'s the whole trick. Every tick, runRepeatedly\'s lambda calls speedSupplier.getAsDouble() to get a brand-new reading, runs it through applyDeadband, and sends it to the motor. Point out that the lambda body here has multiple statements, which is why it needs curly braces — the single-expression lambda from the previous slide didn\'t need them. This file won\'t compile yet on purpose: applyDeadband doesn\'t exist until the next section, and that\'s fine — it\'s a normal part of building up a file piece by piece.'
+    );
   }
 
   // ============================================================ SLIDE 6 — deadband
@@ -160,6 +175,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 6, label: 'Joystick Control' });
+    s.addNotes(
+      'This is a private helper method — private because nothing outside DriveModule needs to call it, it exists purely to keep driveWithJoystick readable. Trace an example out loud: applyDeadband(0.03, 0.1) — Math.abs(0.03) is 0.03, which is less than 0.1, so it returns 0.0. applyDeadband(0.6, 0.1) — Math.abs(0.6) is 0.6, not less than 0.1, so it returns 0.6 unchanged. Worth mentioning that WPILib actually ships MathUtil.applyDeadband as a library method that does this exact job — writing it by hand once here is what makes reaching for the built-in one later feel like a shortcut instead of a mystery.'
+    );
   }
 
   // ============================================================ SLIDE 7 — default command
@@ -185,6 +203,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 7, label: 'Joystick Control' });
+    s.addNotes(
+      'Read the binding from the inside out: () -> -robot.driverController.getLeftY() is a lambda — a DoubleSupplier — that reads the stick and flips its sign. That lambda gets passed into driveWithJoystick, which returns a Command, and that Command becomes the module\'s default. A default command is simply "what runs when nothing else is asking for this mechanism" — driving is the normal state for a drivetrain, so it makes sense as the default rather than something you\'d trigger with a button. The scheduler handles the handoff automatically: schedule some other command that requires the module, and the default steps aside for as long as that command runs, then resumes the instant it finishes or is canceled — no code in driveWithJoystick itself has to know that\'s happening.'
+    );
   }
 
   // ============================================================ SLIDE 8 — run it
@@ -207,6 +228,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 8, label: 'Joystick Control', dark: true });
+    s.addNotes(
+      'Nothing needs to be scheduled by hand this time — that\'s the point of a default command. As soon as the robot enables in teleop, the module is already running driveWithJoystick because no other command has claimed it. Push the stick forward and the motor should spin one direction; pull back and it should reverse; let go and it should settle at exactly zero rather than drifting. If it creeps at rest, the most common cause is that driveWithJoystick isn\'t actually routing through applyDeadband — double check the call is really there before assuming the deadband math itself is wrong.'
+    );
   }
 
   // ============================================================ SLIDE 9 — try it
@@ -225,6 +249,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 9, label: 'Joystick Control', dark: true });
+    s.addNotes(
+      'Slow mode is a good first extension because it reuses everything just built — one more parameter, one more multiply, one more button binding, nothing new conceptually. Squaring the input (speed * Math.abs(speed), not speed * speed) is worth pausing on: ask why Math.abs has to stay in there — squaring alone would always return a positive number and the motor would never reverse, since a negative times a negative is positive. Printing raw vs. deadbanded side by side is the most convincing demo of why the deadband exists at all — students can watch the raw number jitter near zero while the deadbanded one sits rock steady at 0.0.'
+    );
   }
 
   // ============================================================ SLIDE 10 — what you learned + next
@@ -254,6 +281,9 @@ function buildDeck() {
     s.addImage({ path: K.ICON('arrowright_white.png'), x: 8.43, y: 5.73, w: 0.29, h: 0.29 });
 
     K.addFooter(s, { pageNum: 10, label: 'Joystick Control' });
+    s.addNotes(
+      'The big idea this lesson adds is that not every value a command needs is known up front — some of it has to be fetched fresh, tick after tick, and a lambda stored as a DoubleSupplier is how Java lets you pass around "go get the current value" instead of just a value. if, Math.abs, and return are ordinary building blocks, but stacked together they solve a real problem: a joystick that never quite reads zero. And a default command is the first time a mechanism does something without anybody explicitly telling it to on that tick — worth sitting with, because most of the commands still to come will interrupt this one temporarily rather than replace it for good.'
+    );
   }
 
   return p;

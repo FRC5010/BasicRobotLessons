@@ -5,12 +5,15 @@ const { NAVY, NAVY2, TEAL, ORANGE, WHITE, INK, MUTED, CARDBG, FONT_HEAD, FONT_BO
 function buildDeck() {
   const p = K.newDeck({ title: 'Lesson 9 — Autonomous' });
 
-  K.addTitleSlide(p, {
+  const titleSlide = K.addTitleSlide(p, {
     tag: 'LESSON 9',
     title: 'Autonomous',
     subtitle: 'Combine everything into a routine that runs itself',
     versionTag: 'WPILib 2027 Alpha  ·  Commands V3',
   });
+  titleSlide.addNotes(
+    'Step back and look at the whole spine built so far: mechanisms own hardware, commands describe work, the scheduler runs it, telemetry records it, and simulation proves it before the robot exists. This lesson is where all of that finally gets composed into something that runs itself, with nobody\'s hands on the sticks — which is a genuinely satisfying moment to let land.'
+  );
 
   // ============================================================ SLIDE 2 — goal + concepts
   {
@@ -52,6 +55,9 @@ function buildDeck() {
     );
 
     K.addFooter(s, { pageNum: 2, label: 'Autonomous' });
+    s.addNotes(
+      'For the first 15 seconds of an FRC match, the robot runs with no driver. In this framework that\'s not a special mode with its own API — it\'s just another opmode, annotated @Autonomous instead of @Teleop, selected on the Driver Station exactly the way RobotTeleop has been all along. Nothing new to learn about how it runs; the only new part is what it does once it\'s running.'
+    );
   }
 
   // ============================================================ SLIDE 3 — what autonomous is (concept)
@@ -73,6 +79,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 3, label: 'Autonomous', dark: true });
+    s.addNotes(
+      'This is also a good moment for the rename this course has been quietly setting up since Lesson 1: MyTeleop and MyAuto were fine names for template example code, but they\'re not example code anymore — they\'re the permanent home for how this robot drives and how it runs itself. Time they sounded like it.'
+    );
   }
 
   // ============================================================ SLIDE 4 — rename MyTeleop/MyAuto
@@ -97,6 +106,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 4, label: 'Autonomous' });
+    s.addNotes(
+      'Same VS Code refactor-rename move as DriveModule → SwerveModule back in Lesson 7 — it keeps @Teleop, keeps the Robot robot constructor parameter, and every binding inside RobotTeleop stays exactly as it was; only the file and class name change. RobotAuto is the one that\'s about to look very different inside — the rest of this lesson is what goes in it.'
+    );
   }
 
   // ============================================================ SLIDE 5 — whole-chassis driveDistance
@@ -129,6 +141,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 5, label: 'Autonomous' });
+    s.addNotes(
+      'Read this top to bottom as the same shape as Lesson 6\'s driveDistance, applied one level up. Every module is asked to point forward and roll, and only one wheel is watched to know when we\'ve gone far enough. Watching one wheel works for straight-ahead driving because, with all four wheels aimed the same direction at the same speed, they all cover the same distance. Two endings, same as every finishing command since Lesson 6 — the loop\'s own stop-order for finishing on its own, .whenCanceled(...) for being interrupted. If that split is starting to feel routine, that\'s the point.'
+    );
   }
 
   // ============================================================ SLIDE 6 — resetDrivePosition (encapsulation)
@@ -156,6 +171,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 6, label: 'Autonomous' });
+    s.addNotes(
+      'Lesson 6 called setPosition(0) directly on the TalonFX — but that was inside DriveModule, where the motor is visible. The Drivetrain can\'t do that: m_driveMotor is private to the module, and that\'s encapsulation doing its job — outsiders don\'t get to poke a module\'s hardware. What the module can do is offer a named, intention-revealing method instead. This is a nice small callback to Lesson 1\'s original encapsulation pitch, now paying rent four lessons later.'
+    );
   }
 
   // ============================================================ SLIDE 7 — create Autos.java
@@ -180,6 +198,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 7, label: 'Autonomous' });
+    s.addNotes(
+      'commands/Autos.java is a new file — the home for auto factories, a cookbook for the robot rather than a subsystem. driveTurnDrive is static — called on the class itself, Autos.driveTurnDrive(...), no object needed, the same way you call Math.abs(...). That fits, because Autos has no data of its own; it\'s a cookbook, not a machine.'
+    );
   }
 
   // ============================================================ SLIDE 8 — driveTurnDrive (sequence)
@@ -214,6 +235,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 8, label: 'Autonomous' });
+    s.addNotes(
+      'Command.sequence(...) runs the commands you give it one at a time, in order. Step 2 doesn\'t start until step 1 reports finished; step 3 waits for step 2. Because each step finishes itself, the sequence flows step to step and then ends — at which point auto is over. Command.sequence(...) is a static method — same family as Command.noRequirements(...) and Command.requiring(...) already used — and, like every builder in this API, it needs .named(...) before it\'s a real, runnable Command. (Command.andThen(Command) does the same job for exactly two commands — Lesson 7\'s turn-in-place hint already used it — sequence is the clean way to chain many.)'
+    );
   }
 
   // ============================================================ SLIDE 9 — the await rewrite
@@ -244,6 +268,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 9, label: 'Autonomous' });
+    s.addNotes(
+      'This is worth slowing down for, because it changes how every routine gets written from here on. Command.sequence(...) takes three already-built commands and glues them together from the outside. coroutine.await(command) schedules command and suspends this coroutine right there until it finishes — then the next line runs. Read the method top to bottom and it IS the plan you\'d say out loud: drive a meter, await it; turn to ninety, await it; drive a meter, await it. No decorators gluing pieces together from outside — the sequencing IS the code\'s own control flow, the same "just write it as a loop" idea Lesson 8 used for turnToHeading. Here\'s the part that matters beyond looking nicer: Command.sequence(...) builds one command that requires the Drivetrain for the group\'s ENTIRE duration, start to finish. The await version is different — driveTurnDrive itself requires nothing, and each step claims the Drivetrain only while that step is actually running, then lets go the instant it finishes. With only a Drivetrain in this robot that distinction has nowhere to show off yet, but it matters the moment a routine mixes mechanisms — drive somewhere, then run an arm, then drive again — where a sequence(...) group would hold the drivetrain reserved even during the arm step it doesn\'t need. Get comfortable with the shape now; it pays off the moment this robot has more than one mechanism to coordinate.'
+    );
   }
 
   // ============================================================ SLIDE 10 — hand it to the robot
@@ -273,6 +300,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 10, label: 'Autonomous' });
+    s.addNotes(
+      'Autonomous doesn\'t need a getAutonomousCommand() hook to fill in — there\'s no framework method waiting for a return value. RobotAuto just has to schedule its own plan the moment auto actually starts, the same way every other binding in this course has lived in a constructor since Lesson 1. Why the constructor and not start()? The constructor runs exactly once, when RobotAuto is selected, and that\'s what makes this binding scoped to RobotAuto specifically — it\'s automatically torn down the moment the Driver Station selects a different opmode, the same scoping that already protects every button binding written so far. Put this logic in start() instead and you\'d re-register a fresh trigger on every re-enable, stacking duplicates — Lesson 1\'s exact warning, still true here. Once running: Drivetrain/Module0/SteerAngleDegrees holds 0 while distance climbs to 1.0, the heading sweeps to 90° and settles, distance climbs again from a new zero — the robot ran the plan untouched, nobody\'s hands on the controller. That\'s worth savoring for a second before moving to the polish in the next section.'
+    );
   }
 
   // ============================================================ SLIDE 11 — cosine compensation
@@ -299,6 +329,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 11, label: 'Autonomous' });
+    s.addNotes(
+      'Watch the Swerve tab closely at the moment each step changes — right when the turn begins, and right when step 3 starts — and there\'s a little ugliness hiding in those transitions. When step 2 begins, every wheel\'s steering target snaps from 0° to its pinwheel angle, but steering takes real time (that 25:1 gearbox from Lesson 7 doesn\'t teleport). For a fraction of a second the drive motors push at full command through wheels pointed somewhere between the old direction and the new one — the chassis scrubs sideways, the tires drag, and the odometer counts distance the robot didn\'t cleanly travel. In teleop you\'d never notice; in an auto that\'s supposed to end in a precise spot, these little smears add up. The fix is one line of trigonometry, and it\'s a trick every good swerve robot uses: ask how much of this wheel\'s rolling actually points where we want to go — that\'s exactly what cosine measures. Pointed perfectly, cos = 1, drive full speed; pointed 60° off, cos = 0.5, drive at half; pointed sideways at 90°, cos = 0, don\'t drive at all. One subtlety worth naming: past 90° of error, cosine goes negative, so the wheel briefly drives backward — that\'s not a bug, it\'s the honest answer to "how much of my rolling points the right way," since at 180° off, rolling backward IS rolling the right way. WPILib ships this exact idea as SwerveModuleVelocity.cosineScale, swappable in once Lesson 10 has the module speaking in states.'
+    );
   }
 
   // ============================================================ SLIDE 12 — parallel / race
@@ -334,6 +367,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 12, label: 'Autonomous', dark: true });
+    s.addNotes(
+      'Sequences do one thing at a time; sometimes you want simultaneous actions — running a mechanism alongside a drive step, say. The .optional(...) shape chained onto Command.parallel(...) is worth naming because it\'s more flexible than the two static methods alone. Command.parallel(a, b) treats every command you hand it as required — the group waits for all of them. Chain .optional(...) instead of listing a command as required, and it rides along without being able to keep the group alive — the group finishes based on its required commands alone, and optional ones just get cancelled when that happens. That\'s exactly "run this, and something else alongside it for as long as it takes" — one designated command sets the pace, everything else just comes along for the ride. On the hard rule: this framework tells you about the violation immediately — IllegalArgumentException: Commands running in parallel cannot share requirements — not a mysterious runtime hang, a clear error the moment you build the group. The way to actually combine translation and rotation on one mechanism is Lesson 10\'s SwerveDriveKinematics.'
+    );
   }
 
   // ============================================================ SLIDE 13 — RobotAutoBox (second opmode)
@@ -364,6 +400,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 13, label: 'Autonomous' });
+    s.addNotes(
+      'Real robots pick from several autos before a match. In this framework that\'s not a dashboard widget you build — it\'s the Driver Station\'s own opmode selector, the exact same list RobotTeleop and RobotAuto already show up in. Every @Autonomous class is its own selectable entry. After rebuilding, open the opmode selector in SimGUI and "Do Nothing" sits right next to "Drive Turn Drive" — two real, independent choices, zero chooser code written. This is the pattern to reach for every time this robot needs another auto: one more small @Autonomous class, not a dropdown living inside a bigger one.'
+    );
   }
 
   // ============================================================ SLIDE 14 — try it
@@ -382,6 +421,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 14, label: 'Autonomous', dark: true });
+    s.addNotes(
+      'The box pattern is the meaty exercise here — worth having students actually predict the final heading before running it, since a wrong prediction (and it should end at the start heading, 0°, having turned 90° four times) is a great teaching moment about accumulating turns. The parameterize-the-distance exercise is a light reprise of dependency injection applied to a second axis (distance instead of just the drivetrain). The deliberate-wait exercise previews a real pattern: letting a mechanism settle before moving on is exactly the kind of thing coroutine.wait(...) is for once this robot has more than a drivetrain.'
+    );
   }
 
   // ============================================================ SLIDE 15 — what you learned + next
@@ -411,6 +453,9 @@ function buildDeck() {
     s.addImage({ path: K.ICON('arrowright_white.png'), x: 8.43, y: 5.73, w: 0.29, h: 0.29 });
 
     K.addFooter(s, { pageNum: 15, label: 'Autonomous' });
+    s.addNotes(
+      'Autonomous turned out to be the least mysterious thing in robot programming: just another opmode, whose whole job is scheduling one plan the moment RobotModeTriggers.autonomous() fires — built by composing the small finishing commands already in hand. An auto factory that takes the drivetrain as a parameter is dependency injection, keeping every command pointed at the one real robot. Running a plan with nobody\'s hands on the sticks also exposed a flaw teleop had been hiding, and cosine compensation fixed it with one line. And the MyTeleop/MyAuto names finally became RobotTeleop/RobotAuto — not because anything technical demanded it today, but because template example code doesn\'t drive a match, and now neither of these files is that anymore. Everything from here on is refinement — starting with Lesson 10, where the chassis finally learns to drive and spin at the same time.'
+    );
   }
 
   return p;

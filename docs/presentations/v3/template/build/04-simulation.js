@@ -5,12 +5,15 @@ const { NAVY, NAVY2, TEAL, ORANGE, WHITE, INK, MUTED, CARDBG, FONT_HEAD, FONT_BO
 function buildDeck() {
   const p = K.newDeck({ title: 'Lesson 4 — Simulation' });
 
-  K.addTitleSlide(p, {
+  const titleSlide = K.addTitleSlide(p, {
     tag: 'LESSON 4',
     title: 'Simulation',
     subtitle: 'Make the motor move on your laptop',
     versionTag: 'WPILib 2027 Alpha  ·  Commands V3',
   });
+  titleSlide.addNotes(
+    'The plots from Lesson 3 sat flat because nothing connects "I commanded 30% power" to "the rotor spins up" in sim — this lesson fixes that by giving the simulated motor a physics model, so from here on you can develop and debug most of your logic on a laptop and save the real robot for fine-tuning.'
+  );
 
   // ============================================================ SLIDE 2 — goal + concepts
   {
@@ -51,6 +54,9 @@ function buildDeck() {
     );
 
     K.addFooter(s, { pageNum: 2, label: 'Simulation' });
+    s.addNotes(
+      'The mental model to correct up front: simulation is not a video game that comes with physics built in. On a real robot, the universe handles physics for free; in sim, nothing has mass or inertia unless you tell it to. That reframes what today\'s work is — not fixing a bug, but adding the physics that was never there.'
+    );
   }
 
   // ============================================================ SLIDE 3 — why simulate?
@@ -68,6 +74,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 3, label: 'Simulation', dark: true });
+    s.addNotes(
+      'The sim motor isn\'t broken — it\'s just sitting in a world with no physics yet. You fix that by adding a physics model: an object that takes the voltage your code applies and computes how fast a real motor with a real load would spin. Feed that motion back into the TalonFX and suddenly getVelocity() and getPosition() report believable numbers. This is how good teams write most of their code: develop and debug logic on a laptop, and save the real robot for fine-tuning.'
+    );
   }
 
   // ============================================================ SLIDE 4 — the sim bridge and the model
@@ -95,6 +104,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 4, label: 'Simulation' });
+    s.addNotes(
+      'Two objects do the work. Phoenix 6 gives every TalonFX a sim state — the hook for injecting fake sensor readings into the motor. WPILib gives you DCMotorSim — the physics. Both are data the module keeps for life, so they\'re fields, up top with the motor. Don\'t sweat the exact numbers yet: 0.001 for inertia just makes the motor feel snappy; tuning for realism comes later, right now the goal is any believable motion.'
+    );
   }
 
   // ============================================================ SLIDE 5 — composition
@@ -118,6 +130,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 5, label: 'Simulation' });
+    s.addNotes(
+      'Fields initialize top to bottom, and m_driveSim is built by asking the motor for its sim state — so the motor has to exist first. Put m_driveSim above m_driveMotor and the compiler refuses outright with "illegal forward reference" — worth having students actually try that once to see the error. The rule to state plainly: when one field is built from another, the one it depends on goes first. For the composition side, read m_driveModel inside-out: DCMotor.getKrakenX60(1) describes the motor itself, that description gets handed to Models.singleJointedArmFromPhysicalConstants(motor, inertia, gearing), which builds the math model, and the math model gets handed to new DCMotorSim(...), which wraps it into something you can step forward in time. Three objects, each passed into the next — this shape shows up constantly from here on. Worth naming: the method mentions an "arm" because a motor turning a shaft against a load is the same equation whether the shaft is an arm joint or a wheel axle, so WPILib doesn\'t duplicate the math under a second name.'
+    );
   }
 
   // ============================================================ SLIDE 6 — step the physics
@@ -149,6 +164,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 6, label: 'Simulation' });
+    s.addNotes(
+      'WPILib steps simulated physics on its own schedule, separate from the scheduler tick wired up in Lesson 1 — but that schedule lives on Robot, not on Mechanism. A mechanism doesn\'t get a "run my physics" hook of its own; the only thing that does is a plain method you write yourself, for Robot to call — a smaller idea than it sounds, just another method the same way getPositionRotations() was in Lesson 3. Walk the four steps as a loop: tell the sim the battery voltage, read the voltage the TalonFX is applying, feed that into the physics model and advance time by one tick, then push the resulting motion back into the fake encoder. That loop is the whole idea of simulation — if there\'s one picture to take from this lesson, it\'s this one, and the next slide draws it explicitly.'
+    );
   }
 
   // ============================================================ SLIDE 7 — the loop picture
@@ -176,6 +194,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 7, label: 'Simulation', dark: true });
+    s.addNotes(
+      'Your command flows out as voltage; the model turns voltage into motion; the motion flows back in as fake sensor readings. Once this runs, getPosition() and getVelocity() — the values you\'ve been logging since Lesson 3 — reflect real-feeling physics, and nothing downstream of the encoder can tell the difference. Your telemetry, your plots, and every controller you write later work identically in sim and on the real robot — that\'s the payoff. On the unit note: DCMotorSim reports position and velocity in radians and radians per second, but setRawRotorPosition and setRotorVelocity want rotations and rotations per second — one full turn is 2π radians, so dividing by it converts either quantity. Skip that division and the plots would be lying by a factor of about 6.3.'
+    );
   }
 
   // ============================================================ SLIDE 8 — wire it into Robot
@@ -203,6 +224,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 8, label: 'Simulation' });
+    s.addNotes(
+      'You\'ve already met one method WPILib calls every tick no matter what: robotPeriodic(), which got the scheduler tick back in Lesson 1. simulationPeriodic() is that method\'s sim-only sibling — same idea, called on the same schedule, except WPILib only calls it when you\'re actually running in simulation. On a real robot it never runs, so nothing inside it can ever leak onto the field. That\'s the whole wire-up: Robot already holds module, so it just calls the method you wrote in section 3. As more mechanisms arrive in later lessons, this is where each one\'s simulatePeriodic() gets called from — one line per mechanism, all in one obvious place.'
+    );
   }
 
   // ============================================================ SLIDE 9 — run it
@@ -221,6 +245,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 9, label: 'Simulation' });
+    s.addNotes(
+      'This is the payoff Lesson 3 promised: push the stick and watch the same plots that sat flat before now actually respond. Velocity ramps up to a steady value and back to zero, like a real motor accelerating; position climbs while driving and holds when stopped. There\'s now a robot you can develop against with no hardware on the bench at all.'
+    );
   }
 
   // ============================================================ SLIDE 10 — try it
@@ -239,6 +266,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 10, label: 'Simulation', dark: true });
+    s.addNotes(
+      'The inertia change is a genuine predict-then-check exercise: a bigger inertia means the motor is harder to spin up, so the velocity plot should reach full speed more slowly — have students commit to a prediction before rebuilding. The step-input exercise surfaces the S-shaped ramp as the motor\'s natural response to a sudden voltage change; that same curve comes back when tuning control in Lesson 5, so it\'s worth pointing out this is the first time they\'re seeing it, not the last. Logging applied volts is explicitly framed as simulatePeriodic()\'s version of logTelemetry() — a value that only exists in sim gets logged from the sim-only tick.'
+    );
   }
 
   // ============================================================ SLIDE 11 — what you learned + next
@@ -268,6 +298,9 @@ function buildDeck() {
     s.addImage({ path: K.ICON('arrowright_white.png'), x: 8.43, y: 5.73, w: 0.29, h: 0.29 });
 
     K.addFooter(s, { pageNum: 11, label: 'Simulation' });
+    s.addNotes(
+      'Simulation isn\'t magic — that\'s the lesson under the lesson. Nothing in sim moves until you model it: the Phoenix sim state is the bridge for injecting fake sensor readings, DCMotorSim is the physics that turns applied voltage into motion, and simulationPeriodic() is where you step it, one 20 ms tick at a time — the sim-only sibling of the robotPeriodic() scheduler tick from Lesson 1. Along the way you met composition — objects built from objects, handed one into the next — and a rule about field order: when one field is built from another, the dependency comes first. The picture to keep is the loop: command → voltage → model → fake encoder → your reads. Everything downstream of the encoder can\'t tell sim from reality, which means from here on you can build and debug on your laptop and bring the real robot in at the end. Lesson 5 cashes that in immediately with the first feedback controller.'
+    );
   }
 
   return p;

@@ -5,12 +5,15 @@ const { NAVY, NAVY2, TEAL, ORANGE, WHITE, INK, MUTED, CARDBG, FONT_HEAD, FONT_BO
 function buildDeck() {
   const p = K.newDeck({ title: 'Lesson 8 — Gyro & Heading' });
 
-  K.addTitleSlide(p, {
+  const titleSlide = K.addTitleSlide(p, {
     tag: 'LESSON 8',
     title: 'Gyro & Heading',
     subtitle: 'Turn the robot to a compass direction and stop',
     versionTag: 'WPILib 2027 Alpha  ·  Commands V3',
   });
+  titleSlide.addNotes(
+    'An encoder tells you how far a motor turned. A gyro tells you how far the whole robot has rotated. The Pigeon 2 reports yaw — rotation about the vertical axis, i.e. heading — in degrees, 0° wherever the robot was pointing when the gyro zeroed, positive CCW (the Lesson 7 convention, holding as promised). The most important thing in this lesson is what does NOT change: turning a whole robot to face 90° turns out to be the same five moves as pointing one wheel.'
+  );
 
   // ============================================================ SLIDE 2 — goal + concepts
   {
@@ -50,6 +53,9 @@ function buildDeck() {
     );
 
     K.addFooter(s, { pageNum: 2, label: 'Gyro & Heading' });
+    s.addNotes(
+      'Where should the gyro live? Heading is a chassis fact — no single module knows it, and no single module needs it alone — so it goes on Drivetrain, not in SwerveModule and not in some new mechanism. That framing question is worth asking out loud before opening the file.'
+    );
   }
 
   // ============================================================ SLIDE 3 — gyro field + getHeadingDegrees
@@ -82,6 +88,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 3, label: 'Gyro & Heading' });
+    s.addNotes(
+      'Reading yaw has the same shape as reading motor position: getYaw() returns a signal, .getValue().in(Degrees) pulls the number out in the unit you want. Sensors all feel alike once you\'ve read one — that\'s worth naming explicitly, since it validates the pattern-recognition students have been building since Lesson 3. Notice those last two fields aren\'t final — they\'re memory, a running total the sim rewrites every tick, which is why they\'re plain mutable doubles and not final like the hardware fields around them.'
+    );
   }
 
   // ============================================================ SLIDE 4 — structured telemetry for heading
@@ -109,6 +118,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 4, label: 'Gyro & Heading' });
+    s.addNotes(
+      'StructPublisher is StructArrayPublisher\'s singular sibling from Lesson 7\'s getStructArrayTopic — same bridge idea, one value instead of an array, so it\'s getStructTopic and .set(value) instead of .set(array). Rotation2d and NetworkTableInstance are already imported from Lesson 7, so this slots in without new plumbing beyond the publisher itself.'
+    );
   }
 
   // ============================================================ SLIDE 5 — extract commandRotation
@@ -141,6 +153,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 5, label: 'Gyro & Heading' });
+    s.addNotes(
+      'The rotate(omega) command from Lesson 7 does the actual module-steering math for pure rotation. turnToHeading is about to need the same math with a different omega each tick — and the sim needs to know what omega was just asked for. You could copy the tangent-angle loop into the new command. Don\'t — copied code is a bug with a delay on it: fix the original and the copy stays wrong. Look at what happened to rotate: its whole body became one line that says what it wants, and the helper holds the how. That\'s the move — when two commands need the same math, promote it to a helper, and every caller gets the m_lastCommandedOmega bookkeeping for free. One loose end worth mentioning: translate(...) from Lesson 7 needs one new line too — pure translation shouldn\'t leave a stale rotation rate lying around for the sim to integrate, so it sets m_lastCommandedOmega = 0.0.'
+    );
   }
 
   // ============================================================ SLIDE 6 — turnToHeading
@@ -173,6 +188,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 6, label: 'Gyro & Heading' });
+    s.addNotes(
+      'Lesson 5 promised its five moves would come back — measure, subtract, multiply, clamp, command — and here they are, pointed at the whole robot. Two things differ from steerToAngle: which sensor gets measured, and that headings wrap around a circle, so the subtract step needs the wrap trick baked in (-170° to 170° should turn 20°, not 340°). The wrap logic goes in its own headingError question-method because the finish condition is about to need it too — the clamp is tighter than Lesson 5\'s ±1.0 on purpose, since full-power spins are violent and a heading turn never needs more than half throttle. Because the finish condition calls the same headingError the loop body used, "done" means "within 2° by the shortest path" — the wrap logic can\'t disagree with itself. Also worth noting: Drivetrain needs its own private clamp helper — it\'s a different class from SwerveModule, so it can\'t reach that one\'s private helper, even though the logic is identical.'
+    );
   }
 
   // ============================================================ SLIDE 7 — the while loop, explained
@@ -194,6 +212,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 7, label: 'Gyro & Heading', dark: true });
+    s.addNotes(
+      'Read the while loop as "keep steering toward the target, one tick at a time, for as long as we\'re still more than 2° off." Each pass computes a fresh omega from the current error, hands it to commandRotation, then coroutine.yield() suspends until the next tick — this is precisely what Coroutine.waitUntil(...) did under the hood back in Lesson 6, just written out by hand because this loop has real work to do on every pass, not just a condition to poll. The moment the error drops under 2°, the loop exits, the line right after it commands a full stop, and the coroutine body is out of code — finished, the same way driveDistance finished in Lesson 6. And because Lesson 6\'s rule about endings hasn\'t gone anywhere, .whenCanceled(() -> commandRotation(0.0)) covers the other ending — something interrupting this command before the loop ever gets to its own stop line. Two endings, two stop orders, same as driveDistance.'
+    );
   }
 
   // ============================================================ SLIDE 8 — wire it up
@@ -220,6 +241,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 8, label: 'Gyro & Heading' });
+    s.addNotes(
+      'The bottom and right face buttons are free again since Lesson 7\'s cleanup, which is a small but nice callback worth mentioning — the refactor really did clear things out. Because turnToHeading requires the Drivetrain, pressing the bottom button cancels the default translate command; when it finishes (or is interrupted by the right button), the default resumes automatically. Unlike Lesson 5\'s steerToAngle, this command finishes — so the stick comes back to life on its own the moment the robot faces 90°, with no extra code needed to hand control back.'
+    );
   }
 
   // ============================================================ SLIDE 9 — fake the gyro in sim
@@ -246,6 +270,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 9, label: 'Gyro & Heading' });
+    s.addNotes(
+      'On a real robot, commandRotation(omega) spins the four wheels tangent to the circle, the chassis rotates, and the gyro reads the result. In sim, the modules don\'t actually push the chassis around — that physics hasn\'t been built. So the loop gets closed by hand: pretend the robot rotates at the rate just commanded, and inject that back into the fake gyro. It\'s an honest stand-in that lets turnToHeading get developed on a laptop today; when Lesson 10 adds SwerveDriveKinematics, this can be replaced with a physics-driven simulation of the actual modules pushing the chassis around. Worth stating plainly: this is the same command → model → fake sensor → your reads loop as Lesson 4, just with a one-line model instead of a full DCMotorSim.'
+    );
   }
 
   // ============================================================ SLIDE 10 — run it
@@ -265,6 +292,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 10, label: 'Gyro & Heading', dark: true });
+    s.addNotes(
+      'Verified against this model: from a standing start, turnToHeading(90) settles inside the band in well under a second — no overshoot, no oscillation, because integrating a commanded rate has no momentum to fight, unlike the geared motors from Lesson 7. That\'s a clean, deliberate contrast worth naming: this control loop is easier to tune than the geared steering was, precisely because the fake gyro has no inertia. One glance at the Swerve tab now tells you what the wheels are doing and which way the robot thinks it\'s facing, at the same time.'
+    );
   }
 
   // ============================================================ SLIDE 11 — try it
@@ -284,6 +314,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 11, label: 'Gyro & Heading', dark: true });
+    s.addNotes(
+      'The wrap-proving exercise is the most important of the four to actually run, not just assign: from 90°, turnToHeading(-170) should sweep +100° through 180° — the short way — not -260°, and watching the plot is what confirms the wrap logic is really doing its job rather than just compiling. zeroHeading() is a good moment to point out that a one-statement coroutine body with nothing to wait for finishes the instant it runs — the same shape as a runOnce-style setup step from Lesson 6, just realized through the coroutine body instead of a decorator.'
+    );
   }
 
   // ============================================================ SLIDE 12 — what you learned + next
@@ -313,6 +346,9 @@ function buildDeck() {
     s.addImage({ path: K.ICON('arrowright_white.png'), x: 8.43, y: 5.73, w: 0.29, h: 0.29 });
 
     K.addFooter(s, { pageNum: 12, label: 'Gyro & Heading' });
+    s.addNotes(
+      'The most important thing in this lesson is what didn\'t change: turning a five-hundred-newton robot to face 90° is the same five moves as pointing one wheel — measure, subtract, multiply, clamp, command — with a gyro as the sensor and the wrap trick promoted into a headingError helper that the finish condition shares, so "done" and "which way" can never disagree. Around that came two habits worth keeping: when a second caller needs the same math, extract a helper method instead of copying — copied code is a bug with a delay on it — and when the physics doesn\'t exist yet, fake the sensor by integrating the commanded rate. You also wrote your first finishing command whose loop body does real per-tick work instead of just waiting — the direct, by-hand version of what coroutine.waitUntil(...) was quietly doing all along back in Lesson 6. A robot that knows its heading and can command its own motion is most of what an autonomous routine needs — Lesson 9 takes the driver out of the loop entirely.'
+    );
   }
 
   return p;

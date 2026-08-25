@@ -5,12 +5,15 @@ const { NAVY, NAVY2, TEAL, ORANGE, WHITE, INK, MUTED, CARDBG, FONT_HEAD, FONT_BO
 function buildDeck() {
   const p = K.newDeck({ title: 'Lesson 5 — Steering with P Control' });
 
-  K.addTitleSlide(p, {
+  const titleSlide = K.addTitleSlide(p, {
     tag: 'LESSON 5',
     title: 'Steering with P Control',
     subtitle: 'Turn to an angle, and hold it there',
     versionTag: 'WPILib 2027 Alpha  ·  Commands V3',
   });
+  titleSlide.addNotes(
+    'A swerve module\'s steering motor has to point the wheel at a commanded angle. The model students bring in is "if I want 90°, I\'ll set the motor to 90°" — reasonable, and not how motors work. A motor takes an effort, not a destination; there is no "go to 90°" knob. This lesson is the single most important idea in robotics: look at where you are, compare to where you want to be, push in the right direction, and keep re-checking until they match.'
+  );
 
   // ============================================================ SLIDE 2 — goal + concepts
   {
@@ -50,6 +53,9 @@ function buildDeck() {
     );
 
     K.addFooter(s, { pageNum: 2, label: 'Steering P Control' });
+    s.addNotes(
+      'Three words to learn that will follow students their whole robotics career: setpoint (where you want to be), measurement (where you are), error (setpoint minus measurement). The bigger the error, the harder you push; when error hits zero, you stop. That\'s the whole idea, and everything else in this lesson is just writing it down in Java.'
+    );
   }
 
   // ============================================================ SLIDE 3 — setpoint, measurement, error
@@ -76,6 +82,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 3, label: 'Steering P Control', dark: true });
+    s.addNotes(
+      'Say this slowly, because this is the idea the rest of the course builds on: a motor takes an effort — a speed, a voltage — not a destination. You have to drive it there yourself, tick after tick, by looking at where it is and comparing to where you want it. That\'s feedback control, and P control (proportional control) is the simplest useful form of it.'
+    );
   }
 
   // ============================================================ SLIDE 4 — add the steering motor + sim
@@ -107,6 +116,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 4, label: 'Steering P Control' });
+    s.addNotes(
+      'The steering motor is a second TalonFX, and it needs the same sim plumbing the drive motor got in Lesson 4 — the ordering rule applies again, m_steerSim is built by asking m_steerMotor for its sim state, so the motor field comes first. No new imports are needed; everything here arrived in Lesson 4. Worth reading the steering angle in degrees, not rotations: a real steering module has a big reduction between motor and wheel — this one steers through 25:1 — but to keep this lesson focused on P control rather than unit conversion, the sensor is treated as 1:1 with the wheel for now. Lesson 6 applies the gear-ratio pattern to the drive motor, and Lesson 7 gives steering its real 25:1 as part of growing up.'
+    );
   }
 
   // ============================================================ SLIDE 5 — priming: why a relative sensor needs a memory
@@ -132,6 +144,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 5, label: 'Steering P Control' });
+    s.addNotes(
+      'getSteerAngleDegrees() trusts the steering motor\'s own sensor completely, and that sensor has a blind spot: it\'s relative, counting rotations from wherever it happened to be when the robot powered on, not from any fixed reference. On the bench that\'s invisible, because the robot gets built with the wheel already close to "forward." On a real match day, after being unplugged, carried around, and replugged a dozen times, there\'s no guarantee the wheel is anywhere near where it was last time — and the sensor has no way to know. We won\'t make the steering motor read the CANcoder continuously yet — that\'s a firmware trick for Lesson 12. For now: read it once, right when the robot boots, and tell the steering motor\'s own sensor to start counting from there.'
+    );
   }
 
   // ============================================================ SLIDE 6 — Constants + CANcoder + priming
@@ -162,6 +177,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 6, label: 'Steering P Control' });
+    s.addNotes(
+      'One calibration step first, worth explaining before the code: the CANcoder\'s own zero is wherever its magnet happens to be glued on — probably not "wheel pointing forward." You measure that gap once, with a number called the magnet offset — point the wheel straight forward by hand, read the CANcoder\'s raw position in Phoenix Tuner X, and store the negative of that reading as the offset. getConfigurator().apply(...) is a pattern that shows up constantly from here on: build a small object describing what you want, hand it to the device once, done. setPosition(...) is new — every Phoenix device lets you tell it what its own sensor should currently read, which is exactly what priming means: not moving the wheel, just correcting what the motor believes about where it already is. Two callouts worth mentioning if asked: a CAN device needs a moment after power-on before it reports real values, so if a prime ever looks like it read 0 instead of the real angle, that\'s the usual suspect; and a CANcoder reads counterclockwise-positive by default — if yours reads backwards, set MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive, or priming will confidently seed the wrong zero every single boot.'
+    );
   }
 
   // ============================================================ SLIDE 7 — proportional control
@@ -191,6 +209,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 7, label: 'Steering P Control' });
+    s.addNotes(
+      'This is the heart of the lesson — read it slowly, because this little method is the seed of every controller students will ever write. runRepeatedly(...).whenCanceled(...).named(...) is a chain built twice already: runRepeatedly is Lesson 2\'s shape, running fresh every tick, exactly what a controller needs since it has to keep re-measuring; whenCanceled is Lesson 1\'s shape, cleanup that fires once when something takes the module away. steerToAngle is just the first method that needed both at once. Also worth naming explicitly: the lambda remembers targetDegrees — a parameter of steerToAngle used tick after tick, long after the method returned. Lambdas hold onto the variables around them when they were created, which is the "tiny bit of state" this lesson promised, and it\'s why one factory method can produce a go-to-90 command and a go-to-0 command that each remember their own target. Also point out the comment about motors holding their last value: when this command is interrupted, its per-tick math stops running, so unless 0 is commanded in cleanup, the motor keeps applying whatever fraction it was last given and the wheel drifts.'
+    );
   }
 
   // ============================================================ SLIDE 8 — walk through one tick
@@ -214,6 +235,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 8, label: 'Steering P Control', dark: true });
+    s.addNotes(
+      'Walk this out loud as a story, not just numbers: with kP = 0.0005, an error of 70° gives output = 0.035, about 3.5% power toward the target — a Kraken X60 spinning something this light doesn\'t need much to get moving. As the motor turns and measurement rises, error shrinks, so output shrinks with it. Near 90°, error is roughly 0, output is roughly 0 — it eases in and holds. That gentle slow-down is what "proportional" buys you: no slamming into the target. And the math handles direction for free — overshoot past 90° and error goes negative, so output goes negative and the motor pushes back. The sign of the error carries which way to go; the size carries how hard.'
+    );
   }
 
   // ============================================================ SLIDE 9 — clamp + kP as a tuning constant
@@ -244,6 +268,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 9, label: 'Steering P Control' });
+    s.addNotes(
+      'clamp shows off if / else if / else — one decision, three branches, exactly one of which runs. Without it, a large error could compute an output like 5.0, which the motor can\'t do; clamping keeps commands sane. It\'s private, like applyDeadband was back in Lesson 2 — internal plumbing, placed right below the method that uses it. kP itself is a tuning constant, a number you\'ll adjust over and over, and numbers like that live in Constants.java in a nested class named for the subsystem area they belong to. public static final reads as: anyone can see it, there\'s exactly one of it — no object needed, you write SteerConstants.kP just like Math.abs — and it can never be reassigned. One named number, one home, every place that needs it points here. That\'s the whole philosophy of Constants.java.'
+    );
   }
 
   // ============================================================ SLIDE 10 — bind it and tune
@@ -270,6 +297,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 10, label: 'Steering P Control' });
+    s.addNotes(
+      'New word: onTrue, where Lesson 1 used whileTrue. whileTrue runs a command while you hold the button; onTrue schedules it once when the button is pressed and then walks away. Since steerToAngle is built on runRepeatedly, it never finishes on its own — so a single tap of the west button sends the module to 90° and holds it there, no need to keep the button down. Tap the north button and the scheduler swaps commands: one command per mechanism, so scheduling the go-to-0 command cancels the go-to-90 one, firing its whenCanceled cleanup on the way out. Worth calling out as a callout of its own: while a steering command owns the module, the joystick stops driving the wheel — the Lesson 2 default command only runs when no other command is using the mechanism, and steerToAngle never lets go. That\'s the one-command-per-mechanism rule doing exactly what it promised; it\'s fine here since we\'re steering, not driving, and the module learns to do both at once when it grows up in Lesson 7.'
+    );
   }
 
   // ============================================================ SLIDE 11 — run it, tune kP
@@ -291,6 +321,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 11, label: 'Steering P Control', dark: true });
+    s.addNotes(
+      'Before running it, add the steering angle to logTelemetry() the same place drive readings have been logging since Lesson 3, so the plot in AdvantageScope actually shows something. Tuning kP by watching the plot is the job — start at 0.0005, double it until it oscillates, then back off. This intuition transfers to every controller students will ever write, so it\'s worth letting them actually watch all three states (too small, too big, just right) rather than just telling them what each looks like.'
+    );
   }
 
   // ============================================================ SLIDE 12 — try it
@@ -309,6 +342,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 12, label: 'Steering P Control', dark: true });
+    s.addNotes(
+      'The shortest-path exercise is worth setting up with the wrinkle it fixes: ask for 0° while sitting at 350°. Error = 0 − 350 = −350, so it spins almost all the way around backwards — when it could have nudged +10° forward. Real steering code wraps the error to the range −180°…+180° so it always takes the short path; the two while loops in the exercise are the fix, and it\'s students\' first while loop — it repeats until the condition is false. Logging the error is Lesson 3\'s refinement applied again: a value that only exists inside a command gets logged where it\'s computed. The kP = 0 / negative-kP exercise is a genuine predict-then-check: 0 means no output ever, so the wheel never moves regardless of error; negative kP pushes the wrong direction and error grows instead of shrinking.'
+    );
   }
 
   // ============================================================ SLIDE 13 — what you learned + next
@@ -338,6 +374,9 @@ function buildDeck() {
     s.addImage({ path: K.ICON('arrowright_white.png'), x: 8.43, y: 5.73, w: 0.29, h: 0.29 });
 
     K.addFooter(s, { pageNum: 13, label: 'Steering P Control' });
+    s.addNotes(
+      'P control earns its billing as the most important idea in robotics, so it\'s worth saying one more time: motors take effort, not destinations, so you close the gap yourself — setpoint − measurement = error, output = kP × error, and the shrinking error eases you into the target while its sign steers the direction. Hold onto the shape of steerToAngle: measure, subtract, multiply, clamp, command. The same five moves point a whole chassis at a compass heading in Lesson 8 — only the sensor changes, which is a sign something real was learned. One more habit worth naming as smaller but just as real: priming. The steering motor\'s own sensor only knows change, not place, so it got a memory — read the CANcoder once at startup, tell the motor\'s sensor to match. It isn\'t the whole fix — Lesson 12 finishes that job — but it\'s the part that matters on the very first boot, which is most of them.'
+    );
   }
 
   return p;

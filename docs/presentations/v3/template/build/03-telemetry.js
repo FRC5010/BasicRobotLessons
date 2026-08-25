@@ -5,12 +5,15 @@ const { NAVY, NAVY2, TEAL, ORANGE, WHITE, INK, MUTED, CARDBG, FONT_HEAD, FONT_BO
 function buildDeck() {
   const p = K.newDeck({ title: 'Lesson 3 — Telemetry' });
 
-  K.addTitleSlide(p, {
+  const titleSlide = K.addTitleSlide(p, {
     tag: 'LESSON 3',
     title: 'Telemetry',
     subtitle: 'Plot position and velocity, live',
     versionTag: 'WPILib 2027 Alpha  ·  Commands V3',
   });
+  titleSlide.addNotes(
+    'So far the conversation with the motor has been one-way — you talk, it spins. This lesson makes it talk back: a TalonFX has a built-in encoder that reports position and velocity for free, and the theme of the whole lesson is asking instead of telling.'
+  );
 
   // ============================================================ SLIDE 2 — goal + concepts
   {
@@ -52,6 +55,9 @@ function buildDeck() {
     );
 
     K.addFooter(s, { pageNum: 2, label: 'Telemetry' });
+    s.addNotes(
+      'A TalonFX\'s built-in encoder gives you position — how many rotations the motor has turned since boot — and velocity, how fast it\'s turning right now in rotations per second. You read these instead of setting them, which is the "questions vs. actions" split the rest of the lesson builds on.'
+    );
   }
 
   // ============================================================ SLIDE 3 — motors that know where they are
@@ -78,6 +84,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 3, label: 'Telemetry' });
+    s.addNotes(
+      'Walk the chain left to right like a little assembly line. m_driveMotor.getPosition() doesn\'t return a plain number — it returns a signal object, Phoenix\'s wrapper that carries the value together with a timestamp. .getValue() reads the signal\'s current value, but that\'s a measurement that remembers its own unit, so it can\'t be silently misread as the wrong one. .in(Rotations) is where you say which unit you want it as. This is also a good moment to name a pattern already in use without a name: setThrottle(0.3) is an action — nothing comes back — while getPosition() is a question, and the answer comes back as a return value to catch in a variable. From this lesson on, question-methods start doing the heavy lifting.'
+    );
   }
 
   // ============================================================ SLIDE 4 — telemetry & the naming rule
@@ -101,6 +110,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 4, label: 'Telemetry' });
+    s.addNotes(
+      'Your code runs on the robot; you\'re looking at a laptop. SmartDashboard.putNumber("some name", value) is the plumbing that gets a number from one to the other, live. This course holds a standard from day one: the name is the address. Every value goes under an organized name, one branch per mechanism, so a hundred values from now you can still find the one you want — and names carry their units too, PositionRotations rather than just Position, so nobody has to guess what a number means later.'
+    );
   }
 
   // ============================================================ SLIDE 5 — start the flight recorder
@@ -127,6 +139,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 5, label: 'Telemetry' });
+    s.addNotes(
+      'SmartDashboard\'s values are live — visible while the robot runs, gone the instant it stops — unless something is also saving them. DataLogManager.start() does exactly that: start it once, and every value published anywhere gets mirrored into a .wpilog file automatically. It has to go at the very top of the Robot constructor, before anything else gets set up. Recording sim sessions might sound like overkill, but it isn\'t — a session you can scrub through afterward is how you answer "wait, what just happened?" without having to make it happen again.'
+    );
   }
 
   // ============================================================ SLIDE 6 — what to log, and where
@@ -160,6 +175,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 6, label: 'Telemetry' });
+    s.addNotes(
+      'You want telemetry fresh always, not just while some command happens to be running — that means it belongs somewhere that always runs, on its own schedule, independent of whatever command is currently active. Scheduler.getDefault().addPeriodic(...) registers a callback that runs every tick, forever, for as long as the robot runs, no command required. this::logTelemetry is a method reference — shorthand for () -> this.logTelemetry() — reads naturally out loud as "add a periodic task, this dot logTelemetry." The slash in the dashboard key isn\'t decoration; it builds a folder tree, and the organization rule for this whole course is that every value a mechanism logs starts with the mechanism\'s name and a slash. When this robot grows to four modules, a gyro, and an arm, that tree is what keeps a hundred values findable. Worth calling out the standing habit: log from a steady, always-running callback like this one, not from inside command bodies — commands come and go, this callback doesn\'t, so plots never go blank just because a command ended.'
+    );
   }
 
   // ============================================================ SLIDE 7 — AdvantageScope
@@ -180,6 +198,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 7, label: 'Telemetry' });
+    s.addNotes(
+      'AdvantageScope ships in the WPILib installer, so it\'s already there — it plots live data, overlays signals, scrubs back through time, and opens .wpilog flight-recorder files. Don\'t be discouraged when the traces sit nearly flat even at full stick — in simulation the motor isn\'t actually turning yet, so there\'s nothing for the encoder to count. That\'s exactly what Lesson 4 fixes. What\'s built today is the pipe; next lesson gives it something real to carry. On a real robot these plots already work — spin the wheel by hand and watch position climb. And sim or real, DataLogManager has been saving every value to a .wpilog file this whole time; open one with File → Open Log(s) to scrub back through an entire session. This tool comes back constantly — tuning P control in Lesson 5, comparing commanded vs. actual speed, eventually watching the robot drive around a virtual field.'
+    );
   }
 
   // ============================================================ SLIDE 8 — listening instead of asking
@@ -211,6 +232,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 8, label: 'Telemetry' });
+    s.addNotes(
+      'Lesson 1\'s logRunningCommand() asked the scheduler a question every tick and read entry zero off the answer — it worked because every command built so far either parks or loops until canceled, so there\'s always something running whenever you ask. That guarantee won\'t last: later lessons build commands that finish on their own, and Lesson 8 ships one that can finish the instant it\'s scheduled, before a poll ever gets a chance to see it run — asking at just the wrong moment means reading past the end of an empty list, not a stale answer. The fix isn\'t a smarter poll, it\'s not polling at all: the scheduler announces every SchedulerEvent it fires — scheduled, completed, canceled, interrupted, and a few more — and addEventListener reacts the instant one happens. The if line does two jobs at once: "event instanceof SchedulerEvent.Scheduled scheduled" asks whether this event is specifically a Scheduled event, and if so hands it back as a variable named scheduled, typed as that specific kind rather than the general SchedulerEvent — which is why the check has to come first, since only the specific kind has a .command() on it. The && after it can use scheduled right away because Java only evaluates the rest of the line once the left side has already passed. scheduled.command().requires(module) matters because the same event stream fires for every mechanism on the robot, not just this one. Run it again and press the button: DriveModule/CurrentCommand still flips the same way as before — what changed is that it isn\'t asking anymore, it\'s told.'
+    );
   }
 
   // ============================================================ SLIDE 9 — try it
@@ -230,6 +254,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 9, label: 'Telemetry', dark: true });
+    s.addNotes(
+      'Logging the commanded speed is a refinement of the always-running rule from section 4: a value that only exists inside a command — like the command\'s own output — gets logged right where it\'s computed, not from a periodic callback. On a real robot, overlaying CommandedOutput against VelocityRotPerSec shows how the motor lags the command — the seed of understanding control, which pays off starting in Lesson 5. getPositionRotations() is worth calling out as exposing a reading method alongside command factories — that\'s fine, readings are safe to share, unlike commands. Renaming a dashboard key is a hands-on demonstration that the slash really is a folder path and the name really is the address — the old entry goes stale and a new folder appears in the tree. The SchedulerEvent.Completed exercise previews the vocabulary callout: Scheduled isn\'t the only kind of event.'
+    );
   }
 
   // ============================================================ SLIDE 10 — what you learned + next
@@ -259,6 +286,9 @@ function buildDeck() {
     s.addImage({ path: K.ICON('arrowright_white.png'), x: 8.43, y: 5.73, w: 0.29, h: 0.29 });
 
     K.addFooter(s, { pageNum: 10, label: 'Telemetry' });
+    s.addNotes(
+      'That naming discipline — Mechanism/Name — feels like overkill for two values; it stops being overkill around value twenty, and this course gets there sooner than it seems. The bigger shift is trading a poll for a listener: logRunningCommand() asked a question every tick and happened to always have an answer, but "happened to" isn\'t a guarantee. logCommandStart() doesn\'t ask at all — it registers once and reacts exactly when a SchedulerEvent.Scheduled actually occurs, unpacked with instanceof pattern matching. Same dashboard key, same string showing up, but nothing left that can come up empty. The plots look unimpressive while the sim motor stands still, but Lesson 4 turns the physics on, and these same plots come alive.'
+    );
   }
 
   return p;
