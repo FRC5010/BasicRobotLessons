@@ -345,6 +345,16 @@ a lesson as-is.
   doc explains why a workaround wasn't taken instead of waiting. When these
   lessons are actually written, their prose goes under `docs/lessons/v3/`,
   a sibling of `docs/lessons/`'s numbered files, not mixed into them.
+- [docs/lesson-plan-alpha7-upgrade.md](docs/lesson-plan-alpha7-upgrade.md) —
+  the impact assessment and phased plan for upgrading the v3 track (only —
+  the classic track targets stable 2026 and is unaffected) to WPILib 2027
+  alpha-7, a large breaking-change release. **Blocked on vendors**: neither
+  WPILib's own vendordep marketplace nor CTRE Phoenix 6 nor PhotonVision has
+  published an alpha-6-or-later-compatible pin yet, and this course's own
+  rule is to pin to the marketplace, never a vendor's "latest" link — so no
+  lesson code gets touched until that clears. A Routine checks every 6 hours
+  and updates that doc's vendor-tracking table (silently, unless something
+  actually changed) — read it before assuming this is still blocked.
 
 ## When adding or editing a lesson
 
