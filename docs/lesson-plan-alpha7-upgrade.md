@@ -143,12 +143,22 @@ against the real sources on 2026-09-01:
   been re-pinned into the marketplace's vendordep JSON format under an
   `alpha6`/`alpha7` bucket, so under this course's own rule (marketplace
   pins only) it isn't adoptable yet either.
+- **`CommandsV3` — correction: this one isn't vendor-blocked at all.** It
+  ships baked into `code/OpModeV3Robot/vendordeps/CommandsV3.json` rather
+  than fetched from the marketplace (`tools/verify-lessons-v3.sh` says so
+  directly: "copied from wpilib source directly"), and that copy is just
+  stale — still declaring `wpilibYear: "2027_alpha5"`. Checked directly
+  against `wpilibsuite/allwpilib` at the actual `v2027.0.0-alpha-7` git tag:
+  [`commandsv3/CommandsV3.json`](https://raw.githubusercontent.com/wpilibsuite/allwpilib/v2027.0.0-alpha-7/commandsv3/CommandsV3.json)
+  already declares `"wpilibYear": "2027_alpha7"` there. **Nobody is waiting
+  on this one** — it's a same-repo re-sync away, whenever the rest of Phase
+  1a (below) is ready to move.
 
-**Bottom line: two independent gates have to clear before any lesson code
-gets touched** — (1) WPILib's marketplace needs an `alpha6` or `alpha7`
-bucket, and (2) both CTRE Phoenix 6 and PhotonVision need a release pinned
-into it. Until then, editing lesson prose or snapshots would be guessing at
-APIs nobody can compile against — exactly what `CLAUDE.md` says not to do.
+**Bottom line, corrected — this isn't one blocker, it's two independent
+ones gating two different parts of the track**, and they don't have to
+clear together. See [Splitting the gate](#splitting-the-gate-lessons-114-dont-need-photonvision)
+just below for why, and the [Phased plan](#phased-plan) for how that
+changes the order of work.
 
 ### Verified directly: how far the lessons actually get today
 
@@ -209,13 +219,47 @@ line of investigation stopped rather than fabricate one.
 
 **So: zero lessons verify against alpha-7 today** — not "Lessons 1–14 work
 and 15+ doesn't," the honest answer given what's actually checkable right
-now. Clearing the vendor-year gate (Phase 1 below) is necessary but might
-not be sufficient on its own; `code/OpModeV3Robot`'s `build.gradle` likely
-needs its own real update against the new deploy-artifact API before
-*anything* rebuilds, template in hand rather than guessed. Worth
-re-running this same experiment once the gate clears for real, since a
-genuine vendor-published alpha-7 pin will very likely arrive bundled with
-guidance (or a new template) for exactly this wiring.
+now. Clearing the vendor-year gate is necessary but might not be sufficient
+on its own; `code/OpModeV3Robot`'s `build.gradle` likely needs its own real
+update against the new deploy-artifact API before *anything* rebuilds,
+template in hand rather than guessed. Worth re-running this same experiment
+once the gate clears for real, since a genuine vendor-published alpha-7 pin
+will very likely arrive bundled with guidance (or a new template) for
+exactly this wiring.
+
+### Splitting the gate: Lessons 1–14 don't need PhotonVision
+
+Team decision (2026-09-02): **don't wait for both vendors together.** Fire
+on Phoenix 6 alone, and take the track as far as it goes — which is
+Lesson 14, the last one before PhotonVision enters at Lesson 15. This is a
+real split, not a shortcut: `tools/verify-lessons-v3.sh`'s own
+`VENDORDEPS` table only fetches `photonlib-*.json` from Lesson 15 onward,
+so a `verify-lessons-v3.sh 14` run never touches it — PhotonVision
+genuinely isn't in the dependency graph for the first 15 lessons.
+
+That gives two independent tracks instead of one combined wait:
+
+- **Track A — Lessons 1–14.** Gated on **Phoenix 6 alone** getting a
+  marketplace-pinned release with a matching `wpilibYear` — *plus* the two
+  same-repo prerequisites that have nothing to do with any vendor and can
+  be worked in parallel while Track A is still waiting: refreshing the
+  stale local `CommandsV3.json` (see the correction above — already
+  possible the moment it's worth trying, just not worth doing alone, since
+  pairing a `wpilibYear` bump with an unbumped `GradleRIO` plugin version
+  trips the exact same hard gate in the other direction), and finding or
+  reconstructing the fixed `build.gradle` deploy-artifact wiring
+  ([Verified directly](#verified-directly-how-far-the-lessons-actually-get-today)
+  above). **"Phoenix ready" starts the attempt, it doesn't guarantee the
+  attempt succeeds** — those other two pieces are real, open unknowns
+  independent of Phoenix's status, and Phase 1a below still ends at
+  `verify-lessons-v3.sh 14`, not a guess that it'll pass first try.
+- **Track B — Lessons 15–34.** Everything Track A needs, *plus* PhotonVision
+  with its own marketplace-pinned, matching-year release. Stays fully
+  blocked until both vendors are ready, same as the original combined plan.
+
+The [monitoring](#monitoring) and [vendor tracking](#vendor-tracking)
+sections below are updated to watch and report the two tracks separately,
+so Track A going green doesn't sit hidden behind Track B still being red.
 
 ## Phased plan
 
@@ -223,38 +267,49 @@ guidance (or a new template) for exactly this wiring.
 this commit: the impact assessment above, and the recurring check described
 in [Monitoring](#monitoring). No lesson file, snapshot, or deck changes yet.
 
-**Phase 1 — mechanical upgrade, once both gates in
-[The vendor blocker](#the-vendor-blocker) clear.**
-1. Bump `code/OpModeV3Robot/build.gradle`'s GradleRIO version to the new
-   alpha — and expect this step to be more than a version-string edit. The
+**Phase 1a — Lessons 1–14, fires on Track A alone
+([split above](#splitting-the-gate-lessons-114-dont-need-photonvision)) —
+does not wait for PhotonVision.**
+1. Refresh `code/OpModeV3Robot/vendordeps/CommandsV3.json` from
+   `wpilibsuite/allwpilib`'s `commandsv3/CommandsV3.json` at whatever tag
+   matches the target alpha (already confirmed current at the alpha-7 tag —
+   re-check if the target has moved past alpha-7 by the time this runs).
+2. Bump `code/OpModeV3Robot/build.gradle`'s GradleRIO version to match —
+   and expect this step to be more than a version-string edit. The
    [direct test above](#verified-directly-how-far-the-lessons-actually-get-today)
    found the deploy-artifact wiring (`debugJni`, `jarTask`,
    `configureExecutableTasks`) already broken against alpha-7's real
    plugin; look for whatever WPILib publishes as the new template's
    `build.gradle` and diff against it rather than reconstructing the new
    shape property-by-property.
-2. Bump `MARKETPLACE` and the `VENDORDEPS` URLs in
-   `tools/verify-lessons-v3.sh` to the new marketplace bucket and the new
-   Phoenix 6 / photonlib file names.
-3. Run `./tools/verify-lessons-v3.sh` with no lesson limit (rolls through
-   the highest lesson present, currently 34) and read the compiler's error
-   list — that list *is* the real, unguessed inventory of what broke,
-   superseding every "likely affected" note in this doc.
-4. Fix lesson snapshots (`code/v3/lesson-N/`) in lesson order, verifying
-   with `./tools/verify-lessons-v3.sh N` after each one, the same
-   lesson-by-lesson discipline `CLAUDE.md` already prescribes for normal
-   lesson edits.
-5. Re-run `./tools/verify-lessons-v3.sh 34 test` once everything compiles,
-   to catch anything only a test surfaces.
+3. Bump `MARKETPLACE` and just the `Phoenix6` entry in the `VENDORDEPS`
+   table in `tools/verify-lessons-v3.sh` to the new marketplace bucket and
+   file name. Leave the `photonlib` entry alone — Track B's job.
+4. Run `./tools/verify-lessons-v3.sh 14` and read the compiler's error
+   list — that list *is* the real, unguessed inventory of what broke in
+   Lessons 1–14, superseding every "likely affected" note in this doc.
+5. Fix lesson snapshots (`code/v3/lesson-N/`) in lesson order for N = 1
+   through 14, verifying with `./tools/verify-lessons-v3.sh N` after each
+   one, the same lesson-by-lesson discipline `CLAUDE.md` already prescribes
+   for normal lesson edits.
 
-**Phase 2 — content updates, driven by what Phase 1 actually found.** Only
-after the code compiles: update each affected lesson's prose to match the
+**Phase 1b — Lessons 15–34, fires once Track B also clears (PhotonVision
+catches up too).** Same steps as 1a, extended: bump the `photonlib` entry
+in `VENDORDEPS` too, then run `./tools/verify-lessons-v3.sh` with no lesson
+limit (rolls through the highest lesson present, currently 34) and continue
+the lesson-by-lesson fix from wherever Phase 1a left off. Re-run
+`./tools/verify-lessons-v3.sh 34 test` once everything compiles, to catch
+anything only a test surfaces.
+
+**Phase 2 — content updates, driven by what Phase 1a/1b actually found.**
+Only after a given lesson's code compiles: update its prose to match the
 real new API (not the guessed shape in this doc), following the same
-walkthrough conventions every other lesson uses. Update
-`docs/presentations/v3/template/build/*.js` code cards for anything renamed
-(the gamepad face-button rename is the known one; there may be others).
-Re-run `audit-overflow.js` and `validate.py` per the deck template's own
-house rules if any deck text changes length.
+walkthrough conventions every other lesson uses — Phase 2 can start on
+Lessons 1–14 as soon as Phase 1a finishes, without waiting for Phase 1b.
+Update `docs/presentations/v3/template/build/*.js` code cards for anything
+renamed (the gamepad face-button rename is the known one; there may be
+others). Re-run `audit-overflow.js` and `validate.py` per the deck
+template's own house rules if any deck text changes length.
 
 ## Open decisions for the team
 
@@ -282,35 +337,44 @@ later:
 Living table, updated only when something actually changes (see
 [Monitoring](#monitoring) — a "still blocked" check does **not** touch this
 table, to keep its history meaningful). Manual checks and automated ones
-both write here.
+both write here. Two verdict columns now, one per
+[track](#splitting-the-gate-lessons-114-dont-need-photonvision) — Track A
+can go green while Track B is still red.
 
-| Checked | allwpilib latest | `vendor-json-repo` alpha6/7 bucket | Phoenix 6 latest alpha pin | PhotonVision latest alpha pin | Verdict |
-|---|---|---|---|---|---|
-| 2026-09-01 (manual, this doc) | `v2027.0.0-alpha-7` | Not present (`2027_alpha1`, `2027_alpha5` only) | `26.50.0-alpha-1` (alpha5) | `v2027.0.0-alpha-2` (built against alpha-6 internally, not yet marketplace-pinned) | **Blocked** — see [The vendor blocker](#the-vendor-blocker) |
+| Checked | allwpilib latest | `vendor-json-repo` alpha6/7 bucket | Phoenix 6 latest alpha pin | PhotonVision latest alpha pin | Track A (Lessons 1–14) | Track B (Lessons 15–34) |
+|---|---|---|---|---|---|---|
+| 2026-09-01 (manual, this doc) | `v2027.0.0-alpha-7` | Not present (`2027_alpha1`, `2027_alpha5` only) | `26.50.0-alpha-1` (alpha5) | `v2027.0.0-alpha-2` (built against alpha-6 internally, not yet marketplace-pinned) | **Blocked** — needs Phoenix 6; `CommandsV3.json` local copy also stale, but that fix is already available (confirmed 2026-09-02) whenever Track A moves; `build.gradle` deploy-wiring fix still an open unknown either way | **Blocked** — same, plus PhotonVision |
 
 ## Monitoring
 
-A Routine checks the three sources above every 6 hours
-(`0 */6 * * *`) and compares against the last row of the table above:
+A Routine checks the three sources below every 6 hours
+(`0 */6 * * *`) and compares against the last row of the table above,
+**tracking Track A and Track B separately** — Phoenix 6 alone going ready
+is real, reportable news even while PhotonVision stays blocked, per the
+[split above](#splitting-the-gate-lessons-114-dont-need-photonvision):
 
 - **`https://github.com/wpilibsuite/vendor-json-repo`** — does a
   `2027_alpha6` or `2027_alpha7` folder exist yet, and if so, does it
-  contain a Phoenix 6 and/or `photonlib` JSON?
+  contain a Phoenix 6 and/or `photonlib` JSON? These are independent
+  questions — one can appear without the other.
 - **CTRE Phoenix 6** — any release/changelog entry naming alpha-6 or
-  alpha-7 compatibility.
-- **PhotonVision** — same, via its GitHub releases.
+  alpha-7 compatibility. This alone is Track A's gate.
+- **PhotonVision** — same, via its GitHub releases. Needed only for
+  Track B, on top of everything Track A needs.
 - **`https://github.com/wpilibsuite/allwpilib/releases`** — informational
   only: whether a newer alpha (alpha-8+) has shipped before the vendors
   caught up to alpha-7, since that would change the actual upgrade target.
 
-**On no change:** the check ends silently — no commit, no push, no
-notification. This is a long-running wait with an unpredictable clear date;
-a ping every 6 hours saying "still blocked" would train the notification to
-be ignored right when it matters.
+**On no change to either track:** the check ends silently — no commit, no
+push, no notification. This is a long-running wait with an unpredictable
+clear date; a ping every 6 hours saying "still blocked" would train the
+notification to be ignored right when it matters.
 
-**On a real change** (a new marketplace bucket appears, or a vendor ships
-an alpha-6/7-tagged release): the routine appends a row to the
-[Vendor tracking](#vendor-tracking) table above with the finding, source
-link, and timestamp, commits, pushes, and the firing ends with a summary —
-which is what triggers the push/email notification. That's the cue to come
-back to this doc and start **Phase 1**.
+**On a real change to either track** (a new marketplace bucket appears, or
+a vendor ships an alpha-6/7-tagged release): the routine appends a row to
+the [Vendor tracking](#vendor-tracking) table above with the finding,
+source link, and timestamp, commits, pushes, and the firing ends with a
+summary — which is what triggers the push/email notification. **If Track A
+alone clears, say so plainly and distinctly from Track B** — that's the cue
+to come back to this doc and start **Phase 1a** on Lessons 1–14 without
+waiting for PhotonVision.
