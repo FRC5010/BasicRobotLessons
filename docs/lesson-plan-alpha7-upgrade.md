@@ -150,6 +150,73 @@ bucket, and (2) both CTRE Phoenix 6 and PhotonVision need a release pinned
 into it. Until then, editing lesson prose or snapshots would be guessing at
 APIs nobody can compile against — exactly what `CLAUDE.md` says not to do.
 
+### Verified directly: how far the lessons actually get today
+
+The question "how far ahead could we go" deserves a real answer, not a
+guess extrapolated from the bullets above — so this was tested directly
+(2026-09-02) rather than reasoned about. GradleRIO 2027.0.0-alpha-7's own
+plugin *is* published (Gradle Plugin Portal), so a real build was attempted:
+`code/OpModeV3Robot`, copied to scratch and pointed at
+`org.wpilib.GradleRIO version "2027.0.0-alpha-7"`, rolled forward through
+Lessons 0–14 with `tools/verify-lessons-v3.sh` (unmodified — same
+`Phoenix6-26.50.0-alpha-1.json` pin it always fetches).
+
+**The answer is sharper than "blocked": it's a hard gate, not a graduated
+one.** GradleRIO refuses to configure the build at all — before touching a
+single line of lesson Java — the moment it sees a vendordep whose
+`wpilibYear` doesn't match its own version:
+
+```
+Vendor Dependency Commands v3 has invalid year 2027_alpha5. Expected to be
+2027_alpha7. Reach out to the vendor to get a new version of the
+dependency. Attempting to modify an existing dependency will break at
+runtime, and will result in loss of support from the WPILib team.
+```
+
+That's not a hint that *some* code might not work — it's the build tool
+itself declining to build anything, for **every** lesson, including
+Lesson 0. Whether a given lesson's actual Java would have compiled clean
+against the real alpha-7 classes is a question the build never gets far
+enough to ask.
+
+Out of curiosity — and only as an unsupported, sandbox-only diagnostic,
+never something to actually ship — the `wpilibYear` fields in
+`CommandsV3.json` and the fetched `Phoenix6-*.json` were hand-patched to
+`2027_alpha7` locally, exactly the move GradleRIO's own error message warns
+against, purely to see what's underneath the gate. It surfaced a second,
+independent finding: **`code/OpModeV3Robot`'s `build.gradle` itself won't
+configure against the real alpha-7 GradleRIO plugin either**, gate aside.
+Three build-tooling DSL breaks turned up in the first minute of poking, each
+one a *different* removed property/method on WPILib's own Gradle extension
+classes, not a vendor or lesson-code issue:
+
+- `wpi.java.debugJni = false` — `debugJni` no longer exists on
+  `WPIJavaExtension`.
+- `deployArtifact.jarTask = shadowJar` — `jarTask` no longer exists on
+  `WPILibJavaArtifact`.
+- `wpi.java.configureExecutableTasks(shadowJar)` — the method itself is
+  gone from `WPIJavaExtension`.
+
+Deleting each in turn just exposed the next one — this is the deploy/jar
+wiring the alpha-7 release notes' "main class architecture reverted to a
+factory loader... requires a manual fix... new project template" line was
+warning about, and it goes deeper than the one line the release notes
+called out by name. Guessing the replacement shape property-by-property
+from here on would be exactly the kind of unverified API-shape guessing
+`CLAUDE.md` rules out — a search for a real WPILib-published alpha-7
+`OpModeRobot` template turned up nothing yet (checked 2026-09-02), so this
+line of investigation stopped rather than fabricate one.
+
+**So: zero lessons verify against alpha-7 today** — not "Lessons 1–14 work
+and 15+ doesn't," the honest answer given what's actually checkable right
+now. Clearing the vendor-year gate (Phase 1 below) is necessary but might
+not be sufficient on its own; `code/OpModeV3Robot`'s `build.gradle` likely
+needs its own real update against the new deploy-artifact API before
+*anything* rebuilds, template in hand rather than guessed. Worth
+re-running this same experiment once the gate clears for real, since a
+genuine vendor-published alpha-7 pin will very likely arrive bundled with
+guidance (or a new template) for exactly this wiring.
+
 ## Phased plan
 
 **Phase 0 — now, no vendor dependency (this doc + monitoring).** Done by
@@ -159,7 +226,13 @@ in [Monitoring](#monitoring). No lesson file, snapshot, or deck changes yet.
 **Phase 1 — mechanical upgrade, once both gates in
 [The vendor blocker](#the-vendor-blocker) clear.**
 1. Bump `code/OpModeV3Robot/build.gradle`'s GradleRIO version to the new
-   alpha.
+   alpha — and expect this step to be more than a version-string edit. The
+   [direct test above](#verified-directly-how-far-the-lessons-actually-get-today)
+   found the deploy-artifact wiring (`debugJni`, `jarTask`,
+   `configureExecutableTasks`) already broken against alpha-7's real
+   plugin; look for whatever WPILib publishes as the new template's
+   `build.gradle` and diff against it rather than reconstructing the new
+   shape property-by-property.
 2. Bump `MARKETPLACE` and the `VENDORDEPS` URLs in
    `tools/verify-lessons-v3.sh` to the new marketplace bucket and the new
    Phoenix 6 / photonlib file names.
