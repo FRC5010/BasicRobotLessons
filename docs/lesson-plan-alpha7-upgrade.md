@@ -344,6 +344,7 @@ can go green while Track B is still red.
 | Checked | allwpilib latest | `vendor-json-repo` alpha6/7 bucket | Phoenix 6 latest alpha pin | PhotonVision latest alpha pin | Track A (Lessons 1–14) | Track B (Lessons 15–34) |
 |---|---|---|---|---|---|---|
 | 2026-09-01 (manual, this doc) | `v2027.0.0-alpha-7` | Not present (`2027_alpha1`, `2027_alpha5` only) | `26.50.0-alpha-1` (alpha5) | `v2027.0.0-alpha-2` (built against alpha-6 internally, not yet marketplace-pinned) | **Blocked** — needs Phoenix 6; `CommandsV3.json` local copy also stale, but that fix is already available (confirmed 2026-09-02) whenever Track A moves; `build.gradle` deploy-wiring fix still an open unknown either way | **Blocked** — same, plus PhotonVision |
+| 2026-09-05 (automated, `NerdSwerveYAGSL2026/tools/check-alpha7-readiness.sh`) | `v2027.0.0-alpha-7` (unchanged, no alpha-8) | **`2027_alpha7` bucket now exists** — but it holds only `AdvantageKit-27.0.0-alpha-5.json`; no Phoenix 6 or `photonlib` entry has landed there yet | `26.50.0-alpha-1` (unchanged) — still 2 classes missing vs. alpha-7: `epilogue/logging/EpilogueBackend`, `epilogue/logging/NestedBackend` | `v2027.0.0-alpha-2` (unchanged) — still 7 classes missing vs. alpha-7: `driverstation/Alert`, `math/util/Pair`, `smartdashboard/SmartDashboard`, `util/sendable/Sendable`, `vision/apriltag/AprilTag`, `vision/apriltag/AprilTagFieldLayout`, `vision/apriltag/AprilTagFields` | **Blocked** — unchanged, still needs Phoenix 6 | **Blocked** — unchanged, still needs Phoenix 6 and PhotonVision |
 
 ## Monitoring
 
