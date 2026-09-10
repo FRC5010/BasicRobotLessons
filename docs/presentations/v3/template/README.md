@@ -14,6 +14,8 @@ npm install
 node build/00-orientation.js          # writes ../00-orientation.pptx
 node build/aside-setup.js             # writes ../aside-setup.pptx
 node build/aside-git-branching.js     # writes ../aside-git-branching.pptx
+node build/01-first-motor.js          # writes ../01-first-motor.pptx
+# ...same pattern through build/10-kinematics.js
 ```
 
 Each build script's `outPath` writes two directories up, into
@@ -28,16 +30,30 @@ regardless of which one you run.
 2. Source the *content* from the actual lesson file under
    `docs/lessons/v3/`, not from memory or from another deck. Re-derive the
    wording — don't just retitle a copy.
-3. **Write every slide as if the student has never seen another version of
+3. **Give every slide a `addNotes(...)` call, filled in with the lesson's own
+   explanatory prose** — the material a slide's terse bullets/code necessarily
+   compress out. A slide shows what to type or click; the notes carry the
+   *why*, in enough detail that someone presenting from this deck could speak
+   from them without re-reading the lesson first. Source them the same way as
+   slide content — pull from the actual paragraph in the `.md` file, not a
+   summary of a summary — and don't just repeat what's already visible on the
+   slide; add what got cut for space (a blockquote callout, a "why" aside, a
+   detail the slide's card had no room for). `s.addNotes(...)` works on any
+   slide, including the title slide — call it on the `Slide` object each
+   helper already returns (`addTitleSlide` returns one; slides built inline
+   already have `s`). It never affects layout or triggers the overflow
+   audit — notes live outside the rendered canvas — so there's no card/height
+   math to redo when you add or lengthen one.
+4. **Write every slide as if the student has never seen another version of
    this course.** No comparisons to "the classic track," no "unlike before,"
    no assuming context the markdown lesson's own asides carry for
    contributors but a classroom never needs. If a sentence only makes sense
    to someone who knows there's another track, cut it.
-4. If a slide needs an icon that isn't already in `assets/icons/`, add a
+5. If a slide needs an icon that isn't already in `assets/icons/`, add a
    `[iconName, color, fileName]` job to `render_icons.js` and run
    `node render_icons.js` once — it only (re)renders icons, it doesn't
    touch any deck.
-5. Keep the house rules `deck-kit.js`'s helpers already enforce: nothing
+6. Keep the house rules `deck-kit.js`'s helpers already enforce: nothing
    smaller than 20pt except code-card text; the three status dots on a code
    card stack at its top-right, not across the top; every slide gets the
    small logo watermark via `addFooter`; the title slide gets the full logo.
@@ -55,7 +71,28 @@ regardless of which one you run.
    that this actually happened once (Lesson 5's "walk through one tick").
    Check every helper you call on a `NAVY` slide, not just the ones this
    note happens to name.
-6. There's no automated overflow check — `pptxgenjs` will happily place text
+7. **Every code card identifies its file and placement, and a brand-new file
+   gets its own "create it" slide before any of its content shows up.** These
+   mirror rules the lessons themselves already follow (see `CLAUDE.md`'s
+   "Every code snippet that instructs a change gets a bold action lead-in
+   naming the file and where the code goes"), and the first pass of these
+   decks skipped both — Lesson 1's `DriveModule.java` code cards walked
+   straight into the file's contents with no slide ever telling the audience
+   to create it, and no code card anywhere named which file it belonged to.
+   - Pass `addCodeCard`'s `fileLabel` on every call — phrase it like the
+     lesson's own lead-in, verb first ("Add to `DriveModule`, below the
+     imports", "Edit `Robot`'s constructor", "Replace X with", "Delete from
+     X"). For a block the lesson itself marks "Nothing to add" (an API
+     example, code the student already has, a wrong version being set up for
+     rejection), pass `example: true` too and phrase the label to match — it
+     renders muted/italic instead of bold orange, the same bold-vs-italic
+     opposite the lessons use for "type this" vs. "just look at this."
+   - When a lesson section creates a file that didn't exist before, give it
+     a slide of its own first — `addNumberedSteps` walking the actual
+     right-click-through-VS-Code sequence the lesson describes (folder,
+     then file, exact names) — before any slide shows what goes inside it.
+     Editing a file that already exists doesn't need this, only creation.
+8. There's no automated overflow check — `pptxgenjs` will happily place text
    that doesn't fit its box, and this has caused real, visible overflow in
    shipped decks twice (a hardcoded-offset bug in `addTryItGrid`'s 2-row case,
    and several code/text boxes sized against too-optimistic line-height math).
@@ -105,7 +142,7 @@ regardless of which one you run.
      smoke test, or just confirm the tool's report changes when you
      deliberately break a real card's size — a report that never changes
      no matter what you do to the source is the tell.
-7. Validate before calling it done:
+9. Validate before calling it done:
    ```
    python3 <path-to-pptx-skill>/scripts/office/validate.py ../<name>.pptx
    markitdown ../<name>.pptx   # eyeball the text; grep for stray track/classic/before wording

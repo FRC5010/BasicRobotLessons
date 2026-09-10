@@ -78,8 +78,12 @@ function checkCodeCards(fname, src, report) {
     const texts = allQuoted(block, 'text');
     const nlines = texts.length;
     const maxlen = texts.reduce((m, t) => Math.max(m, t.length), 0);
+    // A fileLabel (see addCodeCard's comment in deck-kit.js) reserves extra room
+    // at the top of the card — 0.72 total top+bottom pad instead of 0.4. Keep
+    // this in sync with addCodeCard's own codeY/codeH numbers if those change.
+    const hasLabel = /fileLabel:/.test(block);
     const availW = w - 0.75, neededW = maxlen * 0.6 * fs_ / 72;
-    const availH = h - 0.4, neededH = nlines * fs_ * LINE_MULT / 72;
+    const availH = h - (hasLabel ? 0.72 : 0.4), neededH = nlines * fs_ * LINE_MULT / 72;
     const trueOverflow = neededW > availW || neededH > availH;
     const marginOverflow = neededW > availW * MARGIN || neededH > availH * MARGIN;
     if (trueOverflow || marginOverflow) {

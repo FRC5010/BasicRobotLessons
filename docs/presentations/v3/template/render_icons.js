@@ -52,6 +52,14 @@ const jobs = [
   ['FaFlask', 'FFFFFF', 'flask_white'],
   ['FaCompass', 'FFFFFF', 'compass_white'],
   ['FaBolt', 'FFFFFF', 'bolt_white'],
+  // lessons 6-10 specific
+  ['FaRulerCombined', 'FFFFFF', 'ruler_white'],
+  ['FaFlagCheckered', 'FFFFFF', 'flagcheckered_white'],
+  ['FaThLarge', 'FFFFFF', 'thlarge_white'],
+  ['FaShoePrints', 'FFFFFF', 'shoeprints_white'],
+  ['FaCalculator', 'FFFFFF', 'calculator_white'],
+  ['FaObjectGroup', 'FFFFFF', 'objectgroup_white'],
+  ['FaRandom', 'FFFFFF', 'random_white'],
 ];
 
 async function main() {

@@ -5,12 +5,15 @@ const { NAVY, NAVY2, TEAL, ORANGE, WHITE, INK, MUTED, CARDBG, FONT_HEAD, FONT_BO
 function buildDeck() {
   const p = K.newDeck({ title: 'Lesson 0 — Orientation' });
 
-  K.addTitleSlide(p, {
+  const titleSlide = K.addTitleSlide(p, {
     tag: 'LESSON 0',
     title: 'Orientation',
     subtitle: 'Run the robot and print a message',
     versionTag: 'WPILib 2027 Alpha  ·  Commands V3',
   });
+  titleSlide.addNotes(
+    'The very first lesson — before this, students have a template project that builds but does nothing recognizable yet. Frame the whole lesson as three moves: understand the boot sequence, run it once with nothing changed, then make one real edit and watch the robot respond.'
+  );
 
   // ============================================================ SLIDE 2 — Goal + what you'll learn
   {
@@ -69,6 +72,9 @@ function buildDeck() {
     );
 
     K.addFooter(s, { pageNum: 2, label: 'Orientation' });
+    s.addNotes(
+      'Get the template building in simulation, see how the pieces fit together, and make the first code change — printing a message the moment teleop wakes up. Half of what\'s on screen (Main.java, the annotation machinery) won\'t matter for a while, and that\'s fine to say out loud — the goal today is the picture, not full understanding of every file.'
+    );
   }
 
   // ============================================================ SLIDE 3 — file tree
@@ -112,6 +118,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 3, label: 'Orientation' });
+    s.addNotes(
+      'That\'s totally normal to find unfamiliar — half of it won\'t matter for a while. Read the comments once, let the picture settle (boot, then hand off to whichever opmode is picked), and keep going. Robot.java boots the framework and students will rarely touch it; MyTeleop.java and MyAuto.java are what the robot does when driven vs. left to run itself in autonomous.'
+    );
   }
 
   // ============================================================ SLIDE 4 — classes & packages
@@ -121,14 +130,16 @@ function buildDeck() {
     K.addHeader(s, { icon: 'cube_white.png', eyebrow: 'Section 1 · Classes and packages', title: 'A class is a blueprint' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 5.7, h: 1.9, fontSize: 26,
+      x: 0.7, y: 1.75, w: 5.7, h: 2.1, fontSize: 24,
+      fileLabel: 'Nothing to add — code you already have',
+      example: true,
       lines: [{ text: 'package first.robot;', color: '7FD1D9' }],
     });
 
     s.addText(
       'Packages keep class names from colliding — first.robot mirrors the folder first/robot.',
       {
-        x: 0.7, y: 3.9, w: 5.7, h: 2.2,
+        x: 0.7, y: 4.05, w: 5.7, h: 2.05,
         fontFace: FONT_BODY, fontSize: 22, color: INK, valign: 'top', margin: 0, lineSpacingMultiple: 1.3,
       }
     );
@@ -141,6 +152,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 4, label: 'Orientation' });
+    s.addNotes(
+      'That\'s a package declaration. Packages keep class names from colliding across libraries — if two vendors both shipped a Timer class, packages are how you\'d tell them apart. Here the packages just mirror the folder structure: first.robot is the folder first/robot, opmodes live in first.robot.opmode. Below the package line, every file defines a class — a blueprint. Robot is the class the whole program boots from; MyTeleop and MyAuto are opmodes, and every mechanism or command written from Lesson 1 on gets its own class too.'
+    );
   }
 
   // ============================================================ SLIDE 5 — methods
@@ -150,7 +164,9 @@ function buildDeck() {
     K.addHeader(s, { icon: 'listul_white.png', eyebrow: 'Section 1 · Methods', title: 'Five homes, each named for its moment' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 6.3, h: 3.55, fontSize: 19,
+      x: 0.7, y: 1.75, w: 6.3, h: 4.3, fontSize: 17,
+      fileLabel: 'Nothing to add — code you already have',
+      example: true,
       lines: [
         { text: '@Override', color: 'FFD166' },
         { text: 'public void start() {', color: 'D7E3F4' },
@@ -173,6 +189,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 5, label: 'Orientation' });
+    s.addNotes(
+      'Inside a class, the code that actually runs lives in methods — named blocks of code that do something. Five methods, all currently empty, each named after the moment it fires. The one to focus on today is periodic() — the others get met as they\'re needed. Like every method WPILib calls, you don\'t call periodic() yourself; the framework does, on its own schedule. @Override next to it means what it always will in this course: "yes, I know this method already has a meaning; I\'m supplying my own."'
+    );
   }
 
   // ============================================================ SLIDE 6 — @Teleop annotation + mental shift
@@ -182,7 +201,9 @@ function buildDeck() {
     K.addHeader(s, { icon: 'tag_white.png', eyebrow: 'Section 1 · Annotations', title: '@Teleop is a tag, not a method' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 5.9, h: 1.9, fontSize: 20,
+      x: 0.7, y: 1.75, w: 5.9, h: 2.15, fontSize: 18,
+      fileLabel: 'Nothing to add — code you already have',
+      example: true,
       lines: [
         { text: '@Teleop', color: 'FFD166' },
         { text: 'public class MyTeleop', color: 'D7E3F4' },
@@ -192,7 +213,7 @@ function buildDeck() {
     s.addText(
       '@Teleop sits above the whole class — a tag the framework reads before your code ever runs. It says: offer this on the Driver Station as "My Teleop."',
       {
-        x: 0.7, y: 3.9, w: 5.9, h: 2.2,
+        x: 0.7, y: 4.1, w: 5.9, h: 2.0,
         fontFace: FONT_BODY, fontSize: 20, color: INK, valign: 'top', margin: 0, lineSpacingMultiple: 1.25,
       }
     );
@@ -222,6 +243,9 @@ function buildDeck() {
     );
 
     K.addFooter(s, { pageNum: 6, label: 'Orientation' });
+    s.addNotes(
+      '@Teleop sitting above the whole class is a different kind of thing: an annotation — a tag that tells the framework something about the class underneath it, without being a method or a field itself. It says "this is a piece of robot behavior a human can pick on the Driver Station, and call it My Teleop unless told otherwise." MyAuto.java has the same idea with @Autonomous instead. Neither annotation runs any code by itself — it\'s a label the framework reads before the code ever executes. This is the biggest mental shift in the lesson, worth saying plainly: you don\'t write one robot program that runs top to bottom. You write several small ones — opmodes — and something else decides which one is running right now.'
+    );
   }
 
   // ============================================================ SLIDE 7 — opmodes & the heartbeat
@@ -271,6 +295,9 @@ function buildDeck() {
     );
 
     K.addFooter(s, { pageNum: 7, label: 'Orientation', dark: true });
+    s.addNotes(
+      'An opmode is a named, selectable chunk of robot behavior. MyTeleop and MyAuto are both opmodes, and a human picks one by name on the Driver Station before anything in it runs. Once picked and enabled, its periodic() method runs about 50 times a second, forever, until something else is picked or the robot disables. Each run is a tick — the heartbeat, same idea as always: a fast loop, ticking away, doing a little work each time. You never write while (true) yourself; the framework is the loop, and you plug things into it. If students take one thing from this lesson, it\'s this picture, with one layer added: which piece of code the framework is ticking depends on what\'s selected.'
+    );
   }
 
   // ============================================================ SLIDE 8 — run it
@@ -292,6 +319,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 8, label: 'Orientation' });
+    s.addNotes(
+      'Either click the WPILib icon in VS Code\'s left sidebar (or Ctrl+Shift+P → WPILib: Simulate Robot Code), or run ./gradlew simulateJava from the project folder in PowerShell. The very first run downloads a pile of dependencies and can take several minutes — grab a drink, this is normal, not broken. When the build finishes, VS Code asks about Sim GUI vs. Real Driverstation — Sim GUI is correct for now. Nothing moves once enabled, because there\'s no motor yet — that\'s Lesson 1, worth saying so nobody thinks something\'s broken.'
+    );
   }
 
   // ============================================================ SLIDE 9 — say hello
@@ -301,7 +331,8 @@ function buildDeck() {
     K.addHeader(s, { icon: 'commentdots_white.png', eyebrow: 'Section 4 · Your first change', title: 'Say hello, and watch it show up' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 7.1, h: 2.5, fontSize: 19,
+      x: 0.7, y: 1.75, w: 7.1, h: 2.8, fontSize: 17,
+      fileLabel: 'Back in MyTeleop.java, find start() and drop this in',
       lines: [
         { text: '@Override', color: 'FFD166' },
         { text: 'public void start() {', color: 'D7E3F4' },
@@ -314,7 +345,7 @@ function buildDeck() {
     s.addText(
       "start() runs once — the instant the opmode is enabled. periodic() would print this fifty times a second and flood your terminal.",
       {
-        x: 0.7, y: 4.45, w: 7.1, h: 1.9,
+        x: 0.7, y: 4.7, w: 7.1, h: 1.65,
         fontFace: FONT_HEAD, italic: true, fontSize: 21, color: INK, valign: 'top', margin: 0, lineSpacingMultiple: 1.3,
       }
     );
@@ -345,6 +376,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 9, label: 'Orientation' });
+    s.addNotes(
+      'start() runs exactly once — the instant the opmode goes from disabled to enabled. That makes it a better home for a one-time message than periodic(), which would print the same line fifty times a second and flood the terminal. Three things worth naming in this one line: System.out.println(...) is a method call — asking a method to run and handing it something in the parentheses. The stuff in double quotes is a String, Java\'s word for a chunk of literal text. And the whole line ends in a semicolon — every statement in Java does, and forgetting it is the number-one beginner compile error, better met now than later. Run the simulator again, pick My Teleop, flip to Enabled, and the message should be sitting right there in the terminal — the robot just changed what it does.'
+    );
   }
 
   // ============================================================ SLIDE 10 — try it
@@ -368,6 +402,9 @@ function buildDeck() {
     });
 
     K.addFooter(s, { pageNum: 10, label: 'Orientation', dark: true });
+    s.addNotes(
+      'Don\'t let these get skipped — most of the actual learning happens when a student has to think, not when copying code out of the walkthrough. First, MyAuto.java doesn\'t have a start() method yet — add one matching MyTeleop\'s shape, print a different message, and confirm it only shows up when My Auto is picked, not My Teleop. Second, break it on purpose: delete a semicolon, run ./gradlew build, and read the error carefully — note the file and line number it names. Reading compiler errors is a real skill, and the sooner students are comfortable with them the better. Put the semicolon back when done.'
+    );
   }
 
   // ============================================================ SLIDE 11 — what you learned + next
@@ -420,6 +457,9 @@ function buildDeck() {
     s.addImage({ path: K.ICON('arrowright_white.png'), x: 8.43, y: 5.73, w: 0.29, h: 0.29 });
 
     K.addFooter(s, { pageNum: 11, label: 'Orientation' });
+    s.addNotes(
+      'A robot program here is a stack of classes in packages, same as always — but now some of those classes are opmodes, tagged with an annotation like @Teleop so the framework can find them and offer them by name on the Driver Station. Whichever opmode gets picked is the one whose periodic() starts ticking about 50 times a second — that\'s still the heartbeat everything else in this course hangs off, just with one more layer: which piece of code the heartbeat is driving is now a choice made at runtime, not baked into a single class. That\'s plenty for one sitting.'
+    );
   }
 
   return p;
