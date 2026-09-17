@@ -354,16 +354,16 @@ thing that's oscillating:
    bind a button to `turnToHeading(-170)` and press it. The heading should
    sweep +100° through 180° (the short way), *not* −260°. Watch the plot to
    confirm.
-2. **Snap to nearest 90°:** add a command that reads the current heading and
+2. **Code — snap to nearest 90°.** Add a command that reads the current heading and
    turns to the closest multiple of 90 (0, 90, 180, 270). Hint:
    `Math.round(heading / 90.0) * 90.0`.
-3. **Zero the gyro at teleop start:** add a `zeroHeading()` command factory —
+3. **Code — zero the gyro at teleop start.** Add a `zeroHeading()` command factory —
    `return run(coroutine -> m_gyro.setYaw(0)).named("Zero Heading");` — a
    coroutine body with one statement and nothing to wait for, so it finishes
    the instant it runs, the same shape as Lesson 6's `runOnce`-style setup
    step. Bind it to a button so "forward" is always relative to where you're
    pointed *now*.
-4. **Keep the CAN-ID habit going:** the gyro went in as a literal,
+4. **Code — keep the CAN-ID habit going.** The gyro went in as a literal,
    `new Pigeon2(0, CANBus.systemcore(0))`. Move that `0` into `DriveConstants`
    as `kGyroPort` — right alongside the twelve motor/CANcoder ports from
    Lesson 7 — and use `new Pigeon2(DriveConstants.kGyroPort, CANBus.systemcore(0))`.
