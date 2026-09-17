@@ -442,13 +442,13 @@ up.
    wheel should mostly not spin around — it should flip the drive sign
    instead. (`Drivetrain/DesiredModuleStates`'s arrows flip
    length-direction instead of swinging 180°.)
-2. **Try a spin-while-driving auto:** in `Autos`, build `drivetrain.drive(()
+2. **Code — a spin-while-driving auto.** In `Autos`, build `drivetrain.drive(()
    -> MetersPerSecond.of(1.0), () -> MetersPerSecond.of(0), () ->
    RadiansPerSecond.of(Math.PI / 2)).withTimeout(Seconds.of(2))` — drive
    forward at 1 m/s while spinning half a turn per second, for 2 seconds.
    Watch the plots (and the gyro).
-3. **Slow-mode multiplier:** while a bumper is held, multiply the three
-   suppliers' outputs by `0.25` for fine control. Compose it as a new
+3. **Code — a slow-mode multiplier.** While a bumper is held, multiply the
+   three suppliers' outputs by `0.25` for fine control. Compose it as a new
    command that wraps `drive(...)`.
 
 ---
