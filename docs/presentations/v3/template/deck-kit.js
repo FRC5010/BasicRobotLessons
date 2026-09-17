@@ -254,7 +254,15 @@ function addNumberedSteps(slide, {
  *  4-card (2-row) grid has real vertical pressure — at `bodyFontSize` (20pt
  *  minimum, matching every other body text in these decks) a card needs
  *  roughly 100–110 characters of body text per 3 lines it can hold, so keep
- *  a 2-row grid's item text terse, or pass a larger `h`/`y` budget. */
+ *  a 2-row grid's item text terse, or pass a larger `h`/`y` budget.
+ *
+ *  Pass `code: true` on a card whose Try It genuinely expects the student to
+ *  write/modify code (not just run something and observe, or predict an
+ *  answer) — it renders a small bold-orange "WRITE CODE" tag in the card's
+ *  top-right corner, the same bold-orange-means-"you type this" language
+ *  `addCodeCard`'s `fileLabel` already uses. Leave it off for run-it/predict/
+ *  observe items. This needs its own width budget, so a `code` card's title
+ *  gets less room — the layout below accounts for that automatically. */
 function addTryItGrid(slide, { cards, x = 0.7, y = 2.45, totalW = 11.9, h, gap = 0.3, cols, bodyFontSize = 20 }) {
   const n = cards.length;
   const nCols = cols || (n <= 2 ? n : 2);
@@ -264,6 +272,7 @@ function addTryItGrid(slide, { cards, x = 0.7, y = 2.45, totalW = 11.9, h, gap =
   const badgeD = 0.5, topPad = 0.25, rowGap = 0.15, bottomPad = 0.3;
   const bodyY = topPad + badgeD + rowGap;   // offset from cy, not an absolute constant
   const bodyH = cardH - bodyY - bottomPad;
+  const codeTagW = 1.55;
   cards.forEach((c, i) => {
     const col = i % nCols, row = Math.floor(i / nCols);
     const cx = x + col * (cardW + gap);
@@ -279,10 +288,22 @@ function addTryItGrid(slide, { cards, x = 0.7, y = 2.45, totalW = 11.9, h, gap =
       x: cx + 0.35, y: cy + topPad, w: badgeD, h: badgeD, align: 'center', valign: 'middle',
       fontFace: FONT_HEAD, bold: true, fontSize: 22, color: WHITE, margin: 0,
     });
+    const titleW = cardW - 0.7 - badgeD - 0.2 - (c.code ? codeTagW : 0);
     slide.addText(c.title, {
-      x: cx + 0.35 + badgeD + 0.2, y: cy + topPad, w: cardW - 0.7 - badgeD - 0.2, h: badgeD,
+      x: cx + 0.35 + badgeD + 0.2, y: cy + topPad, w: titleW, h: badgeD,
       fontFace: FONT_HEAD, bold: true, fontSize: 20, color: WHITE, valign: 'middle', margin: 0, lineSpacingMultiple: 1.1,
     });
+    if (c.code) {
+      slide.addShape('roundRect', {
+        x: cx + cardW - 0.35 - codeTagW, y: cy + topPad + (badgeD - 0.32) / 2, w: codeTagW, h: 0.32,
+        rectRadius: 0.06, fill: { color: ORANGE }, line: { type: 'none' },
+      });
+      slide.addText('WRITE CODE', {
+        x: cx + cardW - 0.35 - codeTagW, y: cy + topPad + (badgeD - 0.32) / 2, w: codeTagW, h: 0.32,
+        align: 'center', valign: 'middle', fontFace: FONT_BODY, bold: true, fontSize: 12,
+        color: NAVY, charSpacing: 0.5, margin: 0,
+      });
+    }
     slide.addText(c.body, {
       x: cx + 0.35, y: cy + bodyY, w: cardW - 0.7, h: bodyH,
       fontFace: FONT_BODY, fontSize: bodyFontSize, color: 'CADCE8', valign: 'top', margin: 0, lineSpacingMultiple: 1.25,

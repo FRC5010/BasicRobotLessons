@@ -659,11 +659,12 @@ up.
    you which one.
 2. Change `kHalfLength` to `0.4` and `kHalfWidth` to `0.2`. What do the four
    rotate angles become? (You now understand why chassis geometry matters.)
-3. Add a `driveForwardMeters(double meters)` method to `Drivetrain` — read
+3. **Code — add `driveForwardMeters` to `Drivetrain`.** Add a
+   `driveForwardMeters(double meters)` method — read
    `getDistanceMeters()` from `m_modules[0]` after resetting, sequence steps like
    Lesson 6's `driveDistance`. This is the whole-chassis version we'll formalize
    in Lesson 9.
-4. **Move the CAN IDs and offsets into `Constants.java`.** The array above
+4. **Code — move the CAN IDs and offsets into `Constants.java`.** The array above
    bakes them in as literals (`new SwerveModule(1, 2, 9, 0.0, ...)`) — fine to
    learn with, but a real robot keeps its numbers in one place, the way you
    did for the single module back in Lesson 1. Add named constants to
