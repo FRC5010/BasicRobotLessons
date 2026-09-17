@@ -117,10 +117,10 @@ function buildDeck() {
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
-    K.addHeader(s, { icon: 'ruler_white.png', eyebrow: 'Section 2 · Constants.java', title: 'Four constants: grip, the two acceleration limits, a starting pose' });
+    K.addHeader(s, { icon: 'ruler_white.png', eyebrow: 'Section 2 · Constants.java', title: 'Grip, acceleration limits, and a starting pose' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.4, w: 11.9, h: 4.35, fontSize: 13,
+      x: 0.7, y: 1.5, w: 11.9, h: 4.25, fontSize: 13,
       fileLabel: 'Add to DriveConstants in Constants.java',
       lines: [
         { text: '// How hard the tires can grip, in sim — a Colson-wheel-on-carpet guess.', color: '7FA8C9' },
