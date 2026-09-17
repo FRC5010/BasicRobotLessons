@@ -396,16 +396,17 @@ small `@Autonomous` class, not a dropdown living inside a bigger one.
 
 ## Try it
 
-1. **Design your own auto:** a box pattern — drive 1 m, turn 90°, four times,
-   ending where it started facing the start heading. Predict the final heading
-   before you run it. (This is what `RobotAutoBox` from section 7 is named
-   for — replace its empty body with the real thing.)
-2. Give `driveTurnDrive` a `double distance` parameter so the same factory
-   makes short and long autos, and add a third `@Autonomous` opmode that
-   calls it with a different distance.
-3. Add a `coroutine.wait(Seconds.of(1.0))` between two of the `await` calls
-   and watch the pause on your plots. When might a deliberate wait help a
-   real auto? (Hint: letting a mechanism settle.)
+1. **Code — design your own auto.** A box pattern — drive 1 m, turn 90°, four
+   times, ending where it started facing the start heading. Predict the
+   final heading before you run it. (This is what `RobotAutoBox` from
+   section 7 is named for — replace its empty body with the real thing.)
+2. **Code — parameterize the distance.** Give `driveTurnDrive` a `double
+   distance` parameter so the same factory makes short and long autos, and
+   add a third `@Autonomous` opmode that calls it with a different distance.
+3. **Code — a deliberate wait.** Add a `coroutine.wait(Seconds.of(1.0))`
+   between two of the `await` calls and watch the pause on your plots. When
+   might a deliberate wait help a real auto? (Hint: letting a mechanism
+   settle.)
 
 ---
 
