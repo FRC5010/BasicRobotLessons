@@ -118,7 +118,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'ruler_white.png', eyebrow: 'Section 2 · Drivetrain.java', title: 'Watch one wheel to know when all four have arrived' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.4, w: 11.9, h: 4.55, fontSize: 12,
+      x: 0.7, y: 1.2, w: 11.9, h: 5.15, fontSize: 11,
       fileLabel: 'Add to Drivetrain, with the other command factories',
       lines: [
         { text: '/** Drive straight forward \'meters\' at 40% power. Finishes on its own. */', color: '7FA8C9' },
@@ -132,9 +132,15 @@ function buildDeck() {
         { text: '          m_lastCommandedOmega = 0.0;', color: 'D7E3F4' },
         { text: '          coroutine.yield();', color: '9EF01A' },
         { text: '        }', color: 'D7E3F4' },
-        { text: '        for (SwerveModule module : m_modules) { module.setDesiredState(0.0, 0.0); } // stop', color: 'D7E3F4' },
+        { text: '        for (SwerveModule module : m_modules) {', color: 'D7E3F4' },
+        { text: '          module.setDesiredState(0.0, 0.0); // reached it — stop', color: 'D7E3F4' },
+        { text: '        }', color: 'D7E3F4' },
         { text: '      })', color: 'D7E3F4' },
-        { text: '      .whenCanceled(() -> { /* ...same stop, for every module... */ })', color: '9EF01A' },
+        { text: '      .whenCanceled(() -> {', color: '9EF01A' },
+        { text: '        for (SwerveModule module : m_modules) {', color: '9EF01A' },
+        { text: '          module.setDesiredState(0.0, 0.0); // interrupted — stop', color: '9EF01A' },
+        { text: '        }', color: '9EF01A' },
+        { text: '      })', color: '9EF01A' },
         { text: '      .named("Drive Distance");', color: '9EF01A' },
         { text: '}', color: 'D7E3F4' },
       ],
@@ -142,7 +148,7 @@ function buildDeck() {
 
     K.addFooter(s, { pageNum: 5, label: 'Autonomous' });
     s.addNotes(
-      'Read this top to bottom as the same shape as Lesson 6\'s driveDistance, applied one level up. Every module is asked to point forward and roll, and only one wheel is watched to know when we\'ve gone far enough. Watching one wheel works for straight-ahead driving because, with all four wheels aimed the same direction at the same speed, they all cover the same distance. Two endings, same as every finishing command since Lesson 6 — the loop\'s own stop-order for finishing on its own, .whenCanceled(...) for being interrupted. If that split is starting to feel routine, that\'s the point.'
+      'Read this top to bottom as the same shape as Lesson 6\'s driveDistance, applied one level up. Every module is asked to point forward and roll, and only one wheel is watched to know when we\'ve gone far enough. Watching one wheel works for straight-ahead driving because, with all four wheels aimed the same direction at the same speed, they all cover the same distance. Two endings, same as every finishing command since Lesson 6 — the loop\'s own stop-order for finishing on its own, .whenCanceled(...) for being interrupted, with the identical stop written out both places. If that split is starting to feel routine, that\'s the point.'
     );
   }
 
@@ -312,13 +318,17 @@ function buildDeck() {
     K.addHeader(s, { icon: 'calculator_white.png', eyebrow: 'Section 5 · SwerveModule.java', title: "Don't drive hard until the wheel points right" });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.5, w: 11.9, h: 3.0, fontSize: 15,
+      x: 0.7, y: 1.5, w: 11.9, h: 3.1, fontSize: 14,
       fileLabel: 'Edit setDesiredState in SwerveModule',
       lines: [
-        { text: '// Drive only as much as the wheel is pointed the right way:', color: '7FA8C9' },
-        { text: '// cos(0°) = 1 → full speed; cos(90°) = 0 → don\'t drive while sideways.', color: '7FA8C9' },
-        { text: 'double alignment = Math.cos(Math.toRadians(error));', color: '9EF01A' },
-        { text: 'm_driveMotor.setThrottle(speedFraction * alignment);', color: '9EF01A' },
+        { text: 'public void setDesiredState(double angleDegrees, double speedFraction) {', color: 'FFD166' },
+        { text: '  // ...steering P control (same math as Lesson 5, with the wrap trick) stays...', color: '7FA8C9' },
+        { text: '', color: 'D7E3F4' },
+        { text: '  // Drive only as much as the wheel is pointed the right way:', color: '7FA8C9' },
+        { text: '  // cos(0°) = 1 → full speed; cos(90°) = 0 → don\'t drive while sideways.', color: '7FA8C9' },
+        { text: '  double alignment = Math.cos(Math.toRadians(error));', color: '9EF01A' },
+        { text: '  m_driveMotor.setThrottle(speedFraction * alignment);', color: '9EF01A' },
+        { text: '}', color: 'D7E3F4' },
       ],
     });
 
@@ -414,9 +424,9 @@ function buildDeck() {
     K.addTryItGrid(s, {
       y: 1.6, cols: 2,
       cards: [
-        { title: 'Design a box pattern', body: 'Drive 1 m, turn 90°, four times, ending where it started. Predict the final heading first.' },
-        { title: 'Parameterize the distance', body: 'Give driveTurnDrive a double distance, and a third @Autonomous opmode that calls it differently.' },
-        { title: 'Add a deliberate wait', body: 'coroutine.wait(Seconds.of(1.0)) between two awaits. When might that help a real auto?' },
+        { title: 'Design a box pattern', body: 'Drive 1 m, turn 90°, four times, ending where it started. Predict the final heading first.', code: true },
+        { title: 'Parameterize the distance', body: 'Give driveTurnDrive a double distance, and a third @Autonomous opmode that calls it differently.', code: true },
+        { title: 'Add a deliberate wait', body: 'coroutine.wait(Seconds.of(1.0)) between two awaits. When might that help a real auto?', code: true },
       ],
     });
 

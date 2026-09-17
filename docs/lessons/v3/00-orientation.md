@@ -205,10 +205,10 @@ Two quick exercises before you move on. Don't skip them — most of the actual
 learning happens when you have to think, not when you're copying code out of
 the walkthrough.
 
-1. Open `MyAuto.java`. It doesn't have a `start()` method yet — add one,
-   matching the shape `MyTeleop`'s already has, and print a *different*
-   message from it. Verify it only shows up when you've picked **My Auto**
-   on the opmode selector, not **My Teleop**.
+1. **Code — give `MyAuto` a `start()`.** Open `MyAuto.java`. It doesn't have
+   a `start()` method yet — add one, matching the shape `MyTeleop`'s already
+   has, and print a *different* message from it. Verify it only shows up
+   when you've picked **My Auto** on the opmode selector, not **My Teleop**.
 2. Break it on purpose. Delete a semicolon and run `./gradlew build`. Read
    the error carefully — note the file it points at and the line number it
    gives you. Reading compiler errors is a real skill, and the sooner you're

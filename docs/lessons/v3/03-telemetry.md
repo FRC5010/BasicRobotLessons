@@ -341,25 +341,26 @@ matter how briefly "happens" lasts.
 
 ## Try it
 
-1. Log the **commanded** speed too. Inside `driveWithJoystick`'s loop body,
-   add `SmartDashboard.putNumber("DriveModule/CommandedOutput", speed);`.
-   This is a refinement to the always-running rule: a value that only
-   exists inside a command — like the command's own output — gets logged
-   right where it's computed. On a real robot, overlaying
+1. **Code — log the commanded speed too.** Inside `driveWithJoystick`'s loop
+   body, add `SmartDashboard.putNumber("DriveModule/CommandedOutput",
+   speed);`. This is a refinement to the always-running rule: a value that
+   only exists inside a command — like the command's own output — gets
+   logged right where it's computed. On a real robot, overlaying
    `CommandedOutput` against `VelocityRotPerSec` shows how the motor lags
    your command — the seed of understanding control.
-2. Add a `getPositionRotations()` method to `DriveModule` that returns the
-   position as a `double`. Notice you're now exposing a *reading* method
-   alongside your command factories — that's fine; readings are safe to
-   share. We'll use this in Lesson 6.
+2. **Code — add `getPositionRotations()`.** Add this method to
+   `DriveModule`, returning the position as a `double`. Notice you're now
+   exposing a *reading* method alongside your command factories — that's
+   fine; readings are safe to share. We'll use this in Lesson 6.
 3. Change the prefix of one key from `"DriveModule/"` to `"Elevator/"`,
    rebuild, and watch AdvantageScope: the old entry goes stale and a new
    folder appears in the tree. The slash really is a folder path, and the
    name really is the address. Change it back before moving on.
-4. Add a matching `SchedulerEvent.Completed` case — either inside
-   `logCommandStart` or as a second `addEventListener` call — that writes
-   the finishing command's name to `DriveModule/LastCompletedCommand`.
-   Watch it update the instant you release the button.
+4. **Code — log when a command completes.** Add a matching
+   `SchedulerEvent.Completed` case — either inside `logCommandStart` or as
+   a second `addEventListener` call — that writes the finishing command's
+   name to `DriveModule/LastCompletedCommand`. Watch it update the instant
+   you release the button.
 
 ---
 

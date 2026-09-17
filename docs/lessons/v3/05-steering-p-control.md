@@ -409,14 +409,14 @@ short path. Try writing that in the challenge; it's a great `if` exercise.
 
 ## Try it
 
-1. **Shortest path:** after computing `error`, add:
+1. **Code — shortest path.** After computing `error`, add:
    ```java
    while (error > 180)  { error -= 360; }
    while (error < -180) { error += 360; }
    ```
    Test the 350°→0° case again. It should now move +10°. (This is your first
    `while` loop — it repeats until the condition is false.)
-2. Log the error: add
+2. **Code — log the error.** Add
    `SmartDashboard.putNumber("DriveModule/SteerErrorDegrees", error);` right
    after `error` is computed — a value that only exists inside a command gets
    logged where it's computed, Lesson 3's refinement. Plot it and watch it

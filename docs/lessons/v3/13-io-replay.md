@@ -666,7 +666,7 @@ physics on its own — nothing to opt into each tick, nothing to forget.
 
 ## Try it
 
-1. **Watch the empty doorway.** Flip `kSimMode` to `Mode.REPLAY` in
+1. **Code — watch the empty doorway.** Flip `kSimMode` to `Mode.REPLAY` in
    `Constants.java` and run `./gradlew simulateJava`. The robot builds and
    runs without a single error — the `new ModuleIO() {}` and
    `new GyroIO() {}` arms compile and construct fine — but every value on
@@ -674,7 +674,7 @@ physics on its own — nothing to opt into each tick, nothing to forget.
    forever, no matter what you command. That's the honest state of the
    `REPLAY` doorway today: open, and empty. Flip it back to `Mode.SIM` when
    you're done.
-2. **Corrupt a sensor on purpose.** In `ModuleIOTalonFX.updateInputs`,
+2. **Code — corrupt a sensor on purpose.** In `ModuleIOTalonFX.updateInputs`,
    multiply `drivePositionMeters` by `1.1` — a fake "wheel slip" baked
    straight into the hardware layer. Drive a known distance and watch
    odometry disagree with where you actually went, by a consistent 10%.
@@ -682,15 +682,15 @@ physics on its own — nothing to opt into each tick, nothing to forget.
    door everything else trusts, so *everything downstream* — distance,
    pose, the Field2d dot — inherited it without any of that code being
    wrong itself. Put the `1.1` back to `1.0`.
-3. **Cut the cord.** `ModuleIOSim` leans on Phoenix's simulated firmware by
-   extending the TalonFX class. Rebuild it standalone: `implements ModuleIO`
-   directly, with a `DCMotorSim` and a WPILib `PIDController` doing the
-   closed loops yourself — no Phoenix at all, the way `GyroIOSim` already
-   works. The CANcoder disappears entirely in this version — there's no
-   remote sensor to wire up when the "firmware" is a `PIDController` you
-   wrote yourself. Building it will test whether the interface boundary is
-   really as clean as it looks: nothing outside the class should need to
-   change.
+3. **Code — cut the cord.** `ModuleIOSim` leans on Phoenix's simulated
+   firmware by extending the TalonFX class. Rebuild it standalone:
+   `implements ModuleIO` directly, with a `DCMotorSim` and a WPILib
+   `PIDController` doing the closed loops yourself — no Phoenix at all, the
+   way `GyroIOSim` already works. The CANcoder disappears entirely in this
+   version — there's no remote sensor to wire up when the "firmware" is a
+   `PIDController` you wrote yourself. Building it will test whether the
+   interface boundary is really as clean as it looks: nothing outside the
+   class should need to change.
 
 ---
 

@@ -148,11 +148,72 @@ function buildDeck() {
 
     K.addFooter(s, { pageNum: 5, label: 'Full Swerve' });
     s.addNotes(
-      'Your clamp two lines down doesn\'t get the same MathUtil treatment — this alpha\'s MathUtil has no clamp to graduate to, so the private helper from Lesson 5 stays, permanently, same as it did in Lesson 7. kMaxSpeed.in(MetersPerSecond) is the Units boundary in action: the constant is a typed LinearVelocity, but the division needs a plain number, so .in(...) hands one back. Worth noting explicitly: state.velocity is read as a plain double, not unpacked with .in(...) — SwerveModuleVelocity\'s constructor accepts a LinearVelocity if you want to build one that way, but the value it actually stores is a bare double in meters per second. Units at the boundary where you build the value, plain numbers once it\'s inside a kinematics type built for speed — you\'ll see the same thing on ChassisVelocities in a moment. Also worth a callout: this alpha ships SwerveModuleVelocity.cosineScale(Rotation2d) doing exactly the alignment trick here, built in — it\'s not used because the hand-rolled version already lives right next to the P control it depends on, and moving it wouldn\'t simplify anything. And remember to update Drivetrain.driveDistance from Lesson 9 — it called the old two-argument setDesiredState(0.0, 0.4), which no longer compiles; build a state instead with kMaxSpeed.times(0.4) and Rotation2d.fromDegrees(0).'
+      'Your clamp two lines down doesn\'t get the same MathUtil treatment — this alpha\'s MathUtil has no clamp to graduate to, so the private helper from Lesson 5 stays, permanently, same as it did in Lesson 7. kMaxSpeed.in(MetersPerSecond) is the Units boundary in action: the constant is a typed LinearVelocity, but the division needs a plain number, so .in(...) hands one back. Worth noting explicitly: state.velocity is read as a plain double, not unpacked with .in(...) — SwerveModuleVelocity\'s constructor accepts a LinearVelocity if you want to build one that way, but the value it actually stores is a bare double in meters per second. Units at the boundary where you build the value, plain numbers once it\'s inside a kinematics type built for speed — you\'ll see the same thing on ChassisVelocities in a moment. Also worth a callout: this alpha ships SwerveModuleVelocity.cosineScale(Rotation2d) doing exactly the alignment trick here, built in — it\'s not used because the hand-rolled version already lives right next to the P control it depends on, and moving it wouldn\'t simplify anything.'
     );
   }
 
-  // ============================================================ SLIDE 6 — applyChassisSpeeds
+  // ============================================================ SLIDE 6 — fix driveDistance from Lesson 9 (NEW)
+  {
+    const s = p.addSlide();
+    s.background = { color: WHITE };
+    K.addHeader(s, { icon: 'code_white.png', eyebrow: 'Section 3 continued · Drivetrain.java', title: 'Fix the caller the compiler already knows about' });
+
+    K.addCodeCard(s, {
+      x: 0.7, y: 1.6, w: 11.9, h: 3.0, fontSize: 15,
+      fileLabel: 'Update driveDistance from Lesson 9 — the old two-argument setDesiredState(0.0, 0.4) no longer compiles',
+      lines: [
+        { text: '// while driving forward:', color: '7FA8C9' },
+        { text: 'module.setDesiredState(new SwerveModuleVelocity(', color: 'FFD166' },
+        { text: '    DriveConstants.kMaxSpeed.times(0.4), Rotation2d.fromDegrees(0)));', color: '9EF01A' },
+        { text: '', color: 'D7E3F4' },
+        { text: '// to stop — after the loop, AND again inside whenCanceled:', color: '7FA8C9' },
+        { text: 'module.setDesiredState(new SwerveModuleVelocity());', color: '9EF01A' },
+      ],
+    });
+
+    K.addCard(s, {
+      x: 0.7, y: 4.9, w: 11.9, h: 1.85,
+      body: 'Same fix anywhere else you called the two-argument setDesiredState — let the compiler\'s red list walk you to each one, Lesson 7 style. .times(0.4) scales the max-speed measure and stays a LinearVelocity; new SwerveModuleVelocity() with no arguments means zero speed.',
+      pad: 0.2, bodySize: 19,
+    });
+
+    K.addFooter(s, { pageNum: 6, label: 'Full Swerve' });
+    s.addNotes(
+      'Lesson 9\'s driveDistance called setDesiredState(0.0, 0.4) to drive and setDesiredState(0.0, 0.0) twice to stop (once after the loop finishes on its own, once inside whenCanceled for an interruption) — none of that compiles anymore. Build a state instead: new SwerveModuleVelocity(DriveConstants.kMaxSpeed.times(0.4), Rotation2d.fromDegrees(0)) to drive, and new SwerveModuleVelocity() — zero speed — everywhere it used to stop. This is deliberately compiler-driven, the same habit Lesson 7 taught: change the signature, let the red squiggly list walk you to every call site rather than trying to remember them all.'
+    );
+  }
+
+  // ============================================================ SLIDE 7 — desired-states publisher field (NEW)
+  {
+    const s = p.addSlide();
+    s.background = { color: WHITE };
+    K.addHeader(s, { icon: 'broadcasttower_white.png', eyebrow: 'Section 4 · Drivetrain.java', title: 'Publish the desired states too' });
+
+    K.addCodeCard(s, {
+      x: 0.7, y: 1.7, w: 11.9, h: 2.15, fontSize: 13,
+      fileLabel: 'Add to Drivetrain, alongside m_moduleStatesPublisher',
+      lines: [
+        { text: 'private final StructArrayPublisher<SwerveModuleVelocity> m_desiredModuleStatesPublisher =', color: 'D7E3F4' },
+        { text: '    NetworkTableInstance.getDefault()', color: 'D7E3F4' },
+        { text: '        .getStructArrayTopic("Drivetrain/DesiredModuleStates", SwerveModuleVelocity.struct)', color: '9EF01A' },
+        { text: '        .publish();', color: 'D7E3F4' },
+      ],
+    });
+
+    K.addCard(s, {
+      x: 0.7, y: 4.2, w: 11.9, h: 2.8,
+      heading: 'The helper you\'re about to write publishes into this.',
+      headingSize: 22,
+      body: 'applyChassisSpeeds is about to publish the chassis\'s desired states right next to Lesson 7\'s measured ones. Same StructArrayPublisher shape as m_moduleStatesPublisher, just a new topic name and a field to hold it.',
+    });
+
+    K.addFooter(s, { pageNum: 7, label: 'Full Swerve' });
+    s.addNotes(
+      'The helper about to get built is going to publish the chassis\'s desired states right next to Lesson 7\'s measured ones, so it needs a second publisher first — same shape as m_moduleStatesPublisher, new topic name Drivetrain/DesiredModuleStates. Section 6 is where this pair of publishers pays off: dropping both ModuleStates and DesiredModuleStates into the Swerve tab\'s States slots shows two sets of arrows, where the wheels are told to be versus where they actually are.'
+    );
+  }
+
+  // ============================================================ SLIDE 8 — applyChassisSpeeds
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -182,13 +243,13 @@ function buildDeck() {
       ],
     });
 
-    K.addFooter(s, { pageNum: 6, label: 'Full Swerve' });
+    K.addFooter(s, { pageNum: 8, label: 'Full Swerve' });
     s.addNotes(
-      'This is Lesson 8\'s own trick again: every path into the drivetrain — stick driving, heading turns, and a future lesson\'s pose chasing — ends with the same four steps, so those four steps become one private helper and everything else becomes a thin caller. new ChassisVelocities(vx, vy, ω) packs "what I want the whole robot to do" into a single value; toSwerveModuleVelocities is the library math this lesson exists for, one chassis motion in, one SwerveModuleVelocity[] out, one entry per corner in the order given to the constructor. desaturateWheelVelocities matters at the edge of the envelope: if translation-plus-rotation asks one wheel for 6 m/s but the max is 4.7, it scales all four down so the motion keeps its shape, just slower — without it, the overasked wheel silently caps and the robot curves off course. Now the real trap: optimize doesn\'t change states[i] in place — it\'s a pure function, same as Rotation2d.rotateBy or Translation2d.plus — it returns a new SwerveModuleVelocity, and the original is untouched. Call states[i].optimize(...) and throw away the result, and nothing happens — the module gets commanded with the un-optimized state, silently. That\'s why the loop reads states[i] = states[i].optimize(...) — assign it back before it\'s used. The indexed for loop is the new shape here because states[i] has to be paired with m_modules[i], and pairing two arrays takes an index. m_lastCommandedOmega keeps Lesson 8\'s fake gyro fed, and m_desiredModuleStatesPublisher.set(states) publishes the desired states right next to Lesson 7\'s measured ones — section 6 shows why that pair is gold.'
+      'This is Lesson 8\'s own trick again: every path into the drivetrain — stick driving, heading turns, and a future lesson\'s pose chasing — ends with the same four steps, so those four steps become one private helper and everything else becomes a thin caller. new ChassisVelocities(vx, vy, ω) packs "what I want the whole robot to do" into a single value; toSwerveModuleVelocities is the library math this lesson exists for, one chassis motion in, one SwerveModuleVelocity[] out, one entry per corner in the order given to the constructor. desaturateWheelVelocities matters at the edge of the envelope: if translation-plus-rotation asks one wheel for 6 m/s but the max is 4.7, it scales all four down so the motion keeps its shape, just slower — without it, the overasked wheel silently caps and the robot curves off course. Now the real trap: optimize doesn\'t change states[i] in place — it\'s a pure function, same as Rotation2d.rotateBy or Translation2d.plus — it returns a new SwerveModuleVelocity, and the original is untouched. Call states[i].optimize(...) and throw away the result, and nothing happens — the module gets commanded with the un-optimized state, silently. That\'s why the loop reads states[i] = states[i].optimize(...) — assign it back before it\'s used. The indexed for loop is the new shape here because states[i] has to be paired with m_modules[i], and pairing two arrays takes an index. m_lastCommandedOmega keeps Lesson 8\'s fake gyro fed, and m_desiredModuleStatesPublisher.set(states) publishes the desired states right next to Lesson 7\'s measured ones — the pair built on the previous slide.'
     );
   }
 
-  // ============================================================ SLIDE 7 — drive() + commandRotation
+  // ============================================================ SLIDE 9 — drive() + commandRotation
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -222,13 +283,49 @@ function buildDeck() {
       pad: 0.15, bodySize: 20,
     });
 
-    K.addFooter(s, { pageNum: 7, label: 'Full Swerve' });
+    K.addFooter(s, { pageNum: 9, label: 'Full Swerve' });
     s.addNotes(
-      'Delete the translate and rotate command factories from Drivetrain — kinematics subsumes both. But don\'t delete commandRotation: Lesson 8\'s turnToHeading still calls it, and breaking a working command isn\'t part of the plan. Instead the machinery underneath it gets rebuilt: its one-line translator means turnToHeading keeps working without a single edit. runRepeatedly is the same helper driveWithJoystick used back in Lesson 2 — a plain block of code, run once per tick until something cancels the command. While in the file, headingError gets the same one-liner treatment the module just got, via MathUtil.inputModulus — its two while loops were the last hand-rolled wrap left in the codebase.'
+      'Delete the translate and rotate command factories from Drivetrain — kinematics subsumes both. But don\'t delete commandRotation: Lesson 8\'s turnToHeading still calls it, and breaking a working command isn\'t part of the plan. Instead the machinery underneath it gets rebuilt: its one-line translator means turnToHeading keeps working without a single edit. runRepeatedly is the same helper driveWithJoystick used back in Lesson 2 — a plain block of code, run once per tick until something cancels the command.'
     );
   }
 
-  // ============================================================ SLIDE 8 — optimize (concept)
+  // ============================================================ SLIDE 10 — headingError one-liner + delete import (NEW)
+  {
+    const s = p.addSlide();
+    s.background = { color: WHITE };
+    K.addHeader(s, { icon: 'syncalt_white.png', eyebrow: 'Section 4 continued · Drivetrain.java', title: 'The last hand-rolled wrap retires' });
+
+    K.addCodeCard(s, {
+      x: 0.7, y: 1.6, w: 11.9, h: 1.75, fontSize: 16,
+      fileLabel: "Replace headingError's body with",
+      lines: [
+        { text: 'private double headingError(double targetDegrees) {', color: 'FFD166' },
+        { text: '  return MathUtil.inputModulus(targetDegrees - getHeadingDegrees(), -180, 180);', color: '9EF01A' },
+        { text: '}', color: 'D7E3F4' },
+      ],
+    });
+
+    K.addCodeCard(s, {
+      x: 0.7, y: 3.65, w: 11.9, h: 1.1, fontSize: 15,
+      fileLabel: "Delete from Drivetrain's imports",
+      lines: [
+        { text: 'import java.util.function.DoubleSupplier; // only translate used it, and it\'s gone', color: 'FF6B6B' },
+      ],
+    });
+
+    K.addCard(s, {
+      x: 0.7, y: 5.0, w: 11.9, h: 1.75,
+      body: 'While you\'re in the file, headingError gets the same one-liner treatment setDesiredState got in section 3 — its two while loops were the last hand-rolled wrap left in the codebase.',
+      pad: 0.2, bodySize: 20,
+    });
+
+    K.addFooter(s, { pageNum: 10, label: 'Full Swerve' });
+    s.addNotes(
+      'headingError\'s two while loops collapse into the same MathUtil.inputModulus one-liner setDesiredState got in section 3 — the wrap-loop story that ran hand-rolled since Lesson 5 finally retires everywhere it appeared in Drivetrain. The DoubleSupplier import was only there for translate, which is gone now that drive() takes typed LinearVelocity/AngularVelocity suppliers instead of bare doubles — leaving it in place would be a dead import the compiler quietly tolerates but a careful reader would notice.'
+    );
+  }
+
+  // ============================================================ SLIDE 11 — optimize (concept)
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
@@ -246,13 +343,13 @@ function buildDeck() {
       x: 7.05, y: 3.0, w: 5.25, h: 3.2, fontFace: FONT_BODY, fontSize: 20, color: 'D7E3F4', valign: 'top', margin: 0, lineSpacingMultiple: 1.3,
     });
 
-    K.addFooter(s, { pageNum: 8, label: 'Full Swerve', dark: true });
+    K.addFooter(s, { pageNum: 11, label: 'Full Swerve', dark: true });
     s.addNotes(
       'Without optimize, wheels routinely make 180° pirouettes for no reason, which looks awful and burns time. With it, they nudge a few degrees and reverse — as swerve robots should. Note what it needs to decide: the wheel\'s current angle — that\'s why the measurement gets passed in. Worth naming the connection to Lesson 9\'s cosine trick: optimize keeps every steering move under 90°, which means the cosine scale in setDesiredState never goes negative — the two together give wheels that take the short path AND hold their push until they\'re pointed right.'
     );
   }
 
-  // ============================================================ SLIDE 9 — wire up joysticks
+  // ============================================================ SLIDE 12 — wire up joysticks
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -276,13 +373,13 @@ function buildDeck() {
       body: 'No maxMps local, no .in(...) — the unit rides all the way from the constant into ChassisVelocities. No boundary to convert at until Phoenix\'s setThrottle, deep inside setDesiredState.',
     });
 
-    K.addFooter(s, { pageNum: 9, label: 'Full Swerve' });
+    K.addFooter(s, { pageNum: 12, label: 'Full Swerve' });
     s.addNotes(
       'Two edits: delete the Lesson 7 default translate binding and both bumper rotate bindings — those factories no longer exist, and the right stick is taking over rotation. The turnToHeading bindings from Lesson 8 stay; they never stopped working. Look at each supplier: the stick reads a fraction from -1 to 1, and kMaxSpeed.times(fraction) scales the max-speed measure down to that fraction — the result is still a LinearVelocity, exactly what drive now asks for. No maxMps local, no .in(...) — the unit rides all the way from the constant into ChassisVelocities. This is the Units payoff: because every hop speaks the type, there\'s simply no boundary to convert at until Phoenix\'s setThrottle, deep inside setDesiredState. Once wired, open the Swerve tab and push both sticks: with ModuleStates and DesiredModuleStates both dropped into the States slots, you see two sets of arrows — where the wheels are told to be, and where they actually are. When the two sets track each other closely, steering control is keeping up; when they lag apart, that\'s exactly what to tune.'
     );
   }
 
-  // ============================================================ SLIDE 10 — field-relative
+  // ============================================================ SLIDE 13 — field-relative
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -303,19 +400,24 @@ function buildDeck() {
       ],
     });
 
-    K.addCard(s, {
-      x: 0.7, y: 4.8, w: 11.9, h: 2.1,
-      body: 'toRobotRelative(...) rotates the field-frame velocity into the robot\'s frame using the current heading — the gyro from Lesson 8 quietly becoming load-bearing. Swap drive for driveFieldRelative in setDefaultCommand and you\'re done.',
-      pad: 0.15, bodySize: 20,
+    K.addCodeCard(s, {
+      x: 0.7, y: 4.8, w: 11.9, h: 2.0, fontSize: 12,
+      fileLabel: "Swap drive for driveFieldRelative in setDefaultCommand — same three suppliers, new method name",
+      lines: [
+        { text: 'robot.drivetrain.setDefaultCommand(robot.drivetrain.driveFieldRelative(', color: 'FFD166' },
+        { text: '    () -> DriveConstants.kMaxSpeed.times(-robot.driverController.getLeftY()),', color: 'D7E3F4' },
+        { text: '    () -> DriveConstants.kMaxSpeed.times(-robot.driverController.getLeftX()),', color: 'D7E3F4' },
+        { text: '    () -> DriveConstants.kMaxAngularSpeed.times(-robot.driverController.getRightX())));', color: '9EF01A' },
+      ],
     });
 
-    K.addFooter(s, { pageNum: 10, label: 'Full Swerve' });
+    K.addFooter(s, { pageNum: 13, label: 'Full Swerve' });
     s.addNotes(
       'Right now the sticks are robot-relative: pushing forward always drives the robot in its own forward direction, wherever it happens to be pointing — which means after a 180° turn, forward is backward and half the drivers\' brains melt. Most drivers prefer field-relative: pushing forward always drives away from the driver\'s station, regardless of robot orientation. Thanks to applyChassisSpeeds, this is now a genuinely small method — one new line of math and a delegation. fieldSpeeds.toRobotRelative(...) rotates the field-frame velocity into the robot\'s frame using the current heading — the gyro from Lesson 8 quietly becoming load-bearing. toRobotRelative reads the same way optimize and cosineScale do: it doesn\'t change fieldSpeeds, it returns the converted value. Everything downstream still speaks robot frame, and applyChassisSpeeds neither knows nor cares where the speeds came from — that\'s the extraction paying rent already. Once you feel field-relative driving, you won\'t want to give it up — that\'s worth saying plainly, it\'s the version drivers actually want.'
     );
   }
 
-  // ============================================================ SLIDE 11 — try it
+  // ============================================================ SLIDE 14 — try it
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
@@ -325,18 +427,18 @@ function buildDeck() {
       y: 1.6, cols: 2,
       cards: [
         { title: 'Watch a wheel optimize', body: 'Drive slow forward, then abruptly reverse. The wheel should flip drive sign, not spin 180°.' },
-        { title: 'Spin-while-driving auto', body: 'drivetrain.drive(...) forward at 1 m/s while spinning half a turn per second, for 2 seconds.' },
-        { title: 'Slow-mode multiplier', body: 'While a bumper is held, multiply the three suppliers\' outputs by 0.25 for fine control.' },
+        { title: 'Spin-while-driving auto', body: 'drivetrain.drive(...) forward at 1 m/s while spinning half a turn per second, for 2 seconds.', code: true },
+        { title: 'Slow-mode multiplier', body: 'While a bumper is held, multiply the three suppliers\' outputs by 0.25 for fine control.', code: true },
       ],
     });
 
-    K.addFooter(s, { pageNum: 11, label: 'Full Swerve', dark: true });
+    K.addFooter(s, { pageNum: 14, label: 'Full Swerve', dark: true });
     s.addNotes(
-      'The watch-a-wheel-optimize exercise is the one worth actually running: drive slow forward, then abruptly reverse, and watch DesiredModuleStates\'s arrows flip length-direction instead of swinging 180° — that\'s optimize doing its job visibly, not just in theory. The spin-while-driving auto is a good concrete demonstration that this really is full swerve now — forward motion and rotation composed in one command, which was impossible before this lesson. The slow-mode multiplier is a light reprise of composing a new command around drive(...), similar in spirit to Lesson 2\'s slow-mode Try It but now scaling three suppliers instead of one.'
+      'The watch-a-wheel-optimize exercise is the one worth actually running: drive slow forward, then abruptly reverse, and watch DesiredModuleStates\'s arrows flip length-direction instead of swinging 180° — that\'s optimize doing its job visibly, not just in theory. The spin-while-driving auto is a good concrete demonstration that this really is full swerve now — forward motion and rotation composed in one command, which was impossible before this lesson; that one is real code the student writes and drops into Autos. The slow-mode multiplier is a light reprise of composing a new command around drive(...), similar in spirit to Lesson 2\'s slow-mode Try It but now scaling three suppliers instead of one — also real code, a new command the student writes from scratch.'
     );
   }
 
-  // ============================================================ SLIDE 12 — what you learned + next
+  // ============================================================ SLIDE 15 — what you learned + next
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -362,7 +464,7 @@ function buildDeck() {
     s.addShape('ellipse', { x: 8.3, y: 5.6, w: 0.55, h: 0.55, fill: { color: TEAL }, line: { type: 'none' } });
     s.addImage({ path: K.ICON('arrowright_white.png'), x: 8.43, y: 5.73, w: 0.29, h: 0.29 });
 
-    K.addFooter(s, { pageNum: 12, label: 'Full Swerve' });
+    K.addFooter(s, { pageNum: 15, label: 'Full Swerve' });
     s.addNotes(
       'Full swerve turned out to be a translation exercise: ChassisVelocities says what you want the whole robot to do, SwerveDriveKinematics translates that into per-wheel SwerveModuleVelocitys, and the two hand-rolled commands from Lessons 7–8 collapsed into one drive that mixes translation and rotation freely. One library tool also graduated: MathUtil.inputModulus retired the wrap loop, the same trade the hand-rolled clamp didn\'t get to make, because this alpha never shipped one to graduate to. The quieter thread running through the whole lesson: optimize, cosineScale, and toRobotRelative all share a shape — call them, get a new value back, original untouched — the same immutable style Rotation2d and Translation2d have had all along, now showing up in the kinematics types too. Field-relative is the version drivers will never let you take away. One thing is still missing: the robot can move any way you ask, but it has no idea where it is. A future lesson gives it a map.'
     );

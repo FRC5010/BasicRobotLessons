@@ -147,6 +147,39 @@ regardless of which one you run.
    python3 <path-to-pptx-skill>/scripts/office/validate.py ../<name>.pptx
    markitdown ../<name>.pptx   # eyeball the text; grep for stray track/classic/before wording
    ```
+10. **Every code change the lesson instructs gets its own slide — summarizing
+    an edit in a card's prose instead of showing it is not coverage.** This
+    was a real, shipped bug (Lesson 7's deck): the lesson's "pay off Lesson
+    5's IOU" section makes three separate edits (`getSteerAngleDegrees`, the
+    CANcoder priming line, the `m_steerModel`/`simulatePeriodic` sim fields),
+    and the deck showed only the first, with the other two folded into a
+    caption sentence — so a presenter following the deck alone would tell
+    students to make an edit the deck never actually displayed. Build the
+    deck section-by-section against the lesson file with both open side by
+    side, and for every fenced code block the lesson marks with a bold
+    action lead-in (**Edit X**, **Add to Y**, **Replace Z**, **Delete from
+    W**), confirm there's a slide showing that exact edit — not a
+    paraphrase, not a comment placeholder like `/* ...rest of it... */`
+    standing in for code the lesson actually gives verbatim. A full new
+    method or file is allowed to split across two slides (setup card +
+    payoff card) but not to vanish into a bullet.
+    - This applies to whole-file wiring too — a lesson section that edits
+      `Robot.java`'s imports, a method body, *and* adds a new field is three
+      edits, and the deck needs a card (or cards) for each, not just the
+      most visually interesting one.
+    - **Try It items that expect the student to actually write or modify
+      code — not just run a build, predict an answer, or observe a
+      plot — get flagged, not left looking identical to the
+      observation-only ones.** In the lesson file, give that list item a
+      bold `**Code:**` lead-in the same family as every other bold
+      instruction lead-in (e.g. `4. **Code:** Add a
+      driveForwardMeters(double meters) method to Drivetrain...`). In the
+      deck, pass `code: true` on that card in the `addTryItGrid` call — it
+      renders a small bold "WRITE CODE" tag (see `deck-kit.js`'s
+      `addTryItGrid` doc comment) so a presenter can tell at a glance which
+      Try Its need real code review versus which ones are "run this and
+      watch." A Try It that's purely predict-then-run or observe-a-plot
+      does not get either marking.
 
 ## What's not in here
 

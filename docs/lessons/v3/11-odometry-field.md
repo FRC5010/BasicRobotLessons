@@ -337,15 +337,16 @@ kind of ending.
 
 ## Try it
 
-1. Reset the pose at the start of teleop
-   (`robot.drivetrain.resetPose(new Pose2d())` from a button) and confirm
-   the robot on the field jumps back to (0, 0, 0°).
+1. **Code — reset the pose from a button.** Bind
+   `robot.drivetrain.resetPose(new Pose2d())` at the start of teleop and
+   confirm the robot on the field jumps back to (0, 0, 0°).
 2. Drive a square with the sticks — forward a meter or so, strafe, back,
    strafe — and try to end exactly where you started. Watch how far off
    the field view says you are. That accumulating error is *drift*, and
    it's why teams add vision.
-3. **Watch `Rotation2d` do the wrap for you.** `driveToPose`'s heading
-   term, `target.getRotation().minus(current.getRotation()).getRadians()`,
+3. **Code — watch `Rotation2d` do the wrap for you.** `driveToPose`'s
+   heading term,
+   `target.getRotation().minus(current.getRotation()).getRadians()`,
    never needs the ±180° trick you wrote by hand — `Rotation2d` already
    knows angles live on a circle. Prove it: log that value, point the
    robot near −170°, and call `driveToPose` with a target facing +170°.

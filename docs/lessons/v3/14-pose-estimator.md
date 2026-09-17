@@ -435,23 +435,23 @@ modern FRC localization in one sentence.
 
 ## Try it
 
-1. **Drift, then correct.** Resurrect Lesson 13's Try It — multiply
+1. **Code — drift, then correct.** Resurrect Lesson 13's Try It — multiply
    `drivePositionMeters` by `1.1` in `ModuleIOTalonFX.updateInputs` — drive
    a lap, and watch the pose wander somewhere false. Now press Start a few
    times. The lie gets pulled back toward the "camera's" truth — the exact
    drama that plays out on a real field, in slow motion. Remove the slip
    after.
-2. **A second camera.** Register a *second* `VisionPoseProvider` and bind it
-   to another button reporting a different spot. Nothing in `Localizer`
-   changes — you just `addProvider` again. That's the whole point of the
-   registry: sources are pluggable. (On a real robot, that's a front camera
-   and a back camera, both feeding the same estimate.)
-3. **Feed it garbage.** Report an absurd sighting — `(15, 1, 0°)` while you
-   sit at the origin — and press Start several times in a row. The estimate
-   lurches toward a place the robot never was. Moral: the estimator believes
-   what you feed it, weighted by the trust knob. Real vision code *filters*
-   before it feeds, rejecting sightings too far from the current estimate to
-   be plausible.
+2. **Code — a second camera.** Register a *second* `VisionPoseProvider` and
+   bind it to another button reporting a different spot. Nothing in
+   `Localizer` changes — you just `addProvider` again. That's the whole
+   point of the registry: sources are pluggable. (On a real robot, that's a
+   front camera and a back camera, both feeding the same estimate.)
+3. **Code — feed it garbage.** Report an absurd sighting —
+   `(15, 1, 0°)` while you sit at the origin — and press Start several times
+   in a row. The estimate lurches toward a place the robot never was.
+   Moral: the estimator believes what you feed it, weighted by the trust
+   knob. Real vision code *filters* before it feeds, rejecting sightings too
+   far from the current estimate to be plausible.
 
 ---
 

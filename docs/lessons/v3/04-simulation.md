@@ -209,7 +209,8 @@ You now have a robot you can develop against with no hardware on the bench.
    to `driveAtSpeed(0.3)` from Lesson 1 — try changing it to `1.0` and
    rebuilding) and watch the velocity curve. That S-shaped ramp is the
    motor's natural response — you'll meet it again when you tune control.
-3. Add `SmartDashboard.putNumber("DriveModule/AppliedVolts", appliedVolts);`
+3. **Code — log applied volts.** Add
+   `SmartDashboard.putNumber("DriveModule/AppliedVolts", appliedVolts);`
    inside `simulatePeriodic()` and overlay it against velocity in
    AdvantageScope. (A value that only exists in sim gets logged from
    `simulatePeriodic()` — it's the `logTelemetry()` of the sim world.)

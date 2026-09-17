@@ -365,7 +365,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'listol_white.png', eyebrow: 'Section 8 · Robot.java', title: 'What is this mechanism doing right now?' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 2.4, fontSize: 14,
+      x: 0.7, y: 1.55, w: 11.9, h: 2.0, fontSize: 12,
       fileLabel: "Add to Robot, below robotPeriodic()",
       lines: [
         { text: 'private void logRunningCommand() {', color: 'FFD166' },
@@ -376,11 +376,22 @@ function buildDeck() {
       ],
     });
 
+    K.addCodeCard(s, {
+      x: 0.7, y: 3.7, w: 11.9, h: 1.95, fontSize: 12,
+      fileLabel: 'Call it from robotPeriodic(), right after the scheduler tick',
+      lines: [
+        { text: '@Override', color: 'FFD166' },
+        { text: 'public void robotPeriodic() {', color: 'D7E3F4' },
+        { text: '  Scheduler.getDefault().run();', color: 'D7E3F4' },
+        { text: '  logRunningCommand(); // ← added', color: '9EF01A' },
+        { text: '}', color: 'D7E3F4' },
+      ],
+    });
+
     K.addCard(s, {
-      x: 0.7, y: 4.2, w: 11.9, h: 2.7,
-      heading: 'getRunningCommandsFor(module) returns a List<Command>.',
-      headingSize: 21,
-      body: '.get(0) asks for entry zero — safe here because a mechanism can only ever have one command running on it. Read it after Scheduler.run(), never before, or the list is still empty.',
+      x: 0.7, y: 5.75, w: 11.9, h: 1.35,
+      body: 'getRunningCommandsFor(module) returns a List<Command> — .get(0) is safe because a mechanism can only ever have one command running on it. Order matters: read it after Scheduler.run(), never before.',
+      pad: 0.18, bodySize: 17,
     });
 
     K.addFooter(s, { pageNum: 13, label: 'First Motor' });
@@ -398,10 +409,10 @@ function buildDeck() {
     K.addTryItGrid(s, {
       y: 1.6, cols: 2,
       cards: [
-        { title: 'Add a reverse button', body: 'eastFace() drives at -0.3. Press both — the most-recently-scheduled command wins cleanly.' },
+        { title: 'Add a reverse button', body: 'eastFace() drives at -0.3. Press both — the most-recently-scheduled command wins cleanly.', code: true },
         { title: 'Change the CAN ID', body: 'Rebuild. Nothing breaks in sim, but get in the habit of setting IDs deliberately.' },
-        { title: 'Move the ID into a constant', body: 'Create Constants.java with DriveConstants.kDriveMotorPort — this is where robot numbers should live.' },
-        { title: 'Use the constant', body: 'Reference it as Constants.DriveConstants.kDriveMotorPort in the subsystem instead of a bare number.' },
+        { title: 'Move the ID into a constant', body: 'Create Constants.java with DriveConstants.kDriveMotorPort — this is where robot numbers should live.', code: true },
+        { title: 'Use the constant', body: 'Reference it as Constants.DriveConstants.kDriveMotorPort in the subsystem instead of a bare number.', code: true },
       ],
     });
 

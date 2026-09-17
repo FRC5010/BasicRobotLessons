@@ -111,17 +111,113 @@ function buildDeck() {
 
     K.addCard(s, {
       x: 0.7, y: 5.15, w: 11.9, h: 1.75,
-      body: 'Step the steer physics in simulatePeriodic() right after the drive motor\'s four steps — same loop, second motor. Robot.simulationPeriodic() doesn\'t change at all.',
+      body: 'Same three fields the drive motor got in Lesson 4 — sim state, then a physics model. Robot.simulationPeriodic() doesn\'t change at all; the next slide shows where the steer physics actually gets stepped.',
       pad: 0.2, bodySize: 20,
     });
 
     K.addFooter(s, { pageNum: 4, label: 'Steering P Control' });
     s.addNotes(
-      'The steering motor is a second TalonFX, and it needs the same sim plumbing the drive motor got in Lesson 4 — the ordering rule applies again, m_steerSim is built by asking m_steerMotor for its sim state, so the motor field comes first. No new imports are needed; everything here arrived in Lesson 4. Worth reading the steering angle in degrees, not rotations: a real steering module has a big reduction between motor and wheel — this one steers through 25:1 — but to keep this lesson focused on P control rather than unit conversion, the sensor is treated as 1:1 with the wheel for now. Lesson 6 applies the gear-ratio pattern to the drive motor, and Lesson 7 gives steering its real 25:1 as part of growing up.'
+      'The steering motor is a second TalonFX, and it needs the same sim plumbing the drive motor got in Lesson 4 — the ordering rule applies again, m_steerSim is built by asking m_steerMotor for its sim state, so the motor field comes first. No new imports are needed; everything here arrived in Lesson 4.'
     );
   }
 
-  // ============================================================ SLIDE 5 — priming: why a relative sensor needs a memory
+  // ============================================================ SLIDE 5 — simulatePeriodic steer physics
+  {
+    const s = p.addSlide();
+    s.background = { color: WHITE };
+    K.addHeader(s, { icon: 'syncalt_white.png', eyebrow: 'Section 2 · DriveModule.java', title: 'Step the steer physics, same loop as the drive motor' });
+
+    K.addCodeCard(s, {
+      x: 0.7, y: 1.75, w: 11.9, h: 2.85, fontSize: 13,
+      fileLabel: "Edit DriveModule's simulatePeriodic(), right after the drive motor's four steps",
+      lines: [
+        { text: 'public void simulatePeriodic() {', color: 'FFD166' },
+        { text: '  // ...the drive motor\'s four steps stay here, unchanged...', color: '7FA8C9' },
+        { text: '', color: 'D7E3F4' },
+        { text: '  m_steerSim.setSupplyVoltage(RobotController.getBatteryVoltage());', color: '9EF01A' },
+        { text: '  m_steerModel.setInputVoltage(m_steerSim.getMotorVoltage());', color: '9EF01A' },
+        { text: '  m_steerModel.update(0.020);', color: '9EF01A' },
+        { text: '  m_steerSim.setRawRotorPosition(m_steerModel.getAngularPosition() / (2 * Math.PI));', color: '9EF01A' },
+        { text: '  m_steerSim.setRotorVelocity(m_steerModel.getAngularVelocity() / (2 * Math.PI));', color: '9EF01A' },
+        { text: '}', color: 'D7E3F4' },
+      ],
+    });
+
+    K.addCard(s, {
+      x: 0.7, y: 4.85, w: 11.9, h: 2.05,
+      body: 'Same loop, second motor — battery volts in, model steps forward 20 ms, the model\'s motion feeds back into the fake rotor. Notice what you didn\'t have to touch: Robot.simulationPeriodic() still just calls module.simulatePeriodic(), one line, from Lesson 4.',
+      pad: 0.2, bodySize: 20,
+    });
+
+    K.addFooter(s, { pageNum: 5, label: 'Steering P Control' });
+    s.addNotes(
+      'This is the exact four-step loop Lesson 4 established for the drive motor, copied for the steering motor: tell the sim the battery voltage, read the voltage the TalonFX is applying, feed that into the physics model and advance time by one tick, then push the resulting motion back into the fake encoder. Everything this module needs in sim lives inside the module — Robot doesn\'t need to know a second motor showed up, which is worth calling out explicitly since it\'s easy to assume adding hardware means touching Robot.java too.'
+    );
+  }
+
+  // ============================================================ SLIDE 6 — getSteerAngleDegrees
+  {
+    const s = p.addSlide();
+    s.background = { color: WHITE };
+    K.addHeader(s, { icon: 'chartline_white.png', eyebrow: 'Section 2 · DriveModule.java', title: 'Read the angle — pretending 1:1 for now' });
+
+    K.addCodeCard(s, {
+      x: 0.7, y: 1.75, w: 11.9, h: 2.15, fontSize: 16,
+      fileLabel: 'Add to DriveModule, with your other public methods',
+      lines: [
+        { text: '/** Current steering angle in degrees. */', color: '7FA8C9' },
+        { text: 'public double getSteerAngleDegrees() {', color: 'FFD166' },
+        { text: '  return m_steerMotor.getPosition().getValue().in(Degrees);', color: '9EF01A' },
+        { text: '}', color: 'D7E3F4' },
+      ],
+    });
+
+    K.addCard(s, {
+      x: 0.7, y: 4.15, w: 11.9, h: 2.8,
+      body: 'Add import static org.wpilib.units.Units.Degrees;. A real steering module gears down 25:1 between motor and wheel — this lesson pretends the sensor turns 1:1 with the wheel so it can focus on P control, not unit conversion. Lesson 7 pays that debt off for real.',
+      pad: 0.2, bodySize: 20,
+    });
+
+    K.addFooter(s, { pageNum: 6, label: 'Steering P Control' });
+    s.addNotes(
+      'It\'s a question-method, Lesson 3 style: ask the motor for its position, hand back degrees. Degrees is just another unit constant, the same family as Rotations from Lesson 3 — .in(...) doesn\'t care which one you ask for. Worth being upfront about the simplification: a real steering module has a big reduction between the motor and the wheel — this one steers through 25:1 — but to keep this lesson focused on P control rather than unit conversion, the sensor is treated as 1:1 with the wheel for now. Lesson 6 applies the gear-ratio pattern to the drive motor, and Lesson 7 gives steering its real 25:1 as part of growing up — this is a deliberate, named simplification, not an oversight.'
+    );
+  }
+
+  // ============================================================ SLIDE 7 — SteerConstants: the magnet offset
+  {
+    const s = p.addSlide();
+    s.background = { color: WHITE };
+    K.addHeader(s, { icon: 'sitemap_white.png', eyebrow: 'Section 3 · Constants.java', title: 'One calibration number, measured by hand' });
+
+    K.addCodeCard(s, {
+      x: 0.7, y: 1.75, w: 11.9, h: 3.0, fontSize: 13,
+      fileLabel: 'Add to Constants.java',
+      lines: [
+        { text: 'public static final class DriveConstants {', color: 'D7E3F4' },
+        { text: '  // ...kDriveMotorPort, kSteerMotorPort stay...', color: '7FA8C9' },
+        { text: '  public static final int kCancoderPort = 3;   // CAN ID — change to yours', color: '9EF01A' },
+        { text: '}', color: 'D7E3F4' },
+        { text: '', color: 'D7E3F4' },
+        { text: 'public static final class SteerConstants {', color: 'FFD166' },
+        { text: '  public static final double kMagnetOffset = 0.0; // measure with Tuner X', color: '9EF01A' },
+        { text: '}', color: 'D7E3F4' },
+      ],
+    });
+
+    K.addCard(s, {
+      x: 0.7, y: 5.05, w: 11.9, h: 1.95,
+      body: 'Point the wheel straight forward by hand, read the CANcoder\'s raw position in Phoenix Tuner X, and store the negative of that as kMagnetOffset — the CANcoder then reports exactly 0 at true forward. SteerConstants gains kP later — this is its first job, not its last.',
+      pad: 0.2, bodySize: 20,
+    });
+
+    K.addFooter(s, { pageNum: 7, label: 'Steering P Control' });
+    s.addNotes(
+      'This is the calibration step that has to happen before the code means anything: the CANcoder\'s own zero is wherever its magnet happens to be glued on — probably not "wheel pointing forward." You measure that gap once, with a number called the magnet offset. Configured with that number, the CANcoder reports exactly 0 when the wheel is at true forward. This class is new — SteerConstants doesn\'t exist yet before this slide — and it\'s worth being explicit that it\'s created here specifically so the next slide\'s constructor code has something to reference.'
+    );
+  }
+
+  // ============================================================ SLIDE 8 — priming: why a relative sensor needs a memory
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -143,13 +239,13 @@ function buildDeck() {
       bodyColor: 'CADCE8',
     });
 
-    K.addFooter(s, { pageNum: 5, label: 'Steering P Control' });
+    K.addFooter(s, { pageNum: 8, label: 'Steering P Control' });
     s.addNotes(
       'getSteerAngleDegrees() trusts the steering motor\'s own sensor completely, and that sensor has a blind spot: it\'s relative, counting rotations from wherever it happened to be when the robot powered on, not from any fixed reference. On the bench that\'s invisible, because the robot gets built with the wheel already close to "forward." On a real match day, after being unplugged, carried around, and replugged a dozen times, there\'s no guarantee the wheel is anywhere near where it was last time — and the sensor has no way to know. We won\'t make the steering motor read the CANcoder continuously yet — that\'s a firmware trick for Lesson 12. For now: read it once, right when the robot boots, and tell the steering motor\'s own sensor to start counting from there.'
     );
   }
 
-  // ============================================================ SLIDE 6 — Constants + CANcoder + priming
+  // ============================================================ SLIDE 9 — CANcoder field + priming in the constructor
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -176,13 +272,13 @@ function buildDeck() {
       ],
     });
 
-    K.addFooter(s, { pageNum: 6, label: 'Steering P Control' });
+    K.addFooter(s, { pageNum: 9, label: 'Steering P Control' });
     s.addNotes(
-      'One calibration step first, worth explaining before the code: the CANcoder\'s own zero is wherever its magnet happens to be glued on — probably not "wheel pointing forward." You measure that gap once, with a number called the magnet offset — point the wheel straight forward by hand, read the CANcoder\'s raw position in Phoenix Tuner X, and store the negative of that reading as the offset. getConfigurator().apply(...) is a pattern that shows up constantly from here on: build a small object describing what you want, hand it to the device once, done. setPosition(...) is new — every Phoenix device lets you tell it what its own sensor should currently read, which is exactly what priming means: not moving the wheel, just correcting what the motor believes about where it already is. Two callouts worth mentioning if asked: a CAN device needs a moment after power-on before it reports real values, so if a prime ever looks like it read 0 instead of the real angle, that\'s the usual suspect; and a CANcoder reads counterclockwise-positive by default — if yours reads backwards, set MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive, or priming will confidently seed the wrong zero every single boot.'
+      'Add imports for com.ctre.phoenix6.configs.CANcoderConfiguration, com.ctre.phoenix6.hardware.CANcoder, and first.robot.Constants.SteerConstants (this last one lets the code write SteerConstants directly instead of Constants.SteerConstants). Two calls do all the work. getConfigurator().apply(...) is a pattern that shows up constantly from here on: build a small object describing what you want, hand it to the device once, done. setPosition(...) is new — every Phoenix device lets you tell it what its own sensor should currently read, which is exactly what priming means: not moving the wheel, just correcting what the motor believes about where it already is. Two callouts worth mentioning if asked: a CAN device needs a moment after power-on before it reports real values, so if a prime ever looks like it read 0 instead of the real angle, that\'s the usual suspect; and a CANcoder reads counterclockwise-positive by default — if yours reads backwards, set MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive, or priming will confidently seed the wrong zero every single boot.'
     );
   }
 
-  // ============================================================ SLIDE 7 — proportional control
+  // ============================================================ SLIDE 10 — proportional control
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -208,13 +304,13 @@ function buildDeck() {
       ],
     });
 
-    K.addFooter(s, { pageNum: 7, label: 'Steering P Control' });
+    K.addFooter(s, { pageNum: 10, label: 'Steering P Control' });
     s.addNotes(
       'This is the heart of the lesson — read it slowly, because this little method is the seed of every controller students will ever write. runRepeatedly(...).whenCanceled(...).named(...) is a chain built twice already: runRepeatedly is Lesson 2\'s shape, running fresh every tick, exactly what a controller needs since it has to keep re-measuring; whenCanceled is Lesson 1\'s shape, cleanup that fires once when something takes the module away. steerToAngle is just the first method that needed both at once. Also worth naming explicitly: the lambda remembers targetDegrees — a parameter of steerToAngle used tick after tick, long after the method returned. Lambdas hold onto the variables around them when they were created, which is the "tiny bit of state" this lesson promised, and it\'s why one factory method can produce a go-to-90 command and a go-to-0 command that each remember their own target. Also point out the comment about motors holding their last value: when this command is interrupted, its per-tick math stops running, so unless 0 is commanded in cleanup, the motor keeps applying whatever fraction it was last given and the wheel drifts.'
     );
   }
 
-  // ============================================================ SLIDE 8 — walk through one tick
+  // ============================================================ SLIDE 11 — walk through one tick
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
@@ -234,17 +330,17 @@ function buildDeck() {
       x: 0.7, y: 5.9, w: 11.9, h: 1.2, fontFace: FONT_HEAD, italic: true, fontSize: 20, color: 'CADCE8', valign: 'top', margin: 0, lineSpacingMultiple: 1.25,
     });
 
-    K.addFooter(s, { pageNum: 8, label: 'Steering P Control', dark: true });
+    K.addFooter(s, { pageNum: 11, label: 'Steering P Control', dark: true });
     s.addNotes(
       'Walk this out loud as a story, not just numbers: with kP = 0.0005, an error of 70° gives output = 0.035, about 3.5% power toward the target — a Kraken X60 spinning something this light doesn\'t need much to get moving. As the motor turns and measurement rises, error shrinks, so output shrinks with it. Near 90°, error is roughly 0, output is roughly 0 — it eases in and holds. That gentle slow-down is what "proportional" buys you: no slamming into the target. And the math handles direction for free — overshoot past 90° and error goes negative, so output goes negative and the motor pushes back. The sign of the error carries which way to go; the size carries how hard.'
     );
   }
 
-  // ============================================================ SLIDE 9 — clamp + kP as a tuning constant
+  // ============================================================ SLIDE 12 — clamp
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
-    K.addHeader(s, { icon: 'cog_white.png', eyebrow: 'Section 4 · Two supporting pieces', title: 'A safety clamp, and one named constant' });
+    K.addHeader(s, { icon: 'cog_white.png', eyebrow: 'Section 4 · A safety clamp', title: 'if / else if / else, one decision, three branches' });
 
     K.addCodeCard(s, {
       x: 0.7, y: 1.75, w: 11.9, h: 3.15, fontSize: 12,
@@ -264,16 +360,45 @@ function buildDeck() {
 
     K.addCard(s, {
       x: 0.7, y: 5.1, w: 11.9, h: 1.85,
-      body: 'kP is a tuning constant — SteerConstants.kP = 0.0005 in Constants.java, never reassigned. clamp is if / else if / else: without it, a large error could ask for more power than the motor has.',
+      body: 'Without it, a large error could ask for more power than the motor has. It\'s private, like applyDeadband was in Lesson 2 — internal plumbing, placed right below the method that uses it.',
     });
 
-    K.addFooter(s, { pageNum: 9, label: 'Steering P Control' });
+    K.addFooter(s, { pageNum: 12, label: 'Steering P Control' });
     s.addNotes(
-      'clamp shows off if / else if / else — one decision, three branches, exactly one of which runs. Without it, a large error could compute an output like 5.0, which the motor can\'t do; clamping keeps commands sane. It\'s private, like applyDeadband was back in Lesson 2 — internal plumbing, placed right below the method that uses it. kP itself is a tuning constant, a number you\'ll adjust over and over, and numbers like that live in Constants.java in a nested class named for the subsystem area they belong to. public static final reads as: anyone can see it, there\'s exactly one of it — no object needed, you write SteerConstants.kP just like Math.abs — and it can never be reassigned. One named number, one home, every place that needs it points here. That\'s the whole philosophy of Constants.java.'
+      'clamp shows off if / else if / else — one decision, three branches, exactly one of which runs. Without it, a large error could compute an output like 5.0, which the motor can\'t do; clamping keeps commands sane. It\'s private, like applyDeadband was back in Lesson 2 — internal plumbing, placed right below the method that uses it.'
     );
   }
 
-  // ============================================================ SLIDE 10 — bind it and tune
+  // ============================================================ SLIDE 13 — kP joins SteerConstants
+  {
+    const s = p.addSlide();
+    s.background = { color: WHITE };
+    K.addHeader(s, { icon: 'sitemap_white.png', eyebrow: 'Section 4 · Constants.java', title: 'kP: a number you\'ll adjust over and over' });
+
+    K.addCodeCard(s, {
+      x: 0.7, y: 1.75, w: 11.9, h: 2.15, fontSize: 16,
+      fileLabel: 'Add kP to SteerConstants in Constants.java',
+      lines: [
+        { text: 'public static final class SteerConstants {', color: 'FFD166' },
+        { text: '  public static final double kMagnetOffset = 0.0; // from the previous section', color: 'D7E3F4' },
+        { text: '  public static final double kP = 0.0005;          // output per degree of error', color: '9EF01A' },
+        { text: '}', color: 'D7E3F4' },
+      ],
+    });
+
+    K.addCard(s, {
+      x: 0.7, y: 4.15, w: 11.9, h: 2.8,
+      body: 'public static final reads as: anyone can see it, there\'s exactly one of it (no object needed — you write SteerConstants.kP, just like Math.abs), and it can never be reassigned. One named number, one home, every place that needs it points here.',
+      pad: 0.2, bodySize: 20,
+    });
+
+    K.addFooter(s, { pageNum: 13, label: 'Steering P Control' });
+    s.addNotes(
+      'kP itself is a tuning constant, a number you\'ll adjust over and over, and numbers like that live in Constants.java in a nested class named for the subsystem area they belong to. SteerConstants already exists — it was created a few slides ago, for the magnet offset — so this is the class\'s second job, not a new class. That\'s the whole philosophy of Constants.java: one named number, one home.'
+    );
+  }
+
+  // ============================================================ SLIDE 14 — bind it and tune
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -296,13 +421,43 @@ function buildDeck() {
       body: 'Since steerToAngle never finishes on its own, one tap sends the module to 90° and holds it — no need to keep the button down. Tap the other button and the scheduler swaps commands, firing the old one\'s whenCanceled cleanup on the way out.',
     });
 
-    K.addFooter(s, { pageNum: 10, label: 'Steering P Control' });
+    K.addFooter(s, { pageNum: 14, label: 'Steering P Control' });
     s.addNotes(
       'New word: onTrue, where Lesson 1 used whileTrue. whileTrue runs a command while you hold the button; onTrue schedules it once when the button is pressed and then walks away. Since steerToAngle is built on runRepeatedly, it never finishes on its own — so a single tap of the west button sends the module to 90° and holds it there, no need to keep the button down. Tap the north button and the scheduler swaps commands: one command per mechanism, so scheduling the go-to-0 command cancels the go-to-90 one, firing its whenCanceled cleanup on the way out. Worth calling out as a callout of its own: while a steering command owns the module, the joystick stops driving the wheel — the Lesson 2 default command only runs when no other command is using the mechanism, and steerToAngle never lets go. That\'s the one-command-per-mechanism rule doing exactly what it promised; it\'s fine here since we\'re steering, not driving, and the module learns to do both at once when it grows up in Lesson 7.'
     );
   }
 
-  // ============================================================ SLIDE 11 — run it, tune kP
+  // ============================================================ SLIDE 15 — log the steer angle
+  {
+    const s = p.addSlide();
+    s.background = { color: WHITE };
+    K.addHeader(s, { icon: 'chartline_white.png', eyebrow: 'Section 5 · DriveModule.java', title: 'One more line, so the plot shows something' });
+
+    K.addCodeCard(s, {
+      x: 0.7, y: 1.75, w: 11.9, h: 2.15, fontSize: 15,
+      fileLabel: "Add to DriveModule's logTelemetry()",
+      lines: [
+        { text: 'private void logTelemetry() {', color: 'FFD166' },
+        { text: '  // ...the drive position and velocity logs from Lesson 3 stay...', color: '7FA8C9' },
+        { text: '', color: 'D7E3F4' },
+        { text: '  SmartDashboard.putNumber("DriveModule/SteerAngleDegrees", getSteerAngleDegrees());', color: '9EF01A' },
+        { text: '}', color: 'D7E3F4' },
+      ],
+    });
+
+    K.addCard(s, {
+      x: 0.7, y: 4.15, w: 11.9, h: 2.8,
+      body: 'Same place the drive readings have been logging since Lesson 3 — one more line, same periodic callback, same naming convention. Without it, there\'s nothing on the AdvantageScope plot to watch kP tune against.',
+      pad: 0.2, bodySize: 20,
+    });
+
+    K.addFooter(s, { pageNum: 15, label: 'Steering P Control' });
+    s.addNotes(
+      'To watch the controller work, log the steering angle from the same place the drive readings have been logging since Lesson 3 — logTelemetry() already exists and already runs every tick via the addPeriodic call from a few slides back; this is one more line inside it, not a new method or a new callback. Skip this and the next slide\'s tuning instructions have nothing to point AdvantageScope at.'
+    );
+  }
+
+  // ============================================================ SLIDE 16 — run it, tune kP
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
@@ -320,13 +475,13 @@ function buildDeck() {
       s.addText(r[1], { x: 4.6, y: y + 0.18, w: 7.7, h: 0.85, fontFace: FONT_BODY, fontSize: 21, color: 'D7E3F4', valign: 'middle', margin: 0, lineSpacingMultiple: 1.2 });
     });
 
-    K.addFooter(s, { pageNum: 11, label: 'Steering P Control', dark: true });
+    K.addFooter(s, { pageNum: 16, label: 'Steering P Control', dark: true });
     s.addNotes(
-      'Before running it, add the steering angle to logTelemetry() the same place drive readings have been logging since Lesson 3, so the plot in AdvantageScope actually shows something. Tuning kP by watching the plot is the job — start at 0.0005, double it until it oscillates, then back off. This intuition transfers to every controller students will ever write, so it\'s worth letting them actually watch all three states (too small, too big, just right) rather than just telling them what each looks like.'
+      'Tuning kP by watching the plot is the job — start at 0.0005, double it until it oscillates, then back off. This intuition transfers to every controller students will ever write, so it\'s worth letting them actually watch all three states (too small, too big, just right) rather than just telling them what each looks like.'
     );
   }
 
-  // ============================================================ SLIDE 12 — try it
+  // ============================================================ SLIDE 17 — try it
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
@@ -335,19 +490,19 @@ function buildDeck() {
     K.addTryItGrid(s, {
       y: 1.6, cols: 2,
       cards: [
-        { title: 'Shortest path', body: 'Wrap error to -180°..180° with two while loops. Test 350° → 0°: it should move +10°.' },
-        { title: 'Log the error', body: 'SteerErrorDegrees, right after error is computed. Plot it decaying toward zero.' },
+        { title: 'Shortest path', body: 'Wrap error to -180°..180° with two while loops. Test 350° → 0°: it should move +10°.', code: true },
+        { title: 'Log the error', body: 'SteerErrorDegrees, right after error is computed. Plot it decaying toward zero.', code: true },
         { title: 'Try kP = 0', body: 'Then a negative kP. Predict first, then run it, and explain what you saw.' },
       ],
     });
 
-    K.addFooter(s, { pageNum: 12, label: 'Steering P Control', dark: true });
+    K.addFooter(s, { pageNum: 17, label: 'Steering P Control', dark: true });
     s.addNotes(
-      'The shortest-path exercise is worth setting up with the wrinkle it fixes: ask for 0° while sitting at 350°. Error = 0 − 350 = −350, so it spins almost all the way around backwards — when it could have nudged +10° forward. Real steering code wraps the error to the range −180°…+180° so it always takes the short path; the two while loops in the exercise are the fix, and it\'s students\' first while loop — it repeats until the condition is false. Logging the error is Lesson 3\'s refinement applied again: a value that only exists inside a command gets logged where it\'s computed. The kP = 0 / negative-kP exercise is a genuine predict-then-check: 0 means no output ever, so the wheel never moves regardless of error; negative kP pushes the wrong direction and error grows instead of shrinking.'
+      'Two of these three genuinely expect written code, tagged accordingly. The shortest-path exercise is worth setting up with the wrinkle it fixes: ask for 0° while sitting at 350°. Error = 0 − 350 = −350, so it spins almost all the way around backwards — when it could have nudged +10° forward. Real steering code wraps the error to the range −180°…+180° so it always takes the short path; the two while loops in the exercise are the fix, and it\'s students\' first while loop — it repeats until the condition is false. Logging the error is Lesson 3\'s refinement applied again: a value that only exists inside a command gets logged where it\'s computed — a real SmartDashboard.putNumber call to add, not just an observation. The kP = 0 / negative-kP exercise is a genuine predict-then-check, not code-writing: 0 means no output ever, so the wheel never moves regardless of error; negative kP pushes the wrong direction and error grows instead of shrinking.'
     );
   }
 
-  // ============================================================ SLIDE 13 — what you learned + next
+  // ============================================================ SLIDE 18 — what you learned + next
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -373,7 +528,7 @@ function buildDeck() {
     s.addShape('ellipse', { x: 8.3, y: 5.6, w: 0.55, h: 0.55, fill: { color: TEAL }, line: { type: 'none' } });
     s.addImage({ path: K.ICON('arrowright_white.png'), x: 8.43, y: 5.73, w: 0.29, h: 0.29 });
 
-    K.addFooter(s, { pageNum: 13, label: 'Steering P Control' });
+    K.addFooter(s, { pageNum: 18, label: 'Steering P Control' });
     s.addNotes(
       'P control earns its billing as the most important idea in robotics, so it\'s worth saying one more time: motors take effort, not destinations, so you close the gap yourself — setpoint − measurement = error, output = kP × error, and the shrinking error eases you into the target while its sign steers the direction. Hold onto the shape of steerToAngle: measure, subtract, multiply, clamp, command. The same five moves point a whole chassis at a compass heading in Lesson 8 — only the sensor changes, which is a sign something real was learned. One more habit worth naming as smaller but just as real: priming. The steering motor\'s own sensor only knows change, not place, so it got a memory — read the CANcoder once at startup, tell the motor\'s sensor to match. It isn\'t the whole fix — Lesson 12 finishes that job — but it\'s the part that matters on the very first boot, which is most of them.'
     );

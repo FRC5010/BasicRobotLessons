@@ -385,7 +385,7 @@ second.
 
 ## Try it
 
-1. **Watch the model work.** Log the drive motor's applied voltage
+1. **Code — watch the model work.** Log the drive motor's applied voltage
    (`m_driveMotor.getMotorVoltage().getValue().in(Volts)`) next to
    requested and measured wheel speed. Command a step — the voltage jumps
    *instantly* to `kV × requested` before any error exists. That instant
@@ -398,7 +398,7 @@ second.
    across the ±180° boundary, and watch the wheel take the long way
    around — Lesson 5's bug, resurrected in firmware. Turn it back on and
    watch it vanish.
-4. **Prove priming is really dead.** Add the deleted
+4. **Code — prove priming is really dead.** Add the deleted
    `m_steerMotor.setPosition(...)` line back into the constructor, right
    where it used to live. The constructor now sets it and then
    immediately hands control to `FeedbackSensorSource`, which means

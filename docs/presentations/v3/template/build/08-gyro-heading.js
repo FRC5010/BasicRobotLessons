@@ -93,7 +93,38 @@ function buildDeck() {
     );
   }
 
-  // ============================================================ SLIDE 4 — structured telemetry for heading
+  // ============================================================ SLIDE 4 — log the heading
+  {
+    const s = p.addSlide();
+    s.background = { color: WHITE };
+    K.addHeader(s, { icon: 'chartline_white.png', eyebrow: 'Section 1 · Drivetrain.java', title: 'Log it — the same two audiences as Lesson 7' });
+
+    K.addCodeCard(s, {
+      x: 0.7, y: 1.75, w: 11.9, h: 2.6, fontSize: 15,
+      fileLabel: "Add to Drivetrain's logTelemetry(), alongside the module telemetry",
+      lines: [
+        { text: 'private void logTelemetry() {', color: 'FFD166' },
+        { text: '  // ...the module telemetry from Lesson 7 stays...', color: '7FA8C9' },
+        { text: '', color: 'D7E3F4' },
+        { text: '  SmartDashboard.putNumber("Drivetrain/HeadingDegrees", getHeadingDegrees());', color: '9EF01A' },
+        { text: '  m_headingPublisher.set(Rotation2d.fromDegrees(getHeadingDegrees()));', color: '9EF01A' },
+        { text: '}', color: 'D7E3F4' },
+      ],
+    });
+
+    K.addCard(s, {
+      x: 0.7, y: 4.65, w: 11.9, h: 2.2,
+      body: 'The plain number is for line graphs. The Rotation2d version is the structured value AdvantageScope\'s Swerve tab wants in its Rotation slot — same fact, packaged for a tool that draws instead of plots. Both lines need the publisher field, built on the next slide.',
+      pad: 0.2, bodySize: 20,
+    });
+
+    K.addFooter(s, { pageNum: 4, label: 'Gyro & Heading' });
+    s.addNotes(
+      'Two audiences for the same fact, the same split Lesson 7 established for module states: SmartDashboard.putNumber for anything that just wants a line graph, and the struct publisher for AdvantageScope\'s Swerve tab, which wants a real Rotation2d, not a bare number. This slot right below the existing module-telemetry loop is deliberate — logTelemetry() already runs every tick via the periodic callback, so nothing new needs to be registered with the scheduler for this.'
+    );
+  }
+
+  // ============================================================ SLIDE 5 — structured telemetry for heading
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -117,26 +148,29 @@ function buildDeck() {
       body: 'StructPublisher is StructArrayPublisher\'s singular sibling from Lesson 7 — same bridge, one value instead of an array. Same fact, packaged for a tool that draws instead of plots.',
     });
 
-    K.addFooter(s, { pageNum: 4, label: 'Gyro & Heading' });
+    K.addFooter(s, { pageNum: 5, label: 'Gyro & Heading' });
     s.addNotes(
-      'StructPublisher is StructArrayPublisher\'s singular sibling from Lesson 7\'s getStructArrayTopic — same bridge idea, one value instead of an array, so it\'s getStructTopic and .set(value) instead of .set(array). Rotation2d and NetworkTableInstance are already imported from Lesson 7, so this slots in without new plumbing beyond the publisher itself.'
+      'StructPublisher is StructArrayPublisher\'s singular sibling from Lesson 7\'s getStructArrayTopic — same bridge idea, one value instead of an array, so it\'s getStructTopic and .set(value) instead of .set(array). Rotation2d and NetworkTableInstance are already imported from Lesson 7, so this slots in without new plumbing beyond the publisher itself. Add import org.wpilib.networktables.StructPublisher.'
     );
   }
 
-  // ============================================================ SLIDE 5 — extract commandRotation
+  // ============================================================ SLIDE 6 — extract commandRotation (real body)
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
     K.addHeader(s, { icon: 'lightbulb_white.png', eyebrow: 'Section 2 · Extract a helper', title: 'Copied code is a bug with a delay on it' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.5, w: 11.9, h: 3.3, fontSize: 12,
+      x: 0.7, y: 1.4, w: 11.9, h: 5.3, fontSize: 12,
       fileLabel: 'Add a helper, then replace rotate with the one-liner',
       lines: [
         { text: 'private void commandRotation(double omega) {', color: 'FFD166' },
         { text: '  m_lastCommandedOmega = omega;', color: '9EF01A' },
         { text: '  for (SwerveModule module : m_modules) {', color: 'D7E3F4' },
-        { text: '    /* ...same tangent-angle math rotate() already had... */', color: '7FA8C9' },
+        { text: '    double x = module.location.getX();', color: 'D7E3F4' },
+        { text: '    double y = module.location.getY();', color: 'D7E3F4' },
+        { text: '    double angleDeg = Math.toDegrees(Math.atan2(x, -y));', color: 'D7E3F4' },
+        { text: '    module.setDesiredState(angleDeg, omega);', color: 'D7E3F4' },
         { text: '  }', color: 'D7E3F4' },
         { text: '}', color: 'D7E3F4' },
         { text: '', color: 'D7E3F4' },
@@ -146,54 +180,109 @@ function buildDeck() {
       ],
     });
 
-    K.addCard(s, {
-      x: 0.7, y: 5.05, w: 11.9, h: 1.9,
-      body: 'rotate\'s whole body became one line that says what it wants; the helper holds the how. turnToHeading needs the same math with a different omega each tick — now both callers share it.',
-      pad: 0.2, bodySize: 20,
-    });
-
-    K.addFooter(s, { pageNum: 5, label: 'Gyro & Heading' });
+    K.addFooter(s, { pageNum: 6, label: 'Gyro & Heading' });
     s.addNotes(
-      'The rotate(omega) command from Lesson 7 does the actual module-steering math for pure rotation. turnToHeading is about to need the same math with a different omega each tick — and the sim needs to know what omega was just asked for. You could copy the tangent-angle loop into the new command. Don\'t — copied code is a bug with a delay on it: fix the original and the copy stays wrong. Look at what happened to rotate: its whole body became one line that says what it wants, and the helper holds the how. That\'s the move — when two commands need the same math, promote it to a helper, and every caller gets the m_lastCommandedOmega bookkeeping for free. One loose end worth mentioning: translate(...) from Lesson 7 needs one new line too — pure translation shouldn\'t leave a stale rotation rate lying around for the sim to integrate, so it sets m_lastCommandedOmega = 0.0.'
+      'The rotate(omega) command from Lesson 7 does the actual module-steering math for pure rotation — this is that exact tangent-angle loop, unchanged, just moved into a private helper. turnToHeading is about to need the same math with a different omega each tick — and the sim needs to know what omega was just asked for. You could copy the tangent-angle loop into the new command. Don\'t — copied code is a bug with a delay on it: fix the original and the copy stays wrong. Look at what happened to rotate: its whole body became one line that says what it wants, and the helper holds the how. That\'s the move — when two commands need the same math, promote it to a helper, and every caller gets the m_lastCommandedOmega bookkeeping for free.'
     );
   }
 
-  // ============================================================ SLIDE 6 — turnToHeading
+  // ============================================================ SLIDE 7 — translate gets one new line
+  {
+    const s = p.addSlide();
+    s.background = { color: WHITE };
+    K.addHeader(s, { icon: 'gamepad_white.png', eyebrow: 'Section 2 · Drivetrain.java', title: 'One loose end: translate needs a line too' });
+
+    K.addCodeCard(s, {
+      x: 0.7, y: 1.5, w: 11.9, h: 4.4, fontSize: 12,
+      fileLabel: 'Edit translate in Drivetrain, adding one line',
+      lines: [
+        { text: 'public Command translate(DoubleSupplier vxSupplier, DoubleSupplier vySupplier) {', color: 'D7E3F4' },
+        { text: '  return runRepeatedly(() -> {', color: 'D7E3F4' },
+        { text: '    double vx = vxSupplier.getAsDouble();', color: 'D7E3F4' },
+        { text: '    double vy = vySupplier.getAsDouble();', color: 'D7E3F4' },
+        { text: '    double speed = Math.hypot(vx, vy);', color: 'D7E3F4' },
+        { text: '    double angleDeg = Math.toDegrees(Math.atan2(vy, vx));', color: 'D7E3F4' },
+        { text: '    m_lastCommandedOmega = 0.0;                            // ← added', color: '9EF01A' },
+        { text: '    for (SwerveModule module : m_modules) {', color: 'D7E3F4' },
+        { text: '      module.setDesiredState(angleDeg, speed);', color: 'D7E3F4' },
+        { text: '    }', color: 'D7E3F4' },
+        { text: '  }).named("Translate");', color: 'D7E3F4' },
+        { text: '}', color: 'D7E3F4' },
+      ],
+    });
+
+    K.addFooter(s, { pageNum: 7, label: 'Gyro & Heading' });
+    s.addNotes(
+      'Pure translation shouldn\'t leave a stale rotation rate lying around for the sim to integrate — without this line, stopping a rotate and switching to translate would leave m_lastCommandedOmega at whatever it was last set to, and the fake gyro would keep drifting even though nothing is actually asking the chassis to spin. One line, easy to miss because the rest of the method is untouched — this is exactly the kind of edit that\'s easy to skip when skimming a diff.'
+    );
+  }
+
+  // ============================================================ SLIDE 8 — headingError (real body)
+  {
+    const s = p.addSlide();
+    s.background = { color: WHITE };
+    K.addHeader(s, { icon: 'syncalt_white.png', eyebrow: 'Section 3 · Drivetrain.java', title: 'The wrap trick, in its own question-method' });
+
+    K.addCodeCard(s, {
+      x: 0.7, y: 1.75, w: 11.9, h: 2.95, fontSize: 15,
+      fileLabel: 'Add to Drivetrain',
+      lines: [
+        { text: '/** Signed error to \'target\' in degrees, wrapped to (-180, 180]. */', color: '7FA8C9' },
+        { text: 'private double headingError(double targetDegrees) {', color: 'FFD166' },
+        { text: '  double error = targetDegrees - getHeadingDegrees();', color: 'D7E3F4' },
+        { text: '  while (error > 180)  { error -= 360; }', color: '9EF01A' },
+        { text: '  while (error < -180) { error += 360; }', color: '9EF01A' },
+        { text: '  return error;', color: 'D7E3F4' },
+        { text: '}', color: 'D7E3F4' },
+      ],
+    });
+
+    K.addCard(s, {
+      x: 0.7, y: 4.85, w: 11.9, h: 1.95,
+      body: 'Two things differ from Lesson 5\'s steerToAngle: which sensor gets measured, and that headings wrap around a circle — so -170° to 170° should turn 20°, not 340°. The wrap logic gets its own method because the finish condition needs it too, next slide.',
+      pad: 0.2, bodySize: 20,
+    });
+
+    K.addFooter(s, { pageNum: 8, label: 'Gyro & Heading' });
+    s.addNotes(
+      'Lesson 5 promised its five moves would come back — measure, subtract, multiply, clamp, command — and here they are, pointed at the whole robot. This is the same two while loops Lesson 5 wrote inline inside steerToAngle, just pulled into their own method this time, because turnToHeading needs the wrapped error in two places: once inside the loop to compute a fresh omega, and once in the loop\'s own condition to decide when to stop. Writing the wrap logic twice would risk the two copies disagreeing about what "done" means — pulling it into headingError guarantees they can\'t.'
+    );
+  }
+
+  // ============================================================ SLIDE 9 — turnToHeading
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
     K.addHeader(s, { icon: 'filecode_teal.png', eyebrow: 'Section 3 · Drivetrain.java', title: 'Measure, subtract, multiply, clamp, command' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.4, w: 11.9, h: 5.2, fontSize: 12,
+      x: 0.7, y: 1.5, w: 11.9, h: 5.2, fontSize: 13,
       fileLabel: 'Add to Drivetrain, with the other command factories',
       lines: [
-        { text: '/** Signed error to \'target\', wrapped to (-180, 180]. */', color: '7FA8C9' },
-        { text: 'private double headingError(double targetDegrees) { /* ...wrap, like Lesson 5... */ }', color: 'D7E3F4' },
-        { text: '', color: 'D7E3F4' },
         { text: '/** Turn to face \'targetDegrees\'. Finishes when within 2°. */', color: '7FA8C9' },
         { text: 'public Command turnToHeading(double targetDegrees) {', color: 'FFD166' },
         { text: '  return run(coroutine -> {', color: 'D7E3F4' },
         { text: '        while (Math.abs(headingError(targetDegrees)) >= 2.0) {', color: 'D7E3F4' },
-        { text: '          double omega = clamp(HeadingConstants.kP * headingError(targetDegrees), -0.5, 0.5);', color: '9EF01A' },
+        { text: '          double omega = clamp(', color: 'D7E3F4' },
+        { text: '              HeadingConstants.kP * headingError(targetDegrees), -0.5, 0.5);', color: '9EF01A' },
         { text: '          commandRotation(omega);', color: 'D7E3F4' },
         { text: '          coroutine.yield();', color: '9EF01A' },
         { text: '        }', color: 'D7E3F4' },
         { text: '        commandRotation(0.0); // reached it — stop', color: 'D7E3F4' },
         { text: '      })', color: 'D7E3F4' },
-        { text: '      .whenCanceled(() -> commandRotation(0.0))', color: '9EF01A' },
+        { text: '      .whenCanceled(() -> commandRotation(0.0)) // interrupted — stop', color: '9EF01A' },
         { text: '      .named("Turn To Heading");', color: '9EF01A' },
         { text: '}', color: 'D7E3F4' },
       ],
     });
 
-    K.addFooter(s, { pageNum: 6, label: 'Gyro & Heading' });
+    K.addFooter(s, { pageNum: 9, label: 'Gyro & Heading' });
     s.addNotes(
-      'Lesson 5 promised its five moves would come back — measure, subtract, multiply, clamp, command — and here they are, pointed at the whole robot. Two things differ from steerToAngle: which sensor gets measured, and that headings wrap around a circle, so the subtract step needs the wrap trick baked in (-170° to 170° should turn 20°, not 340°). The wrap logic goes in its own headingError question-method because the finish condition is about to need it too — the clamp is tighter than Lesson 5\'s ±1.0 on purpose, since full-power spins are violent and a heading turn never needs more than half throttle. Because the finish condition calls the same headingError the loop body used, "done" means "within 2° by the shortest path" — the wrap logic can\'t disagree with itself. Also worth noting: Drivetrain needs its own private clamp helper — it\'s a different class from SwerveModule, so it can\'t reach that one\'s private helper, even though the logic is identical.'
+      'The clamp is tighter than Lesson 5\'s ±1.0 on purpose: full-power spins are violent, and a heading turn never needs more than half throttle. Because the finish condition calls the same headingError the loop body used, "done" means "within 2° by the shortest path" — the wrap logic can\'t disagree with itself. Drivetrain needs its own private clamp helper here — it\'s a different class from SwerveModule, so it can\'t reach that one\'s private helper, even though the logic is identical; that helper and the HeadingConstants class holding kP both get their own slides right after this one.'
     );
   }
 
-  // ============================================================ SLIDE 7 — the while loop, explained
+  // ============================================================ SLIDE 10 — the while loop, explained
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
@@ -211,13 +300,75 @@ function buildDeck() {
       x: 7.05, y: 2.6, w: 5.25, h: 3.6, fontFace: FONT_BODY, fontSize: 20, color: 'D7E3F4', valign: 'top', margin: 0, lineSpacingMultiple: 1.25,
     });
 
-    K.addFooter(s, { pageNum: 7, label: 'Gyro & Heading', dark: true });
+    K.addFooter(s, { pageNum: 10, label: 'Gyro & Heading', dark: true });
     s.addNotes(
       'Read the while loop as "keep steering toward the target, one tick at a time, for as long as we\'re still more than 2° off." Each pass computes a fresh omega from the current error, hands it to commandRotation, then coroutine.yield() suspends until the next tick — this is precisely what Coroutine.waitUntil(...) did under the hood back in Lesson 6, just written out by hand because this loop has real work to do on every pass, not just a condition to poll. The moment the error drops under 2°, the loop exits, the line right after it commands a full stop, and the coroutine body is out of code — finished, the same way driveDistance finished in Lesson 6. And because Lesson 6\'s rule about endings hasn\'t gone anywhere, .whenCanceled(() -> commandRotation(0.0)) covers the other ending — something interrupting this command before the loop ever gets to its own stop line. Two endings, two stop orders, same as driveDistance.'
     );
   }
 
-  // ============================================================ SLIDE 8 — wire it up
+  // ============================================================ SLIDE 11 — clamp helper
+  {
+    const s = p.addSlide();
+    s.background = { color: WHITE };
+    K.addHeader(s, { icon: 'cog_white.png', eyebrow: 'Section 3 · Drivetrain.java', title: 'Drivetrain needs its own copy of clamp' });
+
+    K.addCodeCard(s, {
+      x: 0.7, y: 1.75, w: 11.9, h: 3.15, fontSize: 12,
+      fileLabel: 'Add a private clamp helper to Drivetrain',
+      lines: [
+        { text: '/** Keeps \'value\' between \'min\' and \'max\'. */', color: '7FA8C9' },
+        { text: 'private double clamp(double value, double min, double max) {', color: 'FFD166' },
+        { text: '  if (value > max) {', color: 'D7E3F4' },
+        { text: '    return max;', color: 'D7E3F4' },
+        { text: '  } else if (value < min) {', color: 'D7E3F4' },
+        { text: '    return min;', color: 'D7E3F4' },
+        { text: '  } else {', color: 'D7E3F4' },
+        { text: '    return value;', color: 'D7E3F4' },
+        { text: '  }', color: 'D7E3F4' },
+        { text: '}', color: 'D7E3F4' },
+      ],
+    });
+
+    K.addCard(s, {
+      x: 0.7, y: 5.1, w: 11.9, h: 1.85,
+      body: 'This alpha\'s WPILib has no MathUtil.clamp (Lesson 7 already found that out), and Drivetrain can\'t reach SwerveModule\'s private clamp — it\'s a different class. Same logic, its own copy.',
+    });
+
+    K.addFooter(s, { pageNum: 11, label: 'Gyro & Heading' });
+    s.addNotes(
+      'This is identical logic to SwerveModule\'s clamp from Lesson 5/7 — deliberately duplicated, not shared, because Java\'s private access doesn\'t cross class boundaries and there\'s no shared parent class here to hang a common helper off of. Worth naming as a small, honest exception to the "don\'t copy code" rule from a few slides ago: commandRotation was worth extracting because both callers lived in the same class; clamp is small enough, and different enough in its lack of a natural home, that a second private copy is the pragmatic answer.'
+    );
+  }
+
+  // ============================================================ SLIDE 12 — HeadingConstants
+  {
+    const s = p.addSlide();
+    s.background = { color: WHITE };
+    K.addHeader(s, { icon: 'sitemap_white.png', eyebrow: 'Section 3 · Constants.java', title: 'A new nested class, for one gain' });
+
+    K.addCodeCard(s, {
+      x: 0.7, y: 1.75, w: 11.9, h: 1.85, fontSize: 16,
+      fileLabel: 'Add a nested HeadingConstants class to Constants.java',
+      lines: [
+        { text: 'public static final class HeadingConstants {', color: 'FFD166' },
+        { text: '  public static final double kP = 0.02; // turn power per degree of error', color: '9EF01A' },
+        { text: '}', color: 'D7E3F4' },
+      ],
+    });
+
+    K.addCard(s, {
+      x: 0.7, y: 3.9, w: 11.9, h: 2.9,
+      body: 'SteerConstants and DriveConstants stay untouched — this is a third, new nested class, one tuning gain per class, named for the quantity it controls. Same Constants.java philosophy since Lesson 5: one named number, one home.',
+      pad: 0.2, bodySize: 20,
+    });
+
+    K.addFooter(s, { pageNum: 12, label: 'Gyro & Heading' });
+    s.addNotes(
+      'kP here starts at 0.02 — a very different number from SteerConstants.kP\'s 0.0005, and that\'s worth naming: these are two unrelated gains, tuned against two different plants (a geared steering motor vs. an integrated fake gyro with no inertia at all), so there\'s no reason to expect the numbers to be close, and they aren\'t. HeadingConstants existing as its own class rather than folding kP into SteerConstants keeps the naming honest — this gain is about heading, not steering.'
+    );
+  }
+
+  // ============================================================ SLIDE 13 — wire it up
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -240,13 +391,13 @@ function buildDeck() {
       body: 'Pressing the bottom button cancels the default translate; when turnToHeading finishes (or is interrupted), the default resumes automatically — the stick comes back to life on its own.',
     });
 
-    K.addFooter(s, { pageNum: 8, label: 'Gyro & Heading' });
+    K.addFooter(s, { pageNum: 13, label: 'Gyro & Heading' });
     s.addNotes(
       'The bottom and right face buttons are free again since Lesson 7\'s cleanup, which is a small but nice callback worth mentioning — the refactor really did clear things out. Because turnToHeading requires the Drivetrain, pressing the bottom button cancels the default translate command; when it finishes (or is interrupted by the right button), the default resumes automatically. Unlike Lesson 5\'s steerToAngle, this command finishes — so the stick comes back to life on its own the moment the robot faces 90°, with no extra code needed to hand control back.'
     );
   }
 
-  // ============================================================ SLIDE 9 — fake the gyro in sim
+  // ============================================================ SLIDE 14 — fake the gyro in sim
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -269,13 +420,13 @@ function buildDeck() {
       body: 'Rotating at 180°/s for one 20 ms tick adds 3.6°; do that fifty times a second and the total is the heading. Same command → model → fake sensor loop as Lesson 4, one line of model.',
     });
 
-    K.addFooter(s, { pageNum: 9, label: 'Gyro & Heading' });
+    K.addFooter(s, { pageNum: 14, label: 'Gyro & Heading' });
     s.addNotes(
-      'On a real robot, commandRotation(omega) spins the four wheels tangent to the circle, the chassis rotates, and the gyro reads the result. In sim, the modules don\'t actually push the chassis around — that physics hasn\'t been built. So the loop gets closed by hand: pretend the robot rotates at the rate just commanded, and inject that back into the fake gyro. It\'s an honest stand-in that lets turnToHeading get developed on a laptop today; when Lesson 10 adds SwerveDriveKinematics, this can be replaced with a physics-driven simulation of the actual modules pushing the chassis around. Worth stating plainly: this is the same command → model → fake sensor → your reads loop as Lesson 4, just with a one-line model instead of a full DCMotorSim.'
+      'On a real robot, commandRotation(omega) spins the four wheels tangent to the circle, the chassis rotates, and the gyro reads the result. In sim, the modules don\'t actually push the chassis around — that physics hasn\'t been built. So the loop gets closed by hand: pretend the robot rotates at the rate just commanded, and inject that back into the fake gyro. It\'s an honest stand-in that lets turnToHeading get developed on a laptop today; when Lesson 10 adds SwerveDriveKinematics, this can be replaced with a physics-driven simulation of the actual modules pushing the chassis around. Worth stating plainly: this is the same command → model → fake sensor → your reads loop as Lesson 4, just with a one-line model instead of a full DCMotorSim. Add this below the existing module loop in simulatePeriodic() — the Lesson 7 code that steps every module\'s physics stays exactly as it was.'
     );
   }
 
-  // ============================================================ SLIDE 10 — run it
+  // ============================================================ SLIDE 15 — run it
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
@@ -291,13 +442,13 @@ function buildDeck() {
       ],
     });
 
-    K.addFooter(s, { pageNum: 10, label: 'Gyro & Heading', dark: true });
+    K.addFooter(s, { pageNum: 15, label: 'Gyro & Heading', dark: true });
     s.addNotes(
       'Verified against this model: from a standing start, turnToHeading(90) settles inside the band in well under a second — no overshoot, no oscillation, because integrating a commanded rate has no momentum to fight, unlike the geared motors from Lesson 7. That\'s a clean, deliberate contrast worth naming: this control loop is easier to tune than the geared steering was, precisely because the fake gyro has no inertia. One glance at the Swerve tab now tells you what the wheels are doing and which way the robot thinks it\'s facing, at the same time.'
     );
   }
 
-  // ============================================================ SLIDE 11 — try it
+  // ============================================================ SLIDE 16 — try it
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
@@ -307,19 +458,19 @@ function buildDeck() {
       y: 1.6, cols: 2,
       cards: [
         { title: 'Prove the wrap works', body: 'From 90°, bind turnToHeading(-170). It should sweep +100° through 180°, not -260°.' },
-        { title: 'Snap to nearest 90°', body: 'Math.round(heading / 90.0) * 90.0 — turn to the closest multiple of 90.' },
-        { title: 'Zero the gyro at start', body: 'A zeroHeading() command with one statement — no coroutine.park(), it finishes instantly.' },
-        { title: 'Move the gyro ID into Constants', body: 'kGyroPort, right alongside the twelve motor and CANcoder ports from Lesson 7.' },
+        { title: 'Snap to nearest 90°', body: 'Math.round(heading / 90.0) * 90.0 — a new command that reads heading and turns there.', code: true },
+        { title: 'Zero the gyro at start', body: 'A zeroHeading() command with one statement — no coroutine.park(), it finishes instantly.', code: true },
+        { title: 'Move the gyro ID into Constants', body: 'kGyroPort, right alongside the twelve motor and CANcoder ports from Lesson 7.', code: true },
       ],
     });
 
-    K.addFooter(s, { pageNum: 11, label: 'Gyro & Heading', dark: true });
+    K.addFooter(s, { pageNum: 16, label: 'Gyro & Heading', dark: true });
     s.addNotes(
-      'The wrap-proving exercise is the most important of the four to actually run, not just assign: from 90°, turnToHeading(-170) should sweep +100° through 180° — the short way — not -260°, and watching the plot is what confirms the wrap logic is really doing its job rather than just compiling. zeroHeading() is a good moment to point out that a one-statement coroutine body with nothing to wait for finishes the instant it runs — the same shape as a runOnce-style setup step from Lesson 6, just realized through the coroutine body instead of a decorator.'
+      'Three of these four genuinely expect written code, tagged accordingly. The wrap-proving exercise is the most important of the four to actually run, not just assign, even though it\'s not itself code-writing: from 90°, turnToHeading(-170) should sweep +100° through 180° — the short way — not -260°, and watching the plot is what confirms the wrap logic is really doing its job rather than just compiling. Snap-to-nearest-90 is a genuine new command factory, not just a binding — Math.round(heading / 90.0) * 90.0 gives the target, then it\'s turnToHeading\'s own shape wrapping it. zeroHeading() is a good moment to point out that a one-statement coroutine body with nothing to wait for finishes the instant it runs — the same shape as a runOnce-style setup step from Lesson 6, just realized through the coroutine body instead of a decorator.'
     );
   }
 
-  // ============================================================ SLIDE 12 — what you learned + next
+  // ============================================================ SLIDE 17 — what you learned + next
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -345,7 +496,7 @@ function buildDeck() {
     s.addShape('ellipse', { x: 8.3, y: 5.6, w: 0.55, h: 0.55, fill: { color: TEAL }, line: { type: 'none' } });
     s.addImage({ path: K.ICON('arrowright_white.png'), x: 8.43, y: 5.73, w: 0.29, h: 0.29 });
 
-    K.addFooter(s, { pageNum: 12, label: 'Gyro & Heading' });
+    K.addFooter(s, { pageNum: 17, label: 'Gyro & Heading' });
     s.addNotes(
       'The most important thing in this lesson is what didn\'t change: turning a five-hundred-newton robot to face 90° is the same five moves as pointing one wheel — measure, subtract, multiply, clamp, command — with a gyro as the sensor and the wrap trick promoted into a headingError helper that the finish condition shares, so "done" and "which way" can never disagree. Around that came two habits worth keeping: when a second caller needs the same math, extract a helper method instead of copying — copied code is a bug with a delay on it — and when the physics doesn\'t exist yet, fake the sensor by integrating the commanded rate. You also wrote your first finishing command whose loop body does real per-tick work instead of just waiting — the direct, by-hand version of what coroutine.waitUntil(...) was quietly doing all along back in Lesson 6. A robot that knows its heading and can command its own motion is most of what an autonomous routine needs — Lesson 9 takes the driver out of the loop entirely.'
     );

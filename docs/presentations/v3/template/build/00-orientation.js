@@ -396,7 +396,7 @@ function buildDeck() {
 
     K.addTryItGrid(s, {
       cards: [
-        { title: 'Give MyAuto a start()', body: "It doesn't have one yet — add it, matching the shape MyTeleop's already has, and print a different message. Confirm it only shows up when you've picked My Auto." },
+        { title: 'Give MyAuto a start()', body: "It doesn't have one yet — add it, matching the shape MyTeleop's already has, and print a different message. Confirm it only shows up when you've picked My Auto.", code: true },
         { title: 'Break it on purpose', body: 'Delete a semicolon and run ./gradlew build. Read the error carefully — note the file and line it names. Then put the semicolon back.' },
       ],
     });

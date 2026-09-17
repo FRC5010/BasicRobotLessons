@@ -204,7 +204,41 @@ function buildDeck() {
     K.addFooter(s, { pageNum: 7, label: 'Branches' });
   }
 
-  // ============================================================ SLIDE 8 — GitHub + pull requests
+  // ============================================================ SLIDE 8 — the resolved file (NEW)
+  {
+    const s = p.addSlide();
+    s.background = { color: WHITE };
+    K.addHeader(s, { icon: 'checkcircle_white.png', eyebrow: 'Section 4 · Resolving it', title: 'Markers gone, both blocks kept' });
+
+    K.addCodeCard(s, {
+      x: 0.7, y: 1.5, w: 11.9, h: 3.2, fontSize: 13,
+      fileLabel: 'Edit the file until it says what you want, markers and all removed',
+      lines: [
+        { text: 'public final class Constants {', color: 'D7E3F4' },
+        { text: '  public static class ElevatorConstants {', color: '9EF01A' },
+        { text: '    public static final double kElevatorKG = 0.18;', color: '9EF01A' },
+        { text: '  }', color: '9EF01A' },
+        { text: '', color: 'D7E3F4' },
+        { text: '  public static class ArmConstants {', color: '9EF01A' },
+        { text: '    public static final double kArmKG = 0.25;', color: '9EF01A' },
+        { text: '  }', color: '9EF01A' },
+        { text: '}', color: 'D7E3F4' },
+      ],
+    });
+
+    K.addCodeCard(s, {
+      x: 0.7, y: 4.85, w: 11.9, h: 1.4, fontSize: 17,
+      fileLabel: 'Tell Git you\'ve resolved it, and finish the merge',
+      lines: [
+        { text: 'git add Constants.java', color: 'D7E3F4' },
+        { text: 'git commit', color: '9EF01A' },
+      ],
+    });
+
+    K.addFooter(s, { pageNum: 8, label: 'Branches' });
+  }
+
+  // ============================================================ SLIDE 9 — GitHub + pull requests
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -226,10 +260,10 @@ function buildDeck() {
       body: 'Merging the PR merges the branch on GitHub — your laptop doesn\'t know yet.\n\ngit switch main\ngit pull\n\nNow main matches GitHub, so your next branch starts from the current, agreed-on state.',
     });
 
-    K.addFooter(s, { pageNum: 8, label: 'Branches' });
+    K.addFooter(s, { pageNum: 9, label: 'Branches' });
   }
 
-  // ============================================================ SLIDE 9 — rebase
+  // ============================================================ SLIDE 10 — rebase
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
@@ -277,10 +311,45 @@ function buildDeck() {
       }
     );
 
-    K.addFooter(s, { pageNum: 9, label: 'Branches', dark: true });
+    K.addFooter(s, { pageNum: 10, label: 'Branches', dark: true });
   }
 
-  // ============================================================ SLIDE 10 — which do I use?
+  // ============================================================ SLIDE 11 — the rebase conflict file (NEW)
+  {
+    const s = p.addSlide();
+    s.background = { color: WHITE };
+    K.addHeader(s, { icon: 'history_white.png', eyebrow: 'Section 6 · What a rebase conflict looks like', title: 'HEAD is main here — read the labels, not the positions' });
+
+    K.addCodeCard(s, {
+      x: 0.7, y: 1.4, w: 11.9, h: 3.3, fontSize: 12,
+      fileLabel: 'The markers look identical to §4\'s, with one genuinely confusing twist',
+      example: true,
+      lines: [
+        { text: 'public final class Constants {', color: 'D7E3F4' },
+        { text: '  public static class DriveConstants {', color: 'D7E3F4' },
+        { text: '    public static final int kFrontLeftDriveId = 1;', color: 'D7E3F4' },
+        { text: '<<<<<<< HEAD', color: 'FF8B8B' },
+        { text: '    public static final double kTranslationP = 1.0;', color: 'D7E3F4' },
+        { text: '=======', color: 'FF8B8B' },
+        { text: '    public static final double kHomingVolts = -1.0;', color: 'D7E3F4' },
+        { text: '>>>>>>> 5adaa87 (Lesson 21 complete)', color: 'FF8B8B' },
+        { text: '  }', color: 'D7E3F4' },
+        { text: '}', color: 'D7E3F4' },
+      ],
+    });
+
+    K.addCard(s, {
+      x: 0.7, y: 4.8, w: 11.9, h: 2.15,
+      heading: 'HEAD is main — that\'s backwards from a merge.',
+      headingSize: 20,
+      body: 'Rebase already moved you onto main, replaying your commit as the incoming change. The bottom half is your work. Resolve the same way: edit, keep both, git add, git rebase --continue.',
+      bodySize: 17,
+    });
+
+    K.addFooter(s, { pageNum: 11, label: 'Branches' });
+  }
+
+  // ============================================================ SLIDE 12 — which do I use?
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -303,10 +372,10 @@ function buildDeck() {
       bodyColor: 'CADCE8',
     });
 
-    K.addFooter(s, { pageNum: 10, label: 'Branches' });
+    K.addFooter(s, { pageNum: 12, label: 'Branches' });
   }
 
-  // ============================================================ SLIDE 11 — try it
+  // ============================================================ SLIDE 13 — try it
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
@@ -322,10 +391,10 @@ function buildDeck() {
       ],
     });
 
-    K.addFooter(s, { pageNum: 11, label: 'Branches', dark: true });
+    K.addFooter(s, { pageNum: 13, label: 'Branches', dark: true });
   }
 
-  // ============================================================ SLIDE 12 — what you learned + next
+  // ============================================================ SLIDE 14 — what you learned + next
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -374,7 +443,7 @@ function buildDeck() {
     s.addShape('ellipse', { x: 8.3, y: 5.6, w: 0.55, h: 0.55, fill: { color: TEAL }, line: { type: 'none' } });
     s.addImage({ path: K.ICON('arrowright_white.png'), x: 8.43, y: 5.73, w: 0.29, h: 0.29 });
 
-    K.addFooter(s, { pageNum: 12, label: 'Branches' });
+    K.addFooter(s, { pageNum: 14, label: 'Branches' });
   }
 
   return p;

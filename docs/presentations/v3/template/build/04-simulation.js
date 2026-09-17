@@ -261,7 +261,7 @@ function buildDeck() {
       cards: [
         { title: 'Change the inertia', body: 'From 0.001 to 0.05. Does velocity reach full speed faster or slower? Explain why.' },
         { title: 'Command a step input', body: 'Change driveAtSpeed(0.3) to 1.0 and watch the S-shaped velocity ramp.' },
-        { title: 'Log applied volts', body: 'SmartDashboard.putNumber inside simulatePeriodic() — a sim-only logTelemetry().' },
+        { title: 'Log applied volts', body: 'SmartDashboard.putNumber inside simulatePeriodic() — a sim-only logTelemetry().', code: true },
       ],
     });
 

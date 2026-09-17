@@ -99,7 +99,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'filecode_teal.png', eyebrow: 'Section 1 · DriveModule.java', title: 'Rotor turns ÷ gear ratio × circumference = meters' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 2.6, fontSize: 15,
+      x: 0.7, y: 1.6, w: 11.9, h: 2.5, fontSize: 14,
       fileLabel: 'Add to DriveModule, with your other public methods',
       lines: [
         { text: '/** How far this module\'s wheel has driven, in meters, since the last reset. */', color: '7FA8C9' },
@@ -111,16 +111,20 @@ function buildDeck() {
       ],
     });
 
-    K.addCard(s, {
-      x: 0.7, y: 4.5, w: 11.9, h: 2.5,
-      heading: 'Read it as a pipeline.',
-      headingSize: 22,
-      body: 'Rotor turns ÷ gear ratio = wheel turns; wheel turns × circumference = meters. Name the constants, and swapping modules next season means changing one line in Constants.java.',
+    K.addCodeCard(s, {
+      x: 0.7, y: 4.3, w: 11.9, h: 2.4, fontSize: 16,
+      fileLabel: "Add to DriveModule's logTelemetry()",
+      lines: [
+        { text: 'private void logTelemetry() {', color: 'FFD166' },
+        { text: '  // ...the logs from Lessons 3 and 5 stay...', color: '7FA8C9' },
+        { text: '  SmartDashboard.putNumber("DriveModule/DistanceMeters", getDistanceMeters());', color: '9EF01A' },
+        { text: '}', color: 'D7E3F4' },
+      ],
     });
 
     K.addFooter(s, { pageNum: 4, label: 'Distance & Commands' });
     s.addNotes(
-      'This is why the constants get names instead of 6.75 sprinkled through the code: when you swap modules next season, you change one line in Constants.java and everything downstream is correct. Once this compiles, log it from the same place the other readings have been logging since Lesson 3 (DriveModule/DistanceMeters) — now there\'s a live odometer on the dashboard.'
+      'Read getDistanceMeters() as a pipeline: rotor turns ÷ gear ratio = wheel turns; wheel turns × circumference = meters. This is why the constants get names instead of 6.75 sprinkled through the code: when you swap modules next season, you change one line in Constants.java and everything downstream is correct. Log it from the same place the other readings have been logging since Lesson 3 — DriveModule/DistanceMeters joins the logs from Lessons 3 and 5 in logTelemetry() — and now there\'s a live odometer on the dashboard.'
     );
   }
 
@@ -151,11 +155,42 @@ function buildDeck() {
 
     K.addFooter(s, { pageNum: 5, label: 'Distance & Commands' });
     s.addNotes(
-      'Back in Lesson 4 the sim was built with gearing = 1.0 — a rotor spinning against a tiny inertia, no gearbox. Now that a real 6.75:1 reduction exists in the distance math, the sim has to learn about it too, or "one wheel turn" in sim won\'t mean the same physical motion as on the real robot. Two things changed: inertia grew from 0.001 to 0.025 (kg·m² at the wheel) — a rotor pulling a wheel through a gearbox has more to move than a bare rotor, and 0.025 gives a visible ramp without dragging; and gearing is now kDriveGearRatio instead of 1.0. The subtlety worth slowing down for: because DCMotorSim now models a gearbox, getAngularPosition/getAngularVelocity report the wheel (output) motion, not the rotor — but the TalonFX\'s fake encoder still lives on the rotor, since the sensor is physically on the motor, gearbox or not. So simulatePeriodic() has to convert wheel-side back to rotor-side by multiplying by the ratio, on top of the radians-to-rotations conversion from Lesson 4 which still has to happen too. If sim distances ever come out off by a suspiciously round factor, this chain — a gear ratio applied twice, or not at all — is the classic cause.'
+      'Back in Lesson 4 the sim was built with gearing = 1.0 — a rotor spinning against a tiny inertia, no gearbox. Now that a real 6.75:1 reduction exists in the distance math, the sim has to learn about it too, or "one wheel turn" in sim won\'t mean the same physical motion as on the real robot. Two things changed: inertia grew from 0.001 to 0.025 (kg·m² at the wheel) — a rotor pulling a wheel through a gearbox has more to move than a bare rotor, and 0.025 gives a visible ramp without dragging; and gearing is now kDriveGearRatio instead of 1.0.'
     );
   }
 
-  // ============================================================ SLIDE 6 — commands that finish (concept)
+  // ============================================================ SLIDE 6 — simulatePeriodic gearing fix (NEW)
+  {
+    const s = p.addSlide();
+    s.background = { color: WHITE };
+    K.addHeader(s, { icon: 'syncalt_white.png', eyebrow: 'Section 2 continued · DriveModule.java', title: 'Convert wheel-side back to rotor-side' });
+
+    K.addCodeCard(s, {
+      x: 0.7, y: 1.75, w: 11.9, h: 2.0, fontSize: 14,
+      fileLabel: 'Replace the last two drive-motor lines of simulatePeriodic()',
+      lines: [
+        { text: 'm_driveSim.setRawRotorPosition(', color: 'FFD166' },
+        { text: '    m_driveModel.getAngularPosition() / (2 * Math.PI) * DriveConstants.kDriveGearRatio);', color: '9EF01A' },
+        { text: 'm_driveSim.setRotorVelocity(', color: 'FFD166' },
+        { text: '    m_driveModel.getAngularVelocity() / (2 * Math.PI) * DriveConstants.kDriveGearRatio);', color: '9EF01A' },
+      ],
+    });
+
+    K.addCard(s, {
+      x: 0.7, y: 3.95, w: 11.9, h: 3.0,
+      heading: 'The encoder still lives on the rotor — gearbox or not.',
+      headingSize: 21,
+      body: 'DCMotorSim now reports wheel-side motion, so this multiplies back by the gear ratio, on top of the radians-to-rotations fix from Lesson 4. The chain stays honest end to end: applied volts spin the rotor, the wheel moves 1/6.75 as fast, getDistanceMeters() divides by that same ratio.',
+      bodySize: 19,
+    });
+
+    K.addFooter(s, { pageNum: 6, label: 'Distance & Commands' });
+    s.addNotes(
+      'The subtlety worth slowing down for: because DCMotorSim now models a gearbox, getAngularPosition/getAngularVelocity report the wheel (output) motion, not the rotor — but the TalonFX\'s fake encoder still lives on the rotor, since the sensor is physically on the motor, gearbox or not. So simulatePeriodic() has to convert wheel-side back to rotor-side by multiplying by the ratio, on top of the radians-to-rotations conversion from Lesson 4 which still has to happen too. Now the whole chain is honest: applied volts spin the rotor, the wheel moves 1/6.75 as fast, getDistanceMeters() divides getPosition() by that same ratio, and the number of meters on the plot matches what the real robot would roll. If sim distances ever come out off by a suspiciously round factor, this chain — a gear ratio applied twice, or not at all — is the classic cause.'
+    );
+  }
+
+  // ============================================================ SLIDE 8 — commands that finish (concept)
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
@@ -177,13 +212,13 @@ function buildDeck() {
       x: 7.05, y: 3.0, w: 5.25, h: 3.2, fontFace: FONT_BODY, fontSize: 20, color: 'D7E3F4', valign: 'top', margin: 0, lineSpacingMultiple: 1.3,
     });
 
-    K.addFooter(s, { pageNum: 6, label: 'Distance & Commands', dark: true });
+    K.addFooter(s, { pageNum: 7, label: 'Distance & Commands', dark: true });
     s.addNotes(
       'Stop and notice something about every command written so far: none of them ever finishes. driveAtSpeed parks forever; driveWithJoystick and steerToAngle recompute every tick, forever. They run until something else kills them — a button release, a rival command. That was fine for "spin while I hold a button," but "drive exactly one meter" is a different kind of job: the command itself is the only thing that knows when the job is done, so it has to decide for itself when to end. The idea is smaller than it sounds: a coroutine body is just code, top to bottom, like any method. driveAtSpeed\'s body never ends because it calls coroutine.park(), which means "suspend here forever." Leave that call out, and once the body\'s last line runs, the coroutine is done — same as a method returning — and the command finishes right along with it.'
     );
   }
 
-  // ============================================================ SLIDE 7 — driveDistance
+  // ============================================================ SLIDE 9 — driveDistance
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -207,13 +242,13 @@ function buildDeck() {
       ],
     });
 
-    K.addFooter(s, { pageNum: 7, label: 'Distance & Commands' });
+    K.addFooter(s, { pageNum: 8, label: 'Distance & Commands' });
     s.addNotes(
       'Read it top to bottom as four steps. 1: m_driveMotor.setPosition(0) tells the encoder "call right here zero," so getDistanceMeters() measures from the start of this command, not since boot. 2: setThrottle(speed) starts the wheel moving, once. 3: coroutine.waitUntil(condition) is new — it suspends the command right here, checking the condition every tick, and only lets execution continue once it\'s true; the condition is a lambda answering true or false, the same trick as Lesson 2\'s DoubleSupplier but yes/no instead of a number. 4: once waitUntil returns, the distance check is true, so the next line stops the motor — then the lambda has nothing left to do, falls off the end, and the coroutine (and command) is done. One method, four lines, and it sets up, works, waits for done, and cleans up — no separate decorators needed, because it\'s just code running in order. This is the shape students will write constantly from here on.'
     );
   }
 
-  // ============================================================ SLIDE 8 — waitUntil explained
+  // ============================================================ SLIDE 10 — waitUntil explained
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -236,13 +271,13 @@ function buildDeck() {
       bodyColor: 'CADCE8',
     });
 
-    K.addFooter(s, { pageNum: 8, label: 'Distance & Commands' });
+    K.addFooter(s, { pageNum: 9, label: 'Distance & Commands' });
     s.addNotes(
       'Notice there\'s no new decorator here at all — run(...), .whenCanceled(...), .named(...) are all things already had from Lesson 1. What\'s new is entirely inside the lambda: a while-shaped wait (waitUntil) sitting between two motor commands, in a body that\'s allowed to just... end. That\'s the payoff of a coroutine body: "do this, then wait, then do that" IS Java\'s normal control flow, not something bolted on with chained decorators.'
     );
   }
 
-  // ============================================================ SLIDE 9 — two endings
+  // ============================================================ SLIDE 11 — two endings
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
@@ -263,13 +298,13 @@ function buildDeck() {
       x: 0.7, y: 5.65, w: 11.9, h: 1.15, fontFace: FONT_HEAD, italic: true, fontSize: 20, color: 'CADCE8', valign: 'top', margin: 0, lineSpacingMultiple: 1.25,
     });
 
-    K.addFooter(s, { pageNum: 9, label: 'Distance & Commands', dark: true });
+    K.addFooter(s, { pageNum: 10, label: 'Distance & Commands', dark: true });
     s.addNotes(
       'Be precise here: .whenCanceled(() -> m_driveMotor.setThrottle(0)) does NOT fire when the coroutine body finishes on its own — only when something else interrupts this command before it gets there, the same button-swap situation Lesson 5 already used it for. Every earlier command in this course only had one of these endings — driveAtSpeed and steerToAngle never finish on their own, so .whenCanceled(...) was the only ending that ever happened, and it was enough by itself. driveDistance is the first command that can end either way, which is why it\'s also the first one that needs cleanup written twice: once for "got there," inline in the body, and once for "got interrupted," in .whenCanceled(...). Miss either one and the motor keeps spinning in exactly that scenario — Lesson 1\'s rule, still true, just now with two doors it can sneak out of.'
     );
   }
 
-  // ============================================================ SLIDE 10 — bind and test
+  // ============================================================ SLIDE 12 — bind and test
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -291,13 +326,13 @@ function buildDeck() {
       body: 'The trace climbs to 1.0 and flattens as the command stops itself. Change the target to 2.0 and confirm it goes twice as far — a command that accomplishes a goal and reports done, exactly what autonomous routines are made of.',
     });
 
-    K.addFooter(s, { pageNum: 10, label: 'Distance & Commands' });
+    K.addFooter(s, { pageNum: 11, label: 'Distance & Commands' });
     s.addNotes(
       'dpadUp() is a new button family worth naming: the D-pad reports its four directions separately, and dpadUp() fires on the up direction — handy once the face buttons fill up, which they have by this point in the course. Worth mentioning as an aside, since this deck doesn\'t give it its own slide: with steerToAngle from Lesson 5 (point the wheel) and driveDistance now (roll it forward), students have the two ingredients for turning the robot — steer to an angle, then drive an arc length, sequenced with .andThen(...) (e.g. steerToAngle(90).andThen(driveDistance(1.0, 0.4)).named("Turn And Drive")). Lesson 7 builds the real four-module version and Lesson 8 does the clean gyro version, but the two bricks already exist to experiment with now.'
     );
   }
 
-  // ============================================================ SLIDE 11 — try it
+  // ============================================================ SLIDE 13 — try it
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
@@ -306,19 +341,19 @@ function buildDeck() {
     K.addTryItGrid(s, {
       y: 1.6, cols: 2,
       cards: [
-        { title: 'Reverse it', body: 'driveDistance(1.0, -0.4) never finishes — distance goes negative. Fix the wait condition with Math.abs on both sides.' },
-        { title: 'Ease in with P control', body: 'Drive at kP × (meters − getDistanceMeters()) instead of a constant speed — the same pattern, a new quantity.' },
-        { title: 'Watch both endings for real', body: 'Print after waitUntil returns, and print inside .whenCanceled(...). Confirm you only ever see one, never both.' },
+        { title: 'Reverse it', body: 'driveDistance(1.0, -0.4) never finishes — distance goes negative. Fix the wait condition with Math.abs on both sides.', code: true },
+        { title: 'Ease in with P control', body: 'Drive at kP × (meters − getDistanceMeters()) instead of a constant speed — the same pattern, a new quantity.', code: true },
+        { title: 'Watch both endings for real', body: 'Print after waitUntil returns, and print inside .whenCanceled(...). Confirm you only ever see one, never both.', code: true },
       ],
     });
 
-    K.addFooter(s, { pageNum: 11, label: 'Distance & Commands', dark: true });
+    K.addFooter(s, { pageNum: 12, label: 'Distance & Commands', dark: true });
     s.addNotes(
       'The reverse exercise is a genuine bug students should hit before being told the fix: driveDistance(1.0, -0.4) never finishes because getDistanceMeters() >= meters never becomes true — distance goes negative while meters stays positive. Wrapping both sides in Math.abs is the fix, and the point is explicitly "this is why you test edge cases," not just a syntax exercise. The ease-in exercise reuses Lesson 5\'s P control pattern on a new quantity — kP × (meters − getDistanceMeters()) — worth naming that this is the same control idea, just applied somewhere new. The watch-both-endings exercise is meant to be run for real, not just reasoned about: a print after waitUntil returns and a different print inside .whenCanceled(...), then tap D-pad up and let it finish, then tap again and interrupt it with a different button — exactly one print should appear each time, never both, confirming section 3\'s split by watching it happen.'
     );
   }
 
-  // ============================================================ SLIDE 12 — what you learned + next
+  // ============================================================ SLIDE 14 — what you learned + next
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -344,7 +379,7 @@ function buildDeck() {
     s.addShape('ellipse', { x: 8.3, y: 5.6, w: 0.55, h: 0.55, fill: { color: TEAL }, line: { type: 'none' } });
     s.addImage({ path: K.ICON('arrowright_white.png'), x: 8.43, y: 5.73, w: 0.29, h: 0.29 });
 
-    K.addFooter(s, { pageNum: 12, label: 'Distance & Commands' });
+    K.addFooter(s, { pageNum: 13, label: 'Distance & Commands' });
     s.addNotes(
       'Two ideas carried this lesson. First: units are yours to build — gear ratio and wheel circumference turn rotor rotations into meters, setPosition(0) rezeros the encoder so distance means "since this command started," and named constants keep the conversion honest in one place. Second, and bigger: commands can finish, and in this framework that just means the coroutine body runs out of lines — no park(), no more code, done. The sharper edge underneath that: a command can end finished or canceled, they\'re genuinely different events, and only driveDistance has needed to handle both. That distinction is easy to miss and expensive to get wrong, so it\'s worth carrying forward deliberately. Lesson 7 turns the one module into four, and Lesson 9 strings finishing commands into a full autonomous routine. If the gearbox math felt dense, let the plot reassure you — when the trace stops at exactly 1.0 meters, every conversion in the chain earned its keep.'
     );
