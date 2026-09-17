@@ -267,21 +267,22 @@ routines are made of.
 
 ## Try it
 
-1. **Reverse:** what happens if you call `driveDistance(1.0, -0.4)`? The condition
-   `getDistanceMeters() >= meters` never becomes true because distance goes negative.
-   Fix it by changing `coroutine.waitUntil(...)`'s condition to
-   `Math.abs(getDistanceMeters()) >= Math.abs(meters)`. This is why you test
-   edge cases.
-2. **Ease-in with P control:** instead of a constant `speed`, reuse Lesson 5's idea
-   — drive at `kP × (meters − getDistanceMeters())` so it slows as it arrives.
-   Notice you're applying the *same control pattern* to a new quantity.
-3. **Watch the two endings for real.** Add a print right after `waitUntil`
-   returns (before the line that stops the motor) and a different print
-   inside `.whenCanceled(...)`. Tap D-pad up and let it finish — which one
-   printed? Now tap it again and immediately press a different drive button
-   to interrupt it — which one printed *that* time? You should see exactly
-   one, never both, on either run. That's section 3's split, confirmed by
-   watching it happen.
+1. **Code — reverse.** What happens if you call `driveDistance(1.0, -0.4)`? The
+   condition `getDistanceMeters() >= meters` never becomes true because
+   distance goes negative. Fix it by changing `coroutine.waitUntil(...)`'s
+   condition to `Math.abs(getDistanceMeters()) >= Math.abs(meters)`. This is
+   why you test edge cases.
+2. **Code — ease in with P control.** Instead of a constant `speed`, reuse
+   Lesson 5's idea — drive at `kP × (meters − getDistanceMeters())` so it
+   slows as it arrives. Notice you're applying the *same control pattern* to
+   a new quantity.
+3. **Code — watch the two endings for real.** Add a print right after
+   `waitUntil` returns (before the line that stops the motor) and a
+   different print inside `.whenCanceled(...)`. Tap D-pad up and let it
+   finish — which one printed? Now tap it again and immediately press a
+   different drive button to interrupt it — which one printed *that* time?
+   You should see exactly one, never both, on either run. That's section
+   3's split, confirmed by watching it happen.
 
 ---
 
