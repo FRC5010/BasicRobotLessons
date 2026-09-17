@@ -242,9 +242,9 @@ function buildDeck() {
     K.addTryItGrid(s, {
       y: 1.6, cols: 2,
       cards: [
-        { title: 'Slow mode', body: 'A scale parameter multiplied into the speed. Bind the right bumper to 0.25 for fine control.' },
-        { title: 'Square the input', body: 'speed * Math.abs(speed) for finer low-speed control. Why keep Math.abs? What breaks without it?' },
-        { title: 'Print raw vs. deadbanded', body: 'System.out.println both, and watch how much the raw value jitters at rest.' },
+        { title: 'Slow mode', body: 'A scale parameter multiplied into the speed. Bind the right bumper to 0.25 for fine control.', code: true },
+        { title: 'Square the input', body: 'speed * Math.abs(speed) for finer low-speed control. Why keep Math.abs? What breaks without it?', code: true },
+        { title: 'Print raw vs. deadbanded', body: 'System.out.println both, and watch how much the raw value jitters at rest.', code: true },
       ],
     });
 

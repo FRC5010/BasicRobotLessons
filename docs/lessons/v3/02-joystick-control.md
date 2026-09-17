@@ -222,16 +222,16 @@ creeps at rest instead, your deadband isn't in the path — check that
 The first two are the kind of feature request real drivers make of their
 programmers every season.
 
-1. **Slow mode:** make a method `driveWithJoystick(DoubleSupplier speed,
-   double scale)` that multiplies the speed by `scale`. Bind the right
-   bumper so that while held, the module drives at `scale = 0.25` for fine
-   control.
-2. **Square the input** for finer low-speed control: `speed *
+1. **Code — slow mode.** Make a method `driveWithJoystick(DoubleSupplier
+   speed, double scale)` that multiplies the speed by `scale`. Bind the
+   right bumper so that while held, the module drives at `scale = 0.25` for
+   fine control.
+2. **Code — square the input** for finer low-speed control: `speed *
    Math.abs(speed)`. Feel the difference. Why does keeping `Math.abs`
    matter here? (Hint: what happens to the sign if you just do `speed *
    speed`?)
-3. Print the raw vs. deadbanded value with `System.out.println` and watch
-   how much the raw value jitters at rest.
+3. **Code — print raw vs. deadbanded.** Print both values with
+   `System.out.println` and watch how much the raw value jitters at rest.
 
 ---
 
