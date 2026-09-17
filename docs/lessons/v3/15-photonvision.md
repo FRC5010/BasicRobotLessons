@@ -569,7 +569,7 @@ exact same `Localizer` loop, logging under its own key.
 
 ## Try it
 
-1. **Add a third camera.** Pick a corner mount — angled 45°, say — add its
+1. **Code — add a third camera.** Pick a corner mount — angled 45°, say — add its
    `Transform3d` to `VisionConstants`, declare a third `PhotonVisionPoseProvider`
    blank final on `Robot`, build it in the constructor with
    `PhotonVisionPoseProvider.makeCamera(...)`, and register it right after
@@ -577,12 +577,12 @@ exact same `Localizer` loop, logging under its own key.
    changes to make this work — its shared `static VisionSystemSim` just
    picks up a third camera the moment one more `VisionIOPhotonVisionSim` is
    constructed.
-2. **Turn off multi-tag.** In `VisionIOPhotonVision.updateInputs`, delete the
+2. **Code — turn off multi-tag.** In `VisionIOPhotonVision.updateInputs`, delete the
    `estimateCoprocMultiTagPose` branch so every frame falls straight to
    `estimateLowestAmbiguityPose`. Drive past a spot where two tags are
    visible at once and compare — single-tag estimates should look visibly
    noisier on the plot than multi-tag did.
-3. **Prove a miscalibrated camera is invisible here — and understand why.**
+3. **Code — prove a miscalibrated camera is invisible here — and understand why.**
    Add 0.3 meters to `kFrontRobotToCamera`'s forward offset, pretending you
    measured wrong, and drive around watching `Localizer/Pose`. It doesn't
    skew. The callout in section 10 explains the mechanism: `robotToCamera`
@@ -594,7 +594,7 @@ exact same `Localizer` loop, logging under its own key.
    correction it makes. Put the number back, and take the lesson: some bugs
    this simulator simply cannot show you, and knowing which ones is its own
    kind of expertise.
-4. **Watch the empty doorway, vision edition.** Flip `kSimMode` to
+4. **Code — watch the empty doorway, vision edition.** Flip `kSimMode` to
    `Mode.REPLAY` in `Constants.java` and run `./gradlew simulateJava`. Both
    cameras build fine — `PhotonVisionPoseProvider.makeCamera`'s `REPLAY` arm
    resolves to `new VisionIO() {}` — but `Localizer/Front/PoseObservations`
