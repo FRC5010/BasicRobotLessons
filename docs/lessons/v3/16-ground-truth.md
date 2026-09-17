@@ -431,7 +431,7 @@ checking itself.
 
 ## Try it
 
-1. **Make the tires slicker.** Drop `kWheelCoF` to `0.4` and repeat hard
+1. **Code — make the tires slicker.** Drop `kWheelCoF` to `0.4` and repeat hard
    driving. The estimate should peel away from ground truth far faster than
    it did with real grip. Put it back — and if Lesson 13's Try It left a
    fake `1.1` wheel-slip multiplier lurking in `ModuleIOTalonFX`, delete it
@@ -442,7 +442,7 @@ checking itself.
    if nothing limited it. The gyro should visibly lag the instant command —
    Lesson 8's fake gyro could never have shown you that, because it had no
    concept of "too fast to actually achieve."
-3. **Push the estimate somewhere wrong on purpose.** Call
+3. **Code — push the estimate somewhere wrong on purpose.** Call
    `m_localizer.resetPose(...)` from a temporary button binding with a pose
    half a meter off from where the chassis sim actually is, then park where
    a tag is visible. Watch the estimate get pulled back — not toward the
