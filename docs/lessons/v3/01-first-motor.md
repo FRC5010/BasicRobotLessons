@@ -552,14 +552,15 @@ debugger.
 Three exercises. The third one plants a habit you'll lean on for the rest
 of the course.
 
-1. Add a **second** button (`robot.driverController.eastFace()`) that drives at
-   `-0.3` (reverse). Confirm both buttons fight for the motor cleanly —
-   press both; the scheduler lets the most-recently-scheduled one win.
+1. **Code — a reverse button.** Add a **second** button
+   (`robot.driverController.eastFace()`) that drives at `-0.3` (reverse).
+   Confirm both buttons fight for the motor cleanly — press both; the
+   scheduler lets the most-recently-scheduled one win.
 2. Change `m_driveMotor`'s CAN ID and rebuild. Nothing breaks in sim — IDs
    only matter on the real robot, but get in the habit of setting them
    deliberately.
-3. Move the CAN ID out of the code and into a named constant. Create
-   `Constants.java` next to `Robot.java`, in package `first.robot`:
+3. **Code — move the CAN ID into a constant.** Create `Constants.java` next
+   to `Robot.java`, in package `first.robot`:
 
    ```java
    package first.robot;
