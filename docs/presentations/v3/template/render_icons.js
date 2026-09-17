@@ -60,6 +60,17 @@ const jobs = [
   ['FaCalculator', 'FFFFFF', 'calculator_white'],
   ['FaObjectGroup', 'FFFFFF', 'objectgroup_white'],
   ['FaRandom', 'FFFFFF', 'random_white'],
+  // lessons 11-16 specific
+  ['FaMapMarkerAlt', 'FFFFFF', 'mapmarker_white'],
+  ['FaMicrochip', 'FFFFFF', 'microchip_white'],
+  ['FaDoorOpen', 'FFFFFF', 'dooropen_white'],
+  ['FaPuzzlePiece', 'FFFFFF', 'puzzlepiece_white'],
+  ['FaCrosshairs', 'FFFFFF', 'crosshairs_white'],
+  ['FaCamera', 'FFFFFF', 'camera_white'],
+  ['FaGlobeAmericas', 'FFFFFF', 'globe_white'],
+  ['FaLayerGroup', 'FFFFFF', 'layergroup_white'],
+  ['FaWeightHanging', 'FFFFFF', 'weight_white'],
+  ['FaSatelliteDish', 'FFFFFF', 'satellite_white'],
 ];
 
 async function main() {
