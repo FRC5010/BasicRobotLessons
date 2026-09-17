@@ -210,11 +210,20 @@ function buildDeck() {
     K.addHeader(s, { icon: 'lightbulb_white.png', eyebrow: 'Section 6 · Robot.java', title: 'Told, not asked' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 2.8, fontSize: 12,
-      fileLabel: 'Edit Robot: add the listener, then replace logRunningCommand()',
+      x: 0.7, y: 1.5, w: 11.9, h: 1.8, fontSize: 14,
+      fileLabel: "Edit Robot's constructor — add the listener",
       lines: [
-        { text: 'Scheduler.getDefault().addEventListener(this::logCommandStart);', color: '9EF01A' },
-        { text: '', color: 'D7E3F4' },
+        { text: 'public Robot() {', color: 'FFD166' },
+        { text: '  DataLogManager.start(); // saves every published value to a .wpilog file', color: 'D7E3F4' },
+        { text: '  Scheduler.getDefault().addEventListener(this::logCommandStart); // ← added', color: '9EF01A' },
+        { text: '}', color: 'D7E3F4' },
+      ],
+    });
+
+    K.addCodeCard(s, {
+      x: 0.7, y: 3.45, w: 11.9, h: 2.55, fontSize: 12,
+      fileLabel: 'Replace logRunningCommand() with',
+      lines: [
         { text: 'private void logCommandStart(SchedulerEvent event) {', color: 'FFD166' },
         { text: '  if (event instanceof SchedulerEvent.Scheduled scheduled', color: 'D7E3F4' },
         { text: '      && scheduled.command().requires(module)) {', color: 'D7E3F4' },
@@ -225,19 +234,48 @@ function buildDeck() {
     });
 
     K.addCard(s, {
-      x: 0.7, y: 4.7, w: 11.9, h: 2.3,
-      heading: 'Is this a Scheduled event? Type it as one.',
-      headingSize: 20,
-      body: 'Only the specific kind has .command() on it. The old version polled and got lucky every time; this one can\'t get unlucky — it isn\'t asking, it\'s told.',
+      x: 0.7, y: 6.05, w: 11.9, h: 0.95,
+      body: 'Is this a Scheduled event? Type it as one, right there — that\'s pattern matching. The old version polled and got lucky every time; this one is told.',
+      pad: 0.15, bodySize: 16,
     });
 
     K.addFooter(s, { pageNum: 8, label: 'Telemetry' });
     s.addNotes(
-      'Lesson 1\'s logRunningCommand() asked the scheduler a question every tick and read entry zero off the answer — it worked because every command built so far either parks or loops until canceled, so there\'s always something running whenever you ask. That guarantee won\'t last: later lessons build commands that finish on their own, and Lesson 8 ships one that can finish the instant it\'s scheduled, before a poll ever gets a chance to see it run — asking at just the wrong moment means reading past the end of an empty list, not a stale answer. The fix isn\'t a smarter poll, it\'s not polling at all: the scheduler announces every SchedulerEvent it fires — scheduled, completed, canceled, interrupted, and a few more — and addEventListener reacts the instant one happens. The if line does two jobs at once: "event instanceof SchedulerEvent.Scheduled scheduled" asks whether this event is specifically a Scheduled event, and if so hands it back as a variable named scheduled, typed as that specific kind rather than the general SchedulerEvent — which is why the check has to come first, since only the specific kind has a .command() on it. The && after it can use scheduled right away because Java only evaluates the rest of the line once the left side has already passed. scheduled.command().requires(module) matters because the same event stream fires for every mechanism on the robot, not just this one. Run it again and press the button: DriveModule/CurrentCommand still flips the same way as before — what changed is that it isn\'t asking anymore, it\'s told.'
+      'Lesson 1\'s logRunningCommand() asked the scheduler a question every tick and read entry zero off the answer — it worked because every command built so far either parks or loops until canceled, so there\'s always something running whenever you ask. That guarantee won\'t last: later lessons build commands that finish on their own, and Lesson 8 ships one that can finish the instant it\'s scheduled, before a poll ever gets a chance to see it run — asking at just the wrong moment means reading past the end of an empty list, not a stale answer. The fix isn\'t a smarter poll, it\'s not polling at all: the scheduler announces every SchedulerEvent it fires — scheduled, completed, canceled, interrupted, and a few more — and addEventListener reacts the instant one happens. Another method reference here, the same shorthand as this::logTelemetry back in section 4, just pointing at a different method. The if line does two jobs at once: "event instanceof SchedulerEvent.Scheduled scheduled" asks whether this event is specifically a Scheduled event, and if so hands it back as a variable named scheduled, typed as that specific kind rather than the general SchedulerEvent — which is why the check has to come first, since only the specific kind has a .command() on it. The && after it can use scheduled right away because Java only evaluates the rest of the line once the left side has already passed. scheduled.command().requires(module) matters because the same event stream fires for every mechanism on the robot, not just this one. Run it again and press the button: DriveModule/CurrentCommand still flips the same way as before — what changed is that it isn\'t asking anymore, it\'s told.'
     );
   }
 
-  // ============================================================ SLIDE 9 — try it
+  // ============================================================ SLIDE 9 — robotPeriodic gets simpler (NEW)
+  {
+    const s = p.addSlide();
+    s.background = { color: WHITE };
+    K.addHeader(s, { icon: 'compressarrowsalt_white.png', eyebrow: 'Section 6 continued · Robot.java', title: 'The command log takes care of itself now' });
+
+    K.addCodeCard(s, {
+      x: 0.7, y: 1.75, w: 11.9, h: 2.2, fontSize: 17,
+      fileLabel: "Edit Robot's robotPeriodic(), dropping the call to the old method",
+      lines: [
+        { text: '@Override', color: 'FFD166' },
+        { text: 'public void robotPeriodic() {', color: 'D7E3F4' },
+        { text: '  Scheduler.getDefault().run();', color: '9EF01A' },
+        { text: '}', color: 'D7E3F4' },
+      ],
+    });
+
+    K.addCard(s, {
+      x: 0.7, y: 4.15, w: 11.9, h: 2.75,
+      heading: 'Ticking the scheduler is still the only thing that has to happen every tick.',
+      headingSize: 21,
+      body: 'Remove the now-unused imports (java.util.List and org.wpilib.command3.Command — nothing here needs them anymore) and add org.wpilib.command3.SchedulerEvent. What changed is how Robot knows what\'s running, not what shows up on the dashboard.',
+    });
+
+    K.addFooter(s, { pageNum: 9, label: 'Telemetry' });
+    s.addNotes(
+      'logRunningCommand() is gone, and with it the only thing robotPeriodic() needs to do every tick is the scheduler tick itself — the command log takes care of itself now, reacting to events instead of being asked. Run it again and press the button: DriveModule/CurrentCommand on the dashboard still flips between "DriveModule[IDLE]" and "Drive At Speed", exactly like before. What changed is how it knows — the old version asked, every tick, and got lucky every time because nothing could finish between one ask and the next; the new version can\'t get unlucky, because it isn\'t asking anymore, it\'s told, the instant something happens, no matter how briefly "happens" lasts. Worth naming as a callout: Scheduled isn\'t the only kind of SchedulerEvent — there\'s a Completed for when a command finishes on its own, Canceled and Interrupted for the other two ways a command\'s life can end, and a couple more besides. Only one piece of that vocabulary got used here.'
+    );
+  }
+
+  // ============================================================ SLIDE 10 — try it
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
@@ -246,20 +284,20 @@ function buildDeck() {
     K.addTryItGrid(s, {
       y: 1.6, cols: 2,
       cards: [
-        { title: 'Log the commanded speed', body: 'Inside driveWithJoystick\'s loop, log CommandedOutput right where it\'s computed.' },
-        { title: 'Add getPositionRotations()', body: 'A reading method returning position as a double — safe to share, unlike a command.' },
+        { title: 'Log the commanded speed', body: 'Inside driveWithJoystick\'s loop, log CommandedOutput right where it\'s computed.', code: true },
+        { title: 'Add getPositionRotations()', body: 'A reading method returning position as a double — safe to share, unlike a command.', code: true },
         { title: 'Rename a dashboard key', body: 'Swap "DriveModule/" for "Elevator/", rebuild, and watch a new folder appear in the tree.' },
-        { title: 'Log when a command completes', body: 'Handle SchedulerEvent.Completed and write LastCompletedCommand.' },
+        { title: 'Log when a command completes', body: 'Handle SchedulerEvent.Completed and write LastCompletedCommand.', code: true },
       ],
     });
 
-    K.addFooter(s, { pageNum: 9, label: 'Telemetry', dark: true });
+    K.addFooter(s, { pageNum: 10, label: 'Telemetry', dark: true });
     s.addNotes(
       'Logging the commanded speed is a refinement of the always-running rule from section 4: a value that only exists inside a command — like the command\'s own output — gets logged right where it\'s computed, not from a periodic callback. On a real robot, overlaying CommandedOutput against VelocityRotPerSec shows how the motor lags the command — the seed of understanding control, which pays off starting in Lesson 5. getPositionRotations() is worth calling out as exposing a reading method alongside command factories — that\'s fine, readings are safe to share, unlike commands. Renaming a dashboard key is a hands-on demonstration that the slash really is a folder path and the name really is the address — the old entry goes stale and a new folder appears in the tree. The SchedulerEvent.Completed exercise previews the vocabulary callout: Scheduled isn\'t the only kind of event.'
     );
   }
 
-  // ============================================================ SLIDE 10 — what you learned + next
+  // ============================================================ SLIDE 11 — what you learned + next
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -285,7 +323,7 @@ function buildDeck() {
     s.addShape('ellipse', { x: 8.3, y: 5.6, w: 0.55, h: 0.55, fill: { color: TEAL }, line: { type: 'none' } });
     s.addImage({ path: K.ICON('arrowright_white.png'), x: 8.43, y: 5.73, w: 0.29, h: 0.29 });
 
-    K.addFooter(s, { pageNum: 10, label: 'Telemetry' });
+    K.addFooter(s, { pageNum: 11, label: 'Telemetry' });
     s.addNotes(
       'That naming discipline — Mechanism/Name — feels like overkill for two values; it stops being overkill around value twenty, and this course gets there sooner than it seems. The bigger shift is trading a poll for a listener: logRunningCommand() asked a question every tick and happened to always have an answer, but "happened to" isn\'t a guarantee. logCommandStart() doesn\'t ask at all — it registers once and reacts exactly when a SchedulerEvent.Scheduled actually occurs, unpacked with instanceof pattern matching. Same dashboard key, same string showing up, but nothing left that can come up empty. The plots look unimpressive while the sim motor stands still, but Lesson 4 turns the physics on, and these same plots come alive.'
     );
