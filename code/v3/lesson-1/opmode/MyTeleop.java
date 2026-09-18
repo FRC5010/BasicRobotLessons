@@ -18,9 +18,9 @@ public class MyTeleop extends PeriodicOpMode {
     this.robot = robot;
 
     // Hold the bottom face button to drive forward at 30% power; release to stop.
-    robot.driverController.southFace().whileTrue(robot.module.driveAtSpeed(0.3));
+    robot.driverController.faceDown().whileTrue(robot.module.driveAtSpeed(0.3));
     // Try It #1: hold the right face button to drive backward at 30% power.
-    robot.driverController.eastFace().whileTrue(robot.module.driveAtSpeed(-0.3));
+    robot.driverController.faceRight().whileTrue(robot.module.driveAtSpeed(-0.3));
   }
 
   @Override

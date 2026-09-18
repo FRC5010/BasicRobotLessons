@@ -5,12 +5,13 @@ import com.ctre.phoenix6.hardware.TalonFX;
 
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
+import org.wpilib.hardware.bus.CANPort;
 
 import first.robot.Constants;
 
-public class DriveModule extends Mechanism {
+public class DriveModule implements Mechanism {
   private final TalonFX m_driveMotor =
-      new TalonFX(Constants.DriveConstants.kDriveMotorPort, CANBus.systemcore(0)); // CAN ID 1 — change to yours
+      new TalonFX(Constants.DriveConstants.kDriveMotorPort, new CANBus(CANPort.CAN_S0)); // CAN ID 1 — change to yours
 
   public DriveModule() {
     // Setup that should happen when the module is created goes here.

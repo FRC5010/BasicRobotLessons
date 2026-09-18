@@ -9,11 +9,11 @@ import org.wpilib.math.geometry.Rotation2d;
 import org.wpilib.math.kinematics.SwerveModuleVelocity;
 import org.wpilib.networktables.NetworkTableInstance;
 import org.wpilib.networktables.StructArrayPublisher;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 
 import first.robot.Constants.DriveConstants;
 
-public class Drivetrain extends Mechanism {
+public class Drivetrain implements Mechanism {
   // Corner order: FL, FR, BL, BR. Pick a convention and stick to it.
   private final SwerveModule[] m_modules = new SwerveModule[] {
       new SwerveModule(DriveConstants.kFrontLeftDrivePort, DriveConstants.kFrontLeftSteerPort,
@@ -71,7 +71,7 @@ public class Drivetrain extends Mechanism {
     SwerveModuleVelocity[] states = new SwerveModuleVelocity[4];
     int index = 0;
     for (SwerveModule module : m_modules) {
-      SmartDashboard.putNumber("Drivetrain/Module" + index + "/SteerAngleDegrees",
+      Telemetry.log("Drivetrain/Module" + index + "/SteerAngleDegrees",
           module.getSteerAngleDegrees());
       states[index] = new SwerveModuleVelocity(
           module.getDriveVelocityMetersPerSec(),

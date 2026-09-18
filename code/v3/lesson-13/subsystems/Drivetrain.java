@@ -20,7 +20,7 @@ import org.wpilib.networktables.NetworkTableInstance;
 import org.wpilib.networktables.StructArrayPublisher;
 import org.wpilib.networktables.StructPublisher;
 import org.wpilib.smartdashboard.Field2d;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.AngularVelocity;
 import org.wpilib.units.measure.LinearVelocity;
 
@@ -28,7 +28,7 @@ import first.robot.Constants;
 import first.robot.Constants.DriveConstants;
 import first.robot.Constants.HeadingConstants;
 
-public class Drivetrain extends Mechanism {
+public class Drivetrain implements Mechanism {
   // Corner order: FL, FR, BL, BR. Pick a convention and stick to it.
   private final SwerveModule[] m_modules = new SwerveModule[] {
       makeModule(0, DriveConstants.kFrontLeftDrivePort, DriveConstants.kFrontLeftSteerPort,
@@ -87,7 +87,7 @@ public class Drivetrain extends Mechanism {
           .publish();
 
   public Drivetrain() {
-    SmartDashboard.putData("Field", m_field);
+    Telemetry.log("Field", m_field);
     Scheduler.getDefault().addPeriodic(this::logTelemetry);
   }
 
@@ -247,7 +247,7 @@ public class Drivetrain extends Mechanism {
 
   private void logTelemetry() {
     m_gyroIO.updateInputs(m_gyroInputs);
-    SmartDashboard.putNumber("Drivetrain/Gyro/YawDegrees", m_gyroInputs.yawDegrees);
+    Telemetry.log("Drivetrain/Gyro/YawDegrees", m_gyroInputs.yawDegrees);
 
     SwerveModuleVelocity[] states = new SwerveModuleVelocity[4];
     int index = 0;
@@ -260,7 +260,7 @@ public class Drivetrain extends Mechanism {
     }
     m_moduleStatesPublisher.set(states);
 
-    SmartDashboard.putNumber("Drivetrain/HeadingDegrees", getHeadingDegrees());
+    Telemetry.log("Drivetrain/HeadingDegrees", getHeadingDegrees());
     m_headingPublisher.set(Rotation2d.fromDegrees(getHeadingDegrees()));
 
     Pose2d pose = m_odometry.update(Rotation2d.fromDegrees(getHeadingDegrees()), modulePositions());

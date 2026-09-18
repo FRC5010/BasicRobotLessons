@@ -10,7 +10,7 @@ import org.wpilib.command3.Command;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.command3.button.CommandGamepad;
 import org.wpilib.framework.OpModeRobot;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 
 import first.robot.subsystems.DriveModule;
 
@@ -48,7 +48,7 @@ public class Robot extends OpModeRobot {
   private void logRunningCommand() {
     List<Command> running = Scheduler.getDefault().getRunningCommandsFor(module);
     Command current = running.get(0);
-    SmartDashboard.putString("DriveModule/CurrentCommand", current.name());
+    Telemetry.log("DriveModule/CurrentCommand", current.name());
   }
 
   /**

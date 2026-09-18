@@ -11,13 +11,14 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.hardware.bus.CANPort;
+import org.wpilib.telemetry.Telemetry;
 
 import first.robot.Constants;
 
-public class DriveModule extends Mechanism {
+public class DriveModule implements Mechanism {
   private final TalonFX m_driveMotor =
-      new TalonFX(Constants.DriveConstants.kDriveMotorPort, CANBus.systemcore(0)); // CAN ID 1 — change to yours
+      new TalonFX(Constants.DriveConstants.kDriveMotorPort, new CANBus(CANPort.CAN_S0)); // CAN ID 1 — change to yours
 
   public DriveModule() {
     Scheduler.getDefault().addPeriodic(this::logTelemetry);
@@ -40,7 +41,7 @@ public class DriveModule extends Mechanism {
       double speed = applyDeadband(raw, 0.1);     // clean it up
       m_driveMotor.setThrottle(speed);
       // Try It #1: log the commanded speed too.
-      SmartDashboard.putNumber("DriveModule/CommandedOutput", speed);
+      Telemetry.log("DriveModule/CommandedOutput", speed);
     }).named("Drive With Joystick");
   }
 
@@ -50,7 +51,7 @@ public class DriveModule extends Mechanism {
       double raw = speedSupplier.getAsDouble();
       double speed = applyDeadband(raw, 0.1) * scale;
       m_driveMotor.setThrottle(speed);
-      SmartDashboard.putNumber("DriveModule/CommandedOutput", speed);
+      Telemetry.log("DriveModule/CommandedOutput", speed);
     }).named("Drive With Joystick (Slow Mode)");
   }
 
@@ -72,7 +73,7 @@ public class DriveModule extends Mechanism {
     double rotations = m_driveMotor.getPosition().getValue().in(Rotations);
     double rps = m_driveMotor.getVelocity().getValue().in(RotationsPerSecond);
 
-    SmartDashboard.putNumber("DriveModule/PositionRotations", rotations);
-    SmartDashboard.putNumber("DriveModule/VelocityRotPerSec", rps);
+    Telemetry.log("DriveModule/PositionRotations", rotations);
+    Telemetry.log("DriveModule/VelocityRotPerSec", rps);
   }
 }

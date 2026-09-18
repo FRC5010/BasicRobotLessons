@@ -9,7 +9,7 @@ import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.networktables.NetworkTableInstance;
 import org.wpilib.networktables.StructPublisher;
 import org.wpilib.smartdashboard.Field2d;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 
 /**
  * Owns the fused pose estimate. Not a Mechanism — it drives no motors and no
@@ -42,7 +42,7 @@ public class Localizer {
     // The drivetrain is the odometry backbone — register it first.
     addProvider(drivetrain);
 
-    SmartDashboard.putData("Field", m_field); // the SimGUI field view from Lesson 11
+    Telemetry.log("Field", m_field); // the SimGUI field view from Lesson 11
     Scheduler.getDefault().addPeriodic(this::periodic);
   }
 
