@@ -6,7 +6,10 @@
 # original script because almost everything differs: the base project
 # (code/OpModeV3Robot, not code/ActualLessons), the package root
 # (first.robot, not frc.robot), the deploy target (SystemCore, not roboRIO),
-# and the vendordep source (2027_alpha5, not the current season). There is no
+# and the vendordep source (WPILib's 2027-alpha marketplace buckets, not the
+# current season — Phoenix 6 pins to the 2027_alpha7 bucket, photonlib still
+# to 2027_alpha5 until it publishes an alpha7-compatible release; see
+# docs/lesson-plan-alpha7-upgrade.md). There is no
 # AdvantageKit build.gradle block to carry over, but lesson-deletion replay
 # does apply here too, the same way it does in the main script (see `del`
 # below) — the first one lands at Lesson 7, same rename as the main course.
@@ -120,16 +123,20 @@ for arg in "$@"; do
 done
 
 # --- vendordeps -------------------------------------------------------------
-# Pinned to WPILib's vendordep marketplace's 2027_alpha5 bucket, one
+# Pinned to WPILib's vendordep marketplace's 2027_alpha7 bucket, one
 # immutable file per version — same rule as the main script: never a
-# vendor's own "latest" link.
-MARKETPLACE="https://raw.githubusercontent.com/wpilibsuite/vendor-json-repo/main/2027_alpha5"
+# vendor's own "latest" link. Phoenix 6 cleared the alpha-7 bucket first
+# (Track A, Lessons 1-14); photonlib has not (Track B, Lessons 15-34 —
+# see docs/lesson-plan-alpha7-upgrade.md), so its entry below still points
+# at the old alpha5 bucket on purpose until it does.
+MARKETPLACE="https://raw.githubusercontent.com/wpilibsuite/vendor-json-repo/main/2027_alpha7"
+MARKETPLACE_ALPHA5="https://raw.githubusercontent.com/wpilibsuite/vendor-json-repo/main/2027_alpha5"
 # "<lesson it is first needed>|<url>". Only what the requested range needs
 # gets fetched. CommandsV3 is NOT fetched here — it ships already installed
 # in code/OpModeV3Robot/vendordeps/, copied from wpilib source directly.
 VENDORDEPS=(
-  "1|$MARKETPLACE/Phoenix6-26.50.0-alpha-1.json"
-  "15|$MARKETPLACE/photonlib-v2027.0.0-alpha-2.json"
+  "1|$MARKETPLACE/Phoenix6-26.70.0-alpha-2.json"
+  "15|$MARKETPLACE_ALPHA5/photonlib-v2027.0.0-alpha-2.json"
 )
 
 say() { printf '\n\033[1m==> %s\033[0m\n' "$*"; }
