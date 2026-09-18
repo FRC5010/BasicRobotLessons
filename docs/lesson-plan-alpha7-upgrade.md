@@ -22,11 +22,27 @@ The classic numbered track (`docs/lessons/00-*.md` … `34-*.md`) targets
 effect on it. Everything below is about `docs/lessons/v3/` and
 `code/OpModeV3Robot` / `code/v3/lesson-N/` only.
 
-As of this writing, `code/OpModeV3Robot/build.gradle` pins
-`org.wpilib.GradleRIO version "2027.0.0-alpha-6"` — one alpha behind the new
-release already, for the reason in [The vendor blocker](#the-vendor-blocker)
-below: nothing has forced a jump to alpha-6→7 yet because the vendor pins
-this course depends on haven't caught up to alpha-6 either.
+**Update, 2026-09-18: Phase 1a has landed.** Phoenix 6 published an
+alpha-7-compatible, marketplace-pinned release (`26.70.0-alpha-2`, in the
+`vendor-json-repo`'s `2027_alpha7` bucket), clearing Track A's gate — see the
+[vendor tracking table](#vendor-tracking) below for how this was verified.
+`code/OpModeV3Robot/build.gradle` now pins
+`org.wpilib.GradleRIO version "2027.0.0-alpha-7"`, `vendordeps/CommandsV3.json`
+is re-synced to the real alpha-7 file (`wpilibYear` and the `commandsv3-java`
+artifact ID both moved), `settings.gradle` and `.wpilib/wpilib_preferences.json`
+follow the same year, and `tools/verify-lessons-v3.sh`'s `MARKETPLACE` /
+Phoenix6 entry point at the alpha-7 bucket (`photonlib` deliberately still
+points at the alpha-5 bucket — Track B's job, see
+[Splitting the gate](#splitting-the-gate-lessons-114-dont-need-photonvision)).
+Lessons 0 through 14 — every intermediate stopping point, not just the
+rollup — compile clean with zero warnings via
+`./tools/verify-lessons-v3.sh N` for each `N` in that range. Track B
+(Lessons 15–34, PhotonVision) is still blocked; nothing there was touched.
+See [Phase 1a](#phased-plan) below for the full list of what actually broke
+and how each was fixed — it is the real, unguessed inventory this doc's
+earlier sections predicted, superseding the "likely affected" language in
+[What alpha-7 actually changed](#what-alpha-7-actually-changed) for anything
+in Lessons 1–14.
 
 ## What alpha-7 actually changed
 
@@ -293,6 +309,76 @@ does not wait for PhotonVision.**
    one, the same lesson-by-lesson discipline `CLAUDE.md` already prescribes
    for normal lesson edits.
 
+**Done, 2026-09-18.** Steps 1–3 above, plus `settings.gradle` and
+`.wpilib/wpilib_preferences.json`'s `wpilibYear`/`projectYear` (not called
+out by name above, but the same kind of version pin). Step 4's real,
+unguessed error list from `./tools/verify-lessons-v3.sh 14` was 25 compiler
+errors, all falling into six categories — verified against the real alpha-7
+jars with `javap` (`commandsv3-java`, `wpilibj-java`, `telemetry-java`,
+`wpiapi-java` in the local Gradle cache), never guessed from the release
+notes alone:
+
+- `Mechanism` is an interface now, and — checked directly — it still ships
+  every default method Lessons 1–14 call (`run`, `runRepeatedly`,
+  `setDefaultCommand`, `idle`, `getName`, …) with identical signatures. Every
+  `class X extends Mechanism` became `implements Mechanism` (or
+  `implements Mechanism, PoseProvider` where a second interface was already
+  there); nothing else about those classes needed to change.
+- `SmartDashboard` is genuinely gone, replaced by `org.wpilib.telemetry.Telemetry`.
+  `Telemetry.log(path, value)` covers every primitive overload
+  `putNumber`/`putString`/`putBoolean` had, and — confirmed by disassembling
+  `Telemetry.log(String, Object)` — a `TelemetryLoggable`-implementing widget
+  (checked: `Field2d` implements it) dispatches through `logTo(...)` the same
+  way `SmartDashboard.putData` used to, so `putData("Field", m_field)` became
+  `Telemetry.log("Field", m_field)` directly. **This is a mechanical,
+  code-only substitution to get Lessons 1–14 compiling — it is not the
+  pedagogical decision [Open decisions #1](#open-decisions-for-the-team)
+  asks for**, and that decision (rewrite Lesson 3 around `Telemetry` natively,
+  or revisit AdvantageKit) is still open, still Phase 2's job, and still
+  unresolved by this pass.
+- CAN device construction: `CANBus.systemcore(int)` is gone from CTRE's own
+  `CANBus` (checked directly against `wpiapi-java-26.70.0-alpha-2.jar` — this
+  turned out to be a Phoenix 6 class, not a WPILib HAL one). It gained a
+  `CANBus(org.wpilib.hardware.bus.CANPort)` constructor instead; the old
+  `.systemcore(0)` becomes `new CANBus(CANPort.CAN_S0)`. `TalonFX`/`CANcoder`/
+  `Pigeon2`'s own `(int, CANBus)` constructors are unchanged.
+- Gamepad face buttons: `southFace()`/`eastFace()`/`northFace()`/`westFace()`
+  renamed to `faceDown()`/`faceRight()`/`faceUp()`/`faceLeft()` on
+  `CommandGamepad` — confirmed the direction mapping directly via `javap`
+  rather than assuming the obvious compass-to-clock-position guess.
+- `RobotBase.startRobot` now takes a `Supplier<T>`, not a `Class<T>` — the
+  factory-loader revert the release notes named. `Main.java`'s
+  `RobotBase.startRobot(first.robot.Robot.class)` became
+  `RobotBase.startRobot(first.robot.Robot::new)`. This lives in
+  `code/OpModeV3Robot` itself, not a lesson snapshot — no lesson ever ships
+  its own `Main.java`.
+- `build.gradle`'s deploy-artifact wiring: confirmed against GradleRIO's own
+  `testing/java/build.gradle` fixture at the real `v2027.0.0-alpha-7` tag
+  (cloned locally rather than guessed) — `debugJni` moved onto the
+  `WPILibJavaArtifact` block itself, a new `wpi.java.runSimWithDebugJni`
+  covers what the old blanket `wpi.java.debugJni` did for simulation, the
+  `application` plugin replaces `com.gradleup.shadow` (deploy is a
+  multi-jar classpath now, not a fat jar), and
+  `deployArtifact.configureApplication(application)` /
+  `wpi.java.configureApplication(application)` replace
+  `deployArtifact.jarTask = shadowJar` / `wpi.java.configureExecutableTasks(shadowJar)`.
+  The project's own backup-copy-into-the-jar behavior moved from the deleted
+  `shadowJar {}` block onto a plain `jar {}` block, same contents.
+
+Every one of these was checked against the real alpha-7 artifacts (a shallow
+clone of `wpilibsuite/allwpilib` and `wpilibsuite/GradleRIO` at the
+`v2027.0.0-alpha-7` tag, plus `javap` on the jars Gradle itself downloaded
+into `~/.gradle/caches`) rather than inferred from the release notes or a
+team's already-migrated `build.gradle` found by search — two of those
+(`Drew-Robotics/2027beta`, `Hemlock5712/2027-Template`) were read for
+corroboration only, and the actual edits are sourced from GradleRIO's own
+`testing/java/build.gradle`, which is guaranteed in sync with the plugin
+version because GradleRIO's own test suite builds against it.
+
+`./tools/verify-lessons-v3.sh N` was then run for **every** `N` from 0
+through 14 individually (not just the Lesson-14 rollup), confirming every
+intermediate stopping point compiles — zero errors, zero warnings.
+
 **Phase 1b — Lessons 15–34, fires once Track B also clears (PhotonVision
 catches up too).** Same steps as 1a, extended: bump the `photonlib` entry
 in `VENDORDEPS` too, then run `./tools/verify-lessons-v3.sh` with no lesson
@@ -347,6 +433,7 @@ can go green while Track B is still red.
 | 2026-09-05 (automated, `NerdSwerveYAGSL2026/tools/check-alpha7-readiness.sh`) | `v2027.0.0-alpha-7` (unchanged, no alpha-8) | **`2027_alpha7` bucket now exists** — but it holds only `AdvantageKit-27.0.0-alpha-5.json`; no Phoenix 6 or `photonlib` entry has landed there yet | `26.50.0-alpha-1` (unchanged) — still 2 classes missing vs. alpha-7: `epilogue/logging/EpilogueBackend`, `epilogue/logging/NestedBackend` | `v2027.0.0-alpha-2` (unchanged) — still 7 classes missing vs. alpha-7: `driverstation/Alert`, `math/util/Pair`, `smartdashboard/SmartDashboard`, `util/sendable/Sendable`, `vision/apriltag/AprilTag`, `vision/apriltag/AprilTagFieldLayout`, `vision/apriltag/AprilTagFields` | **Blocked** — unchanged, still needs Phoenix 6 | **Blocked** — unchanged, still needs Phoenix 6 and PhotonVision |
 | 2026-09-12 (automated, `NerdSwerveYAGSL2026/tools/check-alpha7-readiness.sh`) | `v2027.0.0-alpha-7` (unchanged, no alpha-8) | `2027_alpha7` bucket gained an entry — **`REVLib-2027.0.0-alpha-7.json` now published there** (REVLib's native `libREVLibWpi.so` also resolves cleanly against alpha-7 now, clearing NerdSwerve's blocker — not this repo's gate, but the same bucket this row tracks). Still no Phoenix 6 or `photonlib` entry in `2027_alpha7` | `26.50.0-alpha-1` (unchanged) — still 2 classes missing vs. alpha-7: `epilogue/logging/EpilogueBackend`, `epilogue/logging/NestedBackend` | `v2027.0.0-alpha-2` (unchanged) — still 7 classes missing vs. alpha-7: `driverstation/Alert`, `math/util/Pair`, `smartdashboard/SmartDashboard`, `util/sendable/Sendable`, `vision/apriltag/AprilTag`, `vision/apriltag/AprilTagFieldLayout`, `vision/apriltag/AprilTagFields` | **Blocked** — unchanged, still needs Phoenix 6 | **Blocked** — unchanged, still needs Phoenix 6 and PhotonVision |
 | 2026-09-14 (automated, `NerdSwerveYAGSL2026/tools/check-alpha7-readiness.sh`) | `v2027.0.0-alpha-7` (unchanged, no alpha-8) | `2027_alpha7` bucket gained one more entry since the last check — **`ChoreoLib-2027.0.0-alpha-3.json`** — alongside the `AdvantageKit`/`REVLib` entries already there. REVLib's alpha-7 build is now confirmed clean on *both* the class-reference and native-ABI checks (this fully clears NerdSwerve's gate, not this repo's). Still no Phoenix 6 or `photonlib` entry in `2027_alpha7` | `26.50.0-alpha-1` (unchanged) — still 2 classes missing vs. alpha-7: `epilogue/logging/EpilogueBackend`, `epilogue/logging/NestedBackend` | `v2027.0.0-alpha-2` (unchanged) — still 7 classes missing vs. alpha-7: `driverstation/Alert`, `math/util/Pair`, `smartdashboard/SmartDashboard`, `util/sendable/Sendable`, `vision/apriltag/AprilTag`, `vision/apriltag/AprilTagFieldLayout`, `vision/apriltag/AprilTagFields` | **Blocked** — unchanged, still needs Phoenix 6 | **Blocked** — unchanged, still needs Phoenix 6 and PhotonVision |
+| 2026-09-18 (manual, this session — directly checked `vendor-json-repo`'s live directory listing and CTRE's own `SystemCoreTesting/main/CTR-Phoenix.md` compatibility doc, not just the automated script's cached view) | `v2027.0.0-alpha-7` (confirmed via the GitHub releases page — still nothing newer) | **`2027_alpha7` bucket now holds `Phoenix6-26.70.0-alpha-2.json` and `Phoenix6-replay-26.70.0-alpha-2.json`**, alongside `AdvantageKit`/`ChoreoLib`/`REVLib`. Still no `photonlib` entry | **`26.70.0-alpha-2`, and it's in the `2027_alpha7` bucket** — CTRE's own compatibility doc states this release is `2027_alpha7`-compatible | `v2027.0.0-alpha-2` (unchanged) — still not marketplace-pinned for alpha6/7 | **Ready → Phase 1a executed this session.** `code/OpModeV3Robot` and `tools/verify-lessons-v3.sh` now pin the alpha-7 bucket for Phoenix 6; Lessons 0–14 verified compiling with zero warnings at every intermediate stopping point. See [Phase 1a](#phased-plan) above for what broke and how it was fixed | **Still blocked** — unchanged, needs PhotonVision's own alpha6/7-pinned release |
 
 ## Monitoring
 
