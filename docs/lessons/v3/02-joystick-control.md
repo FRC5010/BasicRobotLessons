@@ -90,7 +90,7 @@ every tick.
 **Add to `DriveModule`, below `driveAtSpeed`:**
 
 ```java
-public class DriveModule extends Mechanism {
+public class DriveModule implements Mechanism {
   // ...field, constructor, and driveAtSpeed(...) stay as they are...
 
   /** Drives continuously using a live speed source (e.g. a joystick axis). */

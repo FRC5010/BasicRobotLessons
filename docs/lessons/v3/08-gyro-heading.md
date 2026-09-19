@@ -40,7 +40,7 @@ import first.robot.Constants.HeadingConstants;
 **Add to `Drivetrain`, below the modules array:**
 
 ```java
-private final Pigeon2 m_gyro = new Pigeon2(0, CANBus.systemcore(0)); // CAN ID 0 — change to yours
+private final Pigeon2 m_gyro = new Pigeon2(0, new CANBus(CANPort.CAN_S0)); // CAN ID 0 — change to yours
 
 // Remembered for the sim: what rotation rate did we just command?
 private double m_lastCommandedOmega = 0.0;
@@ -75,7 +75,7 @@ Finally, log it — the same two audiences as the module states from Lesson 7.
 **Add to `Drivetrain`'s `logTelemetry()`, alongside the module telemetry:**
 
 ```java
-SmartDashboard.putNumber("Drivetrain/HeadingDegrees", getHeadingDegrees());
+Telemetry.log("Drivetrain/HeadingDegrees", getHeadingDegrees());
 m_headingPublisher.set(Rotation2d.fromDegrees(getHeadingDegrees()));
 ```
 
@@ -270,8 +270,8 @@ The bottom and right face buttons are free again since Lesson 7's cleanup.
 
 ```java
 // Tap the bottom face button to turn and face 90°; the right face button for 0°.
-robot.driverController.southFace().onTrue(robot.drivetrain.turnToHeading(90));
-robot.driverController.eastFace().onTrue(robot.drivetrain.turnToHeading(0));
+robot.driverController.faceDown().onTrue(robot.drivetrain.turnToHeading(90));
+robot.driverController.faceRight().onTrue(robot.drivetrain.turnToHeading(0));
 ```
 
 Because `turnToHeading` requires the Drivetrain, pressing the bottom button
@@ -364,9 +364,10 @@ thing that's oscillating:
    step. Bind it to a button so "forward" is always relative to where you're
    pointed *now*.
 4. **Code — keep the CAN-ID habit going.** The gyro went in as a literal,
-   `new Pigeon2(0, CANBus.systemcore(0))`. Move that `0` into `DriveConstants`
-   as `kGyroPort` — right alongside the twelve motor/CANcoder ports from
-   Lesson 7 — and use `new Pigeon2(DriveConstants.kGyroPort, CANBus.systemcore(0))`.
+   `new Pigeon2(0, new CANBus(CANPort.CAN_S0))`. Move that `0` into
+   `DriveConstants` as `kGyroPort` — right alongside the twelve
+   motor/CANcoder ports from Lesson 7 — and use
+   `new Pigeon2(DriveConstants.kGyroPort, new CANBus(CANPort.CAN_S0))`.
    Every CAN ID your robot owns now lives in one place.
 
 ---

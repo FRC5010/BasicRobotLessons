@@ -101,7 +101,7 @@ import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.networktables.NetworkTableInstance;
 import org.wpilib.networktables.StructPublisher;
 import org.wpilib.smartdashboard.Field2d;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 
 public class Localizer {
   private final Drivetrain m_drivetrain;
@@ -128,7 +128,7 @@ public class Localizer {
     // The drivetrain is the odometry backbone — register it first.
     addProvider(drivetrain);
 
-    SmartDashboard.putData("Field", m_field); // the SimGUI field view from Lesson 11
+    Telemetry.log("Field", m_field); // the SimGUI field view from Lesson 11
     Scheduler.getDefault().addPeriodic(this::periodic);
   }
 
@@ -201,7 +201,7 @@ expose it and answer the `PoseProvider` call. `SwerveDriveKinematics` and
 ```java
 import org.wpilib.math.estimator.SwerveDrivePoseEstimator;
 
-public class Drivetrain extends Mechanism implements PoseProvider {
+public class Drivetrain implements Mechanism, PoseProvider {
 ```
 
 **Delete** the pose machinery that used to live here — the `m_odometry`

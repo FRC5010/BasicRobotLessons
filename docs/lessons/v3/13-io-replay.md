@@ -131,6 +131,8 @@ import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 
+import org.wpilib.hardware.bus.CANPort;
+
 import first.robot.Constants.DriveConstants;
 import first.robot.Constants.SteerConstants;
 
@@ -142,9 +144,9 @@ public class ModuleIOTalonFX implements ModuleIO {
   private final VelocityVoltage m_driveRequest = new VelocityVoltage(0);
 
   public ModuleIOTalonFX(int driveId, int steerId, int cancoderId, double magnetOffsetRotations) {
-    m_driveMotor = new TalonFX(driveId, CANBus.systemcore(0));
-    m_steerMotor = new TalonFX(steerId, CANBus.systemcore(0));
-    m_steerEncoder = new CANcoder(cancoderId, CANBus.systemcore(0));
+    m_driveMotor = new TalonFX(driveId, new CANBus(CANPort.CAN_S0));
+    m_steerMotor = new TalonFX(steerId, new CANBus(CANPort.CAN_S0));
+    m_steerEncoder = new CANcoder(cancoderId, new CANBus(CANPort.CAN_S0));
 
     CANcoderConfiguration cancoderConfig = new CANcoderConfiguration();
     cancoderConfig.MagnetSensor.MagnetOffset = magnetOffsetRotations;
@@ -343,7 +345,7 @@ import org.wpilib.math.geometry.Rotation2d;
 import org.wpilib.math.geometry.Translation2d;
 import org.wpilib.math.kinematics.SwerveModulePosition;
 import org.wpilib.math.kinematics.SwerveModuleVelocity;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 
 /**
  * One swerve corner. No hardware of its own anymore — it owns an IO (whichever
@@ -366,9 +368,9 @@ public class SwerveModule {
   /** One tick of sensing: read the hardware into the bundle and log it. */
   public void periodic() {
     m_io.updateInputs(m_inputs);
-    SmartDashboard.putNumber(m_logKey + "/SteerAngleDegrees", m_inputs.steerAngleDegrees);
-    SmartDashboard.putNumber(m_logKey + "/DrivePositionMeters", m_inputs.drivePositionMeters);
-    SmartDashboard.putNumber(m_logKey + "/DriveVelocityMetersPerSec", m_inputs.driveVelocityMetersPerSec);
+    Telemetry.log(m_logKey + "/SteerAngleDegrees", m_inputs.steerAngleDegrees);
+    Telemetry.log(m_logKey + "/DrivePositionMeters", m_inputs.drivePositionMeters);
+    Telemetry.log(m_logKey + "/DriveVelocityMetersPerSec", m_inputs.driveVelocityMetersPerSec);
   }
 
   /** One tick of control: hand the IO its targets. Called by a command each tick. */
@@ -534,8 +536,10 @@ import static org.wpilib.units.Units.Degrees;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.hardware.Pigeon2;
 
+import org.wpilib.hardware.bus.CANPort;
+
 public class GyroIOPigeon2 implements GyroIO {
-  private final Pigeon2 m_gyro = new Pigeon2(0, CANBus.systemcore(0)); // CAN ID 0 — change to yours
+  private final Pigeon2 m_gyro = new Pigeon2(0, new CANBus(CANPort.CAN_S0)); // CAN ID 0 — change to yours
 
   @Override
   public void updateInputs(GyroIOInputs inputs) {
@@ -616,7 +620,7 @@ own read a line above:**
 ```java
   private void logTelemetry() {
     m_gyroIO.updateInputs(m_gyroInputs);
-    SmartDashboard.putNumber("Drivetrain/Gyro/YawDegrees", m_gyroInputs.yawDegrees);
+    Telemetry.log("Drivetrain/Gyro/YawDegrees", m_gyroInputs.yawDegrees);
 
     SwerveModuleVelocity[] states = new SwerveModuleVelocity[4];
     int index = 0;

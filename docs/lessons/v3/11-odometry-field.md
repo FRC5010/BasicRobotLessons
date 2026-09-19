@@ -192,11 +192,12 @@ Driving in the sim officially looks like a game. Take a lap.
 
 AdvantageScope is the full-featured viewer, but sometimes you just want the
 field right inside the sim window — no second tool. WPILib's **`Field2d`**
-is a dashboard *widget* that does exactly that. It's the one place this
-course touches the `SmartDashboard` class directly, and the distinction
-matters: `putData` publishes a **widget** (a thing dashboards know how to
-draw), which is a different job from the per-value `putNumber` spam we
-swore off in Lesson 3.
+is a dashboard *widget* that does exactly that. Logging it is still a plain
+`Telemetry.log(...)` call, same as every number you've logged since
+Lesson 3 — but notice what you're handing it this time: not a number, a
+whole **widget** object, a thing dashboards know how to draw rather than
+just plot. `Telemetry.log` tells the two apart automatically from what you
+pass in.
 
 **Add to `Drivetrain.java`'s imports:**
 
@@ -214,7 +215,7 @@ private final Field2d m_field = new Field2d();
 
 ```java
 public Drivetrain() {
-  SmartDashboard.putData("Field", m_field);
+  Telemetry.log("Field", m_field);
   Scheduler.getDefault().addPeriodic(this::logTelemetry);
 }
 ```
@@ -225,7 +226,7 @@ public Drivetrain() {
 m_field.setRobotPose(pose);
 ```
 
-Now in **SimGUI**: menu **NetworkTables → SmartDashboard → Field**, and a
+Now in **SimGUI**: menu **NetworkTables → Telemetry → Field**, and a
 top-down field pane opens right in the sim window, robot moving as you
 drive. Same pose, two viewers: `Field2d` for the quick glance while sim is
 already open, the logged `Pose2d` for AdvantageScope's field images,

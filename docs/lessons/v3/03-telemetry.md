@@ -13,7 +13,7 @@
 
 **New robot concepts**
 - The TalonFX **integrated encoder** (position & velocity for free)
-- **Logging** with `SmartDashboard` — every interesting value, recorded
+- **Logging** with `Telemetry` — every interesting value, recorded
   under an organized name
 - **Plotting** in **AdvantageScope**
 - **Units:** rotations and rotations-per-second
@@ -81,8 +81,8 @@ the heavy lifting.
 
 Now the plumbing problem: your code runs on the robot, and you're looking
 at a laptop. The numbers need a way off the robot and onto a screen.
-WPILib's answer is a class called `SmartDashboard` — sprinkle
-`SmartDashboard.putNumber("some name", value)` anywhere and the value shows
+WPILib's answer is a class called `Telemetry` — sprinkle
+`Telemetry.log("some name", value)` anywhere and the value shows
 up on a dashboard, live.
 
 This course holds a standard from day one: **the name is the address.**
@@ -95,7 +95,7 @@ guess what a number means later.
 
 ## 3. Start the flight recorder
 
-`SmartDashboard`'s values are live — visible while the robot runs,
+`Telemetry`'s values are live — visible while the robot runs,
 gone the moment it stops, unless something is also saving them. WPILib's
 `DataLogManager` does exactly that: start it once, and every value
 published anywhere gets mirrored into a `.wpilog` file automatically.
@@ -155,8 +155,8 @@ private void logTelemetry() {
   double rotations = m_driveMotor.getPosition().getValue().in(Rotations);
   double rps = m_driveMotor.getVelocity().getValue().in(RotationsPerSecond);
 
-  SmartDashboard.putNumber("DriveModule/PositionRotations", rotations);
-  SmartDashboard.putNumber("DriveModule/VelocityRotPerSec", rps);
+  Telemetry.log("DriveModule/PositionRotations", rotations);
+  Telemetry.log("DriveModule/VelocityRotPerSec", rps);
 }
 ```
 
@@ -164,7 +164,7 @@ private void logTelemetry() {
 
 ```java
 import org.wpilib.command3.Scheduler;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 ```
 
 Look at the names. The slash isn't decoration — it builds a folder tree,
@@ -196,7 +196,7 @@ Tool** → **AdvantageScope**. In AdvantageScope:
 1. **File → Connect to Simulator** (on a real robot it's "Connect to
    Robot" with team number e.g. 5010). Also choose the default NetworkTables
    4.
-2. In the sidebar, expand **NetworkTables → SmartDashboard → DriveModule**
+2. In the sidebar, expand **NetworkTables → Telemetry → DriveModule**
    — there's your folder tree, with both values ticking.
 3. Drag `VelocityRotPerSec` onto the **📈 Line Graph** tab. A live plot
    appears.
@@ -279,7 +279,7 @@ in section 4, just pointing at a different method below.
 ```java
 private void logCommandStart(SchedulerEvent event) {
   if (event instanceof SchedulerEvent.Scheduled scheduled && scheduled.command().requires(module)) {
-    SmartDashboard.putString("DriveModule/CurrentCommand", scheduled.command().name());
+    Telemetry.log("DriveModule/CurrentCommand", scheduled.command().name());
   }
 }
 ```
@@ -300,7 +300,7 @@ the line once the check on the left has already passed.
 is about actually belongs to your module — the same event stream fires for
 every mechanism on the robot, so without that check you'd catch events for
 mechanisms you don't even have yet. `module` works as the argument here
-for the same reason it always has: `DriveModule extends Mechanism`.
+for the same reason it always has: `DriveModule implements Mechanism`.
 
 **Edit `Robot`'s `robotPeriodic()`, dropping the call to the old method:**
 
@@ -342,7 +342,7 @@ matter how briefly "happens" lasts.
 ## Try it
 
 1. **Code — log the commanded speed too.** Inside `driveWithJoystick`'s loop
-   body, add `SmartDashboard.putNumber("DriveModule/CommandedOutput",
+   body, add `Telemetry.log("DriveModule/CommandedOutput",
    speed);`. This is a refinement to the always-running rule: a value that
    only exists inside a command — like the command's own output — gets
    logged right where it's computed. On a real robot, overlaying
@@ -376,7 +376,7 @@ ad-hoc numbers around the
 code, you set up real, organized **logging**: `DataLogManager.start()`
 turns the flight recorder on once in `Robot.java`, a mechanism registers a
 steady periodic callback with the scheduler using a **method reference**,
-and every value flows through `SmartDashboard.putNumber("Mechanism/Name",
+and every value flows through `Telemetry.log("Mechanism/Name",
 value)` from there. That naming discipline feels like overkill for two
 values — it stops being overkill around value twenty, and you'll get there
 sooner than you think. You also traded a poll for a listener: Lesson 1's

@@ -230,7 +230,7 @@ import first.robot.commands.Autos;
 ```
 
 **`RobotModeTriggers.autonomous()`** is a `Trigger` — the same kind of thing
-`robot.driverController.southFace()` gives you — except its condition isn't a
+`robot.driverController.faceDown()` gives you — except its condition isn't a
 button, it's "is the Driver Station currently in Autonomous, and enabled."
 `.onTrue(...)` schedules `driveTurnDrive` the instant that becomes true,
 exactly once per enable, the same `onTrue` you've used since Lesson 5.

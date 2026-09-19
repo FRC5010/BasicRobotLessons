@@ -57,7 +57,7 @@ needs each module's position.
 name → **Refactor → Rename**, which updates the filename and every reference in
 the project for you. Then change two things about it:
 
-1. **Drop `extends Mechanism`.** A single wheel isn't what the scheduler
+1. **Drop `implements Mechanism`.** A single wheel isn't what the scheduler
    needs to lock — the *whole chassis* is. From now on, the only mechanism for
    driving is `Drivetrain`; each `SwerveModule` is a plain helper it owns.
 2. **Parameterize the constructor** so the corner and its CAN IDs come in from
@@ -82,9 +82,9 @@ public class SwerveModule {
       int driveId, int steerId, int cancoderId, double magnetOffsetRotations,
       Translation2d location) {
     this.location  = location;
-    m_driveMotor   = new TalonFX(driveId, CANBus.systemcore(0));
-    m_steerMotor   = new TalonFX(steerId, CANBus.systemcore(0));
-    m_steerEncoder = new CANcoder(cancoderId, CANBus.systemcore(0));
+    m_driveMotor   = new TalonFX(driveId, new CANBus(CANPort.CAN_S0));
+    m_steerMotor   = new TalonFX(steerId, new CANBus(CANPort.CAN_S0));
+    m_steerEncoder = new CANcoder(cancoderId, new CANBus(CANPort.CAN_S0));
     m_driveSim     = m_driveMotor.getSimState();
     m_steerSim     = m_steerMotor.getSimState();
 
@@ -314,11 +314,11 @@ import org.wpilib.math.geometry.Rotation2d;
 import org.wpilib.math.kinematics.SwerveModuleVelocity;
 import org.wpilib.networktables.NetworkTableInstance;
 import org.wpilib.networktables.StructArrayPublisher;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 
 import first.robot.Constants.DriveConstants;
 
-public class Drivetrain extends Mechanism {
+public class Drivetrain implements Mechanism {
   // Corner order: FL, FR, BL, BR. Pick a convention and stick to it.
   private final SwerveModule[] m_modules = new SwerveModule[] {
       new SwerveModule(1, 2, 9, 0.0, DriveConstants.kFrontLeft),   // CAN IDs, offset — change to yours
@@ -342,7 +342,7 @@ public class Drivetrain extends Mechanism {
     SwerveModuleVelocity[] states = new SwerveModuleVelocity[4];
     int index = 0;
     for (SwerveModule module : m_modules) {
-      SmartDashboard.putNumber("Drivetrain/Module" + index + "/SteerAngleDegrees",
+      Telemetry.log("Drivetrain/Module" + index + "/SteerAngleDegrees",
           module.getSteerAngleDegrees());
       states[index] = new SwerveModuleVelocity(
           module.getDriveVelocityMetersPerSec(),
@@ -379,15 +379,15 @@ the text). Keys `Module0`–`Module3` follow the FL, FR, BL, BR order of the
 array.
 
 Now the new machinery. Every value you've logged since Lesson 3 has been a
-single number or string — `SmartDashboard.putNumber`/`putString`, one call,
-one value. **`SwerveModuleVelocity`** is different: a WPILib data-carrier
-bundling one wheel's speed (in m/s — which is why you wrote
+single number, logged one at a time with `Telemetry.log(name, value)`.
+**`SwerveModuleVelocity`** is different: a WPILib data-carrier bundling one
+wheel's speed (in m/s — which is why you wrote
 `getDriveVelocityMetersPerSec`) with its angle as a **`Rotation2d`**,
-WPILib's angle type (`Rotation2d.fromDegrees(...)` builds one). `SmartDashboard`
-has no `putSwerveModuleVelocity` — it only knows numbers, strings, and a
-couple of array flavors — so a whole *object*, and an array of four of them,
-needs a different kind of bridge, the same idea as the `TalonFXSimState`
-bridge from Lesson 4, just for network data instead of fake sensor readings.
+WPILib's angle type (`Rotation2d.fromDegrees(...)` builds one). Publishing
+four of these together, every tick, as one array under one topic, is a job
+for a dedicated NT topic built once and reused — the same idea as the
+`TalonFXSimState` bridge from Lesson 4, just for network data instead of
+fake sensor readings.
 
 **`NetworkTableInstance.getDefault().getStructArrayTopic(name, structType)`**
 describes that bridge: "a topic at this name, carrying an array of this
@@ -548,7 +548,7 @@ course adds from here on would mean coming back to this method again. The
 private void logCommandStart(SchedulerEvent event) {
   if (event instanceof SchedulerEvent.Scheduled scheduled) {
     for (Mechanism mechanism : scheduled.command().requirements()) {
-      SmartDashboard.putString(mechanism.getName() + "/CurrentCommand", scheduled.command().name());
+      Telemetry.log(mechanism.getName() + "/CurrentCommand", scheduled.command().name());
     }
   }
 }

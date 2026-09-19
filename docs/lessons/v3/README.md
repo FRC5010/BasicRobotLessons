@@ -20,7 +20,7 @@ status of every lesson, including what changed and why.
 | 0 | [Orientation](00-orientation.md) | Run the template, print a message | Classes, packages, methods, annotations |
 | 1 | [Your first motor](01-first-motor.md) | Spin a drive motor with a button | Objects, fields, constructors, `import` |
 | 2 | [Joystick control](02-joystick-control.md) | Drive the motor with a joystick | Parameters, return values, lambdas, suppliers |
-| 3 | [Telemetry](03-telemetry.md) | Plot position & velocity live | Return values, `instanceof` pattern matching, `SmartDashboard`/`DataLogManager` logging |
+| 3 | [Telemetry](03-telemetry.md) | Plot position & velocity live | Return values, `instanceof` pattern matching, `Telemetry`/`DataLogManager` logging |
 | 4 | [Simulation](04-simulation.md) | Make it move on your laptop | `simulationPeriodic()`, physics models, composition |
 | 5 | [Steering with P control](05-steering-p-control.md) | Point the module to an angle, primed from a CANcoder at boot | `if`/`else`, arithmetic, error, setpoints |
 | 6 | [Distance & commands](06-distance-and-commands.md) | Drive an exact distance | Unit conversion, coroutine bodies that run out, finished vs. canceled |

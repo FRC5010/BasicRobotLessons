@@ -52,11 +52,11 @@ arrived in Lesson 4.
 **Add to `DriveModule`, below the drive motor's fields:**
 
 ```java
-public class DriveModule extends Mechanism {
+public class DriveModule implements Mechanism {
   // ...the drive motor and its sim fields from Lessons 1 and 4 stay put...
 
   private final TalonFX m_steerMotor =
-      new TalonFX(Constants.DriveConstants.kSteerMotorPort, CANBus.systemcore(0)); // CAN ID 2
+      new TalonFX(Constants.DriveConstants.kSteerMotorPort, new CANBus(CANPort.CAN_S0)); // CAN ID 2
 
   // Sim plumbing for the steering motor (same pattern as the drive motor).
   private final TalonFXSimState m_steerSim = m_steerMotor.getSimState();
@@ -175,7 +175,7 @@ import com.ctre.phoenix6.hardware.CANcoder;
 
 ```java
 private final CANcoder m_steerEncoder =
-    new CANcoder(Constants.DriveConstants.kCancoderPort, CANBus.systemcore(0)); // CAN ID 3
+    new CANcoder(Constants.DriveConstants.kCancoderPort, new CANBus(CANPort.CAN_S0)); // CAN ID 3
 ```
 
 Same shape as the motors: a `CANcoder` needs a CAN ID *and* a bus, just like
@@ -350,9 +350,9 @@ public MyTeleop(Robot robot) {
   // ...the drive bindings from earlier lessons stay...
 
   // Tap the left face button to steer to 90° and hold it there.
-  robot.driverController.westFace().onTrue(robot.module.steerToAngle(90));
+  robot.driverController.faceLeft().onTrue(robot.module.steerToAngle(90));
   // Tap the top face button to steer back to 0° and hold it there.
-  robot.driverController.northFace().onTrue(robot.module.steerToAngle(0));
+  robot.driverController.faceUp().onTrue(robot.module.steerToAngle(0));
 }
 ```
 
@@ -360,8 +360,8 @@ New word: **`onTrue`**, where Lesson 1 used `whileTrue`. `whileTrue` runs a
 command while you hold the button; `onTrue` schedules it once when the button
 is *pressed* and then walks away. Since `steerToAngle` is built on
 `runRepeatedly(...)`, it never finishes on its own — so a single tap of the
-west button sends the module to 90° *and holds it there*, no need to keep the
-button down. Tap the north button and the scheduler swaps commands: one
+left button sends the module to 90° *and holds it there*, no need to keep the
+button down. Tap the top button and the scheduler swaps commands: one
 command per mechanism, so scheduling the go-to-0 command cancels the
 go-to-90 one (firing its `whenCanceled` cleanup on the way out).
 
@@ -381,12 +381,12 @@ drive readings have been logging since Lesson 3.
 private void logTelemetry() {
   // ...the drive position and velocity logs from Lesson 3 stay...
 
-  SmartDashboard.putNumber("DriveModule/SteerAngleDegrees", getSteerAngleDegrees());
+  Telemetry.log("DriveModule/SteerAngleDegrees", getSteerAngleDegrees());
 }
 ```
 
 Run in sim, plot `DriveModule/SteerAngleDegrees` in AdvantageScope, and tap
-the west button:
+the left button:
 
 - **`kP` too small:** it crawls to 90° and takes forever (or never gets there).
 - **`kP` too big:** it overshoots and oscillates back and forth around 90°.
@@ -417,7 +417,7 @@ short path. Try writing that in the challenge; it's a great `if` exercise.
    Test the 350°→0° case again. It should now move +10°. (This is your first
    `while` loop — it repeats until the condition is false.)
 2. **Code — log the error.** Add
-   `SmartDashboard.putNumber("DriveModule/SteerErrorDegrees", error);` right
+   `Telemetry.log("DriveModule/SteerErrorDegrees", error);` right
    after `error` is computed — a value that only exists inside a command gets
    logged where it's computed, Lesson 3's refinement. Plot it and watch it
    decay toward zero. That curve is the signature of P control working.
