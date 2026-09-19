@@ -403,14 +403,57 @@ Two items above aren't mechanical renames and need an actual decision once
 the real API is in hand — flagging now so Phase 2 doesn't stall on them
 later:
 
-1. **`SmartDashboard` → Telemetry/Tunables.** If the old API is truly gone,
-   does Lesson 3 get rewritten around the new API (and every downstream
-   lesson's `putNumber` calls with it), or does the course pull in
-   AdvantageKit at that point instead (revisiting the 2026-08-10 decision
-   recorded in `docs/lesson-plan-v3-0-3.md`, conditional on AdvantageKit
-   having picked up `OpModeRobot` support by then)? Worth checking
-   AdvantageKit's status again when this comes up — the original blocker
-   may have moved.
+1. **`SmartDashboard` → Telemetry/Tunables — resolved, 2026-09-18.**
+   `SmartDashboard` is gone; `org.wpilib.telemetry.Telemetry` is its
+   replacement and Phase 1a already ported every lesson's `putNumber`/
+   `putString`/`putData` call to `Telemetry.log(...)` as a mechanical,
+   code-only substitution (see [Phase 1a](#phased-plan)). The team decision
+   this item asked for is: **`Telemetry` is the v3 track's lasting idiom for
+   Lessons 3–12, not a stopgap** — Lesson 3's prose should be written around
+   it natively, the same way classic Lesson 3 is written around
+   AdvantageKit natively, not as "SmartDashboard, but renamed."
+
+   **AdvantageKit does not replace it at Lesson 3, and can't yet at any
+   lesson.** Checked directly against AdvantageKit's own compatibility doc
+   (`wpilibsuite/SystemCoreTesting/AdvantageKit.md`, current release
+   `v27.0.0-alpha-5`, itself alpha-7-compatible): its Known Issues section
+   states plainly, "**OpModeRobot is not supported** ... An equivalent for
+   WPILib's `OpModeRobot` will be available in a future release." This is
+   an architectural gap, not a missing flag — AdvantageKit's replay hook is
+   `LoggedRobot extends TimedRobot`, overriding the main loop itself so
+   replay mode can drive ticks from a recorded log instead of a real clock.
+   Every v3 lesson from Lesson 0 has `Robot extends OpModeRobot`. The two
+   are mutually exclusive today; there is no partial "logging-only" path
+   confirmed against AdvantageKit's own docs (a secondhand mention of one
+   turned up in search but could not be verified against a primary source,
+   so it isn't being relied on here).
+
+   **Lesson 13 is the right target for a future switch, and not just
+   because that's where the classic course does it.** Lessons 1–12 have
+   subsystems talking to hardware directly — there's no `ModuleIO`/`GyroIO`
+   seam yet for anything to be replayed *through*. AdvantageKit's actual
+   value over `Telemetry` is that `Logger.processInputs` is bidirectional
+   (write live, read back in replay); introducing it before that IO
+   boundary exists would only buy the output-logging half, which
+   `Telemetry` already does natively (`RobotBase`'s own constructor
+   registers a `NetworkTablesTelemetryBackend` automatically — confirmed by
+   disassembling it — so there's no setup lesson needed either). So Lesson
+   13 (introducing `ModuleIO`/`GyroIO` and a `Constants.Mode` switch, same
+   as the classic track) is where a future AdvantageKit conversion belongs
+   *if and when* `OpModeRobot` support ships — tracked as future work, not
+   scheduled.
+
+   **Lesson 7's AdvantageScope-compatible swerve-state publisher is
+   unaffected either way** — checked directly, it's a raw
+   `NetworkTableInstance.getStructArrayTopic(...)` / `StructArrayPublisher`,
+   going through neither `Telemetry` nor AdvantageKit. AdvantageScope reads
+   NT struct topics by shape, not by which logging framework published
+   them, so nothing about it needs to change now or at a future Lesson 13
+   conversion.
+
+   Worth re-checking AdvantageKit's `OpModeRobot` status again whenever a
+   future alpha-7 (or later) vendor-tracking check runs — the original
+   blocker may move the same way Phoenix 6's did.
 2. **Default gamepad deadband.** Does Lesson 2 keep teaching a hand-rolled
    `applyDeadband` as foundational technique (framed as "here's what the
    default now does for you, and here's how it works"), or does the lesson
