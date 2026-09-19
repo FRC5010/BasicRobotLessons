@@ -76,31 +76,16 @@ Finally, log it — the same two audiences as the module states from Lesson 7.
 
 ```java
 Telemetry.log("Drivetrain/HeadingDegrees", getHeadingDegrees());
-m_headingPublisher.set(Rotation2d.fromDegrees(getHeadingDegrees()));
-```
-
-**Add the publisher as a field, next to `m_moduleStatesPublisher`:**
-
-```java
-private final StructPublisher<Rotation2d> m_headingPublisher =
-    NetworkTableInstance.getDefault()
-        .getStructTopic("Drivetrain/Heading", Rotation2d.struct)
-        .publish();
-```
-
-**Add to `Drivetrain`'s imports:**
-
-```java
-import org.wpilib.networktables.StructPublisher;
+Telemetry.log("Drivetrain/Heading", Rotation2d.fromDegrees(getHeadingDegrees()), Rotation2d.struct);
 ```
 
 The plain number is for line graphs. The `Rotation2d` version is the
 structured value AdvantageScope's Swerve tab wants in its **Rotation**
 slot — same fact, packaged for a tool that draws instead of plots.
-`StructPublisher` is `StructArrayPublisher`'s singular sibling from Lesson
-7's `getStructArrayTopic` — same bridge idea, one value instead of an array,
-so it's `getStructTopic` and `.set(value)` instead of `.set(array)`.
-(`Rotation2d` and `NetworkTableInstance` are already imported from Lesson 7.)
+`Telemetry.log` has a single-value overload for exactly this, the same idea
+as the module-states array from Lesson 7: hand it the value plus
+**`Rotation2d.struct`**, and it publishes the structured type instead of a
+bare number. (`Rotation2d` is already imported from Lesson 7.)
 
 ---
 

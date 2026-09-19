@@ -7,8 +7,6 @@ import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.math.geometry.Rotation2d;
 import org.wpilib.math.kinematics.SwerveModuleVelocity;
-import org.wpilib.networktables.NetworkTableInstance;
-import org.wpilib.networktables.StructArrayPublisher;
 import org.wpilib.telemetry.Telemetry;
 
 import first.robot.Constants.DriveConstants;
@@ -29,13 +27,6 @@ public class Drivetrain implements Mechanism {
           DriveConstants.kBackRightCancoderPort, DriveConstants.kBackRightMagnetOffset,
           DriveConstants.kBackRight)
   };
-
-  // A structured topic: publishes a whole SwerveModuleVelocity[] at once, so
-  // AdvantageScope's Swerve tab can draw it, not just plot four numbers.
-  private final StructArrayPublisher<SwerveModuleVelocity> m_moduleStatesPublisher =
-      NetworkTableInstance.getDefault()
-          .getStructArrayTopic("Drivetrain/ModuleStates", SwerveModuleVelocity.struct)
-          .publish();
 
   public Drivetrain() {
     Scheduler.getDefault().addPeriodic(this::logTelemetry);
@@ -78,7 +69,7 @@ public class Drivetrain implements Mechanism {
           Rotation2d.fromDegrees(module.getSteerAngleDegrees()));
       index++;
     }
-    m_moduleStatesPublisher.set(states);
+    Telemetry.log("Drivetrain/ModuleStates", states, SwerveModuleVelocity.struct);
   }
 
   /** Advances every module's physics model. Only ever called in simulation. */

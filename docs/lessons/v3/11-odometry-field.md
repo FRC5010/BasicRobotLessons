@@ -156,22 +156,13 @@ here.
 ## 4. Draw the robot: log the pose
 
 Here's where the logging discipline you've kept since Lesson 3 pays off in
-full. Drawing the robot on a field takes exactly one more publisher, the
-same shape as every structured value since Lesson 7.
-
-**Add to `Drivetrain`, alongside the other structured-telemetry publishers:**
-
-```java
-private final StructPublisher<Pose2d> m_posePublisher =
-    NetworkTableInstance.getDefault()
-        .getStructTopic("Drivetrain/Pose", Pose2d.struct)
-        .publish();
-```
+full. Drawing the robot on a field takes exactly one more `Telemetry.log`
+call, the same struct-value shape as the heading in Lesson 8.
 
 **Add to `Drivetrain.logTelemetry()`, right after the odometry update:**
 
 ```java
-m_posePublisher.set(pose);
+Telemetry.log("Drivetrain/Pose", pose, Pose2d.struct);
 ```
 
 `Pose2d` is a structured value, like the module states from Lesson 7 — and

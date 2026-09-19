@@ -631,7 +631,7 @@ own read a line above:**
           Rotation2d.fromDegrees(module.getSteerAngleDegrees()));
       index++;
     }
-    m_moduleStatesPublisher.set(states);
+    Telemetry.log("Drivetrain/ModuleStates", states, SwerveModuleVelocity.struct);
 
     // ...Heading/Pose publishing, odometry update, Field2d — unchanged...
   }

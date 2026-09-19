@@ -214,16 +214,8 @@ command). So those four steps become one private helper, and everything else
 becomes a thin caller.
 
 The helper is about to publish the chassis's *desired* states, right next to
-Lesson 7's *measured* ones, so it needs a second publisher first.
-
-**Add to `Drivetrain`, alongside `m_moduleStatesPublisher`:**
-
-```java
-private final StructArrayPublisher<SwerveModuleVelocity> m_desiredModuleStatesPublisher =
-    NetworkTableInstance.getDefault()
-        .getStructArrayTopic("Drivetrain/DesiredModuleStates", SwerveModuleVelocity.struct)
-        .publish();
-```
+Lesson 7's *measured* ones — the same `Telemetry.log` struct-array overload,
+one more call, no new field.
 
 **Add to `Drivetrain`:**
 
@@ -244,7 +236,7 @@ private void applyChassisSpeeds(ChassisVelocities speeds) {
     m_modules[i].setDesiredState(states[i]);
   }
 
-  m_desiredModuleStatesPublisher.set(states);
+  Telemetry.log("Drivetrain/DesiredModuleStates", states, SwerveModuleVelocity.struct);
 }
 
 /** Drive with full swerve freedom: translate and rotate at once. */
@@ -315,9 +307,9 @@ concepts list, and it's why: an enhanced `for` walks *one* array, but here
 takes an index. The **`m_lastCommandedOmega`** line keeps Lesson 8's fake
 gyro fed — the units quietly upgraded from "fraction of full turn power" to
 "revolutions per second," same idea, cleaner physics. And the final
-`m_desiredModuleStatesPublisher.set(states)` publishes the *desired* states
-right next to Lesson 7's measured ones — section 6 shows why that pair is
-gold.
+`Telemetry.log("Drivetrain/DesiredModuleStates", ...)` publishes the
+*desired* states right next to Lesson 7's measured ones — section 6 shows
+why that pair is gold.
 
 ---
 

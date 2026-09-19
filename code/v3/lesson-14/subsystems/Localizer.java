@@ -6,8 +6,6 @@ import java.util.List;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.math.estimator.SwerveDrivePoseEstimator;
 import org.wpilib.math.geometry.Pose2d;
-import org.wpilib.networktables.NetworkTableInstance;
-import org.wpilib.networktables.StructPublisher;
 import org.wpilib.smartdashboard.Field2d;
 import org.wpilib.telemetry.Telemetry;
 
@@ -22,11 +20,6 @@ public class Localizer {
   private final SwerveDrivePoseEstimator m_estimator;
   private final List<PoseProvider> m_providers = new ArrayList<>();
   private final Field2d m_field = new Field2d();
-
-  private final StructPublisher<Pose2d> m_posePublisher =
-      NetworkTableInstance.getDefault()
-          .getStructTopic("Localizer/Pose", Pose2d.struct)
-          .publish();
 
   public Localizer(Drivetrain drivetrain) {
     m_drivetrain = drivetrain;
@@ -55,7 +48,7 @@ public class Localizer {
     for (PoseProvider provider : m_providers) {
       provider.updatePoseEstimate(m_estimator);
     }
-    m_posePublisher.set(getPose());
+    Telemetry.log("Localizer/Pose", getPose(), Pose2d.struct);
     m_field.setRobotPose(getPose());
   }
 

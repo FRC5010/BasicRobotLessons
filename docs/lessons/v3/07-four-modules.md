@@ -312,8 +312,6 @@ import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.math.geometry.Rotation2d;
 import org.wpilib.math.kinematics.SwerveModuleVelocity;
-import org.wpilib.networktables.NetworkTableInstance;
-import org.wpilib.networktables.StructArrayPublisher;
 import org.wpilib.telemetry.Telemetry;
 
 import first.robot.Constants.DriveConstants;
@@ -326,13 +324,6 @@ public class Drivetrain implements Mechanism {
       new SwerveModule(5, 6, 11, 0.0, DriveConstants.kBackLeft),
       new SwerveModule(7, 8, 12, 0.0, DriveConstants.kBackRight)
   };
-
-  // A structured topic: publishes a whole SwerveModuleVelocity[] at once, so
-  // AdvantageScope's Swerve tab can draw it, not just plot four numbers.
-  private final StructArrayPublisher<SwerveModuleVelocity> m_moduleStatesPublisher =
-      NetworkTableInstance.getDefault()
-          .getStructArrayTopic("Drivetrain/ModuleStates", SwerveModuleVelocity.struct)
-          .publish();
 
   public Drivetrain() {
     Scheduler.getDefault().addPeriodic(this::logTelemetry);
@@ -349,7 +340,7 @@ public class Drivetrain implements Mechanism {
           Rotation2d.fromDegrees(module.getSteerAngleDegrees()));
       index++;
     }
-    m_moduleStatesPublisher.set(states);
+    Telemetry.log("Drivetrain/ModuleStates", states, SwerveModuleVelocity.struct);
   }
 
   /** Advances every module's physics model. Only ever called in simulation. */
@@ -383,22 +374,13 @@ single number, logged one at a time with `Telemetry.log(name, value)`.
 **`SwerveModuleVelocity`** is different: a WPILib data-carrier bundling one
 wheel's speed (in m/s — which is why you wrote
 `getDriveVelocityMetersPerSec`) with its angle as a **`Rotation2d`**,
-WPILib's angle type (`Rotation2d.fromDegrees(...)` builds one). Publishing
-four of these together, every tick, as one array under one topic, is a job
-for a dedicated NT topic built once and reused — the same idea as the
-`TalonFXSimState` bridge from Lesson 4, just for network data instead of
-fake sensor readings.
-
-**`NetworkTableInstance.getDefault().getStructArrayTopic(name, structType)`**
-describes that bridge: "a topic at this name, carrying an array of this
-struct-shaped type." `SwerveModuleVelocity.struct` is a value the class ships
-for exactly this — it knows how to turn a `SwerveModuleVelocity` into bytes
-and back. `.publish()` claims the topic for writing and hands back a
-**`StructArrayPublisher`** — built once, as a field, the same "set it up
-once, use it every tick" shape as the sim bridge. From there, `.set(states)`
-pushes a fresh array every time `logTelemetry()` runs — one call publishes
-all four modules' speed and angle together, instead of four separate numbers
-that AdvantageScope would have no way to know belong to the same picture.
+WPILib's angle type (`Rotation2d.fromDegrees(...)` builds one).
+`Telemetry.log` has an overload for exactly this: hand it a whole array
+plus the type's **`.struct`** — a value `SwerveModuleVelocity` ships that
+knows how to turn one into bytes and back — and one call publishes all four
+modules' speed and angle together, as one labeled topic AdvantageScope's
+Swerve tab knows how to draw, instead of four separate numbers it would
+have no way to know belong to the same picture.
 
 Step back and look at the division of labor, because this is the lesson's
 real idea. The periodic callback registered in the constructor runs rain or
@@ -703,8 +685,8 @@ shrank to one method: a single tick of control toward whatever it's told,
 whenever a command asks. With that structure, whole-chassis behavior got almost easy:
 **translate** is one angle for everyone; **rotate** is one angle *per
 corner*, courtesy of each module knowing its `location`. You also picked up
-**structured telemetry** — a `StructArrayPublisher` bridges a whole array of
-labeled objects onto the network in one call, so AdvantageScope draws it
+**structured telemetry** — `Telemetry.log`'s struct-array overload publishes
+a whole array of labeled objects in one call, so AdvantageScope draws it
 live, which will catch a miswired corner faster than any plot. If the
 refactor felt long, that's because it was the real thing — a rename,
 deletions, red files, and the compiler walking you through every place the

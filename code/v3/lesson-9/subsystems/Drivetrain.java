@@ -13,9 +13,6 @@ import org.wpilib.command3.Scheduler;
 import org.wpilib.hardware.bus.CANPort;
 import org.wpilib.math.geometry.Rotation2d;
 import org.wpilib.math.kinematics.SwerveModuleVelocity;
-import org.wpilib.networktables.NetworkTableInstance;
-import org.wpilib.networktables.StructArrayPublisher;
-import org.wpilib.networktables.StructPublisher;
 import org.wpilib.telemetry.Telemetry;
 
 import first.robot.Constants.DriveConstants;
@@ -35,17 +32,6 @@ public class Drivetrain implements Mechanism {
   // Remembered for the sim: what rotation rate did we just command?
   private double m_lastCommandedOmega = 0.0;
   private double m_simHeadingDegrees = 0.0;
-
-  // Structured topics: publish a whole labeled value at once, so
-  // AdvantageScope's Swerve tab can draw it, not just plot numbers.
-  private final StructArrayPublisher<SwerveModuleVelocity> m_moduleStatesPublisher =
-      NetworkTableInstance.getDefault()
-          .getStructArrayTopic("Drivetrain/ModuleStates", SwerveModuleVelocity.struct)
-          .publish();
-  private final StructPublisher<Rotation2d> m_headingPublisher =
-      NetworkTableInstance.getDefault()
-          .getStructTopic("Drivetrain/Heading", Rotation2d.struct)
-          .publish();
 
   public Drivetrain() {
     Scheduler.getDefault().addPeriodic(this::logTelemetry);
@@ -159,10 +145,10 @@ public class Drivetrain implements Mechanism {
           Rotation2d.fromDegrees(module.getSteerAngleDegrees()));
       index++;
     }
-    m_moduleStatesPublisher.set(states);
+    Telemetry.log("Drivetrain/ModuleStates", states, SwerveModuleVelocity.struct);
 
     Telemetry.log("Drivetrain/HeadingDegrees", getHeadingDegrees());
-    m_headingPublisher.set(Rotation2d.fromDegrees(getHeadingDegrees()));
+    Telemetry.log("Drivetrain/Heading", Rotation2d.fromDegrees(getHeadingDegrees()), Rotation2d.struct);
   }
 
   /** Advances every module's physics model, then the fake gyro. Only ever called in simulation. */

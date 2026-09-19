@@ -20,9 +20,6 @@ import org.wpilib.math.kinematics.SwerveDriveOdometry;
 import org.wpilib.math.kinematics.SwerveModulePosition;
 import org.wpilib.math.kinematics.SwerveModuleVelocity;
 import org.wpilib.math.util.MathUtil;
-import org.wpilib.networktables.NetworkTableInstance;
-import org.wpilib.networktables.StructArrayPublisher;
-import org.wpilib.networktables.StructPublisher;
 import org.wpilib.smartdashboard.Field2d;
 import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.AngularVelocity;
@@ -61,25 +58,6 @@ public class Drivetrain implements Mechanism {
   private double m_lastCommandedOmega = 0.0;
   private double m_simHeadingDegrees = 0.0;
 
-  // Structured topics: publish a whole labeled value at once, so
-  // AdvantageScope's Swerve tab can draw it, not just plot numbers.
-  private final StructArrayPublisher<SwerveModuleVelocity> m_moduleStatesPublisher =
-      NetworkTableInstance.getDefault()
-          .getStructArrayTopic("Drivetrain/ModuleStates", SwerveModuleVelocity.struct)
-          .publish();
-  private final StructArrayPublisher<SwerveModuleVelocity> m_desiredModuleStatesPublisher =
-      NetworkTableInstance.getDefault()
-          .getStructArrayTopic("Drivetrain/DesiredModuleStates", SwerveModuleVelocity.struct)
-          .publish();
-  private final StructPublisher<Rotation2d> m_headingPublisher =
-      NetworkTableInstance.getDefault()
-          .getStructTopic("Drivetrain/Heading", Rotation2d.struct)
-          .publish();
-  private final StructPublisher<Pose2d> m_posePublisher =
-      NetworkTableInstance.getDefault()
-          .getStructTopic("Drivetrain/Pose", Pose2d.struct)
-          .publish();
-
   public Drivetrain() {
     Telemetry.log("Field", m_field);
     Scheduler.getDefault().addPeriodic(this::logTelemetry);
@@ -101,7 +79,7 @@ public class Drivetrain implements Mechanism {
       m_modules[i].setDesiredState(states[i]);
     }
 
-    m_desiredModuleStatesPublisher.set(states);
+    Telemetry.log("Drivetrain/DesiredModuleStates", states, SwerveModuleVelocity.struct);
   }
 
   /** Drive with full swerve freedom: translate and rotate at once. */
@@ -238,13 +216,13 @@ public class Drivetrain implements Mechanism {
           Rotation2d.fromDegrees(module.getSteerAngleDegrees()));
       index++;
     }
-    m_moduleStatesPublisher.set(states);
+    Telemetry.log("Drivetrain/ModuleStates", states, SwerveModuleVelocity.struct);
 
     Telemetry.log("Drivetrain/HeadingDegrees", getHeadingDegrees());
-    m_headingPublisher.set(Rotation2d.fromDegrees(getHeadingDegrees()));
+    Telemetry.log("Drivetrain/Heading", Rotation2d.fromDegrees(getHeadingDegrees()), Rotation2d.struct);
 
     Pose2d pose = m_odometry.update(Rotation2d.fromDegrees(getHeadingDegrees()), modulePositions());
-    m_posePublisher.set(pose);
+    Telemetry.log("Drivetrain/Pose", pose, Pose2d.struct);
     m_field.setRobotPose(pose);
   }
 
