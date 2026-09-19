@@ -378,8 +378,8 @@ the type, there's simply no boundary to convert at until Phoenix's
 
 Now, for the first time, a driver can drive forward *and* strafe *and*
 rotate, all in the same tick. Run sim, open the **Swerve** tab, and push
-both sticks: with `Drivetrain/ModuleStates` *and*
-`Drivetrain/DesiredModuleStates` both dropped into the States slots, you see
+both sticks: with `Telemetry/Drivetrain/ModuleStates` *and*
+`Telemetry/Drivetrain/DesiredModuleStates` both dropped into the States slots, you see
 two sets of arrows — where the wheels are told to be, and where they
 actually are — mixing translation and spin per corner. When the two sets
 track each other closely, your steering control is keeping up; when they
@@ -432,7 +432,7 @@ up.
    RadiansPerSecond.of(0))` (a slow forward). Watch a module's steer angle in
    the Swerve tab. Then abruptly reverse to `MetersPerSecond.of(-0.5)`. The
    wheel should mostly not spin around — it should flip the drive sign
-   instead. (`Drivetrain/DesiredModuleStates`'s arrows flip
+   instead. (`Telemetry/Drivetrain/DesiredModuleStates`'s arrows flip
    length-direction instead of swinging 180°.)
 2. **Code — a spin-while-driving auto.** In `Autos`, build `drivetrain.drive(()
    -> MetersPerSecond.of(1.0), () -> MetersPerSecond.of(0), () ->

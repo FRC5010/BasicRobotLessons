@@ -606,7 +606,7 @@ all agree on zero the instant power comes on, with no ritual and no chance
 to forget it before a match.
 
 Now the payoff for publishing `ModuleStates`: open AdvantageScope's **Swerve**
-tab and drag `NetworkTables/Drivetrain/ModuleStates` into its **States** slot
+tab and drag `NetworkTables/Telemetry/Drivetrain/ModuleStates` into its **States** slot
 (set the tab's *Max Speed* to about `5` — that's roughly what a Kraken-driven
 wheel tops out at in m/s). You get a live diagram of the chassis: one arrow
 per module, direction showing steer angle, length showing wheel speed. Push

@@ -317,8 +317,8 @@ overshoot, no oscillation, because integrating a commanded rate has no
 momentum to fight, unlike the geared motors from Lesson 7.
 
 Then watch the same thing as a picture: open the **Swerve** tab from Lesson 7
-(with `NetworkTables/Drivetrain/ModuleStates` in its **States** slot) and drop
-`NetworkTables/Drivetrain/Heading` into the **Rotation** slot. Press the
+(with `NetworkTables/Telemetry/Drivetrain/ModuleStates` in its **States** slot) and drop
+`NetworkTables/Telemetry/Drivetrain/Heading` into the **Rotation** slot. Press the
 bottom button again — the four wheels snap into the pinwheel, and the whole
 chassis diagram rotates to 90° as the fake gyro integrates, easing in exactly
 like the plot does. One glance now tells you what the wheels are doing *and*

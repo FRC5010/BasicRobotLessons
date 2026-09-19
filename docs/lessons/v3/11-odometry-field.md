@@ -170,7 +170,7 @@ AdvantageScope knows how to *draw* a logged pose, not just plot it. Run
 `./gradlew simulateJava`, then in AdvantageScope:
 
 1. Connect to the sim (**File → Connect to Simulator**).
-2. Add an **📐 Odometry** tab and drag `Drivetrain/Pose` onto it.
+2. Add an **📐 Odometry** tab and drag `Telemetry/Drivetrain/Pose` onto it.
 3. Pick a field image (e.g., the current game) from the source dropdown.
 4. Drive with the joysticks. The little robot moves and rotates on the field.
 
