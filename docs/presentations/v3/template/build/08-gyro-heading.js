@@ -68,7 +68,7 @@ function buildDeck() {
       x: 0.7, y: 1.6, w: 11.9, h: 3.35, fontSize: 12,
       fileLabel: 'Add to Drivetrain, below the modules array',
       lines: [
-        { text: 'private final Pigeon2 m_gyro = new Pigeon2(0, CANBus.systemcore(0)); // CAN ID 0', color: 'D7E3F4' },
+        { text: 'private final Pigeon2 m_gyro = new Pigeon2(0, new CANBus(CANPort.CAN_S0)); // CAN ID 0', color: 'D7E3F4' },
         { text: '', color: 'D7E3F4' },
         { text: '// Remembered for the sim: what rotation rate did we just command?', color: '7FA8C9' },
         { text: 'private double m_lastCommandedOmega = 0.0;', color: 'D7E3F4' },
@@ -100,27 +100,28 @@ function buildDeck() {
     K.addHeader(s, { icon: 'chartline_white.png', eyebrow: 'Section 1 · Drivetrain.java', title: 'Log it — the same two audiences as Lesson 7' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 2.6, fontSize: 15,
+      x: 0.7, y: 1.75, w: 11.9, h: 3.05, fontSize: 15,
       fileLabel: "Add to Drivetrain's logTelemetry(), alongside the module telemetry",
       lines: [
         { text: 'private void logTelemetry() {', color: 'FFD166' },
         { text: '  // ...the module telemetry from Lesson 7 stays...', color: '7FA8C9' },
         { text: '', color: 'D7E3F4' },
-        { text: '  SmartDashboard.putNumber("Drivetrain/HeadingDegrees", getHeadingDegrees());', color: '9EF01A' },
-        { text: '  m_headingPublisher.set(Rotation2d.fromDegrees(getHeadingDegrees()));', color: '9EF01A' },
+        { text: '  Telemetry.log("Drivetrain/HeadingDegrees", getHeadingDegrees());', color: '9EF01A' },
+        { text: '  Telemetry.log("Drivetrain/Heading",', color: '9EF01A' },
+        { text: '      Rotation2d.fromDegrees(getHeadingDegrees()), Rotation2d.struct);', color: '9EF01A' },
         { text: '}', color: 'D7E3F4' },
       ],
     });
 
     K.addCard(s, {
-      x: 0.7, y: 4.65, w: 11.9, h: 2.2,
-      body: 'The plain number is for line graphs. The Rotation2d version is the structured value AdvantageScope\'s Swerve tab wants in its Rotation slot — same fact, packaged for a tool that draws instead of plots. Both lines need the publisher field, built on the next slide.',
+      x: 0.7, y: 4.95, w: 11.9, h: 1.9,
+      body: 'The plain number is for line graphs. The Rotation2d version is the structured value AdvantageScope\'s Swerve tab wants in its Rotation slot — same fact, packaged for a tool that draws instead of plots.',
       pad: 0.2, bodySize: 20,
     });
 
     K.addFooter(s, { pageNum: 4, label: 'Gyro & Heading' });
     s.addNotes(
-      'Two audiences for the same fact, the same split Lesson 7 established for module states: SmartDashboard.putNumber for anything that just wants a line graph, and the struct publisher for AdvantageScope\'s Swerve tab, which wants a real Rotation2d, not a bare number. This slot right below the existing module-telemetry loop is deliberate — logTelemetry() already runs every tick via the periodic callback, so nothing new needs to be registered with the scheduler for this.'
+      'Two audiences for the same fact, the same split Lesson 7 established for module states: Telemetry.log\'s plain overload for anything that just wants a line graph, and its struct overload for AdvantageScope\'s Swerve tab, which wants a real Rotation2d, not a bare number. This slot right below the existing module-telemetry loop is deliberate — logTelemetry() already runs every tick via the periodic callback, so nothing new needs to be registered with the scheduler for this.'
     );
   }
 
@@ -128,29 +129,25 @@ function buildDeck() {
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
-    K.addHeader(s, { icon: 'chartline_white.png', eyebrow: 'Section 1 · Drivetrain.java', title: "StructPublisher — one value, not an array" });
+    K.addHeader(s, { icon: 'chartline_white.png', eyebrow: 'Section 1 · Drivetrain.java', title: "One value has a struct overload too" });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 2.15, fontSize: 15,
-      fileLabel: 'Add the publisher, next to m_moduleStatesPublisher',
-      lines: [
-        { text: 'private final StructPublisher<Rotation2d> m_headingPublisher =', color: 'D7E3F4' },
-        { text: '    NetworkTableInstance.getDefault()', color: 'D7E3F4' },
-        { text: '        .getStructTopic("Drivetrain/Heading", Rotation2d.struct)', color: '9EF01A' },
-        { text: '        .publish();', color: 'D7E3F4' },
-      ],
+      x: 0.7, y: 1.75, w: 11.9, h: 1.6, fontSize: 15,
+      fileLabel: 'Nothing to add yet — already added, on the previous slide',
+      example: true,
+      lines: [{ text: 'Telemetry.log("Drivetrain/Heading", Rotation2d.fromDegrees(...), Rotation2d.struct);', color: '9EF01A' }],
     });
 
     K.addCard(s, {
-      x: 0.7, y: 4.15, w: 11.9, h: 2.7,
+      x: 0.7, y: 3.6, w: 11.9, h: 3.25,
       heading: 'The plain number is for line graphs; the Rotation2d is for the Swerve tab.',
       headingSize: 21,
-      body: 'StructPublisher is StructArrayPublisher\'s singular sibling from Lesson 7 — same bridge, one value instead of an array. Same fact, packaged for a tool that draws instead of plots.',
+      body: 'Telemetry.log has a single-value overload for this, the same idea as the module-states array from Lesson 7: hand it the value plus the type\'s own .struct, and it publishes the structured type instead of a bare number — no field, no bridge, just a second call.',
     });
 
     K.addFooter(s, { pageNum: 5, label: 'Gyro & Heading' });
     s.addNotes(
-      'StructPublisher is StructArrayPublisher\'s singular sibling from Lesson 7\'s getStructArrayTopic — same bridge idea, one value instead of an array, so it\'s getStructTopic and .set(value) instead of .set(array). Rotation2d and NetworkTableInstance are already imported from Lesson 7, so this slots in without new plumbing beyond the publisher itself. Add import org.wpilib.networktables.StructPublisher.'
+      'Telemetry.log has a single-value overload for exactly this, the same idea as the module-states array from Lesson 7: hand it the value plus Rotation2d.struct — a value Rotation2d ships that knows how to turn one into bytes and back — and it publishes the structured type instead of a bare number. Rotation2d is already imported from Lesson 7, so this slots in with no new plumbing at all — no field, no NetworkTableInstance, no .publish() to call.'
     );
   }
 
@@ -379,8 +376,8 @@ function buildDeck() {
       fileLabel: "Add two taps to MyTeleop's constructor",
       lines: [
         { text: '// Tap the bottom face button to face 90°; the right face button for 0°.', color: '7FA8C9' },
-        { text: 'robot.driverController.southFace().onTrue(robot.drivetrain.turnToHeading(90));', color: '9EF01A' },
-        { text: 'robot.driverController.eastFace().onTrue(robot.drivetrain.turnToHeading(0));', color: '9EF01A' },
+        { text: 'robot.driverController.faceDown().onTrue(robot.drivetrain.turnToHeading(90));', color: '9EF01A' },
+        { text: 'robot.driverController.faceRight().onTrue(robot.drivetrain.turnToHeading(0));', color: '9EF01A' },
       ],
     });
 
@@ -435,9 +432,9 @@ function buildDeck() {
     K.addNumberedSteps(s, {
       startY: 1.85, rowH: 1.15, dark: true,
       steps: [
-        { title: './gradlew simulateJava → My Teleop → Enabled', detail: 'Plot Drivetrain/HeadingDegrees in AdvantageScope.' },
+        { title: './gradlew simulateJava → My Teleop → Enabled', detail: 'Plot Telemetry/Drivetrain/HeadingDegrees in AdvantageScope.' },
         { title: 'Press the bottom face button', detail: 'Heading sweeps toward 90°, slows as it approaches, settles inside ±2°.' },
-        { title: 'Watch the Swerve tab', detail: 'Drop Drivetrain/Heading into the Rotation slot — the chassis diagram turns too.' },
+        { title: 'Watch the Swerve tab', detail: 'Drop Telemetry/Drivetrain/Heading into the Rotation slot — the chassis diagram turns too.' },
         { title: 'Tune kP the Lesson 5 way', detail: 'Too small crawls; too big oscillates; just right settles quick and smooth.' },
       ],
     });

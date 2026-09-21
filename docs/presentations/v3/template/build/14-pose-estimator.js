@@ -132,9 +132,6 @@ function buildDeck() {
         { text: '  private final List<PoseProvider> m_providers = new ArrayList<>();', color: '9EF01A' },
         { text: '  private final Field2d m_field = new Field2d();', color: 'D7E3F4' },
         { text: '', color: 'D7E3F4' },
-        { text: '  private final StructPublisher<Pose2d> m_posePublisher = NetworkTableInstance.getDefault()', color: 'D7E3F4' },
-        { text: '      .getStructTopic("Localizer/Pose", Pose2d.struct).publish();', color: 'D7E3F4' },
-        { text: '', color: 'D7E3F4' },
         { text: '  public Localizer(Drivetrain drivetrain) {', color: 'FFD166' },
         { text: '    m_drivetrain = drivetrain;', color: 'D7E3F4' },
         { text: '    m_estimator = new SwerveDrivePoseEstimator(', color: '9EF01A' },
@@ -143,7 +140,7 @@ function buildDeck() {
         { text: '', color: 'D7E3F4' },
         { text: '    addProvider(drivetrain); // the odometry backbone, registered first', color: '9EF01A' },
         { text: '', color: 'D7E3F4' },
-        { text: '    SmartDashboard.putData("Field", m_field);', color: 'D7E3F4' },
+        { text: '    Telemetry.log("Field", m_field);', color: '9EF01A' },
         { text: '    Scheduler.getDefault().addPeriodic(this::periodic);', color: 'D7E3F4' },
         { text: '  }', color: 'D7E3F4' },
       ],
@@ -174,7 +171,7 @@ function buildDeck() {
         { text: '  for (PoseProvider provider : m_providers) {', color: '9EF01A' },
         { text: '    provider.updatePoseEstimate(m_estimator);', color: '9EF01A' },
         { text: '  }', color: 'D7E3F4' },
-        { text: '  m_posePublisher.set(getPose());', color: 'D7E3F4' },
+        { text: '  Telemetry.log("Localizer/Pose", getPose(), Pose2d.struct);', color: '9EF01A' },
         { text: '  m_field.setRobotPose(getPose());', color: 'D7E3F4' },
         { text: '}', color: 'D7E3F4' },
         { text: '', color: 'D7E3F4' },
@@ -232,7 +229,7 @@ function buildDeck() {
       lines: [
         { text: 'import org.wpilib.math.estimator.SwerveDrivePoseEstimator;', color: 'D7E3F4' },
         { text: '', color: 'D7E3F4' },
-        { text: 'public class Drivetrain extends Mechanism implements PoseProvider {', color: '9EF01A' },
+        { text: 'public class Drivetrain implements Mechanism, PoseProvider {', color: '9EF01A' },
       ],
     });
 
@@ -258,7 +255,7 @@ function buildDeck() {
       x: 0.7, y: 1.5, w: 11.9, h: 2.35, bg: CARDBG,
       heading: 'Delete the pose machinery that used to live here.',
       headingSize: 21,
-      body: 'The m_odometry field, the Field2d/m_field, and the StructPublisher<Pose2d> that published Drivetrain/Pose — all of it moves to Localizer, which publishes the fused result as Localizer/Pose instead.',
+      body: 'The m_odometry field, the Field2d/m_field, and the Telemetry.log call that published Drivetrain/Pose — all of it moves to Localizer, which publishes the fused result as Localizer/Pose instead.',
     });
 
     K.addCodeCard(s, {
@@ -268,7 +265,7 @@ function buildDeck() {
         { text: '// DELETE — odometry lives on Localizer now.', color: 'FF8B8B' },
         { text: 'Pose2d pose = m_odometry.update(', color: 'FF6B6B' },
         { text: '    Rotation2d.fromDegrees(getHeadingDegrees()), modulePositions());', color: 'FF6B6B' },
-        { text: 'm_posePublisher.set(pose);', color: 'FF6B6B' },
+        { text: 'Telemetry.log("Drivetrain/Pose", pose, Pose2d.struct);', color: 'FF6B6B' },
         { text: 'm_field.setRobotPose(pose);', color: 'FF6B6B' },
       ],
     });
@@ -422,9 +419,6 @@ function buildDeck() {
         { text: 'public class VisionPoseProvider implements PoseProvider {', color: 'FFD166' },
         { text: '  private Pose2d m_pending = null;', color: 'D7E3F4' },
         { text: '', color: 'D7E3F4' },
-        { text: '  private final StructPublisher<Pose2d> m_sightingPublisher = NetworkTableInstance.getDefault()', color: 'D7E3F4' },
-        { text: '      .getStructTopic("Localizer/VisionPose", Pose2d.struct).publish();', color: 'D7E3F4' },
-        { text: '', color: 'D7E3F4' },
         { text: '  /** Pretend a camera just saw the robot here. A real camera calls this on each frame. */', color: '7FA8C9' },
         { text: '  public void reportSighting(Pose2d pose) {', color: 'FFD166' },
         { text: '    m_pending = pose;', color: '9EF01A' },
@@ -434,7 +428,7 @@ function buildDeck() {
         { text: '  public void updatePoseEstimate(SwerveDrivePoseEstimator estimator) {', color: 'D7E3F4' },
         { text: '    if (m_pending != null) {', color: '9EF01A' },
         { text: '      estimator.addVisionMeasurement(m_pending, Timer.getTimestamp());', color: '9EF01A' },
-        { text: '      m_sightingPublisher.set(m_pending);', color: '9EF01A' },
+        { text: '      Telemetry.log("Localizer/VisionPose", m_pending, Pose2d.struct);', color: '9EF01A' },
         { text: '      m_pending = null;', color: '9EF01A' },
         { text: '    }', color: 'D7E3F4' },
         { text: '  }', color: 'D7E3F4' },

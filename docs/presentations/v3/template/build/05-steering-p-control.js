@@ -98,7 +98,7 @@ function buildDeck() {
       fileLabel: "Add to DriveModule, below the drive motor's fields",
       lines: [
         { text: 'private final TalonFX m_steerMotor =', color: 'D7E3F4' },
-        { text: '    new TalonFX(Constants.DriveConstants.kSteerMotorPort, CANBus.systemcore(0));', color: 'D7E3F4' },
+        { text: '    new TalonFX(Constants.DriveConstants.kSteerMotorPort, new CANBus(CANPort.CAN_S0));', color: 'D7E3F4' },
         { text: '', color: 'D7E3F4' },
         { text: '// Sim plumbing for the steering motor (same pattern as the drive motor).', color: '7FA8C9' },
         { text: 'private final TalonFXSimState m_steerSim = m_steerMotor.getSimState();', color: '9EF01A' },
@@ -256,7 +256,7 @@ function buildDeck() {
       fileLabel: 'Add the CANcoder field, then fill in the constructor',
       lines: [
         { text: 'private final CANcoder m_steerEncoder =', color: 'D7E3F4' },
-        { text: '    new CANcoder(Constants.DriveConstants.kCancoderPort, CANBus.systemcore(0));', color: 'D7E3F4' },
+        { text: '    new CANcoder(Constants.DriveConstants.kCancoderPort, new CANBus(CANPort.CAN_S0));', color: 'D7E3F4' },
         { text: '', color: 'D7E3F4' },
         { text: 'public DriveModule() {', color: 'FFD166' },
         { text: '  // Calibrate the CANcoder\'s zero to "wheel pointing forward"...', color: '7FA8C9' },
@@ -409,8 +409,8 @@ function buildDeck() {
       fileLabel: "Add to MyTeleop's constructor, with the rest of the wiring",
       lines: [
         { text: '// Tap the left face button to steer to 90° and hold it there.', color: '7FA8C9' },
-        { text: 'robot.driverController.westFace().onTrue(robot.module.steerToAngle(90));', color: '9EF01A' },
-        { text: 'robot.driverController.northFace().onTrue(robot.module.steerToAngle(0));', color: '9EF01A' },
+        { text: 'robot.driverController.faceLeft().onTrue(robot.module.steerToAngle(90));', color: '9EF01A' },
+        { text: 'robot.driverController.faceUp().onTrue(robot.module.steerToAngle(0));', color: '9EF01A' },
       ],
     });
 
@@ -423,7 +423,7 @@ function buildDeck() {
 
     K.addFooter(s, { pageNum: 14, label: 'Steering P Control' });
     s.addNotes(
-      'New word: onTrue, where Lesson 1 used whileTrue. whileTrue runs a command while you hold the button; onTrue schedules it once when the button is pressed and then walks away. Since steerToAngle is built on runRepeatedly, it never finishes on its own — so a single tap of the west button sends the module to 90° and holds it there, no need to keep the button down. Tap the north button and the scheduler swaps commands: one command per mechanism, so scheduling the go-to-0 command cancels the go-to-90 one, firing its whenCanceled cleanup on the way out. Worth calling out as a callout of its own: while a steering command owns the module, the joystick stops driving the wheel — the Lesson 2 default command only runs when no other command is using the mechanism, and steerToAngle never lets go. That\'s the one-command-per-mechanism rule doing exactly what it promised; it\'s fine here since we\'re steering, not driving, and the module learns to do both at once when it grows up in Lesson 7.'
+      'New word: onTrue, where Lesson 1 used whileTrue. whileTrue runs a command while you hold the button; onTrue schedules it once when the button is pressed and then walks away. Since steerToAngle is built on runRepeatedly, it never finishes on its own — so a single tap of the left button sends the module to 90° and holds it there, no need to keep the button down. Tap the top button and the scheduler swaps commands: one command per mechanism, so scheduling the go-to-0 command cancels the go-to-90 one, firing its whenCanceled cleanup on the way out. Worth calling out as a callout of its own: while a steering command owns the module, the joystick stops driving the wheel — the Lesson 2 default command only runs when no other command is using the mechanism, and steerToAngle never lets go. That\'s the one-command-per-mechanism rule doing exactly what it promised; it\'s fine here since we\'re steering, not driving, and the module learns to do both at once when it grows up in Lesson 7.'
     );
   }
 
@@ -440,7 +440,7 @@ function buildDeck() {
         { text: 'private void logTelemetry() {', color: 'FFD166' },
         { text: '  // ...the drive position and velocity logs from Lesson 3 stay...', color: '7FA8C9' },
         { text: '', color: 'D7E3F4' },
-        { text: '  SmartDashboard.putNumber("DriveModule/SteerAngleDegrees", getSteerAngleDegrees());', color: '9EF01A' },
+        { text: '  Telemetry.log("DriveModule/SteerAngleDegrees", getSteerAngleDegrees());', color: '9EF01A' },
         { text: '}', color: 'D7E3F4' },
       ],
     });
@@ -498,7 +498,7 @@ function buildDeck() {
 
     K.addFooter(s, { pageNum: 17, label: 'Steering P Control', dark: true });
     s.addNotes(
-      'Two of these three genuinely expect written code, tagged accordingly. The shortest-path exercise is worth setting up with the wrinkle it fixes: ask for 0° while sitting at 350°. Error = 0 − 350 = −350, so it spins almost all the way around backwards — when it could have nudged +10° forward. Real steering code wraps the error to the range −180°…+180° so it always takes the short path; the two while loops in the exercise are the fix, and it\'s students\' first while loop — it repeats until the condition is false. Logging the error is Lesson 3\'s refinement applied again: a value that only exists inside a command gets logged where it\'s computed — a real SmartDashboard.putNumber call to add, not just an observation. The kP = 0 / negative-kP exercise is a genuine predict-then-check, not code-writing: 0 means no output ever, so the wheel never moves regardless of error; negative kP pushes the wrong direction and error grows instead of shrinking.'
+      'Two of these three genuinely expect written code, tagged accordingly. The shortest-path exercise is worth setting up with the wrinkle it fixes: ask for 0° while sitting at 350°. Error = 0 − 350 = −350, so it spins almost all the way around backwards — when it could have nudged +10° forward. Real steering code wraps the error to the range −180°…+180° so it always takes the short path; the two while loops in the exercise are the fix, and it\'s students\' first while loop — it repeats until the condition is false. Logging the error is Lesson 3\'s refinement applied again: a value that only exists inside a command gets logged where it\'s computed — a real Telemetry.log call to add, not just an observation. The kP = 0 / negative-kP exercise is a genuine predict-then-check, not code-writing: 0 means no output ever, so the wheel never moves regardless of error; negative kP pushes the wrong direction and error grows instead of shrinking.'
     );
   }
 

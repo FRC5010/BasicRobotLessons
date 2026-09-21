@@ -99,14 +99,14 @@ function buildDeck() {
       x: 0.7, y: 1.85, w: 11.9, h: 1.5, fontSize: 19,
       fileLabel: 'Nothing to add — just an example, not code for any file',
       example: true,
-      lines: [{ text: 'TalonFX driveMotor = new TalonFX(1, CANBus.systemcore(0));', color: '9EF01A' }],
+      lines: [{ text: 'TalonFX driveMotor = new TalonFX(1, new CANBus(CANPort.CAN_S0));', color: '9EF01A' }],
     });
 
     K.addCard(s, {
       x: 0.7, y: 3.7, w: 5.85, h: 3.0, bg: CARDBG,
       heading: 'Read it right to left.',
       headingSize: 22,
-      body: 'new TalonFX(1, CANBus.systemcore(0)) builds the object for CAN ID 1, on SystemCore\'s first CAN bus. driveMotor is your handle to it from here on.',
+      body: 'new TalonFX(1, new CANBus(CANPort.CAN_S0)) builds the object for CAN ID 1, on the first CAN bus. driveMotor is your handle to it from here on.',
     });
     K.addCard(s, {
       x: 6.75, y: 3.7, w: 5.85, h: 3.0, bg: NAVY,
@@ -118,7 +118,7 @@ function buildDeck() {
 
     K.addFooter(s, { pageNum: 4, label: 'First Motor' });
     s.addNotes(
-      'This is the missing third piece after classes and methods — the piece that makes classes finally make sense. A class is a blueprint: TalonFX describes what any TalonFX can do. An object is one actual thing built from that blueprint — the specific motor with CAN ID 1, bolted to the robot. One blueprint, as many objects as needed. Read the example right-to-left: new TalonFX(1, CANBus.systemcore(0)) builds a TalonFX object for CAN ID 1 on SystemCore\'s first CAN bus; TalonFX driveMotor declares a variable to hold it. Worth saying explicitly, since it isn\'t on the slide: a robot can have more than one CAN bus, so a TalonFX needs to be told which one to listen on — CANBus.systemcore(0) picks the first one, the one the motor is actually wired to.'
+      'This is the missing third piece after classes and methods — the piece that makes classes finally make sense. A class is a blueprint: TalonFX describes what any TalonFX can do. An object is one actual thing built from that blueprint — the specific motor with CAN ID 1, bolted to the robot. One blueprint, as many objects as needed. Read the example right-to-left: new TalonFX(1, new CANBus(CANPort.CAN_S0)) builds a TalonFX object for CAN ID 1 on SystemCore\'s first built-in CAN bus; TalonFX driveMotor declares a variable to hold it. Worth saying explicitly, since it isn\'t on the slide: a robot can have more than one CAN bus, so a TalonFX needs to be told which one to listen on — CANPort.CAN_S0 names the first one, the one the motor is actually wired to, and new CANBus(...) builds the bus object from that name.'
     );
   }
 
@@ -166,21 +166,22 @@ function buildDeck() {
         { text: '', color: 'D7E3F4' },
         { text: 'import org.wpilib.command3.Command;', color: 'D7E3F4' },
         { text: 'import org.wpilib.command3.Mechanism;', color: 'D7E3F4' },
-        { text: 'public class DriveModule extends Mechanism {', color: 'FFD166' },
+        { text: 'import org.wpilib.hardware.bus.CANPort;', color: 'D7E3F4' },
+        { text: 'public class DriveModule implements Mechanism {', color: 'FFD166' },
         { text: '  private final TalonFX m_driveMotor =', color: 'D7E3F4' },
-        { text: '      new TalonFX(1, CANBus.systemcore(0)); // CAN ID 1', color: 'D7E3F4' },
+        { text: '      new TalonFX(1, new CANBus(CANPort.CAN_S0)); // CAN ID 1', color: 'D7E3F4' },
       ],
     });
 
     K.addCard(s, {
       x: 0.7, y: 5.35, w: 11.9, h: 1.65,
-      body: 'extends Mechanism plugs this class into the scheduler. private hides the field from other classes; final means it always points at the same motor. m_ marks a field, by convention.',
+      body: 'implements Mechanism plugs this class into the scheduler. private hides the field from other classes; final means it always points at the same motor. m_ marks a field, by convention.',
       pad: 0.2, bodySize: 20,
     });
 
     K.addFooter(s, { pageNum: 6, label: 'First Motor' });
     s.addNotes(
-      'An import lets this file refer to a class from another package by its short name — without the first two, every mention of the motor would have to be spelled com.ctre.phoenix6.hardware.TalonFX in full. org.wpilib.command3 is where Command and Mechanism live — the classes that let this motor plug into the scheduler. Reassure students they don\'t need to memorize import paths: whenever they use a class they haven\'t imported, VS Code underlines it in red and offers to add the import for them. On the field: extends Mechanism declares that DriveModule IS a mechanism, inheriting the machinery that lets the scheduler manage it and hand it commands — this is what plugs DriveModule into the heartbeat from Lesson 0. A field is data the object keeps for life, not a variable that vanishes when a method returns — the motor has to exist for the whole match. private hides it from other classes (encapsulation, paying off in a couple of slides); final means the variable always points at the same motor object; the m_ prefix is a team convention meaning "member field."'
+      'An import lets this file refer to a class from another package by its short name — without the first two, every mention of the motor would have to be spelled com.ctre.phoenix6.hardware.TalonFX in full. org.wpilib.command3 is where Command and Mechanism live — the classes that let this motor plug into the scheduler — and CANPort is the name of the CAN bus about to get built. Reassure students they don\'t need to memorize import paths: whenever they use a class they haven\'t imported, VS Code underlines it in red and offers to add the import for them. On the field: implements Mechanism declares that DriveModule IS a mechanism, inheriting the machinery that lets the scheduler manage it and hand it commands — this is what plugs DriveModule into the heartbeat from Lesson 0. Mechanism is an interface rather than a regular class, which is why the keyword is implements and not extends — it works the same way for students either way: type it, and the class gets that machinery for free. A field is data the object keeps for life, not a variable that vanishes when a method returns — the motor has to exist for the whole match. private hides it from other classes (encapsulation, paying off in a couple of slides); final means the variable always points at the same motor object; the m_ prefix is a team convention meaning "member field."'
     );
   }
 
@@ -288,7 +289,7 @@ function buildDeck() {
 
     K.addCard(s, {
       x: 7.5, y: 1.75, w: 5.1, h: 4.65,
-      heading: 'extends Mechanism registered your module — it didn\'t make anything happen.',
+      heading: 'implements Mechanism registered your module — it didn\'t make anything happen.',
       headingSize: 21,
       body: '.run() is the tick: check every trigger, hand out and step every command that should be running. Skip this and buttons sit there fully wired, doing nothing.',
     });
@@ -300,7 +301,7 @@ function buildDeck() {
 
     K.addFooter(s, { pageNum: 10, label: 'First Motor' });
     s.addNotes(
-      'The scheduler manages commands so only one runs a mechanism at a time, and it has one job nobody does for it automatically: something has to tell it to check its triggers and run its commands, every single tick. extends Mechanism already registered DriveModule with it — but that registration doesn\'t make anything happen by itself. Lesson 0 introduced the heartbeat: OpModeRobot calls a fixed set of methods on a schedule, forever, whether or not they\'re overridden. robotPeriodic() runs every single tick, no matter which opmode is selected and whether the robot is enabled or disabled — exactly the right place for something that has to keep running no matter what. Scheduler.getDefault() is the one scheduler every mechanism and every trigger plugs into automatically; .run() is the tick — check every trigger, hand out and step every command that should be running right now. Skip this line and none of it moves — buttons would sit there fully wired and nothing would ever happen when pressed.'
+      'The scheduler manages commands so only one runs a mechanism at a time, and it has one job nobody does for it automatically: something has to tell it to check its triggers and run its commands, every single tick. implements Mechanism already registered DriveModule with it — but that registration doesn\'t make anything happen by itself. Lesson 0 introduced the heartbeat: OpModeRobot calls a fixed set of methods on a schedule, forever, whether or not they\'re overridden. robotPeriodic() runs every single tick, no matter which opmode is selected and whether the robot is enabled or disabled — exactly the right place for something that has to keep running no matter what. Scheduler.getDefault() is the one scheduler every mechanism and every trigger plugs into automatically; .run() is the tick — check every trigger, hand out and step every command that should be running right now. Skip this line and none of it moves — buttons would sit there fully wired and nothing would ever happen when pressed.'
     );
   }
 
@@ -317,7 +318,7 @@ function buildDeck() {
         { text: 'public MyTeleop(Robot robot) {', color: 'FFD166' },
         { text: '  this.robot = robot;', color: 'D7E3F4' },
         { text: '', color: 'D7E3F4' },
-        { text: '  robot.driverController.southFace().whileTrue(robot.module.driveAtSpeed(0.3));', color: '9EF01A' },
+        { text: '  robot.driverController.faceDown().whileTrue(robot.module.driveAtSpeed(0.3));', color: '9EF01A' },
         { text: '}', color: 'D7E3F4' },
       ],
     });
@@ -331,7 +332,7 @@ function buildDeck() {
 
     K.addFooter(s, { pageNum: 11, label: 'First Motor' });
     s.addNotes(
-      'CommandGamepad gives a method per button — southFace(), eastFace(), leftBumper(), and so on — named by where the button sits on the pad rather than by letter; on a standard layout, southFace() is the bottom face button, the one an Xbox pad labels A. Each hands back a Trigger: an object that answers "is that button down right now?" and, more usefully, lets you attach a command to it. What that binding line says: while the bottom face button is held (whileTrue), schedule the command driveAtSpeed(0.3) returns; let go, and the scheduler cancels it, firing the .whenCanceled(...) cleanup so the motor stops. This line runs once, when MyTeleop is constructed — it registers the wiring, and the scheduler does the watching from then on. Why the constructor and not start()? The constructor runs once, the instant MyTeleop is built, when it\'s selected on the Driver Station. start() runs on a different schedule — every time the robot goes from disabled to enabled, more than once per opmode. Toggle Robot State off and back on in SimGUI and watch: wiring in start() would register a fresh binding on top of the old one each re-enable. The constructor registers it exactly once.'
+      'CommandGamepad gives a method per button — faceDown(), faceRight(), leftBumper(), and so on — named by where the button sits on the pad rather than by letter; on a standard layout, faceDown() is the bottom face button, the one an Xbox pad labels A. Each hands back a Trigger: an object that answers "is that button down right now?" and, more usefully, lets you attach a command to it. What that binding line says: while the bottom face button is held (whileTrue), schedule the command driveAtSpeed(0.3) returns; let go, and the scheduler cancels it, firing the .whenCanceled(...) cleanup so the motor stops. This line runs once, when MyTeleop is constructed — it registers the wiring, and the scheduler does the watching from then on. Why the constructor and not start()? The constructor runs once, the instant MyTeleop is built, when it\'s selected on the Driver Station. start() runs on a different schedule — every time the robot goes from disabled to enabled, more than once per opmode. Toggle Robot State off and back on in SimGUI and watch: wiring in start() would register a fresh binding on top of the old one each re-enable. The constructor registers it exactly once.'
     );
   }
 
@@ -371,7 +372,7 @@ function buildDeck() {
         { text: 'private void logRunningCommand() {', color: 'FFD166' },
         { text: '  List<Command> running = Scheduler.getDefault().getRunningCommandsFor(module);', color: 'D7E3F4' },
         { text: '  Command current = running.get(0);', color: 'D7E3F4' },
-        { text: '  SmartDashboard.putString("DriveModule/CurrentCommand", current.name());', color: '9EF01A' },
+        { text: '  Telemetry.log("DriveModule/CurrentCommand", current.name());', color: '9EF01A' },
         { text: '}', color: 'D7E3F4' },
       ],
     });
@@ -409,7 +410,7 @@ function buildDeck() {
     K.addTryItGrid(s, {
       y: 1.6, cols: 2,
       cards: [
-        { title: 'Add a reverse button', body: 'eastFace() drives at -0.3. Press both — the most-recently-scheduled command wins cleanly.', code: true },
+        { title: 'Add a reverse button', body: 'faceRight() drives at -0.3. Press both — the most-recently-scheduled command wins cleanly.', code: true },
         { title: 'Change the CAN ID', body: 'Rebuild. Nothing breaks in sim, but get in the habit of setting IDs deliberately.' },
         { title: 'Move the ID into a constant', body: 'Create Constants.java with DriveConstants.kDriveMotorPort — this is where robot numbers should live.', code: true },
         { title: 'Use the constant', body: 'Reference it as Constants.DriveConstants.kDriveMotorPort in the subsystem instead of a bare number.', code: true },
@@ -418,7 +419,7 @@ function buildDeck() {
 
     K.addFooter(s, { pageNum: 14, label: 'First Motor', dark: true });
     s.addNotes(
-      'Three exercises, and the third plants a habit that carries the rest of the course. First, a reverse button on eastFace() at -0.3 — pressing both proves the scheduler lets the most-recently-scheduled command win cleanly, no conflict. Second, changing the CAN ID and rebuilding — nothing breaks in sim since IDs only matter on the real robot, but it builds the habit of setting them deliberately. Third — the one to spend real time on — moving the CAN ID out of the code and into a named constant in a new Constants.java, referenced as Constants.DriveConstants.kDriveMotorPort. This is where robot numbers should live, and it\'s the pattern every later lesson assumes.'
+      'Three exercises, and the third plants a habit that carries the rest of the course. First, a reverse button on faceRight() at -0.3 — pressing both proves the scheduler lets the most-recently-scheduled command win cleanly, no conflict. Second, changing the CAN ID and rebuilding — nothing breaks in sim since IDs only matter on the real robot, but it builds the habit of setting them deliberately. Third — the one to spend real time on — moving the CAN ID out of the code and into a named constant in a new Constants.java, referenced as Constants.DriveConstants.kDriveMotorPort. This is where robot numbers should live, and it\'s the pattern every later lesson assumes.'
     );
   }
 

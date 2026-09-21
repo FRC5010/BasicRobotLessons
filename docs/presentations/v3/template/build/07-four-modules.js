@@ -138,9 +138,9 @@ function buildDeck() {
         { text: '      int driveId, int steerId, int cancoderId,', color: 'D7E3F4' },
         { text: '      double magnetOffsetRotations, Translation2d location) {', color: 'D7E3F4' },
         { text: '    this.location  = location;', color: '9EF01A' },
-        { text: '    m_driveMotor   = new TalonFX(driveId, CANBus.systemcore(0));', color: 'D7E3F4' },
-        { text: '    m_steerMotor   = new TalonFX(steerId, CANBus.systemcore(0));', color: 'D7E3F4' },
-        { text: '    m_steerEncoder = new CANcoder(cancoderId, CANBus.systemcore(0));', color: 'D7E3F4' },
+        { text: '    m_driveMotor   = new TalonFX(driveId, new CANBus(CANPort.CAN_S0));', color: 'D7E3F4' },
+        { text: '    m_steerMotor   = new TalonFX(steerId, new CANBus(CANPort.CAN_S0));', color: 'D7E3F4' },
+        { text: '    m_steerEncoder = new CANcoder(cancoderId, new CANBus(CANPort.CAN_S0));', color: 'D7E3F4' },
         { text: '    m_driveSim     = m_driveMotor.getSimState();', color: 'D7E3F4' },
         { text: '    m_steerSim     = m_steerMotor.getSimState();', color: 'D7E3F4' },
         { text: '    // ...priming continues on the next slide...', color: '7FA8C9' },
@@ -214,7 +214,7 @@ function buildDeck() {
 
     K.addFooter(s, { pageNum: 7, label: 'Four Modules' });
     s.addNotes(
-      'Because the module no longer extends Mechanism, the command factories are literally gone — run, runRepeatedly, and friends were inherited from Mechanism, so driveAtSpeed, driveWithJoystick, steerToAngle, and driveDistance don\'t compile anymore. That\'s fine: commands belong to mechanisms, and this class isn\'t one anymore, so those all get deleted along with the constructor\'s addPeriodic call and logTelemetry() (telemetry moves up to Drivetrain in the next section). setDesiredState is Lesson 5\'s steerToAngle math wearing a new home: one call means one tick of control toward the given goal. The Drivetrain\'s commands will call it every tick they run — the same per-tick rhythm runRepeatedly has had since Lesson 2. That keeps a tidy rule intact: motors move only when a command asks, and commands only run while the robot is enabled. The module doesn\'t register anything with the scheduler at all — no addPeriodic, nothing — because there\'s nothing it needs to do on its own schedule. Keep the private clamp helper from Lesson 5 unchanged — this alpha\'s WPILib doesn\'t ship a MathUtil.clamp to replace it with.'
+      'Because the module no longer implements Mechanism, the command factories are literally gone — run, runRepeatedly, and friends were inherited from Mechanism, so driveAtSpeed, driveWithJoystick, steerToAngle, and driveDistance don\'t compile anymore. That\'s fine: commands belong to mechanisms, and this class isn\'t one anymore, so those all get deleted along with the constructor\'s addPeriodic call and logTelemetry() (telemetry moves up to Drivetrain in the next section). setDesiredState is Lesson 5\'s steerToAngle math wearing a new home: one call means one tick of control toward the given goal. The Drivetrain\'s commands will call it every tick they run — the same per-tick rhythm runRepeatedly has had since Lesson 2. That keeps a tidy rule intact: motors move only when a command asks, and commands only run while the robot is enabled. The module doesn\'t register anything with the scheduler at all — no addPeriodic, nothing — because there\'s nothing it needs to do on its own schedule. Keep the private clamp helper from Lesson 5 unchanged — this alpha\'s WPILib doesn\'t ship a MathUtil.clamp to replace it with.'
     );
   }
 
@@ -385,7 +385,7 @@ function buildDeck() {
       x: 0.7, y: 1.5, w: 11.9, h: 4.2, fontSize: 13,
       fileLabel: 'Start Drivetrain.java with the module array',
       lines: [
-        { text: 'public class Drivetrain extends Mechanism {', color: 'FFD166' },
+        { text: 'public class Drivetrain implements Mechanism {', color: 'FFD166' },
         { text: '  // Corner order: FL, FR, BL, BR. Pick a convention and stick to it.', color: '7FA8C9' },
         { text: '  private final SwerveModule[] m_modules = new SwerveModule[] {', color: 'D7E3F4' },
         { text: '      new SwerveModule(1, 2, 9, 0.0, DriveConstants.kFrontLeft),', color: '9EF01A' },
@@ -410,28 +410,24 @@ function buildDeck() {
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
-    K.addHeader(s, { icon: 'chartline_white.png', eyebrow: 'Section 3 · Drivetrain.java', title: 'A struct bridge, built once as a field' });
+    K.addHeader(s, { icon: 'chartline_white.png', eyebrow: 'Section 3 · Drivetrain.java', title: 'One overload publishes a whole array' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.75, w: 11.9, h: 2.15, fontSize: 13,
-      fileLabel: 'Add to Drivetrain, alongside the constructor',
-      lines: [
-        { text: 'private final StructArrayPublisher<SwerveModuleVelocity> m_moduleStatesPublisher =', color: 'D7E3F4' },
-        { text: '    NetworkTableInstance.getDefault()', color: 'D7E3F4' },
-        { text: '        .getStructArrayTopic("Drivetrain/ModuleStates", SwerveModuleVelocity.struct)', color: '9EF01A' },
-        { text: '        .publish();', color: 'D7E3F4' },
-      ],
+      x: 0.7, y: 1.75, w: 11.9, h: 1.6, fontSize: 16,
+      fileLabel: 'Nothing to add yet — this is the shape of the call, in logTelemetry() next',
+      example: true,
+      lines: [{ text: 'Telemetry.log("Drivetrain/ModuleStates", states, SwerveModuleVelocity.struct);', color: '9EF01A' }],
     });
 
     K.addCard(s, {
-      x: 0.7, y: 4.15, w: 11.9, h: 2.8,
-      body: 'SmartDashboard only knows numbers and strings — a whole SwerveModuleVelocity[] needs a struct bridge, the same idea as the TalonFXSimState bridge from Lesson 4, just for network data instead of fake sensor readings. Built once as a field, the same "set it up once, use it every tick" shape.',
+      x: 0.7, y: 3.6, w: 11.9, h: 3.35,
+      body: 'Telemetry.log has an overload for exactly this: hand it a whole array plus the type\'s own .struct value, and one call publishes all four modules\' speed and angle together — as one labeled topic AdvantageScope\'s Swerve tab knows how to draw, instead of four separate numbers it would have no way to know belong to the same picture. No separate field, no bridge to build.',
       pad: 0.2, bodySize: 20,
     });
 
     K.addFooter(s, { pageNum: 14, label: 'Four Modules' });
     s.addNotes(
-      'Every value logged since Lesson 3 has been a single number or string — SmartDashboard.putNumber/putString, one call, one value. SwerveModuleVelocity is different: a WPILib data-carrier bundling one wheel\'s speed with its angle as a Rotation2d. NetworkTableInstance.getDefault().getStructArrayTopic(name, structType) describes the bridge: "a topic at this name, carrying an array of this struct-shaped type." SwerveModuleVelocity.struct is a value the class ships for exactly this — it knows how to turn the object into bytes and back. .publish() claims the topic for writing and hands back a StructArrayPublisher. The method that actually fills it in — logTelemetry() — is next.'
+      'Every value logged since Lesson 3 has been a single number, logged one at a time with Telemetry.log(name, value). SwerveModuleVelocity is different: a WPILib data-carrier bundling one wheel\'s speed with its angle as a Rotation2d. Telemetry.log has an overload for exactly this: hand it a whole array plus the type\'s own .struct — a value SwerveModuleVelocity ships that knows how to turn one into bytes and back — and one call publishes all four modules\' speed and angle together, as one labeled topic AdvantageScope\'s Swerve tab knows how to draw, instead of four separate numbers it would have no way to know belong to the same picture. The method that actually calls it — logTelemetry() — is next.'
     );
   }
 
@@ -443,13 +439,13 @@ function buildDeck() {
 
     K.addCodeCard(s, {
       x: 0.7, y: 1.5, w: 11.9, h: 4.7, fontSize: 13,
-      fileLabel: 'Add the method itself, right below the publisher field',
+      fileLabel: 'Add the method itself, below the constructor',
       lines: [
         { text: 'private void logTelemetry() {', color: 'FFD166' },
         { text: '  SwerveModuleVelocity[] states = new SwerveModuleVelocity[4];', color: 'D7E3F4' },
         { text: '  int index = 0;', color: 'D7E3F4' },
         { text: '  for (SwerveModule module : m_modules) {', color: 'D7E3F4' },
-        { text: '    SmartDashboard.putNumber(', color: 'D7E3F4' },
+        { text: '    Telemetry.log(', color: 'D7E3F4' },
         { text: '        "Drivetrain/Module" + index + "/SteerAngleDegrees",', color: '9EF01A' },
         { text: '        module.getSteerAngleDegrees());', color: 'D7E3F4' },
         { text: '    states[index] = new SwerveModuleVelocity(', color: 'D7E3F4' },
@@ -457,14 +453,14 @@ function buildDeck() {
         { text: '        Rotation2d.fromDegrees(module.getSteerAngleDegrees()));', color: '9EF01A' },
         { text: '    index++;', color: 'D7E3F4' },
         { text: '  }', color: 'D7E3F4' },
-        { text: '  m_moduleStatesPublisher.set(states);', color: '9EF01A' },
+        { text: '  Telemetry.log("Drivetrain/ModuleStates", states, SwerveModuleVelocity.struct);', color: '9EF01A' },
         { text: '}', color: 'D7E3F4' },
       ],
     });
 
     K.addFooter(s, { pageNum: 15, label: 'Four Modules' });
     s.addNotes(
-      'for (SwerveModule module : m_modules) is the enhanced for loop — read it as "for each module in m_modules": the body runs once per element with module standing for each in turn. One wrinkle: a for-each loop doesn\'t number its elements, and the log keys need numbers, so a plain int index counter rides along, and "Drivetrain/Module" + index + "/..." glues the number into the key (+ between a String and a number pulls the number into the text). Keys Module0-Module3 follow the FL, FR, BL, BR order of the array. From there .set(states) pushes a fresh array every time logTelemetry() runs — one call publishes all four modules\' speed and angle together, instead of four separate numbers that AdvantageScope would have no way to know belong to the same picture. Step back and name the division of labor: the periodic callback registered in the constructor runs rain or shine — every tick, even while the robot is disabled — so it holds the watching. The acting lives in commands, built next, which call setDesiredState only while enabled. That\'s the whole point of dropping Mechanism from SwerveModule — one mechanism, one lock, four workers commanded together.'
+      'for (SwerveModule module : m_modules) is the enhanced for loop — read it as "for each module in m_modules": the body runs once per element with module standing for each in turn. One wrinkle: a for-each loop doesn\'t number its elements, and the log keys need numbers, so a plain int index counter rides along, and "Drivetrain/Module" + index + "/..." glues the number into the key (+ between a String and a number pulls the number into the text). Keys Module0-Module3 follow the FL, FR, BL, BR order of the array. From there the final Telemetry.log(...) call publishes a fresh array every time logTelemetry() runs — one call publishes all four modules\' speed and angle together, instead of four separate numbers that AdvantageScope would have no way to know belong to the same picture. Step back and name the division of labor: the periodic callback registered in the constructor runs rain or shine — every tick, even while the robot is disabled — so it holds the watching. The acting lives in commands, built next, which call setDesiredState only while enabled. That\'s the whole point of dropping Mechanism from SwerveModule — one mechanism, one lock, four workers commanded together.'
     );
   }
 
@@ -633,7 +629,7 @@ function buildDeck() {
         { text: 'private void logCommandStart(SchedulerEvent event) {', color: 'FFD166' },
         { text: '  if (event instanceof SchedulerEvent.Scheduled scheduled) {', color: 'D7E3F4' },
         { text: '    for (Mechanism mechanism : scheduled.command().requirements()) {', color: '9EF01A' },
-        { text: '      SmartDashboard.putString(', color: 'D7E3F4' },
+        { text: '      Telemetry.log(', color: 'D7E3F4' },
         { text: '          mechanism.getName() + "/CurrentCommand", scheduled.command().name());', color: '9EF01A' },
         { text: '    }', color: 'D7E3F4' },
         { text: '  }', color: 'D7E3F4' },
@@ -695,7 +691,7 @@ function buildDeck() {
       steps: [
         { title: './gradlew simulateJava → My Teleop → Enabled', detail: 'Push the stick — all four steer angles snap to the same value.' },
         { title: 'Hold a bumper', detail: 'The four angles split into the pinwheel from the table.' },
-        { title: 'Open AdvantageScope\'s Swerve tab', detail: 'Drag Drivetrain/ModuleStates into its States slot, Max Speed ≈ 5.' },
+        { title: 'Open AdvantageScope\'s Swerve tab', detail: 'Drag Telemetry/Drivetrain/ModuleStates into its States slot, Max Speed ≈ 5.' },
         { title: 'Retune kP now that you can see it move', detail: 'kP = 0.005 — ten times Lesson 5\'s value — settles in about a second.' },
       ],
     });
@@ -775,7 +771,7 @@ function buildDeck() {
 
     K.addFooter(s, { pageNum: 25, label: 'Four Modules' });
     s.addNotes(
-      'The Java half of this lesson was about many of the same thing: an array holds four same-typed modules, the enhanced for loop does the same work to each, and constructor parameters let one class describe four corners that differ only in their numbers. That same loop paid for itself twice — once over m_modules, and again over command.requirements(), which turned Lesson 3\'s one-mechanism logCommandStart() into a version that needs no further edits no matter how many mechanisms Robot ends up with. The robot half was an architecture decision worth remembering the reasoning for: not every class should be a mechanism. SwerveModule became a plain helper class — the Drivetrain owns the array and holds the scheduler\'s one lock — and the module\'s job shrank to one method: a single tick of control toward whatever it\'s told, whenever a command asks. You also picked up structured telemetry — a StructArrayPublisher bridges a whole array of labeled objects onto the network in one call, so AdvantageScope draws it live, which will catch a miswired corner faster than any plot. If the refactor felt long, that\'s because it was the real thing — a rename, deletions, red files, and the compiler walking you through every place the old design used to live. First, the robot needs to know which way it\'s facing — Lesson 8 gives it a gyro.'
+      'The Java half of this lesson was about many of the same thing: an array holds four same-typed modules, the enhanced for loop does the same work to each, and constructor parameters let one class describe four corners that differ only in their numbers. That same loop paid for itself twice — once over m_modules, and again over command.requirements(), which turned Lesson 3\'s one-mechanism logCommandStart() into a version that needs no further edits no matter how many mechanisms Robot ends up with. The robot half was an architecture decision worth remembering the reasoning for: not every class should be a mechanism. SwerveModule became a plain helper class — the Drivetrain owns the array and holds the scheduler\'s one lock — and the module\'s job shrank to one method: a single tick of control toward whatever it\'s told, whenever a command asks. You also picked up structured telemetry — Telemetry.log\'s struct-array overload publishes a whole array of labeled objects in one call, so AdvantageScope draws it live, which will catch a miswired corner faster than any plot. If the refactor felt long, that\'s because it was the real thing — a rename, deletions, red files, and the compiler walking you through every place the old design used to live. First, the robot needs to know which way it\'s facing — Lesson 8 gives it a gyro.'
     );
   }
 
