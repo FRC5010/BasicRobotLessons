@@ -913,6 +913,45 @@ out badly.
   isolation against a standalone sandbox that skips the PhotonVision/
   maple-sim lessons.** BLine's clearance stands and needs no re-verifying
   once Track B unblocks; only the PhotonVision pin is still awaited.
+
+  **Same-day follow-up: PhotonVision's own `Dev` branch genuinely targets
+  alpha-7 already — verified by a real compile, not just its own claim —
+  but it was deliberately not adopted as a stand-in.** Investigated
+  because a moving CI channel, not the `vendor-json-repo` marketplace,
+  might still unblock Track B sooner. `PhotonVision/photonvision`'s `Dev`
+  tag (a continuously-recreated pre-release, not a numbered one) points at
+  a commit whose `build.gradle` genuinely sets `wpilibVersion =
+  "2027.0.0-alpha-7"` — confirmed by cloning it directly, not inferred
+  from a webpage. Its actual published Maven snapshot
+  (`org.photonvision:photonlib-java:dev-v2027.0.0-alpha-2-66-g18e9cb30`
+  on `maven.photonvision.org/repository/snapshots`) was hand-assembled
+  into a vendordep JSON using PhotonVision's own documented "install a
+  specific version" workflow (hand-edit the version string after a normal
+  install — not a hack) and dropped into a real
+  `tools/verify-lessons-v3.sh 14 --sandbox` checkout alongside a scratch
+  class calling `PhotonCamera`/`PhotonPoseEstimator`. `./gradlew
+  compileJava` — **BUILD SUCCESSFUL** on the first attempt, once the
+  scratch code stopped assuming a stale API (see below). **Two reasons
+  this isn't being pinned to, despite compiling clean:** (1) PhotonVision
+  itself labels this channel "not as well-tested as the latest stable
+  release! Use at your own risk" — it's whatever `main` happens to be,
+  with no semantic-version guarantee, a materially different risk profile
+  than BLine's deliberately-tagged beta; (2) `javap` on the resolved jar
+  shows `PhotonPoseEstimator`'s API has genuinely been redesigned, not
+  just renamed — the old generic `estimator.update(result)` method is
+  gone, replaced by eight separate named strategy methods
+  (`estimateLowestAmbiguityPose`, `estimateCoprocMultiTagPose`,
+  `estimateConstrainedSolvepnpPose`, `estimateRioMultiTagPose`,
+  `estimateClosestToCameraHeightPose`, `estimateClosestToReferencePose`,
+  `estimateAverageBestTargetsPose`,
+  `estimatePnpDistanceTrigSolvePose`) — the signature of active,
+  unfinished redesign work, not a completed migration a lesson could
+  safely be written against today. **User decision (2026-09-22): keep
+  waiting for an actual PhotonVision release** (matching the same logic
+  as the BLine/Track-B decision above) **rather than pin Lesson 15+ to
+  this snapshot.** Nothing here changes Track B's blocked status; it only
+  rules out "pin to the dev channel" as a shortcut, with the reasoning on
+  record so it doesn't need re-investigating.
 - **R3 — pin confirmed, and API confirmed too, by actually compiling against
   it.** Phoenix 6's 2027 alpha vendordep for this project's WPILib version is
   `Phoenix6-26.50.0-alpha-1.json` (with a matching
