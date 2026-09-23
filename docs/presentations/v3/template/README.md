@@ -103,10 +103,32 @@ regardless of which one you run.
      `lineSpacingMultiple` is set lower — PowerPoint's actual per-line height
      appears to run higher than a naive `fontSize × lineSpacingMultiple`
      estimate, and trusting the lower number is exactly how the two bugs above
-     happened.
+     happened. Code-card lines cost more: **`1.36 × fontSize`** —
+     Courier New's own line height is 1.133 em, times the cards' 1.2 line
+     spacing (`CODE_LINE_MULT` in `deck-kit.js`). The old 1.3 let a 22-line
+     card that spilled in PowerPoint (Lesson 14's `Localizer` card) pass the
+     audit; at 1.36 it's caught, and the size it was hand-fixed to in
+     PowerPoint just fits. LibreOffice renders code lines about 6% taller
+     (~1.44×), so a render (below) can show a card's last line touching its
+     bottom edge when PowerPoint may not — check tight cards in PowerPoint.
+   - `addCodeCard` shrinks code that doesn't fit its card, in half-points,
+     by at most 1pt below the size you asked for; the audit reports each one
+     as `(code shrunk 12→11.5pt to fit)`. Treat that as a nudge you can accept,
+     not a license to overfill a card — anything needing more is reported as
+     an overflow for you to fix on the slide.
    - Require the estimate to fit in **at most 85% of the box's height/width**
      (i.e. at least 15% slack) before calling a box "fine" — a number that
      merely fits with 2–5% to spare is a future overflow report, not a pass.
+   - **The header owns everything above y = 1.4in** (`CONTENT_TOP`). Its
+     title is always one line: `addHeader`/`addSectionHeader` measure it
+     (real Cambria Bold widths) and shrink it just enough to fit the full
+     content width, down to 24pt, so a long title can't wrap into the slide
+     below it. A title that won't fit even at 24pt is reported by the audit —
+     shorten it. `addCodeCard` moves a card placed above 1.4in down below the
+     header (keeping its bottom edge if the code still fits, otherwise
+     sliding the whole card down, never past the footer). Nothing else
+     moves itself, so any other card, text, or shape placed above 1.4in on a
+     slide with a header is reported by the audit.
    - Whenever you resize one element in a stacked column, re-derive the
      sibling below it — a code card that grows by 0.3in and an info card
      that isn't shifted/shrunk to match is how a body paragraph ends up
@@ -114,10 +136,11 @@ regardless of which one you run.
    - Run `docs/presentations/v3/template/audit-overflow.js` (Node, no deps
      beyond what's already installed) after any layout change — it parses
      every `addCodeCard`/`addCard`/`s.addText` call in `build/*.js` and flags
-     anything failing the 15%-margin rule above. It's a heuristic scan, not a
-     real layout engine — treat a clean report as "no known problem," not
-     "definitely fine," especially since visual rendering isn't available in
-     this environment (see below). Its block-extraction is string-literal-aware
+     anything failing the 15%-margin rule above, plus header titles that
+     can't fit on one line and anything placed inside the header. It's a
+     heuristic scan, not a real layout engine — treat a clean report as "no
+     known problem," not "definitely fine," and render the slides you changed
+     (see "Rendering slides to check them" below). Its block-extraction is string-literal-aware
      (a `(` or `)` inside a quoted heading/body — `"getPosition()"`, very
      common in this content — no longer miscounts as real nesting); an
      earlier version wasn't, and silently mis-scanned any `addCard` whose
@@ -180,6 +203,24 @@ regardless of which one you run.
       Try Its need real code review versus which ones are "run this and
       watch." A Try It that's purely predict-then-run or observe-a-plot
       does not get either marking.
+
+## Rendering slides to check them
+
+The audit can't see everything, so look at the slides you changed. On a
+Debian/Ubuntu box (including a fresh cloud session), LibreOffice's core
+package alone can't open a `.pptx` ("source file could not be loaded") —
+it needs Impress. It also needs fonts metrically identical to the deck's:
+Caladea for Cambria, Carlito for Calibri, Liberation Mono for Courier New.
+Without them LibreOffice substitutes wider fonts, and titles wrap in the
+render that fit fine in PowerPoint.
+
+```
+sudo apt-get install --no-install-recommends libreoffice-impress poppler-utils \
+  fonts-crosextra-caladea fonts-crosextra-carlito fonts-liberation
+python3 <path-to-pptx-skill>/scripts/office/soffice.py --headless --convert-to pdf \
+  --outdir /tmp/render ../<name>.pptx
+pdftoppm -jpeg -r 80 -f 6 -l 6 /tmp/render/<name>.pdf /tmp/render/slide   # slide 6
+```
 
 ## What's not in here
 
