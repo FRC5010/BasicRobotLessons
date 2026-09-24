@@ -117,8 +117,9 @@ axis: **+Z is up.**
 **Add to `VisionConstants`, below the tag layout:**
 
 ```java
-// Camera mount positions: robot center → camera lens.
-public static final String kFrontCameraName = "limelight-front"; // must match the camera's name in its web UI
+// Camera mount positions: robot center → camera lens. Each name must
+// match the one set in that camera's web UI.
+public static final String kFrontCameraName = "limelight-front";
 public static final Transform3d kFrontRobotToCamera = new Transform3d(
     new Translation3d(0.3, 0.0, 0.2), // 30 cm forward, centered, 20 cm up
     new Rotation3d(0, 0, 0));         // facing straight forward
@@ -410,8 +411,8 @@ public class LimelightFrame {
   }
 
   /** A frame that saw 'tagIds' and placed the robot at 'robot' (MegaTag2, blue-alliance origin). */
-  public static byte[] withTargets(
-      long frameIndex, Pose2d robot, List<Integer> tagIds, double avgDistanceMeters, double latencyMs) {
+  public static byte[] withTargets(long frameIndex, Pose2d robot, List<Integer> tagIds,
+      double avgDistanceMeters, double latencyMs) {
     LimelightFrame frame = new LimelightFrame()
         .map(6)
         .key("fidx").number(frameIndex)

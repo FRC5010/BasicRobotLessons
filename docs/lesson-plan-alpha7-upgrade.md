@@ -529,9 +529,13 @@ is real, reportable news even while PhotonVision stays blocked, per the
   questions — one can appear without the other.
 - **CTRE Phoenix 6** — any release/changelog entry naming alpha-6 or
   alpha-7 compatibility. This alone is Track A's gate.
-- **PhotonVision** — same, via its GitHub releases. **Informational only
-  since 2026-09-24**: the v3 track no longer uses it (see the update at the
-  top), so a PhotonVision alpha-7 release unblocks nothing here.
+- **PhotonVision** — same, via its GitHub releases. **No longer gates
+  anything since 2026-09-24** (the v3 track uses LimelightLib — see the
+  update at the top), **but still watched on purpose**: the user wants to
+  know when an alpha-7 PhotonLib lands, because a PhotonVision flavor of
+  Lesson 15 is a possible future option (see the restructure plan's
+  housekeeping checklist). A release gets a tracking-table row, reported as
+  "an option is now possible," never as "Track B unblocked."
 - **`https://github.com/wpilibsuite/allwpilib/releases`** — informational
   only: whether a newer alpha (alpha-8+) has shipped before the vendors
   caught up to alpha-7, since that would change the actual upgrade target.

@@ -26,8 +26,8 @@ public class LimelightFrame {
   }
 
   /** A frame that saw 'tagIds' and placed the robot at 'robot' (MegaTag2, blue-alliance origin). */
-  public static byte[] withTargets(
-      long frameIndex, Pose2d robot, List<Integer> tagIds, double avgDistanceMeters, double latencyMs) {
+  public static byte[] withTargets(long frameIndex, Pose2d robot, List<Integer> tagIds,
+      double avgDistanceMeters, double latencyMs) {
     LimelightFrame frame = new LimelightFrame()
         .map(6)
         .key("fidx").number(frameIndex)

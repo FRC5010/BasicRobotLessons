@@ -85,8 +85,9 @@ public final class Constants {
     // This season's field: its size, and where every AprilTag sits on it.
     public static final Field kTagLayout = Field.loadField(Fields.DEFAULT_FIELD);
 
-    // Camera mount positions: robot center → camera lens.
-    public static final String kFrontCameraName = "limelight-front"; // must match the camera's name in its web UI
+    // Camera mount positions: robot center → camera lens. Each name must
+    // match the one set in that camera's web UI.
+    public static final String kFrontCameraName = "limelight-front";
     public static final Transform3d kFrontRobotToCamera = new Transform3d(
         new Translation3d(0.3, 0.0, 0.2), // 30 cm forward, centered, 20 cm up
         new Rotation3d(0, 0, 0));         // facing straight forward

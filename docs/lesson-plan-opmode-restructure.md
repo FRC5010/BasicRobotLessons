@@ -4277,6 +4277,36 @@ appendices: verify before drafting, record what you verified.
       `VisionConstants` in every later `Constants.java` (16–33) and the
       provider class name in `Robot.java` for 16–30. **Not done, pending
       user decisions:** Lesson 27 and Lesson 31's vision redesigns (see
-      their rows), and the Lesson 15 deck
-      (`docs/presentations/v3/15-photonvision.pptx` and its
-      `template/build/15-photonvision.js`, which still teach PhotonVision).
+      their rows). (The Lesson 15 deck was done the same day — next entry.)
+- [x] **Lesson 15 deck rebuilt for Limelight, 2026-09-24.**
+      `docs/presentations/v3/15-limelight.pptx` from a new
+      `template/build/15-limelight.js` (40 slides, one per code edit the
+      lesson instructs, speaker notes on every slide). Every code-card line
+      was sliced from the lesson's own code blocks and checked to appear in
+      the lesson verbatim (239 lines, 0 mismatches). `audit-overflow.js`
+      reports no true overflows; `validate.py` passes; all 40 slides were
+      rendered and checked by eye. To fit cards legibly, two source lines
+      were reflowed, with no behavior change (Lesson 15 recompiled): the
+      camera-name comment in `VisionConstants` moved onto its own lines
+      (carried into every later `Constants.java`), and
+      `LimelightFrame.withTargets`' signature wraps differently. The Lesson
+      14 deck's "Next" card and the Lesson 16 deck's Lesson 15 references
+      were updated and rebuilt (only those text runs changed, confirmed by
+      diffing the slide XML). The old PhotonVision deck
+      (`15-photonvision.pptx`, `template/build/15-photonvision.js`) was
+      removed from the working tree.
+- [ ] **Possible future option: a PhotonVision flavor of Lesson 15**
+      (user, 2026-09-24: "Keeping a PV oriented lesson might be nice as an
+      option, in the future"). Nothing to do until PhotonLib ships an
+      alpha-7 build — the vendor-check Routine still watches for it and
+      reports when it lands. The last PhotonVision version of everything is
+      at commit `94fe7b9`: `docs/lessons/v3/15-photonvision.md`,
+      `code/v3/lesson-15/subsystems/{PhotonVisionPoseProvider,VisionIOPhotonVision,VisionIOPhotonVisionSim}.java`,
+      `docs/presentations/v3/15-photonvision.pptx` and
+      `template/build/15-photonvision.js` (restore with
+      `git show 94fe7b9:<path>`). It was written against the alpha-5
+      PhotonLib, so it will need its own alpha-7 port (the R2 notes on
+      PhotonVision's redesigned `PhotonPoseEstimator` apply), and the form
+      is open — an aside, or an alternate Lesson 15 sharing the same
+      `VisionIO` interface, which `LimelightPoseProvider`'s design would
+      allow.
