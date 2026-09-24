@@ -16,8 +16,8 @@ import first.robot.Constants.DriveConstants;
 import first.robot.Constants.VisionConstants;
 import first.robot.subsystems.Drivetrain;
 import first.robot.subsystems.Elevator;
+import first.robot.subsystems.LimelightPoseProvider;
 import first.robot.subsystems.Localizer;
-import first.robot.subsystems.PhotonVisionPoseProvider;
 
 /**
  * The methods in this class are called automatically as described in the OpModeRobot documentation.
@@ -38,8 +38,8 @@ public class Robot extends OpModeRobot {
   // Blank finals: building a camera needs localizer (for its pose supplier),
   // so localizer has to be a finished object first. Assigned in the
   // constructor body, below, which runs after every field initializer above.
-  public final PhotonVisionPoseProvider frontCamera;
-  public final PhotonVisionPoseProvider backCamera;
+  public final LimelightPoseProvider frontCamera;
+  public final LimelightPoseProvider backCamera;
   public final Elevator elevator = new Elevator();
 
   /**
@@ -52,9 +52,9 @@ public class Robot extends OpModeRobot {
 
     // Vision now checks its simulated eyesight against ground truth, not
     // against its own guess — the fix Lesson 15 admitted it was missing.
-    frontCamera = PhotonVisionPoseProvider.makeCamera(
+    frontCamera = LimelightPoseProvider.makeCamera(
         VisionConstants.kFrontCameraName, VisionConstants.kFrontRobotToCamera, drivetrain::getSimulatedPose);
-    backCamera = PhotonVisionPoseProvider.makeCamera(
+    backCamera = LimelightPoseProvider.makeCamera(
         VisionConstants.kBackCameraName, VisionConstants.kBackRobotToCamera, drivetrain::getSimulatedPose);
     localizer.addProvider(frontCamera);
     localizer.addProvider(backCamera);

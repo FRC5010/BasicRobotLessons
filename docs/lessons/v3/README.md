@@ -32,7 +32,7 @@ status of every lesson, including what changed and why.
 | 12 | [Model-based control](12-model-based-control.md) | Onboard closed loop with feedforward, replacing boot-time CANcoder priming with continuous remote-sensor feedback | Config objects, control requests |
 | 13 | [IO layers](13-io-replay.md) | Every sensor behind a clean `ModuleIO`/`GyroIO` — the doors real replay will use once this framework's tooling catches up, not replay itself yet | Interfaces & default methods, anonymous classes, enums, `switch` expressions |
 | 14 | [Pose estimator & localizer](14-pose-estimator.md) | A localization subsystem fused from pluggable pose providers | Interfaces, registries, timestamps |
-| 15 | [Real vision — PhotonVision](15-photonvision.md) | A real PhotonVision pose provider, plus simulated multi-camera coverage | `Optional`, `static` fields, `record` |
+| 15 | [Real vision — Limelight](15-limelight.md) | A real Limelight pose provider, plus a simulated camera the real library can't tell apart | `Optional`, `static`, `record` |
 | 16 | [Ground truth — a hand-built stand-in](16-ground-truth.md) | A hand-built chassis body with friction-limited acceleration, standing in for maple-sim until it supports this framework | Friction-limited acceleration, `MathUtil.slewRateLimit`, `Twist2d.exp()` |
 | 17 | — | *Gap for now* — the old lesson's BLine path-following library doesn't run on Commands V3 yet. See the plan doc. | — |
 | 18 | [Scoring elevator](18-elevator.md) | A second mechanism on the same IO spine, profiled and gravity-compensated | Comparing measures directly (`Distance.gt`/`.lt`) |

@@ -7,9 +7,9 @@
 # (code/OpModeV3Robot, not code/ActualLessons), the package root
 # (first.robot, not frc.robot), the deploy target (SystemCore, not roboRIO),
 # and the vendordep source (WPILib's 2027-alpha marketplace buckets, not the
-# current season — Phoenix 6 pins to the 2027_alpha7 bucket, photonlib still
-# to 2027_alpha5 until it publishes an alpha7-compatible release; see
-# docs/lesson-plan-alpha7-upgrade.md). There is no
+# current season — Phoenix 6 pins to the 2027_alpha7 bucket; LimelightLib,
+# which isn't in the marketplace, pins to one commit of Limelight's own repo;
+# see docs/lesson-plan-alpha7-upgrade.md). There is no
 # AdvantageKit build.gradle block to carry over, but lesson-deletion replay
 # does apply here too, the same way it does in the main script (see `del`
 # below) — the first one lands at Lesson 7, same rename as the main course.
@@ -125,18 +125,19 @@ done
 # --- vendordeps -------------------------------------------------------------
 # Pinned to WPILib's vendordep marketplace's 2027_alpha7 bucket, one
 # immutable file per version — same rule as the main script: never a
-# vendor's own "latest" link. Phoenix 6 cleared the alpha-7 bucket first
-# (Track A, Lessons 1-14); photonlib has not (Track B, Lessons 15-34 —
-# see docs/lesson-plan-alpha7-upgrade.md), so its entry below still points
-# at the old alpha5 bucket on purpose until it does.
+# vendor's own "latest" link. LimelightLib 2 (vision, from Lesson 15) is not
+# in the marketplace, and its own URL is a moving link — the same
+# LimelightLib-alpha7.json was overwritten five times between beta5 and
+# beta9 — so it pins to one commit of Limelight's repo instead, which can't
+# drift. Its Maven repo keeps every version, so an old pin stays buildable.
 MARKETPLACE="https://raw.githubusercontent.com/wpilibsuite/vendor-json-repo/main/2027_alpha7"
-MARKETPLACE_ALPHA5="https://raw.githubusercontent.com/wpilibsuite/vendor-json-repo/main/2027_alpha5"
+LIMELIGHT_PIN="https://raw.githubusercontent.com/LimelightVision/limelightlib-public/717a921719f5dbaf4ce940819e2d84bdab8738b9"
 # "<lesson it is first needed>|<url>". Only what the requested range needs
 # gets fetched. CommandsV3 is NOT fetched here — it ships already installed
 # in code/OpModeV3Robot/vendordeps/, copied from wpilib source directly.
 VENDORDEPS=(
   "1|$MARKETPLACE/Phoenix6-26.70.0-alpha-2.json"
-  "15|$MARKETPLACE_ALPHA5/photonlib-v2027.0.0-alpha-2.json"
+  "15|$LIMELIGHT_PIN/LimelightLib-alpha7.json"   # 2.0.0-beta9-alpha7
 )
 
 say() { printf '\n\033[1m==> %s\033[0m\n' "$*"; }
@@ -213,7 +214,7 @@ say "Applying the deletions the lessons instruct"
 del() { [ "$THROUGH" -ge "$1" ] && shift && for f; do rm -f "$JAVA_DIR/$f"; done || true; }
 del 7  subsystems/DriveModule.java   # became SwerveModule
 del 9  opmode/MyTeleop.java opmode/MyAuto.java   # became RobotTeleop / RobotAuto
-del 15 subsystems/VisionPoseProvider.java   # became PhotonVisionPoseProvider
+del 15 subsystems/VisionPoseProvider.java   # became LimelightPoseProvider
 echo "  done"
 fi
 

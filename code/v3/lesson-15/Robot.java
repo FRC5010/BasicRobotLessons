@@ -9,13 +9,13 @@ import org.wpilib.command3.Scheduler;
 import org.wpilib.command3.SchedulerEvent;
 import org.wpilib.command3.button.CommandGamepad;
 import org.wpilib.framework.OpModeRobot;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 import org.wpilib.system.DataLogManager;
 
 import first.robot.Constants.VisionConstants;
 import first.robot.subsystems.Drivetrain;
+import first.robot.subsystems.LimelightPoseProvider;
 import first.robot.subsystems.Localizer;
-import first.robot.subsystems.PhotonVisionPoseProvider;
 
 /**
  * The methods in this class are called automatically as described in the OpModeRobot documentation.
@@ -36,8 +36,8 @@ public class Robot extends OpModeRobot {
   // Blank finals: building a camera needs localizer (for its pose supplier),
   // so localizer has to be a finished object first. Assigned in the
   // constructor body, below, which runs after every field initializer above.
-  public final PhotonVisionPoseProvider frontCamera;
-  public final PhotonVisionPoseProvider backCamera;
+  public final LimelightPoseProvider frontCamera;
+  public final LimelightPoseProvider backCamera;
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -47,9 +47,9 @@ public class Robot extends OpModeRobot {
     DataLogManager.start(); // saves every published value to a .wpilog file
     Scheduler.getDefault().addEventListener(this::logCommandStart);
 
-    frontCamera = PhotonVisionPoseProvider.makeCamera(
+    frontCamera = LimelightPoseProvider.makeCamera(
         VisionConstants.kFrontCameraName, VisionConstants.kFrontRobotToCamera, localizer::getPose);
-    backCamera = PhotonVisionPoseProvider.makeCamera(
+    backCamera = LimelightPoseProvider.makeCamera(
         VisionConstants.kBackCameraName, VisionConstants.kBackRobotToCamera, localizer::getPose);
     localizer.addProvider(frontCamera);
     localizer.addProvider(backCamera);
@@ -68,7 +68,7 @@ public class Robot extends OpModeRobot {
   private void logCommandStart(SchedulerEvent event) {
     if (event instanceof SchedulerEvent.Scheduled scheduled) {
       for (Mechanism mechanism : scheduled.command().requirements()) {
-        SmartDashboard.putString(mechanism.getName() + "/CurrentCommand", scheduled.command().name());
+        Telemetry.log(mechanism.getName() + "/CurrentCommand", scheduled.command().name());
       }
     }
   }

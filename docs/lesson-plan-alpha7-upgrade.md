@@ -44,6 +44,32 @@ earlier sections predicted, superseding the "likely affected" language in
 [What alpha-7 actually changed](#what-alpha-7-actually-changed) for anything
 in Lessons 1–14.
 
+**Update, 2026-09-24: Track B's vendor blocker is gone — the v3 track
+switched vision from PhotonVision to LimelightLib 2.** User decision, after a
+verified exploration: LimelightLib 2 (`com.limelightvision`, pure Java)
+publishes an alpha-7 build (`2.0.0-beta9-alpha7`, `wpilibYear: 2027_alpha7`),
+and Systemcore runs Limelight's vision on up to four plain USB cameras
+(`Limelight.SYSTEMCORE_USB0`–`3`, NetworkTables names `limelightsc0`–`3`).
+It is **not** in WPILib's marketplace, and Limelight's own
+`LimelightLib-alpha7.json` URL is a moving link — the same file name was
+overwritten five times, beta5 → beta9, between 2026-09-04 and 2026-09-11 —
+so `tools/verify-lessons-v3.sh` pins it by **commit** instead:
+`raw.githubusercontent.com/LimelightVision/limelightlib-public/717a921719f5dbaf4ce940819e2d84bdab8738b9/LimelightLib-alpha7.json`.
+Limelight's Maven repo keeps every published version (beta2 through beta9
+are all still there), so an old pin stays buildable. **Lesson 15 is migrated
+and verified**: `./tools/verify-lessons-v3.sh 15` compiles 0–15 with zero
+warnings, and the vision chain was exercised end to end in desktop sim (see
+the restructure plan's R2 section for the measurements). Track B is now
+blocked on **nothing vendor-side** — Lessons 16–34 are simply pre-alpha-7
+code awaiting Phase 1b (`verify-lessons-v3.sh 16` now fails on
+`extends Mechanism`/`SmartDashboard`, not on a vendordep). Two alpha-7 facts
+Phase 1b will need that only surfaced here: **`AprilTagFieldLayout` and
+`AprilTagFields` are gone** — the field is now
+`org.wpilib.fields.Field.loadField(Fields.DEFAULT_FIELD)`, tags are
+`FieldTag` (`getID()`, `getPose()`), and `Field.getTagPose(int)` still
+returns `Optional<Pose3d>` (Lesson 28's `tagPosition` keeps its shape); and
+**`Rotation2d.kZero` doesn't exist** in alpha-7 (`k180deg` does).
+
 ## What alpha-7 actually changed
 
 Read straight off the [release notes](https://github.com/wpilibsuite/allwpilib/releases/tag/v2027.0.0-alpha-7).
@@ -379,11 +405,20 @@ version because GradleRIO's own test suite builds against it.
 through 14 individually (not just the Lesson-14 rollup), confirming every
 intermediate stopping point compiles — zero errors, zero warnings.
 
-**Phase 1b — Lessons 15–34, fires once Track B also clears (PhotonVision
-catches up too).** Same steps as 1a, extended: bump the `photonlib` entry
-in `VENDORDEPS` too, then run `./tools/verify-lessons-v3.sh` with no lesson
-limit (rolls through the highest lesson present, currently 34) and continue
-the lesson-by-lesson fix from wherever Phase 1a left off. Re-run
+**Phase 1b — Lessons 15–34. No longer gated on a vendor (2026-09-24).**
+Track B was waiting on PhotonVision; the v3 track switched vision to
+LimelightLib 2 instead (see the 2026-09-24 update at the top), and Lesson 15
+landed on it first. What remains is the same lesson-by-lesson fix as 1a,
+starting at Lesson 16: run `./tools/verify-lessons-v3.sh N` for each `N`
+and fix whatever the real compiler reports. Two lessons need more than a
+port, because their PhotonVision-specific designs don't carry over to
+Limelight on their own — **Lesson 27** (object detection: `PhotonCamera`
+detections and a `VisionTargetSim` scene) and **Lesson 31** (camera
+disconnect alert: its sim demo relied on `PhotonCamera.isConnected()`; the
+Limelight equivalent, `Limelight.isConnected()`, is honest in sim, but
+renaming a camera renames both the simulated publisher and the reader, so
+the demo needs a different setup). Both are design calls for the user, not
+mechanical ports. Re-run
 `./tools/verify-lessons-v3.sh 34 test` once everything compiles, to catch
 anything only a test surfaces.
 
@@ -478,6 +513,7 @@ can go green while Track B is still red.
 | 2026-09-14 (automated, `NerdSwerveYAGSL2026/tools/check-alpha7-readiness.sh`) | `v2027.0.0-alpha-7` (unchanged, no alpha-8) | `2027_alpha7` bucket gained one more entry since the last check — **`ChoreoLib-2027.0.0-alpha-3.json`** — alongside the `AdvantageKit`/`REVLib` entries already there. REVLib's alpha-7 build is now confirmed clean on *both* the class-reference and native-ABI checks (this fully clears NerdSwerve's gate, not this repo's). Still no Phoenix 6 or `photonlib` entry in `2027_alpha7` | `26.50.0-alpha-1` (unchanged) — still 2 classes missing vs. alpha-7: `epilogue/logging/EpilogueBackend`, `epilogue/logging/NestedBackend` | `v2027.0.0-alpha-2` (unchanged) — still 7 classes missing vs. alpha-7: `driverstation/Alert`, `math/util/Pair`, `smartdashboard/SmartDashboard`, `util/sendable/Sendable`, `vision/apriltag/AprilTag`, `vision/apriltag/AprilTagFieldLayout`, `vision/apriltag/AprilTagFields` | **Blocked** — unchanged, still needs Phoenix 6 | **Blocked** — unchanged, still needs Phoenix 6 and PhotonVision |
 | 2026-09-18 (manual, this session — directly checked `vendor-json-repo`'s live directory listing and CTRE's own `SystemCoreTesting/main/CTR-Phoenix.md` compatibility doc, not just the automated script's cached view) | `v2027.0.0-alpha-7` (confirmed via the GitHub releases page — still nothing newer) | **`2027_alpha7` bucket now holds `Phoenix6-26.70.0-alpha-2.json` and `Phoenix6-replay-26.70.0-alpha-2.json`**, alongside `AdvantageKit`/`ChoreoLib`/`REVLib`. Still no `photonlib` entry | **`26.70.0-alpha-2`, and it's in the `2027_alpha7` bucket** — CTRE's own compatibility doc states this release is `2027_alpha7`-compatible | `v2027.0.0-alpha-2` (unchanged) — still not marketplace-pinned for alpha6/7 | **Ready → Phase 1a executed this session.** `code/OpModeV3Robot` and `tools/verify-lessons-v3.sh` now pin the alpha-7 bucket for Phoenix 6; Lessons 0–14 verified compiling with zero warnings at every intermediate stopping point. See [Phase 1a](#phased-plan) above for what broke and how it was fixed | **Still blocked** — unchanged, needs PhotonVision's own alpha6/7-pinned release |
 | 2026-09-22 (manual, this session — investigated PhotonVision's own `Dev` CI channel directly as a possible shortcut, not just the marketplace) | `v2027.0.0-alpha-7` (unchanged) | Unchanged — still no `photonlib` entry in `2027_alpha7` | Unchanged | **Still no tagged/numbered release beyond `v2027.0.0-alpha-2` (targets alpha-6).** But PhotonVision's `Dev` branch (a continuously-recreated pre-release, not a version tag) does genuinely target alpha-7 in source, confirmed by cloning it directly: `build.gradle` sets `wpilibVersion = "2027.0.0-alpha-7"`. Its real published snapshot (`org.photonvision:photonlib-java:dev-v2027.0.0-alpha-2-66-g18e9cb30` on `maven.photonvision.org`) was hand-assembled into a vendordep JSON via PhotonVision's own documented "install a specific version" workflow and compiled clean against this project in a real sandbox. **Deliberately not adopted as a stand-in** — PhotonVision labels this channel "use at your own risk," and `javap` shows `PhotonPoseEstimator`'s API has been redesigned (no more generic `update()`, replaced by eight separate named strategy methods), the signature of unfinished work rather than a completed migration. Full reasoning in `docs/lesson-plan-opmode-restructure.md`'s R2 section. **User decision: keep waiting for an actual tagged release.** | N/A (this session's Track A already executed; unaffected) | **Still blocked** — the dev-channel shortcut was investigated and rejected; still needs a real, numbered, alpha6/7-targeted PhotonVision release |
+| 2026-09-24 (manual, this session — direct `vendor-json-repo` checkout of `2027_alpha7`, plus LimelightLib 2's own repo history) | `v2027.0.0-alpha-7` (unchanged) | Unchanged: `AdvantageKit-27.0.0-alpha-5`, `ChoreoLib-2027.0.0-alpha-3`, `Phoenix6-26.70.0-alpha-2` (+ replay), `REVLib-2027.0.0-alpha-7`, `ReduxLib-2027.0.0-alpha-7`. No `photonlib`, and no LimelightLib entry either | Unchanged | **No longer needed.** The v3 track switched vision to **LimelightLib 2** (`2.0.0-beta9-alpha7`, `wpilibYear: 2027_alpha7`), pinned by commit `717a921` of `LimelightVision/limelightlib-public` because the vendor's own URL is overwritten on every release (beta5→beta9 in one week). PhotonVision is now informational only for this repo | N/A (unaffected) | **Unblocked vendor-side.** Lesson 15 migrated to Limelight and verified (0–15 compile, zero warnings; runtime-checked in sim). Lessons 16–34 remain pre-alpha-7 code — that's Phase 1b's migration work, gated on nothing external |
 
 ## Monitoring
 
@@ -493,8 +529,9 @@ is real, reportable news even while PhotonVision stays blocked, per the
   questions — one can appear without the other.
 - **CTRE Phoenix 6** — any release/changelog entry naming alpha-6 or
   alpha-7 compatibility. This alone is Track A's gate.
-- **PhotonVision** — same, via its GitHub releases. Needed only for
-  Track B, on top of everything Track A needs.
+- **PhotonVision** — same, via its GitHub releases. **Informational only
+  since 2026-09-24**: the v3 track no longer uses it (see the update at the
+  top), so a PhotonVision alpha-7 release unblocks nothing here.
 - **`https://github.com/wpilibsuite/allwpilib/releases`** — informational
   only: whether a newer alpha (alpha-8+) has shipped before the vendors
   caught up to alpha-7, since that would change the actual upgrade target.

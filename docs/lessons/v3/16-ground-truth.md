@@ -34,10 +34,10 @@ frame. The chassis has no mass. The tires have no grip.
 You've been getting away with it because everything downstream of the
 encoder can't tell the difference — that was Lesson 4's whole promise, and
 it held. But look at what the course has had to fake as a result. Lesson
-15's Try It asked you to multiply `robotToCamera`'s offset on purpose and
-notice the sim couldn't show you the consequence, because there was no
-independent truth to check against. There's a deeper version of the same
-gap: every wheel spins exactly as fast as it's told, so odometry has never
+15's Try It asked you to give the simulated camera a shaky hand, and the
+estimate drifted off with nothing to pull it back, because there was no
+independent truth for vision to be right about. There's a deeper version of
+the same gap: every wheel spins exactly as fast as it's told, so odometry has never
 once been *wrong* in simulation — it's just been a very precise record of
 what the motors did, with nothing to compare it to.
 
@@ -382,17 +382,17 @@ word.
 
 ## 7. Closing the loop: vision checks itself against truth
 
-Lesson 15 admitted a compromise. `VisionIOPhotonVisionSim` rendered what
-the simulated camera saw from `Localizer::getPose()` — the very estimate
-vision was supposed to correct — because no independent truth existed yet.
+Lesson 15 admitted a compromise. `VisionIOLimelightSim` looked out from
+`localizer::getPose` — the very estimate vision was supposed to correct —
+because no independent truth existed yet.
 One does now, and the fix is a one-line swap.
 
 **Change both camera suppliers in `Robot`'s constructor:**
 
 ```java
-    frontCamera = PhotonVisionPoseProvider.makeCamera(
+    frontCamera = LimelightPoseProvider.makeCamera(
         VisionConstants.kFrontCameraName, VisionConstants.kFrontRobotToCamera, drivetrain::getSimulatedPose);
-    backCamera = PhotonVisionPoseProvider.makeCamera(
+    backCamera = LimelightPoseProvider.makeCamera(
         VisionConstants.kBackCameraName, VisionConstants.kBackRobotToCamera, drivetrain::getSimulatedPose);
 ```
 

@@ -348,13 +348,21 @@ a lesson as-is.
 - [docs/lesson-plan-alpha7-upgrade.md](docs/lesson-plan-alpha7-upgrade.md) —
   the impact assessment and phased plan for upgrading the v3 track (only —
   the classic track targets stable 2026 and is unaffected) to WPILib 2027
-  alpha-7, a large breaking-change release. **Blocked on vendors**: neither
-  WPILib's own vendordep marketplace nor CTRE Phoenix 6 nor PhotonVision has
-  published an alpha-6-or-later-compatible pin yet, and this course's own
-  rule is to pin to the marketplace, never a vendor's "latest" link — so no
-  lesson code gets touched until that clears. A Routine checks every 6 hours
-  and updates that doc's vendor-tracking table (silently, unless something
-  actually changed) — read it before assuming this is still blocked.
+  alpha-7, a large breaking-change release. **Lessons 0–15 are migrated and
+  verified on alpha-7**: Phoenix 6 cleared the marketplace (Track A, 1–14,
+  2026-09-18), and on 2026-09-24 the v3 track switched vision from
+  PhotonVision to **LimelightLib 2**, which cleared Track B's vendor gate.
+  LimelightLib isn't in WPILib's marketplace and its own URL is overwritten on
+  every release, so `verify-lessons-v3.sh` pins it **by commit** — the one
+  sanctioned exception to "pin to the marketplace", and the reason for it is
+  in that doc. Lesson 15's simulated camera publishes real results frames to
+  the NetworkTables topic a real Limelight uses, so the unmodified library
+  runs in sim. Lessons 16–34 are still pre-alpha-7 code awaiting Phase 1b;
+  Lessons 27 and 31 need Limelight redesigns first (user decisions). Alpha-7
+  also removed `AprilTagFieldLayout` — the field is
+  `org.wpilib.fields.Field.loadField(Fields.DEFAULT_FIELD)` now. A Routine
+  checks vendors every 6 hours and updates that doc's vendor-tracking table
+  (silently, unless something actually changed).
 
 ## When adding or editing a lesson
 

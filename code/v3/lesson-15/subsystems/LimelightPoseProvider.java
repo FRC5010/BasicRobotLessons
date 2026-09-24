@@ -4,50 +4,47 @@ import java.util.function.Supplier;
 
 import org.wpilib.math.estimator.SwerveDrivePoseEstimator;
 import org.wpilib.math.geometry.Pose2d;
-import org.wpilib.math.geometry.Pose3d;
 import org.wpilib.math.geometry.Transform3d;
-import org.wpilib.networktables.NetworkTableInstance;
-import org.wpilib.networktables.StructArrayPublisher;
+import org.wpilib.telemetry.Telemetry;
 
 import first.robot.Constants;
 
 /** A vision camera, contributing whatever pose corrections its IO reported this tick. */
-public class PhotonVisionPoseProvider implements PoseProvider {
+public class LimelightPoseProvider implements PoseProvider {
   private final VisionIO m_io;
   private final VisionIO.VisionIOInputs m_inputs = new VisionIO.VisionIOInputs();
+  private final String m_logKey;
 
-  private final StructArrayPublisher<Pose3d> m_observationsPublisher;
-
-  public PhotonVisionPoseProvider(VisionIO io, String logKey) {
+  public LimelightPoseProvider(VisionIO io, String logKey) {
     m_io = io;
-    m_observationsPublisher = NetworkTableInstance.getDefault()
-        .getStructArrayTopic(logKey + "/PoseObservations", Pose3d.struct)
-        .publish();
+    m_logKey = logKey;
   }
 
   @Override
   public void updatePoseEstimate(SwerveDrivePoseEstimator estimator) {
+    m_io.setRobotHeading(estimator.getEstimatedPosition().getRotation());
     m_io.updateInputs(m_inputs);
 
-    Pose3d[] poses = new Pose3d[m_inputs.poseObservations.length];
+    Pose2d[] poses = new Pose2d[m_inputs.poseObservations.length];
     for (int i = 0; i < poses.length; i++) {
       poses[i] = m_inputs.poseObservations[i].pose();
     }
-    m_observationsPublisher.set(poses);
+    Telemetry.log(m_logKey + "/PoseObservations", poses, Pose2d.struct);
 
     for (VisionIO.PoseObservation observation : m_inputs.poseObservations) {
-      estimator.addVisionMeasurement(observation.pose().toPose2d(), observation.timestampSeconds());
+      estimator.addVisionMeasurement(
+          observation.pose(), observation.timestampSeconds(), observation.stdDevs());
     }
   }
 
   /** Picks each camera's real/sim/replay IO, the same way Drivetrain picks each module's. */
-  public static PhotonVisionPoseProvider makeCamera(
+  public static LimelightPoseProvider makeCamera(
       String name, Transform3d robotToCamera, Supplier<Pose2d> poseSupplier) {
     VisionIO io = switch (Constants.kCurrentMode) {
-      case REAL -> new VisionIOPhotonVision(name, robotToCamera);
-      case SIM -> new VisionIOPhotonVisionSim(name, robotToCamera, poseSupplier);
+      case REAL -> new VisionIOLimelight(name, robotToCamera);
+      case SIM -> new VisionIOLimelightSim(name, robotToCamera, poseSupplier);
       case REPLAY -> new VisionIO() {}; // nothing feeds this yet
     };
-    return new PhotonVisionPoseProvider(io, "Localizer/" + name);
+    return new LimelightPoseProvider(io, "Localizer/" + name);
   }
 }
