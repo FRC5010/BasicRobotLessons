@@ -98,21 +98,14 @@ import java.util.List;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.math.estimator.SwerveDrivePoseEstimator;
 import org.wpilib.math.geometry.Pose2d;
-import org.wpilib.networktables.NetworkTableInstance;
-import org.wpilib.networktables.StructPublisher;
 import org.wpilib.smartdashboard.Field2d;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 
 public class Localizer {
   private final Drivetrain m_drivetrain;
   private final SwerveDrivePoseEstimator m_estimator;
   private final List<PoseProvider> m_providers = new ArrayList<>();
   private final Field2d m_field = new Field2d();
-
-  private final StructPublisher<Pose2d> m_posePublisher =
-      NetworkTableInstance.getDefault()
-          .getStructTopic("Localizer/Pose", Pose2d.struct)
-          .publish();
 
   public Localizer(Drivetrain drivetrain) {
     m_drivetrain = drivetrain;
@@ -128,7 +121,7 @@ public class Localizer {
     // The drivetrain is the odometry backbone — register it first.
     addProvider(drivetrain);
 
-    SmartDashboard.putData("Field", m_field); // the SimGUI field view from Lesson 11
+    Telemetry.log("Field", m_field); // the SimGUI field view from Lesson 11
     Scheduler.getDefault().addPeriodic(this::periodic);
   }
 
@@ -141,7 +134,7 @@ public class Localizer {
     for (PoseProvider provider : m_providers) {
       provider.updatePoseEstimate(m_estimator);
     }
-    m_posePublisher.set(getPose());
+    Telemetry.log("Localizer/Pose", getPose(), Pose2d.struct);
     m_field.setRobotPose(getPose());
   }
 
@@ -201,20 +194,20 @@ expose it and answer the `PoseProvider` call. `SwerveDriveKinematics` and
 ```java
 import org.wpilib.math.estimator.SwerveDrivePoseEstimator;
 
-public class Drivetrain extends Mechanism implements PoseProvider {
+public class Drivetrain implements Mechanism, PoseProvider {
 ```
 
 **Delete** the pose machinery that used to live here — the `m_odometry`
-field, the `Field2d`/`m_field`, and the `StructPublisher<Pose2d>` that
-published `Drivetrain/Pose`. All of it moves to `Localizer`, which
-publishes the fused result as `Localizer/Pose` instead.
+field, the `Field2d`/`m_field`, and the `Telemetry.log("Drivetrain/Pose",
+...)` call. All of it moves to `Localizer`, which publishes the fused
+result as `Localizer/Pose` instead.
 
 **Delete from `logTelemetry()`, at the bottom:**
 
 ```java
     // DELETE — odometry lives on Localizer now.
     Pose2d pose = m_odometry.update(Rotation2d.fromDegrees(getHeadingDegrees()), modulePositions());
-    m_posePublisher.set(pose);
+    Telemetry.log("Drivetrain/Pose", pose, Pose2d.struct);
     m_field.setRobotPose(pose);
 ```
 
@@ -325,17 +318,11 @@ package first.robot.subsystems;
 
 import org.wpilib.math.estimator.SwerveDrivePoseEstimator;
 import org.wpilib.math.geometry.Pose2d;
-import org.wpilib.networktables.NetworkTableInstance;
-import org.wpilib.networktables.StructPublisher;
 import org.wpilib.system.Timer;
+import org.wpilib.telemetry.Telemetry;
 
 public class VisionPoseProvider implements PoseProvider {
   private Pose2d m_pending = null;
-
-  private final StructPublisher<Pose2d> m_sightingPublisher =
-      NetworkTableInstance.getDefault()
-          .getStructTopic("Localizer/VisionPose", Pose2d.struct)
-          .publish();
 
   /** Pretend a camera just saw the robot here. A real camera calls this on each frame. */
   public void reportSighting(Pose2d pose) {
@@ -346,7 +333,7 @@ public class VisionPoseProvider implements PoseProvider {
   public void updatePoseEstimate(SwerveDrivePoseEstimator estimator) {
     if (m_pending != null) {
       estimator.addVisionMeasurement(m_pending, Timer.getTimestamp());
-      m_sightingPublisher.set(m_pending);
+      Telemetry.log("Localizer/VisionPose", m_pending, Pose2d.struct);
       m_pending = null;
     }
   }
@@ -486,4 +473,4 @@ only reports what a button tells it to. A future lesson replaces it with the
 real thing: an actual camera reading actual AprilTags. Watch how much of
 `Localizer` would have to change to accept it. (Spoiler: none.)
 
-Next: [Lesson 15 — Real vision: PhotonVision and multi-camera simulation](15-photonvision.md).
+Next: [Lesson 15 — Real vision: a Limelight, and a simulated one](15-limelight.md).

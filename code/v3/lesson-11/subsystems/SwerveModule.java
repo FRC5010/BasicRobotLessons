@@ -9,6 +9,7 @@ import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.sim.TalonFXSimState;
+import org.wpilib.hardware.bus.CANPort;
 
 import org.wpilib.math.geometry.Rotation2d;
 import org.wpilib.math.geometry.Translation2d;
@@ -54,9 +55,9 @@ public class SwerveModule {
       int driveId, int steerId, int cancoderId, double magnetOffsetRotations,
       Translation2d location) {
     this.location = location;
-    m_driveMotor = new TalonFX(driveId, CANBus.systemcore(0));
-    m_steerMotor = new TalonFX(steerId, CANBus.systemcore(0));
-    m_steerEncoder = new CANcoder(cancoderId, CANBus.systemcore(0));
+    m_driveMotor = new TalonFX(driveId, new CANBus(CANPort.CAN_S0));
+    m_steerMotor = new TalonFX(steerId, new CANBus(CANPort.CAN_S0));
+    m_steerEncoder = new CANcoder(cancoderId, new CANBus(CANPort.CAN_S0));
     m_driveSim = m_driveMotor.getSimState();
     m_steerSim = m_steerMotor.getSimState();
 

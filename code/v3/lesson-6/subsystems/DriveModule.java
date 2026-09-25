@@ -15,19 +15,20 @@ import com.ctre.phoenix6.sim.TalonFXSimState;
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
+import org.wpilib.hardware.bus.CANPort;
 import org.wpilib.math.system.DCMotor;
 import org.wpilib.math.system.Models;
 import org.wpilib.simulation.DCMotorSim;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 import org.wpilib.system.RobotController;
 
 import first.robot.Constants;
 import first.robot.Constants.DriveConstants;
 import first.robot.Constants.SteerConstants;
 
-public class DriveModule extends Mechanism {
+public class DriveModule implements Mechanism {
   private final TalonFX m_driveMotor =
-      new TalonFX(Constants.DriveConstants.kDriveMotorPort, CANBus.systemcore(0)); // CAN ID 1 — change to yours
+      new TalonFX(Constants.DriveConstants.kDriveMotorPort, new CANBus(CANPort.CAN_S0)); // CAN ID 1 — change to yours
 
   // The bridge: lets us push fake sensor values into the TalonFX during sim.
   private final TalonFXSimState m_driveSim = m_driveMotor.getSimState();
@@ -40,7 +41,7 @@ public class DriveModule extends Mechanism {
           DCMotor.getKrakenX60(1));
 
   private final TalonFX m_steerMotor =
-      new TalonFX(Constants.DriveConstants.kSteerMotorPort, CANBus.systemcore(0)); // CAN ID 2 — change to yours
+      new TalonFX(Constants.DriveConstants.kSteerMotorPort, new CANBus(CANPort.CAN_S0)); // CAN ID 2 — change to yours
 
   // Sim plumbing for the steering motor (same pattern as the drive motor).
   private final TalonFXSimState m_steerSim = m_steerMotor.getSimState();
@@ -50,7 +51,7 @@ public class DriveModule extends Mechanism {
           DCMotor.getKrakenX60(1));
 
   private final CANcoder m_steerEncoder =
-      new CANcoder(Constants.DriveConstants.kCancoderPort, CANBus.systemcore(0)); // CAN ID 3 — change to yours
+      new CANcoder(Constants.DriveConstants.kCancoderPort, new CANBus(CANPort.CAN_S0)); // CAN ID 3 — change to yours
 
   public DriveModule() {
     // Calibrate the CANcoder's zero to "wheel pointing forward"...
@@ -81,7 +82,7 @@ public class DriveModule extends Mechanism {
       double speed = applyDeadband(raw, 0.1);     // clean it up
       m_driveMotor.setThrottle(speed);
       // Try It #1 (Lesson 3): log the commanded speed too.
-      SmartDashboard.putNumber("DriveModule/CommandedOutput", speed);
+      Telemetry.log("DriveModule/CommandedOutput", speed);
     }).named("Drive With Joystick");
   }
 
@@ -91,7 +92,7 @@ public class DriveModule extends Mechanism {
       double raw = speedSupplier.getAsDouble();
       double speed = applyDeadband(raw, 0.1) * scale;
       m_driveMotor.setThrottle(speed);
-      SmartDashboard.putNumber("DriveModule/CommandedOutput", speed);
+      Telemetry.log("DriveModule/CommandedOutput", speed);
     }).named("Drive With Joystick (Slow Mode)");
   }
 
@@ -205,9 +206,9 @@ public class DriveModule extends Mechanism {
     double rotations = m_driveMotor.getPosition().getValue().in(Rotations);
     double rps = m_driveMotor.getVelocity().getValue().in(RotationsPerSecond);
 
-    SmartDashboard.putNumber("DriveModule/PositionRotations", rotations);
-    SmartDashboard.putNumber("DriveModule/VelocityRotPerSec", rps);
-    SmartDashboard.putNumber("DriveModule/SteerAngleDegrees", getSteerAngleDegrees());
-    SmartDashboard.putNumber("DriveModule/DistanceMeters", getDistanceMeters());
+    Telemetry.log("DriveModule/PositionRotations", rotations);
+    Telemetry.log("DriveModule/VelocityRotPerSec", rps);
+    Telemetry.log("DriveModule/SteerAngleDegrees", getSteerAngleDegrees());
+    Telemetry.log("DriveModule/DistanceMeters", getDistanceMeters());
   }
 }

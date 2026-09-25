@@ -59,19 +59,20 @@ You create an object with the keyword **`new`**.
 *Nothing to add — this is just an example, not code for any file:*
 
 ```java
-TalonFX driveMotor = new TalonFX(1, CANBus.systemcore(0));
+TalonFX driveMotor = new TalonFX(1, new CANBus(CANPort.CAN_S0));
 ```
 
-Read it right-to-left: `new TalonFX(1, CANBus.systemcore(0))` builds a
-TalonFX object for the motor at CAN ID 1, on SystemCore's first CAN bus.
-`TalonFX driveMotor` declares a **variable** of type `TalonFX` named
+Read it right-to-left: `new TalonFX(1, new CANBus(CANPort.CAN_S0))` builds a
+TalonFX object for the motor at CAN ID 1, on SystemCore's first built-in CAN
+bus. `TalonFX driveMotor` declares a **variable** of type `TalonFX` named
 `driveMotor` to hold it. From here on, `driveMotor` is your handle to that
 motor — when you want the physical thing to do something, you talk to this
 object.
 
 A robot can have more than one CAN bus, so a `TalonFX` needs to be told
-which one to listen on. `CANBus.systemcore(0)` picks the first one — the one
-your motor is actually wired to.
+which one to listen on. `CANPort.CAN_S0` names the first one — the one your
+motor is actually wired to — and `new CANBus(...)` builds the bus object
+from that name.
 
 ---
 
@@ -107,16 +108,17 @@ import com.ctre.phoenix6.hardware.TalonFX;
 
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
+import org.wpilib.hardware.bus.CANPort;
 ```
 
 An **`import`** lets this file refer to a class from another package by its
 short name. Without the first two, every mention of the motor would have to
 be spelled `com.ctre.phoenix6.hardware.TalonFX` — the import is how you say
 that mouthful exactly once. `org.wpilib.command3` is where `Command` and
-`Mechanism` live — the classes that let this motor plug into the scheduler.
-Don't worry about memorizing import paths, either: whenever you use a class
-you haven't imported, VS Code underlines it in red and offers to add the
-import for you.
+`Mechanism` live — the classes that let this motor plug into the scheduler —
+and `CANPort` is the name of the CAN bus you're about to build. Don't worry
+about memorizing import paths, either: whenever you use a class you haven't
+imported, VS Code underlines it in red and offers to add the import for you.
 
 ### Piece 2 — the class line and the motor field
 
@@ -125,14 +127,17 @@ Below the imports, open the class and give it its one piece of hardware.
 **Add to `DriveModule`, below the imports:**
 
 ```java
-public class DriveModule extends Mechanism {
-  private final TalonFX m_driveMotor = new TalonFX(1, CANBus.systemcore(0)); // CAN ID 1 — change to yours
+public class DriveModule implements Mechanism {
+  private final TalonFX m_driveMotor = new TalonFX(1, new CANBus(CANPort.CAN_S0)); // CAN ID 1 — change to yours
 ```
 
-Two big ideas on two lines. **`extends Mechanism`** declares that our class
-*is a* mechanism — it inherits all the machinery that lets the scheduler
-manage it and hand it commands. This line is what plugs `DriveModule` into
-the heartbeat from Lesson 0.
+Two big ideas on two lines. **`implements Mechanism`** declares that our
+class *is a* mechanism — it inherits all the machinery that lets the
+scheduler manage it and hand it commands. This line is what plugs
+`DriveModule` into the heartbeat from Lesson 0. `Mechanism` is an
+**interface** rather than a regular class — that's why the keyword is
+`implements`, not `extends` — but it works the same way for you as a
+student: type it, and your class gets that machinery for free.
 
 The second line is a **field**: a variable that belongs to the object
 itself rather than to any one method. The distinction matters. A variable
@@ -242,9 +247,10 @@ import com.ctre.phoenix6.hardware.TalonFX;
 
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
+import org.wpilib.hardware.bus.CANPort;
 
-public class DriveModule extends Mechanism {
-  private final TalonFX m_driveMotor = new TalonFX(1, CANBus.systemcore(0)); // CAN ID 1 — change to yours
+public class DriveModule implements Mechanism {
+  private final TalonFX m_driveMotor = new TalonFX(1, new CANBus(CANPort.CAN_S0)); // CAN ID 1 — change to yours
 
   public DriveModule() {
     // Setup that should happen when the module is created goes here.
@@ -340,7 +346,7 @@ You've heard "the scheduler" a few times now — it's the thing that manages
 commands so only one runs a mechanism at a time. Time to meet it directly,
 because it has one job nobody does for it automatically: something has to
 tell it to check its triggers and run its commands, every single tick.
-`extends Mechanism` back in `DriveModule` already registered your module
+`implements Mechanism` back in `DriveModule` already registered your module
 with it; that registration doesn't make anything happen by itself.
 
 Lesson 0 introduced the **heartbeat**: `OpModeRobot` calls a fixed set of
@@ -361,7 +367,7 @@ matter what.
 
 `Scheduler.getDefault()` is the one scheduler every mechanism and every
 trigger plugs into automatically — `DriveModule` joined it the moment
-`extends Mechanism` ran. Calling `.run()` on it is the tick: check every
+`implements Mechanism` ran. Calling `.run()` on it is the tick: check every
 trigger, hand out and step every command that should be running right now.
 Skip this line and none of it moves — buttons would sit there fully wired
 and nothing would ever happen when you pressed one.
@@ -387,10 +393,10 @@ import org.wpilib.command3.Scheduler;
 Open `MyTeleop.java`. It already has a `robot` field from the template —
 that's your way in.
 
-`CommandGamepad` gives you a method per button — `southFace()`,
-`eastFace()`, `leftBumper()`, and so on, named by where the button sits on
+`CommandGamepad` gives you a method per button — `faceDown()`,
+`faceRight()`, `leftBumper()`, and so on, named by where the button sits on
 the pad rather than by letter. On a standard controller layout,
-`southFace()` is the bottom face button — the one an Xbox pad labels A.
+`faceDown()` is the bottom face button — the one an Xbox pad labels A.
 Each one hands back a **`Trigger`**: an object that knows how to answer "is
 that button down right now?" and, more usefully, lets you attach a command
 to it.
@@ -402,7 +408,7 @@ to it.
     this.robot = robot;
 
     // Hold the bottom face button to drive forward at 30% power; release to stop.
-    robot.driverController.southFace().whileTrue(robot.module.driveAtSpeed(0.3));
+    robot.driverController.faceDown().whileTrue(robot.module.driveAtSpeed(0.3));
   }
 ```
 
@@ -491,7 +497,7 @@ rule from section 3, and it means the scheduler can just be *asked*.
 private void logRunningCommand() {
   List<Command> running = Scheduler.getDefault().getRunningCommandsFor(module);
   Command current = running.get(0);
-  SmartDashboard.putString("DriveModule/CurrentCommand", current.name());
+  Telemetry.log("DriveModule/CurrentCommand", current.name());
 }
 ```
 
@@ -511,7 +517,7 @@ public void robotPeriodic() {
 import java.util.List;
 
 import org.wpilib.command3.Command;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 ```
 
 `getRunningCommandsFor(module)` hands back a **`List<Command>`** — a
@@ -529,7 +535,7 @@ be empty. `robotPeriodic()` already ticks first and reads second here, so
 this just slots in.
 
 Run it again, hold the bottom face button, and open **NetworkTables →
-SmartDashboard → DriveModule** in SimGUI or AdvantageScope. `CurrentCommand`
+Telemetry → DriveModule** in SimGUI or AdvantageScope. `CurrentCommand`
 reads `"DriveModule[IDLE]"` at rest — `Mechanism`'s own name for the fallback
 command every mechanism starts with, built from the mechanism's own class
 name — and flips to `"Drive At Speed"` the instant you hold the button, back
@@ -553,7 +559,7 @@ Three exercises. The third one plants a habit you'll lean on for the rest
 of the course.
 
 1. **Code — a reverse button.** Add a **second** button
-   (`robot.driverController.eastFace()`) that drives at `-0.3` (reverse).
+   (`robot.driverController.faceRight()`) that drives at `-0.3` (reverse).
    Confirm both buttons fight for the motor cleanly — press both; the
    scheduler lets the most-recently-scheduled one win.
 2. Change `m_driveMotor`'s CAN ID and rebuild. Nothing breaks in sim — IDs

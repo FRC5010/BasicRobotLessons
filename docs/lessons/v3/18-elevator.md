@@ -490,8 +490,8 @@ changes nothing. There's no gap where the carriage is uncommanded.
 **Add to `Robot.java`, alongside the other fields:**
 
 ```java
-public final PhotonVisionPoseProvider frontCamera;
-public final PhotonVisionPoseProvider backCamera;
+public final LimelightPoseProvider frontCamera;
+public final LimelightPoseProvider backCamera;
 public final Elevator elevator = new Elevator();
 ```
 

@@ -87,7 +87,7 @@ and you've got a live odometer.
 private void logTelemetry() {
   // ...the logs from Lessons 3 and 5 stay...
 
-  SmartDashboard.putNumber("DriveModule/DistanceMeters", getDistanceMeters());
+  Telemetry.log("DriveModule/DistanceMeters", getDistanceMeters());
 }
 ```
 

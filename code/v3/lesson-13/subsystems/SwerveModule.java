@@ -4,7 +4,7 @@ import org.wpilib.math.geometry.Rotation2d;
 import org.wpilib.math.geometry.Translation2d;
 import org.wpilib.math.kinematics.SwerveModulePosition;
 import org.wpilib.math.kinematics.SwerveModuleVelocity;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 
 /**
  * One swerve corner. No hardware of its own anymore — it owns an IO (whichever
@@ -27,9 +27,9 @@ public class SwerveModule {
   /** One tick of sensing: read the hardware into the bundle and log it. */
   public void periodic() {
     m_io.updateInputs(m_inputs);
-    SmartDashboard.putNumber(m_logKey + "/SteerAngleDegrees", m_inputs.steerAngleDegrees);
-    SmartDashboard.putNumber(m_logKey + "/DrivePositionMeters", m_inputs.drivePositionMeters);
-    SmartDashboard.putNumber(m_logKey + "/DriveVelocityMetersPerSec", m_inputs.driveVelocityMetersPerSec);
+    Telemetry.log(m_logKey + "/SteerAngleDegrees", m_inputs.steerAngleDegrees);
+    Telemetry.log(m_logKey + "/DrivePositionMeters", m_inputs.drivePositionMeters);
+    Telemetry.log(m_logKey + "/DriveVelocityMetersPerSec", m_inputs.driveVelocityMetersPerSec);
   }
 
   /** One tick of control: hand the IO its targets. Called by a command each tick. */

@@ -57,7 +57,7 @@ needs each module's position.
 name → **Refactor → Rename**, which updates the filename and every reference in
 the project for you. Then change two things about it:
 
-1. **Drop `extends Mechanism`.** A single wheel isn't what the scheduler
+1. **Drop `implements Mechanism`.** A single wheel isn't what the scheduler
    needs to lock — the *whole chassis* is. From now on, the only mechanism for
    driving is `Drivetrain`; each `SwerveModule` is a plain helper it owns.
 2. **Parameterize the constructor** so the corner and its CAN IDs come in from
@@ -82,9 +82,9 @@ public class SwerveModule {
       int driveId, int steerId, int cancoderId, double magnetOffsetRotations,
       Translation2d location) {
     this.location  = location;
-    m_driveMotor   = new TalonFX(driveId, CANBus.systemcore(0));
-    m_steerMotor   = new TalonFX(steerId, CANBus.systemcore(0));
-    m_steerEncoder = new CANcoder(cancoderId, CANBus.systemcore(0));
+    m_driveMotor   = new TalonFX(driveId, new CANBus(CANPort.CAN_S0));
+    m_steerMotor   = new TalonFX(steerId, new CANBus(CANPort.CAN_S0));
+    m_steerEncoder = new CANcoder(cancoderId, new CANBus(CANPort.CAN_S0));
     m_driveSim     = m_driveMotor.getSimState();
     m_steerSim     = m_steerMotor.getSimState();
 
@@ -312,13 +312,11 @@ import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.math.geometry.Rotation2d;
 import org.wpilib.math.kinematics.SwerveModuleVelocity;
-import org.wpilib.networktables.NetworkTableInstance;
-import org.wpilib.networktables.StructArrayPublisher;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 
 import first.robot.Constants.DriveConstants;
 
-public class Drivetrain extends Mechanism {
+public class Drivetrain implements Mechanism {
   // Corner order: FL, FR, BL, BR. Pick a convention and stick to it.
   private final SwerveModule[] m_modules = new SwerveModule[] {
       new SwerveModule(1, 2, 9, 0.0, DriveConstants.kFrontLeft),   // CAN IDs, offset — change to yours
@@ -326,13 +324,6 @@ public class Drivetrain extends Mechanism {
       new SwerveModule(5, 6, 11, 0.0, DriveConstants.kBackLeft),
       new SwerveModule(7, 8, 12, 0.0, DriveConstants.kBackRight)
   };
-
-  // A structured topic: publishes a whole SwerveModuleVelocity[] at once, so
-  // AdvantageScope's Swerve tab can draw it, not just plot four numbers.
-  private final StructArrayPublisher<SwerveModuleVelocity> m_moduleStatesPublisher =
-      NetworkTableInstance.getDefault()
-          .getStructArrayTopic("Drivetrain/ModuleStates", SwerveModuleVelocity.struct)
-          .publish();
 
   public Drivetrain() {
     Scheduler.getDefault().addPeriodic(this::logTelemetry);
@@ -342,14 +333,14 @@ public class Drivetrain extends Mechanism {
     SwerveModuleVelocity[] states = new SwerveModuleVelocity[4];
     int index = 0;
     for (SwerveModule module : m_modules) {
-      SmartDashboard.putNumber("Drivetrain/Module" + index + "/SteerAngleDegrees",
+      Telemetry.log("Drivetrain/Module" + index + "/SteerAngleDegrees",
           module.getSteerAngleDegrees());
       states[index] = new SwerveModuleVelocity(
           module.getDriveVelocityMetersPerSec(),
           Rotation2d.fromDegrees(module.getSteerAngleDegrees()));
       index++;
     }
-    m_moduleStatesPublisher.set(states);
+    Telemetry.log("Drivetrain/ModuleStates", states, SwerveModuleVelocity.struct);
   }
 
   /** Advances every module's physics model. Only ever called in simulation. */
@@ -379,26 +370,17 @@ the text). Keys `Module0`–`Module3` follow the FL, FR, BL, BR order of the
 array.
 
 Now the new machinery. Every value you've logged since Lesson 3 has been a
-single number or string — `SmartDashboard.putNumber`/`putString`, one call,
-one value. **`SwerveModuleVelocity`** is different: a WPILib data-carrier
-bundling one wheel's speed (in m/s — which is why you wrote
+single number, logged one at a time with `Telemetry.log(name, value)`.
+**`SwerveModuleVelocity`** is different: a WPILib data-carrier bundling one
+wheel's speed (in m/s — which is why you wrote
 `getDriveVelocityMetersPerSec`) with its angle as a **`Rotation2d`**,
-WPILib's angle type (`Rotation2d.fromDegrees(...)` builds one). `SmartDashboard`
-has no `putSwerveModuleVelocity` — it only knows numbers, strings, and a
-couple of array flavors — so a whole *object*, and an array of four of them,
-needs a different kind of bridge, the same idea as the `TalonFXSimState`
-bridge from Lesson 4, just for network data instead of fake sensor readings.
-
-**`NetworkTableInstance.getDefault().getStructArrayTopic(name, structType)`**
-describes that bridge: "a topic at this name, carrying an array of this
-struct-shaped type." `SwerveModuleVelocity.struct` is a value the class ships
-for exactly this — it knows how to turn a `SwerveModuleVelocity` into bytes
-and back. `.publish()` claims the topic for writing and hands back a
-**`StructArrayPublisher`** — built once, as a field, the same "set it up
-once, use it every tick" shape as the sim bridge. From there, `.set(states)`
-pushes a fresh array every time `logTelemetry()` runs — one call publishes
-all four modules' speed and angle together, instead of four separate numbers
-that AdvantageScope would have no way to know belong to the same picture.
+WPILib's angle type (`Rotation2d.fromDegrees(...)` builds one).
+`Telemetry.log` has an overload for exactly this: hand it a whole array
+plus the type's **`.struct`** — a value `SwerveModuleVelocity` ships that
+knows how to turn one into bytes and back — and one call publishes all four
+modules' speed and angle together, as one labeled topic AdvantageScope's
+Swerve tab knows how to draw, instead of four separate numbers it would
+have no way to know belong to the same picture.
 
 Step back and look at the division of labor, because this is the lesson's
 real idea. The periodic callback registered in the constructor runs rain or
@@ -548,7 +530,7 @@ course adds from here on would mean coming back to this method again. The
 private void logCommandStart(SchedulerEvent event) {
   if (event instanceof SchedulerEvent.Scheduled scheduled) {
     for (Mechanism mechanism : scheduled.command().requirements()) {
-      SmartDashboard.putString(mechanism.getName() + "/CurrentCommand", scheduled.command().name());
+      Telemetry.log(mechanism.getName() + "/CurrentCommand", scheduled.command().name());
     }
   }
 }
@@ -624,7 +606,7 @@ all agree on zero the instant power comes on, with no ritual and no chance
 to forget it before a match.
 
 Now the payoff for publishing `ModuleStates`: open AdvantageScope's **Swerve**
-tab and drag `NetworkTables/Drivetrain/ModuleStates` into its **States** slot
+tab and drag `NetworkTables/Telemetry/Drivetrain/ModuleStates` into its **States** slot
 (set the tab's *Max Speed* to about `5` — that's roughly what a Kraken-driven
 wheel tops out at in m/s). You get a live diagram of the chassis: one arrow
 per module, direction showing steer angle, length showing wheel speed. Push
@@ -703,8 +685,8 @@ shrank to one method: a single tick of control toward whatever it's told,
 whenever a command asks. With that structure, whole-chassis behavior got almost easy:
 **translate** is one angle for everyone; **rotate** is one angle *per
 corner*, courtesy of each module knowing its `location`. You also picked up
-**structured telemetry** — a `StructArrayPublisher` bridges a whole array of
-labeled objects onto the network in one call, so AdvantageScope draws it
+**structured telemetry** — `Telemetry.log`'s struct-array overload publishes
+a whole array of labeled objects in one call, so AdvantageScope draws it
 live, which will catch a miswired corner faster than any plot. If the
 refactor felt long, that's because it was the real thing — a rename,
 deletions, red files, and the compiler walking you through every place the

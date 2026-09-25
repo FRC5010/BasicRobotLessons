@@ -90,7 +90,7 @@ function buildDeck() {
       fileLabel: 'Add to DriveModule, directly below m_driveMotor',
       lines: [
         { text: 'private final TalonFX m_driveMotor =', color: 'D7E3F4' },
-        { text: '    new TalonFX(Constants.DriveConstants.kDriveMotorPort, CANBus.systemcore(0));', color: 'D7E3F4' },
+        { text: '    new TalonFX(Constants.DriveConstants.kDriveMotorPort, new CANBus(CANPort.CAN_S0));', color: 'D7E3F4' },
         { text: '', color: 'D7E3F4' },
         { text: '// The bridge: lets us push fake sensor values into the TalonFX during sim.', color: '7FA8C9' },
         { text: 'private final TalonFXSimState m_driveSim = m_driveMotor.getSimState();', color: '9EF01A' },
@@ -261,7 +261,7 @@ function buildDeck() {
       cards: [
         { title: 'Change the inertia', body: 'From 0.001 to 0.05. Does velocity reach full speed faster or slower? Explain why.' },
         { title: 'Command a step input', body: 'Change driveAtSpeed(0.3) to 1.0 and watch the S-shaped velocity ramp.' },
-        { title: 'Log applied volts', body: 'SmartDashboard.putNumber inside simulatePeriodic() — a sim-only logTelemetry().', code: true },
+        { title: 'Log applied volts', body: 'Telemetry.log inside simulatePeriodic() — a sim-only logTelemetry().', code: true },
       ],
     });
 

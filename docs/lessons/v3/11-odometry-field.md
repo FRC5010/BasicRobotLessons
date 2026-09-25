@@ -156,22 +156,13 @@ here.
 ## 4. Draw the robot: log the pose
 
 Here's where the logging discipline you've kept since Lesson 3 pays off in
-full. Drawing the robot on a field takes exactly one more publisher, the
-same shape as every structured value since Lesson 7.
-
-**Add to `Drivetrain`, alongside the other structured-telemetry publishers:**
-
-```java
-private final StructPublisher<Pose2d> m_posePublisher =
-    NetworkTableInstance.getDefault()
-        .getStructTopic("Drivetrain/Pose", Pose2d.struct)
-        .publish();
-```
+full. Drawing the robot on a field takes exactly one more `Telemetry.log`
+call, the same struct-value shape as the heading in Lesson 8.
 
 **Add to `Drivetrain.logTelemetry()`, right after the odometry update:**
 
 ```java
-m_posePublisher.set(pose);
+Telemetry.log("Drivetrain/Pose", pose, Pose2d.struct);
 ```
 
 `Pose2d` is a structured value, like the module states from Lesson 7 — and
@@ -179,7 +170,7 @@ AdvantageScope knows how to *draw* a logged pose, not just plot it. Run
 `./gradlew simulateJava`, then in AdvantageScope:
 
 1. Connect to the sim (**File → Connect to Simulator**).
-2. Add an **📐 Odometry** tab and drag `Drivetrain/Pose` onto it.
+2. Add an **📐 Odometry** tab and drag `Telemetry/Drivetrain/Pose` onto it.
 3. Pick a field image (e.g., the current game) from the source dropdown.
 4. Drive with the joysticks. The little robot moves and rotates on the field.
 
@@ -192,11 +183,12 @@ Driving in the sim officially looks like a game. Take a lap.
 
 AdvantageScope is the full-featured viewer, but sometimes you just want the
 field right inside the sim window — no second tool. WPILib's **`Field2d`**
-is a dashboard *widget* that does exactly that. It's the one place this
-course touches the `SmartDashboard` class directly, and the distinction
-matters: `putData` publishes a **widget** (a thing dashboards know how to
-draw), which is a different job from the per-value `putNumber` spam we
-swore off in Lesson 3.
+is a dashboard *widget* that does exactly that. Logging it is still a plain
+`Telemetry.log(...)` call, same as every number you've logged since
+Lesson 3 — but notice what you're handing it this time: not a number, a
+whole **widget** object, a thing dashboards know how to draw rather than
+just plot. `Telemetry.log` tells the two apart automatically from what you
+pass in.
 
 **Add to `Drivetrain.java`'s imports:**
 
@@ -214,7 +206,7 @@ private final Field2d m_field = new Field2d();
 
 ```java
 public Drivetrain() {
-  SmartDashboard.putData("Field", m_field);
+  Telemetry.log("Field", m_field);
   Scheduler.getDefault().addPeriodic(this::logTelemetry);
 }
 ```
@@ -225,7 +217,7 @@ public Drivetrain() {
 m_field.setRobotPose(pose);
 ```
 
-Now in **SimGUI**: menu **NetworkTables → SmartDashboard → Field**, and a
+Now in **SimGUI**: menu **NetworkTables → Telemetry → Field**, and a
 top-down field pane opens right in the sim window, robot moving as you
 drive. Same pose, two viewers: `Field2d` for the quick glance while sim is
 already open, the logged `Pose2d` for AdvantageScope's field images,

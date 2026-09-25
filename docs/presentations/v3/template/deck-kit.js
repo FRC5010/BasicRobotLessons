@@ -6,6 +6,9 @@
 // Style rules baked into these helpers (do not silently break these when adding
 // a new one):
 //   - Nothing reads smaller than 20pt except code-card text.
+//   - A header title is always one line (shrunk to fit, see fitTitle), and
+//     nothing under a header starts above CONTENT_TOP. addCodeCard moves
+//     itself below the header; audit-overflow.js reports anything else.
 //   - Code cards carry their three status dots stacked at the TOP-RIGHT, so the
 //     code itself starts almost at the card's top edge.
 //   - Every addCodeCard passes a `fileLabel` — the same "what file, and where"
@@ -52,6 +55,93 @@ const FONT_CODE = 'Courier New';
 
 const W = 13.333, H = 7.5;
 
+// ---- Header/content boundary ----
+// A header title is always ONE line. A wrapped title grows into whatever the
+// slide placed under the header, and the helper drawing that card can't see
+// that the title above it wrapped. So fitTitle() measures the title and
+// shrinks it just enough to fit on one line, never below TITLE_MIN_PT.
+const TITLE_PT = 30;
+const TITLE_MIN_PT = 24;
+const TITLE_W = 11.1;        // title x (1.5) to the right edge of full-width content (12.6)
+const TITLE_FIT = 0.97;      // headroom so a measured-to-fit title can't wrap in PowerPoint
+const CONTENT_TOP = 1.4;     // below a one-line title; addCodeCard won't start above it
+const CONTENT_BOTTOM = 6.95; // above the footer text at 7.05
+// Courier New's line height is 1.133 em (Liberation Mono, its metric twin,
+// measures the same), times the code cards' 1.2 line spacing.
+const CODE_LINE_MULT = 1.36;
+// Shrinking code to fit its card is a nudge, not a redesign: code that needs
+// more than this below the size its slide asked for is the slide's to fix
+// (audit-overflow.js reports it).
+const CODE_MAX_SHRINK_PT = 1;
+const CODE_FIT = 0.85;       // keep in sync with audit-overflow.js's MARGIN
+
+// Advance widths (thousandths of an em) of Cambria Bold, printable ASCII from
+// space through '~'. Taken from Caladea Bold, which is metric-compatible with
+// Cambria, so these match what PowerPoint lays out.
+const CAMBRIA_BOLD_ASCII = [
+  220, 335, 422, 618, 543, 976, 740, 251, 408, 408, 453, 592, 232, 311, 230, 505,
+  533, 458, 507, 508, 553, 520, 538, 494, 556, 534, 280, 280, 592, 592, 592, 452,
+  921, 653, 634, 551, 664, 559, 534, 586, 719, 358, 340, 680, 541, 845, 686, 647,
+  593, 647, 640, 473, 587, 695, 632, 959, 616, 587, 554, 368, 505, 368, 592, 371,
+  184, 525, 568, 450, 570, 513, 335, 508, 600, 308, 297, 589, 311, 891, 604, 530,
+  573, 559, 454, 444, 365, 609, 519, 779, 525, 521, 464, 393, 320, 393, 592,
+];
+const CAMBRIA_BOLD_EXTRA = {
+  '°': 378, '×': 592, '÷': 592, '—': 1000, '–': 500, '→': 783, '·': 140,
+  '’': 235, '‘': 235, '“': 398, '”': 398, '…': 772,
+};
+
+function titleWidthIn(text, pt) {
+  let em = 0;
+  for (const ch of text) {
+    const c = ch.codePointAt(0);
+    em += (c >= 32 && c <= 126) ? CAMBRIA_BOLD_ASCII[c - 32] : (CAMBRIA_BOLD_EXTRA[ch] ?? 1000);
+  }
+  return em / 1000 * pt / 72;
+}
+
+/** Largest font size, in half-points, that keeps `title` on one line of the
+ *  header. `fits` is false when even TITLE_MIN_PT wraps — shorten the title. */
+function fitTitle(title) {
+  const room = TITLE_W * TITLE_FIT;
+  const at30 = titleWidthIn(title, TITLE_PT);
+  if (at30 <= room) return { fontSize: TITLE_PT, fits: true };
+  const pt = Math.floor(TITLE_PT * room / at30 * 2) / 2;
+  return { fontSize: Math.max(pt, TITLE_MIN_PT), fits: pt >= TITLE_MIN_PT };
+}
+
+// Slides that have a header, so addCodeCard knows to stay below it.
+const slidesWithHeader = new WeakSet();
+
+/** Where a code card actually lands, and at what code font size.
+ *
+ *  On a slide with a header, a card that starts above CONTENT_TOP moves down
+ *  to it. Keeping its bottom edge where the slide put it is preferred, since
+ *  that leaves whatever sits below untouched; if the code wouldn't fit the
+ *  shorter card, the whole card slides down instead, stopping above the footer.
+ *
+ *  Then, if the code is taller than the card has room for, its font shrinks in
+ *  half-points until it fits, by at most CODE_MAX_SHRINK_PT. A card that fits
+ *  is left at the size its slide asked for.
+ *
+ *  audit-overflow.js calls this too, so it checks the card as it's drawn. */
+function codeCardLayout({ y, h, lineCount, fontSize = 18, hasLabel }, underHeader = true) {
+  const room = hh => hh - (hasLabel ? 0.72 : 0.4);
+  const textH = pt => lineCount * pt * CODE_LINE_MULT / 72;
+  if (underHeader && y < CONTENT_TOP) {
+    const keptBottomH = y + h - CONTENT_TOP;
+    h = textH(fontSize) <= room(keptBottomH) * CODE_FIT
+      ? keptBottomH
+      : Math.min(h, CONTENT_BOTTOM - CONTENT_TOP);
+    y = CONTENT_TOP;
+  }
+  if (lineCount > 0 && textH(fontSize) > room(h)) {
+    const fit = Math.floor(room(h) * 72 / (lineCount * CODE_LINE_MULT) * 2) / 2;
+    fontSize = Math.max(fit, fontSize - CODE_MAX_SHRINK_PT);
+  }
+  return { y, h, fontSize };
+}
+
 function newDeck({ title, author = 'Learn Java + Robot Programming' } = {}) {
   const p = new pptxgen();
   p.defineLayout({ name: 'WIDE', width: W, height: H });
@@ -87,8 +177,23 @@ function addFooter(slide, { pageNum, label, dark = false }) {
   addCornerLogo(slide, { dark });
 }
 
+/** The header title, one line at a measured size (see fitTitle). Top-anchored
+ *  and placed where the original centered 0.65"-tall box drew a one-line
+ *  title, so nothing moves on a slide whose title already fit. */
+function addHeaderTitle(slide, { title, color, x, y }) {
+  const { fontSize, fits } = fitTitle(title);
+  if (!fits) {
+    console.warn(`deck-kit: title wraps even at ${TITLE_MIN_PT}pt and will overlap the slide below it — shorten it: "${title}"`);
+  }
+  slide.addText(title, {
+    x: x + 0.8, y: y + 0.395, w: TITLE_W, h: 0.55,
+    fontFace: FONT_HEAD, bold: true, fontSize, color, margin: 0, valign: 'top',
+  });
+  slidesWithHeader.add(slide);
+}
+
 /** Standard content-slide header for a WHITE-background slide: circular icon
- *  badge + eyebrow label + title. */
+ *  badge + eyebrow label + title. Code cards on the slide stay below it. */
 function addHeader(slide, { icon, eyebrow, title, badgeColor = NAVY, x = 0.7, y = 0.5 }) {
   slide.addShape('ellipse', {
     x, y, w: 0.62, h: 0.62, fill: { color: badgeColor }, line: { type: 'none' },
@@ -98,10 +203,7 @@ function addHeader(slide, { icon, eyebrow, title, badgeColor = NAVY, x = 0.7, y 
     x: x + 0.82, y: y - 0.06, w: 10, h: 0.4,
     fontFace: FONT_BODY, bold: true, fontSize: 20, color: ORANGE, charSpacing: 1.5, margin: 0,
   });
-  slide.addText(title, {
-    x: x + 0.8, y: y + 0.32, w: 10.3, h: 0.65,
-    fontFace: FONT_HEAD, bold: true, fontSize: 30, color: INK, margin: 0,
-  });
+  addHeaderTitle(slide, { title, color: INK, x, y });
 }
 
 /** Same header shape, for a NAVY-background section slide (eyebrow goes teal,
@@ -115,10 +217,7 @@ function addSectionHeader(slide, { icon, eyebrow, title, badgeColor = ORANGE, x 
     x: x + 0.82, y: y - 0.06, w: 10, h: 0.4,
     fontFace: FONT_BODY, bold: true, fontSize: 20, color: TEAL, charSpacing: 1, margin: 0,
   });
-  slide.addText(title, {
-    x: x + 0.8, y: y + 0.32, w: 10.3, h: 0.65,
-    fontFace: FONT_HEAD, bold: true, fontSize: 30, color: WHITE, margin: 0,
-  });
+  addHeaderTitle(slide, { title, color: WHITE, x, y });
 }
 
 /** Code-editor card: navy rounded rect, three status dots stacked at the TOP-RIGHT
@@ -136,8 +235,15 @@ function addSectionHeader(slide, { icon, eyebrow, title, badgeColor = ORANGE, x 
  *  it renders muted and italic instead of the bold orange "type this" treatment,
  *  the same visual opposite the lessons use bold vs. italic for.
  *  Reserves extra height inside the card for the label — see LABEL_H below, and
- *  keep audit-overflow.js's own copy of that number in sync if it changes. */
+ *  keep audit-overflow.js's own copy of that number in sync if it changes.
+ *
+ *  On a slide with a header, a card placed above CONTENT_TOP is moved down
+ *  so it can't cover the title, and code too tall for its card is shrunk to
+ *  fit — see codeCardLayout. */
 function addCodeCard(slide, { x, y, w, h, lines, fontSize = 18, fileLabel, example = false }) {
+  ({ y, h, fontSize } = codeCardLayout(
+    { y, h, lineCount: lines.length, fontSize, hasLabel: !!fileLabel },
+    slidesWithHeader.has(slide)));
   slide.addShape('roundRect', {
     x, y, w, h, rectRadius: 0.12,
     fill: { color: NAVY }, line: { type: 'none' },
@@ -349,6 +455,7 @@ module.exports = {
   NAVY, NAVY2, TEAL, ORANGE, WHITE, INK, MUTED, CARDBG,
   FONT_HEAD, FONT_BODY, FONT_CODE, W, H,
   ICON, LOGO_ON_NAVY, LOGO_ON_WHITE,
+  CONTENT_TOP, TITLE_MIN_PT, CODE_LINE_MULT, fitTitle, codeCardLayout,
   newDeck, addCornerLogo, addFooter, addHeader, addSectionHeader,
   addCodeCard, addCard, addNumberedSteps, addTryItGrid, addTitleSlide,
 };

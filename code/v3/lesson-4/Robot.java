@@ -8,7 +8,7 @@ import org.wpilib.command3.Scheduler;
 import org.wpilib.command3.SchedulerEvent;
 import org.wpilib.command3.button.CommandGamepad;
 import org.wpilib.framework.OpModeRobot;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 import org.wpilib.system.DataLogManager;
 
 import first.robot.subsystems.DriveModule;
@@ -48,7 +48,7 @@ public class Robot extends OpModeRobot {
 
   private void logCommandStart(SchedulerEvent event) {
     if (event instanceof SchedulerEvent.Scheduled scheduled && scheduled.command().requires(module)) {
-      SmartDashboard.putString("DriveModule/CurrentCommand", scheduled.command().name());
+      Telemetry.log("DriveModule/CurrentCommand", scheduled.command().name());
     }
   }
 

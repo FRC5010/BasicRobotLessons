@@ -16,10 +16,7 @@ import org.wpilib.math.kinematics.SwerveDriveKinematics;
 import org.wpilib.math.kinematics.SwerveModulePosition;
 import org.wpilib.math.kinematics.SwerveModuleVelocity;
 import org.wpilib.math.util.MathUtil;
-import org.wpilib.networktables.NetworkTableInstance;
-import org.wpilib.networktables.StructArrayPublisher;
-import org.wpilib.networktables.StructPublisher;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.AngularVelocity;
 import org.wpilib.units.measure.LinearVelocity;
 
@@ -27,7 +24,7 @@ import first.robot.Constants;
 import first.robot.Constants.DriveConstants;
 import first.robot.Constants.HeadingConstants;
 
-public class Drivetrain extends Mechanism implements PoseProvider {
+public class Drivetrain implements Mechanism, PoseProvider {
   // Corner order: FL, FR, BL, BR. Pick a convention and stick to it.
   private final SwerveModule[] m_modules = new SwerveModule[] {
       makeModule(0, DriveConstants.kFrontLeftDrivePort, DriveConstants.kFrontLeftSteerPort,
@@ -56,21 +53,6 @@ public class Drivetrain extends Mechanism implements PoseProvider {
     case REPLAY -> new GyroIO() {}; // inputs come from the log
   };
   private final GyroIO.GyroIOInputs m_gyroInputs = new GyroIO.GyroIOInputs();
-
-  // Structured topics: publish a whole labeled value at once, so
-  // AdvantageScope's Swerve tab can draw it, not just plot numbers.
-  private final StructArrayPublisher<SwerveModuleVelocity> m_moduleStatesPublisher =
-      NetworkTableInstance.getDefault()
-          .getStructArrayTopic("Drivetrain/ModuleStates", SwerveModuleVelocity.struct)
-          .publish();
-  private final StructArrayPublisher<SwerveModuleVelocity> m_desiredModuleStatesPublisher =
-      NetworkTableInstance.getDefault()
-          .getStructArrayTopic("Drivetrain/DesiredModuleStates", SwerveModuleVelocity.struct)
-          .publish();
-  private final StructPublisher<Rotation2d> m_headingPublisher =
-      NetworkTableInstance.getDefault()
-          .getStructTopic("Drivetrain/Heading", Rotation2d.struct)
-          .publish();
 
   public Drivetrain() {
     Scheduler.getDefault().addPeriodic(this::logTelemetry);
@@ -104,7 +86,7 @@ public class Drivetrain extends Mechanism implements PoseProvider {
       m_modules[i].setDesiredState(states[i]);
     }
 
-    m_desiredModuleStatesPublisher.set(states);
+    Telemetry.log("Drivetrain/DesiredModuleStates", states, SwerveModuleVelocity.struct);
   }
 
   /** Drive with full swerve freedom: translate and rotate at once. */
@@ -236,7 +218,7 @@ public class Drivetrain extends Mechanism implements PoseProvider {
 
   private void logTelemetry() {
     m_gyroIO.updateInputs(m_gyroInputs);
-    SmartDashboard.putNumber("Drivetrain/Gyro/YawDegrees", m_gyroInputs.yawDegrees);
+    Telemetry.log("Drivetrain/Gyro/YawDegrees", m_gyroInputs.yawDegrees);
 
     SwerveModuleVelocity[] states = new SwerveModuleVelocity[4];
     int index = 0;
@@ -247,9 +229,9 @@ public class Drivetrain extends Mechanism implements PoseProvider {
           Rotation2d.fromDegrees(module.getSteerAngleDegrees()));
       index++;
     }
-    m_moduleStatesPublisher.set(states);
+    Telemetry.log("Drivetrain/ModuleStates", states, SwerveModuleVelocity.struct);
 
-    SmartDashboard.putNumber("Drivetrain/HeadingDegrees", getHeadingDegrees());
-    m_headingPublisher.set(Rotation2d.fromDegrees(getHeadingDegrees()));
+    Telemetry.log("Drivetrain/HeadingDegrees", getHeadingDegrees());
+    Telemetry.log("Drivetrain/Heading", Rotation2d.fromDegrees(getHeadingDegrees()), Rotation2d.struct);
   }
 }

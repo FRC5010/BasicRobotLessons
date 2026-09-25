@@ -190,26 +190,22 @@ function buildDeck() {
     K.addHeader(s, { icon: 'broadcasttower_white.png', eyebrow: 'Section 4 · Drivetrain.java', title: 'Publish the desired states too' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.7, w: 11.9, h: 2.15, fontSize: 13,
-      fileLabel: 'Add to Drivetrain, alongside m_moduleStatesPublisher',
-      lines: [
-        { text: 'private final StructArrayPublisher<SwerveModuleVelocity> m_desiredModuleStatesPublisher =', color: 'D7E3F4' },
-        { text: '    NetworkTableInstance.getDefault()', color: 'D7E3F4' },
-        { text: '        .getStructArrayTopic("Drivetrain/DesiredModuleStates", SwerveModuleVelocity.struct)', color: '9EF01A' },
-        { text: '        .publish();', color: 'D7E3F4' },
-      ],
+      x: 0.7, y: 1.75, w: 11.9, h: 1.6, fontSize: 15,
+      fileLabel: 'Nothing to add yet — this is the call, inside applyChassisSpeeds next',
+      example: true,
+      lines: [{ text: 'Telemetry.log("Drivetrain/DesiredModuleStates", states, SwerveModuleVelocity.struct);', color: '9EF01A' }],
     });
 
     K.addCard(s, {
-      x: 0.7, y: 4.2, w: 11.9, h: 2.8,
-      heading: 'The helper you\'re about to write publishes into this.',
-      headingSize: 22,
-      body: 'applyChassisSpeeds is about to publish the chassis\'s desired states right next to Lesson 7\'s measured ones. Same StructArrayPublisher shape as m_moduleStatesPublisher, just a new topic name and a field to hold it.',
+      x: 0.7, y: 3.6, w: 11.9, h: 3.25,
+      heading: 'The helper you\'re about to write publishes this, right next to Lesson 7\'s measured states.',
+      headingSize: 21,
+      body: 'The same Telemetry.log struct-array overload from Lesson 7 — one more call, a new topic name, no new field to build.',
     });
 
     K.addFooter(s, { pageNum: 7, label: 'Full Swerve' });
     s.addNotes(
-      'The helper about to get built is going to publish the chassis\'s desired states right next to Lesson 7\'s measured ones, so it needs a second publisher first — same shape as m_moduleStatesPublisher, new topic name Drivetrain/DesiredModuleStates. Section 6 is where this pair of publishers pays off: dropping both ModuleStates and DesiredModuleStates into the Swerve tab\'s States slots shows two sets of arrows, where the wheels are told to be versus where they actually are.'
+      'The helper about to get built is going to publish the chassis\'s desired states right next to Lesson 7\'s measured ones — the same Telemetry.log struct-array overload, one more call, new topic name Drivetrain/DesiredModuleStates, no new field. Section 6 is where this pair pays off: dropping both ModuleStates and DesiredModuleStates into the Swerve tab\'s States slots shows two sets of arrows, where the wheels are told to be versus where they actually are.'
     );
   }
 
@@ -238,14 +234,14 @@ function buildDeck() {
         { text: '    m_modules[i].setDesiredState(states[i]);', color: 'D7E3F4' },
         { text: '  }', color: 'D7E3F4' },
         { text: '', color: 'D7E3F4' },
-        { text: '  m_desiredModuleStatesPublisher.set(states);', color: 'D7E3F4' },
+        { text: '  Telemetry.log("Drivetrain/DesiredModuleStates", states, SwerveModuleVelocity.struct);', color: '9EF01A' },
         { text: '}', color: 'D7E3F4' },
       ],
     });
 
     K.addFooter(s, { pageNum: 8, label: 'Full Swerve' });
     s.addNotes(
-      'This is Lesson 8\'s own trick again: every path into the drivetrain — stick driving, heading turns, and a future lesson\'s pose chasing — ends with the same four steps, so those four steps become one private helper and everything else becomes a thin caller. new ChassisVelocities(vx, vy, ω) packs "what I want the whole robot to do" into a single value; toSwerveModuleVelocities is the library math this lesson exists for, one chassis motion in, one SwerveModuleVelocity[] out, one entry per corner in the order given to the constructor. desaturateWheelVelocities matters at the edge of the envelope: if translation-plus-rotation asks one wheel for 6 m/s but the max is 4.7, it scales all four down so the motion keeps its shape, just slower — without it, the overasked wheel silently caps and the robot curves off course. Now the real trap: optimize doesn\'t change states[i] in place — it\'s a pure function, same as Rotation2d.rotateBy or Translation2d.plus — it returns a new SwerveModuleVelocity, and the original is untouched. Call states[i].optimize(...) and throw away the result, and nothing happens — the module gets commanded with the un-optimized state, silently. That\'s why the loop reads states[i] = states[i].optimize(...) — assign it back before it\'s used. The indexed for loop is the new shape here because states[i] has to be paired with m_modules[i], and pairing two arrays takes an index. m_lastCommandedOmega keeps Lesson 8\'s fake gyro fed, and m_desiredModuleStatesPublisher.set(states) publishes the desired states right next to Lesson 7\'s measured ones — the pair built on the previous slide.'
+      'This is Lesson 8\'s own trick again: every path into the drivetrain — stick driving, heading turns, and a future lesson\'s pose chasing — ends with the same four steps, so those four steps become one private helper and everything else becomes a thin caller. new ChassisVelocities(vx, vy, ω) packs "what I want the whole robot to do" into a single value; toSwerveModuleVelocities is the library math this lesson exists for, one chassis motion in, one SwerveModuleVelocity[] out, one entry per corner in the order given to the constructor. desaturateWheelVelocities matters at the edge of the envelope: if translation-plus-rotation asks one wheel for 6 m/s but the max is 4.7, it scales all four down so the motion keeps its shape, just slower — without it, the overasked wheel silently caps and the robot curves off course. Now the real trap: optimize doesn\'t change states[i] in place — it\'s a pure function, same as Rotation2d.rotateBy or Translation2d.plus — it returns a new SwerveModuleVelocity, and the original is untouched. Call states[i].optimize(...) and throw away the result, and nothing happens — the module gets commanded with the un-optimized state, silently. That\'s why the loop reads states[i] = states[i].optimize(...) — assign it back before it\'s used. The indexed for loop is the new shape here because states[i] has to be paired with m_modules[i], and pairing two arrays takes an index. m_lastCommandedOmega keeps Lesson 8\'s fake gyro fed, and the Telemetry.log call publishes the desired states right next to Lesson 7\'s measured ones — the pair built on the previous slide.'
     );
   }
 

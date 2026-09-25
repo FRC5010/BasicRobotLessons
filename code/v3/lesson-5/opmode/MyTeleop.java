@@ -18,9 +18,9 @@ public class MyTeleop extends PeriodicOpMode {
     this.robot = robot;
 
     // Hold the bottom face button to drive forward at 30% power; release to stop.
-    robot.driverController.southFace().whileTrue(robot.module.driveAtSpeed(0.3));
+    robot.driverController.faceDown().whileTrue(robot.module.driveAtSpeed(0.3));
     // Hold the right face button to drive backward at 30% power; release to stop.
-    robot.driverController.eastFace().whileTrue(robot.module.driveAtSpeed(-0.3));
+    robot.driverController.faceRight().whileTrue(robot.module.driveAtSpeed(-0.3));
 
     robot.module.setDefaultCommand(
         robot.module.driveWithJoystick(() -> -robot.driverController.getLeftY()));
@@ -30,9 +30,9 @@ public class MyTeleop extends PeriodicOpMode {
         robot.module.driveWithJoystick(() -> -robot.driverController.getLeftY(), 0.25));
 
     // Tap the left face button to steer to 90° and hold it there.
-    robot.driverController.westFace().onTrue(robot.module.steerToAngle(90));
+    robot.driverController.faceLeft().onTrue(robot.module.steerToAngle(90));
     // Tap the top face button to steer back to 0° and hold it there.
-    robot.driverController.northFace().onTrue(robot.module.steerToAngle(0));
+    robot.driverController.faceUp().onTrue(robot.module.steerToAngle(0));
   }
 
   @Override

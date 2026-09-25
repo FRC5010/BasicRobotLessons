@@ -40,7 +40,7 @@ import first.robot.Constants.HeadingConstants;
 **Add to `Drivetrain`, below the modules array:**
 
 ```java
-private final Pigeon2 m_gyro = new Pigeon2(0, CANBus.systemcore(0)); // CAN ID 0 — change to yours
+private final Pigeon2 m_gyro = new Pigeon2(0, new CANBus(CANPort.CAN_S0)); // CAN ID 0 — change to yours
 
 // Remembered for the sim: what rotation rate did we just command?
 private double m_lastCommandedOmega = 0.0;
@@ -75,32 +75,17 @@ Finally, log it — the same two audiences as the module states from Lesson 7.
 **Add to `Drivetrain`'s `logTelemetry()`, alongside the module telemetry:**
 
 ```java
-SmartDashboard.putNumber("Drivetrain/HeadingDegrees", getHeadingDegrees());
-m_headingPublisher.set(Rotation2d.fromDegrees(getHeadingDegrees()));
-```
-
-**Add the publisher as a field, next to `m_moduleStatesPublisher`:**
-
-```java
-private final StructPublisher<Rotation2d> m_headingPublisher =
-    NetworkTableInstance.getDefault()
-        .getStructTopic("Drivetrain/Heading", Rotation2d.struct)
-        .publish();
-```
-
-**Add to `Drivetrain`'s imports:**
-
-```java
-import org.wpilib.networktables.StructPublisher;
+Telemetry.log("Drivetrain/HeadingDegrees", getHeadingDegrees());
+Telemetry.log("Drivetrain/Heading", Rotation2d.fromDegrees(getHeadingDegrees()), Rotation2d.struct);
 ```
 
 The plain number is for line graphs. The `Rotation2d` version is the
 structured value AdvantageScope's Swerve tab wants in its **Rotation**
 slot — same fact, packaged for a tool that draws instead of plots.
-`StructPublisher` is `StructArrayPublisher`'s singular sibling from Lesson
-7's `getStructArrayTopic` — same bridge idea, one value instead of an array,
-so it's `getStructTopic` and `.set(value)` instead of `.set(array)`.
-(`Rotation2d` and `NetworkTableInstance` are already imported from Lesson 7.)
+`Telemetry.log` has a single-value overload for exactly this, the same idea
+as the module-states array from Lesson 7: hand it the value plus
+**`Rotation2d.struct`**, and it publishes the structured type instead of a
+bare number. (`Rotation2d` is already imported from Lesson 7.)
 
 ---
 
@@ -270,8 +255,8 @@ The bottom and right face buttons are free again since Lesson 7's cleanup.
 
 ```java
 // Tap the bottom face button to turn and face 90°; the right face button for 0°.
-robot.driverController.southFace().onTrue(robot.drivetrain.turnToHeading(90));
-robot.driverController.eastFace().onTrue(robot.drivetrain.turnToHeading(0));
+robot.driverController.faceDown().onTrue(robot.drivetrain.turnToHeading(90));
+robot.driverController.faceRight().onTrue(robot.drivetrain.turnToHeading(0));
 ```
 
 Because `turnToHeading` requires the Drivetrain, pressing the bottom button
@@ -332,8 +317,8 @@ overshoot, no oscillation, because integrating a commanded rate has no
 momentum to fight, unlike the geared motors from Lesson 7.
 
 Then watch the same thing as a picture: open the **Swerve** tab from Lesson 7
-(with `NetworkTables/Drivetrain/ModuleStates` in its **States** slot) and drop
-`NetworkTables/Drivetrain/Heading` into the **Rotation** slot. Press the
+(with `NetworkTables/Telemetry/Drivetrain/ModuleStates` in its **States** slot) and drop
+`NetworkTables/Telemetry/Drivetrain/Heading` into the **Rotation** slot. Press the
 bottom button again — the four wheels snap into the pinwheel, and the whole
 chassis diagram rotates to 90° as the fake gyro integrates, easing in exactly
 like the plot does. One glance now tells you what the wheels are doing *and*
@@ -364,9 +349,10 @@ thing that's oscillating:
    step. Bind it to a button so "forward" is always relative to where you're
    pointed *now*.
 4. **Code — keep the CAN-ID habit going.** The gyro went in as a literal,
-   `new Pigeon2(0, CANBus.systemcore(0))`. Move that `0` into `DriveConstants`
-   as `kGyroPort` — right alongside the twelve motor/CANcoder ports from
-   Lesson 7 — and use `new Pigeon2(DriveConstants.kGyroPort, CANBus.systemcore(0))`.
+   `new Pigeon2(0, new CANBus(CANPort.CAN_S0))`. Move that `0` into
+   `DriveConstants` as `kGyroPort` — right alongside the twelve
+   motor/CANcoder ports from Lesson 7 — and use
+   `new Pigeon2(DriveConstants.kGyroPort, new CANBus(CANPort.CAN_S0))`.
    Every CAN ID your robot owns now lives in one place.
 
 ---

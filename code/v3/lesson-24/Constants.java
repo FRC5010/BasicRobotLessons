@@ -18,6 +18,8 @@ import static org.wpilib.units.Units.RotationsPerSecond;
 import static org.wpilib.units.Units.Seconds;
 import static org.wpilib.units.Units.Volts;
 
+import org.wpilib.fields.Field;
+import org.wpilib.fields.Fields;
 import org.wpilib.framework.RobotBase;
 import org.wpilib.hardware.led.LEDPattern;
 import org.wpilib.math.geometry.Pose2d;
@@ -38,8 +40,6 @@ import org.wpilib.units.measure.Time;
 import org.wpilib.units.measure.Voltage;
 import org.wpilib.util.Color;
 import org.wpilib.util.Color8Bit;
-import org.wpilib.vision.apriltag.AprilTagFieldLayout;
-import org.wpilib.vision.apriltag.AprilTagFields;
 
 public final class Constants {
   public enum Mode { REAL, SIM, REPLAY }
@@ -123,19 +123,26 @@ public final class Constants {
   }
 
   public static final class VisionConstants {
-    public static final AprilTagFieldLayout kTagLayout =
-        AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
+    // This season's field: its size, and where every AprilTag sits on it.
+    public static final Field kTagLayout = Field.loadField(Fields.DEFAULT_FIELD);
 
-    // Camera mount positions: robot center → camera lens.
-    public static final String kFrontCameraName = "Front"; // must match the name in the PhotonVision UI
+    // Camera mount positions: robot center → camera lens. Each name must
+    // match the one set in that camera's web UI.
+    public static final String kFrontCameraName = "limelight-front";
     public static final Transform3d kFrontRobotToCamera = new Transform3d(
         new Translation3d(0.3, 0.0, 0.2), // 30 cm forward, centered, 20 cm up
         new Rotation3d(0, 0, 0));         // facing straight forward
 
-    public static final String kBackCameraName = "Back";
+    public static final String kBackCameraName = "limelight-back";
     public static final Transform3d kBackRobotToCamera = new Transform3d(
         new Translation3d(-0.3, 0.0, 0.2), // 30 cm back, 20 cm up
         new Rotation3d(0, 0, Math.PI));    // facing straight backward
+
+    // The simulated camera only. Plausible guesses, not any one camera's spec
+    // sheet — check yours before trusting them.
+    public static final double kSimHorizontalFovDegrees = 80.0;
+    public static final double kSimVerticalFovDegrees = 56.0;
+    public static final double kSimMaxRangeMeters = 6.0;
   }
 
   public static final class ElevatorConstants {

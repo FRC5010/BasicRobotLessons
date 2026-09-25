@@ -1,8 +1,8 @@
 // Heuristic overflow scanner for this deck series' build scripts.
 //
 // This is NOT a layout engine — pptxgenjs (and PowerPoint) don't expose one
-// to script against, and visual rendering isn't available in this project's
-// environment (LibreOffice headless conversion is broken here). This script
+// to script against. Rendering slides to images is possible (README.md,
+// "Rendering slides to check them"), but slow; this script
 // instead re-derives, from the same source text every build script writes,
 // a conservative estimate of whether each text box has enough room, and
 // flags anything under a 15%-margin safety bar. A clean report means "no
@@ -15,10 +15,36 @@
 
 const fs = require('fs');
 const path = require('path');
+const K = require('./deck-kit');
 
-const LINE_MULT = 1.3;   // see README.md — PowerPoint's real per-line height
-                          // runs higher than fontSize * lineSpacingMultiple.
+const LINE_MULT = 1.3;   // body text (Cambria/Calibri) — see README.md. Code
+                          // cards use deck-kit.js's measured CODE_LINE_MULT.
 const MARGIN = 0.85;      // require needed <= avail * MARGIN (>=15% slack)
+                          // deck-kit.js's CODE_FIT must match this.
+
+/** Start offsets of each `p.addSlide()` in the source, so a call can be tied
+ *  to its slide — needed to know whether the slide has a header above it. */
+function slideStarts(src) {
+  const out = [];
+  let i = -1;
+  while ((i = src.indexOf('p.addSlide(', i + 1)) >= 0) out.push(i);
+  return out;
+}
+
+function slideOf(starts, at) {
+  let n = -1;
+  for (const s of starts) { if (s <= at) n++; else break; }
+  return n;
+}
+
+/** Numeric option from a call's source, ignoring anything inside a string
+ *  literal ("Priority: 1" must not read as y: 1) and longer keys that merely
+ *  end in the same letters (startY, rowH). */
+function optNum(block, key) {
+  const code = block.replace(/'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"/g, "''");
+  const m = code.match(new RegExp('(?<![A-Za-z])' + key + ':\\s*(-?[\\d.]+)'));
+  return m ? parseFloat(m[1]) : null;
+}
 
 function findBlocks(src, call) {
   const out = [];
@@ -48,7 +74,7 @@ function findBlocks(src, call) {
     }
     const block = src.slice(at + call.length, i + 1); // starts at '('
     const lineno = src.slice(0, at).split('\n').length;
-    out.push({ lineno, block });
+    out.push({ lineno, block, at });
     idx = i + 1;
   }
   return out;
@@ -72,9 +98,9 @@ function allQuoted(block, key) {
   return out;
 }
 
-function checkCodeCards(fname, src, report) {
-  for (const { lineno, block } of findBlocks(src, 'addCodeCard')) {
-    const w = getNum(block, 'w'), h = getNum(block, 'h'), fs_ = getNum(block, 'fontSize', 18);
+function checkCodeCards(fname, src, report, underHeader) {
+  for (const { lineno, block, at } of findBlocks(src, 'addCodeCard')) {
+    const w = getNum(block, 'w'), srcFs = getNum(block, 'fontSize', 18);
     const texts = allQuoted(block, 'text');
     const nlines = texts.length;
     const maxlen = texts.reduce((m, t) => Math.max(m, t.length), 0);
@@ -82,13 +108,50 @@ function checkCodeCards(fname, src, report) {
     // at the top of the card — 0.72 total top+bottom pad instead of 0.4. Keep
     // this in sync with addCodeCard's own codeY/codeH numbers if those change.
     const hasLabel = /fileLabel:/.test(block);
+    // Check the card as it's really drawn: addCodeCard moves a card that
+    // starts inside a header down below it (possibly shortening it), and
+    // shrinks code that's too tall for its card.
+    const srcY = optNum(block, 'y'), srcH = optNum(block, 'h');
+    let h = srcH, fs_ = srcFs;
+    if (srcY != null && srcH != null) {
+      ({ h, fontSize: fs_ } = K.codeCardLayout(
+        { y: srcY, h: srcH, lineCount: nlines, fontSize: srcFs, hasLabel }, underHeader(at)));
+    }
     const availW = w - 0.75, neededW = maxlen * 0.6 * fs_ / 72;
-    const availH = h - (hasLabel ? 0.72 : 0.4), neededH = nlines * fs_ * LINE_MULT / 72;
+    const availH = h - (hasLabel ? 0.72 : 0.4), neededH = nlines * fs_ * K.CODE_LINE_MULT / 72;
     const trueOverflow = neededW > availW || neededH > availH;
     const marginOverflow = neededW > availW * MARGIN || neededH > availH * MARGIN;
     if (trueOverflow || marginOverflow) {
       report.push(`[${fname} CODE L${lineno}] ${trueOverflow ? 'TRUE-OVERFLOW' : 'margin-only'} ` +
-        `W:${neededW.toFixed(2)}/${availW.toFixed(2)} H:${neededH.toFixed(2)}/${availH.toFixed(2)}`);
+        `W:${neededW.toFixed(2)}/${availW.toFixed(2)} H:${neededH.toFixed(2)}/${availH.toFixed(2)}` +
+        (fs_ < srcFs ? ` (code shrunk ${srcFs}→${fs_}pt to fit)` : ''));
+    }
+  }
+}
+
+/** Header titles must fit on one line (deck-kit shrinks them to fit, down to
+ *  TITLE_MIN_PT), and nothing but a code card may start inside the header —
+ *  addCodeCard moves itself below it, nothing else does. */
+function checkHeaders(fname, src, report, underHeader) {
+  for (const call of ['addHeader', 'addSectionHeader']) {
+    for (const { lineno, block } of findBlocks(src, call)) {
+      const m = block.match(/title:\s*'((?:[^'\\]|\\.)*)'/) || block.match(/title:\s*"((?:[^"\\]|\\.)*)"/);
+      if (!m) continue;
+      const title = m[1].replace(/\\(['"\\])/g, '$1');
+      if (!K.fitTitle(title).fits) {
+        report.push(`[${fname} TITLE L${lineno}] TRUE-OVERFLOW wraps even at ${K.TITLE_MIN_PT}pt — shorten: "${title}"`);
+      }
+    }
+  }
+  const placed = [['addCard', 'y'], ['addTryItGrid', 'y'], ['addNumberedSteps', 'startY'],
+                  ['s.addText', 'y'], ['s.addShape', 'y'], ['s.addImage', 'y']];
+  for (const [call, key] of placed) {
+    for (const { lineno, block, at } of findBlocks(src, call)) {
+      const y = optNum(block, key);
+      if (y != null && y < K.CONTENT_TOP && underHeader(at)) {
+        report.push(`[${fname} HEADER L${lineno}] TRUE-OVERFLOW ${call} at ${key}=${y} starts inside the header ` +
+          `(content starts at ${K.CONTENT_TOP})`);
+      }
     }
   }
 }
@@ -163,7 +226,12 @@ function main() {
     const fname = path.basename(file);
     const src = fs.readFileSync(file, 'utf8');
     const report = [];
-    checkCodeCards(fname, src, report);
+    const starts = slideStarts(src);
+    const headerSlides = new Set(
+      ['addHeader', 'addSectionHeader'].flatMap(c => findBlocks(src, c)).map(b => slideOf(starts, b.at)));
+    const underHeader = at => headerSlides.has(slideOf(starts, at));
+    checkHeaders(fname, src, report, underHeader);
+    checkCodeCards(fname, src, report, underHeader);
     checkAddCards(fname, src, report);
     checkAddTexts(fname, src, report);
     console.log(`===== ${fname} =====`);

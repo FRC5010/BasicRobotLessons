@@ -79,7 +79,7 @@ function buildDeck() {
 
     K.addFooter(s, { pageNum: 3, label: 'Ground Truth', dark: true });
     s.addNotes(
-      'Lesson 15\'s Try It asked you to multiply robotToCamera\'s offset on purpose and notice the sim couldn\'t show you the consequence, because there was no independent truth to check against. Today that changes: one shared chassis gets a body, and for the first time the number your odometry reports is no longer the only version of events. The best part is what doesn\'t change: SwerveModule, ModuleIOTalonFX, ModuleIOSim, Localizer, every command, every log key from Lessons 13-15 stay untouched — this all happens in one new class and two small edits, the IO layer from Lesson 13 doing exactly the job it was built for.'
+      'Lesson 15\'s Try It asked you to give the simulated camera a shaky hand, and the estimate drifted off with nothing to pull it back, because there was no independent truth for vision to be right about. Today that changes: one shared chassis gets a body, and for the first time the number your odometry reports is no longer the only version of events. The best part is what doesn\'t change: SwerveModule, ModuleIOTalonFX, ModuleIOSim, Localizer, every command, every log key from Lessons 13-15 stay untouched — this all happens in one new class and two small edits, the IO layer from Lesson 13 doing exactly the job it was built for.'
     );
   }
 
@@ -566,10 +566,10 @@ function buildDeck() {
       x: 0.7, y: 1.5, w: 11.9, h: 3.0, fontSize: 14,
       fileLabel: "Change both camera suppliers in Robot's constructor",
       lines: [
-        { text: 'frontCamera = PhotonVisionPoseProvider.makeCamera(', color: '9EF01A' },
+        { text: 'frontCamera = LimelightPoseProvider.makeCamera(', color: '9EF01A' },
         { text: '    VisionConstants.kFrontCameraName, VisionConstants.kFrontRobotToCamera,', color: '9EF01A' },
         { text: '    drivetrain::getSimulatedPose);', color: '9EF01A' },
-        { text: 'backCamera = PhotonVisionPoseProvider.makeCamera(', color: '9EF01A' },
+        { text: 'backCamera = LimelightPoseProvider.makeCamera(', color: '9EF01A' },
         { text: '    VisionConstants.kBackCameraName, VisionConstants.kBackRobotToCamera,', color: '9EF01A' },
         { text: '    drivetrain::getSimulatedPose);', color: '9EF01A' },
       ],
@@ -583,7 +583,7 @@ function buildDeck() {
 
     K.addFooter(s, { pageNum: 19, label: 'Ground Truth' });
     s.addNotes(
-      'Lesson 15 admitted a compromise: VisionIOPhotonVisionSim rendered what the simulated camera saw from Localizer::getPose() — the very estimate vision was supposed to correct — because no independent truth existed yet. One does now, and the fix is a one-line swap.'
+      'Lesson 15 admitted a compromise: VisionIOLimelightSim looked out from localizer::getPose — the very estimate vision was supposed to correct — because no independent truth existed yet. One does now, and the fix is a one-line swap.'
     );
   }
 

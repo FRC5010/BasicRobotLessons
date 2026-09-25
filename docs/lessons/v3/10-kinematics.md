@@ -214,16 +214,8 @@ command). So those four steps become one private helper, and everything else
 becomes a thin caller.
 
 The helper is about to publish the chassis's *desired* states, right next to
-Lesson 7's *measured* ones, so it needs a second publisher first.
-
-**Add to `Drivetrain`, alongside `m_moduleStatesPublisher`:**
-
-```java
-private final StructArrayPublisher<SwerveModuleVelocity> m_desiredModuleStatesPublisher =
-    NetworkTableInstance.getDefault()
-        .getStructArrayTopic("Drivetrain/DesiredModuleStates", SwerveModuleVelocity.struct)
-        .publish();
-```
+Lesson 7's *measured* ones — the same `Telemetry.log` struct-array overload,
+one more call, no new field.
 
 **Add to `Drivetrain`:**
 
@@ -244,7 +236,7 @@ private void applyChassisSpeeds(ChassisVelocities speeds) {
     m_modules[i].setDesiredState(states[i]);
   }
 
-  m_desiredModuleStatesPublisher.set(states);
+  Telemetry.log("Drivetrain/DesiredModuleStates", states, SwerveModuleVelocity.struct);
 }
 
 /** Drive with full swerve freedom: translate and rotate at once. */
@@ -315,9 +307,9 @@ concepts list, and it's why: an enhanced `for` walks *one* array, but here
 takes an index. The **`m_lastCommandedOmega`** line keeps Lesson 8's fake
 gyro fed — the units quietly upgraded from "fraction of full turn power" to
 "revolutions per second," same idea, cleaner physics. And the final
-`m_desiredModuleStatesPublisher.set(states)` publishes the *desired* states
-right next to Lesson 7's measured ones — section 6 shows why that pair is
-gold.
+`Telemetry.log("Drivetrain/DesiredModuleStates", ...)` publishes the
+*desired* states right next to Lesson 7's measured ones — section 6 shows
+why that pair is gold.
 
 ---
 
@@ -386,8 +378,8 @@ the type, there's simply no boundary to convert at until Phoenix's
 
 Now, for the first time, a driver can drive forward *and* strafe *and*
 rotate, all in the same tick. Run sim, open the **Swerve** tab, and push
-both sticks: with `Drivetrain/ModuleStates` *and*
-`Drivetrain/DesiredModuleStates` both dropped into the States slots, you see
+both sticks: with `Telemetry/Drivetrain/ModuleStates` *and*
+`Telemetry/Drivetrain/DesiredModuleStates` both dropped into the States slots, you see
 two sets of arrows — where the wheels are told to be, and where they
 actually are — mixing translation and spin per corner. When the two sets
 track each other closely, your steering control is keeping up; when they
@@ -440,7 +432,7 @@ up.
    RadiansPerSecond.of(0))` (a slow forward). Watch a module's steer angle in
    the Swerve tab. Then abruptly reverse to `MetersPerSecond.of(-0.5)`. The
    wheel should mostly not spin around — it should flip the drive sign
-   instead. (`Drivetrain/DesiredModuleStates`'s arrows flip
+   instead. (`Telemetry/Drivetrain/DesiredModuleStates`'s arrows flip
    length-direction instead of swinging 180°.)
 2. **Code — a spin-while-driving auto.** In `Autos`, build `drivetrain.drive(()
    -> MetersPerSecond.of(1.0), () -> MetersPerSecond.of(0), () ->

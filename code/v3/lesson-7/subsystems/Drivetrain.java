@@ -7,13 +7,11 @@ import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.math.geometry.Rotation2d;
 import org.wpilib.math.kinematics.SwerveModuleVelocity;
-import org.wpilib.networktables.NetworkTableInstance;
-import org.wpilib.networktables.StructArrayPublisher;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 
 import first.robot.Constants.DriveConstants;
 
-public class Drivetrain extends Mechanism {
+public class Drivetrain implements Mechanism {
   // Corner order: FL, FR, BL, BR. Pick a convention and stick to it.
   private final SwerveModule[] m_modules = new SwerveModule[] {
       new SwerveModule(DriveConstants.kFrontLeftDrivePort, DriveConstants.kFrontLeftSteerPort,
@@ -29,13 +27,6 @@ public class Drivetrain extends Mechanism {
           DriveConstants.kBackRightCancoderPort, DriveConstants.kBackRightMagnetOffset,
           DriveConstants.kBackRight)
   };
-
-  // A structured topic: publishes a whole SwerveModuleVelocity[] at once, so
-  // AdvantageScope's Swerve tab can draw it, not just plot four numbers.
-  private final StructArrayPublisher<SwerveModuleVelocity> m_moduleStatesPublisher =
-      NetworkTableInstance.getDefault()
-          .getStructArrayTopic("Drivetrain/ModuleStates", SwerveModuleVelocity.struct)
-          .publish();
 
   public Drivetrain() {
     Scheduler.getDefault().addPeriodic(this::logTelemetry);
@@ -71,14 +62,14 @@ public class Drivetrain extends Mechanism {
     SwerveModuleVelocity[] states = new SwerveModuleVelocity[4];
     int index = 0;
     for (SwerveModule module : m_modules) {
-      SmartDashboard.putNumber("Drivetrain/Module" + index + "/SteerAngleDegrees",
+      Telemetry.log("Drivetrain/Module" + index + "/SteerAngleDegrees",
           module.getSteerAngleDegrees());
       states[index] = new SwerveModuleVelocity(
           module.getDriveVelocityMetersPerSec(),
           Rotation2d.fromDegrees(module.getSteerAngleDegrees()));
       index++;
     }
-    m_moduleStatesPublisher.set(states);
+    Telemetry.log("Drivetrain/ModuleStates", states, SwerveModuleVelocity.struct);
   }
 
   /** Advances every module's physics model. Only ever called in simulation. */

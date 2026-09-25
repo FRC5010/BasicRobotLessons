@@ -449,7 +449,7 @@ function buildDeck() {
     K.addNumberedSteps(s, {
       startY: 1.85, rowH: 1.1, dark: true,
       steps: [
-        { title: './gradlew simulateJava → RobotTeleop', detail: 'Swerve tab open with both ModuleStates and DesiredModuleStates showing.' },
+        { title: './gradlew simulateJava → RobotTeleop', detail: 'Swerve tab open with both Telemetry/Drivetrain/ModuleStates and Telemetry/Drivetrain/DesiredModuleStates showing.' },
         { title: 'Drive hard, reverse abruptly, spin while translating', detail: 'The measured arrows should hug the desired ones noticeably tighter than last lesson.' },
         { title: 'Tune kSteerKP: too low lags, too high buzzes', detail: 'Same feel as any P gain from Lesson 5.' },
         { title: 'Tune kDriveKV first, then kDriveKP', detail: 'Set kDriveKP = 0, adjust kV until measured speed matches requested — then bring in a little kP for the residue.' },

@@ -117,7 +117,7 @@ function buildDeck() {
       lines: [
         { text: 'private void logTelemetry() {', color: 'FFD166' },
         { text: '  // ...the logs from Lessons 3 and 5 stay...', color: '7FA8C9' },
-        { text: '  SmartDashboard.putNumber("DriveModule/DistanceMeters", getDistanceMeters());', color: '9EF01A' },
+        { text: '  Telemetry.log("DriveModule/DistanceMeters", getDistanceMeters());', color: '9EF01A' },
         { text: '}', color: 'D7E3F4' },
       ],
     });

@@ -12,6 +12,7 @@ import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
+import org.wpilib.hardware.bus.CANPort;
 
 import first.robot.Constants.DriveConstants;
 import first.robot.Constants.SteerConstants;
@@ -25,9 +26,9 @@ public class ModuleIOTalonFX implements ModuleIO {
   private final VelocityVoltage m_driveRequest = new VelocityVoltage(0);
 
   public ModuleIOTalonFX(int driveId, int steerId, int cancoderId, double magnetOffsetRotations) {
-    m_driveMotor = new TalonFX(driveId, CANBus.systemcore(0));
-    m_steerMotor = new TalonFX(steerId, CANBus.systemcore(0));
-    m_steerEncoder = new CANcoder(cancoderId, CANBus.systemcore(0));
+    m_driveMotor = new TalonFX(driveId, new CANBus(CANPort.CAN_S0));
+    m_steerMotor = new TalonFX(steerId, new CANBus(CANPort.CAN_S0));
+    m_steerEncoder = new CANcoder(cancoderId, new CANBus(CANPort.CAN_S0));
 
     CANcoderConfiguration cancoderConfig = new CANcoderConfiguration();
     cancoderConfig.MagnetSensor.MagnetOffset = magnetOffsetRotations;

@@ -47,7 +47,7 @@ function buildDeck() {
     s.addText(
       [
         { text: 'The TalonFX integrated encoder', options: { bullet: true, breakLine: true } },
-        { text: 'Logging with SmartDashboard', options: { bullet: true, breakLine: true } },
+        { text: 'Logging with Telemetry', options: { bullet: true, breakLine: true } },
         { text: 'Plotting in AdvantageScope', options: { bullet: true, breakLine: true } },
         { text: 'Reacting to scheduler events, not polling', options: { bullet: true, breakLine: false } },
       ],
@@ -99,7 +99,7 @@ function buildDeck() {
       x: 0.7, y: 1.75, w: 11.9, h: 1.6, fontSize: 16,
       fileLabel: 'Nothing to add — just the general shape',
       example: true,
-      lines: [{ text: 'SmartDashboard.putNumber("DriveModule/PositionRotations", rotations);', color: '9EF01A' }],
+      lines: [{ text: 'Telemetry.log("DriveModule/PositionRotations", rotations);', color: '9EF01A' }],
     });
 
     K.addCard(s, {
@@ -111,7 +111,7 @@ function buildDeck() {
 
     K.addFooter(s, { pageNum: 4, label: 'Telemetry' });
     s.addNotes(
-      'Your code runs on the robot; you\'re looking at a laptop. SmartDashboard.putNumber("some name", value) is the plumbing that gets a number from one to the other, live. This course holds a standard from day one: the name is the address. Every value goes under an organized name, one branch per mechanism, so a hundred values from now you can still find the one you want — and names carry their units too, PositionRotations rather than just Position, so nobody has to guess what a number means later.'
+      'Your code runs on the robot; you\'re looking at a laptop. Telemetry.log("some name", value) is the plumbing that gets a number from one to the other, live. This course holds a standard from day one: the name is the address. Every value goes under an organized name, one branch per mechanism, so a hundred values from now you can still find the one you want — and names carry their units too, PositionRotations rather than just Position, so nobody has to guess what a number means later.'
     );
   }
 
@@ -140,7 +140,7 @@ function buildDeck() {
 
     K.addFooter(s, { pageNum: 5, label: 'Telemetry' });
     s.addNotes(
-      'SmartDashboard\'s values are live — visible while the robot runs, gone the instant it stops — unless something is also saving them. DataLogManager.start() does exactly that: start it once, and every value published anywhere gets mirrored into a .wpilog file automatically. It has to go at the very top of the Robot constructor, before anything else gets set up. Recording sim sessions might sound like overkill, but it isn\'t — a session you can scrub through afterward is how you answer "wait, what just happened?" without having to make it happen again.'
+      'Telemetry\'s values are live — visible while the robot runs, gone the instant it stops — unless something is also saving them. DataLogManager.start() does exactly that: start it once, and every value published anywhere gets mirrored into a .wpilog file automatically. It has to go at the very top of the Robot constructor, before anything else gets set up. Recording sim sessions might sound like overkill, but it isn\'t — a session you can scrub through afterward is how you answer "wait, what just happened?" without having to make it happen again.'
     );
   }
 
@@ -162,8 +162,8 @@ function buildDeck() {
         { text: '  double rotations = m_driveMotor.getPosition().getValue().in(Rotations);', color: 'D7E3F4' },
         { text: '  double rps = m_driveMotor.getVelocity().getValue().in(RotationsPerSecond);', color: 'D7E3F4' },
         { text: '', color: 'D7E3F4' },
-        { text: '  SmartDashboard.putNumber("DriveModule/PositionRotations", rotations);', color: '9EF01A' },
-        { text: '  SmartDashboard.putNumber("DriveModule/VelocityRotPerSec", rps);', color: '9EF01A' },
+        { text: '  Telemetry.log("DriveModule/PositionRotations", rotations);', color: '9EF01A' },
+        { text: '  Telemetry.log("DriveModule/VelocityRotPerSec", rps);', color: '9EF01A' },
         { text: '}', color: 'D7E3F4' },
       ],
     });
@@ -190,7 +190,7 @@ function buildDeck() {
       startY: 1.75, rowH: 0.98,
       steps: [
         { title: 'File → Connect to Simulator', detail: 'On a real robot it\'s Connect to Robot, with your team number.' },
-        { title: 'NetworkTables → SmartDashboard → DriveModule', detail: 'Your folder tree, with both values ticking.' },
+        { title: 'NetworkTables → Telemetry → DriveModule', detail: 'Your folder tree, with both values ticking.' },
         { title: 'Drag VelocityRotPerSec onto the Line Graph tab', detail: 'A live plot appears.' },
         { title: 'Drag PositionRotations on too, right axis', detail: 'Two signals, one time axis.' },
         { title: 'Drive, and watch', detail: 'The traces sit nearly flat — nothing\'s actually spinning yet. Lesson 4 fixes that.' },
@@ -227,7 +227,7 @@ function buildDeck() {
         { text: 'private void logCommandStart(SchedulerEvent event) {', color: 'FFD166' },
         { text: '  if (event instanceof SchedulerEvent.Scheduled scheduled', color: 'D7E3F4' },
         { text: '      && scheduled.command().requires(module)) {', color: 'D7E3F4' },
-        { text: '    SmartDashboard.putString("DriveModule/CurrentCommand", scheduled.command().name());', color: '9EF01A' },
+        { text: '    Telemetry.log("DriveModule/CurrentCommand", scheduled.command().name());', color: '9EF01A' },
         { text: '  }', color: 'D7E3F4' },
         { text: '}', color: 'D7E3F4' },
       ],
@@ -305,7 +305,7 @@ function buildDeck() {
 
     const points = [
       'Methods split into actions (setThrottle) and questions (getPosition) — chain a question\'s return value straight into the next call.',
-      'SmartDashboard.putNumber("Mechanism/Name", value) with DataLogManager recording started, is this course\'s whole telemetry story.',
+      'Telemetry.log("Mechanism/Name", value) with DataLogManager recording started, is this course\'s whole telemetry story.',
       'A listener reacting to a SchedulerEvent can\'t get unlucky the way a poll can — it\'s told the instant something happens.',
     ];
     s.addText(

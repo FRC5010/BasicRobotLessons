@@ -541,23 +541,23 @@ and so on). A "High" lesson needs real rework or is where an open risk lands.
 | 12 | Model-based control | Low | Written and verified 2026-08-13. Phoenix 6 config/control-request API ports essentially unchanged (not part of the `org.wpilib` 2027 rename) — `TalonFXConfiguration`, `PositionVoltage`/`VelocityVoltage`, `FeedbackSensorSourceValue.RemoteCANcoder` all confirmed via `javap`. Real end-to-end sim convergence verified for both loops — see [R17](#risks-and-blocking-unknowns) |
 | 13 | IO layers & replay | **High** | Written and verified 2026-08-13. Structure (interfaces, Inputs classes, `Constants.Mode` switch, IO implementations) ported clean, with the owning class (`SwerveModule`/`Drivetrain`) `SmartDashboard.putNumber`-ing its own Inputs fields manually instead of `@AutoLog`/`Logger.processInputs`. **Actual replay is deferred** — `REPLAY` stays a dormant, unreachable switch arm, verified via a real test to construct cleanly and leave every reading at its Inputs class's default — see [R1](#risks-and-blocking-unknowns). Also pays off Lesson 7's Try It 4 (named CAN ID/offset constants finally wired into the module array) and deletes `Drivetrain.simulatePeriodic()`/empties `Robot.simulationPeriodic()`, a v3-specific consequence of `Mechanism` having no `simulationPeriodic()` hook of its own — see [R18](#risks-and-blocking-unknowns) |
 | 14 | Pose estimator & localizer | Low | Written and verified 2026-08-13. Not a `SubsystemBase` → `Mechanism` rename after all — `Localizer` ships as a **plain class**, since it drives nothing and no command needs to require it; `Scheduler.addPeriodic(Runnable)` gives it a heartbeat with no `Mechanism`-ness needed. `SwerveDrivePoseEstimator`/`VecBuilder`/`Timer.getTimestamp()` all ported clean — see [R19](#risks-and-blocking-unknowns), which also corrects R18's retracted jvmArgs claim with a clean repro |
-| 15 | PhotonVision | ~~Medium~~ Low | Written and verified 2026-08-13. Vendordep fetches, compiles, and runtime-verifies clean — `OpModeRobot` integration confirmed working via a real `DriverStationSim`-backed multi-tag detection test, not just "the API compiles." Real finding, not anticipated by this plan: this course's vision-sim has no independent ground truth, so it can demonstrate accurate tracking but not recovering from a bad pose or exposing a miscalibrated camera — see [R20](#risks-and-blocking-unknowns), which also retires the old lesson's "mismeasure the camera" Try It (doesn't work here) with a corrected one that teaches the limitation directly |
-| 16 | Ground truth (interim, no maple-sim) | Medium | Written and verified 2026-08-13. **User decision (2026-08-13): write an interim lesson without maple-sim** rather than skip or wait — maple-sim remains confirmed structurally incompatible with this 2027 alpha (see R2). Ships a hand-built `ChassisSimulation` (grip-limited `a = μg` acceleration via `MathUtil.slewRateLimit` on a `Translation2d`, exact integration via `Twist2d.exp()`) as a shared, `static`, sim-only chassis body — giving the track real ground truth, a real gyro fed from it, and real (not faked) drift, without needing maple-sim at all. Closes Lesson 15's own admitted compromise by re-wiring both cameras' `poseSupplier` from `Localizer::getPose` to `Drivetrain::getSimulatedPose`. No walls, no collisions, no game pieces — those stay out of scope until maple-sim (or an equivalent) actually becomes available; see R21. Presented to students with zero mention of maple-sim or blockers, framed as "build the physics by hand first," matching this course's own established rhythm (P-control by hand before firmware, wrap-loops by hand before `ContinuousWrap`) |
-| 17 | BLine autos | **Skipped for now** | 2026-08-13: BLine confirmed structurally incompatible with this 2027 alpha by direct test — `FollowPath extends edu.wpi.first.wpilibj2.command.Command` (Commands V2's base class) and `FollowPath.Builder` requires an `edu.wpi.first.wpilibj2.command.Subsystem`; needs a rewrite against Commands V3, not a recompile. See [R2](#risks-and-blocking-unknowns). **User decision (2026-08-13): skip to Lesson 18 for now** rather than write an interim stand-in or wait — the mechanisms arc (18+) doesn't depend on BLine or maple-sim, so the track moves on and Lesson 17 stays a gap to revisit once BLine (or an equivalent) ships Commands V3 support. This is also where the resolved multi-`@Autonomous` selection decision (OD3) would land, whenever this unblocks |
+| 15 | ~~PhotonVision~~ **Limelight** | Low | **Rewritten on LimelightLib 2, 2026-09-24** (user decision: switch the v3 track's baseline vision from PhotonVision to Limelight, "with the NetworkTables approach"). The 2026-08-13 PhotonVision version is superseded — it could never compile on alpha-7 (no alpha-7 PhotonLib; see R2). Now `docs/lessons/v3/15-limelight.md` + `code/v3/lesson-15/`: `VisionIO` (record `PoseObservation(timestampSeconds, Pose2d, tagCount, Vector<N3> stdDevs)` + an output, `setRobotHeading`) / `VisionIOLimelight` (`readAcceptedPoseEstimates(MT2_WPIBLUE)`, `Limelight.setSharedRobotOrientation`) / `VisionIOLimelightSim extends` it / `LimelightFrame` (a ~20-line MessagePack writer) / `LimelightPoseProvider` (per-frame std devs into `addVisionMeasurement`). **The sim publishes real results frames to `<name>/results_msgpack`**, so the unmodified library does the filtering, trust, latency-corrected timestamps and health status. Verified in desktop sim, not inferred: timestamps land within 0.5–1.4 ms of the capture tick; library std dev 0.4704 m for two hub tags at ~2.2 m (formula 0.3·d/√n); a 0.5 m error fuses to <1 cm in 0.5 s when the camera sees truth; misspelled camera name → `NO_DATA`; the real `Robot` boots headless with no exceptions; full `Drivetrain`+`Localizer`+two-camera wiring stepped through the real `Scheduler`. Three measured findings shaped the lesson — see R2's 2026-09-24 update. Java concepts: `Optional` (now produced *and* consumed), `static` (named explicitly, taught via the shared robot orientation), blank `final`, `record` — the old lesson's "`static` field" beat moved to "`static`, named at last", since the Limelight sim has no genuinely shared mutable state and inventing one would be forced |
+| 16 | Ground truth | Medium | Written and verified 2026-08-13. **User decision (2026-08-13): write an interim lesson without maple-sim** rather than skip or wait — maple-sim remains confirmed structurally incompatible with this 2027 alpha (see R2). Ships a hand-built `ChassisSimulation` (grip-limited `a = μg` acceleration via `MathUtil.slewRateLimit` on a `Translation2d`, exact integration via `Twist2d.exp()`) as a shared, `static`, sim-only chassis body — giving the track real ground truth, a real gyro fed from it, and real (not faked) drift, without needing maple-sim at all. Closes Lesson 15's own admitted compromise by re-wiring both cameras' `poseSupplier` from `Localizer::getPose` to `Drivetrain::getSimulatedPose`. No walls, no collisions, no game pieces — out of scope, permanently (see R2's 2026-09-22 update: maple-sim isn't coming back and nothing else will replace it in time, so this design stays as-is, not an interim). Presented to students with zero mention of maple-sim or blockers, framed as "build the physics by hand first," matching this course's own established rhythm (P-control by hand before firmware, wrap-loops by hand before `ContinuousWrap`) |
+| 17 | BLine autos | **Still skipped — both vendor blockers gone as of 2026-09-24; now waits only on Lesson 16's alpha-7 migration** | 2026-08-13: BLine confirmed structurally incompatible with this 2027 alpha by direct test — `FollowPath extends edu.wpi.first.wpilibj2.command.Command` (Commands V2's base class) and `FollowPath.Builder` requires an `edu.wpi.first.wpilibj2.command.Subsystem`; needs a rewrite against Commands V3, not a recompile. See [R2](#risks-and-blocking-unknowns). **User decision (2026-08-13): skip to Lesson 18 for now** rather than write an interim stand-in or wait — the mechanisms arc (18+) doesn't depend on BLine or maple-sim, so the track moves on and Lesson 17 stays a gap to revisit once BLine (or an equivalent) ships Commands V3 support. This is also where the resolved multi-`@Autonomous` selection decision (OD3) would land, whenever this unblocks. **2026-09-22: BLine `v2027.0.0-beta.1` verified compiling against this project's real Commands V3 `Mechanism` — see R2's update. But Lesson 17 sits after Lesson 15 (PhotonVision) in the roll-forward order, and Track B's PhotonVision gate is still shut** — a real `tools/verify-lessons-v3.sh 16` attempt the same day failed at Gradle configuration with `Vendor Dependency photonlib has invalid year 2027_alpha5. Expected to be 2027_alpha7`, confirmed against a fresh, direct listing of `vendor-json-repo`'s `2027_alpha7` bucket (still no `photonlib` entry). **User decision (2026-09-22): wait for Track B to clear as a whole, per the plan's own Track A/B split, rather than write Lesson 17 in isolation** — no `docs/lessons/v3/17-*.md` or `code/v3/lesson-17/` written **2026-09-24: the PhotonVision gate no longer exists** — the v3 track switched vision to LimelightLib 2 and Lesson 15 compiles on alpha-7 (see row 15 and R2). `verify-lessons-v3.sh 16` now fails on Lesson 16's own pre-alpha-7 code (`extends Mechanism`, `SmartDashboard`), not on a vendordep, so what stands between Lesson 17 and being written is Phase 1b migrating Lesson 16 first. The 2026-09-22 decision (wait for Track B as a whole) stands until the user revisits it |
 | 18 | Scoring elevator | Low | Written and verified 2026-08-13. `SubsystemBase` → `Mechanism` rename landed exactly as predicted, with `ElevatorIO`/`ElevatorIOTalonFX`/`ElevatorIOSim` matching `ModuleIO`'s spine from Lesson 13 file-for-file. Phoenix's Motion Magic + full feedforward config surface (`MotionMagicVoltage`, `MotionMagicConfigs`, `Slot0Configs.kG/kV/kA/kP`, `GravityTypeValue.Elevator_Static`) and `org.wpilib.simulation.ElevatorSim` all confirmed via `javap` with unchanged signatures from pre-2027 WPILib/Phoenix 6. R3/R7's `StatusSignal.getValueAsDouble()` finding held again here, including on `getClosedLoopReference()`'s `Double`-typed signal. See [R22](#risks-and-blocking-unknowns) for measured (not reused) feedforward-term numbers from this alpha's own physics |
 | 19 | Mechanism2d | Low | Written and verified 2026-08-13. **Real, load-bearing departure from the old lesson: no AdvantageKit means no `LoggedMechanism2d`/`LoggedMechanismRoot2d`/`LoggedMechanismLigament2d`** — this course uses WPILib's own `org.wpilib.smartdashboard.Mechanism2d`/`MechanismRoot2d`/`MechanismLigament2d` instead (confirmed via `javap`, same package as `Field2d`/`SmartDashboard`). Two real consequences, not cosmetic renames: (1) these classes are plain-`double` constructors with no `Distance`/`Angle`-typed overloads at all, so every measure gets unpacked with `.in(Meters)` right at the call site — a new instance of the course's own "unpack only at a genuine double-only boundary" rule, not an exception to it; (2) `Mechanism2d implements NTSendable` (confirmed `extends Sendable`), so it's a **live** object — `SmartDashboard.putData(...)` publishes it exactly once, in the constructor, mirroring Lesson 14's already-shipped `Field2d` precedent, and `setLength`/`setColor` push straight to NetworkTables from `periodic()` with no `Logger.recordOutput`-style "must republish every tick" step. This is a genuinely simpler story than the old lesson's, not a downgrade. See [R23](#risks-and-blocking-unknowns) for the `Color`/`Color8Bit` naming-convention finding and the real NT-backed verification |
 | 20 | Intake arm | Low | Written and verified 2026-08-13. `SubsystemBase` → `Mechanism` rename landed exactly as predicted, and `Arm(Elevator elevator)` — a `Mechanism` constructor taking another `Mechanism` — is the first of its kind in this track, mirroring `Robot.java`'s own already-established "later field reads an earlier one" ordering rule (Lesson 14). `GravityTypeValue.Arm_Cosine`, `SoftwareLimitSwitchConfigs`, and `SingleJointedArmSim` (including `estimateMOI`) all confirmed via `javap` with unchanged signatures from pre-2027 WPILib/Phoenix 6. Real finding: `TalonFX.setThrottle(double)` (not `.set(double)`, per R3) is what the roller's plain percent-output write needed — R3 held four lessons after it was first found. See [R24](#risks-and-blocking-unknowns) for that and for the measured, exact match to the old course's own 5-point `kG × cos θ` table (0.25/0.18/0.00/−0.18/−0.25 V at 0°/45°/90°/135°/180°) and the real firmware-soft-limit verification |
 | 21 | Limit sensors (homing) | Low | Written and verified 2026-08-13. `DigitalInput` confirmed present (moved to `org.wpilib.hardware.discrete.DigitalInput`), `VoltageOut`/`TalonFX.setPosition` unchanged from pre-2027 Phoenix 6. **Real, load-bearing finding, not anticipated by this plan: this framework's `Scheduler` does not auto-cancel commands while the robot is disabled at all** — confirmed by a real test that schedules a `Trigger`-bound, no-requirements command with the robot deliberately left disabled and watches it fire — so `rezeroAtBottom()` needs no `ignoringDisable`-equivalent (none exists) where the old lesson needed one. Second finding, verified rather than assumed from `Drivetrain.driveToPose`'s own comment: `.whenCanceled(...)` genuinely fires whether a `runRepeatedly(...).until(...)` command was interrupted *or* finished on its own, confirmed by an isolated scheduler test before trusting it for `home()`'s cleanup. See [R25](#risks-and-blocking-unknowns) for both, plus measured numbers matching the old course's almost exactly (3.88 s to home, ≈120.7 A stalled) |
-| 22 | Light sensors (beam break) | **Skipped for now** | 2026-08-13: needs maple-sim's `IntakeSimulation` to give the beam-break sensor an independent "is a piece really there" signal — maple-sim remains confirmed structurally incompatible with this 2027 alpha (see R2). **User decision (2026-08-13): skip to Lesson 23 for now** rather than write an interim hand-built stand-in — LEDs (23) doesn't depend on a beam break or maple-sim, so the track moves on and Lesson 22 stays a gap alongside Lesson 17 to revisit once maple-sim ships `org.wpilib.*`-compatible support |
+| 22 | Light sensors (beam break) | **Skipped for now — permanently needs a hand-built stand-in, not a wait** | 2026-08-13: needs maple-sim's `IntakeSimulation` to give the beam-break sensor an independent "is a piece really there" signal — maple-sim remains confirmed structurally incompatible with this 2027 alpha (see R2). **User decision (2026-08-13): skip to Lesson 23 for now** rather than write an interim hand-built stand-in — LEDs (23) doesn't depend on a beam break or maple-sim, so the track moves on and Lesson 22 stays a gap alongside Lesson 17 to revisit once maple-sim ships `org.wpilib.*`-compatible support. **2026-09-22: that "once maple-sim ships" condition is retired — see R2's update.** maple-sim is not coming back and no alternative will be ready in time; Lesson 22, whenever it's written, needs the hand-built stand-in already sketched in August (a fake-injection signal decoupled from roller state, same spirit as Lesson 14's fake camera sighting) as its permanent design, the same way Lesson 16 already did for ground truth. Not written yet — this only removes the reason it was waiting |
 | 23 | LEDs | Low | Written and verified 2026-08-13. Not a `SubsystemBase` → `Mechanism` rename after all — `Leds` ships as a **plain class**, the same call R19 made for Lesson 14's `Localizer` and for the identical reason (drives nothing, no command ever requires it). Priority chain drops from the old lesson's four conditions to **three**, since it depended on the skipped Lesson 22's `Arm.hasGamePiece()` — the "two things true at once" teaching moment moves to something this track actually has: every robot boots simultaneously disabled *and* unhomed, and the strip correctly shows red (not-homed) rather than breathing blue (disabled) at that exact moment, verified by a real test. `LEDPattern`/`AddressableLED`/`AddressableLEDBuffer` all confirmed via `javap`, moved to `org.wpilib.hardware.led`. See [R26](#risks-and-blocking-unknowns) for three real findings: `AddressableLED` has no `.start()` at all in this alpha, its channel numbering collided with a `DigitalInput`'s in a real test (not guessed), and `DriverStation.getAlliance()` moved to `MatchState.getAlliance()` |
 | 24 | Superstructure | Medium | Written and verified 2026-08-14. Hand-rolled enum kept per OD4's resolution — `StateMachine` deferred to a future dedicated lesson, not folded in here even as a Try It. Redesigned to a 4-state machine (`UNHOMED`/`IDLE`/`INTAKING`/`SCORING`) since the old lesson's piece-driven `HANDOFF`/`HOLDING` states depended on the skipped Lesson 22's `hasGamePiece()` — framed honestly as "the operator is the sensor" rather than faked. Real finding, not anticipated by this plan: `Command` has no `onlyIf`-equivalent anywhere in the package (confirmed by an exhaustive `javap` sweep), replaced by a hand-built guard inside `Command.noRequirements(...)`; a second, separate finding along the way — JUnit tests touching `Scheduler` need two `--add-opens` flags `configureTestTasks` doesn't add, now fixed in the base template's `build.gradle`. See [R27](#risks-and-blocking-unknowns) for both plus the full verified end-to-end test |
-| 25 | Path events | **Skipped for now** | 2026-08-15: same root cause as Lesson 17 (R2) — this lesson's entire content is BLine event-marker/`overrideRotation` machinery layered on `FollowPath`, which is already confirmed structurally incompatible with this alpha's Commands V3. **User decision (2026-08-15): skip, no interim, same call as 17** — proceed to Lesson 26, which doesn't need BLine's generated-path machinery for its own teaching content. Stays a gap alongside 17 and 22 until BLine ships `org.wpilib.*`-compatible support |
+| 25 | Path events | **Still skipped — same as 17: vendor blockers gone as of 2026-09-24, waits on the migration of 16–24** | 2026-08-15: same root cause as Lesson 17 (R2) — this lesson's entire content is BLine event-marker/`overrideRotation` machinery layered on `FollowPath`, which is already confirmed structurally incompatible with this alpha's Commands V3. **User decision (2026-08-15): skip, no interim, same call as 17** — proceed to Lesson 26, which doesn't need BLine's generated-path machinery for its own teaching content. Stays a gap alongside 17 and 22 until BLine ships `org.wpilib.*`-compatible support. **2026-09-22: BLine's blocker cleared alongside 17 — see R2's update** (`registerEventTrigger`/`overrideRotation` both confirmed present in `v2027.0.0-beta.1` via `javap`, the latter gained a `RotationOverrideBehavior` overload not in the old API) — **but Lesson 25 sits even further downstream of Lesson 15 than 17 does, so the same still-shut PhotonVision gate blocks it too.** Waits on Track B alongside 17; when it does get written, inserting it between 24 and 26 will need the `Next:`/back-reference fixes CLAUDE.md calls for **2026-09-24: PhotonVision no longer gates it** (vision switched to Limelight, see row 15); like 17, it now waits only on Phase 1b's migration of the lessons it rolls forward on |
 | 26 | Drive to pose | Low | Written and verified 2026-08-15. **Not actually BLine-free by luck — verified before writing a line of prose**, since the old lesson's stage one used BLine's generated-`Path` machinery, the same dependency that blocked 17/25. Redesigned so stage one is just Lesson 11's already-shipped `driveToPose` sketch reused as-is (no staging-pose offset needed — it hands off to stage two wherever its own 5cm check trips, which bounds `alignToPose`'s un-clamped top speed the same way the old lesson's `kStagingDistance` did), and stage two (`alignToPose`, three `PIDController` fields, `PIDController` introduced as this lesson's one new Java concept) is entirely hand-rolled — no library path following anywhere. `Autos.driveToScoringPose` composes both with `coroutine.await(...)` chaining, matching `driveTurnDrive`'s established Lesson 9 shape; wired as a third `@Autonomous` opmode (`RobotAutoDriveToPose`, matching OD3's multi-opmode pattern) and a teleop left-bumper hold. See [R28](#risks-and-blocking-unknowns) for the two real measurement-methodology findings this lesson's numbers depend on |
-| 27 | Object detection | Medium | Written and verified 2026-08-16. `Commands.defer` retired as predicted, replaced by `Command.requiring(Mechanism...).executing(Consumer<Coroutine>)` — verified this actually defers the body to schedule time, not just assumed from the type signature. **Real, unplanned redesign**: the old lesson's simulated camera pulled game piece positions from maple-sim's physics arena, unavailable on this alpha (R2) — replaced with a small fixed list of field positions (`kSimGamePiecePositions`), no physics. `fetchPiece` reuses Lesson 24's `Superstructure.requestIntake()` instead of commanding Arm directly, which turned out to simplify the port relative to the old lesson (no `Commands.parallel` needed inside `fetchPiece` at all — the intake motion is already wired independently via `inState(INTAKING)`). See [R29](#risks-and-blocking-unknowns) for the maple-sim substitute, a genuinely surprising finding that this alpha's simulated object-detection pipeline injects no camera noise at all (unlike its AprilTag corner path), and the measured end-to-end verification |
-| 28 | Aim at tag | Low | Written and verified 2026-08-16. Confirmed "mechanically unaffected" was right for the core `Aim` arithmetic (no BLine/maple-sim dependency anywhere in it), but the old lesson's §6 ("aiming during an auto") used BLine's `FollowPath.registerEventTrigger`/`overrideRotation` — unavailable here (R2) — so it was replaced with a second `@Autonomous` opmode (`RobotAutoAimWhileDriving`) calling the identical `Aim.omegaTowardTag`, preserving the lesson's real point (one static method, two independent callers) without inventing an event-marker system that doesn't exist yet. `Drivetrain.getChassisSpeeds()` — "the door Lesson 17 opened," per the old lesson's own text — didn't exist here since Lesson 17 was skipped; added directly in this lesson instead, as `getChassisVelocities()` (kinematics run backward via `toChassisVelocities`, matching this alpha's renamed type). See [R30](#risks-and-blocking-unknowns) for the verified tracking-lag numbers, including a genuinely nice finding: `ChassisVelocities.toFieldRelative(Rotation2d)` is a cleaner instance-method replacement for the old `ChassisSpeeds.fromRobotRelativeSpeeds` static call |
+| 27 | Object detection | Medium | Written and verified 2026-08-16. `Commands.defer` retired as predicted, replaced by `Command.requiring(Mechanism...).executing(Consumer<Coroutine>)` — verified this actually defers the body to schedule time, not just assumed from the type signature. **Real, unplanned redesign**: the old lesson's simulated camera pulled game piece positions from maple-sim's physics arena, unavailable on this alpha (R2) — replaced with a small fixed list of field positions (`kSimGamePiecePositions`), no physics. `fetchPiece` reuses Lesson 24's `Superstructure.requestIntake()` instead of commanding Arm directly, which turned out to simplify the port relative to the old lesson (no `Commands.parallel` needed inside `fetchPiece` at all — the intake motion is already wired independently via `inState(INTAKING)`). See [R29](#risks-and-blocking-unknowns) for the maple-sim substitute, a genuinely surprising finding that this alpha's simulated object-detection pipeline injects no camera noise at all (unlike its AprilTag corner path), and the measured end-to-end verification **2026-09-24: needs a Limelight redesign before Phase 1b can migrate it** — its camera is a `PhotonCamera` fed by a `VisionTargetSim` scene, and the v3 track no longer ships PhotonLib. LimelightLib 2 does decode detector results (its decoder reads a `"Detector"` key into `DetectorTarget`s, confirmed in the sources jar), so the Lesson 15 approach — publish results frames the library reads — plausibly extends to detections, but nothing about that has been built or verified yet. Design call for the user |
+| 28 | Aim at tag | Low | Written and verified 2026-08-16. Confirmed "mechanically unaffected" was right for the core `Aim` arithmetic (no BLine/maple-sim dependency anywhere in it), but the old lesson's §6 ("aiming during an auto") used BLine's `FollowPath.registerEventTrigger`/`overrideRotation` — unavailable here (R2) — so it was replaced with a second `@Autonomous` opmode (`RobotAutoAimWhileDriving`) calling the identical `Aim.omegaTowardTag`, preserving the lesson's real point (one static method, two independent callers) without inventing an event-marker system that doesn't exist yet. `Drivetrain.getChassisSpeeds()` — "the door Lesson 17 opened," per the old lesson's own text — didn't exist here since Lesson 17 was skipped; added directly in this lesson instead, as `getChassisVelocities()` (kinematics run backward via `toChassisVelocities`, matching this alpha's renamed type). See [R30](#risks-and-blocking-unknowns) for the verified tracking-lag numbers, including a genuinely nice finding: `ChassisVelocities.toFieldRelative(Rotation2d)` is a cleaner instance-method replacement for the old `ChassisSpeeds.fromRobotRelativeSpeeds` static call **2026-09-24 note for Phase 1b:** `VisionConstants.kTagLayout` is now an alpha-7 `org.wpilib.fields.Field` (`AprilTagFieldLayout`/`AprilTagFields` are gone); `Field.getTagPose(int)` still returns `Optional<Pose3d>`, confirmed via `javap`, so `Aim.tagPosition` should keep its shape |
 | 29 | Flywheel | Low | Written and verified 2026-08-17. Confirmed "mechanically unaffected" was right — no BLine/maple-sim dependency anywhere, the first mechanism lesson in this track's back half not gated by either. `Models.flywheelFromPhysicalConstants(DCMotor, J, gearing)` is the correct factory for `FlywheelSim`'s `LinearSystem<N1,N1,N1>` (unlike Lesson 20's roller, which needed the arm-shaped factory instead — different physics shape, different factory, both now confirmed). A genuinely nice find: overriding `Mechanism.idle()` gets installed as the default command automatically by the (virtual-call) constructor, so this lesson needed no explicit `setDefaultCommand` wiring at all, unlike the old lesson's `RobotContainer` line. See [R31](#risks-and-blocking-unknowns) for the confirmed absence of `MathUtil.clamp` in this alpha (any overload, any type) and the measured kV/kA numbers, including one honest small discrepancy (43.27 vs. the predicted 42.86, reported as measured rather than force-matched) |
 | 30 | Current limits | Low | Written and verified 2026-08-18. Confirmed genuinely free of both BLine and maple-sim. `Robot.simulationPeriodic()` — empty since Lesson 13 — hosts the battery-sim exception as predicted, but the logging itself moved to `robotPeriodic()` instead (it's meaningful on real hardware too, not just in sim). `RobotController.isBrownedOut()` doesn't work in this alpha's simulation, measured over a sustained 2 s hold — see [R32](#risks-and-blocking-unknowns) for that and the rest of the measured current/voltage numbers, some close to the old course's and some honestly not |
-| 31 | Alerts | Low | Written and verified 2026-08-18. Confirmed genuinely free of both BLine and maple-sim. `org.wpilib.driverstation.Alert` confirmed present (imported directly by `OpModeRobot` itself, for its own loop-overrun warning) — but the enum is renamed `Alert.Level.HIGH/MEDIUM/LOW`, not `AlertType.kError/kWarning/kInfo`, and the whole publishing mechanism moved off NetworkTables onto the new 2027 Driver Station app. See [R33](#risks-and-blocking-unknowns) for both findings and for why the old lesson's camera-rename demo doesn't reproduce in this port |
+| 31 | Alerts | Low | Written and verified 2026-08-18. Confirmed genuinely free of both BLine and maple-sim. `org.wpilib.driverstation.Alert` confirmed present (imported directly by `OpModeRobot` itself, for its own loop-overrun warning) — but the enum is renamed `Alert.Level.HIGH/MEDIUM/LOW`, not `AlertType.kError/kWarning/kInfo`, and the whole publishing mechanism moved off NetworkTables onto the new 2027 Driver Station app. See [R33](#risks-and-blocking-unknowns) for both findings and for why the old lesson's camera-rename demo doesn't reproduce in this port **2026-09-24: its vision half needs a Limelight port** — `code/v3/lesson-31/` still ships `PhotonVisionPoseProvider`/`VisionIOPhotonVision` (with `cameraConnected` and the per-camera `Alert`), which the carry-forward deliberately left alone. `cameraConnected` maps naturally to `Limelight.isConnected()` (status `OK` or `DECODE_ERROR`, from the library source; honest in sim, since Lesson 15's sim camera publishes a frame every loop and a name nobody publishes reads `NO_DATA`). But the old hands-on demo (rename a camera → real alert) doesn't transfer: renaming `kFrontCameraName` renames the simulated publisher *and* the reader together. Needs a different demo — design call for the user |
 | 32 | Testing | Medium | Written and verified 2026-08-19. Confirmed genuinely free of both BLine and maple-sim. Test harness patterns re-verified against `Scheduler`/`RobotState` instead of `CommandScheduler`/`DriverStation` — both shipped tests actually run and pass through `tools/verify-lessons-v3.sh 32 test`, not just compile. `SuperstructureState`'s 4-state graph (Lesson 24 dropped `HANDOFF`/`HOLDING`) needed genuinely different test cases than the old lesson's, not a search-and-replace port. See [R34](#risks-and-blocking-unknowns) for the real-time trap's measured, cliff-shaped (not gradual) behavior in this port |
 | 33 | Reading a log | **Medium → resolved.** | Written and verified 2026-08-19. Confirmed genuinely free of both BLine and maple-sim. The "depends on Lesson 13's resolution" flag was right to raise and worse than it looked: section 6, the old lesson's centerpiece (replay an exact recorded match through fixed code), cannot be demonstrated at all — `Mode.REPLAY` is confirmed still the literal empty doorway Lesson 13 shipped, not just unverified. Resolved by keeping the technique (sections 1–5, 7 port directly onto `SmartDashboard`-mirrored `DataLogManager` logs) and rewriting section 6 to state the gap honestly, with a named, weaker substitute (re-run the same script, not the same match) rather than either faking replay or cutting the section. Section 8's second example (BLine `lib_key` typo) has no equivalent at all in this track and was replaced with a fully analogous, verified-real bug native to this port: an invalid `PathConstants.kAimTagId`, which `Aim.tagPosition`'s own javadoc already calls "what a typo looks like." See [R35](#risks-and-blocking-unknowns) for the complete findings, including that `Elevator/AtGoal` had never actually been logged in this track before this lesson added it |
 | 34 | SysId | Medium | Written and verified 2026-08-19, revised 2026-08-19. Confirmed genuinely free of both BLine and maple-sim. **`SysIdRoutine` is confirmed absent from this alpha entirely, not relocated** — only its logging primitive, `org.wpilib.sysid.SysIdRoutineLog`, exists. Following the Lesson 16 precedent, this lesson hand-builds a real V3-native replacement (`first.robot.commands.SysIdRoutine`) against that same logging primitive, verified end to end (ramp/step mechanics, cancellation cleanup, natural-completion cleanup) and readable by the real SysId analysis GUI. Genuine correction to the old lesson's "second `.wpilog` file" claim: this track never had a separate `Logger`, so SysId data lands in the same single log everything else does. Real regression found and fixed along the way: adding the elevator's reverse soft limit (old lesson section 7) broke the already-shipped `ElevatorHomingTest`, because the threshold is measured from the boot-time relative-encoder zero that `home()` hasn't yet made meaningful — resolved by shipping the forward limit only, confirmed by a controlled A/B test and a full regression re-run. **Revised at the user's direction: the four characterization bindings now live on a dedicated `@Utility` opmode (`RobotUtility`) instead of two-button combos inside `RobotTeleop`** — a genuine v3-native improvement the old course has no equivalent for, since it has no third opmode category, relying on Lesson 9's already-verified opmode-scoping (a de-selected opmode's bindings are auto-cancelled) for the actual guarantee. `RobotTeleop.java` no longer changes at this lesson. See [R36](#risks-and-blocking-unknowns) for the complete findings, including the measured percent-of-steady-state kS metric and the elevator travel-budget numbers, both close to the old course's own |
@@ -790,6 +790,27 @@ out badly.
   the lesson for now / write a physics-free interim / wait and retry later)
   rather than resolved unilaterally.
 
+  **Resolved permanently, 2026-09-22: maple-sim is not coming back, and no
+  alternative will be ready in time either.** User decision: stop treating
+  Lesson 16's `ChassisSimulation` as an interim stand-in waiting for
+  maple-sim (or a replacement) to ship — it's the design now, full stop.
+  This closes the "wait and retry later" option above for good; nothing
+  about maple-sim's status needs re-checking again. Two concrete
+  consequences: (1) Lesson 16's own title/framing (currently "Ground truth
+  (interim, no maple-sim)" in the status table) should drop "interim" the
+  next time that table entry is touched — it was never named that way to
+  students in the lesson prose to begin with, per Lesson 16's own writeup,
+  so no lesson text needs rewriting, only this plan doc's bookkeeping; (2)
+  **Lesson 22 (beam breaks), still blocked on maple-sim's
+  `IntakeSimulation` for an independent "is a piece really there" signal,
+  needs the same treatment Lesson 16 got — a hand-built stand-in designed
+  and written as this course's permanent answer, not deferred any longer.**
+  The option already on record for it back in August ("an interim
+  hand-built stand-in — a fake-injection signal decoupled from roller
+  state, same spirit as Lesson 14's fake camera sighting") is the starting
+  point for that design, whenever it's written; this update does not write
+  it, only removes "wait for maple-sim" as a reason not to.
+
   **BLine moved from "unverified" to "confirmed structurally
   incompatible" too, the same day, tested the same way — and it's worse
   off than maple-sim, not just similarly blocked.** Its own vendordep
@@ -835,6 +856,154 @@ out badly.
   it yet" logic that let 18 and 23 proceed past 17 and 22. All three stay
   open until maple-sim or BLine actually ships `org.wpilib.*`-compatible
   support.
+
+  **Update 2026-09-22: BLine's side of this is resolved, verified by a real
+  compile, not just a release announcement.** `EdanLiahovetsky/BLine-Lib`
+  tagged `v2027.0.0-beta.1` (confirmed directly via `git ls-remote --tags`
+  on the real repo, not an AI-summarized page), targeting "WPILib
+  2027.0.0-alpha-7 and Java 25" per its own `WPILIB_2027.md`, with an
+  explicit Commands V3 adapter. Its dedicated vendordep,
+  `https://raw.githubusercontent.com/edanliahovetsky/BLine-Lib/wpilib-2027/BLine-Lib-2027.json`
+  (`wpilibYear: "2027_alpha7"`), was fetched and dropped into a real
+  `tools/verify-lessons-v3.sh 14 --sandbox` checkout alongside a scratch
+  class exercising the documented V3 constructor —
+  `new FollowPath.Builder(DriveType.SWERVE, Mechanism, Supplier<Pose2d>,
+  Consumer<Pose2d>, Supplier<ChassisVelocities>, Consumer<ChassisVelocities>,
+  PIDController, PIDController, PIDController).withDefaultShouldFlip()` —
+  against this project's own real `Drivetrain implements Mechanism`, and
+  `./gradlew compileJava` reported **BUILD SUCCESSFUL**. `javap` on the
+  resolved jar (`com.github.edanliahovetsky:BLine-Lib:v2027.0.0-beta.1`)
+  confirms `FollowPath implements org.wpilib.command3.Command` (not
+  `extends` Commands V2's base class), `requirements()` returns
+  `Set<org.wpilib.command3.Mechanism>`, and `run(Coroutine)` is the real
+  Commands V3 execution method — the exact structural blocker this section
+  documented is gone in this release. Packages reorganized under
+  `frc.robot.lib.BLine.{path,commands,following,field}` (flat single-package
+  imports from `v0.9.1` need updating). Two things not yet re-verified: (1)
+  this is a first beta — its own docs say "later WPILib alphas require
+  validation before being called supported," so only alpha-7 compatibility
+  is confirmed, and (2) `javap` also surfaced telemetry hooks beyond what
+  `WPILIB_2027.md` describes (`FollowPath.setPoseLoggingConsumer`/
+  `setTranslationListLoggingConsumer`/`setBooleanLoggingConsumer`/
+  `setDoubleLoggingConsumer`, static `Pair<String,T>`-consumer setters,
+  alongside the builder's own `withTelemetry(TelemetryTable)`) — worth
+  reading the sources jar for before teaching either, per this repo's own
+  "read the sources jar, not the docs" rule (CLAUDE.md; BLine's own history
+  already burned this course once, on `EventTrigger`). **This clears
+  BLine's own blocker for Lesson 17 and Lesson 25** — Lesson 22 stays
+  blocked separately on maple-sim, untouched by this finding.
+
+  **Same-day correction: BLine was never Lesson 17/25's only blocker —
+  Track B's PhotonVision gate is a second, independent one, and it is
+  still shut.** Lessons 15–34 (which includes both 17 and 25) were split
+  into "Track B" specifically because they need PhotonVision's own
+  alpha-7-pinned vendordep on top of everything Track A needs (see
+  [Splitting the gate](#splitting-the-gate-lessons-114-dont-need-photonvision)
+  in the sibling upgrade doc). A real `./tools/verify-lessons-v3.sh 16`
+  run the same day this update was written — rolling Lessons 0–16 forward
+  onto the now-alpha-7 `code/OpModeV3Robot` base — failed at Gradle
+  configuration, before a single line of Lesson 17 code was even involved:
+  `Vendor Dependency photonlib has invalid year 2027_alpha5. Expected to
+  be 2027_alpha7.` A fresh, direct check of `vendor-json-repo`'s
+  `2027_alpha7` bucket the same day confirms no `photonlib` entry exists
+  there yet (still just `AdvantageKit`, `ChoreoLib`, `Phoenix6` ×2,
+  `REVLib`, `ReduxLib`). **User decision (2026-09-22): wait for Track B to
+  clear as a whole** — matching the plan's own established Track A/B
+  logic — **rather than write Lesson 17/25 now, verified only in
+  isolation against a standalone sandbox that skips the PhotonVision/
+  maple-sim lessons.** BLine's clearance stands and needs no re-verifying
+  once Track B unblocks; only the PhotonVision pin is still awaited.
+
+  **Same-day follow-up: PhotonVision's own `Dev` branch genuinely targets
+  alpha-7 already — verified by a real compile, not just its own claim —
+  but it was deliberately not adopted as a stand-in.** Investigated
+  because a moving CI channel, not the `vendor-json-repo` marketplace,
+  might still unblock Track B sooner. `PhotonVision/photonvision`'s `Dev`
+  tag (a continuously-recreated pre-release, not a numbered one) points at
+  a commit whose `build.gradle` genuinely sets `wpilibVersion =
+  "2027.0.0-alpha-7"` — confirmed by cloning it directly, not inferred
+  from a webpage. Its actual published Maven snapshot
+  (`org.photonvision:photonlib-java:dev-v2027.0.0-alpha-2-66-g18e9cb30`
+  on `maven.photonvision.org/repository/snapshots`) was hand-assembled
+  into a vendordep JSON using PhotonVision's own documented "install a
+  specific version" workflow (hand-edit the version string after a normal
+  install — not a hack) and dropped into a real
+  `tools/verify-lessons-v3.sh 14 --sandbox` checkout alongside a scratch
+  class calling `PhotonCamera`/`PhotonPoseEstimator`. `./gradlew
+  compileJava` — **BUILD SUCCESSFUL** on the first attempt, once the
+  scratch code stopped assuming a stale API (see below). **Two reasons
+  this isn't being pinned to, despite compiling clean:** (1) PhotonVision
+  itself labels this channel "not as well-tested as the latest stable
+  release! Use at your own risk" — it's whatever `main` happens to be,
+  with no semantic-version guarantee, a materially different risk profile
+  than BLine's deliberately-tagged beta; (2) `javap` on the resolved jar
+  shows `PhotonPoseEstimator`'s API has genuinely been redesigned, not
+  just renamed — the old generic `estimator.update(result)` method is
+  gone, replaced by eight separate named strategy methods
+  (`estimateLowestAmbiguityPose`, `estimateCoprocMultiTagPose`,
+  `estimateConstrainedSolvepnpPose`, `estimateRioMultiTagPose`,
+  `estimateClosestToCameraHeightPose`, `estimateClosestToReferencePose`,
+  `estimateAverageBestTargetsPose`,
+  `estimatePnpDistanceTrigSolvePose`) — the signature of active,
+  unfinished redesign work, not a completed migration a lesson could
+  safely be written against today. **User decision (2026-09-22): keep
+  waiting for an actual PhotonVision release** (matching the same logic
+  as the BLine/Track-B decision above) **rather than pin Lesson 15+ to
+  this snapshot.** Nothing here changes Track B's blocked status; it only
+  rules out "pin to the dev channel" as a shortcut, with the reasoning on
+  record so it doesn't need re-investigating.
+
+  **2026-09-24: PhotonVision retired from the v3 track — vision is
+  LimelightLib 2 now, and Track B's vendor blocker is gone.** User
+  decision, after a verified exploration: LimelightLib 2 publishes an
+  alpha-7 build (`2.0.0-beta9-alpha7`), is pure Java, and Systemcore runs
+  Limelight's vision on up to four USB cameras (`Limelight.SYSTEMCORE_USB0`
+  –`3`, NT names `limelightsc0`–`3`). Not in WPILib's marketplace, and the
+  vendor's own JSON URL is overwritten on every release (beta5→beta9 in one
+  week), so `verify-lessons-v3.sh` pins it by commit (`717a921` of
+  `LimelightVision/limelightlib-public`). **Simulation approach, chosen by
+  the user: the sim camera publishes real MessagePack results frames to
+  `<name>/results_msgpack`**, the topic a real Limelight publishes to, so
+  the unmodified library runs on them. Findings, all measured in desktop
+  sim, none inferred:
+  - **Identical frames are dropped.** A camera sending the same "saw
+    nothing" bytes every loop went `STALE` after 0.25 s, because
+    NetworkTables suppresses a repeated identical value. Fixed by numbering
+    frames (`"fidx"`), which a real Limelight does too; the lesson explains
+    it.
+  - **An exact (0, 0, 0°) pose is the library's "no answer" sentinel.**
+    Lesson 15's robot boots at exactly (0, 0, 0°) with two tags in view, so
+    every frame is rejected `MISSING_POSE` until the robot moves. Kept, and
+    turned into a callout that ties back to the lesson's `Optional` point.
+  - **Scatter + self-reference = drift.** With 1.5 cm/m of Gaussian scatter
+    and the camera looking out from `localizer::getPose` (Lesson 15 has no
+    ground truth), a parked robot's estimate wandered **~60 cm in 60 s** at
+    the start pose (10–33 cm/min at other spots, one camera). So the Lesson
+    15 camera is **noise-free** (zero drift, measured), and adding the
+    scatter is Try It #3, which demonstrates why ground truth matters.
+    **Phase 1b note for Lesson 16:** once the supplier is truth, scatter is
+    well-behaved (a 0.5 m error held within ~1–2 cm) — Lesson 16 is the
+    natural place to add it back, but that is not yet written into Lesson 16.
+  - **Honest latency is exact; a lie compounds.** The sim holds each frame
+    one loop and reports `cl = 20` ms. With truth as the supplier and
+    perfect odometry at 3 m/s, honest latency gives 1.6–2.3 mm error; a
+    claimed 0 ms gives 57 mm mean / 60 mm max, i.e. 3 m/s × 20 ms. Under
+    Lesson 15's self-referencing wiring the same lie compounds to 29 cm
+    behind after 0.8 s — but a student can't *see* that at Lesson 15, so
+    **it's a Try It candidate for Lesson 16**, where ground truth exists.
+  - Visibility is modeled as pinhole FOV (80°×56°), 6 m range, and a
+    facing check (`camera.relativeTo(tag).getX() > 0`, since a tag's +X
+    points out of its face — confirmed by a behind-the-tag test). Survey of
+    the 2026 field (`Fields.DEFAULT_FIELD` = "2026 FRC Rebuilt Welded",
+    16.54×8.07 m, 32 tags): hub tags at z=1.12 on all four faces, trench
+    tags at z=0.89, alliance-wall tags at z=0.55.
+  What remains for Track B is Phase 1b's ordinary migration of Lessons
+  16–34, plus two redesign calls (Lesson 27's detection camera, Lesson 31's
+  camera-alert demo) recorded in their table rows. The later snapshots'
+  `VisionConstants` blocks and `Robot.java` provider references (16–30) were
+  carried forward mechanically to the new names so Phase 1b doesn't
+  reintroduce the PhotonVision ones; Lessons 27 and 31's own vision files
+  were deliberately left alone.
 - **R3 — pin confirmed, and API confirmed too, by actually compiling against
   it.** Phoenix 6's 2027 alpha vendordep for this project's WPILib version is
   `Phoenix6-26.50.0-alpha-1.json` (with a matching
@@ -3027,6 +3196,9 @@ appendices: verify before drafting, record what you verified.
 | `org.wpilib.vision.apriltag.AprilTagFieldLayout`/`AprilTagFields` — compiled, not guessed, see R20 | Moved from the pre-2027 `edu.wpi.first.apriltag` root. `AprilTagFieldLayout.loadField(AprilTagFields)` static factory confirmed present; `AprilTagFields.kDefaultField`/`k2026RebuiltWelded`/`k2026RebuiltAndymark` all confirmed present among the enum's values |
 | `org.photonvision.simulation.VisionSystemSim`/`PhotonCameraSim`/`SimCameraProperties` — compiled and end-to-end runtime-verified, see R20 | `VisionSystemSim(String)`, `.addAprilTags(AprilTagFieldLayout)`, `.getDebugField()` (returns `org.wpilib.smartdashboard.Field2d` — this track's own type, no cross-package mismatch), `.addCamera(PhotonCameraSim, Transform3d)`, `.update(Pose2d)` all confirmed present and, unlike most appendix rows, verified to actually *work*: a real test drove a simulated camera to correctly report a multi-tag pose within centimeters of a known true position |
 | `VisionSystemSim`'s vision-sim architecture has no independent ground truth — a real, tested limitation, not a guess, see R20 | `poseSupplier` (fed to `VisionIOPhotonVisionSim`) is the same fused `Localizer` estimate vision itself corrects. Confirmed by two failed-as-expected tests: seeding a deliberately wrong pose near a real tag never converged toward the tag's true position (error flat at ~0.71 m over 150 ticks), and mismeasuring `robotToCamera` by 0.3 m produced no detectable skew (max error 1.5 cm, indistinguishable from ordinary sim noise) — because that same transform is used to both place the fake camera and un-project its detections, canceling itself out. What *is* verified to work: the fused pose tracks a correctly-seeded true pose within 15 cm over 150 ticks of real multi-tag detections. **Resolved by Lesson 16** — see R21; `poseSupplier` now points at `Drivetrain::getSimulatedPose`, an independent ground truth, not the estimate |
+| LimelightLib 2 `2.0.0-beta9-alpha7` — compiled against the real jar and runtime-verified, 2026-09-24 | Package `com.limelightvision`. `new Limelight(String name, Pose3d cameraPoseRobotSpace)` (publishes the mount, overriding the web UI); `readAcceptedPoseEstimates(PoseEstimateType)` → `PoseEstimate[]` (consumes the frame queue; only one queue-reading method per camera); `PoseEstimate` public fields `pose` (`Pose2d`), `timestampSeconds` (NT receive time − (`cl`+`tl`)), `latencyMillis`, `fieldedTagCount`, `avgTagDistanceMeters`, `stdDevs` (`Vector<N3>`), `rejectionFlags`; `PoseEstimateConfig.describeRejection(int)`; static `Limelight.setSharedRobotOrientation(double yawDegrees)` (writes `limelightshared/robot_orientation_set`, flushes NT); `getStatus()` → `OK`/`NO_DATA`/`STALE`/`DECODE_ERROR`, stale after 0.25 s by default; `hasTarget()`; `isConnected()` (OK or DECODE_ERROR). Default MegaTag2 trust: xy = 0.3 × avg distance ÷ √(fielded tags), heading 9999999 (scaled, untrusted). An all-zero pose array is rejected `MISSING_POSE`. The library publishes its own telemetry under `limelight_telemetry/<name>/`: `status`, `connected`, `customCalibration`, and `MT2_WPIBLUE/{accepted,rejected,rejectionReasons}` |
+| LimelightLib 2 results frame (what `VisionIOLimelightSim` publishes) — decoded by the real library, 2026-09-24 | Raw topic `<name>/results_msgpack`, type string `"msgpack"`, one MessagePack map per frame. The decoder accepts any numeric encoding for every numeric key (it reads float64 into `long` fields), so a writer needs only fixmap/fixarray/fixstr/float64. What an accepted MegaTag2 estimate needs: `v`=1, `botpose_orb_wpiblue` (x, y, z, roll, pitch, yaw — m and °, not all zero), `botpose_avgdist` > 0, and `Fiducial` = array of maps with `fID` and `fielded`=1. The sim also sends `cl` (capture latency, ms — without it the timestamp is simply the receive time) and `fidx` (frame number — not needed for acceptance, but consecutive frames must differ byte-for-byte or NT drops the repeats and the camera reads `STALE`) |
+| alpha-7 field layout — `javap`-verified, 2026-09-24 | `org.wpilib.vision.apriltag.AprilTagFieldLayout`/`AprilTagFields` no longer exist. Replacement: `org.wpilib.fields.Field.loadField(Fields)`, `Fields.DEFAULT_FIELD` (loads "2026 FRC Rebuilt Welded"; `FRC_2026_REBUILT_ANDY_MARK` also exists), `Field.getTags()` → `List<FieldTag>` (`getID()`, `getPose()` → `Pose3d`), `Field.getTagPose(int)` → `Optional<Pose3d>`, `getFieldLength()`/`getFieldWidth()`. Also: `Rotation2d.kZero` does not exist in alpha-7 (`k180deg` does); `Pose3d(Pose2d)` does |
 | `org.wpilib.math.util.MathUtil.slewRateLimit` — disassembled via `javap -c`, not guessed from the name, see R21 | Only `Translation2d`/`Translation3d` overloads exist, no bare-`double` one. Confirmed parameter order and behavior from the compiled method body: `slewRateLimit(current, target, maxRatePerSecond, dtSeconds)` — validates `dtSeconds >= 0`, returns `target` directly if already within `maxRatePerSecond * dtSeconds` of `current`, otherwise steps `current` toward `target` by exactly that much |
 | `org.wpilib.math.geometry.Pose2d.exp(Twist2d)` does NOT exist in this alpha — confirmed via a full unfiltered `javap` dump, a real difference from pre-2027 WPILib, see R21 | The exponential map moved: `Twist2d.exp()` (no argument, using its own `dx`/`dy`/`dtheta` fields) returns a `Transform2d`, composed onto a pose via the already-existing `Pose2d.plus(Transform2d)`. `ChassisVelocities.toTwist2d(double)` (R14) still produces the twist to feed it |
 | `Drivetrain.drive()`/`driveFieldRelative()` have no `.whenCanceled(...)` cleanup — a real, pre-existing gap found by testing, not by code review, see R21 | Every other `Drivetrain` command (`turnToHeading`, `driveDistance`, `driveToPose`) stops the wheels on cancellation; these two don't. Invisible in normal use (both are always immediately replaced by another command, never left canceled with nothing following), but a test that explicitly schedules-then-cancels `drive()` and moves on leaves the wheels running at their last commanded velocity forever, since Phoenix sim devices are keyed by CAN ID and outlive a test in the same JVM — reproduced a real, misleading test failure (expected error to shrink, it grew instead: 0.71 m → 1.02 m) before being traced to this cause. Not fixed in shipped `Drivetrain.java` — out of scope for Lesson 16's diff |
@@ -3560,6 +3732,27 @@ appendices: verify before drafting, record what you verified.
       remains a recorded, explicit gap (see R2, and the per-lesson impact
       table) to revisit once BLine — or an equivalent — ships Commands V3
       support.
+- [x] BLine's blocker cleared, 2026-09-22 — `EdanLiahovetsky/BLine-Lib`
+      tagged `v2027.0.0-beta.1`, confirmed via `git ls-remote --tags` on
+      the real repo. Its `BLine-Lib-2027.json` vendordep
+      (`wpilibYear: "2027_alpha7"`) was fetched into a real
+      `tools/verify-lessons-v3.sh 14 --sandbox` checkout and a scratch
+      class calling `FollowPath.Builder`'s documented V3 constructor
+      against this project's real `Drivetrain implements Mechanism`
+      compiled clean (`BUILD SUCCESSFUL`); `javap` on the resolved jar
+      confirms `FollowPath implements org.wpilib.command3.Command`, not
+      `extends` V2's base class. Full details and the still-open
+      questions (beta-only validation, an undocumented static
+      logging-consumer API found only via `javap`) are in R2's update.
+      **Same-day correction: Lesson 17 is still blocked** — it sits after
+      Lesson 15 in the roll-forward order, and Track B's separate
+      PhotonVision gate is still shut (`./tools/verify-lessons-v3.sh 16`
+      fails at Gradle configuration: `photonlib has invalid year
+      2027_alpha5. Expected to be 2027_alpha7`, and a fresh check of
+      `vendor-json-repo`'s `2027_alpha7` bucket confirms no `photonlib`
+      entry exists yet). **User decision: wait for Track B to clear as a
+      whole rather than write Lesson 17 verified only in isolation.**
+      Lesson 17 remains not written.
 - [x] Lesson 18 (Scoring elevator) written and verified 2026-08-13 —
       `docs/lessons/v3/18-elevator.md` and `code/v3/lesson-18/`, compiling
       through `tools/verify-lessons-v3.sh 18`. First lesson in the
@@ -3717,6 +3910,15 @@ appendices: verify before drafting, record what you verified.
       22 stays a recorded gap alongside Lesson 17, both to revisit once
       maple-sim (or an equivalent) ships `org.wpilib.*`-compatible
       support.
+- [x] maple-sim retired for good, 2026-09-22 — user decision: it is not
+      coming back, and no alternative will be ready in time either. See
+      R2's update. This closes the "revisit once maple-sim ships" framing
+      on both Lesson 16 (already written, its `ChassisSimulation` stand-in
+      is simply the permanent design now, not interim) and Lesson 22
+      (still not written — its hand-built stand-in, sketched above in the
+      2026-08-13 entry, is what gets written whenever Lesson 22 is
+      reached, not a placeholder waiting on a library). Nothing about
+      maple-sim needs re-checking or re-verifying again.
 - [x] Lesson 23 (LEDs: showing what the robot is thinking) written and
       verified 2026-08-13 — `docs/lessons/v3/23-leds.md` and
       `code/v3/lesson-23/`, compiling through
@@ -3789,6 +3991,19 @@ appendices: verify before drafting, record what you verified.
       before writing it, not assumed). Lesson 25 stays a recorded gap
       alongside 17 and 22 (see R2 and the per-lesson impact table) to
       revisit once BLine ships Commands V3 support.
+- [x] BLine's blocker cleared for Lesson 25 too, 2026-09-22 — same
+      `v2027.0.0-beta.1` finding (see R2's update and Lesson 17's
+      housekeeping entry above). `javap` on the resolved jar confirms both
+      `FollowPath.registerEventTrigger(String, Runnable)` and
+      `registerEventTrigger(String, Command)`, plus `overrideRotation`
+      (now with an added `RotationOverrideBehavior` overload not present
+      in the old `v0.9.1` API this lesson's design assumed). **Same
+      same-day correction as Lesson 17: still blocked overall** — Lesson
+      25 sits even further downstream of Lesson 15 than 17 does, so
+      Track B's still-shut PhotonVision gate blocks it too; waits
+      alongside 17 for Track B to clear as a whole. Still not written;
+      note the `Next:`/back-reference link fixes CLAUDE.md requires when
+      inserting a lesson between two that already exist (24 and 26).
 - [x] Lesson 26 (Drive to pose) written and verified 2026-08-15 —
       `docs/lessons/v3/26-drive-to-pose.md` and `code/v3/lesson-26/`,
       compiling through `tools/verify-lessons-v3.sh 26` from a fresh
@@ -4043,3 +4258,55 @@ appendices: verify before drafting, record what you verified.
       Full compile and test pass re-verified from a fresh sandbox (0–34,
       with and without `test`), plus an independent regression checkpoint
       at 33.
+- [x] **Lesson 15 rewritten on LimelightLib 2, 2026-09-24** (user decision:
+      switch the v3 track's baseline vision from PhotonVision to Limelight,
+      simulating with real results frames over NetworkTables).
+      `docs/lessons/v3/15-photonvision.md` → `15-limelight.md`;
+      `code/v3/lesson-15/` now ships `VisionIO`, `VisionIOLimelight`,
+      `VisionIOLimelightSim`, `LimelightFrame`, `LimelightPoseProvider`
+      (the three PhotonVision files deleted), plus alpha-7 `Robot`/
+      `RobotTeleop`/`Constants` carried from Lesson 14. `verify-lessons-v3.sh`
+      pins `LimelightLib-alpha7.json` by commit at lesson 15 (replacing the
+      `photonlib` alpha-5 entry). Verified: 0–15 and 0–14 compile with zero
+      warnings; vision chain runtime-checked in desktop sim (see R2's
+      2026-09-24 update for every number). Links fixed: Lesson 14's `Next:`,
+      `docs/lessons/v3/README.md` row 15, Lesson 16's two back-references
+      (its intro now cites the shaky-hand Try It instead of the retired
+      mount-offset one) and its code block, Lesson 18's `Robot` fields.
+      Carried forward mechanically (unverifiable until Phase 1b):
+      `VisionConstants` in every later `Constants.java` (16–33) and the
+      provider class name in `Robot.java` for 16–30. **Not done, pending
+      user decisions:** Lesson 27 and Lesson 31's vision redesigns (see
+      their rows). (The Lesson 15 deck was done the same day — next entry.)
+- [x] **Lesson 15 deck rebuilt for Limelight, 2026-09-24.**
+      `docs/presentations/v3/15-limelight.pptx` from a new
+      `template/build/15-limelight.js` (40 slides, one per code edit the
+      lesson instructs, speaker notes on every slide). Every code-card line
+      was sliced from the lesson's own code blocks and checked to appear in
+      the lesson verbatim (239 lines, 0 mismatches). `audit-overflow.js`
+      reports no true overflows; `validate.py` passes; all 40 slides were
+      rendered and checked by eye. To fit cards legibly, two source lines
+      were reflowed, with no behavior change (Lesson 15 recompiled): the
+      camera-name comment in `VisionConstants` moved onto its own lines
+      (carried into every later `Constants.java`), and
+      `LimelightFrame.withTargets`' signature wraps differently. The Lesson
+      14 deck's "Next" card and the Lesson 16 deck's Lesson 15 references
+      were updated and rebuilt (only those text runs changed, confirmed by
+      diffing the slide XML). The old PhotonVision deck
+      (`15-photonvision.pptx`, `template/build/15-photonvision.js`) was
+      removed from the working tree.
+- [ ] **Possible future option: a PhotonVision flavor of Lesson 15**
+      (user, 2026-09-24: "Keeping a PV oriented lesson might be nice as an
+      option, in the future"). Nothing to do until PhotonLib ships an
+      alpha-7 build — the vendor-check Routine still watches for it and
+      reports when it lands. The last PhotonVision version of everything is
+      at commit `94fe7b9`: `docs/lessons/v3/15-photonvision.md`,
+      `code/v3/lesson-15/subsystems/{PhotonVisionPoseProvider,VisionIOPhotonVision,VisionIOPhotonVisionSim}.java`,
+      `docs/presentations/v3/15-photonvision.pptx` and
+      `template/build/15-photonvision.js` (restore with
+      `git show 94fe7b9:<path>`). It was written against the alpha-5
+      PhotonLib, so it will need its own alpha-7 port (the R2 notes on
+      PhotonVision's redesigned `PhotonPoseEstimator` apply), and the form
+      is open — an aside, or an alternate Lesson 15 sharing the same
+      `VisionIO` interface, which `LimelightPoseProvider`'s design would
+      allow.

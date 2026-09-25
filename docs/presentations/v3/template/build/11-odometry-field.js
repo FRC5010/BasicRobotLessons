@@ -213,40 +213,30 @@ function buildDeck() {
     );
   }
 
-  // ============================================================ SLIDE 8 — m_posePublisher + logTelemetry publish line
+  // ============================================================ SLIDE 8 — Telemetry.log(pose) in logTelemetry
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
-    K.addHeader(s, { icon: 'broadcasttower_white.png', eyebrow: 'Section 4 · Drivetrain.java', title: 'Publish the pose, the same shape as every structured value' });
+    K.addHeader(s, { icon: 'broadcasttower_white.png', eyebrow: 'Section 4 · Drivetrain.java', title: 'Log the pose, the same shape as every structured value' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.6, w: 11.9, h: 2.0, fontSize: 13,
-      fileLabel: 'Add to Drivetrain, alongside the other structured-telemetry publishers',
-      lines: [
-        { text: 'private final StructPublisher<Pose2d> m_posePublisher =', color: 'D7E3F4' },
-        { text: '    NetworkTableInstance.getDefault()', color: 'D7E3F4' },
-        { text: '        .getStructTopic("Drivetrain/Pose", Pose2d.struct)', color: '9EF01A' },
-        { text: '        .publish();', color: 'D7E3F4' },
-      ],
-    });
-
-    K.addCodeCard(s, {
-      x: 0.7, y: 3.8, w: 11.9, h: 1.4, fontSize: 16,
+      x: 0.7, y: 1.75, w: 11.9, h: 1.4, fontSize: 17,
       fileLabel: 'Add to Drivetrain.logTelemetry(), right after the odometry update',
       lines: [
-        { text: 'm_posePublisher.set(pose);', color: '9EF01A' },
+        { text: 'Telemetry.log("Drivetrain/Pose", pose, Pose2d.struct);', color: '9EF01A' },
       ],
     });
 
     K.addCard(s, {
-      x: 0.7, y: 5.4, w: 11.9, h: 1.6,
-      body: 'Pose2d is a structured value, like the module states from Lesson 7 — and AdvantageScope knows how to draw a logged pose, not just plot it.',
-      pad: 0.2, bodySize: 19,
+      x: 0.7, y: 3.55, w: 11.9, h: 3.4,
+      heading: 'The same struct-value shape as the heading in Lesson 8.',
+      headingSize: 22,
+      body: 'Pose2d is a structured value, like the module states from Lesson 7 — one more Telemetry.log call, a new topic name, no new field to build. AdvantageScope knows how to draw a logged pose, not just plot it.',
     });
 
     K.addFooter(s, { pageNum: 8, label: 'Odometry & Field' });
     s.addNotes(
-      'Here\'s where the logging discipline kept since Lesson 3 pays off in full. Drawing the robot on a field takes exactly one more publisher, the same shape as every structured value since Lesson 7. Pose2d is a structured value — and AdvantageScope knows how to draw a logged pose, not just plot it.'
+      'Here\'s where the logging discipline kept since Lesson 3 pays off in full. Drawing the robot on a field takes exactly one more Telemetry.log call, the same struct-value shape as the heading in Lesson 8. Pose2d is a structured value — and AdvantageScope knows how to draw a logged pose, not just plot it.'
     );
   }
 
@@ -260,7 +250,7 @@ function buildDeck() {
       startY: 1.85, rowH: 1.05, dark: true,
       steps: [
         { title: 'File → Connect to Simulator', detail: 'Run ./gradlew simulateJava first.' },
-        { title: 'Add an 📐 Odometry tab, drag Drivetrain/Pose onto it', detail: 'From the sidebar tree.' },
+        { title: 'Add an 📐 Odometry tab, drag Telemetry/Drivetrain/Pose onto it', detail: 'From the sidebar tree.' },
         { title: 'Pick a field image from the source dropdown', detail: 'The current game\'s field.' },
         { title: 'Drive with the joysticks', detail: 'The little robot moves and rotates on the field.' },
       ],
@@ -291,7 +281,7 @@ function buildDeck() {
       fileLabel: 'Add to Drivetrain\'s constructor, alongside the periodic registration from Lesson 7',
       lines: [
         { text: 'public Drivetrain() {', color: 'FFD166' },
-        { text: '  SmartDashboard.putData("Field", m_field);', color: '9EF01A' },
+        { text: '  Telemetry.log("Field", m_field);', color: '9EF01A' },
         { text: '  Scheduler.getDefault().addPeriodic(this::logTelemetry);', color: 'D7E3F4' },
         { text: '}', color: 'D7E3F4' },
       ],
@@ -299,13 +289,13 @@ function buildDeck() {
 
     K.addCard(s, {
       x: 0.7, y: 5.25, w: 11.9, h: 1.75,
-      body: 'putData publishes a widget — a thing dashboards know how to draw — a different job from the per-value putNumber spam sworn off in Lesson 3. This is the one place this course touches SmartDashboard directly.',
-      pad: 0.2, bodySize: 18,
+      body: 'Still a plain Telemetry.log(...) call, same as every number logged since Lesson 3 — but notice what\'s being handed over this time: not a number, a whole widget object, a thing dashboards know how to draw rather than just plot. Telemetry.log tells the two apart automatically from what you pass in.',
+      pad: 0.2, bodySize: 17,
     });
 
     K.addFooter(s, { pageNum: 10, label: 'Odometry & Field' });
     s.addNotes(
-      'AdvantageScope is the full-featured viewer, but sometimes you just want the field right inside the sim window — no second tool. WPILib\'s Field2d is a dashboard widget that does exactly that. The distinction matters: putData publishes a widget, a different job from the per-value putNumber spam sworn off in Lesson 3.'
+      'AdvantageScope is the full-featured viewer, but sometimes you just want the field right inside the sim window — no second tool. WPILib\'s Field2d is a dashboard widget that does exactly that. Logging it is still a plain Telemetry.log(...) call, same as every number you\'ve logged since Lesson 3 — but notice what you\'re handing it this time: not a number, a whole widget object, a thing dashboards know how to draw rather than just plot. Telemetry.log tells the two apart automatically from what you pass in.'
     );
   }
 
@@ -327,12 +317,12 @@ function buildDeck() {
       x: 0.7, y: 3.65, w: 11.9, h: 3.3,
       heading: 'Field for the quick glance, AdvantageScope for everything else.',
       headingSize: 22,
-      body: 'In SimGUI: menu NetworkTables → SmartDashboard → Field opens a top-down field pane right in the sim window, robot moving as you drive. Field2d for the quick glance while sim is already open; the logged Pose2d for AdvantageScope\'s field images, replays, and everything else.',
+      body: 'In SimGUI: menu NetworkTables → Telemetry → Field opens a top-down field pane right in the sim window, robot moving as you drive. Field2d for the quick glance while sim is already open; the logged Pose2d for AdvantageScope\'s field images, replays, and everything else.',
     });
 
     K.addFooter(s, { pageNum: 11, label: 'Odometry & Field' });
     s.addNotes(
-      'Now in SimGUI: menu NetworkTables → SmartDashboard → Field, and a top-down field pane opens right in the sim window, robot moving as you drive. Same pose, two viewers: Field2d for the quick glance while sim is already open, the logged Pose2d for AdvantageScope\'s field images, replays, and everything else.'
+      'Now in SimGUI: menu NetworkTables → Telemetry → Field, and a top-down field pane opens right in the sim window, robot moving as you drive. Same pose, two viewers: Field2d for the quick glance while sim is already open, the logged Pose2d for AdvantageScope\'s field images, replays, and everything else.'
     );
   }
 

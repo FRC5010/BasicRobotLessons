@@ -58,9 +58,9 @@ import org.wpilib.system.RobotController;
 **Add to `DriveModule`, directly below `m_driveMotor`:**
 
 ```java
-public class DriveModule extends Mechanism {
+public class DriveModule implements Mechanism {
   private final TalonFX m_driveMotor =
-      new TalonFX(Constants.DriveConstants.kDriveMotorPort, CANBus.systemcore(0)); // already here
+      new TalonFX(Constants.DriveConstants.kDriveMotorPort, new CANBus(CANPort.CAN_S0)); // already here
 
   // The bridge: lets us push fake sensor values into the TalonFX during sim.
   private final TalonFXSimState m_driveSim = m_driveMotor.getSimState();
@@ -210,7 +210,7 @@ You now have a robot you can develop against with no hardware on the bench.
    rebuilding) and watch the velocity curve. That S-shaped ramp is the
    motor's natural response — you'll meet it again when you tune control.
 3. **Code — log applied volts.** Add
-   `SmartDashboard.putNumber("DriveModule/AppliedVolts", appliedVolts);`
+   `Telemetry.log("DriveModule/AppliedVolts", appliedVolts);`
    inside `simulatePeriodic()` and overlay it against velocity in
    AdvantageScope. (A value that only exists in sim gets logged from
    `simulatePeriodic()` — it's the `logTelemetry()` of the sim world.)
