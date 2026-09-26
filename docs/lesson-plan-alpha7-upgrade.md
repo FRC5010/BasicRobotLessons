@@ -422,6 +422,19 @@ mechanical ports. Re-run
 `./tools/verify-lessons-v3.sh 34 test` once everything compiles, to catch
 anything only a test surfaces.
 
+**Each lesson Phase 1b migrates also gets its NEXT LESSON markers
+(added 2026-09-26).** Lessons 1–15 now ship them: the code at the end of
+Lesson N-1 carries a javadoc-style comment at every spot where Lesson N has
+the student add or change code in an existing file, and
+`./tools/update-lesson-v3.sh N DIR` hands a student exactly that code. So
+migrating Lesson N is not finished until: `V3_ALPHA7_THROUGH` in
+`tools/lib/v3-lessons.sh` is raised to N (that also raises
+`update-lesson-v3.sh`'s ceiling); Lesson N's markers are added to the
+`code/v3/lesson-(N-1)/` files it edits, copying a file forward unchanged
+from an earlier snapshot if lesson-(N-1) doesn't ship it; and
+`./tools/check-lesson-markers-v3.py N` reports 0 problems.
+Conventions are in CLAUDE.md.
+
 **Phase 2 — content updates, driven by what Phase 1a/1b actually found.**
 Only after a given lesson's code compiles: update its prose to match the
 real new API (not the guessed shape in this doc), following the same

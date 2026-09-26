@@ -30,6 +30,57 @@ for backward compatibility — a flag wins if both are given. Keep the two
 scripts (`verify-lessons.sh` and `verify-lessons-v3.sh`) in sync if the
 interface changes.
 
+**The v3 (OpMode) track's roll-forward rules live in one place,
+[`tools/lib/v3-lessons.sh`](tools/lib/v3-lessons.sh)** — the alpha-7
+cut-off `V3_ALPHA7_THROUGH`, the pinned vendordeps, the deletion list, and
+the functions that apply snapshots — sourced by both `verify-lessons-v3.sh`
+and **`tools/update-lesson-v3.sh LESSON PROJECT_DIR [--force]`**, the
+student-facing script. The second applies snapshots 0..LESSON-1 (the
+lesson's *starting* point) **in place** to a student's own project, installs
+the vendordeps, and builds nothing. It refuses a directory that isn't a clean
+git repo (unless `--force`), anything inside this repo, lesson 0, and
+anything past the cut-off. A deletion that the lesson does as a **rename**
+takes a third field (`"7|subsystems/DriveModule.java|subsystems/SwerveModule.java"`);
+the scripts still just delete, but the marker checker diffs the old file
+against its new name.
+
+**v3 snapshots carry NEXT LESSON markers, through the alpha-7 cut-off.** The
+code at the end of Lesson N-1 has a comment at every spot where Lesson N
+adds to or changes an *existing* file:
+
+```java
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * One or two sentences of what the code is for, summarised from the lesson.
+     */
+```
+
+`ADD CODE HERE` marks an insertion point; `CHANGE THE CODE BELOW` marks code
+that gets rewritten (put it right above the statement or member that
+changes, not above its neighbours). Rules: describe intent only — **never
+reference a section, a slide, a "Try It", or a lesson number**; no marker for
+imports, comment-only edits, pure deletions (mention a deletion inside a
+nearby marker instead), or new files. Markers in method bodies are fine:
+javac, even `-Xlint:all`, doesn't warn about a doc comment there. **A
+snapshot may carry an unchanged copy of an earlier lesson's file purely to
+hold markers**; stale markers can't leak forward, because a marker in
+lesson-k/X implies lesson-(k+1)/X exists and replaces it. **Enforce it with
+`./tools/check-lesson-markers-v3.py [N] [--show]`**, which rebuilds each
+lesson's before/after state through the shared lib, diffs them, and reports
+`MISSING` (a change with no marker announcing it) and `ORPHAN` (a marker
+that announces nothing). It's currently clean for 1–15, and both directions
+were checked against deliberately broken markers. When Phase 1b migrates a
+lesson, raise the cut-off and add its markers in the same change. The
+checker's coverage rules are in its docstring; they absorb diff-alignment
+noise (blank lines, a shared `}`), not missing markers.
+
+The v3 builds need **JDK 25**: this container's `JAVA_HOME` pointed at 21,
+which fails every lesson with `invalid source release: 25` — set
+`JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64`. Snapshots 8–11's
+`Drivetrain` briefly went back to literal CAN IDs in the module array while
+Lesson 7 and 13+ used the per-corner `DriveConstants`; they now all use the
+constants (same values), so no lesson's diff "undoes" another's.
+
 **Use it instead of reasoning about whether a snippet compiles.** Current state: lessons 0–34 all compile, at every intermediate stopping point, with zero warnings. A regression is therefore a real result, not noise. Run the specific lesson you touched plus the highest one.
 
 For anything with runtime behavior — a JSON schema, a replacement for a deprecated API, a config with validation — drop a throwaway JUnit test into the sandbox's `src/test/java/` and re-run with `test`. That has caught things compiling never would.

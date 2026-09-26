@@ -174,6 +174,13 @@ The same trick works when you're stuck rather than ahead: generate a known-good
 state as of the last lesson you finished and diff it against your own project to
 find what drifted.
 
+**On the OpMode track** there's a script made for this job:
+`./tools/update-lesson-v3.sh <lesson you're about to do> <your project folder>`
+updates your own project in place, protected by git rather than by a
+throwaway folder, and marks every spot where that lesson has you add or
+change code. See
+[the OpMode track's page](docs/lessons/v3/README.md#starting-a-lesson-from-the-reference-code).
+
 ## A mental model to carry through the whole course
 
 - **`Robot`** is a metronome. ~50 times a second it ticks the scheduler. You almost

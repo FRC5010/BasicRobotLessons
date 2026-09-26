@@ -3,9 +3,10 @@
 A newer, still-settling alternative to [the classic track](../README.md):
 SystemCore and the 2027 alpha's OpMode framework, with coroutine-style
 Commands V3. Reference code lives under [`code/v3/lesson-N/`](../../../code/v3/),
-and the whole track rolls forward with `./tools/verify-lessons-v3.sh` — see
-the main [README](../../../README.md) for how to use that to jump into a
-lesson in the middle.
+and the whole track rolls forward with `./tools/verify-lessons-v3.sh`. To
+catch up, or to start partway through, see
+[Starting a lesson from the reference code](#starting-a-lesson-from-the-reference-code)
+below.
 
 **Start on [the classic track](../README.md) unless you specifically want
 this one.** Three lessons (17, 22, 25) are gaps for now — their old-course
@@ -52,6 +53,43 @@ status of every lesson, including what changed and why.
 | 32 | [Tests that catch what a plot won't](32-testing.md) | JUnit tests against your own subsystems, with the simulation running inside them | JUnit, arrange/act/assert |
 | 33 | [Reading a match log](33-reading-a-log.md) | Diagnose a failure that already happened, from the log alone — real replay isn't available on this track yet, so the fix is proven by re-running the same script instead | None |
 | 34 | [Tuning your robot when build team hands it over](34-tuning-with-sysid.md) | Measure a real machine's gains with a hand-built `SysIdRoutine`, since WPILib's own isn't ported to this framework yet | `Trigger.and(...)` |
+
+## Starting a lesson from the reference code
+
+Fell behind, lost a file, or want to begin at Lesson 8 without typing out
+0–7? This repo can put your project in the exact state a lesson expects.
+Run it from a clone of this repo (Git Bash on Windows), giving it the lesson
+you're **about to do** and your project's folder:
+
+```bash
+./tools/update-lesson-v3.sh 8 ~/dev/MyOpModeRobot
+```
+
+Lesson 8 starts where Lesson 7 finished, so that copies the reference code
+from lessons 0 through 7 into your project, deletes the files those lessons
+had you delete, and installs the vendordeps they need. It works on your
+project in place and **overwrites every file those lessons touch**, so it
+refuses to run unless your project is a git repository with everything
+committed. Commit first. Afterwards, `git diff` shows exactly what changed,
+and `git checkout .` puts your own version back. It works up to the last
+lesson migrated to the current alpha, Lesson 15 today.
+
+The code it writes marks every place the lesson you're about to do changes
+an existing file:
+
+```java
+/**
+ * ====== NEXT LESSON: ADD CODE HERE ======
+ * What the new code is for, summarised from the lesson.
+ */
+```
+
+`ADD CODE HERE` marks a spot where new code goes; `CHANGE THE CODE BELOW`
+marks code the lesson has you rewrite. Files the lesson creates from scratch
+aren't marked — the lesson tells you to make them. The script lists which
+files have markers, so you know where to look before you start reading.
+They're only comments: delete each one once you've written its code, or
+leave it. The next run of the script replaces the file anyway.
 
 ## Asides
 
