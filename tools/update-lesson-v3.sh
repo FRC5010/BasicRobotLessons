@@ -19,10 +19,16 @@
 # an existing file where LESSON has you add or change code. New files that
 # LESSON creates are not marked — the lesson tells you to create them.
 #
-# It OVERWRITES every file those lessons touch, with the reference version.
-# So it refuses to run unless PROJECT_DIR is a git repository with nothing
+# It OVERWRITES every file those lessons touch, with the reference version —
+# except Constants.java, where your values survive: any constant you changed
+# from what the lessons gave it keeps your value, constants of your own are
+# kept, and the lessons' new constants are added (tools/lib/merge_constants.py
+# has the rules). It prints every value it kept. Everything else is replaced,
+# so it refuses to run unless PROJECT_DIR is a git repository with nothing
 # uncommitted — commit first, and `git diff` afterwards shows exactly what
-# changed (and `git checkout .` undoes it). --force skips that check.
+# changed (and `git checkout .` undoes it). It also stops, changing nothing, if
+# it can't read your Constants.java well enough to merge it. --force skips
+# both checks (an unreadable Constants.java is then replaced, with a warning).
 #
 # Lesson 0 starts from the untouched OpMode template, so there is nothing to
 # apply for it; the highest lesson supported is the last one migrated to
@@ -82,6 +88,14 @@ if [ "$FORCE" -eq 0 ]; then
   fi
 fi
 
+# Constants.java gets merged, not overwritten (below) — but only if it can be
+# read. Find out now, before anything in the project has been touched.
+CONSTANTS="$PROJECT/src/main/java/first/robot/Constants.java"
+if [ -f "$CONSTANTS" ] && [ "$FORCE" -eq 0 ]; then
+  why="$(python3 "$REPO/tools/lib/merge_constants.py" --check "$CONSTANTS" 2>&1)" ||
+    die "couldn't read your Constants.java to keep your values in it (${why#merge_constants: }) — nothing was changed. Fix it, or pass --force to replace it with the reference version (your copy stays in git)."
+fi
+
 say "Updating $PROJECT to the start of Lesson $LESSON (reference code through lesson-$THROUGH)"
 
 # Download first, into a scratch folder: if the network fails, nothing in
@@ -91,11 +105,35 @@ trap 'rm -rf "$STAGE"' EXIT
 say "Fetching pinned vendordeps"
 v3_fetch_vendordeps "$THROUGH" "$STAGE" || die "couldn't download vendordeps — nothing in your project was changed"
 
+# Constants.java holds the student's robot — CAN IDs, offsets, gear ratios,
+# camera mounts, tuned gains — so keep a copy to merge back in below.
+if [ -f "$CONSTANTS" ]; then
+  cp "$CONSTANTS" "$STAGE/Constants.before.java"
+fi
+
 say "Applying lesson snapshots 0..$THROUGH"
 v3_apply_snapshots "$REPO" "$THROUGH" "$PROJECT"
 
 say "Applying the deletions the lessons instruct"
 v3_apply_deletions "$THROUGH" "$PROJECT"
+
+if [ -f "$STAGE/Constants.before.java" ] && [ -f "$CONSTANTS" ]; then
+  say "Keeping your values in Constants.java"
+  if python3 "$REPO/tools/lib/merge_constants.py" \
+      --student "$STAGE/Constants.before.java" --reference "$CONSTANTS" \
+      --out "$STAGE/Constants.merged.java" \
+      --history "$REPO"/code/v3/lesson-*/Constants.java > "$STAGE/merge-report.txt"; then
+    cp "$STAGE/Constants.merged.java" "$CONSTANTS"
+    if [ -s "$STAGE/merge-report.txt" ]; then
+      sed 's/^/  /' "$STAGE/merge-report.txt"
+    else
+      echo "  (you hadn't changed any constants — it's the reference version)"
+    fi
+  else
+    echo "  WARNING: couldn't read your Constants.java, so it was replaced with the reference" >&2
+    echo "  version. Your old one is still in git:  git -C \"$PROJECT\" show HEAD:src/main/java/first/robot/Constants.java" >&2
+  fi
+fi
 
 if compgen -G "$STAGE/*.json" >/dev/null; then
   say "Installing vendordeps"
