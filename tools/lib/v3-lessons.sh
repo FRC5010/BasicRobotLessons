@@ -48,16 +48,36 @@ V3_DELETIONS=(
   "15|subsystems/VisionPoseProvider.java"  # replaced by LimelightPoseProvider
 )
 
+# v3_python
+# Prints a command that runs a working Python 3: $PYTHON if it's set (the
+# lesson-update app sets it to its own interpreter), else the first of
+# python3, python and py that actually runs. On Windows, python3 and python
+# can be Microsoft Store placeholders that only print an install hint, while
+# py (the launcher the python.org installer adds) works.
+v3_python() {
+  local c
+  for c in "${PYTHON:-}" python3 python py; do
+    [ -n "$c" ] || continue
+    if "$c" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 8) else 1)' >/dev/null 2>&1; then
+      echo "$c"
+      return 0
+    fi
+  done
+  echo "  no working Python 3 found (tried \$PYTHON, python3, python, py) — see docs/lessons/v3/aside-setup.md" >&2
+  return 1
+}
+
 # v3_fetch_vendordep URL DEST_DIR
 # Downloads one vendordep JSON into DEST_DIR, saved under the "fileName" its
 # own contents declare (not the URL's basename). Retries network failures;
 # returns non-zero after four failed attempts.
 v3_fetch_vendordep() {
-  local url="$1" dest="$2" tmp attempt name
+  local url="$1" dest="$2" tmp attempt name py
+  py="$(v3_python)" || return 1
   tmp="$(mktemp)"
   for attempt in 1 2 3 4; do
     if curl -fsSL --max-time 60 -o "$tmp" "$url"; then
-      name="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["fileName"])' "$tmp")"
+      name="$("$py" -c 'import json,sys; print(json.load(open(sys.argv[1]))["fileName"])' "$tmp")"
       mkdir -p "$dest"
       mv "$tmp" "$dest/$name"
       echo "  ok  $name"

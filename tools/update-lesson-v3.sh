@@ -88,11 +88,13 @@ if [ "$FORCE" -eq 0 ]; then
   fi
 fi
 
+PY="$(v3_python)" || die "this needs Python 3 — see docs/lessons/v3/aside-setup.md, section 4"
+
 # Constants.java gets merged, not overwritten (below) — but only if it can be
 # read. Find out now, before anything in the project has been touched.
 CONSTANTS="$PROJECT/src/main/java/first/robot/Constants.java"
 if [ -f "$CONSTANTS" ] && [ "$FORCE" -eq 0 ]; then
-  why="$(python3 "$REPO/tools/lib/merge_constants.py" --check "$CONSTANTS" 2>&1)" ||
+  why="$("$PY" "$REPO/tools/lib/merge_constants.py" --check "$CONSTANTS" 2>&1)" ||
     die "couldn't read your Constants.java to keep your values in it (${why#merge_constants: }) — nothing was changed. Fix it, or pass --force to replace it with the reference version (your copy stays in git)."
 fi
 
@@ -119,7 +121,7 @@ v3_apply_deletions "$THROUGH" "$PROJECT"
 
 if [ -f "$STAGE/Constants.before.java" ] && [ -f "$CONSTANTS" ]; then
   say "Keeping your values in Constants.java"
-  if python3 "$REPO/tools/lib/merge_constants.py" \
+  if "$PY" "$REPO/tools/lib/merge_constants.py" \
       --student "$STAGE/Constants.before.java" --reference "$CONSTANTS" \
       --out "$STAGE/Constants.merged.java" \
       --history "$REPO"/code/v3/lesson-*/Constants.java > "$STAGE/merge-report.txt"; then
