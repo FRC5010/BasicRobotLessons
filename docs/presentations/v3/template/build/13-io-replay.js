@@ -173,9 +173,10 @@ function buildDeck() {
         { text: '  CANcoderConfiguration cancoderConfig = new CANcoderConfiguration();', color: 'D7E3F4' },
         { text: '  cancoderConfig.MagnetSensor.MagnetOffset = magnetOffsetRotations;', color: 'D7E3F4' },
         { text: '  m_steerEncoder.getConfigurator().apply(cancoderConfig);', color: 'D7E3F4' },
-        { text: '', color: 'D7E3F4' },
-        { text: '  // Steering: read angle from the CANcoder, wrap like a circle, hold a P gain.', color: '7FA8C9' },
+        { text: '  // Steering: which way it counts (Lesson 7), then read angle from the CANcoder,', color: '7FA8C9' },
+        { text: '  // wrap like a circle, hold a P gain.', color: '7FA8C9' },
         { text: '  TalonFXConfiguration steerConfig = new TalonFXConfiguration();', color: '9EF01A' },
+        { text: '  steerConfig.MotorOutput.Inverted = SteerConstants.kSteerInverted;', color: '9EF01A' },
         { text: '  steerConfig.Feedback.FeedbackRemoteSensorID = cancoderId;', color: '9EF01A' },
         { text: '  steerConfig.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;', color: '9EF01A' },
         { text: '  steerConfig.Feedback.RotorToSensorRatio = SteerConstants.kSteerGearRatio;', color: '9EF01A' },
@@ -183,7 +184,6 @@ function buildDeck() {
         { text: '  steerConfig.ClosedLoopGeneral.ContinuousWrap = true;', color: '9EF01A' },
         { text: '  steerConfig.Slot0.kP = SteerConstants.kSteerKP;', color: '9EF01A' },
         { text: '  m_steerMotor.getConfigurator().apply(steerConfig);', color: 'D7E3F4' },
-        { text: '', color: 'D7E3F4' },
         { text: '  // Drive: firmware knows the gearbox and runs a kV model + kP trim.', color: '7FA8C9' },
         { text: '  TalonFXConfiguration driveConfig = new TalonFXConfiguration();', color: '9EF01A' },
         { text: '  driveConfig.Feedback.SensorToMechanismRatio = DriveConstants.kDriveGearRatio;', color: '9EF01A' },
@@ -629,11 +629,20 @@ function buildDeck() {
     K.addHeader(s, { icon: 'compass_white.png', eyebrow: 'Section 7 · A new file', title: 'GyroIOPigeon2 — the shortest class in the course' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.5, w: 11.9, h: 3.1, fontSize: 14,
+      x: 0.7, y: 1.5, w: 11.9, h: 1.05, fontSize: 14,
+      fileLabel: "If you skipped Lesson 8's Try It, add to DriveConstants",
+      lines: [
+        { text: 'public static final int kGyroPort = 0;               // CAN ID — change to yours', color: '9EF01A' },
+      ],
+    });
+
+    K.addCodeCard(s, {
+      x: 0.7, y: 2.65, w: 11.9, h: 3.35, fontSize: 13,
       fileLabel: 'Create GyroIOPigeon2.java — the whole file',
       lines: [
         { text: 'public class GyroIOPigeon2 implements GyroIO {', color: 'FFD166' },
-        { text: '  private final Pigeon2 m_gyro = new Pigeon2(0, new CANBus(CANPort.CAN_S0)); // CAN ID 0', color: 'D7E3F4' },
+        { text: '  private final Pigeon2 m_gyro =', color: 'D7E3F4' },
+        { text: '      new Pigeon2(DriveConstants.kGyroPort, new CANBus(CANPort.CAN_S0));', color: 'D7E3F4' },
         { text: '', color: 'D7E3F4' },
         { text: '  @Override', color: 'FFD166' },
         { text: '  public void updateInputs(GyroIOInputs inputs) {', color: 'D7E3F4' },
@@ -644,14 +653,14 @@ function buildDeck() {
     });
 
     K.addCard(s, {
-      x: 0.7, y: 4.85, w: 11.9, h: 2.05,
-      body: 'Notice it doesn\'t override setSimRotationRate at all — the real robot has no use for it, so the default no-op body is exactly right. That\'s the interface earning its keep from the other direction.',
+      x: 0.7, y: 6.1, w: 11.9, h: 0.85,
+      body: 'It doesn\'t override setSimRotationRate — the real robot has no use for it.',
       pad: 0.2, bodySize: 18,
     });
 
     K.addFooter(s, { pageNum: 19, label: 'IO Layers' });
     s.addNotes(
-      'A Pigeon and one read.'
+      'A Pigeon and one read. Its CAN ID comes from DriveConstants.kGyroPort, the constant Lesson 8\'s Try It had you add, so every CAN ID the robot owns stays in one file — if you skipped that Try It, add it now (the small card at the top). Notice it doesn\'t override setSimRotationRate at all — the real robot has no use for it, so the default no-op body is exactly right. That\'s the interface earning its keep from the other direction. The file also needs import first.robot.Constants.DriveConstants.'
     );
   }
 

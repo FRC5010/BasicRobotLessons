@@ -285,7 +285,43 @@ function buildDeck() {
     );
   }
 
-  // ============================================================ SLIDE 10 — getDriveVelocityMetersPerSec
+  // ============================================================ SLIDE 10 — which way the steering counts
+  {
+    const s = p.addSlide();
+    s.background = { color: WHITE };
+    K.addHeader(s, { icon: 'ruler_white.png', eyebrow: 'Section 2 · Paying off Lesson 5\'s IOU, continued', title: 'Which way does the steering count?' });
+
+    K.addCodeCard(s, {
+      x: 0.7, y: 1.5, w: 11.9, h: 3.7, fontSize: 12,
+      fileLabel: 'Add kSteerInverted to SteerConstants, then configure the motor above the priming line',
+      lines: [
+        { text: '// Constants.java — in SteerConstants, below the gear ratio:', color: '7FA8C9' },
+        { text: 'public static final InvertedValue kSteerInverted =', color: '9EF01A' },
+        { text: '    InvertedValue.CounterClockwise_Positive; // flip if your steering counts backward', color: '9EF01A' },
+        { text: '', color: 'D7E3F4' },
+        { text: '// SwerveModule\'s constructor — just above the priming line:', color: '7FA8C9' },
+        { text: 'TalonFXConfiguration steerConfig = new TalonFXConfiguration();', color: '9EF01A' },
+        { text: 'steerConfig.MotorOutput.Inverted = SteerConstants.kSteerInverted;', color: '9EF01A' },
+        { text: 'm_steerMotor.getConfigurator().apply(steerConfig);', color: '9EF01A' },
+        { text: '', color: 'D7E3F4' },
+        { text: 'import com.ctre.phoenix6.signals.InvertedValue;          // Constants.java', color: '9EF01A' },
+        { text: 'import com.ctre.phoenix6.configs.TalonFXConfiguration;   // SwerveModule.java', color: '9EF01A' },
+      ],
+    });
+
+    K.addCard(s, {
+      x: 0.7, y: 5.35, w: 11.9, h: 1.55,
+      body: 'Gearing can reverse the spin, so this is a fact about your hardware. The default changes nothing in sim; section 7\'s checklist says whether to flip it.',
+      pad: 0.2, bodySize: 20,
+    });
+
+    K.addFooter(s, { pageNum: 10, label: 'Four Modules' });
+    s.addNotes(
+      'A real gearbox raises one more question the pretend 1:1 sensor never did: which way does the rotor turn when the wheel steers counterclockwise? A gear stage can reverse the direction of spin, so the answer depends on how your module\'s gearbox is built — it\'s a fact about your hardware, not your code. The motor can count either way, and you tell it which with a setting called Inverted. Like the gear ratio, a fact about your hardware belongs in Constants.java. Then hand it to the steering motor in a configuration object — the same build-it-then-apply-it shape the CANcoder has used since Lesson 5. It goes above the priming line, so the motor already counts the right way at the moment it\'s seeded. CounterClockwise_Positive is Phoenix\'s own default, so in sim — and on any robot whose steering already counts the right way — this changes nothing. It\'s there so that a robot whose steering counts backward is a one-word fix in Constants.java rather than a code change. The checklist at the end of the lesson tells you which kind of robot you have, and Lesson 12 grows this same configuration into the one that runs the steering loop.'
+    );
+  }
+
+  // ============================================================ SLIDE 11 — getDriveVelocityMetersPerSec
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -310,13 +346,13 @@ function buildDeck() {
       pad: 0.2, bodySize: 20,
     });
 
-    K.addFooter(s, { pageNum: 10, label: 'Four Modules' });
+    K.addFooter(s, { pageNum: 11, label: 'Four Modules' });
     s.addNotes(
       'This one is easy to skim past because it\'s short, but it\'s load-bearing: without it, Drivetrain has no way to hand a wheel\'s speed to the structured telemetry two sections from now. It\'s exactly getDistanceMeters()\'s pipeline — rotor turns ÷ gear ratio = wheel turns/sec, × circumference = meters/sec — just read from getVelocity() instead of getPosition(). Also worth mentioning while here: MyTeleop is lit up red right now, still binding buttons to command factories that no longer exist on SwerveModule. Leave it red — section 6 rebuilds that wiring around the Drivetrain. A refactor isn\'t done until every file that touched the old shape learns the new one, and the compiler\'s job is to keep that list for you.'
     );
   }
 
-  // ============================================================ SLIDE 11 — DriveConstants corners
+  // ============================================================ SLIDE 12 — DriveConstants corners
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -342,13 +378,13 @@ function buildDeck() {
       pad: 0.2, bodySize: 20,
     });
 
-    K.addFooter(s, { pageNum: 11, label: 'Four Modules' });
+    K.addFooter(s, { pageNum: 12, label: 'Four Modules' });
     s.addNotes(
       'One field on DriveConstants no longer makes sense and has to go: kDriveMotorPort, kSteerMotorPort, and kCancoderPort described one module\'s wiring — four modules need four sets, so delete those three constants; the next section replaces them with per-corner IDs passed straight into each new SwerveModule(...) call. A refactor isn\'t done until every file that touched the old shape learns the new one, and the compiler\'s job is to keep that list for you.'
     );
   }
 
-  // ============================================================ SLIDE 12 — create Drivetrain.java
+  // ============================================================ SLIDE 13 — create Drivetrain.java
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -369,13 +405,13 @@ function buildDeck() {
       pad: 0.2, bodySize: 20,
     });
 
-    K.addFooter(s, { pageNum: 12, label: 'Four Modules' });
+    K.addFooter(s, { pageNum: 13, label: 'Four Modules' });
     s.addNotes(
       'The Drivetrain owns four SwerveModules in an array, logs them from its own always-on telemetry, and commands them from its command factories. This is the file that becomes the one mechanism for driving — the architectural payoff of dropping Mechanism from SwerveModule in section 2.'
     );
   }
 
-  // ============================================================ SLIDE 13 — Drivetrain array + constructor
+  // ============================================================ SLIDE 14 — Drivetrain array + constructor
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -400,13 +436,13 @@ function buildDeck() {
       ],
     });
 
-    K.addFooter(s, { pageNum: 13, label: 'Four Modules' });
+    K.addFooter(s, { pageNum: 14, label: 'Four Modules' });
     s.addNotes(
       'Two new pieces of Java carry this file. SwerveModule[] is an array: a fixed-size, ordered container where every slot holds the same type. new SwerveModule[] { a, b, c, d } builds one with four elements — and here each element is itself a new SwerveModule(...) call with its own IDs and corner, which is constructor parameters doing exactly the job section 2 promised. Corner order (FL, FR, BL, BR) is a convention to pick once and stick to — it\'s what makes Module0 through Module3 mean something consistent later.'
     );
   }
 
-  // ============================================================ SLIDE 14 — structured telemetry: the publisher field
+  // ============================================================ SLIDE 15 — structured telemetry: the publisher field
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -425,13 +461,13 @@ function buildDeck() {
       pad: 0.2, bodySize: 20,
     });
 
-    K.addFooter(s, { pageNum: 14, label: 'Four Modules' });
+    K.addFooter(s, { pageNum: 15, label: 'Four Modules' });
     s.addNotes(
       'Every value logged since Lesson 3 has been a single number, logged one at a time with Telemetry.log(name, value). SwerveModuleVelocity is different: a WPILib data-carrier bundling one wheel\'s speed with its angle as a Rotation2d. Telemetry.log has an overload for exactly this: hand it a whole array plus the type\'s own .struct — a value SwerveModuleVelocity ships that knows how to turn one into bytes and back — and one call publishes all four modules\' speed and angle together, as one labeled topic AdvantageScope\'s Swerve tab knows how to draw, instead of four separate numbers it would have no way to know belong to the same picture. The method that actually calls it — logTelemetry() — is next.'
     );
   }
 
-  // ============================================================ SLIDE 15 — logTelemetry, the real body
+  // ============================================================ SLIDE 16 — logTelemetry, the real body
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -458,13 +494,13 @@ function buildDeck() {
       ],
     });
 
-    K.addFooter(s, { pageNum: 15, label: 'Four Modules' });
+    K.addFooter(s, { pageNum: 16, label: 'Four Modules' });
     s.addNotes(
       'for (SwerveModule module : m_modules) is the enhanced for loop — read it as "for each module in m_modules": the body runs once per element with module standing for each in turn. One wrinkle: a for-each loop doesn\'t number its elements, and the log keys need numbers, so a plain int index counter rides along, and "Drivetrain/Module" + index + "/..." glues the number into the key (+ between a String and a number pulls the number into the text). Keys Module0-Module3 follow the FL, FR, BL, BR order of the array. From there the final Telemetry.log(...) call publishes a fresh array every time logTelemetry() runs — one call publishes all four modules\' speed and angle together, instead of four separate numbers that AdvantageScope would have no way to know belong to the same picture. Step back and name the division of labor: the periodic callback registered in the constructor runs rain or shine — every tick, even while the robot is disabled — so it holds the watching. The acting lives in commands, built next, which call setDesiredState only while enabled. That\'s the whole point of dropping Mechanism from SwerveModule — one mechanism, one lock, four workers commanded together.'
     );
   }
 
-  // ============================================================ SLIDE 16 — Drivetrain.simulatePeriodic
+  // ============================================================ SLIDE 17 — Drivetrain.simulatePeriodic
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -489,13 +525,13 @@ function buildDeck() {
       pad: 0.2, bodySize: 20,
     });
 
-    K.addFooter(s, { pageNum: 16, label: 'Four Modules' });
+    K.addFooter(s, { pageNum: 17, label: 'Four Modules' });
     s.addNotes(
       'This is the third time this file reaches for the enhanced for loop, and it\'s the smallest use — one line in the body, calling the method every SwerveModule has carried since Lesson 4 unchanged. Drivetrain doesn\'t know or care how each module steps its own physics; it just asks all four to do it, every simulated tick. Without this method (and section 6\'s one-line wiring of it into Robot), the sim motors would sit frozen the instant this refactor lands — worth saying out loud, since it\'s an easy edit to skip and the failure mode (nothing moves in sim) doesn\'t obviously point back here.'
     );
   }
 
-  // ============================================================ SLIDE 17 — translate
+  // ============================================================ SLIDE 18 — translate
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -525,13 +561,13 @@ function buildDeck() {
       pad: 0.2, bodySize: 20,
     });
 
-    K.addFooter(s, { pageNum: 17, label: 'Four Modules' });
+    K.addFooter(s, { pageNum: 18, label: 'Four Modules' });
     s.addNotes(
       'The shape should feel familiar — it\'s Lesson 2\'s driveWithJoystick grown up: a command factory (they\'re back, because Drivetrain IS a mechanism) taking suppliers so the sticks get re-read every tick. The two Math calls are the new part. Math.hypot(vx, vy) returns sqrt(vx² + vy²), the length of the vector, cleaner and numerically safer than writing the formula by hand. Math.atan2(vy, vx) is the vector\'s angle in radians — it\'s the four-quadrant version of atan, meaning it gets the direction right even when vx or vy goes negative — and Math.toDegrees converts to what the steering code expects. Then every module gets the same target, and the chassis slides as one.'
     );
   }
 
-  // ============================================================ SLIDE 18 — rotate + corner table
+  // ============================================================ SLIDE 19 — rotate + corner table
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -573,13 +609,13 @@ function buildDeck() {
       pad: 0.2, bodySize: 20,
     });
 
-    K.addFooter(s, { pageNum: 18, label: 'Four Modules' });
+    K.addFooter(s, { pageNum: 19, label: 'Four Modules' });
     s.addNotes(
       'This is where each module\'s location earns its keep: unlike translate, every corner gets a different angle, computed from where that corner sits. For a module at position (x, y) from center, the CCW-tangent direction is (-y, x) — rotate the outward radial 90° CCW. Sketch the four wheels pointing those table angles and imagine them rolling — the whole robot spins CCW. Worth pointing out explicitly: neither translate nor rotate bothers with a .whenCanceled(...) cleanup, unlike every command since Lesson 1 — that\'s not an oversight, it\'s because Drivetrain is never actually idle. translate is about to become the default command in section 6, so the instant rotate is canceled (a bumper released), the scheduler hands the mechanism straight back to translate, which immediately commands fresh output. Contrast that with driveDistance back in Lesson 6, which really could end with nothing else queued up — that\'s the difference that decides whether cleanup is required. Two simplifications worth naming as deliberate, fixed in Lesson 10: real rotation gives faster linear speed to wheels farther from center (v = ω × r), but the same speed is used for all four here, which is close enough on a square chassis; and translate and rotate can\'t run at once since both require the Drivetrain — SwerveDriveKinematics combines them per-wheel.'
     );
   }
 
-  // ============================================================ SLIDE 19 — wire it up: Robot.java
+  // ============================================================ SLIDE 20 — wire it up: Robot.java
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -610,13 +646,13 @@ function buildDeck() {
       pad: 0.15, bodySize: 20,
     });
 
-    K.addFooter(s, { pageNum: 19, label: 'Four Modules' });
+    K.addFooter(s, { pageNum: 20, label: 'Four Modules' });
     s.addNotes(
       'Two small, easy-to-separate edits to the same file. The field swap is the obvious one — module (the single DriveModule) goes away entirely, replaced by drivetrain. The simulationPeriodic() update is the one that\'s easy to forget, because the old version already compiled fine calling module.simulatePeriodic() — updating it to drivetrain.simulatePeriodic() is a silent edit the compiler won\'t flag if you rename the field but forget the body. Without it, nothing errors, but sim physics never advances again: every module sits frozen forever, and the failure looks nothing like "forgot to update simulationPeriodic()" from the outside. This is exactly the kind of thing a refactor\'s compiler-driven checklist is supposed to catch, and it will — Robot.java won\'t compile at all until the field rename happens, but simulationPeriodic()\'s body compiles either way, referencing whichever field exists. Watch for it by hand.'
     );
   }
 
-  // ============================================================ SLIDE 20 — logCommandStart replacement
+  // ============================================================ SLIDE 21 — logCommandStart replacement
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -643,13 +679,13 @@ function buildDeck() {
       pad: 0.15, bodySize: 20,
     });
 
-    K.addFooter(s, { pageNum: 20, label: 'Four Modules' });
+    K.addFooter(s, { pageNum: 21, label: 'Four Modules' });
     s.addNotes(
       'logCommandStart() from Lesson 3 checks one mechanism by name — requires(module) — which was fine when Robot only ever had one to watch. You just renamed that mechanism once already, a few slides ago, and every mechanism this course adds from here on would mean coming back to this method again. requirements() is the data behind Lesson 3\'s requires(...) — the whole set of mechanisms a command needs, instead of a yes-or-no answer about just one. Every command in this course needs exactly one mechanism, so the loop runs once — but the method doesn\'t need to know that, which is the point. mechanism.getName() reads back the same name every Mechanism already carries — it\'s where the "Drivetrain" in "Drivetrain[IDLE]" comes from — so the dashboard key builds itself: Drivetrain/CurrentCommand for a command on drivetrain, whatever a future mechanism happens to be called for one of its own. Same dashboard key you\'ve had since Lesson 3, just arrived at without Robot needing to be told what it was watching.'
     );
   }
 
-  // ============================================================ SLIDE 21 — wire it up: MyTeleop
+  // ============================================================ SLIDE 22 — wire it up: MyTeleop
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -674,13 +710,13 @@ function buildDeck() {
       pad: 0.15, bodySize: 20,
     });
 
-    K.addFooter(s, { pageNum: 21, label: 'Four Modules' });
+    K.addFooter(s, { pageNum: 22, label: 'Four Modules' });
     s.addNotes(
       'The minus signs are Lesson 2\'s stick-inversion lesson meeting section 2\'s coordinate convention: pushing the stick forward reads negative but means +X; pushing it left reads negative but means +Y. Every one of the old bindings named in the caption lived on SwerveModule\'s command factories, which no longer exist — deleting them isn\'t optional cleanup, the project won\'t compile until they\'re gone. The project should compile clean again once this lands.'
     );
   }
 
-  // ============================================================ SLIDE 22 — run it
+  // ============================================================ SLIDE 23 — run it
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
@@ -696,13 +732,95 @@ function buildDeck() {
       ],
     });
 
-    K.addFooter(s, { pageNum: 22, label: 'Four Modules', dark: true });
+    K.addFooter(s, { pageNum: 23, label: 'Four Modules', dark: true });
     s.addNotes(
       'Notice what didn\'t have to happen first: walking out to the robot and pointing every wheel at some agreed "forward" before enabling. That\'s Lesson 5\'s priming, paying off exactly where it matters — four independent modules that all agree on zero the instant power comes on, with no ritual and no chance to forget it before a match. On the Swerve tab: one arrow per module, direction showing steer angle, length showing wheel speed. Push the stick and all four arrows swing together and grow with speed; hold a bumper and they snap into the pinwheel — the table from the previous slide, drawn for you, sixty times a second. This diagram is about to become the main debugging view for everything swerve going forward. On retuning kP: verified against this model, kP = 0.005 — ten times Lesson 5\'s value — settles within about a second with barely any overshoot. The gearbox adds real damping, so a bigger gain is both safe and needed here, the opposite of Lesson 5\'s ungeared case — this is the first moment the effect can actually be seen and tuned. And the gyro still reports zero — the chassis isn\'t yet closing the loop from "commanded rotation" to "reported heading." That\'s exactly what Lesson 8 wires up.'
     );
   }
 
-  // ============================================================ SLIDE 23 — try it (1 of 2)
+  // ============================================================ SLIDE 24 — before you drive a real chassis: set it up
+  {
+    const s = p.addSlide();
+    s.background = { color: WHITE };
+    K.addHeader(s, { icon: 'clipboardcheck_white.png', eyebrow: 'Section 7 · On a real chassis', title: 'Before you drive a real chassis: set it up' });
+
+    K.addNumberedSteps(s, {
+      startY: 1.75, rowH: 1.15,
+      steps: [
+        { title: 'Decide which end is the front', detail: 'kFrontLeft/kFrontRight must really be the front; check IDs.' },
+        { title: 'Point every wheel straight forward', detail: 'A straightedge along each side, all four facing the same way.' },
+        { title: 'Measure the four magnet offsets', detail: 'With offsets at 0.0, store the negative of each raw reading.' },
+      ],
+    });
+
+    K.addCard(s, {
+      x: 0.7, y: 5.3, w: 11.9, h: 1.55,
+      body: 'Once per robot, and again whenever a module comes off the chassis — with the robot up on blocks so the wheels spin free.',
+      pad: 0.2, bodySize: 20,
+    });
+
+    K.addFooter(s, { pageNum: 24, label: 'Four Modules' });
+    s.addNotes(
+      'Sim can\'t get calibration wrong: every simulated wheel boots at exactly the zero its physics model starts from. A real chassis can, and a bad calibration doesn\'t look like a bug — the robot drives confidently in the wrong direction. Priming saves you from pointing the wheels at every boot, but only because you point them carefully once, here. Do this once per robot, and again whenever a module comes off the chassis, with the robot up on blocks so the wheels spin free. Step 1: +X is forward; the corners called kFrontLeft and kFrontRight must physically be at the front, and each new SwerveModule(...) in the array must get the CAN IDs of the module that really sits at that corner — check against the robot (Phoenix Tuner X lists every device on the bus), not against memory. Step 2: lay a straightedge along each side of the chassis, and point them all the same way — a wheel aimed backward is parallel to the frame too. Step 3: with every offset still 0.0 in the code, read each CANcoder\'s raw position in Tuner X — Lesson 5\'s measurement, once per corner — and store the negative of each reading as that corner\'s offset.'
+    );
+  }
+
+  // ============================================================ SLIDE 25 — before you drive a real chassis: check it
+  {
+    const s = p.addSlide();
+    s.background = { color: WHITE };
+    K.addHeader(s, { icon: 'clipboardcheck_white.png', eyebrow: 'Section 7 · On a real chassis', title: 'Before you drive a real chassis: check it' });
+
+    K.addNumberedSteps(s, {
+      startY: 1.75, rowH: 1.15, startNum: 4,
+      steps: [
+        { title: 'Reboot and check zero', detail: 'Each module\'s SteerAngleDegrees should read about 0°.' },
+        { title: 'Turn one wheel a quarter-turn CCW by hand, then reboot', detail: 'About +90° before and after — this checks both sensors.' },
+        { title: 'Drive slowly, still on blocks', detail: 'Forward rolls forward, left points left, bumper = pinwheel.' },
+      ],
+    });
+
+    K.addCard(s, {
+      x: 0.7, y: 5.3, w: 11.9, h: 1.55,
+      body: 'Before the reboot you\'re watching the steering motor count; after it, priming has re-read the CANcoder.',
+      pad: 0.2, bodySize: 20,
+    });
+
+    K.addFooter(s, { pageNum: 25, label: 'Four Modules' });
+    s.addNotes(
+      'Step 4: power-cycle the robot (or restart its code) without touching the wheels — priming only reads the CANcoders at boot — and plot the four Drivetrain/Module0..3/SteerAngleDegrees. Each should read about 0°; one that doesn\'t has the wrong offset, so remeasure it. Step 5: with the robot disabled, turn one wheel a quarter-turn counterclockwise by hand, looking down on the robot from above. Its angle should climb to about +90°. Now reboot again without moving it: it should still read about +90°. Before the reboot you were watching the steering motor count; after it, priming re-read the CANcoder — so this one step checks both sensors. Repeat for each wheel. Step 6: nudge the stick forward — all four wheels should point forward and roll the way the robot should go. Nudge it left — they should point left. Hold the left bumper — the pinwheel from section 5, every wheel pushing counterclockwise.'
+    );
+  }
+
+  // ============================================================ SLIDE 26 — when a step fails
+  {
+    const s = p.addSlide();
+    s.background = { color: WHITE };
+    K.addHeader(s, { icon: 'clipboardcheck_white.png', eyebrow: 'Section 7 · On a real chassis', title: 'When a step fails, the symptom names the cause' });
+
+    K.addCard(s, {
+      x: 0.7, y: 1.55, w: 11.9, h: 3.45,
+      eyebrow: 'What you see → what to fix',
+      body: 'Forward drives sideways → zeros a quarter-turn off: redo steps 1–3\nOne wheel at a different angle → remeasure it, check its IDs\nOne wheel rolls backward → turn it 180°, remeasure its offset\nStick left drives right → the steering motor counts backward\nZero right on some boots only → set the CANcoder\'s SensorDirection',
+      pad: 0.25, bodySize: 20,
+    });
+
+    K.addCodeCard(s, {
+      x: 0.7, y: 5.2, w: 11.9, h: 1.65, fontSize: 14,
+      fileLabel: 'Only if step 5 read −90° before the reboot — change kSteerInverted in SteerConstants',
+      lines: [
+        { text: 'public static final InvertedValue kSteerInverted =', color: 'D7E3F4' },
+        { text: '    InvertedValue.Clockwise_Positive;', color: 'FFD166' },
+      ],
+    });
+
+    K.addFooter(s, { pageNum: 26, label: 'Four Modules' });
+    s.addNotes(
+      'Stick forward drives the robot sideways: every zero is a quarter-turn off — the wheels were pointed sideways when you measured, or the end you treated as the front isn\'t the one kFrontLeft/kFrontRight describe. Redo steps 1–3. One wheel sits at a different angle from the other three: that corner\'s offset is wrong, or its CAN IDs belong to another corner. One wheel rolls backward while the rest roll forward: it was zeroed facing backward — turn it 180° and remeasure. Stick left drives the robot right: the steering motor counts backward (step 5 read about −90° before the reboot) — flip kSteerInverted, the constant from section 2. Every module reads it, which is normally what you want: one module design counts the same way on every corner. Then repeat step 5: the angle should climb to about +90° both before and after the reboot. Because the setting lives in Constants.java, it keeps working when Lesson 12 grows the steering configuration — that configuration reads the same constant. The zero is right on some boots and wrong on others: the CANcoder counts backward (step 5 read +90° before the reboot and −90° after) — set MagnetSensor.SensorDirection, Lesson 5\'s "Mounting matters" callout.'
+    );
+  }
+
+  // ============================================================ SLIDE 27 — try it (1 of 2)
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
@@ -716,13 +834,13 @@ function buildDeck() {
       ],
     });
 
-    K.addFooter(s, { pageNum: 23, label: 'Four Modules', dark: true });
+    K.addFooter(s, { pageNum: 27, label: 'Four Modules', dark: true });
     s.addNotes(
       'Checking the rotate table by corner is worth doing for real, not just reading: if one module disagrees, its position in Constants.java or its slot in the array is wrong, and the plot just told you which one. The geometry exercise is predict-then-check, not code-writing — swap two existing constants and watch the table you already have change shape, which is the point: now you understand why chassis geometry matters, not just that it does.'
     );
   }
 
-  // ============================================================ SLIDE 24 — try it (2 of 2)
+  // ============================================================ SLIDE 28 — try it (2 of 2)
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
@@ -737,13 +855,13 @@ function buildDeck() {
       ],
     });
 
-    K.addFooter(s, { pageNum: 24, label: 'Four Modules', dark: true });
+    K.addFooter(s, { pageNum: 28, label: 'Four Modules', dark: true });
     s.addNotes(
       'Two of these three genuinely expect written code, tagged accordingly. driveForwardMeters(double meters) is a whole-chassis version of Lesson 6\'s driveDistance: reset one wheel\'s odometer, drive all four forward, watch that same wheel to know when you\'ve gone far enough — the exact shape Lesson 9 formalizes for real autonomous routines, so this is a legitimate preview, not busywork. Moving CAN IDs into Constants.java is explicitly framed as "verbose, but now every ID and calibration number lives in the same file as the gear ratios and chassis dimensions" — twelve named ports plus four magnet offsets, then the array rebuilt to reference DriveConstants.kFrontLeftDrivePort and friends instead of bare literals. The calibration-break exercise is the most memorable of the three but isn\'t really code-writing — change one corner\'s magnet offset by 0.1 (about 36°) and watch the Swerve tab: three arrows agree, one doesn\'t, a fixed, consistent disagreement, not noise. That\'s exactly what a bad calibration looks like on a real robot, and with four modules on screen at once, it\'s obvious which corner needs remeasuring. Remember to put the offset back afterward.'
     );
   }
 
-  // ============================================================ SLIDE 25 — what you learned + next
+  // ============================================================ SLIDE 29 — what you learned + next
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -769,7 +887,7 @@ function buildDeck() {
     s.addShape('ellipse', { x: 8.3, y: 5.6, w: 0.55, h: 0.55, fill: { color: TEAL }, line: { type: 'none' } });
     s.addImage({ path: K.ICON('arrowright_white.png'), x: 8.43, y: 5.73, w: 0.29, h: 0.29 });
 
-    K.addFooter(s, { pageNum: 25, label: 'Four Modules' });
+    K.addFooter(s, { pageNum: 29, label: 'Four Modules' });
     s.addNotes(
       'The Java half of this lesson was about many of the same thing: an array holds four same-typed modules, the enhanced for loop does the same work to each, and constructor parameters let one class describe four corners that differ only in their numbers. That same loop paid for itself twice — once over m_modules, and again over command.requirements(), which turned Lesson 3\'s one-mechanism logCommandStart() into a version that needs no further edits no matter how many mechanisms Robot ends up with. The robot half was an architecture decision worth remembering the reasoning for: not every class should be a mechanism. SwerveModule became a plain helper class — the Drivetrain owns the array and holds the scheduler\'s one lock — and the module\'s job shrank to one method: a single tick of control toward whatever it\'s told, whenever a command asks. You also picked up structured telemetry — Telemetry.log\'s struct-array overload publishes a whole array of labeled objects in one call, so AdvantageScope draws it live, which will catch a miswired corner faster than any plot. If the refactor felt long, that\'s because it was the real thing — a rename, deletions, red files, and the compiler walking you through every place the old design used to live. First, the robot needs to know which way it\'s facing — Lesson 8 gives it a gyro.'
     );

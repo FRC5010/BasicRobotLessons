@@ -117,8 +117,8 @@ function buildDeck() {
       x: 0.7, y: 1.75, w: 11.9, h: 1.9, fontSize: 12,
       fileLabel: "Delete from SwerveModule's constructor — it was the last line",
       lines: [
-        { text: '// DELETE — the config below reads the CANcoder continuously; seeding', color: 'FF8B8B' },
-        { text: '// the rotor\'s own counter no longer does anything useful.', color: 'FF8B8B' },
+        { text: '// DELETE — the steering configuration now reads the CANcoder continuously;', color: 'FF8B8B' },
+        { text: '// seeding the rotor\'s own counter no longer does anything useful.', color: 'FF8B8B' },
         { text: 'm_steerMotor.setPosition(', color: 'FF6B6B' },
         { text: '    m_steerEncoder.getAbsolutePosition().getValue().in(Rotations) * SteerConstants.kSteerGearRatio);', color: 'FF6B6B' },
       ],
@@ -144,10 +144,12 @@ function buildDeck() {
 
     K.addCodeCard(s, {
       x: 0.7, y: 1.3, w: 11.9, h: 5.35, fontSize: 11,
-      fileLabel: "Add to SwerveModule's constructor, in priming's place",
+      fileLabel: "Replace Lesson 7's steering configuration (just above where priming was) with",
       lines: [
-        { text: '// Steering: read angle from the CANcoder, wrap like a circle, hold a P gain.', color: '7FA8C9' },
-        { text: 'TalonFXConfiguration steerConfig = new TalonFXConfiguration();', color: 'FFD166' },
+        { text: '// Steering: which way it counts (Lesson 7), then read angle from the CANcoder,', color: '7FA8C9' },
+        { text: '// wrap like a circle, hold a P gain.', color: '7FA8C9' },
+        { text: 'TalonFXConfiguration steerConfig = new TalonFXConfiguration();', color: 'D7E3F4' },
+        { text: 'steerConfig.MotorOutput.Inverted = SteerConstants.kSteerInverted;', color: 'D7E3F4' },
         { text: 'steerConfig.Feedback.FeedbackRemoteSensorID = cancoderId;', color: '9EF01A' },
         { text: 'steerConfig.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;', color: '9EF01A' },
         { text: 'steerConfig.Feedback.RotorToSensorRatio = SteerConstants.kSteerGearRatio;', color: '9EF01A' },
@@ -167,7 +169,7 @@ function buildDeck() {
 
     K.addFooter(s, { pageNum: 6, label: 'Model-Based Control' });
     s.addNotes(
-      'Phoenix 6 configuration works in two steps: build a configuration object that describes everything about the mechanism, then apply it to the motor once — the same pattern already used back in Lesson 5, for the CANcoder itself, now applied to the motors. Four settings carry the lesson, walked through on the next slide.'
+      'Phoenix 6 configuration works in two steps: build a configuration object that describes everything about the mechanism, then apply it to the motor once. This has happened twice already: in Lesson 5 for the CANcoder, and in Lesson 7 for the steering motor, when all it needed to know was which way it counts. Today that steering configuration grows into the one that runs the loop, and the drive motor gets one of its own. TalonFXConfiguration is already imported from Lesson 7. Keep the Inverted line: applying a configuration sets every setting it holds, including the ones never mentioned, so leaving the line out would quietly put a flipped steering motor back to Phoenix\'s default. And from today it matters more than it did: the loop reads the CANcoder, so a motor that counts the opposite way from its sensor makes the loop push the wrong way. Four new settings carry the lesson, walked through on the next slide.'
     );
   }
 
@@ -206,14 +208,15 @@ function buildDeck() {
     K.addHeader(s, { icon: 'calculator_white.png', eyebrow: 'Section 3 · Constants.java', title: 'These gains produce volts, not fractions of full power' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.35, w: 11.9, h: 3.15, fontSize: 13,
-      fileLabel: "Replace Constants.java's SteerConstants, and add to DriveConstants",
+      x: 0.7, y: 1.45, w: 11.9, h: 3.75, fontSize: 12,
+      fileLabel: "Replace SteerConstants — keeping your own kSteerInverted — and add to DriveConstants",
       lines: [
         { text: 'public static final class SteerConstants {', color: 'FFD166' },
         { text: '  public static final double kSteerGearRatio = 25.0;  // rotor : CANcoder', color: 'D7E3F4' },
         { text: '  public static final double kSteerKP = 40.0;         // volts per rotation of error — tune', color: '9EF01A' },
+        { text: '  public static final InvertedValue kSteerInverted =', color: 'D7E3F4' },
+        { text: '      InvertedValue.CounterClockwise_Positive; // flip if your steering counts backward', color: 'D7E3F4' },
         { text: '}', color: 'D7E3F4' },
-        { text: '', color: 'D7E3F4' },
         { text: 'public static final class DriveConstants {', color: 'FFD166' },
         { text: '  // ...existing constants stay...', color: '7FA8C9' },
         { text: '  public static final double kDriveKV = 0.8;   // volts per wheel rotation/sec — the model', color: '9EF01A' },
@@ -223,16 +226,16 @@ function buildDeck() {
     });
 
     K.addCard(s, {
-      x: 0.7, y: 4.65, w: 11.9, h: 2.35,
+      x: 0.7, y: 5.35, w: 11.9, h: 1.6,
       heading: 'kSteerKP = 40 means "40 volts per full rotation of error."',
       headingSize: 20,
-      body: 'A wheel 90° off (0.25 rotations) gets 10 volts of push, easing off as it closes. Nothing about Drivetrain\'s module array changes today — the constructor still takes the same five parameters it\'s taken since Lesson 7.',
+      body: 'A wheel 90° off (0.25 rotations) gets 10 volts of push, easing off as it closes.',
       bodySize: 18,
     });
 
     K.addFooter(s, { pageNum: 8, label: 'Model-Based Control' });
     s.addNotes(
-      'Note the units: these gains produce volts, not fractions of full power, because the control requests about to be used speak voltage. Same P control tuned twice already, wearing engineering units.'
+      'Note the units: these gains produce volts, not fractions of full power, because the control requests about to be used speak voltage. Same P control tuned twice already, wearing engineering units. Keep kSteerInverted from Lesson 7 when you replace SteerConstants — if you flipped it for your robot, keep your value. Nothing about Drivetrain\'s module array changes today — the constructor still takes the same five parameters it\'s taken since Lesson 7.'
     );
   }
 
