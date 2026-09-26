@@ -31,10 +31,18 @@ import first.robot.Constants.HeadingConstants;
 public class Drivetrain implements Mechanism {
   // Corner order: FL, FR, BL, BR. Pick a convention and stick to it.
   private final SwerveModule[] m_modules = new SwerveModule[] {
-      new SwerveModule(1, 2, 9, 0.0, DriveConstants.kFrontLeft),   // CAN IDs, offset — change to yours
-      new SwerveModule(3, 4, 10, 0.0, DriveConstants.kFrontRight),
-      new SwerveModule(5, 6, 11, 0.0, DriveConstants.kBackLeft),
-      new SwerveModule(7, 8, 12, 0.0, DriveConstants.kBackRight)
+      new SwerveModule(DriveConstants.kFrontLeftDrivePort, DriveConstants.kFrontLeftSteerPort,
+          DriveConstants.kFrontLeftCancoderPort, DriveConstants.kFrontLeftMagnetOffset,
+          DriveConstants.kFrontLeft),
+      new SwerveModule(DriveConstants.kFrontRightDrivePort, DriveConstants.kFrontRightSteerPort,
+          DriveConstants.kFrontRightCancoderPort, DriveConstants.kFrontRightMagnetOffset,
+          DriveConstants.kFrontRight),
+      new SwerveModule(DriveConstants.kBackLeftDrivePort, DriveConstants.kBackLeftSteerPort,
+          DriveConstants.kBackLeftCancoderPort, DriveConstants.kBackLeftMagnetOffset,
+          DriveConstants.kBackLeft),
+      new SwerveModule(DriveConstants.kBackRightDrivePort, DriveConstants.kBackRightSteerPort,
+          DriveConstants.kBackRightCancoderPort, DriveConstants.kBackRightMagnetOffset,
+          DriveConstants.kBackRight)
   };
 
   private final SwerveDriveKinematics m_kinematics = new SwerveDriveKinematics(

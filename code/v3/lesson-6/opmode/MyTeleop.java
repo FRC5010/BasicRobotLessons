@@ -17,6 +17,14 @@ public class MyTeleop extends PeriodicOpMode {
   public MyTeleop(Robot robot) {
     this.robot = robot;
 
+    /**
+     * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+     * Those commands lived on a single module, which becomes a plain helper, so replace
+     * all of these bindings with the drivetrain's: make translating with the left stick
+     * its default command — stick forward is +X, stick left is +Y, both negated — and
+     * hold a bumper to spin in place, one direction each.
+     */
+
     // Hold the bottom face button to drive forward at 30% power; release to stop.
     robot.driverController.faceDown().whileTrue(robot.module.driveAtSpeed(0.3));
     // Hold the right face button to drive backward at 30% power; release to stop.

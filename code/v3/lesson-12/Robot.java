@@ -4,6 +4,7 @@
 
 package first.robot;
 
+import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.command3.SchedulerEvent;
 import org.wpilib.command3.button.CommandGamepad;
@@ -11,7 +12,7 @@ import org.wpilib.framework.OpModeRobot;
 import org.wpilib.telemetry.Telemetry;
 import org.wpilib.system.DataLogManager;
 
-import first.robot.subsystems.DriveModule;
+import first.robot.subsystems.Drivetrain;
 
 /**
  * The methods in this class are called automatically as described in the OpModeRobot documentation.
@@ -25,7 +26,7 @@ public class Robot extends OpModeRobot {
   // alive for as long as the robot runs. Opmodes are rebuilt fresh every time
   // they're selected, so they reach in and use these instead of owning them.
   public final CommandGamepad driverController = new CommandGamepad(0);
-  public final DriveModule module = new DriveModule();
+  public final Drivetrain drivetrain = new Drivetrain();
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -47,16 +48,25 @@ public class Robot extends OpModeRobot {
   }
 
   private void logCommandStart(SchedulerEvent event) {
-    if (event instanceof SchedulerEvent.Scheduled scheduled && scheduled.command().requires(module)) {
-      Telemetry.log("DriveModule/CurrentCommand", scheduled.command().name());
+    if (event instanceof SchedulerEvent.Scheduled scheduled) {
+      for (Mechanism mechanism : scheduled.command().requirements()) {
+        Telemetry.log(mechanism.getName() + "/CurrentCommand", scheduled.command().name());
+      }
     }
   }
 
-  /**
-   * ====== NEXT LESSON: ADD CODE HERE ======
-   * Override simulationPeriodic() — it runs every tick, but only in simulation — and
-   * have it ask the module to step its physics.
-   */
+  /** Runs every tick, but only while the code is running in simulation. */
+  @Override
+  public void simulationPeriodic() {
+    /**
+     * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+     * All the sim code moves inside the simulated IO classes, which step their physics
+     * whenever they're read, so there's nothing left to call from here: empty this
+     * method out.
+     */
+
+    drivetrain.simulatePeriodic();
+  }
 
   /**
    * This function is called periodically anytime when no opmode is selected, including when the

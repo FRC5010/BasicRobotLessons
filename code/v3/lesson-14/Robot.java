@@ -32,6 +32,15 @@ public class Robot extends OpModeRobot {
   // Localizer reads the drivetrain's kinematics/rotation/module positions at
   // construction, so drivetrain must be built first — it already is, above.
   public final Localizer localizer = new Localizer(drivetrain);
+
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * Replace the fake camera with two real Limelight pose providers, front and back.
+   * Make them blank finals — declared here, assigned in the constructor — because
+   * building a camera needs the localizer's pose, and the constructor body runs after
+   * every field above is finished.
+   */
+
   public final VisionPoseProvider camera = new VisionPoseProvider();
 
   /**
@@ -41,6 +50,13 @@ public class Robot extends OpModeRobot {
   public Robot() {
     DataLogManager.start(); // saves every published value to a .wpilog file
     Scheduler.getDefault().addEventListener(this::logCommandStart);
+
+    /**
+     * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+     * Build both cameras with LimelightPoseProvider.makeCamera — each one's name, mount
+     * position and the localizer's pose getter — then register each with the localizer.
+     */
+
     localizer.addProvider(camera); // the second provider — vision
   }
 

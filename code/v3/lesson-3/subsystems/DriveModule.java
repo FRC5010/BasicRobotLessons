@@ -20,6 +20,13 @@ public class DriveModule implements Mechanism {
   private final TalonFX m_driveMotor =
       new TalonFX(Constants.DriveConstants.kDriveMotorPort, new CANBus(CANPort.CAN_S0)); // CAN ID 1 — change to yours
 
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Give the module a simulated world to live in: the motor's sim state, the bridge
+   * that lets you push fake sensor readings into the TalonFX, and a physics model of
+   * one Kraken X60 spinning a small inertia.
+   */
+
   public DriveModule() {
     Scheduler.getDefault().addPeriodic(this::logTelemetry);
   }
@@ -68,6 +75,14 @@ public class DriveModule implements Mechanism {
   public double getPositionRotations() {
     return m_driveMotor.getPosition().getValue().in(Rotations);
   }
+
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add a method that steps the physics by one tick: tell the sim the battery voltage,
+   * read the voltage the motor is applying, run the model forward 20 ms on that
+   * voltage, then push the model's position and velocity back into the motor's fake
+   * encoder. Only simulation ever calls it.
+   */
 
   private void logTelemetry() {
     double rotations = m_driveMotor.getPosition().getValue().in(Rotations);

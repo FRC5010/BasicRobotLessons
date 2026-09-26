@@ -39,6 +39,13 @@ public class SwerveModule {
   private final TalonFXSimState m_driveSim;
   private final TalonFXSimState m_steerSim;
 
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add a sim state for the CANcoder — the steering loop is about to read it
+   * continuously. Add two reusable control requests, a position request for steering
+   * and a velocity request for driving, so each tick only has to update the target.
+   */
+
   // Physics models depend only on constants, so they still initialize inline.
   private final DCMotorSim m_driveModel =
       new DCMotorSim(
@@ -61,14 +68,39 @@ public class SwerveModule {
     m_driveSim = m_driveMotor.getSimState();
     m_steerSim = m_steerMotor.getSimState();
 
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Grab the CANcoder's sim state alongside the other two.
+     */
+
     // Same CANcoder priming as Lesson 5, now paid off for the real 25:1 ratio:
     // seed the motor's rotor-side counter, not the wheel-side reading.
     CANcoderConfiguration cancoderConfig = new CANcoderConfiguration();
     cancoderConfig.MagnetSensor.MagnetOffset = magnetOffsetRotations;
     m_steerEncoder.getConfigurator().apply(cancoderConfig);
+
+    /**
+     * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+     * A one-time seed can't correct drift afterward, so priming goes. In its place,
+     * configure both motors so their firmware runs the loops. Steering reads the
+     * CANcoder directly as a remote sensor, with the rotor-to-CANcoder gear ratio,
+     * continuous wrap so it always takes the short way around, and a P gain. Driving
+     * gets the gear ratio as sensor-to-mechanism, so it reports wheel rotations, plus
+     * the kV model and kP trim.
+     */
+
     m_steerMotor.setPosition(
         m_steerEncoder.getAbsolutePosition().getValue().in(Rotations) * SteerConstants.kSteerGearRatio);
   }
+
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * Hand the firmware targets instead of computing outputs: send the steering motor a
+   * position request with the wanted angle, and the drive motor a velocity request in
+   * wheel rotations per second — the requested speed, cosine-scaled, divided by the
+   * wheel's circumference. Nothing calls the private clamp helper after this, so delete
+   * it.
+   */
 
   /** One tick of control: chase the given state. */
   public void setDesiredState(SwerveModuleVelocity state) {
@@ -100,6 +132,12 @@ public class SwerveModule {
     }
   }
 
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * Drop the gear-ratio math: the firmware now reports the CANcoder's reading, already
+   * in steering rotations.
+   */
+
   /** Current steering angle in degrees (through the real 25:1 reduction). */
   public double getSteerAngleDegrees() {
     double steerRotations =
@@ -107,12 +145,22 @@ public class SwerveModule {
     return steerRotations * 360.0;
   }
 
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * Drop the gear-ratio division: the drive motor now reports wheel rotations.
+   */
+
   /** How far this module's wheel has driven, in meters, since the last reset. */
   public double getDistanceMeters() {
     double rotorRotations = m_driveMotor.getPosition().getValue().in(Rotations);
     double wheelRotations = rotorRotations / DriveConstants.kDriveGearRatio;
     return wheelRotations * DriveConstants.kWheelCircumferenceMeters;
   }
+
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * Drop the gear-ratio division here too.
+   */
 
   /** Current wheel speed in meters per second. */
   public double getDriveVelocityMetersPerSec() {
@@ -146,5 +194,12 @@ public class SwerveModule {
         m_steerModel.getAngularPosition() / (2 * Math.PI) * SteerConstants.kSteerGearRatio);
     m_steerSim.setRotorVelocity(
         m_steerModel.getAngularVelocity() / (2 * Math.PI) * SteerConstants.kSteerGearRatio);
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Feed the CANcoder's sim state too: the closed loop reads it continuously now, so
+     * push the steering model's position and velocity in directly — mechanism-side,
+     * with no gear multiply.
+     */
   }
 }

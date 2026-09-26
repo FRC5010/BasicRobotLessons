@@ -25,6 +25,13 @@ public class Robot extends OpModeRobot {
   // alive for as long as the robot runs. Opmodes are rebuilt fresh every time
   // they're selected, so they reach in and use these instead of owning them.
   public final CommandGamepad driverController = new CommandGamepad(0);
+
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * Swap the single module for a drivetrain field — the one mechanism that owns all
+   * four modules.
+   */
+
   public final DriveModule module = new DriveModule();
 
   /**
@@ -46,17 +53,29 @@ public class Robot extends OpModeRobot {
     Scheduler.getDefault().run();
   }
 
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * Log each scheduled command under every mechanism it requires, named after that
+   * mechanism, instead of checking for one module by name — then this never needs
+   * editing when a mechanism is added or renamed.
+   */
+
   private void logCommandStart(SchedulerEvent event) {
     if (event instanceof SchedulerEvent.Scheduled scheduled && scheduled.command().requires(module)) {
       Telemetry.log("DriveModule/CurrentCommand", scheduled.command().name());
     }
   }
 
-  /**
-   * ====== NEXT LESSON: ADD CODE HERE ======
-   * Override simulationPeriodic() — it runs every tick, but only in simulation — and
-   * have it ask the module to step its physics.
-   */
+  /** Runs every tick, but only while the code is running in simulation. */
+  @Override
+  public void simulationPeriodic() {
+    /**
+     * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+     * Step the drivetrain's physics instead; it steps all four modules.
+     */
+
+    module.simulatePeriodic();
+  }
 
   /**
    * This function is called periodically anytime when no opmode is selected, including when the

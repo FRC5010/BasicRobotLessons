@@ -12,6 +12,13 @@ import org.wpilib.units.measure.AngularVelocity;
 import org.wpilib.units.measure.LinearVelocity;
 
 public final class Constants {
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add a Mode enum — REAL, SIM, REPLAY — and decide the current mode once: REAL on a
+   * robot, and otherwise a sim mode you can switch to REPLAY to re-run a log file
+   * instead of simulating fresh.
+   */
+
   // Added by Try It #4: one CAN ID + one magnet offset per corner, all named,
   // instead of literals baked into the array in Drivetrain.
   public static final class DriveConstants {

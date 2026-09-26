@@ -26,6 +26,15 @@ import first.robot.Constants;
 import first.robot.Constants.DriveConstants;
 import first.robot.Constants.SteerConstants;
 
+/**
+ * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+ * Rename this class to SwerveModule and drop implements Mechanism: the whole chassis is
+ * what the scheduler needs to lock now, and each module becomes a plain helper the
+ * drivetrain owns. Give it a public, final location — its position on the robot — and
+ * declare the motors, CANcoder and sim states without initializers, because their CAN
+ * IDs won't be known until the constructor runs.
+ */
+
 public class DriveModule implements Mechanism {
   private final TalonFX m_driveMotor =
       new TalonFX(Constants.DriveConstants.kDriveMotorPort, new CANBus(CANPort.CAN_S0)); // CAN ID 1 — change to yours
@@ -45,15 +54,36 @@ public class DriveModule implements Mechanism {
 
   // Sim plumbing for the steering motor (same pattern as the drive motor).
   private final TalonFXSimState m_steerSim = m_steerMotor.getSimState();
+
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * Model the steering gearbox: build this with the steer gear ratio instead of 1.0.
+   */
+
   private final DCMotorSim m_steerModel =
       new DCMotorSim(
           Models.singleJointedArmFromPhysicalConstants(DCMotor.getKrakenX60(1), 0.004, 1.0),
           DCMotor.getKrakenX60(1));
 
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * Make the constructor take the drive, steer and CANcoder IDs, the magnet offset and
+   * the module's location as parameters, so one class can serve all four corners, and
+   * create the motors, CANcoder and sim states from them inside it.
+   */
+
   private final CANcoder m_steerEncoder =
       new CANcoder(Constants.DriveConstants.kCancoderPort, new CANBus(CANPort.CAN_S0)); // CAN ID 3 — change to yours
 
   public DriveModule() {
+    /**
+     * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+     * Configure the CANcoder with the offset that was passed in. When priming, multiply
+     * its reading by the steer gear ratio: the CANcoder reads the wheel's angle, but
+     * the motor's counter lives on the rotor side of the gearbox. The module stops
+     * talking to the scheduler, so the telemetry registration goes.
+     */
+
     // Calibrate the CANcoder's zero to "wheel pointing forward"...
     CANcoderConfiguration cancoderConfig = new CANcoderConfiguration();
     cancoderConfig.MagnetSensor.MagnetOffset = SteerConstants.kMagnetOffset;
@@ -64,6 +94,15 @@ public class DriveModule implements Mechanism {
 
     Scheduler.getDefault().addPeriodic(this::logTelemetry);
   }
+
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * Commands belong to mechanisms, and this class won't be one, so these command
+   * factories and the deadband helper go. In their place, add setDesiredState: one tick
+   * of control that steers toward an angle with the same P control and angle wrap as
+   * before, and drives at a speed fraction. The drivetrain's commands call it every
+   * tick.
+   */
 
   /** Spins the drive motor at the given fraction of full power (-1.0 to 1.0). */
   public Command driveAtSpeed(double fraction) {
@@ -165,6 +204,12 @@ public class DriveModule implements Mechanism {
 
   /** Current steering angle in degrees. */
   public double getSteerAngleDegrees() {
+    /**
+     * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+     * Divide by the steer gear ratio: the motor's sensor counts rotor turns, and the
+     * rotor turns 25 times per turn of the wheel.
+     */
+
     return m_steerMotor.getPosition().getValue().in(Degrees);
   }
 
@@ -175,8 +220,21 @@ public class DriveModule implements Mechanism {
     return wheelRotations * DriveConstants.kWheelCircumferenceMeters;
   }
 
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add a reading for the wheel's speed in meters per second: the same pipeline as the
+   * distance, applied to velocity instead of position.
+   */
+
   /** Advances the physics model by one tick. Only ever called in simulation. */
   public void simulatePeriodic() {
+    /**
+     * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+     * Model the steering gearbox here too: multiply the steering model's readings by
+     * the steer gear ratio before pushing them into the rotor-side fake encoder, the
+     * same fix the drive motor got.
+     */
+
     // 1. Tell the sim the battery voltage available to each motor.
     m_driveSim.setSupplyVoltage(RobotController.getBatteryVoltage());
     m_steerSim.setSupplyVoltage(RobotController.getBatteryVoltage());

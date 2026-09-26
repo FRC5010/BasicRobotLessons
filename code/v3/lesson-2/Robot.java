@@ -4,12 +4,13 @@
 
 package first.robot;
 
+import java.util.List;
+
+import org.wpilib.command3.Command;
 import org.wpilib.command3.Scheduler;
-import org.wpilib.command3.SchedulerEvent;
 import org.wpilib.command3.button.CommandGamepad;
 import org.wpilib.framework.OpModeRobot;
 import org.wpilib.telemetry.Telemetry;
-import org.wpilib.system.DataLogManager;
 
 import first.robot.subsystems.DriveModule;
 
@@ -28,13 +29,18 @@ public class Robot extends OpModeRobot {
   public final DriveModule module = new DriveModule();
 
   /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Start the data log first thing in the constructor, so every value you publish is
+   * also saved to a .wpilog file you can open after the robot is off. Then register an
+   * event listener with the scheduler, so a method of yours hears about every command
+   * the instant it's scheduled.
+   */
+
+  /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
    */
-  public Robot() {
-    DataLogManager.start(); // saves every published value to a .wpilog file
-    Scheduler.getDefault().addEventListener(this::logCommandStart);
-  }
+  public Robot() {}
 
   /** This function is called exactly once when the DS first connects. */
   @Override
@@ -44,19 +50,23 @@ public class Robot extends OpModeRobot {
   @Override
   public void robotPeriodic() {
     Scheduler.getDefault().run();
-  }
-
-  private void logCommandStart(SchedulerEvent event) {
-    if (event instanceof SchedulerEvent.Scheduled scheduled && scheduled.command().requires(module)) {
-      Telemetry.log("DriveModule/CurrentCommand", scheduled.command().name());
-    }
+    logRunningCommand();
   }
 
   /**
-   * ====== NEXT LESSON: ADD CODE HERE ======
-   * Override simulationPeriodic() — it runs every tick, but only in simulation — and
-   * have it ask the module to step its physics.
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * Replace this polling method with a listener: when the scheduler announces that a
+   * command was scheduled onto the module, log that command's name. Listening can't
+   * miss a command that starts and finishes inside one tick, and asking can. Drop the
+   * call to this method from robotPeriodic() too, since the log now takes care of
+   * itself.
    */
+
+  private void logRunningCommand() {
+    List<Command> running = Scheduler.getDefault().getRunningCommandsFor(module);
+    Command current = running.get(0);
+    Telemetry.log("DriveModule/CurrentCommand", current.name());
+  }
 
   /**
    * This function is called periodically anytime when no opmode is selected, including when the

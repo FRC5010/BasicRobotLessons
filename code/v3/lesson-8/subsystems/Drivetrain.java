@@ -21,10 +21,18 @@ import first.robot.Constants.HeadingConstants;
 public class Drivetrain implements Mechanism {
   // Corner order: FL, FR, BL, BR. Pick a convention and stick to it.
   private final SwerveModule[] m_modules = new SwerveModule[] {
-      new SwerveModule(1, 2, 9, 0.0, DriveConstants.kFrontLeft),   // CAN IDs, offset — change to yours
-      new SwerveModule(3, 4, 10, 0.0, DriveConstants.kFrontRight),
-      new SwerveModule(5, 6, 11, 0.0, DriveConstants.kBackLeft),
-      new SwerveModule(7, 8, 12, 0.0, DriveConstants.kBackRight)
+      new SwerveModule(DriveConstants.kFrontLeftDrivePort, DriveConstants.kFrontLeftSteerPort,
+          DriveConstants.kFrontLeftCancoderPort, DriveConstants.kFrontLeftMagnetOffset,
+          DriveConstants.kFrontLeft),
+      new SwerveModule(DriveConstants.kFrontRightDrivePort, DriveConstants.kFrontRightSteerPort,
+          DriveConstants.kFrontRightCancoderPort, DriveConstants.kFrontRightMagnetOffset,
+          DriveConstants.kFrontRight),
+      new SwerveModule(DriveConstants.kBackLeftDrivePort, DriveConstants.kBackLeftSteerPort,
+          DriveConstants.kBackLeftCancoderPort, DriveConstants.kBackLeftMagnetOffset,
+          DriveConstants.kBackLeft),
+      new SwerveModule(DriveConstants.kBackRightDrivePort, DriveConstants.kBackRightSteerPort,
+          DriveConstants.kBackRightCancoderPort, DriveConstants.kBackRightMagnetOffset,
+          DriveConstants.kBackRight)
   };
 
   private final Pigeon2 m_gyro = new Pigeon2(0, new CANBus(CANPort.CAN_S0)); // CAN ID 0 — change to yours
@@ -71,6 +79,13 @@ public class Drivetrain implements Mechanism {
         .whenCanceled(() -> commandRotation(0.0)) // interrupted — stop
         .named("Turn To Heading");
   }
+
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add a whole-chassis driveDistance: zero one wheel's drive encoder, drive all four
+   * wheels straight forward at 40% power until that wheel has covered the distance,
+   * then stop — and stop if canceled, too.
+   */
 
   /** One tick of pure rotation: steer every wheel tangent to the circle. */
   private void commandRotation(double omega) {

@@ -21,11 +21,26 @@ import first.robot.Constants.HeadingConstants;
 public class Drivetrain implements Mechanism {
   // Corner order: FL, FR, BL, BR. Pick a convention and stick to it.
   private final SwerveModule[] m_modules = new SwerveModule[] {
-      new SwerveModule(1, 2, 9, 0.0, DriveConstants.kFrontLeft),   // CAN IDs, offset — change to yours
-      new SwerveModule(3, 4, 10, 0.0, DriveConstants.kFrontRight),
-      new SwerveModule(5, 6, 11, 0.0, DriveConstants.kBackLeft),
-      new SwerveModule(7, 8, 12, 0.0, DriveConstants.kBackRight)
+      new SwerveModule(DriveConstants.kFrontLeftDrivePort, DriveConstants.kFrontLeftSteerPort,
+          DriveConstants.kFrontLeftCancoderPort, DriveConstants.kFrontLeftMagnetOffset,
+          DriveConstants.kFrontLeft),
+      new SwerveModule(DriveConstants.kFrontRightDrivePort, DriveConstants.kFrontRightSteerPort,
+          DriveConstants.kFrontRightCancoderPort, DriveConstants.kFrontRightMagnetOffset,
+          DriveConstants.kFrontRight),
+      new SwerveModule(DriveConstants.kBackLeftDrivePort, DriveConstants.kBackLeftSteerPort,
+          DriveConstants.kBackLeftCancoderPort, DriveConstants.kBackLeftMagnetOffset,
+          DriveConstants.kBackLeft),
+      new SwerveModule(DriveConstants.kBackRightDrivePort, DriveConstants.kBackRightSteerPort,
+          DriveConstants.kBackRightCancoderPort, DriveConstants.kBackRightMagnetOffset,
+          DriveConstants.kBackRight)
   };
+
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Build a SwerveDriveKinematics from the four modules' locations, in the same corner
+   * order as the array. It does the math that turns one motion of the whole chassis
+   * into four wheel states.
+   */
 
   private final Pigeon2 m_gyro = new Pigeon2(0, new CANBus(CANPort.CAN_S0)); // CAN ID 0 — change to yours
 
@@ -36,6 +51,17 @@ public class Drivetrain implements Mechanism {
   public Drivetrain() {
     Scheduler.getDefault().addPeriodic(this::logTelemetry);
   }
+
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * Kinematics replaces both translate and rotate. Put the four steps every way of
+   * driving shares into one private helper: convert a chassis velocity into module
+   * states, desaturate them so no wheel is asked past max speed, optimize each against
+   * its current angle, and command it — recording the rotation rate for the sim and
+   * logging the desired states. Then add drive, which calls the helper every tick from
+   * three Units suppliers, and driveFieldRelative, which first rotates field-relative
+   * speeds into the robot's frame using the gyro heading.
+   */
 
   /** Drive the whole chassis at fractional velocity (vx, vy). */
   public Command translate(DoubleSupplier vxSupplier, DoubleSupplier vySupplier) {
@@ -72,6 +98,12 @@ public class Drivetrain implements Mechanism {
         .named("Turn To Heading");
   }
 
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * setDesiredState now takes a module state instead of two numbers: drive with a state
+   * at 40% of max speed pointed at 0°, and stop with an empty, zero-speed state.
+   */
+
   /** Drive straight forward 'meters' at 40% power. Finishes on its own. */
   public Command driveDistance(double meters) {
     return run(coroutine -> {
@@ -95,6 +127,12 @@ public class Drivetrain implements Mechanism {
         .named("Drive Distance");
   }
 
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * Rebuild this on the new helper: turn the rotation rate, in revolutions per second,
+   * into a chassis velocity with no translation, and let the helper do the rest.
+   */
+
   /** One tick of pure rotation: steer every wheel tangent to the circle. */
   private void commandRotation(double omega) {
     m_lastCommandedOmega = omega;
@@ -105,6 +143,12 @@ public class Drivetrain implements Mechanism {
       module.setDesiredState(angleDeg, omega);
     }
   }
+
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * Replace the two wrap loops with MathUtil.inputModulus, which wraps the error into
+   * ±180° in one call.
+   */
 
   /** Signed error to 'target' in degrees, wrapped to (-180, 180]. */
   private double headingError(double targetDegrees) {

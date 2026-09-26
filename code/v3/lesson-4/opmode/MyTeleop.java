@@ -19,14 +19,21 @@ public class MyTeleop extends PeriodicOpMode {
 
     // Hold the bottom face button to drive forward at 30% power; release to stop.
     robot.driverController.faceDown().whileTrue(robot.module.driveAtSpeed(0.3));
-    // Try It #1: hold the right face button to drive backward at 30% power.
+    // Hold the right face button to drive backward at 30% power; release to stop.
     robot.driverController.faceRight().whileTrue(robot.module.driveAtSpeed(-0.3));
+
+    robot.module.setDefaultCommand(
+        robot.module.driveWithJoystick(() -> -robot.driverController.getLeftY()));
+
+    // Try It #1: hold the right bumper for fine control at 25% speed.
+    robot.driverController.rightBumper().whileTrue(
+        robot.module.driveWithJoystick(() -> -robot.driverController.getLeftY(), 0.25));
 
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
-     * Make joystick driving the module's default command, so it runs whenever nothing
-     * else is using the module. Negate the stick's Y axis: pushing forward reads
-     * negative, and forward should mean positive speed.
+     * Bind two buttons to steering: tap the left face button to steer the wheel to 90°
+     * and hold it there, and the top face button to steer back to 0°. Use onTrue, which
+     * starts the command on a tap and lets it keep running after release.
      */
   }
 

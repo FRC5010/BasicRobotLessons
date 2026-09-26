@@ -25,6 +25,13 @@ import first.robot.Constants;
 import first.robot.Constants.DriveConstants;
 import first.robot.Constants.HeadingConstants;
 
+/**
+ * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+ * Make the drivetrain a PoseProvider: it contributes wheel-and-gyro odometry to the
+ * localizer instead of tracking the pose itself. The odometry, the field widget and the
+ * pose publishing all move to the localizer, so they go from this class.
+ */
+
 public class Drivetrain implements Mechanism {
   // Corner order: FL, FR, BL, BR. Pick a convention and stick to it.
   private final SwerveModule[] m_modules = new SwerveModule[] {
@@ -157,6 +164,12 @@ public class Drivetrain implements Mechanism {
         .named("Drive Distance");
   }
 
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * The pose lives on the localizer now, so take it as a supplier parameter and read it
+   * through that supplier everywhere this command used getPose().
+   */
+
   /** Drive straight toward 'target' using P control, field-relative. Finishes within 5 cm. */
   public Command driveToPose(Pose2d target) {
     double maxMps = DriveConstants.kMaxSpeed.in(MetersPerSecond); // convert once, reuse
@@ -198,10 +211,23 @@ public class Drivetrain implements Mechanism {
     }
   }
 
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Expose the kinematics through a getter — the localizer needs it to build its
+   * estimator.
+   */
+
   /** Robot heading in degrees (CCW positive). */
   public double getHeadingDegrees() {
     return m_gyroInputs.yawDegrees;
   }
+
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * getPose and resetPose move to the localizer. In their place add getRotation — the
+   * heading as a Rotation2d, the form the estimator speaks — and make the module-
+   * positions helper public as getModulePositions, since the localizer calls it too.
+   */
 
   /** Where odometry currently believes the robot is. */
   public Pose2d getPose() {
@@ -222,6 +248,12 @@ public class Drivetrain implements Mechanism {
     }
     return positions;
   }
+
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add updatePoseEstimate, the method PoseProvider asks for: feed the estimator this
+   * tick's heading and module positions.
+   */
 
   private void logTelemetry() {
     m_gyroIO.updateInputs(m_gyroInputs);

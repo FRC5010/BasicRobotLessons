@@ -37,6 +37,15 @@ public class SwerveModule {
   /** Position of this module relative to robot center, in meters. */
   public final Translation2d location;
 
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * This class stops owning hardware. The motors, CANcoder, sim states, control
+   * requests and physics models below all move into the ModuleIO implementations — the
+   * TalonFX IO and the sim IO — so delete them here, along with simulatePeriodic at the
+   * bottom: the sim IO steps its own physics. In their place, hold a ModuleIO, the
+   * inputs bundle it fills, and a log key such as Drivetrain/Module0.
+   */
+
   private final TalonFX m_driveMotor;
   private final TalonFX m_steerMotor;
   private final CANcoder m_steerEncoder;
@@ -58,6 +67,13 @@ public class SwerveModule {
           Models.singleJointedArmFromPhysicalConstants(
               DCMotor.getKrakenX60(1), 0.004, SteerConstants.kSteerGearRatio),
           DCMotor.getKrakenX60(1));
+
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * Take the IO, the log key and the location as parameters instead of CAN IDs and an
+   * offset; all of the hardware setup in this constructor moves into the TalonFX IO's
+   * constructor.
+   */
 
   public SwerveModule(
       int driveId, int steerId, int cancoderId, double magnetOffsetRotations,
@@ -92,6 +108,21 @@ public class SwerveModule {
     m_driveMotor.getConfigurator().apply(driveConfig);
   }
 
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add periodic(): one tick of sensing — have the IO read the hardware into the inputs
+   * bundle, then log the steering angle, drive position and drive velocity under this
+   * module's log key.
+   */
+
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * Hand the IO its targets instead of talking to motors: the steering angle in
+   * degrees, and the drive speed in meters per second after the cosine scale. The
+   * cosine scale is a decision, not hardware, so it stays here, reading the steering
+   * angle from the inputs bundle.
+   */
+
   /** One tick of control: hand the firmware its targets. */
   public void setDesiredState(SwerveModuleVelocity state) {
     // Steering: firmware position control. state.angle is a Rotation2d — hand its
@@ -106,10 +137,21 @@ public class SwerveModule {
     m_driveMotor.setControl(m_driveRequest.withVelocity(RotationsPerSecond.of(wheelRps)));
   }
 
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * Ask the IO to zero the drive position instead.
+   */
+
   /** Zero the drive encoder — start measuring distance from *here*. */
   public void resetDrivePosition() {
     m_driveMotor.setPosition(0);
   }
+
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * Each of these three getters returns its value from the inputs bundle now, instead
+   * of asking a motor.
+   */
 
   /** Current steering angle in degrees (the CANcoder's own reading — no gear math left here). */
   public double getSteerAngleDegrees() {
@@ -125,6 +167,11 @@ public class SwerveModule {
   public double getDriveVelocityMetersPerSec() {
     return m_driveMotor.getVelocity().getValue().in(RotationsPerSecond) * DriveConstants.kWheelCircumferenceMeters;
   }
+
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * Build this from the inputs bundle too.
+   */
 
   /** How far this wheel has rolled and where it's pointing — for odometry. */
   public SwerveModulePosition getPosition() {

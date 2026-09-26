@@ -1,6 +1,7 @@
 package first.robot.subsystems;
 
 import static org.wpilib.units.Units.Degrees;
+import static org.wpilib.units.Units.MetersPerSecond;
 
 import java.util.function.Supplier;
 
@@ -11,11 +12,15 @@ import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.hardware.bus.CANPort;
+import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.math.geometry.Rotation2d;
 import org.wpilib.math.kinematics.ChassisVelocities;
 import org.wpilib.math.kinematics.SwerveDriveKinematics;
+import org.wpilib.math.kinematics.SwerveDriveOdometry;
+import org.wpilib.math.kinematics.SwerveModulePosition;
 import org.wpilib.math.kinematics.SwerveModuleVelocity;
 import org.wpilib.math.util.MathUtil;
+import org.wpilib.smartdashboard.Field2d;
 import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.AngularVelocity;
 import org.wpilib.units.measure.LinearVelocity;
@@ -25,6 +30,13 @@ import first.robot.Constants.HeadingConstants;
 
 public class Drivetrain implements Mechanism {
   // Corner order: FL, FR, BL, BR. Pick a convention and stick to it.
+
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * Build each corner with makeModule instead of new SwerveModule, passing the corner's
+   * index along with its CAN IDs, magnet offset and location from DriveConstants.
+   */
+
   private final SwerveModule[] m_modules = new SwerveModule[] {
       new SwerveModule(DriveConstants.kFrontLeftDrivePort, DriveConstants.kFrontLeftSteerPort,
           DriveConstants.kFrontLeftCancoderPort, DriveConstants.kFrontLeftMagnetOffset,
@@ -46,28 +58,42 @@ public class Drivetrain implements Mechanism {
       m_modules[2].location,
       m_modules[3].location);
 
-  private final Pigeon2 m_gyro = new Pigeon2(0, new CANBus(CANPort.CAN_S0)); // CAN ID 0 — change to yours
-
   /**
-   * ====== NEXT LESSON: ADD CODE HERE ======
-   * Add odometry: a SwerveDriveOdometry built from the kinematics, the gyro's heading
-   * and the modules' starting positions. It reads all three, so it goes below them —
-   * fields are built top to bottom. Add a Field2d beside it, for drawing the robot on a
-   * field.
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * Replace the Pigeon 2 with a GyroIO picked by the same kind of three-arm switch as
+   * the modules — the Pigeon 2 implementation, the sim implementation, or an empty one
+   * for replay — plus the inputs bundle it fills. The two sim bookkeeping fields below
+   * move into the sim gyro, so delete them.
    */
 
+  private final Pigeon2 m_gyro = new Pigeon2(0, new CANBus(CANPort.CAN_S0)); // CAN ID 0 — change to yours
+
+  // Odometry reads the kinematics, the gyro, and the modules' starting
+  // positions — everything above this line has to exist first.
+  private final SwerveDriveOdometry m_odometry = new SwerveDriveOdometry(
+      m_kinematics,
+      Rotation2d.fromDegrees(getHeadingDegrees()),
+      modulePositions());
+
+  private final Field2d m_field = new Field2d();
+
   // Remembered for the sim: what rotation rate did we just command?
+
   private double m_lastCommandedOmega = 0.0;
   private double m_simHeadingDegrees = 0.0;
 
   public Drivetrain() {
-    /**
-     * ====== NEXT LESSON: ADD CODE HERE ======
-     * Publish the field widget once, so it shows up in the sim's dashboard.
-     */
-
+    Telemetry.log("Field", m_field);
     Scheduler.getDefault().addPeriodic(this::logTelemetry);
   }
+
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add makeModule, a small static helper: a switch expression on the current mode
+   * picks the module's IO — TalonFX hardware on a real robot, the sim IO in simulation,
+   * an empty anonymous IO in replay — and it wraps that IO in a SwerveModule with a log
+   * key and the module's location.
+   */
 
   /** One tick of chassis motion: convert, desaturate, optimize, command. */
   private void applyChassisSpeeds(ChassisVelocities speeds) {
@@ -77,6 +103,12 @@ public class Drivetrain implements Mechanism {
     // down proportionally so the *shape* of the motion is preserved.
     // desaturateWheelVelocities takes a LinearVelocity directly — pass kMaxSpeed as-is.
     states = SwerveDriveKinematics.desaturateWheelVelocities(states, DriveConstants.kMaxSpeed);
+
+    /**
+     * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+     * Hand the commanded rotation rate to the gyro IO instead of storing it here; only
+     * the sim gyro does anything with it.
+     */
 
     m_lastCommandedOmega = speeds.omega / (2 * Math.PI); // rev/s for sim
 
@@ -130,6 +162,12 @@ public class Drivetrain implements Mechanism {
               module.setDesiredState(
                   new SwerveModuleVelocity(DriveConstants.kMaxSpeed.times(0.4), Rotation2d.fromDegrees(0)));
             }
+
+            /**
+             * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+             * Hand the gyro IO a rotation rate of 0 instead.
+             */
+
             m_lastCommandedOmega = 0.0;
             coroutine.yield();
           }
@@ -145,12 +183,25 @@ public class Drivetrain implements Mechanism {
         .named("Drive Distance");
   }
 
-  /**
-   * ====== NEXT LESSON: ADD CODE HERE ======
-   * Add driveToPose: every tick, P control toward a target pose on the field — x, y and
-   * heading, each clamped — turned into robot-relative speeds through the same helper
-   * as driving, finishing once within 5 cm and stopping when it ends.
-   */
+  /** Drive straight toward 'target' using P control, field-relative. Finishes within 5 cm. */
+  public Command driveToPose(Pose2d target) {
+    double maxMps = DriveConstants.kMaxSpeed.in(MetersPerSecond); // convert once, reuse
+    return runRepeatedly(() -> {
+          Pose2d current = getPose();
+          double dx = target.getX() - current.getX();
+          double dy = target.getY() - current.getY();
+          double vx = clamp(1.5 * dx, -maxMps, maxMps);
+          double vy = clamp(1.5 * dy, -maxMps, maxMps);
+          double omega = clamp(
+              3.0 * target.getRotation().minus(current.getRotation()).getRadians(),
+              -Math.PI, Math.PI);
+          ChassisVelocities fieldSpeeds = new ChassisVelocities(vx, vy, omega);
+          applyChassisSpeeds(fieldSpeeds.toRobotRelative(current.getRotation()));
+        })
+        .whenCanceled(() -> applyChassisSpeeds(new ChassisVelocities())) // reached it or interrupted — stop
+        .until(() -> getPose().minus(target).getTranslation().getNorm() < 0.05)
+        .named("Drive To Pose");
+  }
 
   /** One tick of pure rotation: steer every wheel tangent to the circle. */
   private void commandRotation(double omegaRevPerSec) {
@@ -175,18 +226,43 @@ public class Drivetrain implements Mechanism {
 
   /** Robot heading in degrees (CCW positive). */
   public double getHeadingDegrees() {
+    /**
+     * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+     * Read the heading from the gyro's inputs bundle instead of from the Pigeon 2
+     * directly.
+     */
+
     return m_gyro.getYaw().getValue().in(Degrees);
   }
 
-  /**
-   * ====== NEXT LESSON: ADD CODE HERE ======
-   * Add getPose, which asks odometry where it believes the robot is, and resetPose,
-   * which tells odometry where the robot really is right now. Both need the four
-   * modules' positions as one array, so add a private helper that gathers them in a
-   * loop.
-   */
+  /** Where odometry currently believes the robot is. */
+  public Pose2d getPose() {
+    return m_odometry.getPose();
+  }
+
+  /** Tell odometry the robot is actually at 'pose' right now. */
+  public void resetPose(Pose2d pose) {
+    m_odometry.resetPosition(
+        Rotation2d.fromDegrees(getHeadingDegrees()), modulePositions(), pose);
+  }
+
+  /** Snapshot the four modules' positions into one array — used by odometry. */
+  private SwerveModulePosition[] modulePositions() {
+    SwerveModulePosition[] positions = new SwerveModulePosition[m_modules.length];
+    for (int i = 0; i < m_modules.length; i++) {
+      positions[i] = m_modules[i].getPosition();
+    }
+    return positions;
+  }
 
   private void logTelemetry() {
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Read the gyro into its inputs bundle first thing, and log the yaw. Then, inside
+     * the module loop, have each module read and log its own inputs in place of this
+     * steering-angle log.
+     */
+
     SwerveModuleVelocity[] states = new SwerveModuleVelocity[4];
     int index = 0;
     for (SwerveModule module : m_modules) {
@@ -202,12 +278,9 @@ public class Drivetrain implements Mechanism {
     Telemetry.log("Drivetrain/HeadingDegrees", getHeadingDegrees());
     Telemetry.log("Drivetrain/Heading", Rotation2d.fromDegrees(getHeadingDegrees()), Rotation2d.struct);
 
-    /**
-     * ====== NEXT LESSON: ADD CODE HERE ======
-     * Update odometry every tick with the heading and the module positions, log the
-     * pose it returns so AdvantageScope can draw the robot, and hand the same pose to
-     * the field widget.
-     */
+    Pose2d pose = m_odometry.update(Rotation2d.fromDegrees(getHeadingDegrees()), modulePositions());
+    Telemetry.log("Drivetrain/Pose", pose, Pose2d.struct);
+    m_field.setRobotPose(pose);
   }
 
   /** Advances every module's physics model, then the fake gyro. Only ever called in simulation. */

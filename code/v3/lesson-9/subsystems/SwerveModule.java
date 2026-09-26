@@ -65,6 +65,14 @@ public class SwerveModule {
         m_steerEncoder.getAbsolutePosition().getValue().in(Rotations) * SteerConstants.kSteerGearRatio);
   }
 
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * Take a SwerveModuleVelocity — a speed in meters per second plus an angle — instead
+   * of two bare numbers. Wrap the steering error with MathUtil.inputModulus instead of
+   * the two while loops, and turn the speed into a fraction of max speed before
+   * applying the cosine scale.
+   */
+
   /** One tick of control: steer toward 'angleDegrees', drive at 'speedFraction'. */
   public void setDesiredState(double angleDegrees, double speedFraction) {
     // Steering P control (same math as Lesson 5, with the wrap trick).

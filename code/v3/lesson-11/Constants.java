@@ -4,7 +4,12 @@
 
 package first.robot;
 
+import static org.wpilib.units.Units.MetersPerSecond;
+import static org.wpilib.units.Units.RotationsPerSecond;
+
 import org.wpilib.math.geometry.Translation2d;
+import org.wpilib.units.measure.AngularVelocity;
+import org.wpilib.units.measure.LinearVelocity;
 
 public final class Constants {
   // Added by Try It #4: one CAN ID + one magnet offset per corner, all named,
@@ -42,16 +47,36 @@ public final class Constants {
     public static final Translation2d kFrontRight = new Translation2d( kHalfLength, -kHalfWidth);
     public static final Translation2d kBackLeft   = new Translation2d(-kHalfLength,  kHalfWidth);
     public static final Translation2d kBackRight  = new Translation2d(-kHalfLength, -kHalfWidth);
+
+    // Kraken X60 free speed ≈ 6000 RPM = 100 rotations/sec. Divide by the gear
+    // ratio, multiply by circumference → meters/sec. About 4.7 m/s for our numbers.
+    public static final LinearVelocity kMaxSpeed =
+        MetersPerSecond.of(100.0 / kDriveGearRatio * kWheelCircumferenceMeters);
+
+    // How fast the chassis may spin at full stick — one full rotation per second.
+    public static final AngularVelocity kMaxAngularSpeed = RotationsPerSecond.of(1.0);
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Add the drive motor's model and trim for firmware velocity control: kV, in volts
+     * per wheel rotation per second — the voltage that holds a speed with no error at
+     * all — and a small kP to correct whatever the model misses.
+     */
   }
 
   public static final class SteerConstants {
+    /**
+     * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+     * The software steering gain retires; the motor's firmware runs the steering loop
+     * from now on. Keep the gear ratio — it now reads as rotor to CANcoder — and add a
+     * firmware P gain in volts per rotation of error.
+     */
+
     public static final double kP = 0.0005;          // from Lesson 5 — retune once the real gearing lands
     public static final double kSteerGearRatio = 25.0; // rotor : steering
   }
 
-  /**
-   * ====== NEXT LESSON: ADD CODE HERE ======
-   * Add a HeadingConstants class holding the gain for turning the whole robot: turn
-   * power per degree of heading error.
-   */
+  public static final class HeadingConstants {
+    public static final double kP = 0.02; // turn power per degree of heading error
+  }
 }

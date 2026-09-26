@@ -35,7 +35,22 @@ public class DriveModule implements Mechanism {
           Models.singleJointedArmFromPhysicalConstants(DCMotor.getKrakenX60(1), 0.001, 1.0),
           DCMotor.getKrakenX60(1));
 
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add the steering motor — a second TalonFX, with the same sim plumbing the drive
+   * motor has — and a CANcoder: an absolute encoder on the steering axis that reads the
+   * wheel's true angle from a magnet, giving the same answer every time the robot
+   * powers on.
+   */
+
   public DriveModule() {
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Configure the CANcoder with the magnet offset, so it reads 0 when the wheel
+     * points forward. Then prime the steering motor's own relative sensor from one
+     * CANcoder reading, so the motor's count is right from the first tick.
+     */
+
     Scheduler.getDefault().addPeriodic(this::logTelemetry);
   }
 
@@ -70,6 +85,15 @@ public class DriveModule implements Mechanism {
     }).named("Drive With Joystick (Slow Mode)");
   }
 
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add steerToAngle: a command that turns the wheel to a target angle and holds it
+   * there with proportional control — every tick, push with an output proportional to
+   * the error between the target and the measured angle, clamped to full power. Stop
+   * the steering motor when the command is canceled; a motor holds the last value you
+   * gave it.
+   */
+
   /** Returns 0 when |value| is within 'band', otherwise passes the value through. */
   private double applyDeadband(double value, double band) {
     if (Math.abs(value) < band) {
@@ -78,14 +102,33 @@ public class DriveModule implements Mechanism {
     return value;
   }
 
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add a small clamp helper that keeps a value between a minimum and a maximum, so the
+   * controller never asks for more than full power.
+   */
+
   // Try It #2: expose position as a reading, alongside the command factories.
   /** Returns the drive motor's position, in rotations since boot. */
   public double getPositionRotations() {
     return m_driveMotor.getPosition().getValue().in(Rotations);
   }
 
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add a reading that returns the steering angle in degrees, from the steering motor's
+   * own sensor.
+   */
+
   /** Advances the physics model by one tick. Only ever called in simulation. */
   public void simulatePeriodic() {
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Step the steering motor's physics here too, alongside the drive motor's: the same
+     * four steps — supply voltage in, applied voltage out, advance the model, push the
+     * motion back into the fake encoder — for the second motor.
+     */
+
     // 1. Tell the sim the battery voltage available to the motor.
     m_driveSim.setSupplyVoltage(RobotController.getBatteryVoltage());
 
@@ -107,5 +150,10 @@ public class DriveModule implements Mechanism {
 
     Telemetry.log("DriveModule/PositionRotations", rotations);
     Telemetry.log("DriveModule/VelocityRotPerSec", rps);
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Log the steering angle too, so you can plot it and watch the controller work.
+     */
   }
 }

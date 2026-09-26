@@ -7,26 +7,34 @@ package first.robot.opmode;
 import org.wpilib.opmode.PeriodicOpMode;
 import org.wpilib.opmode.Teleop;
 
+import first.robot.Constants.DriveConstants;
 import first.robot.Robot;
 
 @Teleop
-public class MyTeleop extends PeriodicOpMode {
+public class RobotTeleop extends PeriodicOpMode {
   private final Robot robot;
 
   /** The Robot instance is passed into the opmode via the constructor. */
-  public MyTeleop(Robot robot) {
+  public RobotTeleop(Robot robot) {
     this.robot = robot;
 
-    // Hold the bottom face button to drive forward at 30% power; release to stop.
-    robot.driverController.faceDown().whileTrue(robot.module.driveAtSpeed(0.3));
-    // Try It #1: hold the right face button to drive backward at 30% power.
-    robot.driverController.faceRight().whileTrue(robot.module.driveAtSpeed(-0.3));
+    // Classic swerve default: left stick translates (field-relative), right
+    // stick rotates.
+    robot.drivetrain.setDefaultCommand(
+        robot.drivetrain.driveFieldRelative(
+            () -> DriveConstants.kMaxSpeed.times(-robot.driverController.getLeftY()),  // forward = +X
+            () -> DriveConstants.kMaxSpeed.times(-robot.driverController.getLeftX()),  // left    = +Y
+            () -> DriveConstants.kMaxAngularSpeed.times(-robot.driverController.getRightX())));
+
+    // Tap the bottom face button to turn and face 90°; the right face button for 0°.
+    robot.driverController.faceDown().onTrue(robot.drivetrain.turnToHeading(90));
+    robot.driverController.faceRight().onTrue(robot.drivetrain.turnToHeading(0));
 
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
-     * Make joystick driving the module's default command, so it runs whenever nothing
-     * else is using the module. Negate the stick's Y axis: pushing forward reads
-     * negative, and forward should mean positive speed.
+     * Bind the Start button to report a fake camera sighting at (2, 5) facing 90°.
+     * Build that command in a small static helper with no requirements — reporting a
+     * sighting drives nothing, so it shouldn't interrupt anything.
      */
   }
 

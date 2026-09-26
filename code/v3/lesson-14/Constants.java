@@ -4,11 +4,23 @@
 
 package first.robot;
 
+import static org.wpilib.units.Units.MetersPerSecond;
+import static org.wpilib.units.Units.RotationsPerSecond;
+
+import org.wpilib.framework.RobotBase;
 import org.wpilib.math.geometry.Translation2d;
+import org.wpilib.units.measure.AngularVelocity;
+import org.wpilib.units.measure.LinearVelocity;
 
 public final class Constants {
-  // Added by Try It #4: one CAN ID + one magnet offset per corner, all named,
-  // instead of literals baked into the array in Drivetrain.
+  public enum Mode { REAL, SIM, REPLAY }
+
+  /** Change kSimMode to Mode.REPLAY to re-run a log file instead of simulating fresh. */
+  public static final Mode kSimMode = Mode.SIM;
+  public static final Mode kCurrentMode = RobotBase.isReal() ? Mode.REAL : kSimMode;
+
+  // One CAN ID + one magnet offset per corner, all named, instead of
+  // literals baked into the array in Drivetrain.
   public static final class DriveConstants {
     public static final int kFrontLeftDrivePort = 1;     // CAN IDs — change to yours
     public static final int kFrontLeftSteerPort = 2;
@@ -42,16 +54,33 @@ public final class Constants {
     public static final Translation2d kFrontRight = new Translation2d( kHalfLength, -kHalfWidth);
     public static final Translation2d kBackLeft   = new Translation2d(-kHalfLength,  kHalfWidth);
     public static final Translation2d kBackRight  = new Translation2d(-kHalfLength, -kHalfWidth);
+
+    // Kraken X60 free speed ≈ 6000 RPM = 100 rotations/sec. Divide by the gear
+    // ratio, multiply by circumference → meters/sec. About 4.7 m/s for our numbers.
+    public static final LinearVelocity kMaxSpeed =
+        MetersPerSecond.of(100.0 / kDriveGearRatio * kWheelCircumferenceMeters);
+
+    // How fast the chassis may spin at full stick — one full rotation per second.
+    public static final AngularVelocity kMaxAngularSpeed = RotationsPerSecond.of(1.0);
+
+    public static final double kDriveKV = 0.8;          // volts per wheel rotation/sec — the model
+    public static final double kDriveKP = 0.1;          // volts per rps of error — the trim
   }
 
   public static final class SteerConstants {
-    public static final double kP = 0.0005;          // from Lesson 5 — retune once the real gearing lands
-    public static final double kSteerGearRatio = 25.0; // rotor : steering
+    public static final double kSteerGearRatio = 25.0;  // rotor : CANcoder
+    public static final double kSteerKP = 40.0;         // volts per rotation of error — tune
+  }
+
+  public static final class HeadingConstants {
+    public static final double kP = 0.02; // turn power per degree of heading error
   }
 
   /**
    * ====== NEXT LESSON: ADD CODE HERE ======
-   * Add a HeadingConstants class holding the gain for turning the whole robot: turn
-   * power per degree of heading error.
+   * Add a VisionConstants class: this season's field layout — where every AprilTag sits
+   * — loaded once; each camera's name, which must match the name set in that camera's
+   * web UI, and its mount position as a Transform3d from robot center to lens; and the
+   * simulated camera's field of view and range.
    */
 }
