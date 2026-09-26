@@ -631,6 +631,85 @@ The **gyro** still reports zero — the chassis isn't yet closing the loop from
 "commanded rotation" to "reported heading." That's exactly what Lesson 8 wires
 up.
 
+### Before you drive a real chassis
+
+Sim can't get calibration wrong: every simulated wheel boots at exactly the
+zero its physics model starts from. A real chassis can, and a bad calibration
+doesn't look like a bug — the robot drives confidently in the wrong
+direction. Priming saves you from pointing the wheels at every boot, but only
+because you point them carefully once, here. Do this once per robot, and
+again whenever a module comes off the chassis, with the robot up on blocks so
+the wheels spin free.
+
+1. **Decide which end is the front.** +X is forward. The corners you called
+   `kFrontLeft` and `kFrontRight` must physically be at the front, and each
+   `new SwerveModule(...)` in the array must get the CAN IDs of the module
+   that really sits at that corner. Check the IDs against the robot — Phoenix
+   Tuner X lists every device on the bus — not against memory.
+2. **Point every wheel straight forward**, parallel to the frame. Lay a
+   straightedge along each side of the chassis to line them up, and point
+   them all the same way: a wheel aimed backward is parallel to the frame
+   too.
+3. **Measure the four magnet offsets.** With every offset still `0.0` in the
+   code, read each CANcoder's raw position in Phoenix Tuner X — Lesson 5's
+   measurement, once per corner — and store the *negative* of each reading as
+   that corner's offset.
+4. **Reboot and check zero.** Power-cycle the robot (or restart its code)
+   without touching the wheels — priming only reads the CANcoders at boot —
+   and plot the four `Drivetrain/Module0..3/SteerAngleDegrees`. Each should
+   read about `0°`. One that doesn't has the wrong offset: remeasure it.
+5. **Check which way each wheel counts.** With the robot disabled, turn one
+   wheel a quarter-turn counterclockwise by hand, looking down on the robot
+   from above. Its angle should climb to about `+90°`. Now reboot again
+   without moving it: it should *still* read about `+90°`. Before the reboot
+   you were watching the steering motor count; after it, priming re-read the
+   CANcoder — so this one step checks both sensors. Repeat for each wheel.
+6. **Drive it slowly, still on blocks.** Nudge the stick forward: all four
+   wheels should point forward and roll the way the robot should go. Nudge it
+   left: they should point left. Hold the left bumper: the pinwheel from
+   section 5, every wheel pushing counterclockwise.
+
+When a step fails, the symptom usually names the cause:
+
+| What you see | What's wrong | Fix |
+|---|---|---|
+| Stick forward drives the robot sideways | Every zero is a quarter-turn off: the wheels were pointed sideways when you measured, or the end you treated as the front isn't the one `kFrontLeft`/`kFrontRight` describe | Redo steps 1–3 |
+| One wheel sits at a different angle from the other three | That corner's offset is wrong, or its CAN IDs belong to another corner | Remeasure it (step 3), and check its IDs (step 1) |
+| One wheel rolls backward while the rest roll forward | It was zeroed facing backward | Turn it 180°, and remeasure its offset |
+| Stick left drives the robot right | The steering motor counts backward: step 5 read about `−90°` *before* the reboot | Flip the steering motor, below |
+| The zero is right on some boots and wrong on others | The CANcoder counts backward: step 5 read `+90°` before the reboot and `−90°` after | Set `MagnetSensor.SensorDirection` — Lesson 5's "Mounting matters" callout |
+
+Flipping a motor is a configuration setting, `MotorOutput.Inverted`. Your
+steering motor doesn't have a configuration yet, so it needs one. Put it
+before the priming line, so the motor already counts the right way when it's
+seeded. It runs for all four modules, which is normally what you want: one
+module design counts the same way on every corner.
+
+**Only if step 5 read `−90°` before the reboot — add to `SwerveModule`'s constructor, just above the priming line:**
+
+```java
+TalonFXConfiguration steerConfig = new TalonFXConfiguration();
+steerConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+m_steerMotor.getConfigurator().apply(steerConfig);
+```
+
+**And add to `SwerveModule`'s imports:**
+
+```java
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.InvertedValue;
+```
+
+> **Carry it forward.** Lesson 12 gives the steering motor a new, bigger
+> `TalonFXConfiguration` in this same constructor. When you get there, move
+> your `Inverted` line into that one and delete these three lines. Applying a
+> configuration sets *every* setting it holds, including the ones you never
+> touched, so a fresh configuration applied after yours puts the motor
+> straight back to counterclockwise-positive. And from Lesson 12 on, the
+> steering loop reads the CANcoder, so a motor that counts the opposite way
+> from its sensor doesn't just swap left and right — it makes the loop push
+> the wrong way.
+
 ---
 
 ## Try it
