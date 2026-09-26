@@ -7,6 +7,8 @@ package first.robot;
 import static org.wpilib.units.Units.MetersPerSecond;
 import static org.wpilib.units.Units.RotationsPerSecond;
 
+import com.ctre.phoenix6.signals.InvertedValue;
+
 import org.wpilib.framework.RobotBase;
 import org.wpilib.math.geometry.Translation2d;
 import org.wpilib.units.measure.AngularVelocity;
@@ -34,6 +36,7 @@ public final class Constants {
     public static final int kBackRightDrivePort = 7;
     public static final int kBackRightSteerPort = 8;
     public static final int kBackRightCancoderPort = 12;
+    public static final int kGyroPort = 0;               // CAN ID — change to yours
 
     // Magnet offsets (rotations) — measure with Phoenix Tuner X, change to yours.
     public static final double kFrontLeftMagnetOffset = 0.0;
@@ -70,6 +73,7 @@ public final class Constants {
   public static final class SteerConstants {
     public static final double kSteerGearRatio = 25.0;  // rotor : CANcoder
     public static final double kSteerKP = 40.0;         // volts per rotation of error — tune
+    public static final InvertedValue kSteerInverted = InvertedValue.CounterClockwise_Positive; // flip if your steering counts backward
   }
 
   public static final class HeadingConstants {

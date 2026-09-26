@@ -37,8 +37,9 @@ public final class Constants {
     /**
      * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
      * The magnet offset moves into DriveConstants, one per corner. Add the steering
-     * gear ratio next to the gain: the rotor turns 25 times for every turn of the
-     * wheel's steering.
+     * gear ratio next to the gain — the rotor turns 25 times for every turn of the
+     * wheel's steering — and a constant for which way the steering motor counts, so a
+     * robot whose steering counts backward is a one-word fix here.
      */
 
     public static final double kMagnetOffset = 0.0; // rotations — measure with Tuner X, change to yours

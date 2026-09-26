@@ -46,7 +46,7 @@ public class Drivetrain implements Mechanism {
       m_modules[2].location,
       m_modules[3].location);
 
-  private final Pigeon2 m_gyro = new Pigeon2(0, new CANBus(CANPort.CAN_S0)); // CAN ID 0 — change to yours
+  private final Pigeon2 m_gyro = new Pigeon2(DriveConstants.kGyroPort, new CANBus(CANPort.CAN_S0));
 
   /**
    * ====== NEXT LESSON: ADD CODE HERE ======

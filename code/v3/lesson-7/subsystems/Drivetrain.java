@@ -30,10 +30,10 @@ public class Drivetrain implements Mechanism {
 
   /**
    * ====== NEXT LESSON: ADD CODE HERE ======
-   * Add the Pigeon 2 gyro here — heading is a fact about the whole chassis, so it
-   * belongs on the drivetrain, not on a module. Add two plain, non-final doubles for
-   * the sim to remember from tick to tick: the rotation rate just commanded, and the
-   * running fake heading.
+   * Add the Pigeon 2 gyro here, built from its CAN ID constant — heading is a fact
+   * about the whole chassis, so it belongs on the drivetrain, not on a module. Add two
+   * plain, non-final doubles for the sim to remember from tick to tick: the rotation
+   * rate just commanded, and the running fake heading.
    */
 
   public Drivetrain() {

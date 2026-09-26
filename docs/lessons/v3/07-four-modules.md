@@ -211,6 +211,56 @@ m_steerMotor.setPosition(
     m_steerEncoder.getAbsolutePosition().getValue().in(Rotations) * SteerConstants.kSteerGearRatio);
 ```
 
+A real gearbox raises one more question the pretend 1:1 sensor never did:
+**which way does the rotor turn when the wheel steers counterclockwise?**
+A gear stage can reverse the direction of spin, so the answer depends on
+how your module's gearbox is built — it's a fact about your hardware, not
+your code. The motor can count either way, and you tell it
+which with a setting called **`Inverted`**. Like the gear ratio, a fact
+about your hardware belongs in `Constants.java`.
+
+**Add `kSteerInverted` to `SteerConstants`, below the gear ratio:**
+
+```java
+public static final class SteerConstants {
+  // ...kP and kSteerGearRatio stay...
+  public static final InvertedValue kSteerInverted = InvertedValue.CounterClockwise_Positive; // flip if your steering counts backward
+}
+```
+
+**Add to `Constants.java`'s imports:**
+
+```java
+import com.ctre.phoenix6.signals.InvertedValue;
+```
+
+Then hand it to the steering motor in a configuration object — the same
+build-it-then-`apply`-it shape the CANcoder has used since Lesson 5. It goes
+*above* the priming line, so the motor already counts the right way at the
+moment it's seeded.
+
+**Add to `SwerveModule`'s constructor, just above the priming line:**
+
+```java
+    // Which way the steering motor counts: a fact about your gearbox, set in SteerConstants.
+    TalonFXConfiguration steerConfig = new TalonFXConfiguration();
+    steerConfig.MotorOutput.Inverted = SteerConstants.kSteerInverted;
+    m_steerMotor.getConfigurator().apply(steerConfig);
+```
+
+**Add to `SwerveModule`'s imports:**
+
+```java
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+```
+
+`CounterClockwise_Positive` is Phoenix's own default, so in sim — and on any
+robot whose steering already counts the right way — this changes nothing.
+It's there so that a robot whose steering counts backward is a one-word fix
+in `Constants.java` rather than a code change. The checklist at the end of
+this lesson tells you which kind of robot you have, and Lesson 12 grows this
+same configuration into the one that runs the steering loop.
+
 **Edit `SwerveModule`'s `m_steerModel` field to model the gearbox:**
 
 ```java
@@ -676,39 +726,23 @@ When a step fails, the symptom usually names the cause:
 | Stick forward drives the robot sideways | Every zero is a quarter-turn off: the wheels were pointed sideways when you measured, or the end you treated as the front isn't the one `kFrontLeft`/`kFrontRight` describe | Redo steps 1–3 |
 | One wheel sits at a different angle from the other three | That corner's offset is wrong, or its CAN IDs belong to another corner | Remeasure it (step 3), and check its IDs (step 1) |
 | One wheel rolls backward while the rest roll forward | It was zeroed facing backward | Turn it 180°, and remeasure its offset |
-| Stick left drives the robot right | The steering motor counts backward: step 5 read about `−90°` *before* the reboot | Flip the steering motor, below |
+| Stick left drives the robot right | The steering motor counts backward: step 5 read about `−90°` *before* the reboot | Flip `kSteerInverted`, below |
 | The zero is right on some boots and wrong on others | The CANcoder counts backward: step 5 read `+90°` before the reboot and `−90°` after | Set `MagnetSensor.SensorDirection` — Lesson 5's "Mounting matters" callout |
 
-Flipping a motor is a configuration setting, `MotorOutput.Inverted`. Your
-steering motor doesn't have a configuration yet, so it needs one. Put it
-before the priming line, so the motor already counts the right way when it's
-seeded. It runs for all four modules, which is normally what you want: one
-module design counts the same way on every corner.
+That flip is the `kSteerInverted` constant you added in section 2. Every
+module reads it, which is normally what you want: one module design counts
+the same way on every corner.
 
-**Only if step 5 read `−90°` before the reboot — add to `SwerveModule`'s constructor, just above the priming line:**
+**Only if step 5 read `−90°` before the reboot — change `kSteerInverted` in `SteerConstants`:**
 
 ```java
-TalonFXConfiguration steerConfig = new TalonFXConfiguration();
-steerConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
-m_steerMotor.getConfigurator().apply(steerConfig);
+public static final InvertedValue kSteerInverted = InvertedValue.Clockwise_Positive;
 ```
 
-**And add to `SwerveModule`'s imports:**
-
-```java
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.signals.InvertedValue;
-```
-
-> **Carry it forward.** Lesson 12 gives the steering motor a new, bigger
-> `TalonFXConfiguration` in this same constructor. When you get there, move
-> your `Inverted` line into that one and delete these three lines. Applying a
-> configuration sets *every* setting it holds, including the ones you never
-> touched, so a fresh configuration applied after yours puts the motor
-> straight back to counterclockwise-positive. And from Lesson 12 on, the
-> steering loop reads the CANcoder, so a motor that counts the opposite way
-> from its sensor doesn't just swap left and right — it makes the loop push
-> the wrong way.
+Then repeat step 5: the angle should climb to about `+90°` both before and
+after the reboot. And because the setting lives in `Constants.java`, it
+keeps working when Lesson 12 grows the steering configuration — that
+configuration reads the same constant.
 
 ---
 

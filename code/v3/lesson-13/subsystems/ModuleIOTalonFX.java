@@ -34,8 +34,10 @@ public class ModuleIOTalonFX implements ModuleIO {
     cancoderConfig.MagnetSensor.MagnetOffset = magnetOffsetRotations;
     m_steerEncoder.getConfigurator().apply(cancoderConfig);
 
-    // Steering: read angle from the CANcoder, wrap like a circle, hold a P gain.
+    // Steering: which way it counts (Lesson 7), then read angle from the CANcoder,
+    // wrap like a circle, hold a P gain.
     TalonFXConfiguration steerConfig = new TalonFXConfiguration();
+    steerConfig.MotorOutput.Inverted = SteerConstants.kSteerInverted;
     steerConfig.Feedback.FeedbackRemoteSensorID = cancoderId;
     steerConfig.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;
     steerConfig.Feedback.RotorToSensorRatio = SteerConstants.kSteerGearRatio;

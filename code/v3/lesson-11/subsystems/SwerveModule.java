@@ -6,6 +6,7 @@ import static org.wpilib.units.Units.RotationsPerSecond;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.sim.TalonFXSimState;
@@ -81,12 +82,22 @@ public class SwerveModule {
 
     /**
      * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+     * Grow this configuration into the one that runs the steering loop. Keep the
+     * inversion, and add: read the CANcoder directly as a remote sensor, with the
+     * rotor-to-CANcoder gear ratio; continuous wrap, so it always takes the short way
+     * around; and a P gain.
+     */
+
+    // Which way the steering motor counts: a fact about your gearbox, set in SteerConstants.
+    TalonFXConfiguration steerConfig = new TalonFXConfiguration();
+    steerConfig.MotorOutput.Inverted = SteerConstants.kSteerInverted;
+    m_steerMotor.getConfigurator().apply(steerConfig);
+
+    /**
+     * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
      * A one-time seed can't correct drift afterward, so priming goes. In its place,
-     * configure both motors so their firmware runs the loops. Steering reads the
-     * CANcoder directly as a remote sensor, with the rotor-to-CANcoder gear ratio,
-     * continuous wrap so it always takes the short way around, and a P gain. Driving
-     * gets the gear ratio as sensor-to-mechanism, so it reports wheel rotations, plus
-     * the kV model and kP trim.
+     * give the drive motor a configuration of its own: the gear ratio as sensor-to-
+     * mechanism, so it reports wheel rotations, plus the kV model and kP trim.
      */
 
     m_steerMotor.setPosition(

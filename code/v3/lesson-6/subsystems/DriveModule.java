@@ -78,10 +78,12 @@ public class DriveModule implements Mechanism {
   public DriveModule() {
     /**
      * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
-     * Configure the CANcoder with the offset that was passed in. When priming, multiply
-     * its reading by the steer gear ratio: the CANcoder reads the wheel's angle, but
-     * the motor's counter lives on the rotor side of the gearbox. The module stops
-     * talking to the scheduler, so the telemetry registration goes.
+     * Configure the CANcoder with the offset that was passed in. Before priming, give
+     * the steering motor a configuration that sets which way it counts, from that
+     * constant. When priming, multiply the CANcoder's reading by the steer gear ratio:
+     * the CANcoder reads the wheel's angle, but the motor's counter lives on the rotor
+     * side of the gearbox. The module stops talking to the scheduler, so the telemetry
+     * registration goes.
      */
 
     // Calibrate the CANcoder's zero to "wheel pointing forward"...

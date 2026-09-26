@@ -4,6 +4,8 @@
 
 package first.robot;
 
+import com.ctre.phoenix6.signals.InvertedValue;
+
 import org.wpilib.math.geometry.Translation2d;
 
 public final class Constants {
@@ -22,6 +24,12 @@ public final class Constants {
     public static final int kBackRightDrivePort = 7;
     public static final int kBackRightSteerPort = 8;
     public static final int kBackRightCancoderPort = 12;
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Give the gyro's CAN ID a named constant here too, next to the modules' — every
+     * CAN ID the robot owns in one file.
+     */
 
     // Magnet offsets (rotations) — measure with Phoenix Tuner X, change to yours.
     public static final double kFrontLeftMagnetOffset = 0.0;
@@ -47,6 +55,7 @@ public final class Constants {
   public static final class SteerConstants {
     public static final double kP = 0.0005;          // from Lesson 5 — retune once the real gearing lands
     public static final double kSteerGearRatio = 25.0; // rotor : steering
+    public static final InvertedValue kSteerInverted = InvertedValue.CounterClockwise_Positive; // flip if your steering counts backward
   }
 
   /**
