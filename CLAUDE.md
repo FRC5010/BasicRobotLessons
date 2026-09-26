@@ -71,6 +71,35 @@ measured in Phoenix sim). Snapshots 16–33 carry both constants too, unverified
 until Phase 1b. The classic track keeps its Lesson 7 checklist's "only if"
 inversion snippet — it has no update script to preserve values for.
 
+**A Tkinter app wraps `update-lesson-v3.sh`** so students never type the
+command: [`tools/update_lesson_app.py`](tools/update_lesson_app.py), started
+by double-clicking `Update Lesson.cmd` (Windows) or `Update Lesson.command`
+(macOS) at the repo root. It offers the lessons from 1 to the cut-off, with
+their titles read from `docs/lessons/v3/README.md`. It checks the folder
+first, offers to commit uncommitted work, then streams the script's output
+into a log. Everything except the window is plain functions, tested by
+`tools/tests/test_update_lesson_app.py`. That includes a real update to
+Lesson 8, which needs the network. `tkinter` is imported only in `main()`,
+so the tests don't need Tk.
+
+The Windows-specific parts are:
+
+- Bash comes from Git for Windows. `find_bash` skips anything under
+  `System32`, because that `bash.exe` is WSL's.
+- Paths passed to bash use forward slashes.
+- The child process runs with `CREATE_NO_WINDOW`.
+- The app passes its own interpreter as `PYTHON`. The scripts' `v3_python`
+  (in the lib) tries `$PYTHON`, `python3`, `python`, then `py`, because on
+  Windows `python3` is usually the Microsoft Store stub.
+
+`.gitattributes` forces CRLF on `*.cmd`. **Only Linux has been exercised**
+(under `xvfb-run`). The `.cmd`/`.command` launchers, Git Bash discovery and
+the Store-stub fallback are untested on real Windows and macOS. In this
+container only `/usr/bin/python3.12` has Tk; the `python3` on PATH (3.11)
+doesn't. The v3 setup aside's §4 is where students install Python 3 with Tk
+— the course never asked for it before, though the scripts always needed
+it.
+
 **v3 snapshots carry NEXT LESSON markers, through the alpha-7 cut-off.** The
 code at the end of Lesson N-1 has a comment at every spot where Lesson N
 adds to or changes an *existing* file:

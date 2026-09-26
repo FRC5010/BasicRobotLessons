@@ -42,6 +42,7 @@ function buildDeck() {
       [
         { text: 'Git — tracks snapshots of your project', options: { bullet: true, breakLine: true } },
         { text: 'A JDK 25 — the Java toolchain this course builds against', options: { bullet: true, breakLine: true } },
+        { text: "Python 3 — runs the course's scripts", options: { bullet: true, breakLine: true } },
         { text: 'GitHub CLI (gh) — the friction-free way to log in', options: { bullet: true, breakLine: false } },
       ],
       {
@@ -145,7 +146,35 @@ function buildDeck() {
     K.addFooter(s, { pageNum: 5, label: 'Setup' });
   }
 
-  // ============================================================ SLIDE 6 — get your starting project
+  // ============================================================ SLIDE 6 — install Python
+  {
+    const s = p.addSlide();
+    s.background = { color: WHITE };
+    K.addHeader(s, { icon: 'python_white.png', eyebrow: 'Section 4 · Install Python 3', title: "One more tool, for the course's scripts" });
+
+    K.addNumberedSteps(s, {
+      startY: 1.75, rowH: 0.95,
+      steps: [
+        { title: 'Download Python 3 from python.org/downloads', detail: 'macOS: same site. Linux: install python3 and python3-tk.' },
+        { title: 'Run the installer with its defaults', detail: 'If it offers "Add python.exe to PATH", tick it.' },
+        { title: 'Check it, in a new PowerShell window', detail: 'It should print ok: Python works, and so does Tk, its window toolkit.' },
+      ],
+    });
+
+    K.addCodeCard(s, {
+      x: 0.7, y: 4.7, w: 11.9, h: 1.1, fontSize: 20,
+      lines: [{ text: "py -3 -c \"import tkinter; print('ok')\"", color: '7FD1D9' }],
+    });
+
+    s.addText('py not recognized? Try python instead. Complaint about tkinter? Re-run the installer, choose Modify, and tick tcl/tk.', {
+      x: 0.7, y: 6.0, w: 11.9, h: 0.85,
+      fontFace: FONT_BODY, italic: true, fontSize: 20, color: MUTED, valign: 'top', margin: 0, lineSpacingMultiple: 1.2,
+    });
+
+    K.addFooter(s, { pageNum: 6, label: 'Setup' });
+  }
+
+  // ============================================================ SLIDE 7 — get your starting project
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -177,15 +206,15 @@ function buildDeck() {
       x: 7.05, y: 4.3, w: 5.25, h: 0.8,
       fontFace: FONT_BODY, bold: true, fontSize: 20, color: WHITE, charSpacing: 0.3, margin: 0, valign: 'top', lineSpacingMultiple: 1.15,
     });
-    s.addText('The script needs bash, curl, and python3. Git Bash — installed alongside Git — is in your Start menu.', {
+    s.addText('The script needs bash, curl, and Python. Git Bash — installed alongside Git — is in your Start menu.', {
       x: 7.05, y: 5.15, w: 5.25, h: 1.35,
       fontFace: FONT_BODY, fontSize: 20, color: WHITE, valign: 'top', margin: 0, lineSpacingMultiple: 1.2,
     });
 
-    K.addFooter(s, { pageNum: 6, label: 'Setup' });
+    K.addFooter(s, { pageNum: 7, label: 'Setup' });
   }
 
-  // ============================================================ SLIDE 7 — two folders + verify it builds
+  // ============================================================ SLIDE 8 — two folders + verify it builds
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -209,10 +238,10 @@ function buildDeck() {
       bodyColor: 'CADCE8',
     });
 
-    K.addFooter(s, { pageNum: 7, label: 'Setup' });
+    K.addFooter(s, { pageNum: 8, label: 'Setup' });
   }
 
-  // ============================================================ SLIDE 8 — verify it builds + make it a repo
+  // ============================================================ SLIDE 9 — verify it builds + make it a repo
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -243,10 +272,10 @@ function buildDeck() {
       body: 'Confirm with git status that every untracked file belongs in the repo. That first commit is your recovery point — if your laptop died right now, you could rebuild from it, as long as it lives on GitHub too.',
     });
 
-    K.addFooter(s, { pageNum: 8, label: 'Setup' });
+    K.addFooter(s, { pageNum: 9, label: 'Setup' });
   }
 
-  // ============================================================ SLIDE 9 — GitHub + gh
+  // ============================================================ SLIDE 10 — GitHub + gh
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -271,10 +300,10 @@ function buildDeck() {
       bodyColor: 'CADCE8',
     });
 
-    K.addFooter(s, { pageNum: 9, label: 'Setup' });
+    K.addFooter(s, { pageNum: 10, label: 'Setup' });
   }
 
-  // ============================================================ SLIDE 10 — create the remote & push
+  // ============================================================ SLIDE 11 — create the remote & push
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -292,10 +321,10 @@ function buildDeck() {
       body: 'Check it landed right: gh repo view --web opens the repo in your browser. You should see every file from your project — and nothing from BasicRobotLessons. If the whole course shows up instead, you ran it from the wrong folder.',
     });
 
-    K.addFooter(s, { pageNum: 10, label: 'Setup' });
+    K.addFooter(s, { pageNum: 11, label: 'Setup' });
   }
 
-  // ============================================================ SLIDE 11 — the everyday loop
+  // ============================================================ SLIDE 12 — the everyday loop
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
@@ -338,10 +367,10 @@ function buildDeck() {
       }
     );
 
-    K.addFooter(s, { pageNum: 11, label: 'Setup', dark: true });
+    K.addFooter(s, { pageNum: 12, label: 'Setup', dark: true });
   }
 
-  // ============================================================ SLIDE 12 — try it
+  // ============================================================ SLIDE 13 — try it
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
@@ -357,10 +386,10 @@ function buildDeck() {
       ],
     });
 
-    K.addFooter(s, { pageNum: 12, label: 'Setup', dark: true });
+    K.addFooter(s, { pageNum: 13, label: 'Setup', dark: true });
   }
 
-  // ============================================================ SLIDE 13 — what you learned + ready
+  // ============================================================ SLIDE 14 — what you learned + ready
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -409,7 +438,7 @@ function buildDeck() {
     s.addShape('ellipse', { x: 8.3, y: 5.6, w: 0.55, h: 0.55, fill: { color: TEAL }, line: { type: 'none' } });
     s.addImage({ path: K.ICON('arrowright_white.png'), x: 8.43, y: 5.73, w: 0.29, h: 0.29 });
 
-    K.addFooter(s, { pageNum: 13, label: 'Setup' });
+    K.addFooter(s, { pageNum: 14, label: 'Setup' });
   }
 
   return p;

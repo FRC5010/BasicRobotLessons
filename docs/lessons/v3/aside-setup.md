@@ -154,8 +154,32 @@ the one it already ships: `code/OpModeV3Robot`, the pristine 2027 alpha
 template every lesson in this track builds forward from, Commands V3
 already wired in.
 
+First, one more tool that neither WPILib nor Git installs: **Python 3**.
+The course's scripts use it whenever they install a vendordep, and the
+lesson updater, which you'll use whenever you fall behind or want to start
+a lesson fresh, is written in it. (The command below happens not to need
+it, because the starting template has no vendordeps to install. The
+updater always does.)
+
+**Install Python 3 from python.org/downloads.** Run the installer with its
+defaults. If it offers **Add python.exe to PATH**, tick it. (macOS: the
+python.org installer too. Linux: your package manager's `python3` and
+`python3-tk`.)
+
+**Check it — run, in a new PowerShell window:**
+
+```powershell
+py -3 -c "import tkinter; print('ok')"
+```
+
+It should print `ok`. That one line checks both things the course needs:
+Python 3 itself, and **Tk**, the toolkit Python draws windows with, which
+the lesson updater uses. If `py` isn't recognized, try `python` in its
+place. If it complains about `tkinter`, re-run the installer, choose
+**Modify**, and make sure **tcl/tk** is ticked.
+
 > **Run this part in Git Bash, not PowerShell.** The script that does the
-> extraction needs `bash`, `curl`, and `python3` — the same requirement the
+> extraction needs `bash`, `curl`, and Python 3 — the same requirement the
 > classic track's README states for its equivalent trick. The WPILib/Git
 > installers you already have give you Git Bash; look for it in your Start
 > menu. Everything before and after this step can stay in PowerShell.

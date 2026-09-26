@@ -178,7 +178,9 @@ find what drifted.
 `./tools/update-lesson-v3.sh <lesson you're about to do> <your project folder>`
 updates your own project in place, protected by git rather than by a
 throwaway folder, and marks every spot where that lesson has you add or
-change code. See
+change code. It also has a small app wrapping that script: double-click
+`Update Lesson.cmd` (Windows) or `Update Lesson.command` (macOS) at the root
+of this repo, pick a lesson and a folder, and press Update. See
 [the OpMode track's page](docs/lessons/v3/README.md#starting-a-lesson-from-the-reference-code).
 
 ## A mental model to carry through the whole course

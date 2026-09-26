@@ -58,19 +58,31 @@ status of every lesson, including what changed and why.
 
 Fell behind, lost a file, or want to begin at Lesson 8 without typing out
 0–7? This repo can put your project in the exact state a lesson expects.
-Run it from a clone of this repo (Git Bash on Windows), giving it the lesson
-you're **about to do** and your project's folder:
+
+**The easy way: open the lesson updater.** In your clone of this repo,
+double-click **`Update Lesson.cmd`** (Windows) or **`Update Lesson.command`**
+(macOS). On Linux, run `python3 tools/update_lesson_app.py` from the repo.
+Pick the lesson you're **about to do**, choose your project's folder, and
+press **Update**. It needs Python 3 with Tk (see
+[the setup aside, section 4](aside-setup.md#4-clone-the-course-repo-and-pull-out-your-starting-project))
+and Git for Windows, which gives it Git Bash. If your project has
+uncommitted work, it offers to commit it for you first. Its log shows the
+same messages the script below prints.
+
+**Or run the script it wraps, from Git Bash**, giving it the lesson you're
+about to do and your project's folder:
 
 ```bash
 ./tools/update-lesson-v3.sh 8 ~/dev/MyOpModeRobot
 ```
 
-Lesson 8 starts where Lesson 7 finished, so that copies the reference code
-from lessons 0 through 7 into your project, deletes the files those lessons
-had you delete, and installs the vendordeps they need. It works on your
-project in place and **overwrites every file those lessons touch**, so it
-refuses to run unless your project is a git repository with everything
-committed. Commit first. Afterwards, `git diff` shows exactly what changed,
+Either way it does the same thing. Lesson 8 starts where Lesson 7
+finished, so that copies the reference code from lessons 0 through 7 into
+your project, deletes the files those lessons had you delete, and installs
+the vendordeps they need. It works on your project in place and
+**overwrites every file those lessons touch**, so it refuses to run unless
+your project is a git repository with everything committed. Commit first
+(the app offers to). Afterwards, `git diff` shows exactly what changed,
 and `git checkout .` puts your own version back. It works up to the last
 lesson migrated to the current alpha, Lesson 15 today.
 
