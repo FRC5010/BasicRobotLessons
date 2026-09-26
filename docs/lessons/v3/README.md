@@ -74,6 +74,15 @@ committed. Commit first. Afterwards, `git diff` shows exactly what changed,
 and `git checkout .` puts your own version back. It works up to the last
 lesson migrated to the current alpha, Lesson 15 today.
 
+The one file it doesn't simply overwrite is **`Constants.java`**, because
+that's where your robot lives: CAN IDs, magnet offsets, gear ratios, which
+way your steering counts, camera mounts, tuned gains. Any constant you've
+changed from what the lessons gave it keeps your value, constants you added
+yourself stay, and the constants the lessons add arrive around them. It
+prints every value it kept, so check that list. If it can't read your
+`Constants.java` — say, a half-finished edit with a missing brace — it stops
+before changing anything and tells you why.
+
 The code it writes marks every place the lesson you're about to do changes
 an existing file:
 

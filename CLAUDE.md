@@ -44,6 +44,33 @@ takes a third field (`"7|subsystems/DriveModule.java|subsystems/SwerveModule.jav
 the scripts still just delete, but the marker checker diffs the old file
 against its new name.
 
+**`update-lesson-v3.sh` merges `Constants.java` instead of overwriting it**,
+through [`tools/lib/merge_constants.py`](tools/lib/merge_constants.py): each
+`static final` field is matched by class and name, and the student's value
+survives when it isn't a value the lessons have *ever* given that constant
+(the history is every `code/v3/lesson-*/Constants.java`), so a value a lesson
+changes on purpose still reaches a student who never touched it. Student-only
+constants and classes are kept; constants the lessons dropped are reported if
+customized; a type change takes the reference and warns. It pre-checks that
+the file parses and stops with nothing changed if not (`--force` falls back
+to the reference). Measured when it landed: across 0–15, none of 47
+constants ever changes type or value after its introducing lesson — lessons
+only add, rename, or remove. **Tests:** `python3 -m unittest discover -s
+tools/tests` (the rules, parser traps like `;`/`{` inside strings and
+comments, CRLF, and a sweep proving every `Constants.java` in both tracks
+merges into itself unchanged); a sabotaged merge fails them. **This only
+works if robot-specific values live in `Constants.java`**, so the v3
+snapshots keep them there: the gyro's CAN ID is `DriveConstants.kGyroPort`
+from Lesson 8 on (Lesson 8's Try It #4, applied in the reference like Lesson
+7's per-corner IDs), and steering direction is
+`SteerConstants.kSteerInverted` (`InvertedValue`, default
+`CounterClockwise_Positive`) from Lesson 7 on — applied by a small steering
+`TalonFXConfiguration` above priming, which **Lesson 12 extends rather than
+replaces** (a fresh config applied after it would reset `Inverted`;
+measured in Phoenix sim). Snapshots 16–33 carry both constants too, unverified
+until Phase 1b. The classic track keeps its Lesson 7 checklist's "only if"
+inversion snippet — it has no update script to preserve values for.
+
 **v3 snapshots carry NEXT LESSON markers, through the alpha-7 cut-off.** The
 code at the end of Lesson N-1 has a comment at every spot where Lesson N
 adds to or changes an *existing* file:
