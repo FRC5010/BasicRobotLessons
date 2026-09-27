@@ -143,7 +143,69 @@ class Command(unittest.TestCase):
         self.assertEqual(app.strip_ansi('\x1b[1m==> Done\x1b[0m'), '==> Done')
 
 
+def files(project):
+    """Every file under src/, relative to the project."""
+    out = set()
+    for dirpath, _, names in os.walk(os.path.join(project, 'src')):
+        out |= {os.path.relpath(os.path.join(dirpath, n), project) for n in names}
+    return out
+
+
+def read(path):
+    with open(path, encoding='utf-8') as fh:
+        return fh.read()
+
+
+def update(lesson, project):
+    argv, env = app.command(lesson, project, app.find_bash())
+    lines = []
+    code = app.run(argv, env, lines.append)
+    assert code == 0, '\n'.join(lines)
+    return lines
+
+
 class RealUpdate(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp)
+
+    def test_rolling_back_leaves_what_a_fresh_update_would_plus_your_own(self):
+        fresh = make_project(os.path.join(self.tmp, 'fresh'))
+        update(6, fresh)
+
+        project = make_project(self.tmp)
+        update(15, project)
+        robot = os.path.join(project, 'src', 'main', 'java', 'first', 'robot')
+        constants = os.path.join(robot, 'Constants.java')
+        text = read(constants).replace('kGyroPort = 0;', 'kGyroPort = 13;')
+        with open(constants, 'w', encoding='utf-8') as fh:
+            fh.write(text)
+        with open(os.path.join(robot, 'subsystems', 'Blinker.java'), 'w', encoding='utf-8') as fh:
+            fh.write('package first.robot.subsystems;\n\npublic class Blinker {}\n')
+        git(project, 'add', '-A')
+        git(project, 'commit', '-qm', 'my robot, at lesson 15')
+
+        lines = update(6, project)
+        self.assertEqual(files(project), files(fresh) | {'src/main/java/first/robot/subsystems/Blinker.java'})
+        for f in files(fresh) - {'src/main/java/first/robot/Constants.java'}:
+            self.assertEqual(read(os.path.join(project, f)), read(os.path.join(fresh, f)), f)
+        self.assertFalse(os.path.exists(os.path.join(robot, 'commands')))
+        self.assertIn('kGyroPort = 13;', read(constants))
+        self.assertIn('  removed subsystems/Drivetrain.java  (from Lesson 7)', lines)
+        self.assertFalse(any('DROPPED' in line for line in lines), lines)
+
+    def test_rolling_back_to_lesson_1_keeps_your_constants_file(self):
+        project = make_project(self.tmp)
+        update(8, project)
+        git(project, 'add', '-A')
+        git(project, 'commit', '-qm', 'at lesson 8')
+        lines = update(1, project)
+        template = make_project(os.path.join(self.tmp, 'template'), commit=False)
+        self.assertEqual(files(project), files(template) | {'src/main/java/first/robot/Constants.java'})
+        self.assertTrue(any(line.startswith('  kept    Constants.java') for line in lines), lines)
+
     def test_update_a_project_to_the_start_of_lesson_8(self):
         tmp = tempfile.mkdtemp()
         try:

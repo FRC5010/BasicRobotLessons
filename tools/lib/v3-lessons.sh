@@ -104,6 +104,7 @@ v3_fetch_vendordeps() {
 
 # v3_apply_snapshots REPO THROUGH PROJECT_DIR
 # Copies code/v3/lesson-0 .. lesson-THROUGH onto PROJECT_DIR in order.
+# v3_snapshot_files, below, lists the same paths — change the two together.
 v3_apply_snapshots() {
   local repo="$1" through="$2" project="$3" n d f
   local java_dir="$project/src/main/java/first/robot"
@@ -121,6 +122,75 @@ v3_apply_snapshots() {
     fi
     echo "  applied lesson-$n"
   done
+}
+
+# v3_snapshot_files DIR
+# Lists what one snapshot writes into a project, one path per line, relative
+# to the project — the same mapping v3_apply_snapshots uses.
+v3_snapshot_files() {
+  local d="$1"
+  [ -d "$d" ] || return 0
+  (cd "$d" && find . -name '*.java' -not -path './tests/*' | sed 's|^\./|src/main/java/first/robot/|')
+  if [ -d "$d/tests" ]; then
+    (cd "$d/tests" && find . -type f | sed 's|^\./|src/test/java/first/robot/|')
+  fi
+  return 0
+}
+
+# v3_later_files REPO THROUGH
+# Prints "<lesson> <path>" for every file that only lessons after THROUGH
+# add: in some later snapshot, but not in the state after lesson THROUGH.
+# <lesson> is the first lesson that adds it. Sorted by path. (awk, not an
+# associative array, so it runs on macOS's bash 3.2.)
+v3_later_files() {
+  local repo="$1" through="$2" d n entry path
+  {
+    for entry in "${V3_DELETIONS[@]}"; do
+      path="${entry#*|}"
+      path="${path%%|*}"
+      if [ "$through" -ge "${entry%%|*}" ]; then
+        echo "- src/main/java/first/robot/$path"
+      fi
+    done
+    for d in "$repo"/code/v3/lesson-*; do
+      n="${d##*lesson-}"
+      case "$n" in ''|*[!0-9]*) continue ;; esac
+      v3_snapshot_files "$d" | sed "s|^|$n |"
+    done
+  } | awk -v t="$through" '
+    $1 == "-"    { gone[$2] = 1; next }
+    $1 + 0 <= t  { have[$2] = 1; next }
+    !($2 in first) || $1 + 0 < first[$2] { first[$2] = $1 + 0 }
+    END { for (p in first) if (!(p in have) || (p in gone)) print first[p], p }' | sort -k2
+}
+
+# v3_remove_later_files REPO THROUGH PROJECT_DIR
+# Going back to an earlier lesson: deletes the files that only lessons after
+# THROUGH add, so they can't be left behind referring to code that isn't
+# there any more. Files that are in no snapshot are the student's own and are
+# left alone, and so is Constants.java, which holds their robot. Prints one
+# line per file.
+v3_remove_later_files() {
+  local repo="$1" through="$2" project="$3" n f show dir
+  while read -r n f; do
+    [ -e "$project/$f" ] || continue
+    case "$f" in
+      src/main/java/first/robot/*) show="${f#src/main/java/first/robot/}" ;;
+      *) show="$f" ;;
+    esac
+    if [ "$f" = src/main/java/first/robot/Constants.java ]; then
+      echo "  kept    $show  (Lesson $n has you create it, but yours holds your robot's values)"
+      continue
+    fi
+    rm -f "$project/$f"
+    echo "  removed $show  (from Lesson $n)"
+    dir="$(dirname "$project/$f")"
+    case "$dir" in
+      */first/robot) ;;
+      *) rmdir "$dir" 2>/dev/null || true ;;
+    esac
+  done < <(v3_later_files "$repo" "$through")
+  return 0
 }
 
 # v3_apply_deletions THROUGH PROJECT_DIR

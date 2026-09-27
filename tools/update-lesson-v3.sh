@@ -23,12 +23,21 @@
 # except Constants.java, where your values survive: any constant you changed
 # from what the lessons gave it keeps your value, constants of your own are
 # kept, and the lessons' new constants are added (tools/lib/merge_constants.py
-# has the rules). It prints every value it kept. Everything else is replaced,
-# so it refuses to run unless PROJECT_DIR is a git repository with nothing
-# uncommitted — commit first, and `git diff` afterwards shows exactly what
-# changed (and `git checkout .` undoes it). It also stops, changing nothing, if
-# it can't read your Constants.java well enough to merge it. --force skips
-# both checks (an unreadable Constants.java is then replaced, with a warning).
+# has the rules). It prints every value it kept.
+#
+# It works backwards too. Asked for an earlier lesson than the one you're on,
+# it deletes the files only later lessons add (and prints each one), leaving
+# files of your own alone. In Constants.java a later lesson's constant stays
+# if you changed its value, so rolling forward again gets it back; one you
+# never touched goes quietly.
+#
+# Because it replaces and deletes files, it refuses to run unless PROJECT_DIR
+# is a git repository with nothing uncommitted — commit first. Afterwards
+# `git status` and `git diff` show exactly what changed; `git checkout .` puts
+# back every file it changed or deleted, and `git clean -fd` removes the ones
+# it added. It also stops, changing nothing, if it can't read your
+# Constants.java well enough to merge it. --force skips both checks (an
+# unreadable Constants.java is then replaced, with a warning).
 #
 # Lesson 0 starts from the untouched OpMode template, so there is nothing to
 # apply for it; the highest lesson supported is the last one migrated to
@@ -119,12 +128,31 @@ v3_apply_snapshots "$REPO" "$THROUGH" "$PROJECT"
 say "Applying the deletions the lessons instruct"
 v3_apply_deletions "$THROUGH" "$PROJECT"
 
+# Going back to an earlier lesson (or starting one over) leaves files that
+# only later lessons add, and they refer to code that isn't there any more.
+removed="$(v3_remove_later_files "$REPO" "$THROUGH" "$PROJECT")"
+if [ -n "$removed" ]; then
+  say "Removing files that Lesson $LESSON and later lessons add"
+  echo "$removed"
+fi
+
 if [ -f "$STAGE/Constants.before.java" ] && [ -f "$CONSTANTS" ]; then
   say "Keeping your values in Constants.java"
+  # --applied tells the merge which lessons' constants the project should
+  # have now; one from a later lesson means you've gone back, and it keeps
+  # your value for it instead of dropping it.
+  merge_args=(--history "$REPO"/code/v3/lesson-*/Constants.java --applied)
+  for n in $(seq 0 "$THROUGH"); do
+    if [ -f "$REPO/code/v3/lesson-$n/Constants.java" ]; then
+      merge_args+=("$REPO/code/v3/lesson-$n/Constants.java")
+    fi
+  done
+  if [ -f "$REPO/code/v3/lesson-$LESSON/Constants.java" ]; then
+    merge_args+=(--upcoming "$REPO/code/v3/lesson-$LESSON/Constants.java")
+  fi
   if "$PY" "$REPO/tools/lib/merge_constants.py" \
       --student "$STAGE/Constants.before.java" --reference "$CONSTANTS" \
-      --out "$STAGE/Constants.merged.java" \
-      --history "$REPO"/code/v3/lesson-*/Constants.java > "$STAGE/merge-report.txt"; then
+      --out "$STAGE/Constants.merged.java" "${merge_args[@]}" > "$STAGE/merge-report.txt"; then
     cp "$STAGE/Constants.merged.java" "$CONSTANTS"
     if [ -s "$STAGE/merge-report.txt" ]; then
       sed 's/^/  /' "$STAGE/merge-report.txt"

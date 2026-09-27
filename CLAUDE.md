@@ -71,6 +71,38 @@ measured in Phoenix sim). Snapshots 16–33 carry both constants too, unverified
 until Phase 1b. The classic track keeps its Lesson 7 checklist's "only if"
 inversion snippet — it has no update script to preserve values for.
 
+**Rolling back works too.** Asked for an earlier lesson, the script deletes
+every file that only later snapshots add. That's `v3_later_files` in the lib:
+in some snapshot above the target, but not in the target's state after its
+deletions. Files in no snapshot are the student's and stay. `Constants.java`
+always stays, which only matters when rolling back to Lesson 1. The set logic
+is in `awk`, not an associative array, because macOS's `/bin/bash` is 3.2.
+The merge gets `--applied` (the Constants of lessons 0..target) and
+`--upcoming` (the lesson about to be done). A constant that's in the history
+but not in `--applied` is from a later lesson. It's kept if customized and
+dropped quietly if not, where it used to be dropped and reported. Anything a
+kept value is written with comes along too, even when uncustomized: a later
+constant, or a whole class such as the `Mode` enum. A later class comes back
+holding only kept values, with its NEXT LESSON markers stripped. Student
+imports are carried over only when the merged file uses them.
+
+This was measured before the change. Rolling back from Lesson 15 to Lesson 6
+dropped four customized values: a CAN ID, the gyro ID, a gain and the
+steering inversion. They didn't return on rolling forward. It also left
+fifteen later files, so the project no longer compiled.
+
+After the change:
+
+- Rollbacks from 15 to each of 1, 3, 6, 8, 10, 12, 13 and 14 all compile
+  cleanly.
+- 15 → 7 → 15 reproduces the original project byte for byte, except that the
+  student's own constant moves to the end of its class.
+- Tests cover this at both levels: `RollingBack` and `RoundTrip` in the merge
+  tests, and two real rollbacks in the app tests, compared file-by-file with
+  a fresh update.
+- Vendordeps from later lessons are deliberately left installed: an unused
+  one costs nothing, and removing it could break an import.
+
 **A Tkinter app wraps `update-lesson-v3.sh`** so students never type the
 command: [`tools/update_lesson_app.py`](tools/update_lesson_app.py), started
 by double-clicking `Update Lesson.cmd` (Windows) or `Update Lesson.command`

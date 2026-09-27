@@ -82,18 +82,30 @@ your project, deletes the files those lessons had you delete, and installs
 the vendordeps they need. It works on your project in place and
 **overwrites every file those lessons touch**, so it refuses to run unless
 your project is a git repository with everything committed. Commit first
-(the app offers to). Afterwards, `git diff` shows exactly what changed,
-and `git checkout .` puts your own version back. It works up to the last
-lesson migrated to the current alpha, Lesson 15 today.
+(the app offers to). Afterwards, `git status` and `git diff` show exactly
+what changed. If you want your old version back, `git checkout .` restores
+every file it changed or deleted, and `git clean -fd` removes the ones it
+added. It works up to the last lesson migrated to the current alpha, Lesson
+15 today.
+
+**It goes backwards too.** Ask for an earlier lesson than the one you're on
+— to redo one, say — and it also deletes the files that only later lessons
+add, listing each one, since they'd refer to code that isn't there any
+more. The same goes for starting over the lesson you're partway through:
+any new file you'd already made for it is deleted too. Files of your own
+that no lesson makes are left alone.
 
 The one file it doesn't simply overwrite is **`Constants.java`**, because
 that's where your robot lives: CAN IDs, magnet offsets, gear ratios, which
 way your steering counts, camera mounts, tuned gains. Any constant you've
 changed from what the lessons gave it keeps your value, constants you added
-yourself stay, and the constants the lessons add arrive around them. It
-prints every value it kept, so check that list. If it can't read your
-`Constants.java` — say, a half-finished edit with a missing brace — it stops
-before changing anything and tells you why.
+yourself stay, and the constants the lessons add arrive around them. Going
+backwards, a later lesson's constant stays if you changed its value, so
+it's still there when you roll forward again; if the lesson you're about
+to redo is the one that adds it, keep your line rather than typing the
+lesson's. It prints every value it kept, so check that list. If it can't
+read your `Constants.java` — say, a half-finished edit with a missing brace
+— it stops before changing anything and tells you why.
 
 The code it writes marks every place the lesson you're about to do changes
 an existing file:

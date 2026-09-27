@@ -4,6 +4,7 @@
 """
 
 import os
+import re
 import sys
 import textwrap
 import unittest
@@ -163,6 +164,185 @@ class LessonsStillWin(unittest.TestCase):
         self.assertEqual(report, [])
 
 
+# Rolling back: the student's file is from a later lesson than the reference.
+# EARLY is the reference at the lesson being rolled back to; LATER is a lesson
+# after it, which renamed kDrivePort and added everything else.
+EARLY = java('''
+    package first.robot;
+
+    public final class Constants {
+      public static final class DriveConstants {
+        public static final int kDrivePort = 1;   // CAN ID — change to yours
+
+        /**
+         * ====== NEXT LESSON: ADD CODE HERE ======
+         * The CAN IDs and locations of all four corners.
+         */
+      }
+    }
+    ''')
+
+LATER = java('''
+    package first.robot;
+
+    import com.ctre.phoenix6.signals.InvertedValue;
+    import org.wpilib.math.geometry.Translation2d;
+
+    public final class Constants {
+      public enum Mode { REAL, SIM, REPLAY }
+
+      public static final Mode kSimMode = Mode.SIM;
+
+      public static final class DriveConstants {
+        public static final int kFrontLeftDrivePort = 1;     // CAN IDs — change to yours
+        public static final int kGyroPort = 0;               // CAN ID — change to yours
+        public static final double kHalfLength = 0.3;        // meters
+        public static final Translation2d kFrontLeft = new Translation2d(kHalfLength, 0.3);
+      }
+
+      public static final class SteerConstants {
+        public static final double kSteerKP = 40.0;
+
+        /**
+         * ====== NEXT LESSON: ADD CODE HERE ======
+         * Something a lesson after this one adds.
+         */
+        public static final InvertedValue kSteerInverted = InvertedValue.CounterClockwise_Positive;
+      }
+    }
+    ''')
+
+
+def roll_back(student, upcoming=None):
+    return mc.merge(student, EARLY, mc.history_from_texts([EARLY, LATER]),
+                    applied=mc.history_from_texts([EARLY]),
+                    upcoming=None if upcoming is None else mc.history_from_texts([upcoming]))
+
+
+class RollingBack(unittest.TestCase):
+    def test_untouched_constants_from_a_later_lesson_go_quietly(self):
+        merged, report = roll_back(LATER)
+        self.assertEqual(merged, EARLY)
+        self.assertEqual(report, [])
+
+    def test_your_value_for_a_later_lessons_constant_is_kept(self):
+        merged, report = roll_back(LATER.replace('kGyroPort = 0;', 'kGyroPort = 13;'))
+        drive = merged[merged.index('class DriveConstants'):]
+        self.assertIn('public static final int kGyroPort = 13;               // CAN ID — change to yours', drive)
+        self.assertLess(drive.index('kGyroPort'), drive.index('}'))
+        self.assertIn('kDrivePort = 1;', merged)
+        self.assertNotIn('kFrontLeftDrivePort', merged)
+        self.assertTrue(any('kGyroPort = 13' in r and 'later lesson' in r for r in report), report)
+        self.assertFalse(any('DROPPED' in r for r in report), report)
+
+    def test_a_kept_value_brings_the_constants_and_imports_it_is_written_with(self):
+        merged, report = roll_back(LATER.replace('new Translation2d(kHalfLength, 0.3)',
+                                                 'new Translation2d(kHalfLength, 0.25)'))
+        self.assertIn('kFrontLeft = new Translation2d(kHalfLength, 0.25);', merged)
+        self.assertIn('public static final double kHalfLength = 0.3;        // meters', merged)
+        self.assertIn('import org.wpilib.math.geometry.Translation2d;', merged)
+        self.assertNotIn('import com.ctre.phoenix6.signals.InvertedValue;', merged)
+        self.assertTrue(any('kHalfLength' in r and 'kFrontLeft' in r for r in report), report)
+        self.assertLess(merged.index('kHalfLength ='), merged.index('kFrontLeft ='))
+
+    def test_a_later_class_comes_back_holding_only_your_values(self):
+        merged, report = roll_back(LATER.replace('InvertedValue.CounterClockwise_Positive',
+                                                 'InvertedValue.Clockwise_Positive'))
+        self.assertIn('public static final class SteerConstants {', merged)
+        self.assertIn('kSteerInverted = InvertedValue.Clockwise_Positive;', merged)
+        self.assertIn('import com.ctre.phoenix6.signals.InvertedValue;', merged)
+        self.assertNotIn('kSteerKP', merged)
+        self.assertNotIn('Something a lesson after this one adds', merged)
+        steer = merged[merged.index('class SteerConstants'):]
+        self.assertLess(steer.index('kSteerInverted'), steer.index('}'))
+        self.assertEqual(mc.parse(merged).classes.keys(),
+                         {'Constants', 'Constants.DriveConstants', 'Constants.SteerConstants'})
+
+    def test_a_later_enum_comes_back_with_the_value_that_needs_it(self):
+        merged, report = roll_back(LATER.replace('kSimMode = Mode.SIM;', 'kSimMode = Mode.REPLAY;'))
+        self.assertIn('public enum Mode { REAL, SIM, REPLAY }', merged)
+        self.assertIn('kSimMode = Mode.REPLAY;', merged)
+        self.assertTrue(any('Mode' in r and 'kSimMode' in r and 'uses' in r for r in report), report)
+
+    def test_your_own_constant_in_a_later_class_keeps_its_class(self):
+        student = LATER.replace('    public static final double kSteerKP = 40.0;\n',
+                                '    public static final double kSteerKP = 40.0;\n'
+                                '    public static final double kMyTrim = 1.5; // ours\n')
+        merged, report = roll_back(student)
+        self.assertIn('public static final class SteerConstants {', merged)
+        self.assertIn('kMyTrim = 1.5; // ours', merged)
+        self.assertNotIn('kSteerKP', merged)
+
+    def test_the_lesson_about_to_be_done_is_named_when_it_adds_your_constant(self):
+        merged, report = roll_back(LATER.replace('kGyroPort = 0;', 'kGyroPort = 13;'), upcoming=LATER)
+        self.assertTrue(any('kGyroPort = 13' in r and 'about to do' in r for r in report), report)
+
+    def test_rolling_forward_still_drops_what_the_lessons_retired(self):
+        student = EARLY.replace('kDrivePort = 1;', 'kDrivePort = 5;')
+        both = mc.history_from_texts([EARLY, LATER])
+        merged, report = mc.merge(student, LATER, both, applied=both)
+        self.assertNotIn('kDrivePort', merged)
+        self.assertTrue(any('DROPPED' in r and 'kDrivePort = 5' in r for r in report), report)
+
+
+class RoundTrip(unittest.TestCase):
+    """Roll the real v3 snapshots back from Lesson 15's start to Lesson 6's, then forward again."""
+
+    V3 = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'code', 'v3')
+
+    def constants(self, lessons):
+        out = []
+        for n in lessons:
+            path = os.path.join(self.V3, f'lesson-{n}', 'Constants.java')
+            if os.path.exists(path):
+                with open(path, encoding='utf-8') as fh:
+                    out.append(fh.read())
+        return out
+
+    def update(self, student, lesson):
+        """What update-lesson-v3.sh does to Constants.java when you ask for LESSON."""
+        applied = self.constants(range(lesson))
+        everything = self.constants(range(100))
+        upcoming = self.constants([lesson])
+        return mc.merge(student, applied[-1], mc.history_from_texts(everything),
+                        applied=mc.history_from_texts(applied),
+                        upcoming=mc.history_from_texts(upcoming) if upcoming else None)
+
+    def test_your_values_survive_rolling_back_and_forward_again(self):
+        start = self.constants(range(15))[-1]
+        mine = {
+            'Constants.DriveConstants.kFrontLeftDrivePort': ('1', '21'),
+            'Constants.DriveConstants.kGyroPort': ('0', '13'),
+            'Constants.DriveConstants.kDriveKV': ('0.8', '0.75'),
+            'Constants.SteerConstants.kSteerInverted': ('InvertedValue.CounterClockwise_Positive',
+                                                        'InvertedValue.Clockwise_Positive'),
+        }
+        student = start
+        for key, (old, new) in mine.items():
+            name = key.rsplit('.', 1)[1]
+            self.assertEqual(student.count(f' {name} = {old};'), 1, name)
+            student = student.replace(f' {name} = {old};', f' {name} = {new};')
+        student = re.sub(r'(kFrontLeftDrivePort = 21;[^\n]*\n)',
+                         r'\1    public static final int kMyLedPort = 3;   // ours\n', student, count=1)
+
+        back, back_report = self.update(student, 6)
+        lesson5 = mc.parse(self.constants(range(6))[-1])
+        got = mc.parse(back)
+        self.assertEqual(set(got.decls) - set(lesson5.decls),
+                         set(mine) | {'Constants.DriveConstants.kMyLedPort'})
+        for key, (_, new) in mine.items():
+            self.assertEqual(got.decls[key].value, new)
+        self.assertFalse(any('DROPPED' in r for r in back_report), back_report)
+
+        forward, forward_report = self.update(back, 15)
+        want = mc.parse(start)
+        got = mc.parse(forward)
+        self.assertEqual(set(got.decls), set(want.decls) | {'Constants.DriveConstants.kMyLedPort'})
+        for key, d in want.decls.items():
+            self.assertEqual(got.decls[key].value, mine[key][1] if key in mine else d.value, key)
+        self.assertFalse(any('DROPPED' in r for r in forward_report), forward_report)
+
+
 class Parsing(unittest.TestCase):
     def test_comments_and_strings_do_not_confuse_the_parser(self):
         reference = REFERENCE.replace(
@@ -234,7 +414,10 @@ class Parsing(unittest.TestCase):
             if 'Constants.java' in names and '/build/' not in dirpath:
                 found.append(os.path.join(dirpath, 'Constants.java'))
         self.assertGreater(len(found), 20)
-        texts = [open(f, encoding='utf-8').read() for f in found]
+        texts = []
+        for f in found:
+            with open(f, encoding='utf-8') as fh:
+                texts.append(fh.read())
         history = mc.history_from_texts(texts)
         for path, text in zip(found, texts):
             with self.subTest(path=os.path.relpath(path, repo)):
