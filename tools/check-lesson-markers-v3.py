@@ -25,8 +25,9 @@ every later change in that same block, and a "change the code below" marker
 right above a method announces changes anywhere inside that method; a marker at
 class level otherwise announces only the change directly after it. Import lines,
 comment-only edits, lines that are only closing braces, and pure deletions need
-no marker, and new files never do. Exit status is non-zero if anything is
-reported.
+no marker, and new files never do. A lesson with no snapshot directory is a
+gap in the track; it's skipped, and the markers before it are checked against
+the lesson after it. Exit status is non-zero if anything is reported.
 
     ./tools/check-lesson-markers-v3.py            # every lesson through the cut-off
     ./tools/check-lesson-markers-v3.py 8          # just the markers Lesson 8 needs
@@ -301,7 +302,10 @@ def main():
     show = '--show' in sys.argv
     top = cutoff()
     renamed = renames()
-    lessons = [int(args[0])] if args else list(range(1, top + 1))
+    # A lesson with no snapshot is a gap in the track (Lesson 17, say): it changes
+    # nothing, so the markers before it belong to the lesson after it.
+    lessons = [int(args[0])] if args else [
+        n for n in range(1, top + 1) if os.path.isdir(os.path.join(REPO, 'code', 'v3', f'lesson-{n}'))]
     problems = []
     with tempfile.TemporaryDirectory() as tmp:
         states = {}

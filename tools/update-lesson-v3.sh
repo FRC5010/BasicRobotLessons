@@ -78,6 +78,15 @@ if [ "$LESSON" -gt "$V3_ALPHA7_THROUGH" ]; then
   die "lessons above $V3_ALPHA7_THROUGH haven't been migrated to WPILib 2027 alpha-7 yet, so their starting code wouldn't build"
 fi
 THROUGH=$((LESSON - 1))
+# A lesson with no snapshot is a gap in this track (not written yet). Starting
+# it would just be the end of the lesson before it, so send the student on.
+if [ ! -d "$REPO/code/v3/lesson-$LESSON" ]; then
+  next="$LESSON"
+  while [ "$next" -le "$V3_ALPHA7_THROUGH" ] && [ ! -d "$REPO/code/v3/lesson-$next" ]; do
+    next=$((next + 1))
+  done
+  die "Lesson $LESSON isn't written on this track yet — Lesson $next picks up where the lesson before it ends, so ask for Lesson $next"
+fi
 
 [ -d "$PROJECT" ] || die "not a directory: $PROJECT"
 PROJECT="$(cd "$PROJECT" && pwd)"

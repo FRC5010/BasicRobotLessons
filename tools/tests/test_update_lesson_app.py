@@ -7,6 +7,7 @@ access for the vendordep download.
 """
 
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -44,9 +45,13 @@ class Lessons(unittest.TestCase):
                              cwd=REPO, capture_output=True, text=True, check=True)
         self.assertEqual(app.cutoff(), int(out.stdout))
 
-    def test_lessons_run_from_1_to_the_cutoff_with_their_titles(self):
+    def test_lessons_run_from_1_to_the_cutoff_skipping_the_gaps(self):
+        # A gap is a row of the track's README table with no lesson link ("| 17 | — |").
+        with open(os.path.join(REPO, 'docs', 'lessons', 'v3', 'README.md'), encoding='utf-8') as fh:
+            gaps = {int(m) for m in re.findall(r'^\|\s*(\d+)\s*\|\s*—\s*\|', fh.read(), re.M)}
         lessons = app.lessons()
-        self.assertEqual([n for n, _ in lessons], list(range(1, app.cutoff() + 1)))
+        self.assertEqual([n for n, _ in lessons],
+                         [n for n in range(1, app.cutoff() + 1) if n not in gaps])
         titles = dict(lessons)
         self.assertEqual(titles[7], 'Four modules')
         self.assertTrue(titles[app.cutoff()])
@@ -205,6 +210,16 @@ class RealUpdate(unittest.TestCase):
         template = make_project(os.path.join(self.tmp, 'template'), commit=False)
         self.assertEqual(files(project), files(template) | {'src/main/java/first/robot/Constants.java'})
         self.assertTrue(any(line.startswith('  kept    Constants.java') for line in lines), lines)
+
+    def test_a_lesson_that_is_a_gap_on_this_track_is_refused_with_the_next_one(self):
+        project = make_project(self.tmp)
+        argv, env = app.command(17, project, app.find_bash())
+        lines = []
+        self.assertNotEqual(app.run(argv, env, lines.append), 0)
+        text = '\n'.join(lines)
+        self.assertIn('Lesson 17', text)
+        self.assertIn('Lesson 18', text)
+        self.assertEqual(git(project, 'status', '--porcelain').stdout, '')
 
     def test_update_a_project_to_the_start_of_lesson_8(self):
         tmp = tempfile.mkdtemp()
