@@ -121,7 +121,6 @@ public class Localizer {
     // The drivetrain is the odometry backbone — register it first.
     addProvider(drivetrain);
 
-    Telemetry.log("Field", m_field); // the SimGUI field view from Lesson 11
     Scheduler.getDefault().addPeriodic(this::periodic);
   }
 
@@ -136,6 +135,7 @@ public class Localizer {
     }
     Telemetry.log("Localizer/Pose", getPose(), Pose2d.struct);
     m_field.setRobotPose(getPose());
+    Telemetry.log("Field", m_field); // the SimGUI field view from Lesson 11
   }
 
   public Pose2d getPose() {
@@ -209,6 +209,7 @@ result as `Localizer/Pose` instead.
     Pose2d pose = m_odometry.update(Rotation2d.fromDegrees(getHeadingDegrees()), modulePositions());
     Telemetry.log("Drivetrain/Pose", pose, Pose2d.struct);
     m_field.setRobotPose(pose);
+    Telemetry.log("Field", m_field);
 ```
 
 **Add to `Drivetrain` in its place, three small getters and the provider method:**

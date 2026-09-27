@@ -665,7 +665,6 @@ build from here on names its once-a-tick update `periodic()` too.
 
 ```java
   public Drivetrain() {
-    Telemetry.log("Field", m_field);
     Scheduler.getDefault().addPeriodic(this::periodic);
   }
 ```

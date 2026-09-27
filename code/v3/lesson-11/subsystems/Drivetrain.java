@@ -67,7 +67,6 @@ public class Drivetrain implements Mechanism {
   private double m_simHeadingDegrees = 0.0;
 
   public Drivetrain() {
-    Telemetry.log("Field", m_field);
     Scheduler.getDefault().addPeriodic(this::logTelemetry);
   }
 
@@ -232,6 +231,7 @@ public class Drivetrain implements Mechanism {
     Pose2d pose = m_odometry.update(Rotation2d.fromDegrees(getHeadingDegrees()), modulePositions());
     Telemetry.log("Drivetrain/Pose", pose, Pose2d.struct);
     m_field.setRobotPose(pose);
+    Telemetry.log("Field", m_field);
   }
 
   /** Advances every module's physics model, then the fake gyro. Only ever called in simulation. */

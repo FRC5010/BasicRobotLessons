@@ -140,7 +140,6 @@ function buildDeck() {
         { text: '', color: 'D7E3F4' },
         { text: '    addProvider(drivetrain); // the odometry backbone, registered first', color: '9EF01A' },
         { text: '', color: 'D7E3F4' },
-        { text: '    Telemetry.log("Field", m_field);', color: '9EF01A' },
         { text: '    Scheduler.getDefault().addPeriodic(this::periodic);', color: 'D7E3F4' },
         { text: '  }', color: 'D7E3F4' },
       ],
@@ -159,7 +158,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'crosshairs_white.png', eyebrow: 'Section 2 · A new file', title: 'Walk the providers, publish the result' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.2, w: 11.9, h: 5.5, fontSize: 12,
+      x: 0.7, y: 1.2, w: 11.9, h: 5.75, fontSize: 12,
       fileLabel: 'Add to Localizer, closing out the class',
       lines: [
         { text: '/** Register a source of pose information. */', color: '7FA8C9' },
@@ -173,6 +172,7 @@ function buildDeck() {
         { text: '  }', color: 'D7E3F4' },
         { text: '  Telemetry.log("Localizer/Pose", getPose(), Pose2d.struct);', color: '9EF01A' },
         { text: '  m_field.setRobotPose(getPose());', color: 'D7E3F4' },
+        { text: '  Telemetry.log("Field", m_field); // the SimGUI field view from Lesson 11', color: 'D7E3F4' },
         { text: '}', color: 'D7E3F4' },
         { text: '', color: 'D7E3F4' },
         { text: 'public Pose2d getPose() {', color: 'FFD166' },
@@ -260,13 +260,14 @@ function buildDeck() {
 
     K.addCodeCard(s, {
       x: 0.7, y: 4.05, w: 11.9, h: 2.65, fontSize: 13,
-      fileLabel: 'Delete from logTelemetry(), at the bottom',
+      fileLabel: 'Delete from periodic(), at the bottom',
       lines: [
         { text: '// DELETE — odometry lives on Localizer now.', color: 'FF8B8B' },
         { text: 'Pose2d pose = m_odometry.update(', color: 'FF6B6B' },
         { text: '    Rotation2d.fromDegrees(getHeadingDegrees()), modulePositions());', color: 'FF6B6B' },
         { text: 'Telemetry.log("Drivetrain/Pose", pose, Pose2d.struct);', color: 'FF6B6B' },
         { text: 'm_field.setRobotPose(pose);', color: 'FF6B6B' },
+        { text: 'Telemetry.log("Field", m_field);', color: 'FF6B6B' },
       ],
     });
 
@@ -333,7 +334,7 @@ function buildDeck() {
       x: 0.7, y: 3.9, w: 11.9, h: 3.05,
       heading: 'A subtle ordering requirement.',
       headingSize: 21,
-      body: 'updatePoseEstimate reads the gyro and module input bundles, which Drivetrain\'s own logTelemetry() refreshes each tick. For the odometry update to use fresh numbers, Drivetrain\'s periodic callback must run before Localizer\'s — it does, because Scheduler.addPeriodic runs callbacks in registration order. Declare the fields in that order in Robot.java and you never have to think about it again.',
+      body: 'updatePoseEstimate reads the gyro and module input bundles, which Drivetrain\'s own periodic() refreshes each tick. For the odometry update to use fresh numbers, Drivetrain\'s periodic callback must run before Localizer\'s — it does, because Scheduler.addPeriodic runs callbacks in registration order. Declare the fields in that order in Robot.java and you never have to think about it again.',
       bodySize: 18,
     });
 
