@@ -379,7 +379,7 @@ Worth plotting while you watch:
    constant instead of a number buried in Lesson 11's code.
 4. **Log `Drivetrain/AtPose`.** Right now the only way to know stage two
    finished is watching the robot stop. Add `SmartDashboard.putBoolean(...)`
-   for `atPose()` in `logTelemetry()`, the same way every other subsystem
+   for `atPose()` in `periodic()`, the same way every other subsystem
    in this course reports its own "am I done" answer.
 
 ---

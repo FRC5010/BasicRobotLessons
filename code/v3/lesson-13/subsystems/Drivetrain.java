@@ -73,7 +73,7 @@ public class Drivetrain implements Mechanism {
 
   public Drivetrain() {
     Telemetry.log("Field", m_field);
-    Scheduler.getDefault().addPeriodic(this::logTelemetry);
+    Scheduler.getDefault().addPeriodic(this::periodic);
   }
 
   /** Builds the right ModuleIO for the current mode, then wraps it in a SwerveModule. */
@@ -255,7 +255,7 @@ public class Drivetrain implements Mechanism {
    * tick's heading and module positions.
    */
 
-  private void logTelemetry() {
+  private void periodic() {
     m_gyroIO.updateInputs(m_gyroInputs);
     Telemetry.log("Drivetrain/Gyro/YawDegrees", m_gyroInputs.yawDegrees);
 

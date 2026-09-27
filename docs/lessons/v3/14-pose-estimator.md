@@ -202,7 +202,7 @@ field, the `Field2d`/`m_field`, and the `Telemetry.log("Drivetrain/Pose",
 ...)` call. All of it moves to `Localizer`, which publishes the fused
 result as `Localizer/Pose` instead.
 
-**Delete from `logTelemetry()`, at the bottom:**
+**Delete from `periodic()`, at the bottom:**
 
 ```java
     // DELETE — odometry lives on Localizer now.
@@ -245,7 +245,7 @@ too (once to seed the estimator, once inside `resetPose`).
 
 There's a subtle ordering requirement worth naming. `updatePoseEstimate`
 reads the gyro and module *input bundles*, which `Drivetrain`'s own
-`logTelemetry()` refreshes each tick (Lesson 13). For the odometry update to
+`periodic()` refreshes each tick (Lesson 13). For the odometry update to
 use fresh numbers, `Drivetrain`'s periodic callback must run before
 `Localizer`'s. It does, because `Scheduler.addPeriodic` runs its callbacks
 in the order they were registered — and each class registers its own

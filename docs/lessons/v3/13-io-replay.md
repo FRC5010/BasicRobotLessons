@@ -626,11 +626,11 @@ The two places that fed the old bookkeeping now call the IO instead:
 in place of assigning `m_lastCommandedOmega`, and `driveDistance`'s zero
 line does the same** with `0.0`.
 
-**Add the gyro read to the top of `logTelemetry()`, and give each module its
-own read a line above:**
+**Add the gyro read to the top of `logTelemetry()`, give each module its
+own read a line above, and rename the method `periodic()`:**
 
 ```java
-  private void logTelemetry() {
+  private void periodic() {
     m_gyroIO.updateInputs(m_gyroInputs);
     Telemetry.log("Drivetrain/Gyro/YawDegrees", m_gyroInputs.yawDegrees);
 
@@ -653,6 +653,22 @@ That `module.periodic()` call is new — it's the read that used to happen
 implicitly every time `SwerveModule` reached straight into its own motors.
 Now the bundle only refreshes when something asks it to, so something has
 to ask.
+
+And that's why the method needed a new name. It doesn't just report numbers
+any more: it's where the drivetrain reads every sensor, once a tick, and
+every command depends on those reads being fresh. That's the job
+`SwerveModule`'s `periodic()` already does — sense in `periodic()`, act in a
+command — so the drivetrain's version gets the same name. Every class you
+build from here on names its once-a-tick update `periodic()` too.
+
+**Register it by its new name, in `Drivetrain`'s constructor:**
+
+```java
+  public Drivetrain() {
+    Telemetry.log("Field", m_field);
+    Scheduler.getDefault().addPeriodic(this::periodic);
+  }
+```
 
 Last piece, and it's a real behavior change, not a formality: **delete
 `Drivetrain.simulatePeriodic()` entirely.** Every scrap of sim-only code —
