@@ -129,9 +129,7 @@ public final class Constants {
 
   /**
    * ====== NEXT LESSON: ADD CODE HERE ======
-   * Add an ElevatorConstants class: the motor's CAN ID, gear ratio, drum radius and
-   * carriage mass; the travel limits; Motion Magic's cruise speed and acceleration; the
-   * feedforward gains computed from the motor's spec sheet plus a small kP trim; three
-   * preset heights; and how close counts as arrived.
+   * Add a PathConstants class with the gains for the three P loops a path follower
+   * runs at once: distance left along the path, heading, and drift off the line.
    */
 }

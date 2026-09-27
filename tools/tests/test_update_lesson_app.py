@@ -212,14 +212,36 @@ class RealUpdate(unittest.TestCase):
         self.assertTrue(any(line.startswith('  kept    Constants.java') for line in lines), lines)
 
     def test_a_lesson_that_is_a_gap_on_this_track_is_refused_with_the_next_one(self):
+        # A gap is a lesson with no code/v3/lesson-N. None is at or below the
+        # cut-off right now, so make one in a copy of the tools and snapshots.
+        fake = os.path.join(self.tmp, 'repo')
+        shutil.copytree(os.path.join(REPO, 'tools'), os.path.join(fake, 'tools'),
+                        ignore=shutil.ignore_patterns('__pycache__'))
+        shutil.copytree(os.path.join(REPO, 'code', 'v3'), os.path.join(fake, 'code', 'v3'))
+        shutil.rmtree(os.path.join(fake, 'code', 'v3', 'lesson-17'))
         project = make_project(self.tmp)
-        argv, env = app.command(17, project, app.find_bash())
+        argv, env = app.command(17, project, app.find_bash(), repo=fake)
         lines = []
         self.assertNotEqual(app.run(argv, env, lines.append), 0)
         text = '\n'.join(lines)
         self.assertIn('Lesson 17', text)
         self.assertIn('Lesson 18', text)
         self.assertEqual(git(project, 'status', '--porcelain').stdout, '')
+
+    def test_path_files_arrive_with_their_lesson_and_leave_on_rollback(self):
+        project = make_project(self.tmp)
+        update(18, project)  # Lesson 17 done: its path files and BLine are in
+        deploy = os.path.join(project, 'src', 'main', 'deploy')
+        self.assertTrue(os.path.exists(os.path.join(deploy, 'autos', 'config.json')))
+        self.assertTrue(os.path.exists(os.path.join(deploy, 'autos', 'paths', 'TwoCorners.json')))
+        self.assertTrue(os.path.exists(os.path.join(project, 'vendordeps', 'BLine-Lib-2027.json')))
+        git(project, 'add', '-A')
+        git(project, 'commit', '-qm', 'at lesson 18')
+
+        lines = update(16, project)
+        self.assertIn('  removed src/main/deploy/autos/paths/TwoCorners.json  (from Lesson 17)', lines)
+        self.assertFalse(os.path.exists(os.path.join(deploy, 'autos')))  # emptied folders go too
+        self.assertTrue(os.path.exists(os.path.join(deploy, 'example.txt')))  # the template's stays
 
     def test_update_a_project_to_the_start_of_lesson_8(self):
         tmp = tempfile.mkdtemp()

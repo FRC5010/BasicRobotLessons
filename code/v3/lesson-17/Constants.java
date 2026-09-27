@@ -4,12 +4,7 @@
 
 package first.robot;
 
-import static org.wpilib.units.Units.Centimeters;
-import static org.wpilib.units.Units.Inches;
-import static org.wpilib.units.Units.Kilograms;
-import static org.wpilib.units.Units.Meters;
 import static org.wpilib.units.Units.MetersPerSecond;
-import static org.wpilib.units.Units.MetersPerSecondPerSecond;
 import static org.wpilib.units.Units.RotationsPerSecond;
 
 import com.ctre.phoenix6.signals.InvertedValue;
@@ -24,10 +19,7 @@ import org.wpilib.math.geometry.Transform3d;
 import org.wpilib.math.geometry.Translation2d;
 import org.wpilib.math.geometry.Translation3d;
 import org.wpilib.units.measure.AngularVelocity;
-import org.wpilib.units.measure.Distance;
-import org.wpilib.units.measure.LinearAcceleration;
 import org.wpilib.units.measure.LinearVelocity;
-import org.wpilib.units.measure.Mass;
 
 public final class Constants {
   public enum Mode { REAL, SIM, REPLAY }
@@ -144,37 +136,11 @@ public final class Constants {
     public static final double kCrossTrackP = 2.0;  // m/s per meter off the line
   }
 
-  public static final class ElevatorConstants {
-    public static final int kMotorPort = 20; // CAN ID — change to yours
-    public static final double kGearRatio = 12.0; // motor rotations per drum rotation
-    public static final Distance kDrumRadius = Inches.of(1.0);
-    public static final Mass kCarriageMass = Kilograms.of(5.0); // carriage + anything riding on it
-
-    public static final Distance kMinHeight = Meters.of(0.0);
-    public static final Distance kMaxHeight = Meters.of(1.5);
-
-    public static final LinearVelocity kMaxVelocity = MetersPerSecond.of(1.0);
-    public static final LinearAcceleration kMaxAcceleration = MetersPerSecondPerSecond.of(2.0);
-
-    // Feedforward + trim gains, computed from the Kraken X60 spec sheet — see the lesson's §3.
-    // SensorToMechanismRatio makes the closed loop run in drum rotations, so
-    // every gain below is drum-side (mechanism-side), not rotor-side.
-    public static final double kElevatorKG = 0.18; // volts to hold position against gravity
-    public static final double kElevatorKV = 1.44; // volts per drum rotation/sec
-    public static final double kElevatorKA = 0.003; // volts per drum rotation/sec^2
-    public static final double kElevatorKP = 20.0; // volts per drum rotation of error — the trim
-
-    public static final Distance kStowed = Meters.of(0.02);
-    public static final Distance kScoreMid = Meters.of(0.75);
-    public static final Distance kScoreHigh = Meters.of(1.45);
-
-    public static final Distance kTolerance = Centimeters.of(2);
-
-    /**
-     * ====== NEXT LESSON: ADD CODE HERE ======
-     * Add the numbers for a stick-figure drawing of the elevator: the canvas's width
-     * and height, the length of the piece riding on top of the carriage, and a color
-     * for moving and another for arrived.
-     */
-  }
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add an ElevatorConstants class: the motor's CAN ID, gear ratio, drum radius and
+   * carriage mass; the travel limits; Motion Magic's cruise speed and acceleration; the
+   * feedforward gains computed from the motor's spec sheet plus a small kP trim; three
+   * preset heights; and how close counts as arrived.
+   */
 }

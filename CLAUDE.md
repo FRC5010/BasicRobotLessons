@@ -220,14 +220,58 @@ Facts from the alpha-7 jars:
     (`.type = Mechanism2d`, `dims`, roots, ligaments) is unchanged from the
     SmartDashboard days.
 
-**Lesson 17 is a gap, and the tooling knows.** A lesson with no
-`code/v3/lesson-N` is a gap:
+**The tooling understands gaps.** A lesson with no `code/v3/lesson-N` is a
+gap (22 and 25 today, both above the cut-off):
 
 - The marker checker skips it, and checks the markers before it against the
-  lesson after it. So Lesson 18's markers live in the Lesson 16 snapshot.
+  lesson after it.
 - `update-lesson-v3.sh` refuses a gap lesson and names the next real one.
-- The app lists only lessons the README table links, so a `| 17 | — |` row
+  Its test builds a gap in a copy of the tools, since none is at or below
+  the cut-off right now.
+- The app lists only lessons the README table links, so a `| 22 | — |` row
   never appears.
+
+**v3 snapshots can ship `deploy/` files.** `code/v3/lesson-N/deploy/**` maps
+to `src/main/deploy/**`, the same as the classic track. `v3-lessons.sh` copies
+them, lists them, and deletes them on a rollback along with any folder the
+deletion empties (stopping at `src/main/deploy`, so the template's
+`example.txt` stays). The marker checker only reads `.java`, so a path file
+never needs a marker, and can't carry one (JSON has no comments).
+
+**v3 Lesson 17 runs on BLine `v2027.0.0-beta.1`.** Read from its source at
+that tag and measured in sim with the real `Robot`:
+
+- **It's pinned by commit** (`d996781`, what the release tag names), like
+  Limelight: it isn't in the marketplace, and its own vendordep URL follows
+  the `wpilib-2027` branch. The file is `BLine-Lib-2027.json`; the 2026
+  build's `BLine-Lib.json` is a different file for Commands V2.
+- **The API differs from the classic track's v0.9.1.** Packages are
+  `frc.robot.lib.BLine.{commands,path,following,field}`. The builder takes
+  nine arguments (`DriveType.SWERVE`, the drivetrain `Mechanism`, pose,
+  `resetPose`, measured velocities, output, then three distinct
+  `PIDController`s — the same object twice throws). `withPoseReset()` is per
+  command, with no argument. `registerEventTrigger` has a `Runnable` overload
+  (Lesson 17 uses it), and events dispatch on the next default-event-loop
+  poll, not inside the follower. `withTelemetry(Telemetry.getTable())` logs
+  its `FollowPath/...` signals.
+- **A rotation target is aimed at immediately unless it says
+  `"profiled_rotation": true`** — the default is false in v0.9.1 too, so the
+  classic lesson's description of its own path is off. The v3 paths set it.
+- **BLine plans nothing ahead**, so the constraints decide whether the robot
+  can stop. The robot stops in time when `max speed² ÷ (2 × max accel)` fits
+  inside `max speed ÷ kTranslationP`. The classic's 3 m/s / 3 m/s² overshot
+  the corner by 1.5 m and the end by 0.7 m here; v3 ships 2 m/s / 6 m/s² with
+  a 0.5 m handoff, which lands 5–12 cm past the corner and finishes Two
+  Corners in ≈4 s.
+- **An opmode is constructed when it's selected** (`OpModeRobot`'s source),
+  so `Autos.followPath(...)` in an auto opmode's constructor reads the path
+  file while disabled — what the classic lesson built a chooser and
+  `onChange` for. A misspelled path name throws `IllegalArgumentException`
+  right then.
+- **Paths start at `kSimStartingPose` (3, 3, 0°)** because `withPoseReset()`
+  resets only the estimate. On a red alliance in sim the path flips and the
+  simulated robot doesn't, and the robot drives off the field; moving
+  `kSimStartingPose` to the mirrored start fixes it (Try It #6).
 
 **Lesson 18's lag numbers were remeasured on alpha-7** with the documented
 move (stowed to `kMaxHeight`) at full 20 ms ticks:
@@ -559,13 +603,15 @@ a lesson as-is.
   the impact assessment and phased plan for upgrading the v3 track (only —
   the classic track targets stable 2026 and is unaffected) to WPILib 2027
   alpha-7, a large breaking-change release. **Lessons 0–19 are migrated and
-  verified on alpha-7** (Lesson 17 is a gap on this track): Phoenix 6 cleared the marketplace (Track A, 1–14,
+  verified on alpha-7**: Phoenix 6 cleared the marketplace (Track A, 1–14,
   2026-09-18), and on 2026-09-24 the v3 track switched vision from
   PhotonVision to **LimelightLib 2**, which cleared Track B's vendor gate.
-  LimelightLib isn't in WPILib's marketplace and its own URL is overwritten on
-  every release, so `verify-lessons-v3.sh` pins it **by commit** — the one
-  sanctioned exception to "pin to the marketplace", and the reason for it is
-  in that doc. Lesson 15's simulated camera publishes real results frames to
+  LimelightLib and BLine (Lesson 17) aren't in WPILib's marketplace, and
+  their own URLs move, so `verify-lessons-v3.sh` pins both **by commit** —
+  the sanctioned exceptions to "pin to the marketplace"; the reasons are in
+  that doc. The marketplace's `2027_alpha7_metadata.json` names more vendors
+  (maple-sim, PhotonVision, PathPlanner…) than the `2027_alpha7` folder has
+  files for — only a JSON in the folder means a release exists. Lesson 15's simulated camera publishes real results frames to
   the NetworkTables topic a real Limelight uses, so the unmodified library
   runs in sim. Lessons 20–34 are still pre-alpha-7 code awaiting Phase 1b;
   Lessons 27 and 31 need Limelight redesigns first (user decisions). A

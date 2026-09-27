@@ -489,12 +489,18 @@ changes nothing. There's no gap where the carriage is uncommanded.
 
 ## 9. Wire it in: `Robot.java` and the D-pad
 
-**Add to `Robot.java`, alongside the other fields:**
+**Add to `Robot.java`, below the `pathBuilder` field:**
 
 ```java
-public final LimelightPoseProvider frontCamera;
-public final LimelightPoseProvider backCamera;
-public final Elevator elevator = new Elevator();
+  public final FollowPath.Builder pathBuilder = Autos.makePathBuilder(drivetrain, localizer);
+
+  public final Elevator elevator = new Elevator();
+```
+
+**Add to `Robot.java`'s imports:**
+
+```java
+import first.robot.subsystems.Elevator;
 ```
 
 **Add to `RobotTeleop.java`'s constructor, after the heading bindings:**

@@ -14,9 +14,11 @@ import org.wpilib.system.DataLogManager;
 
 import first.robot.Constants.DriveConstants;
 import first.robot.Constants.VisionConstants;
+import first.robot.commands.Autos;
 import first.robot.subsystems.Drivetrain;
 import first.robot.subsystems.LimelightPoseProvider;
 import first.robot.subsystems.Localizer;
+import frc.robot.lib.BLine.commands.FollowPath;
 
 /**
  * The methods in this class are called automatically as described in the OpModeRobot documentation.
@@ -39,11 +41,13 @@ public class Robot extends OpModeRobot {
   public final LimelightPoseProvider frontCamera;
   public final LimelightPoseProvider backCamera;
 
+  // How this robot follows a path. It's the same for every path, so it's
+  // built once, here, and every autonomous opmode reaches in and uses it.
+  public final FollowPath.Builder pathBuilder = Autos.makePathBuilder(drivetrain, localizer);
+
   /**
    * ====== NEXT LESSON: ADD CODE HERE ======
-   * Build the path follower's setup once, here, for every autonomous opmode to use:
-   * which drivetrain, where the robot is, how to reset that, how fast it's moving,
-   * how to drive it, and three P controllers.
+   * Add the scoring elevator, built once here like the rest of the robot's hardware.
    */
 
   /**
@@ -53,11 +57,7 @@ public class Robot extends OpModeRobot {
   public Robot() {
     DataLogManager.start(); // saves every published value to a .wpilog file
     Scheduler.getDefault().addEventListener(this::logCommandStart);
-
-    /**
-     * ====== NEXT LESSON: ADD CODE HERE ======
-     * Register, once for the whole program, what each named event in a path file does.
-     */
+    Autos.registerEventTriggers(); // once, for the whole program
 
     // Vision now checks its simulated eyesight against ground truth, not
     // against its own guess — the fix Lesson 15 admitted it was missing.

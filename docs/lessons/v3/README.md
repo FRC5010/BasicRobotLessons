@@ -9,10 +9,10 @@ catch up, or to start partway through, see
 below.
 
 **Start on [the classic track](../README.md) unless you specifically want
-this one.** Three lessons (17, 22, 25) are gaps for now — their old-course
-content leans on third-party libraries (BLine, maple-sim) that don't yet run
-on this alpha — and one (16) is a genuinely different, hand-built lesson
-rather than a straight port. See
+this one.** Two lessons (22, 25) are gaps for now: 22 needs a hand-built
+stand-in for maple-sim, which isn't available for this alpha, and 25 is
+waiting its turn now that BLine is. One (16) is a genuinely different, hand-built
+lesson rather than a straight port. See
 [the restructure plan](../../lesson-plan-opmode-restructure.md) for the full
 status of every lesson, including what changed and why.
 
@@ -35,7 +35,7 @@ status of every lesson, including what changed and why.
 | 14 | [Pose estimator & localizer](14-pose-estimator.md) | A localization subsystem fused from pluggable pose providers | Interfaces, registries, timestamps |
 | 15 | [Real vision — Limelight](15-limelight.md) | A real Limelight pose provider, plus a simulated camera the real library can't tell apart | `Optional`, `static`, `record` |
 | 16 | [Ground truth — a hand-built stand-in](16-ground-truth.md) | A hand-built chassis body with friction-limited acceleration, standing in for maple-sim until it supports this framework | Friction-limited acceleration, `MathUtil.slewRateLimit`, `Twist2d.exp()` |
-| 17 | — | *Gap for now* — the old lesson's BLine path-following library doesn't run on Commands V3 yet. See the plan doc. | — |
+| 17 | [B-Line autos](17-bline-autos.md) | Autos drawn as paths on the field and followed against the fused pose, one opmode per path | `PIDController`, method references as actions, the `deploy` folder |
 | 18 | [Scoring elevator](18-elevator.md) | A second mechanism on the same IO spine, profiled and gravity-compensated | Comparing measures directly (`Distance.gt`/`.lt`) |
 | 19 | [A picture of the elevator](19-mechanism2d.md) | A live stick figure of the mechanism, with a second piece riding on it | Composition as attachment |
 | 20 | [Intake arm](20-intake-arm.md) | A swinging arm with a roller, mounted on the elevator, gravity-compensated by angle | Two motors in one subsystem, a `Mechanism` that takes a `Mechanism` |
@@ -43,7 +43,7 @@ status of every lesson, including what changed and why.
 | 22 | — | *Gap for now* — the old lesson's beam-break sim needs maple-sim's intake simulation. See the plan doc. | — |
 | 23 | [LEDs](23-leds.md) | A strip that shows what the robot knows, and a priority order you chose | Combinator methods |
 | 24 | [A superstructure](24-superstructure.md) | One named state the whole robot reads, with the illegal moves made impossible | Enums with fields and methods, exhaustive `switch`, a hand-built guard |
-| 25 | — | *Gap for now* — same BLine dependency as 17. See the plan doc. | — |
+| 25 | — | *Gap for now* — its BLine event markers and rotation override now run on this alpha, but the lesson isn't written yet. See the plan doc. | — |
 | 26 | [Getting there exactly](26-drive-to-pose.md) | A two-stage drive-to-pose: fast across the field, then precise onto the spot | `PIDController`, controller objects as fields |
 | 27 | [Going to get something you just saw](27-object-detection.md) | A camera that finds a game piece, and an approach built while the robot runs | `Command.requiring(...).executing(...)` |
 | 28 | [Keeping the nose on the target](28-aim-at-tag.md) | Aim assist that holds while you drive, shared by the driver and by autos | None — the point is that it needs none |
@@ -86,7 +86,7 @@ your project is a git repository with everything committed. Commit first
 what changed. If you want your old version back, `git checkout .` restores
 every file it changed or deleted, and `git clean -fd` removes the ones it
 added. It works up to the last lesson migrated to the current alpha, Lesson
-19 today (Lesson 17 is a gap on this track, so ask for 18 after 16).
+19 today.
 
 **It goes backwards too.** Ask for an earlier lesson than the one you're on
 — to redo one, say — and it also deletes the files that only later lessons

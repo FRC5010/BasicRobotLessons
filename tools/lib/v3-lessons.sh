@@ -7,8 +7,10 @@
 # and never runs anything on its own.
 #
 # A snapshot, code/v3/lesson-N/, mirrors the first/robot package tree
-# (root classes at the top, then opmode/, subsystems/), and
-# code/v3/lesson-N/tests/** maps to src/test/java/first/robot/. Applying
+# (root classes at the top, then opmode/, subsystems/),
+# code/v3/lesson-N/tests/** maps to src/test/java/first/robot/, and
+# code/v3/lesson-N/deploy/** maps to src/main/deploy/ (files the robot reads
+# at runtime, like path files — not code). Applying
 # snapshots 0..N in order, last writer wins, then replaying the deletions
 # below, gives the state after Lesson N.
 
@@ -24,15 +26,20 @@ V3_ALPHA7_THROUGH=19
 # own URL is a moving link — the same LimelightLib-alpha7.json was
 # overwritten five times between beta5 and beta9 — so it pins to one commit
 # of Limelight's repo instead, which can't drift. Its Maven repo keeps every
-# version, so an old pin stays buildable.
+# version, so an old pin stays buildable. BLine (path following, from Lesson
+# 17) is the same story: not in the marketplace, and its own URL follows a
+# branch. It pins to the commit its v2027.0.0-beta.1 tag names; the JSON
+# there points at that tag's jar on JitPack, which doesn't change either.
 V3_MARKETPLACE="https://raw.githubusercontent.com/wpilibsuite/vendor-json-repo/main/2027_alpha7"
 V3_LIMELIGHT_PIN="https://raw.githubusercontent.com/LimelightVision/limelightlib-public/717a921719f5dbaf4ce940819e2d84bdab8738b9"
+V3_BLINE_PIN="https://raw.githubusercontent.com/edanliahovetsky/BLine-Lib/d9967810725ff861767ccde5c5d84981b9defc94"
 # "<lesson it is first needed>|<url>". CommandsV3 is NOT listed — it ships
 # already installed in code/OpModeV3Robot/vendordeps/, and so in every
 # project made from that template.
 V3_VENDORDEPS=(
   "1|$V3_MARKETPLACE/Phoenix6-26.70.0-alpha-2.json"
   "15|$V3_LIMELIGHT_PIN/LimelightLib-alpha7.json"   # 2.0.0-beta9-alpha7
+  "17|$V3_BLINE_PIN/BLine-Lib-2027.json"            # 2027.0.0-beta.1
 )
 
 # --- deletions --------------------------------------------------------------
@@ -111,14 +118,18 @@ v3_apply_snapshots() {
   for n in $(seq 0 "$through" 2>/dev/null || true); do
     d="$repo/code/v3/lesson-$n"
     [ -d "$d" ] || continue
-    # ./tests/* is excluded here — it maps to src/test/java instead, below.
+    # ./tests/* and ./deploy/* are excluded here — they map elsewhere, below.
     while IFS= read -r -d '' f; do
       mkdir -p "$java_dir/$(dirname "$f")"
       cp "$d/$f" "$java_dir/$f"
-    done < <(cd "$d" && find . -name '*.java' -not -path './tests/*' -print0)
+    done < <(cd "$d" && find . -name '*.java' -not -path './tests/*' -not -path './deploy/*' -print0)
     if [ -d "$d/tests" ]; then
       mkdir -p "$project/src/test/java/first/robot"
       cp -r "$d/tests/." "$project/src/test/java/first/robot/"
+    fi
+    if [ -d "$d/deploy" ]; then
+      mkdir -p "$project/src/main/deploy"
+      cp -r "$d/deploy/." "$project/src/main/deploy/"
     fi
     echo "  applied lesson-$n"
   done
@@ -130,9 +141,12 @@ v3_apply_snapshots() {
 v3_snapshot_files() {
   local d="$1"
   [ -d "$d" ] || return 0
-  (cd "$d" && find . -name '*.java' -not -path './tests/*' | sed 's|^\./|src/main/java/first/robot/|')
+  (cd "$d" && find . -name '*.java' -not -path './tests/*' -not -path './deploy/*' | sed 's|^\./|src/main/java/first/robot/|')
   if [ -d "$d/tests" ]; then
     (cd "$d/tests" && find . -type f | sed 's|^\./|src/test/java/first/robot/|')
+  fi
+  if [ -d "$d/deploy" ]; then
+    (cd "$d/deploy" && find . -type f | sed 's|^\./|src/main/deploy/|')
   fi
   return 0
 }
@@ -184,11 +198,17 @@ v3_remove_later_files() {
     fi
     rm -f "$project/$f"
     echo "  removed $show  (from Lesson $n)"
+    # Tidy up folders that only held lesson files (deploy/autos/paths, then
+    # deploy/autos), stopping at the package root, the test root or deploy/
+    # itself. rmdir refuses a folder that still has anything in it.
     dir="$(dirname "$project/$f")"
-    case "$dir" in
-      */first/robot) ;;
-      *) rmdir "$dir" 2>/dev/null || true ;;
-    esac
+    while :; do
+      case "$dir" in
+        */first/robot|*/src/main/deploy) break ;;
+      esac
+      rmdir "$dir" 2>/dev/null || break
+      dir="$(dirname "$dir")"
+    done
   done < <(v3_later_files "$repo" "$through")
   return 0
 }

@@ -221,11 +221,23 @@ public class Drivetrain implements Mechanism, PoseProvider {
   }
 
   /**
-   * ====== NEXT LESSON: ADD CODE HERE ======
-   * Two public doors for a path follower: one that reports how the chassis is moving
-   * right now (kinematics run backward from the four measured wheels), and one that
-   * drives one tick from a robot-relative chassis motion.
+   * How the chassis is moving right now, robot-relative — kinematics run
+   * backward: four measured wheel velocities in, one chassis motion out.
    */
+  public ChassisVelocities getChassisVelocities() {
+    SwerveModuleVelocity[] wheels = new SwerveModuleVelocity[m_modules.length];
+    for (int i = 0; i < m_modules.length; i++) {
+      wheels[i] = new SwerveModuleVelocity(
+          m_modules[i].getDriveVelocityMetersPerSec(),
+          Rotation2d.fromDegrees(m_modules[i].getSteerAngleDegrees()));
+    }
+    return m_kinematics.toChassisVelocities(wheels);
+  }
+
+  /** Drive one tick from a robot-relative chassis motion. The door BLine drives through. */
+  public void driveRobotRelative(ChassisVelocities speeds) {
+    applyChassisSpeeds(speeds);
+  }
 
   /** As a PoseProvider, the drivetrain contributes wheel-and-gyro odometry. */
   @Override
@@ -238,18 +250,7 @@ public class Drivetrain implements Mechanism, PoseProvider {
     if (m_chassisSim == null) {
       return; // a real robot moves itself
     }
-    /**
-     * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
-     * This loop moves into its own public method so a path follower can ask for the
-     * chassis motion too; this method then just calls it.
-     */
-    SwerveModuleVelocity[] wheels = new SwerveModuleVelocity[4];
-    for (int i = 0; i < m_modules.length; i++) {
-      wheels[i] = new SwerveModuleVelocity(
-          m_modules[i].getDriveVelocityMetersPerSec(),
-          Rotation2d.fromDegrees(m_modules[i].getSteerAngleDegrees()));
-    }
-    m_chassisSim.update(m_kinematics.toChassisVelocities(wheels), 0.020);
+    m_chassisSim.update(getChassisVelocities(), 0.020);
   }
 
   /** Where the chassis really is, ground truth — null outside sim. */
