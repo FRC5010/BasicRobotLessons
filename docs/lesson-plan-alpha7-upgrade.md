@@ -445,6 +445,28 @@ changes differ. Two real changes came out of verifying it:
 The marker checker also got stricter here: a line edited above a marker
 partway down a folded diff hunk now needs its own marker (see CLAUDE.md).
 
+**Lessons 18 and 19 migrated, 2026-09-27.** Both compile 0–18 and 0–19
+with zero warnings. The port was the known four categories: `implements
+Mechanism`, `Telemetry.log`, `faceDown`/`faceRight`, and `new
+CANBus(CANPort.CAN_S0)`. Verified at runtime:
+
+- **The elevator (Lesson 18).** The real `Robot` runs `goToHeight` through
+  the scheduler, finishes in 0.98 s and holds afterwards. The lesson's
+  `kG`-zeroed sag (1.56 mm) and settled gap (0.12 mm) reproduce. Its
+  full-travel lag numbers didn't: ≈145/≈34 mm is really ≈94/≈20 mm with
+  `kV` zeroed vs. restored, matching the classic track and the lesson's own
+  arithmetic. The prose now says so and shows the arithmetic.
+- **The drawing (Lesson 19).** Its carriage length tracks the height, its
+  colour goes orange → green on arrival, and the effector rides along.
+
+The big finding: **`Telemetry.log(widget)` is a snapshot on alpha-7, not a
+live registration** (measured). So Lesson 19's "publish once, mutate
+forever" is replaced by "a drawing is logged like a number", and the frozen
+field view that Phase 1a's one-time `Telemetry.log("Field", ...)` had caused
+in Lessons 11–16 is fixed. Lesson 17 is a gap, so Lesson 18's markers live
+in the Lesson 16 snapshot, and the checker and `update-lesson-v3.sh` now
+understand gaps.
+
 **Each lesson Phase 1b migrates also gets its NEXT LESSON markers
 (added 2026-09-26).** Lessons 1–15 now ship them: the code at the end of
 Lesson N-1 carries a javadoc-style comment at every spot where Lesson N has

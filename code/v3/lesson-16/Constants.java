@@ -126,4 +126,12 @@ public final class Constants {
     public static final double kSimVerticalFovDegrees = 56.0;
     public static final double kSimMaxRangeMeters = 6.0;
   }
+
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add an ElevatorConstants class: the motor's CAN ID, gear ratio, drum radius and
+   * carriage mass; the travel limits; Motion Magic's cruise speed and acceleration; the
+   * feedforward gains computed from the motor's spec sheet plus a small kP trim; three
+   * preset heights; and how close counts as arrived.
+   */
 }

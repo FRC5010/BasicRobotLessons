@@ -15,9 +15,8 @@ along without a single line of code telling it to.
 - **`MechanismRoot2d`** — a point pinned to that canvas, where the drawing
   starts
 - **`MechanismLigament2d`** — a segment with a length, an angle, and a color
-- **Publish once, mutate forever** — `SmartDashboard.putData` registers a
-  *live* object; you never call it again, you just keep changing the object
-  it's already watching
+- **A drawing is logged like a number** — change it, then log it, every
+  tick, the same rule Lesson 11's field follows
 
 ---
 
@@ -141,9 +140,9 @@ import org.wpilib.smartdashboard.MechanismLigament2d;
 import org.wpilib.smartdashboard.MechanismRoot2d;
 ```
 
-Same package as `SmartDashboard` itself and Lesson 11's `Field2d` —
-`org.wpilib.smartdashboard`. That's not a coincidence; you're about to use
-these three the same way you already used `Field2d`.
+Same package as Lesson 11's `Field2d`, `org.wpilib.smartdashboard`. That's
+not a coincidence; you're about to use these three the same way you already
+used `Field2d`.
 
 **Add to `Elevator`, below `m_goal`:**
 
@@ -192,47 +191,39 @@ it's mounted on, not to the field — arriving in a new place.
 
 ---
 
-## 5. Publish it once
+## 5. Move it, then log it
 
-**Add to `Elevator`'s constructor:**
+The drawing changes every tick, and it gets logged every tick — the same
+order as Lesson 11's field: change it, then log it.
+
+**Update `periodic()` — add this after the existing telemetry calls:**
 
 ```java
-  public Elevator() {
-    SmartDashboard.putData("Elevator/Mechanism", m_mechanism);
-    Scheduler.getDefault().addPeriodic(this::periodic);
-  }
+    // The picture is built once and changed every tick; only the carriage
+    // changes, and the effector rides along with it for free. Then log it,
+    // like every number above: the log is a snapshot of the drawing right now.
+    m_carriage.setLength(m_inputs.heightMeters);
+    m_carriage.setColor(
+        atGoal() ? ElevatorConstants.kAtGoalColor : ElevatorConstants.kMovingColor);
+    Telemetry.log("Elevator/Mechanism", m_mechanism);
 ```
 
-That's the whole wiring step, and it's worth noticing it happens exactly
-once, in the constructor — not in `periodic()`. `putData` isn't "send this
-value now," the way `putNumber` is. It registers `m_mechanism` as a
-NetworkTables-backed object and hands the dashboard a live reference to it.
-From that point on, anything that mutates the object — `setLength`,
-`setColor` — pushes straight through to NetworkTables on its own. You're
-not re-publishing a snapshot every tick; you're changing an object the
-dashboard is already watching.
+`Telemetry.log` treats the drawing exactly the way it treats Lesson 11's
+field: it sends what the drawing looks like *at that moment*. Log it once,
+in the constructor, and the viewer would show a carriage frozen at zero
+forever. So it goes in `periodic()`, right after the two lines that change
+it, and the constructor doesn't change at all.
 
-You've done this exact thing once before. `Localizer`'s `Field2d` (Lesson
-14) is published with `SmartDashboard.putData("Field", m_field)` a single
-time in its constructor, and every tick after that `m_field.setRobotPose(...)`
-just updates it. `Mechanism2d` follows the identical rule — build it once,
-publish it once, mutate it forever.
+`setColor` is the other new call, and it's carrying information rather than
+decoration: `atGoal()` is already computed for the log, so feeding it into
+the color costs nothing and turns the drawing into a status light. Orange
+while it's travelling, green the moment it settles.
 
 ---
 
 ## 6. The payoff: what you don't have to write
 
 Here's the thing to notice, and it is the actual reason this lesson exists.
-
-**Update `periodic()` — add this after the existing telemetry calls:**
-
-```java
-    // The picture is built once and mutated every tick; only the carriage
-    // changes, and the effector rides along with it for free.
-    m_carriage.setLength(m_inputs.heightMeters);
-    m_carriage.setColor(
-        atGoal() ? ElevatorConstants.kAtGoalColor : ElevatorConstants.kMovingColor);
-```
 
 Count the ligaments you just updated: one. There are two ligaments in the
 picture. When the carriage grows from 0.2 m to 0.75 m, the effector on top
@@ -255,12 +246,7 @@ elevator and all three of the others come with it. You update one number.
 `m_effector` is a placeholder with no motor behind it, so you will not
 touch it again in this lesson. **That is the point.** In Lesson 20 a real
 arm takes its place — its own motor, its own angle, its own subsystem — and
-the two lines above that move the carriage won't change at all.
-
-`setColor` is the other new call, and it's carrying information rather than
-decoration: `atGoal()` is already computed for the log, so feeding it into
-the color costs nothing and turns the drawing into a status light. Orange
-while it's travelling, green the moment it settles.
+the two lines in section 5 that move the carriage won't change at all.
 
 ---
 
@@ -269,7 +255,7 @@ while it's travelling, green the moment it settles.
 `./gradlew simulateJava`, **Teleoperated**, and press D-pad up.
 
 In **AdvantageScope** (Lesson 3), add a **Mechanism** tab and select
-`/SmartDashboard/Elevator/Mechanism` as its source. You get a vertical
+`/Telemetry/Elevator/Mechanism` as its source. You get a vertical
 orange line that grows out of the floor when you press D-pad up, with a
 short stub sticking out sideways at the top, riding along. When the
 carriage settles on the goal, the line turns green.
@@ -279,7 +265,7 @@ and it stops halfway. The picture is `Elevator/HeightMeters` — the same
 number as the graph, drawn instead of printed.
 
 You can also find it inside SimGUI without opening a second tool: menu
-**NetworkTables → SmartDashboard → Elevator → Mechanism**. Same drawing,
+**NetworkTables → Telemetry → Elevator → Mechanism**. Same drawing,
 same two viewers as the field view in Lesson 11 — the quick glance while
 sim is already open, and the full tool for anything careful.
 
@@ -310,11 +296,11 @@ one from the other.
    effector's angle is its own, and its *position* is entirely the
    carriage's business. (`org.wpilib.system.Timer` — and take it back out
    when you're done, since Lesson 20 wants that ligament.)
-4. **Break it on purpose.** Move the `setLength` call out of `periodic()`
-   and into the field declaration, so it runs once. Watch the drawing
-   freeze at zero while the graph keeps moving. That's the difference
-   between an object that's mutated every tick and one that isn't, and
-   it's a bug worth having seen once.
+4. **Break it on purpose.** Move the `Telemetry.log("Elevator/Mechanism", ...)`
+   line out of `periodic()` and into the constructor, so it runs once.
+   Watch the drawing freeze where it started while the graph keeps moving.
+   That's what "the log is a snapshot" means, and it's a bug worth having
+   seen once — the same mistake would freeze Lesson 11's field.
 
 ---
 
@@ -338,10 +324,9 @@ transforms, pose composition. Lesson 15 already had you doing it with
 `Transform3d`s for the cameras without naming it. This is the same idea
 with a picture attached, which is a much easier place to learn it.
 
-The rest was familiar on purpose, once you saw where it pointed:
-`SmartDashboard.putData` once, in the constructor, the exact call Lesson
-14's `Field2d` already taught you — and then mutation in `periodic()` for
-as long as the robot runs.
+The rest was familiar on purpose, once you saw where it pointed: the
+drawing is logged with the same `Telemetry.log` as every number, every tick,
+right after you change it — the rule Lesson 11's field already follows.
 
 Next up, that placeholder stub on top of the carriage stops being a
 placeholder.

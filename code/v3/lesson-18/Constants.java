@@ -160,5 +160,12 @@ public final class Constants {
     public static final Distance kScoreHigh = Meters.of(1.45);
 
     public static final Distance kTolerance = Centimeters.of(2);
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Add the numbers for a stick-figure drawing of the elevator: the canvas's width
+     * and height, the length of the piece riding on top of the carriage, and a color
+     * for moving and another for arrived.
+     */
   }
 }

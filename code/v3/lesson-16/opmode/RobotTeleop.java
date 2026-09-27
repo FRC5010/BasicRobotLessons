@@ -8,7 +8,6 @@ import org.wpilib.opmode.PeriodicOpMode;
 import org.wpilib.opmode.Teleop;
 
 import first.robot.Constants.DriveConstants;
-import first.robot.Constants.ElevatorConstants;
 import first.robot.Robot;
 
 @Teleop
@@ -31,10 +30,10 @@ public class RobotTeleop extends PeriodicOpMode {
     robot.driverController.faceDown().onTrue(robot.drivetrain.turnToHeading(90));
     robot.driverController.faceRight().onTrue(robot.drivetrain.turnToHeading(0));
 
-    // D-pad: send the elevator to one of its three preset heights.
-    robot.driverController.dpadDown().onTrue(robot.elevator.goToHeight(ElevatorConstants.kStowed));
-    robot.driverController.dpadRight().onTrue(robot.elevator.goToHeight(ElevatorConstants.kScoreMid));
-    robot.driverController.dpadUp().onTrue(robot.elevator.goToHeight(ElevatorConstants.kScoreHigh));
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Bind three D-pad directions to send the elevator to its three preset heights.
+     */
   }
 
   @Override

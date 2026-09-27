@@ -236,6 +236,8 @@ import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 
+import org.wpilib.hardware.bus.CANPort;
+
 import first.robot.Constants.ElevatorConstants;
 
 /** Real hardware: Motion Magic profiles the move, Slot0's full feedforward set holds it. */
@@ -244,7 +246,7 @@ public class ElevatorIOTalonFX implements ElevatorIO {
   private final MotionMagicVoltage m_request = new MotionMagicVoltage(0);
 
   public ElevatorIOTalonFX() {
-    m_motor = new TalonFX(ElevatorConstants.kMotorPort, CANBus.systemcore(0));
+    m_motor = new TalonFX(ElevatorConstants.kMotorPort, new CANBus(CANPort.CAN_S0));
 
     TalonFXConfiguration config = new TalonFXConfiguration();
     config.Feedback.SensorToMechanismRatio = ElevatorConstants.kGearRatio;
@@ -402,14 +404,14 @@ import static org.wpilib.units.Units.Meters;
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.Distance;
 
 import first.robot.Constants;
 import first.robot.Constants.ElevatorConstants;
 
 /** Scoring elevator: Motion Magic profiles the move, Slot0's feedforward model holds it there. */
-public class Elevator extends Mechanism {
+public class Elevator implements Mechanism {
   private final ElevatorIO m_io = switch (Constants.kCurrentMode) {
     case REAL -> new ElevatorIOTalonFX();
     case SIM -> new ElevatorIOSim();
@@ -425,11 +427,11 @@ public class Elevator extends Mechanism {
   /** One tick of sensing: read the hardware into the bundle and log it. */
   private void periodic() {
     m_io.updateInputs(m_inputs);
-    SmartDashboard.putNumber("Elevator/HeightMeters", m_inputs.heightMeters);
-    SmartDashboard.putNumber("Elevator/VelocityMetersPerSec", m_inputs.velocityMetersPerSec);
-    SmartDashboard.putNumber("Elevator/AppliedVolts", m_inputs.appliedVolts);
-    SmartDashboard.putNumber("Elevator/SetpointMeters", m_inputs.setpointMeters);
-    SmartDashboard.putNumber("Elevator/GoalMeters", m_goal.in(Meters));
+    Telemetry.log("Elevator/HeightMeters", m_inputs.heightMeters);
+    Telemetry.log("Elevator/VelocityMetersPerSec", m_inputs.velocityMetersPerSec);
+    Telemetry.log("Elevator/AppliedVolts", m_inputs.appliedVolts);
+    Telemetry.log("Elevator/SetpointMeters", m_inputs.setpointMeters);
+    Telemetry.log("Elevator/GoalMeters", m_goal.in(Meters));
   }
 
   /** Send the carriage to 'target', clamped to safe travel. Keeps holding once it arrives. */
@@ -507,9 +509,9 @@ robot.driverController.dpadUp().onTrue(robot.elevator.goToHeight(ElevatorConstan
 That needs `import first.robot.Constants.ElevatorConstants;` up top,
 alongside the `DriveConstants` import already there.
 
-Run `./gradlew simulateJava`, open **SmartDashboard** or **Elastic**,
-tap the D-pad, and watch `Elevator/HeightMeters` climb toward whichever
-preset you asked for and stay there.
+Run `./gradlew simulateJava`, open AdvantageScope (Lesson 3), expand
+**NetworkTables → Telemetry → Elevator**, tap the D-pad, and watch
+`HeightMeters` climb toward whichever preset you asked for and stay there.
 
 ---
 
@@ -518,8 +520,9 @@ preset you asked for and stay there.
 Every gain here was computed, not guessed — but "computed" still means
 "worth checking against what the robot actually does." Open
 AdvantageScope (Lesson 3), connect to the simulator, and drag
-`SmartDashboard/Elevator/GoalMeters`, `.../SetpointMeters`, and
-`.../HeightMeters` onto the same **Line Graph** tab. Three curves, and
+`GoalMeters`, `SetpointMeters`, and `HeightMeters` from
+**NetworkTables → Telemetry → Elevator** onto the same **Line Graph**
+tab. Three curves, and
 each one answers a different question: the goal is a step (what you
 asked for), the setpoint is the smooth ramp Motion Magic generated (what
 the profile is asking for *right now*), and the height is what the
@@ -537,11 +540,15 @@ possible trim.
   matter how long you wait. Measured on this course's own numbers:
   zeroing `kElevatorKG` sags the hold by about **1.6 mm**. Small, because
   0.18 V is small, but it never goes away on its own.
-- **`kV` wrong** shows up *only while cruising* — position lagging
-  setpoint by a growing gap during the flat part of the profile, closing
-  again as the profile decelerates. Measured moving the full travel
-  range with `kElevatorKV` zeroed: **≈145 mm** of peak lag. With the
-  model in place, the same move: **≈34 mm**. `kP = 20` is doing real
+- **`kV` wrong** shows up *only while moving* — position lagging
+  setpoint by a gap that opens up during the flat part of the profile and
+  closes again as the profile decelerates. You can predict its size: a
+  1.0 m/s cruise is about 6.3 drum rotations a second, which costs
+  `1.44 × 6.3 ≈ 9 V`, and with no `kV`, `kP = 20` can only make 9 V out
+  of about 0.45 rotations of error — some 7 cm. Measured moving the full
+  travel range with `kElevatorKV` zeroed: **≈95 mm** of peak lag, the
+  7 cm plus a little extra while the profile is still speeding up. With
+  the model in place, the same move: **≈20 mm**. `kP = 20` is doing real
   work either way — the difference is how much work it's *forced* to do
   versus how much the model already handled for it.
 - **`kA` wrong** is the subtlest: a brief spike in the setpoint-vs-height

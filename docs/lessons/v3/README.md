@@ -86,7 +86,7 @@ your project is a git repository with everything committed. Commit first
 what changed. If you want your old version back, `git checkout .` restores
 every file it changed or deleted, and `git clean -fd` removes the ones it
 added. It works up to the last lesson migrated to the current alpha, Lesson
-16 today.
+19 today (Lesson 17 is a gap on this track, so ask for 18 after 16).
 
 **It goes backwards too.** Ask for an earlier lesson than the one you're on
 — to redo one, say — and it also deletes the files that only later lessons

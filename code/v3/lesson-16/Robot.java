@@ -40,6 +40,11 @@ public class Robot extends OpModeRobot {
   public final LimelightPoseProvider backCamera;
 
   /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add the scoring elevator, built once here like the rest of the robot's hardware.
+   */
+
+  /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
    */

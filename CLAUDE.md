@@ -156,7 +156,7 @@ lesson-k/X implies lesson-(k+1)/X exists and replaces it. **Enforce it with
 `./tools/check-lesson-markers-v3.py [N] [--show]`**, which rebuilds each
 lesson's before/after state through the shared lib, diffs them, and reports
 `MISSING` (a change with no marker announcing it) and `ORPHAN` (a marker
-that announces nothing). It's currently clean for 1–16. When Phase 1b
+that announces nothing). It's currently clean for 1–19. When Phase 1b
 migrates a lesson, raise the cut-off and add its markers in the same change.
 The checker's coverage rules are in its docstring. They absorb
 diff-alignment noise (blank lines, a shared `}`), and that absorption can
@@ -198,12 +198,47 @@ Following the wheels gives 1.7 cm, and 27 cm *ahead* on a hard start, held
 there. It also advances the truth under every command, `driveDistance`
 included.
 
-Two facts from the alpha-7 jars:
+Facts from the alpha-7 jars:
 
 - Commands V3's `Scheduler.run()` runs every `addPeriodic` callback, in
   registration order, before any command (read from bytecode).
 - `HAL.initialize()` takes no arguments in alpha-7, so Lesson 32's test needs
   that fix when it's migrated.
+- **`Telemetry.log(widget)` writes a snapshot.** It isn't a live
+  registration. `Field2d`/`Mechanism2d` implement `TelemetryLoggable`, whose
+  `logTo` copies the widget's current state; `setRobotPose`/`setLength`
+  only change fields, and nothing is pushed afterwards.
+  - Measured: after `setRobotPose(4, 5)`, `/Telemetry/Field/Robot` still
+    read (1, 1) until the widget was logged again.
+  - So a widget is logged every tick, right after it's changed, like every
+    number. `SmartDashboard.putData`'s "publish once, mutate forever" is gone
+    with `SmartDashboard`. Phase 1a had ported Lesson 11's one-time `putData`
+    into a one-time `Telemetry.log`, which froze the field view in Lessons
+    11–16; that's fixed, and Lesson 19's headline concept is now "a drawing
+    is logged like a number".
+  - Widgets publish under `/Telemetry/<key>`; the `Mechanism2d` layout
+    (`.type = Mechanism2d`, `dims`, roots, ligaments) is unchanged from the
+    SmartDashboard days.
+
+**Lesson 17 is a gap, and the tooling knows.** A lesson with no
+`code/v3/lesson-N` is a gap:
+
+- The marker checker skips it, and checks the markers before it against the
+  lesson after it. So Lesson 18's markers live in the Lesson 16 snapshot.
+- `update-lesson-v3.sh` refuses a gap lesson and names the next real one.
+- The app lists only lessons the README table links, so a `| 17 | — |` row
+  never appears.
+
+**Lesson 18's lag numbers were remeasured on alpha-7** with the documented
+move (stowed to `kMaxHeight`) at full 20 ms ticks:
+
+- `kV` zeroed: ≈92–94 mm peak lag.
+- Full model: ≈20–22 mm.
+
+These replace the lesson's old ≈145/≈34 mm. They match the classic track's
+independent 94.5/~23 mm and the arithmetic in the lesson: 9 V needed from
+`kP = 20` means ≈0.45 drum rotations ≈ 7 cm at cruise, plus the transient.
+The `kG`-zeroed sag (1.56 mm) and settled gap (0.12 mm) reproduced unchanged.
 
 **Use it instead of reasoning about whether a snippet compiles.** Current state: lessons 0–34 all compile, at every intermediate stopping point, with zero warnings. A regression is therefore a real result, not noise. Run the specific lesson you touched plus the highest one.
 
@@ -523,7 +558,7 @@ a lesson as-is.
 - [docs/lesson-plan-alpha7-upgrade.md](docs/lesson-plan-alpha7-upgrade.md) —
   the impact assessment and phased plan for upgrading the v3 track (only —
   the classic track targets stable 2026 and is unaffected) to WPILib 2027
-  alpha-7, a large breaking-change release. **Lessons 0–16 are migrated and
+  alpha-7, a large breaking-change release. **Lessons 0–19 are migrated and
   verified on alpha-7** (Lesson 17 is a gap on this track): Phoenix 6 cleared the marketplace (Track A, 1–14,
   2026-09-18), and on 2026-09-24 the v3 track switched vision from
   PhotonVision to **LimelightLib 2**, which cleared Track B's vendor gate.
@@ -532,7 +567,7 @@ a lesson as-is.
   sanctioned exception to "pin to the marketplace", and the reason for it is
   in that doc. Lesson 15's simulated camera publishes real results frames to
   the NetworkTables topic a real Limelight uses, so the unmodified library
-  runs in sim. Lessons 18–34 are still pre-alpha-7 code awaiting Phase 1b;
+  runs in sim. Lessons 20–34 are still pre-alpha-7 code awaiting Phase 1b;
   Lessons 27 and 31 need Limelight redesigns first (user decisions). A
   PhotonVision flavor of Lesson 15 may come back as an option once PhotonLib
   ships for alpha-7; the last PhotonVision version is at commit `94fe7b9`.
