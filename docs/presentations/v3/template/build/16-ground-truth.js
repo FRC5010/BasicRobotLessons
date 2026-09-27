@@ -23,7 +23,7 @@ function buildDeck() {
 
     s.addShape('roundRect', { x: 0.7, y: 1.7, w: 11.9, h: 1.75, rectRadius: 0.1, fill: { color: CARDBG }, line: { type: 'none' } });
     s.addText(
-      'Replace four drive motors that don\'t know about each other with one shared chassis body, moving under a grip-limited acceleration instead of teleporting to whatever speed was commanded — and use it to check odometry against something other than itself for the first time.',
+      'Replace four drive motors that don\'t know about each other with one shared chassis body that follows its wheels only as hard as its tires can grip — and use it to check odometry against something other than itself for the first time.',
       { x: 1.05, y: 1.83, w: 11.2, h: 1.5, fontFace: FONT_HEAD, italic: true, fontSize: 18, color: INK, valign: 'middle', margin: 0, lineSpacingMultiple: 1.2 }
     );
 
@@ -177,7 +177,7 @@ function buildDeck() {
 
     K.addFooter(s, { pageNum: 6, label: 'Ground Truth' });
     s.addNotes(
-      'Two fields, and notice what\'s not here: no per-wheel state at all. This class doesn\'t know or care how the chassis is being driven — only what velocity it\'s chasing and where that velocity has carried it. Ground truth — the Drivetrain\'s own estimate is still built from wheel encoders alone, and the two can disagree exactly the way they would on a real robot.'
+      'Two fields, and notice what\'s not here: no per-wheel state at all. This class doesn\'t know or care how the chassis is being driven — only what velocity it\'s chasing and where that velocity has carried it. Ground truth — the Drivetrain\'s own estimate is still built from wheel encoders alone, and the two disagree exactly when the wheels slip, the way they would on a real robot.'
     );
   }
 
@@ -185,20 +185,20 @@ function buildDeck() {
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
-    K.addHeader(s, { icon: 'cube_white.png', eyebrow: 'Section 3 · A new file', title: 'ChassisSimulation — one tick, chasing the commanded speed' });
+    K.addHeader(s, { icon: 'cube_white.png', eyebrow: 'Section 3 · A new file', title: 'ChassisSimulation — one tick, following the wheels' });
 
     K.addCodeCard(s, {
       x: 0.7, y: 1.4, w: 11.9, h: 4.3, fontSize: 13,
       fileLabel: 'Add to ChassisSimulation — piece 2',
       lines: [
-        { text: '/** Advance the chassis by one tick, chasing \'commanded\' as hard as grip allows. */', color: '7FA8C9' },
-        { text: 'public void update(ChassisVelocities commanded, double dtSeconds) {', color: 'FFD166' },
+        { text: '/** Advance the chassis by one tick, following \'wheels\' as closely as grip allows. */', color: '7FA8C9' },
+        { text: 'public void update(ChassisVelocities wheels, double dtSeconds) {', color: 'FFD166' },
         { text: '  Translation2d nextVelocityXY = MathUtil.slewRateLimit(', color: '9EF01A' },
         { text: '      new Translation2d(m_velocity.vx, m_velocity.vy),', color: '9EF01A' },
-        { text: '      new Translation2d(commanded.vx, commanded.vy),', color: '9EF01A' },
+        { text: '      new Translation2d(wheels.vx, wheels.vy),', color: '9EF01A' },
         { text: '      DriveConstants.kMaxAccelMps2,', color: '9EF01A' },
         { text: '      dtSeconds);', color: '9EF01A' },
-        { text: '  double omega = chaseOmega(m_velocity.omega, commanded.omega, dtSeconds);', color: '9EF01A' },
+        { text: '  double omega = chaseOmega(m_velocity.omega, wheels.omega, dtSeconds);', color: '9EF01A' },
         { text: '  m_velocity = new ChassisVelocities(nextVelocityXY.getX(), nextVelocityXY.getY(), omega);', color: '9EF01A' },
         { text: '', color: 'D7E3F4' },
         { text: '  // Exact integration: how far a constant twist carries the chassis,', color: '7FA8C9' },
@@ -342,25 +342,57 @@ function buildDeck() {
     );
   }
 
-  // ============================================================ SLIDE 12 — applyChassisSpeeds feed + delete fake gyro line
+  // ============================================================ SLIDE 12 — simulateChassis: follow the wheels, every tick
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
-    K.addHeader(s, { icon: 'plug_white.png', eyebrow: 'Section 4 · Drivetrain.java', title: 'Feed it from the one place that computes chassis speed' });
+    K.addHeader(s, { icon: 'plug_white.png', eyebrow: 'Section 4 · Drivetrain.java', title: 'Move the chassis the way its wheels actually turned' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.4, w: 11.9, h: 1.85, fontSize: 14,
-      fileLabel: 'Add to the end of applyChassisSpeeds',
+      x: 0.7, y: 1.4, w: 11.9, h: 1.8, fontSize: 13,
+      fileLabel: 'Register a second periodic in Drivetrain\'s constructor, below the first',
       lines: [
-        { text: 'if (m_chassisSim != null) {', color: '9EF01A' },
-        { text: '  m_chassisSim.update(speeds, 0.020);', color: '9EF01A' },
-        { text: '}', color: 'D7E3F4' },
+        { text: 'public Drivetrain() {', color: 'FFD166' },
+        { text: '  Scheduler.getDefault().addPeriodic(this::periodic);', color: 'D7E3F4' },
+        { text: '  Scheduler.getDefault().addPeriodic(this::simulateChassis);', color: '9EF01A' },
         { text: '}', color: 'D7E3F4' },
       ],
     });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 3.55, w: 11.9, h: 1.5, fontSize: 14,
+      x: 0.7, y: 3.4, w: 11.9, h: 3.45, fontSize: 12,
+      fileLabel: 'Add the method, next to periodic()',
+      lines: [
+        { text: '/** Moves the simulated chassis the way its wheels actually turned this tick. Sim only. */', color: '7FA8C9' },
+        { text: 'private void simulateChassis() {', color: 'FFD166' },
+        { text: '  if (m_chassisSim == null) {', color: '9EF01A' },
+        { text: '    return; // a real robot moves itself', color: '9EF01A' },
+        { text: '  }', color: '9EF01A' },
+        { text: '  SwerveModuleVelocity[] wheels = new SwerveModuleVelocity[4];', color: '9EF01A' },
+        { text: '  for (int i = 0; i < m_modules.length; i++) {', color: '9EF01A' },
+        { text: '    wheels[i] = new SwerveModuleVelocity(', color: '9EF01A' },
+        { text: '        m_modules[i].getDriveVelocityMetersPerSec(),', color: '9EF01A' },
+        { text: '        Rotation2d.fromDegrees(m_modules[i].getSteerAngleDegrees()));', color: '9EF01A' },
+        { text: '  }', color: '9EF01A' },
+        { text: '  m_chassisSim.update(m_kinematics.toChassisVelocities(wheels), 0.020);', color: '9EF01A' },
+        { text: '}', color: 'D7E3F4' },
+      ],
+    });
+
+    K.addFooter(s, { pageNum: 12, label: 'Ground Truth' });
+    s.addNotes(
+      'Move it how much? Not as much as you asked the wheels to — as much as the wheels actually turned. A robot can\'t outrun its own wheels. What it can do is fall short of them: ask the tires for more than they can grip and the wheels spin faster than the chassis moves. That\'s slip, and it\'s exactly the gap the grip limit in ChassisSimulation creates. Watching the wheels is a job for every tick, whether a command is running or not — the same kind of job periodic() does — so it gets a periodic callback of its own. toChassisVelocities runs kinematics backward: four wheel velocities in, the one chassis velocity they add up to out — the reverse of the toSwerveModuleVelocities call applyChassisSpeeds has made since Lesson 10.'
+    );
+  }
+
+  // ============================================================ SLIDE 13 — delete both fake-gyro feeds + getSimulatedPose
+  {
+    const s = p.addSlide();
+    s.background = { color: WHITE };
+    K.addHeader(s, { icon: 'plug_white.png', eyebrow: 'Section 4 · Drivetrain.java', title: 'Delete the fake gyro\'s feeds, then expose the truth' });
+
+    K.addCodeCard(s, {
+      x: 0.7, y: 1.4, w: 11.9, h: 1.5, fontSize: 14,
       fileLabel: 'DELETE from inside applyChassisSpeeds',
       lines: [
         { text: '// nothing integrates a commanded rate by hand anymore; the shared', color: 'FF8B8B' },
@@ -369,20 +401,8 @@ function buildDeck() {
       ],
     });
 
-    K.addFooter(s, { pageNum: 12, label: 'Ground Truth' });
-    s.addNotes(
-      'applyChassisSpeeds already computes the one number that matters — the ChassisVelocities every drive command is asking for — so that\'s exactly where the chassis sim\'s own tick belongs.'
-    );
-  }
-
-  // ============================================================ SLIDE 13 — delete driveDistance twin + getSimulatedPose
-  {
-    const s = p.addSlide();
-    s.background = { color: WHITE };
-    K.addHeader(s, { icon: 'plug_white.png', eyebrow: 'Section 4 · Drivetrain.java', title: 'Delete the twin, then expose the truth' });
-
     K.addCodeCard(s, {
-      x: 0.7, y: 1.4, w: 11.9, h: 1.2, fontSize: 14,
+      x: 0.7, y: 3.1, w: 11.9, h: 1.2, fontSize: 14,
       fileLabel: 'DELETE from driveDistance, where it zeroed the rate',
       lines: [
         { text: 'm_gyroIO.setSimRotationRate(0.0);', color: 'FF6B6B' },
@@ -390,7 +410,7 @@ function buildDeck() {
     });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 2.85, w: 11.9, h: 1.8, fontSize: 14,
+      x: 0.7, y: 4.5, w: 11.9, h: 1.8, fontSize: 14,
       fileLabel: 'Add next to getHeadingDegrees()',
       lines: [
         { text: '/** Where the chassis really is, ground truth — null outside sim. */', color: '7FA8C9' },
@@ -400,15 +420,9 @@ function buildDeck() {
       ],
     });
 
-    K.addCard(s, {
-      x: 0.7, y: 4.9, w: 11.9, h: 1.9,
-      body: 'Two small deletions and one getter close out Drivetrain\'s side of the wiring — the rest of the file, and Lesson 15\'s cameras, can now reach ground truth directly.',
-      pad: 0.25, bodySize: 19,
-    });
-
     K.addFooter(s, { pageNum: 13, label: 'Ground Truth' });
     s.addNotes(
-      'Finally, expose the truth so the rest of the file — and Lesson 15\'s cameras — can reach it.'
+      'Two small deletions retire the fake gyro\'s bookkeeping, and one getter exposes the truth so the rest of the file — and Lesson 15\'s cameras — can reach it.'
     );
   }
 
@@ -500,32 +514,27 @@ function buildDeck() {
     );
   }
 
-  // ============================================================ SLIDE 17 — publisher + log line
+  // ============================================================ SLIDE 17 — log the truth
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
     K.addHeader(s, { icon: 'broadcasttower_white.png', eyebrow: 'Section 6 · Drivetrain.java', title: 'Publish the truth, alongside the estimate' });
 
     K.addCodeCard(s, {
-      x: 0.7, y: 1.4, w: 11.9, h: 2.0, fontSize: 14,
-      fileLabel: 'Add a publisher next to m_headingPublisher',
+      x: 0.7, y: 1.4, w: 11.9, h: 1.95, fontSize: 14,
+      fileLabel: 'Log it at the end of periodic()',
       lines: [
-        { text: 'private final StructPublisher<Pose2d> m_simulatedPosePublisher =', color: 'D7E3F4' },
-        { text: '    NetworkTableInstance.getDefault()', color: '9EF01A' },
-        { text: '        .getStructTopic("Drivetrain/SimulatedPose", Pose2d.struct)', color: '9EF01A' },
-        { text: '        .publish();', color: '9EF01A' },
+        { text: 'if (m_chassisSim != null) {', color: '9EF01A' },
+        { text: '  Telemetry.log("Drivetrain/SimulatedPose", m_chassisSim.getPose(), Pose2d.struct);', color: '9EF01A' },
+        { text: '}', color: 'D7E3F4' },
+        { text: '}', color: 'D7E3F4' },
       ],
     });
 
-    K.addCodeCard(s, {
-      x: 0.7, y: 3.65, w: 11.9, h: 1.95, fontSize: 14,
-      fileLabel: 'Log it at the end of logTelemetry()',
-      lines: [
-        { text: 'if (m_chassisSim != null) {', color: '9EF01A' },
-        { text: '  m_simulatedPosePublisher.set(m_chassisSim.getPose());', color: '9EF01A' },
-        { text: '}', color: 'D7E3F4' },
-        { text: '}', color: 'D7E3F4' },
-      ],
+    K.addCard(s, {
+      x: 0.7, y: 3.6, w: 11.9, h: 1.6,
+      body: 'The same Telemetry.log call that publishes Drivetrain/Heading a few lines up — handed a Pose2d and its .struct this time.',
+      pad: 0.25, bodySize: 20,
     });
 
     K.addFooter(s, { pageNum: 17, label: 'Ground Truth' });
@@ -667,7 +676,7 @@ function buildDeck() {
     K.addHeader(s, { icon: 'graduationcap_white.png', eyebrow: 'What you learned', title: 'The simulation finally has a body' });
 
     const points = [
-      'One shared chassis, moving under a μg acceleration limit instead of teleporting to whatever speed was commanded, replaced four drive motors that never knew about each other — and because the limit comes from grip alone, mass canceled right out of the formula.',
+      'One shared chassis, following its wheels under a μg acceleration limit, replaced four drive motors that never knew about each other — and because the limit comes from grip alone, mass canceled right out of the formula.',
       'MathUtil.slewRateLimit on a Translation2d limited acceleration as a true 2D magnitude, and Twist2d.exp() gave you exact pose integration — the same math SwerveDriveOdometry has been running for you since Lesson 11, written out by hand this time.',
       'What\'s actually worth stopping on: an entire ground-truth chassis went into the project, and SwerveModule never heard about it — Lesson 13\'s IO-layer boundary made ground truth cheap.',
     ];

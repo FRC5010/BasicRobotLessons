@@ -1,9 +1,9 @@
 # Lesson 16 — Ground truth: give the simulation a body
 
 **Goal:** Replace four drive motors that don't know about each other with one
-shared chassis body, moving under a grip-limited acceleration instead of
-teleporting to whatever speed was commanded — and use it to check odometry
-against something other than itself for the first time.
+shared chassis body that follows its wheels only as hard as its tires can
+grip — and use it to check odometry against something other than itself for
+the first time.
 
 **New robot concepts**
 - **Ground truth** — a second, independent notion of "where the robot is,"
@@ -105,9 +105,9 @@ time this file has needed either.
 
 ## 3. One shared chassis body
 
-Now the class that holds all of this: a chassis that chases a commanded
-velocity as hard as grip allows, and integrates its own pose from whatever
-velocity it actually reaches.
+Now the class that holds all of this: a chassis that follows its wheels as
+closely as grip allows, and integrates its own pose from whatever velocity
+it actually reaches.
 
 **Create `src/main/java/first/robot/subsystems/ChassisSimulation.java`, in three pieces.**
 
@@ -124,10 +124,10 @@ import org.wpilib.math.util.MathUtil;
 import first.robot.Constants.DriveConstants;
 
 /**
- * One shared chassis body, moving under a grip-limited acceleration instead
- * of teleporting to whatever speed was commanded. Ground truth — the
- * Drivetrain's own estimate is still built from wheel encoders alone, and
- * the two can disagree exactly the way they would on a real robot.
+ * One shared chassis body, following its wheels as closely as its tires'
+ * grip allows. Ground truth — the Drivetrain's own estimate is still built
+ * from wheel encoders alone, and the two disagree exactly when the wheels
+ * slip, the way they would on a real robot.
  */
 public class ChassisSimulation {
   private Pose2d m_pose;
@@ -145,14 +145,14 @@ velocity it's chasing and where that velocity has carried it.
 **Piece 2 — one tick.**
 
 ```java
-  /** Advance the chassis by one tick, chasing 'commanded' as hard as grip allows. */
-  public void update(ChassisVelocities commanded, double dtSeconds) {
+  /** Advance the chassis by one tick, following 'wheels' as closely as grip allows. */
+  public void update(ChassisVelocities wheels, double dtSeconds) {
     Translation2d nextVelocityXY = MathUtil.slewRateLimit(
         new Translation2d(m_velocity.vx, m_velocity.vy),
-        new Translation2d(commanded.vx, commanded.vy),
+        new Translation2d(wheels.vx, wheels.vy),
         DriveConstants.kMaxAccelMps2,
         dtSeconds);
-    double omega = chaseOmega(m_velocity.omega, commanded.omega, dtSeconds);
+    double omega = chaseOmega(m_velocity.omega, wheels.omega, dtSeconds);
     m_velocity = new ChassisVelocities(nextVelocityXY.getX(), nextVelocityXY.getY(), omega);
 
     // Exact integration: how far a constant twist carries the chassis,
@@ -239,18 +239,50 @@ has a world) and in replay (which needs none) — the same shape Lesson 13's
   }
 ```
 
-Now feed it. `applyChassisSpeeds` already computes the one number that
-matters — the `ChassisVelocities` every drive command is asking for — so
-that's exactly where the chassis sim's own tick belongs.
+Now make it move, once every tick. The question is how much. Not as much as
+you *asked* the wheels to — as much as the wheels **actually turned**. A
+robot can't outrun its own wheels. What it can do is fall short of them: ask
+the tires for more than they can grip and the wheels spin faster than the
+chassis moves. That's **slip**, and it's exactly the gap the grip limit in
+`ChassisSimulation` creates.
 
-**Add to the end of `applyChassisSpeeds`:**
+Watching the wheels is a job for every tick, whether a command is running or
+not — the same kind of job `periodic()` does. So it gets a periodic callback
+of its own.
+
+**Register a second periodic in `Drivetrain`'s constructor, below the first:**
 
 ```java
-    if (m_chassisSim != null) {
-      m_chassisSim.update(speeds, 0.020);
-    }
+  public Drivetrain() {
+    Scheduler.getDefault().addPeriodic(this::periodic);
+    Scheduler.getDefault().addPeriodic(this::simulateChassis);
   }
 ```
+
+**Add the method, next to `periodic()`:**
+
+```java
+  /** Moves the simulated chassis the way its wheels actually turned this tick. Sim only. */
+  private void simulateChassis() {
+    if (m_chassisSim == null) {
+      return; // a real robot moves itself
+    }
+    SwerveModuleVelocity[] wheels = new SwerveModuleVelocity[4];
+    for (int i = 0; i < m_modules.length; i++) {
+      wheels[i] = new SwerveModuleVelocity(
+          m_modules[i].getDriveVelocityMetersPerSec(),
+          Rotation2d.fromDegrees(m_modules[i].getSteerAngleDegrees()));
+    }
+    m_chassisSim.update(m_kinematics.toChassisVelocities(wheels), 0.020);
+  }
+```
+
+Each wheel's measured speed and angle go into a `SwerveModuleVelocity` — the
+same kind of value `applyChassisSpeeds` hands each module as a target — and
+**`toChassisVelocities`** runs kinematics backward: four wheel velocities
+in, the one chassis velocity they add up to out. It's the reverse of the
+`toSwerveModuleVelocities` call `applyChassisSpeeds` has made since Lesson
+10.
 
 **Delete the line that fed the old fake gyro from inside `applyChassisSpeeds`:**
 
@@ -346,23 +378,17 @@ encoders the estimate uses. That's no longer true. The chassis sim tracks
 where the chassis actually is, independent of what any wheel reports, and
 it's been running since section 4.
 
-**Add a publisher next to `m_headingPublisher`:**
-
-```java
-  private final StructPublisher<Pose2d> m_simulatedPosePublisher =
-      NetworkTableInstance.getDefault()
-          .getStructTopic("Drivetrain/SimulatedPose", Pose2d.struct)
-          .publish();
-```
-
-**Log it at the end of `logTelemetry()`:**
+**Log it at the end of `periodic()`:**
 
 ```java
     if (m_chassisSim != null) {
-      m_simulatedPosePublisher.set(m_chassisSim.getPose());
+      Telemetry.log("Drivetrain/SimulatedPose", m_chassisSim.getPose(), Pose2d.struct);
     }
   }
 ```
+
+It's the same `Telemetry.log` call that publishes `Drivetrain/Heading` a few
+lines up, handed a `Pose2d` and its `.struct` this time.
 
 Open AdvantageScope's **Odometry** tab and put both `Localizer/Pose` and
 `Drivetrain/SimulatedPose` on the field at once. Drive gently and they sit
@@ -452,12 +478,11 @@ checking itself.
 
 ## What you learned
 
-The simulation finally has a body. One shared chassis, moving under a
-`μg` acceleration limit instead of teleporting to whatever speed was
-commanded, replaced four drive motors that never knew about each other —
-and because that limit comes from grip alone, mass canceled right out of
-the formula, which is itself worth remembering the next time "heavier
-must mean slower to accelerate" sounds obviously true. Drift stopped
+The simulation finally has a body. One shared chassis, following its wheels
+under a `μg` acceleration limit, replaced four drive motors that never knew
+about each other — and because that limit comes from grip alone, mass
+canceled right out of the formula, which is itself worth remembering the
+next time "heavier must mean slower to accelerate" sounds obviously true. Drift stopped
 being something you faked with a multiplier and became something real
 physics does to you when you ask for more than the tires can give.
 
@@ -468,9 +493,10 @@ been running for you since Lesson 11, written out by hand this time. But
 the thing actually worth stopping on is what *didn't* change: an entire
 ground-truth chassis went into the project, and `SwerveModule` never heard
 about it. Neither did `ModuleIOTalonFX`, `ModuleIOSim`, or a single log key
-from Lesson 13. The changes fit inside one new class and two small edits —
-because Lesson 13 drew the IO-layer boundary in the right place, and ground
-truth is exactly the kind of thing that boundary was built to make cheap.
+from Lesson 13. The changes fit inside one new class and a handful of small
+edits — because Lesson 13 drew the IO-layer boundary in the right place, and
+ground truth is exactly the kind of thing that boundary was built to make
+cheap.
 
 And Lesson 15's admitted compromise is gone. Vision checks its simulated
 eyesight against where the chassis actually is now, not against its own

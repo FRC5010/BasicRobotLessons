@@ -8,10 +8,10 @@ import org.wpilib.math.util.MathUtil;
 import first.robot.Constants.DriveConstants;
 
 /**
- * One shared chassis body, moving under a grip-limited acceleration instead
- * of teleporting to whatever speed was commanded. Ground truth — the
- * Drivetrain's own estimate is still built from wheel encoders alone, and
- * the two can disagree exactly the way they would on a real robot.
+ * One shared chassis body, following its wheels as closely as its tires'
+ * grip allows. Ground truth — the Drivetrain's own estimate is still built
+ * from wheel encoders alone, and the two disagree exactly when the wheels
+ * slip, the way they would on a real robot.
  */
 public class ChassisSimulation {
   private Pose2d m_pose;
@@ -21,14 +21,14 @@ public class ChassisSimulation {
     m_pose = startingPose;
   }
 
-  /** Advance the chassis by one tick, chasing 'commanded' as hard as grip allows. */
-  public void update(ChassisVelocities commanded, double dtSeconds) {
+  /** Advance the chassis by one tick, following 'wheels' as closely as grip allows. */
+  public void update(ChassisVelocities wheels, double dtSeconds) {
     Translation2d nextVelocityXY = MathUtil.slewRateLimit(
         new Translation2d(m_velocity.vx, m_velocity.vy),
-        new Translation2d(commanded.vx, commanded.vy),
+        new Translation2d(wheels.vx, wheels.vy),
         DriveConstants.kMaxAccelMps2,
         dtSeconds);
-    double omega = chaseOmega(m_velocity.omega, commanded.omega, dtSeconds);
+    double omega = chaseOmega(m_velocity.omega, wheels.omega, dtSeconds);
     m_velocity = new ChassisVelocities(nextVelocityXY.getX(), nextVelocityXY.getY(), omega);
 
     // Exact integration: how far a constant twist carries the chassis,

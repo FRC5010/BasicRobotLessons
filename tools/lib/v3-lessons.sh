@@ -15,7 +15,7 @@
 # The highest lesson whose code has been migrated to WPILib 2027 alpha-7.
 # Snapshots above it still target alpha-6 and don't compile on the current
 # base; raise this as Phase 1b migrates them (docs/lesson-plan-alpha7-upgrade.md).
-V3_ALPHA7_THROUGH=15
+V3_ALPHA7_THROUGH=16
 
 # --- vendordeps -------------------------------------------------------------
 # Pinned to WPILib's vendordep marketplace's 2027_alpha7 bucket, one

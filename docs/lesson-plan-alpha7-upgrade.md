@@ -422,6 +422,29 @@ mechanical ports. Re-run
 `./tools/verify-lessons-v3.sh 34 test` once everything compiles, to catch
 anything only a test surfaces.
 
+**Lesson 16 migrated, 2026-09-27.** Compiles 0–16 with zero warnings; the
+real `Robot` boots and drives in a JUnit probe (`HAL.initialize()` now takes
+no arguments). The port was the usual two categories (`implements
+Mechanism`, `Telemetry.log(..., Pose2d.struct)` in place of a raw
+NetworkTables `StructPublisher`), built on the already-migrated Lesson 14/15
+files rather than by patching the old snapshot, so only Lesson 16's own
+changes differ. Two real changes came out of verifying it:
+
+- **`ChassisSimulation` follows the wheels.** Measured in sim, following the
+  command (the original design) let the "truth" outrun its own wheels.
+  Gentle driving drifted 13 cm in 3 s, and a hard start left the estimate
+  *behind*, contradicting the lesson's prose. A `simulateChassis` periodic
+  now feeds it the wheels' measured velocity, grip-limited: 1.7 cm gentle,
+  27 cm *ahead* on a hard start and held. User decision; the prose and deck
+  follow.
+- **`Drivetrain.logTelemetry()` is `periodic()` from Lesson 13 on**, where it
+  starts reading every sensor. User's call, prompted by the same question of
+  where a once-a-tick update belongs. Lessons 13, 14, 16 and 26's prose,
+  Lesson 13's deck, and the 13+ snapshots follow.
+
+The marker checker also got stricter here: a line edited above a marker
+partway down a folded diff hunk now needs its own marker (see CLAUDE.md).
+
 **Each lesson Phase 1b migrates also gets its NEXT LESSON markers
 (added 2026-09-26).** Lessons 1–15 now ship them: the code at the end of
 Lesson N-1 carries a javadoc-style comment at every spot where Lesson N has

@@ -156,11 +156,19 @@ lesson-k/X implies lesson-(k+1)/X exists and replaces it. **Enforce it with
 `./tools/check-lesson-markers-v3.py [N] [--show]`**, which rebuilds each
 lesson's before/after state through the shared lib, diffs them, and reports
 `MISSING` (a change with no marker announcing it) and `ORPHAN` (a marker
-that announces nothing). It's currently clean for 1–15, and both directions
-were checked against deliberately broken markers. When Phase 1b migrates a
-lesson, raise the cut-off and add its markers in the same change. The
-checker's coverage rules are in its docstring; they absorb diff-alignment
-noise (blank lines, a shared `}`), not missing markers.
+that announces nothing). It's currently clean for 1–16. When Phase 1b
+migrates a lesson, raise the cut-off and add its markers in the same change.
+The checker's coverage rules are in its docstring. They absorb
+diff-alignment noise (blank lines, a shared `}`), and that absorption can
+hide a missing marker. A diff can fold a rewritten line into the same hunk
+as an insertion just below it, and the insertion's marker then covered
+both. Lesson 13's rename of the `addPeriodic` line slipped through exactly
+that way. Since then, a line *edited* above a marker partway down a hunk
+needs its own marker (`edited()`: resembles a new line, isn't just a
+deletion or a brace change). Measured by removing each of the 117 markers
+in 0–14 one at a time: the old rules caught 96, the current ones catch 102.
+The 15 uncaught are changes another marker also covers under the rules,
+mostly a later marker inside a block an earlier marker already announces.
 
 The v3 builds need **JDK 25**: this container's `JAVA_HOME` pointed at 21,
 which fails every lesson with `invalid source release: 25` — set
@@ -168,6 +176,34 @@ which fails every lesson with `invalid source release: 25` — set
 `Drivetrain` briefly went back to literal CAN IDs in the module array while
 Lesson 7 and 13+ used the per-corner `DriveConstants`; they now all use the
 constants (same values), so no lesson's diff "undoes" another's.
+
+**v3 `Drivetrain`'s once-a-tick method is `periodic()` from Lesson 13 on.**
+It's `logTelemetry()` in Lessons 3–12, while it only logs. Lesson 13 renames
+it at the point where it starts reading every sensor, matching
+`SwerveModule.periodic()` from the same lesson and every later class
+(`Localizer`, `Elevator`, …).
+
+**Lesson 16's `ChassisSimulation` follows the wheels, not the command.** A
+separate `simulateChassis` periodic feeds it
+`m_kinematics.toChassisVelocities(...)` of the *measured* module states, and
+the grip limit then caps how fast that can change. Following the command
+(the 2026-08-13 design) let the truth outrun its own wheels, measured with
+vision off:
+
+- Gentle driving drifted 13 cm in 3 s.
+- A full-stick start left the estimate 10 cm *behind* the truth, the
+  opposite of what the lesson says.
+
+Following the wheels gives 1.7 cm, and 27 cm *ahead* on a hard start, held
+there. It also advances the truth under every command, `driveDistance`
+included.
+
+Two facts from the alpha-7 jars:
+
+- Commands V3's `Scheduler.run()` runs every `addPeriodic` callback, in
+  registration order, before any command (read from bytecode).
+- `HAL.initialize()` takes no arguments in alpha-7, so Lesson 32's test needs
+  that fix when it's migrated.
 
 **Use it instead of reasoning about whether a snippet compiles.** Current state: lessons 0–34 all compile, at every intermediate stopping point, with zero warnings. A regression is therefore a real result, not noise. Run the specific lesson you touched plus the highest one.
 
@@ -487,8 +523,8 @@ a lesson as-is.
 - [docs/lesson-plan-alpha7-upgrade.md](docs/lesson-plan-alpha7-upgrade.md) —
   the impact assessment and phased plan for upgrading the v3 track (only —
   the classic track targets stable 2026 and is unaffected) to WPILib 2027
-  alpha-7, a large breaking-change release. **Lessons 0–15 are migrated and
-  verified on alpha-7**: Phoenix 6 cleared the marketplace (Track A, 1–14,
+  alpha-7, a large breaking-change release. **Lessons 0–16 are migrated and
+  verified on alpha-7** (Lesson 17 is a gap on this track): Phoenix 6 cleared the marketplace (Track A, 1–14,
   2026-09-18), and on 2026-09-24 the v3 track switched vision from
   PhotonVision to **LimelightLib 2**, which cleared Track B's vendor gate.
   LimelightLib isn't in WPILib's marketplace and its own URL is overwritten on
@@ -496,7 +532,7 @@ a lesson as-is.
   sanctioned exception to "pin to the marketplace", and the reason for it is
   in that doc. Lesson 15's simulated camera publishes real results frames to
   the NetworkTables topic a real Limelight uses, so the unmodified library
-  runs in sim. Lessons 16–34 are still pre-alpha-7 code awaiting Phase 1b;
+  runs in sim. Lessons 18–34 are still pre-alpha-7 code awaiting Phase 1b;
   Lessons 27 and 31 need Limelight redesigns first (user decisions). A
   PhotonVision flavor of Lesson 15 may come back as an option once PhotonLib
   ships for alpha-7; the last PhotonVision version is at commit `94fe7b9`.
