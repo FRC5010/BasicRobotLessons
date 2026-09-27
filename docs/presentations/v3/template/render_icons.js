@@ -36,6 +36,7 @@ const jobs = [
   ['FaSyncAlt', 'FFFFFF', 'syncalt_white'],
   ['FaKey', 'FFFFFF', 'key_white'],
   ['FaTerminal', 'FFFFFF', 'terminal_white'],
+  ['FaPython', 'FFFFFF', 'python_white'],
   ['FaGithub', 'FFFFFF', 'github_white'],
   // git-branching specific
   ['FaCodeBranch', 'FFFFFF', 'codebranch_white'],

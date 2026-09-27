@@ -29,12 +29,25 @@ public class Robot extends OpModeRobot {
   public final Drivetrain drivetrain = new Drivetrain();
 
   /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add the localizer, which owns the fused pose estimate, and a vision pose provider.
+   * Declare them after the drivetrain: the localizer reads the drivetrain when it's
+   * built, and the drivetrain's telemetry has to tick before the localizer's does.
+   */
+
+  /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
    */
   public Robot() {
     DataLogManager.start(); // saves every published value to a .wpilog file
     Scheduler.getDefault().addEventListener(this::logCommandStart);
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Register the vision provider with the localizer, as its second source of pose
+     * information after the drivetrain's odometry.
+     */
   }
 
   /** This function is called exactly once when the DS first connects. */

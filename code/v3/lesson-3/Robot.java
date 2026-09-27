@@ -53,6 +53,12 @@ public class Robot extends OpModeRobot {
   }
 
   /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Override simulationPeriodic() — it runs every tick, but only in simulation — and
+   * have it ask the module to step its physics.
+   */
+
+  /**
    * This function is called periodically anytime when no opmode is selected, including when the
    * Driver Station is disconnected.
    */

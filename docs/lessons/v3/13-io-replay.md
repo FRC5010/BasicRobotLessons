@@ -152,8 +152,10 @@ public class ModuleIOTalonFX implements ModuleIO {
     cancoderConfig.MagnetSensor.MagnetOffset = magnetOffsetRotations;
     m_steerEncoder.getConfigurator().apply(cancoderConfig);
 
-    // Steering: read angle from the CANcoder, wrap like a circle, hold a P gain.
+    // Steering: which way it counts (Lesson 7), then read angle from the CANcoder,
+    // wrap like a circle, hold a P gain.
     TalonFXConfiguration steerConfig = new TalonFXConfiguration();
+    steerConfig.MotorOutput.Inverted = SteerConstants.kSteerInverted;
     steerConfig.Feedback.FeedbackRemoteSensorID = cancoderId;
     steerConfig.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;
     steerConfig.Feedback.RotorToSensorRatio = SteerConstants.kSteerGearRatio;
@@ -524,7 +526,15 @@ public interface GyroIO {
 ```
 
 The real implementation is the shortest class in the course — a Pigeon
-and one read.
+and one read. Its CAN ID comes from `DriveConstants.kGyroPort`, the
+constant Lesson 8's Try It had you add, so every CAN ID the robot owns
+stays in one file.
+
+**If you skipped that Try It, add to `DriveConstants`:**
+
+```java
+public static final int kGyroPort = 0;               // CAN ID — change to yours
+```
 
 **Create `GyroIOPigeon2.java`:**
 
@@ -538,8 +548,10 @@ import com.ctre.phoenix6.hardware.Pigeon2;
 
 import org.wpilib.hardware.bus.CANPort;
 
+import first.robot.Constants.DriveConstants;
+
 public class GyroIOPigeon2 implements GyroIO {
-  private final Pigeon2 m_gyro = new Pigeon2(0, new CANBus(CANPort.CAN_S0)); // CAN ID 0 — change to yours
+  private final Pigeon2 m_gyro = new Pigeon2(DriveConstants.kGyroPort, new CANBus(CANPort.CAN_S0));
 
   @Override
   public void updateInputs(GyroIOInputs inputs) {

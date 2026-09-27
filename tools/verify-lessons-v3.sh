@@ -11,14 +11,15 @@
 # which isn't in the marketplace, pins to one commit of Limelight's own repo;
 # see docs/lesson-plan-alpha7-upgrade.md). There is no
 # AdvantageKit build.gradle block to carry over, but lesson-deletion replay
-# does apply here too, the same way it does in the main script (see `del`
-# below) — the first one lands at Lesson 7, same rename as the main course.
+# does apply here too, the same way it does in the main script (see
+# V3_DELETIONS in tools/lib/v3-lessons.sh) — the first one lands at Lesson
+# 7, same rename as the main course.
 #
 # It works by rolling code/OpModeV3Robot (the pristine 2027 alpha OpMode
 # template, already carrying the CommandsV3 vendordep) forward through
 # code/v3/lesson-0 … code/v3/lesson-N, applying each snapshot in order the way
 # a student would, then replaying any deletions the lessons instruct (a
-# snapshot can only add or replace files — see the `del` calls below), then
+# snapshot can only add or replace files — see tools/lib/v3-lessons.sh), then
 # running Gradle over the result.
 #
 #   ./tools/verify-lessons-v3.sh          # roll through the highest lesson present
@@ -122,23 +123,13 @@ for arg in "$@"; do
   esac
 done
 
-# --- vendordeps -------------------------------------------------------------
-# Pinned to WPILib's vendordep marketplace's 2027_alpha7 bucket, one
-# immutable file per version — same rule as the main script: never a
-# vendor's own "latest" link. LimelightLib 2 (vision, from Lesson 15) is not
-# in the marketplace, and its own URL is a moving link — the same
-# LimelightLib-alpha7.json was overwritten five times between beta5 and
-# beta9 — so it pins to one commit of Limelight's repo instead, which can't
-# drift. Its Maven repo keeps every version, so an old pin stays buildable.
-MARKETPLACE="https://raw.githubusercontent.com/wpilibsuite/vendor-json-repo/main/2027_alpha7"
-LIMELIGHT_PIN="https://raw.githubusercontent.com/LimelightVision/limelightlib-public/717a921719f5dbaf4ce940819e2d84bdab8738b9"
-# "<lesson it is first needed>|<url>". Only what the requested range needs
-# gets fetched. CommandsV3 is NOT fetched here — it ships already installed
-# in code/OpModeV3Robot/vendordeps/, copied from wpilib source directly.
-VENDORDEPS=(
-  "1|$MARKETPLACE/Phoenix6-26.70.0-alpha-2.json"
-  "15|$LIMELIGHT_PIN/LimelightLib-alpha7.json"   # 2.0.0-beta9-alpha7
-)
+# --- vendordeps, snapshots, deletions --------------------------------------
+# The rules for rolling snapshots onto a project (pinned vendordeps, the
+# lesson-N -> first/robot mapping, and the deletions the lessons instruct)
+# live in tools/lib/v3-lessons.sh, shared with tools/update-lesson-v3.sh so
+# the two scripts can never disagree about what "the state after Lesson N" is.
+# shellcheck source=lib/v3-lessons.sh
+. "$REPO/tools/lib/v3-lessons.sh"
 
 say() { printf '\n\033[1m==> %s\033[0m\n' "$*"; }
 
@@ -155,66 +146,22 @@ cp -r "$BASE" "$SANDBOX"
 # absolute paths from wherever it was last built.
 rm -rf "$SANDBOX/.git" "$SANDBOX/build" "$SANDBOX/.gradle"
 [ -f "$SANDBOX/gradlew" ] && chmod +x "$SANDBOX/gradlew"
-JAVA_DIR="$SANDBOX/src/main/java/first/robot"
 
 if [ "$THROUGH" -lt 0 ]; then
   say "Vendordeps: using whatever $BASE already carries"
 else
 say "Fetching pinned vendordeps"
-fetch_vendordep() {
-  local url="$1" tmp attempt
-  tmp="$(mktemp)"
-  for attempt in 1 2 3 4; do
-    if curl -fsSL --max-time 60 -o "$tmp" "$url"; then
-      local name
-      name="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["fileName"])' "$tmp")"
-      mv "$tmp" "$SANDBOX/vendordeps/$name"
-      echo "  ok  $name"
-      return 0
-    fi
-    echo "  retry $attempt  $url" >&2
-    sleep $((attempt * 2))
-  done
-  echo "  FAILED after 4 attempts (network, not your code): $url" >&2
-  exit 1
-}
-for entry in "${VENDORDEPS[@]}"; do
-  need="${entry%%|*}"
-  [ "$THROUGH" -ge "$need" ] && fetch_vendordep "${entry#*|}"
-done
+v3_fetch_vendordeps "$THROUGH" "$SANDBOX/vendordeps" || exit 1
 fi
 
 if [ "$THROUGH" -lt 0 ]; then
   say "Applying no lesson snapshots"
 else
 say "Applying lesson snapshots 0..$THROUGH"
-for n in $(seq 0 "$THROUGH" 2>/dev/null || true); do
-  d="$REPO/code/v3/lesson-$n"
-  [ -d "$d" ] || continue
-  # Java: code/v3/lesson-N/**.java mirrors the first/robot package tree
-  # (root classes at the top, then opmode/, subsystems/). Last writer wins,
-  # which is what makes "apply in order" equal "the state after Lesson N".
-  # ./tests/* is excluded here — see below, it maps to src/test/java instead.
-  (cd "$d" && find . -name '*.java' -not -path './tests/*' -print0 | while IFS= read -r -d '' f; do
-      mkdir -p "$JAVA_DIR/$(dirname "$f")"
-      cp "$f" "$JAVA_DIR/$f"
-  done)
-  # code/v3/lesson-N/tests/** maps to src/test/java/first/robot/, not the
-  # main Java tree — same rule as the main course's Lesson 32.
-  if [ -d "$d/tests" ]; then
-    mkdir -p "$SANDBOX/src/test/java/first/robot"
-    cp -r "$d/tests/." "$SANDBOX/src/test/java/first/robot/"
-  fi
-  echo "  applied lesson-$n"
-done
+v3_apply_snapshots "$REPO" "$THROUGH" "$SANDBOX"
 
 say "Applying the deletions the lessons instruct"
-# Snapshots can only add or replace files, so removals have to be replayed
-# here — same rule and same mechanics as the main course's verify-lessons.sh.
-del() { [ "$THROUGH" -ge "$1" ] && shift && for f; do rm -f "$JAVA_DIR/$f"; done || true; }
-del 7  subsystems/DriveModule.java   # became SwerveModule
-del 9  opmode/MyTeleop.java opmode/MyAuto.java   # became RobotTeleop / RobotAuto
-del 15 subsystems/VisionPoseProvider.java   # became LimelightPoseProvider
+v3_apply_deletions "$THROUGH" "$SANDBOX"
 echo "  done"
 fi
 

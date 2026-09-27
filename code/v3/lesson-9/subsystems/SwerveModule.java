@@ -5,6 +5,7 @@ import static org.wpilib.units.Units.RotationsPerSecond;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.sim.TalonFXSimState;
@@ -61,9 +62,22 @@ public class SwerveModule {
     CANcoderConfiguration cancoderConfig = new CANcoderConfiguration();
     cancoderConfig.MagnetSensor.MagnetOffset = magnetOffsetRotations;
     m_steerEncoder.getConfigurator().apply(cancoderConfig);
+
+    // Which way the steering motor counts: a fact about your gearbox, set in SteerConstants.
+    TalonFXConfiguration steerConfig = new TalonFXConfiguration();
+    steerConfig.MotorOutput.Inverted = SteerConstants.kSteerInverted;
+    m_steerMotor.getConfigurator().apply(steerConfig);
     m_steerMotor.setPosition(
         m_steerEncoder.getAbsolutePosition().getValue().in(Rotations) * SteerConstants.kSteerGearRatio);
   }
+
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * Take a SwerveModuleVelocity — a speed in meters per second plus an angle — instead
+   * of two bare numbers. Wrap the steering error with MathUtil.inputModulus instead of
+   * the two while loops, and turn the speed into a fraction of max speed before
+   * applying the cosine scale.
+   */
 
   /** One tick of control: steer toward 'angleDegrees', drive at 'speedFraction'. */
   public void setDesiredState(double angleDegrees, double speedFraction) {

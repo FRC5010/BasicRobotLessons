@@ -326,6 +326,7 @@ function addNumberedSteps(slide, {
   steps, x = 0.7, startY = 1.7, rowH = 1.0,
   numberColor = TEAL, highlight = {}, // highlight: { [index]: color }
   dark = false, // pass true on a NAVY-background slide, or title/detail render unreadably dark-on-dark
+  startNum = 1, // the first badge's number, for a list that continues from a previous slide
 }) {
   const titleColor = dark ? WHITE : INK;
   const detailColor = dark ? 'CADCE8' : MUTED;
@@ -335,7 +336,7 @@ function addNumberedSteps(slide, {
     slide.addShape('ellipse', {
       x, y: y + 0.02, w: 0.55, h: 0.55, fill: { color }, line: { type: 'none' },
     });
-    slide.addText(String(i + 1), {
+    slide.addText(String(startNum + i), {
       x, y: y + 0.02, w: 0.55, h: 0.55, align: 'center', valign: 'middle',
       fontFace: FONT_HEAD, bold: true, fontSize: 22, color: WHITE, margin: 0,
     });

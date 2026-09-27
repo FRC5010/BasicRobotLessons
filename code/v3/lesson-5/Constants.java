@@ -11,6 +11,13 @@ public final class Constants {
     public static final int kDriveMotorPort = 1; // CAN ID — change to yours
     public static final int kSteerMotorPort = 2; // CAN ID — change to yours
     public static final int kCancoderPort = 3;   // CAN ID — change to yours
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Add the drive gearing and wheel size — the rotor-to-wheel gear ratio, the wheel's
+     * diameter, and the circumference that follows from it — so motor rotations can
+     * become meters.
+     */
   }
 
   public static final class SteerConstants {

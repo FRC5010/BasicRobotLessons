@@ -30,6 +30,145 @@ for backward compatibility — a flag wins if both are given. Keep the two
 scripts (`verify-lessons.sh` and `verify-lessons-v3.sh`) in sync if the
 interface changes.
 
+**The v3 (OpMode) track's roll-forward rules live in one place,
+[`tools/lib/v3-lessons.sh`](tools/lib/v3-lessons.sh)** — the alpha-7
+cut-off `V3_ALPHA7_THROUGH`, the pinned vendordeps, the deletion list, and
+the functions that apply snapshots — sourced by both `verify-lessons-v3.sh`
+and **`tools/update-lesson-v3.sh LESSON PROJECT_DIR [--force]`**, the
+student-facing script. The second applies snapshots 0..LESSON-1 (the
+lesson's *starting* point) **in place** to a student's own project, installs
+the vendordeps, and builds nothing. It refuses a directory that isn't a clean
+git repo (unless `--force`), anything inside this repo, lesson 0, and
+anything past the cut-off. A deletion that the lesson does as a **rename**
+takes a third field (`"7|subsystems/DriveModule.java|subsystems/SwerveModule.java"`);
+the scripts still just delete, but the marker checker diffs the old file
+against its new name.
+
+**`update-lesson-v3.sh` merges `Constants.java` instead of overwriting it**,
+through [`tools/lib/merge_constants.py`](tools/lib/merge_constants.py): each
+`static final` field is matched by class and name, and the student's value
+survives when it isn't a value the lessons have *ever* given that constant
+(the history is every `code/v3/lesson-*/Constants.java`), so a value a lesson
+changes on purpose still reaches a student who never touched it. Student-only
+constants and classes are kept; constants the lessons dropped are reported if
+customized; a type change takes the reference and warns. It pre-checks that
+the file parses and stops with nothing changed if not (`--force` falls back
+to the reference). Measured when it landed: across 0–15, none of 47
+constants ever changes type or value after its introducing lesson — lessons
+only add, rename, or remove. **Tests:** `python3 -m unittest discover -s
+tools/tests` (the rules, parser traps like `;`/`{` inside strings and
+comments, CRLF, and a sweep proving every `Constants.java` in both tracks
+merges into itself unchanged); a sabotaged merge fails them. **This only
+works if robot-specific values live in `Constants.java`**, so the v3
+snapshots keep them there: the gyro's CAN ID is `DriveConstants.kGyroPort`
+from Lesson 8 on (Lesson 8's Try It #4, applied in the reference like Lesson
+7's per-corner IDs), and steering direction is
+`SteerConstants.kSteerInverted` (`InvertedValue`, default
+`CounterClockwise_Positive`) from Lesson 7 on — applied by a small steering
+`TalonFXConfiguration` above priming, which **Lesson 12 extends rather than
+replaces** (a fresh config applied after it would reset `Inverted`;
+measured in Phoenix sim). Snapshots 16–33 carry both constants too, unverified
+until Phase 1b. The classic track keeps its Lesson 7 checklist's "only if"
+inversion snippet — it has no update script to preserve values for.
+
+**Rolling back works too.** Asked for an earlier lesson, the script deletes
+every file that only later snapshots add. That's `v3_later_files` in the lib:
+in some snapshot above the target, but not in the target's state after its
+deletions. Files in no snapshot are the student's and stay. `Constants.java`
+always stays, which only matters when rolling back to Lesson 1. The set logic
+is in `awk`, not an associative array, because macOS's `/bin/bash` is 3.2.
+The merge gets `--applied` (the Constants of lessons 0..target) and
+`--upcoming` (the lesson about to be done). A constant that's in the history
+but not in `--applied` is from a later lesson. It's kept if customized and
+dropped quietly if not, where it used to be dropped and reported. Anything a
+kept value is written with comes along too, even when uncustomized: a later
+constant, or a whole class such as the `Mode` enum. A later class comes back
+holding only kept values, with its NEXT LESSON markers stripped. Student
+imports are carried over only when the merged file uses them.
+
+This was measured before the change. Rolling back from Lesson 15 to Lesson 6
+dropped four customized values: a CAN ID, the gyro ID, a gain and the
+steering inversion. They didn't return on rolling forward. It also left
+fifteen later files, so the project no longer compiled.
+
+After the change:
+
+- Rollbacks from 15 to each of 1, 3, 6, 8, 10, 12, 13 and 14 all compile
+  cleanly.
+- 15 → 7 → 15 reproduces the original project byte for byte, except that the
+  student's own constant moves to the end of its class.
+- Tests cover this at both levels: `RollingBack` and `RoundTrip` in the merge
+  tests, and two real rollbacks in the app tests, compared file-by-file with
+  a fresh update.
+- Vendordeps from later lessons are deliberately left installed: an unused
+  one costs nothing, and removing it could break an import.
+
+**A Tkinter app wraps `update-lesson-v3.sh`** so students never type the
+command: [`tools/update_lesson_app.py`](tools/update_lesson_app.py), started
+by double-clicking `Update Lesson.cmd` (Windows) or `Update Lesson.command`
+(macOS) at the repo root. It offers the lessons from 1 to the cut-off, with
+their titles read from `docs/lessons/v3/README.md`. It checks the folder
+first, offers to commit uncommitted work, then streams the script's output
+into a log. Everything except the window is plain functions, tested by
+`tools/tests/test_update_lesson_app.py`. That includes a real update to
+Lesson 8, which needs the network. `tkinter` is imported only in `main()`,
+so the tests don't need Tk.
+
+The Windows-specific parts are:
+
+- Bash comes from Git for Windows. `find_bash` skips anything under
+  `System32`, because that `bash.exe` is WSL's.
+- Paths passed to bash use forward slashes.
+- The child process runs with `CREATE_NO_WINDOW`.
+- The app passes its own interpreter as `PYTHON`. The scripts' `v3_python`
+  (in the lib) tries `$PYTHON`, `python3`, `python`, then `py`, because on
+  Windows `python3` is usually the Microsoft Store stub.
+
+`.gitattributes` forces CRLF on `*.cmd`. **Only Linux has been exercised**
+(under `xvfb-run`). The `.cmd`/`.command` launchers, Git Bash discovery and
+the Store-stub fallback are untested on real Windows and macOS. In this
+container only `/usr/bin/python3.12` has Tk; the `python3` on PATH (3.11)
+doesn't. The v3 setup aside's §4 is where students install Python 3 with Tk
+— the course never asked for it before, though the scripts always needed
+it.
+
+**v3 snapshots carry NEXT LESSON markers, through the alpha-7 cut-off.** The
+code at the end of Lesson N-1 has a comment at every spot where Lesson N
+adds to or changes an *existing* file:
+
+```java
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * One or two sentences of what the code is for, summarised from the lesson.
+     */
+```
+
+`ADD CODE HERE` marks an insertion point; `CHANGE THE CODE BELOW` marks code
+that gets rewritten (put it right above the statement or member that
+changes, not above its neighbours). Rules: describe intent only — **never
+reference a section, a slide, a "Try It", or a lesson number**; no marker for
+imports, comment-only edits, pure deletions (mention a deletion inside a
+nearby marker instead), or new files. Markers in method bodies are fine:
+javac, even `-Xlint:all`, doesn't warn about a doc comment there. **A
+snapshot may carry an unchanged copy of an earlier lesson's file purely to
+hold markers**; stale markers can't leak forward, because a marker in
+lesson-k/X implies lesson-(k+1)/X exists and replaces it. **Enforce it with
+`./tools/check-lesson-markers-v3.py [N] [--show]`**, which rebuilds each
+lesson's before/after state through the shared lib, diffs them, and reports
+`MISSING` (a change with no marker announcing it) and `ORPHAN` (a marker
+that announces nothing). It's currently clean for 1–15, and both directions
+were checked against deliberately broken markers. When Phase 1b migrates a
+lesson, raise the cut-off and add its markers in the same change. The
+checker's coverage rules are in its docstring; they absorb diff-alignment
+noise (blank lines, a shared `}`), not missing markers.
+
+The v3 builds need **JDK 25**: this container's `JAVA_HOME` pointed at 21,
+which fails every lesson with `invalid source release: 25` — set
+`JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64`. Snapshots 8–11's
+`Drivetrain` briefly went back to literal CAN IDs in the module array while
+Lesson 7 and 13+ used the per-corner `DriveConstants`; they now all use the
+constants (same values), so no lesson's diff "undoes" another's.
+
 **Use it instead of reasoning about whether a snippet compiles.** Current state: lessons 0–34 all compile, at every intermediate stopping point, with zero warnings. A regression is therefore a real result, not noise. Run the specific lesson you touched plus the highest one.
 
 For anything with runtime behavior — a JSON schema, a replacement for a deprecated API, a config with validation — drop a throwaway JUnit test into the sandbox's `src/test/java/` and re-run with `test`. That has caught things compiling never would.

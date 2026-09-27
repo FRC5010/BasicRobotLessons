@@ -21,6 +21,13 @@ public class MyTeleop extends PeriodicOpMode {
     robot.driverController.faceDown().whileTrue(robot.module.driveAtSpeed(0.3));
     // Try It #1: hold the right face button to drive backward at 30% power.
     robot.driverController.faceRight().whileTrue(robot.module.driveAtSpeed(-0.3));
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Make joystick driving the module's default command, so it runs whenever nothing
+     * else is using the module. Negate the stick's Y axis: pushing forward reads
+     * negative, and forward should mean positive speed.
+     */
   }
 
   @Override

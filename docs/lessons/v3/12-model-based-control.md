@@ -74,13 +74,15 @@ who's allowed to read it.
 
 Phoenix 6 configuration works in two steps: build a **configuration
 object** that describes everything about the mechanism, then `apply` it to
-the motor once. You've done this already, back in Lesson 5, for the
-CANcoder itself — now the same pattern, applied to the motors.
+the motor once. You've done this twice already: in Lesson 5 for the
+CANcoder, and in Lesson 7 for the steering motor, when all it needed to know
+was which way it counts. Today that steering configuration grows into the
+one that runs the loop, and the drive motor gets one of its own.
 
-**Add to `SwerveModule`'s imports:**
+**Add to `SwerveModule`'s imports** (`TalonFXConfiguration` is already there
+from Lesson 7):
 
 ```java
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
@@ -95,8 +97,8 @@ that's about to stop existing.
 **Delete from `SwerveModule`'s constructor:**
 
 ```java
-    // DELETE — the config below reads the CANcoder continuously; seeding
-    // the rotor's own counter no longer does anything useful.
+    // DELETE — the steering configuration now reads the CANcoder continuously;
+    // seeding the rotor's own counter no longer does anything useful.
     m_steerMotor.setPosition(
         m_steerEncoder.getAbsolutePosition().getValue().in(Rotations) * SteerConstants.kSteerGearRatio);
 ```
@@ -105,11 +107,13 @@ The CANcoder object, its CAN ID, and its magnet offset are all still right
 there as constructor parameters from Lesson 7; nothing about the
 constructor's *signature* changes today, only what happens inside it.
 
-**Add to `SwerveModule`'s constructor, in priming's place:**
+**Replace the steering configuration from Lesson 7 — the three lines that sat just above the priming line — with:**
 
 ```java
-    // Steering: read angle from the CANcoder, wrap like a circle, hold a P gain.
+    // Steering: which way it counts (Lesson 7), then read angle from the CANcoder,
+    // wrap like a circle, hold a P gain.
     TalonFXConfiguration steerConfig = new TalonFXConfiguration();
+    steerConfig.MotorOutput.Inverted = SteerConstants.kSteerInverted;
     steerConfig.Feedback.FeedbackRemoteSensorID = cancoderId;
     steerConfig.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.RemoteCANcoder;
     steerConfig.Feedback.RotorToSensorRatio = SteerConstants.kSteerGearRatio;
@@ -126,7 +130,14 @@ constructor's *signature* changes today, only what happens inside it.
     m_driveMotor.getConfigurator().apply(driveConfig);
 ```
 
-Four settings carry the lesson.
+Keep that `Inverted` line. Applying a configuration sets *every* setting
+it holds, including the ones you never mention, so leaving the line out
+would quietly put a flipped steering motor back to Phoenix's default. And
+from today it matters more than it did: the loop reads the CANcoder, so a
+motor that counts the opposite way from its sensor makes the loop push the
+wrong way.
+
+Four new settings carry the lesson.
 
 **`FeedbackRemoteSensorID`** and **`FeedbackSensorSource`** are the actual
 handoff: together they tell the steering TalonFX "don't trust your own
@@ -159,12 +170,13 @@ is about the *mechanism*, not the sensor.)
 old software-P `kP` in `SteerConstants` is retiring this lesson — different
 loop, different units, different name.
 
-**Replace `Constants.java`'s `SteerConstants`, and add to `DriveConstants`:**
+**Replace `Constants.java`'s `SteerConstants` — keeping your own `kSteerInverted` value if you flipped it in Lesson 7 — and add to `DriveConstants`:**
 
 ```java
 public static final class SteerConstants {
   public static final double kSteerGearRatio = 25.0;  // rotor : CANcoder
   public static final double kSteerKP = 40.0;         // volts per rotation of error — tune
+  public static final InvertedValue kSteerInverted = InvertedValue.CounterClockwise_Positive; // flip if your steering counts backward
 }
 
 public static final class DriveConstants {

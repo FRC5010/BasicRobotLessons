@@ -25,6 +25,12 @@ public class MyTeleop extends PeriodicOpMode {
 
     robot.driverController.leftBumper().whileTrue(robot.drivetrain.rotate(0.3));
     robot.driverController.rightBumper().whileTrue(robot.drivetrain.rotate(-0.3));
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Bind two taps that turn the whole robot to face a heading: the bottom face button
+     * for 90°, the right face button for 0°.
+     */
   }
 
   @Override

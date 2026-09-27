@@ -26,10 +26,18 @@ import first.robot.Constants.HeadingConstants;
 public class Drivetrain implements Mechanism {
   // Corner order: FL, FR, BL, BR. Pick a convention and stick to it.
   private final SwerveModule[] m_modules = new SwerveModule[] {
-      new SwerveModule(1, 2, 9, 0.0, DriveConstants.kFrontLeft),   // CAN IDs, offset — change to yours
-      new SwerveModule(3, 4, 10, 0.0, DriveConstants.kFrontRight),
-      new SwerveModule(5, 6, 11, 0.0, DriveConstants.kBackLeft),
-      new SwerveModule(7, 8, 12, 0.0, DriveConstants.kBackRight)
+      new SwerveModule(DriveConstants.kFrontLeftDrivePort, DriveConstants.kFrontLeftSteerPort,
+          DriveConstants.kFrontLeftCancoderPort, DriveConstants.kFrontLeftMagnetOffset,
+          DriveConstants.kFrontLeft),
+      new SwerveModule(DriveConstants.kFrontRightDrivePort, DriveConstants.kFrontRightSteerPort,
+          DriveConstants.kFrontRightCancoderPort, DriveConstants.kFrontRightMagnetOffset,
+          DriveConstants.kFrontRight),
+      new SwerveModule(DriveConstants.kBackLeftDrivePort, DriveConstants.kBackLeftSteerPort,
+          DriveConstants.kBackLeftCancoderPort, DriveConstants.kBackLeftMagnetOffset,
+          DriveConstants.kBackLeft),
+      new SwerveModule(DriveConstants.kBackRightDrivePort, DriveConstants.kBackRightSteerPort,
+          DriveConstants.kBackRightCancoderPort, DriveConstants.kBackRightMagnetOffset,
+          DriveConstants.kBackRight)
   };
 
   private final SwerveDriveKinematics m_kinematics = new SwerveDriveKinematics(
@@ -38,13 +46,26 @@ public class Drivetrain implements Mechanism {
       m_modules[2].location,
       m_modules[3].location);
 
-  private final Pigeon2 m_gyro = new Pigeon2(0, new CANBus(CANPort.CAN_S0)); // CAN ID 0 — change to yours
+  private final Pigeon2 m_gyro = new Pigeon2(DriveConstants.kGyroPort, new CANBus(CANPort.CAN_S0));
+
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add odometry: a SwerveDriveOdometry built from the kinematics, the gyro's heading
+   * and the modules' starting positions. It reads all three, so it goes below them —
+   * fields are built top to bottom. Add a Field2d beside it, for drawing the robot on a
+   * field.
+   */
 
   // Remembered for the sim: what rotation rate did we just command?
   private double m_lastCommandedOmega = 0.0;
   private double m_simHeadingDegrees = 0.0;
 
   public Drivetrain() {
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Publish the field widget once, so it shows up in the sim's dashboard.
+     */
+
     Scheduler.getDefault().addPeriodic(this::logTelemetry);
   }
 
@@ -124,6 +145,13 @@ public class Drivetrain implements Mechanism {
         .named("Drive Distance");
   }
 
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add driveToPose: every tick, P control toward a target pose on the field — x, y and
+   * heading, each clamped — turned into robot-relative speeds through the same helper
+   * as driving, finishing once within 5 cm and stopping when it ends.
+   */
+
   /** One tick of pure rotation: steer every wheel tangent to the circle. */
   private void commandRotation(double omegaRevPerSec) {
     applyChassisSpeeds(new ChassisVelocities(0, 0, omegaRevPerSec * 2 * Math.PI));
@@ -150,6 +178,14 @@ public class Drivetrain implements Mechanism {
     return m_gyro.getYaw().getValue().in(Degrees);
   }
 
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add getPose, which asks odometry where it believes the robot is, and resetPose,
+   * which tells odometry where the robot really is right now. Both need the four
+   * modules' positions as one array, so add a private helper that gathers them in a
+   * loop.
+   */
+
   private void logTelemetry() {
     SwerveModuleVelocity[] states = new SwerveModuleVelocity[4];
     int index = 0;
@@ -165,6 +201,13 @@ public class Drivetrain implements Mechanism {
 
     Telemetry.log("Drivetrain/HeadingDegrees", getHeadingDegrees());
     Telemetry.log("Drivetrain/Heading", Rotation2d.fromDegrees(getHeadingDegrees()), Rotation2d.struct);
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Update odometry every tick with the heading and the module positions, log the
+     * pose it returns so AdvantageScope can draw the robot, and hand the same pose to
+     * the field widget.
+     */
   }
 
   /** Advances every module's physics model, then the fake gyro. Only ever called in simulation. */

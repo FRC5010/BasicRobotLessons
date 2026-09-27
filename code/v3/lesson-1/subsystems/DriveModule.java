@@ -26,4 +26,12 @@ public class DriveModule implements Mechanism {
         .whenCanceled(() -> m_driveMotor.setThrottle(0))
         .named("Drive At Speed");
   }
+
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add driveWithJoystick: a second command factory that takes a live speed source — a
+   * DoubleSupplier — and asks it for a fresh value every tick, so the motor follows the
+   * stick instead of one fixed number. Clean each reading with a small private deadband
+   * helper, so a centered stick that reads 0.03 doesn't leave the motor creeping.
+   */
 }

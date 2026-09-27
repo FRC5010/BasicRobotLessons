@@ -3,9 +3,10 @@
 A newer, still-settling alternative to [the classic track](../README.md):
 SystemCore and the 2027 alpha's OpMode framework, with coroutine-style
 Commands V3. Reference code lives under [`code/v3/lesson-N/`](../../../code/v3/),
-and the whole track rolls forward with `./tools/verify-lessons-v3.sh` — see
-the main [README](../../../README.md) for how to use that to jump into a
-lesson in the middle.
+and the whole track rolls forward with `./tools/verify-lessons-v3.sh`. To
+catch up, or to start partway through, see
+[Starting a lesson from the reference code](#starting-a-lesson-from-the-reference-code)
+below.
 
 **Start on [the classic track](../README.md) unless you specifically want
 this one.** Three lessons (17, 22, 25) are gaps for now — their old-course
@@ -52,6 +53,76 @@ status of every lesson, including what changed and why.
 | 32 | [Tests that catch what a plot won't](32-testing.md) | JUnit tests against your own subsystems, with the simulation running inside them | JUnit, arrange/act/assert |
 | 33 | [Reading a match log](33-reading-a-log.md) | Diagnose a failure that already happened, from the log alone — real replay isn't available on this track yet, so the fix is proven by re-running the same script instead | None |
 | 34 | [Tuning your robot when build team hands it over](34-tuning-with-sysid.md) | Measure a real machine's gains with a hand-built `SysIdRoutine`, since WPILib's own isn't ported to this framework yet | `Trigger.and(...)` |
+
+## Starting a lesson from the reference code
+
+Fell behind, lost a file, or want to begin at Lesson 8 without typing out
+0–7? This repo can put your project in the exact state a lesson expects.
+
+**The easy way: open the lesson updater.** In your clone of this repo,
+double-click **`Update Lesson.cmd`** (Windows) or **`Update Lesson.command`**
+(macOS). On Linux, run `python3 tools/update_lesson_app.py` from the repo.
+Pick the lesson you're **about to do**, choose your project's folder, and
+press **Update**. It needs Python 3 with Tk (see
+[the setup aside, section 4](aside-setup.md#4-clone-the-course-repo-and-pull-out-your-starting-project))
+and Git for Windows, which gives it Git Bash. If your project has
+uncommitted work, it offers to commit it for you first. Its log shows the
+same messages the script below prints.
+
+**Or run the script it wraps, from Git Bash**, giving it the lesson you're
+about to do and your project's folder:
+
+```bash
+./tools/update-lesson-v3.sh 8 ~/dev/MyOpModeRobot
+```
+
+Either way it does the same thing. Lesson 8 starts where Lesson 7
+finished, so that copies the reference code from lessons 0 through 7 into
+your project, deletes the files those lessons had you delete, and installs
+the vendordeps they need. It works on your project in place and
+**overwrites every file those lessons touch**, so it refuses to run unless
+your project is a git repository with everything committed. Commit first
+(the app offers to). Afterwards, `git status` and `git diff` show exactly
+what changed. If you want your old version back, `git checkout .` restores
+every file it changed or deleted, and `git clean -fd` removes the ones it
+added. It works up to the last lesson migrated to the current alpha, Lesson
+15 today.
+
+**It goes backwards too.** Ask for an earlier lesson than the one you're on
+— to redo one, say — and it also deletes the files that only later lessons
+add, listing each one, since they'd refer to code that isn't there any
+more. The same goes for starting over the lesson you're partway through:
+any new file you'd already made for it is deleted too. Files of your own
+that no lesson makes are left alone.
+
+The one file it doesn't simply overwrite is **`Constants.java`**, because
+that's where your robot lives: CAN IDs, magnet offsets, gear ratios, which
+way your steering counts, camera mounts, tuned gains. Any constant you've
+changed from what the lessons gave it keeps your value, constants you added
+yourself stay, and the constants the lessons add arrive around them. Going
+backwards, a later lesson's constant stays if you changed its value, so
+it's still there when you roll forward again; if the lesson you're about
+to redo is the one that adds it, keep your line rather than typing the
+lesson's. It prints every value it kept, so check that list. If it can't
+read your `Constants.java` — say, a half-finished edit with a missing brace
+— it stops before changing anything and tells you why.
+
+The code it writes marks every place the lesson you're about to do changes
+an existing file:
+
+```java
+/**
+ * ====== NEXT LESSON: ADD CODE HERE ======
+ * What the new code is for, summarised from the lesson.
+ */
+```
+
+`ADD CODE HERE` marks a spot where new code goes; `CHANGE THE CODE BELOW`
+marks code the lesson has you rewrite. Files the lesson creates from scratch
+aren't marked — the lesson tells you to make them. The script lists which
+files have markers, so you know where to look before you start reading.
+They're only comments: delete each one once you've written its code, or
+leave it. The next run of the script replaces the file anyway.
 
 ## Asides
 

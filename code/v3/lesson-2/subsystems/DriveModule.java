@@ -16,6 +16,13 @@ public class DriveModule implements Mechanism {
       new TalonFX(Constants.DriveConstants.kDriveMotorPort, new CANBus(CANPort.CAN_S0)); // CAN ID 1 — change to yours
 
   public DriveModule() {
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Register a standing every-tick callback with the scheduler that logs the motor's
+     * position and velocity, so telemetry stays fresh whether or not a command is
+     * running.
+     */
+
     // Setup that should happen when the module is created goes here.
   }
 
@@ -35,6 +42,12 @@ public class DriveModule implements Mechanism {
       double raw = speedSupplier.getAsDouble();   // fetch fresh value this tick
       double speed = applyDeadband(raw, 0.1);     // clean it up
       m_driveMotor.setThrottle(speed);
+
+      /**
+       * ====== NEXT LESSON: ADD CODE HERE ======
+       * Log the speed you just commanded, right where it's computed — it only exists
+       * inside this command.
+       */
     }).named("Drive With Joystick");
   }
 
@@ -46,6 +59,12 @@ public class DriveModule implements Mechanism {
       double raw = speedSupplier.getAsDouble();
       double speed = applyDeadband(raw, 0.1) * scale;
       m_driveMotor.setThrottle(speed);
+
+      /**
+       * ====== NEXT LESSON: ADD CODE HERE ======
+       * Log the commanded speed here too, under the same name, so slow mode shows up in
+       * the log.
+       */
     }).named("Drive With Joystick (Slow Mode)");
   }
 
@@ -56,4 +75,12 @@ public class DriveModule implements Mechanism {
     }
     return value;
   }
+
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add the telemetry method the constructor registers: read the motor's position in
+   * rotations and velocity in rotations per second, and log both. Add a getter that
+   * returns the position as a plain number, too — a reading is safe to share alongside
+   * the command factories.
+   */
 }

@@ -33,6 +33,12 @@ public class MyTeleop extends PeriodicOpMode {
     robot.driverController.faceLeft().onTrue(robot.module.steerToAngle(90));
     // Tap the top face button to steer back to 0° and hold it there.
     robot.driverController.faceUp().onTrue(robot.module.steerToAngle(0));
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Bind D-pad up to drive forward exactly 1 meter and then stop on its own — a
+     * command that finishes by itself instead of running until something cancels it.
+     */
   }
 
   @Override

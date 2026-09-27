@@ -16,6 +16,13 @@ public class MyTeleop extends PeriodicOpMode {
   /** The Robot instance is passed into the opmode via the constructor. */
   public MyTeleop(Robot robot) {
     this.robot = robot;
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Bind a gamepad button to a drive command: while the bottom face button is held,
+     * drive forward at 30% power, and stop when it's released. Bindings go in the
+     * constructor because it runs once, when this opmode is selected.
+     */
   }
 
   @Override

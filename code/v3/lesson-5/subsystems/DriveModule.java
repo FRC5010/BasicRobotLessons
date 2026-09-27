@@ -32,6 +32,13 @@ public class DriveModule implements Mechanism {
   // The bridge: lets us push fake sensor values into the TalonFX during sim.
   private final TalonFXSimState m_driveSim = m_driveMotor.getSimState();
 
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * Rebuild the drive model with the real gearing: the drive gear ratio instead of 1.0,
+   * and a larger wheel-side inertia, so one wheel turn in sim means the same motion as
+   * on the robot.
+   */
+
   // The physics: one Kraken X60 motor spinning a small inertia.
   // 0.001 = moment of inertia (kg*m^2), 1.0 = gear ratio (real gearing arrives in Lesson 7).
   private final DCMotorSim m_driveModel =
@@ -122,6 +129,14 @@ public class DriveModule implements Mechanism {
         .named("Steer To Angle");
   }
 
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add driveDistance: a command that finishes on its own. Zero the drive encoder,
+   * drive at the given speed, wait until the wheel has covered the distance, then stop.
+   * Stop the motor when the command is canceled too — an interrupted command never
+   * reaches the last line of its body.
+   */
+
   /** Returns 0 when |value| is within 'band', otherwise passes the value through. */
   private double applyDeadband(double value, double band) {
     if (Math.abs(value) < band) {
@@ -152,6 +167,12 @@ public class DriveModule implements Mechanism {
     return m_steerMotor.getPosition().getValue().in(Degrees);
   }
 
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add a reading that turns the drive motor's rotations into meters: divide by the
+   * gear ratio to get wheel rotations, then multiply by the wheel's circumference.
+   */
+
   /** Advances the physics model by one tick. Only ever called in simulation. */
   public void simulatePeriodic() {
     // 1. Tell the sim the battery voltage available to each motor.
@@ -168,6 +189,13 @@ public class DriveModule implements Mechanism {
     m_steerModel.setInputVoltage(steerVolts);
     m_steerModel.update(0.020);
 
+    /**
+     * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+     * The drive model now reports wheel motion, because it knows about the gearbox, but
+     * the TalonFX's fake encoder sits on the rotor. Multiply the drive motor's two
+     * readings back up by the gear ratio before pushing them in.
+     */
+
     // 4. Push each model's resulting motion BACK into its TalonFX's fake encoder.
     m_driveSim.setRawRotorPosition(m_driveModel.getAngularPosition() / (2 * Math.PI));
     m_driveSim.setRotorVelocity(m_driveModel.getAngularVelocity() / (2 * Math.PI));
@@ -182,5 +210,10 @@ public class DriveModule implements Mechanism {
     Telemetry.log("DriveModule/PositionRotations", rotations);
     Telemetry.log("DriveModule/VelocityRotPerSec", rps);
     Telemetry.log("DriveModule/SteerAngleDegrees", getSteerAngleDegrees());
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Log the distance driven, too.
+     */
   }
 }
