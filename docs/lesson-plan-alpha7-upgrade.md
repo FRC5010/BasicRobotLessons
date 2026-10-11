@@ -497,10 +497,28 @@ the lesson's own opmode:
   while disabled — the classic lesson's `LoggedDashboardChooser` +
   `onChange` pre-build, for free. The `FollowPath.Builder` is a `Robot`
   field, and `Autos.registerEventTriggers()` runs in `Robot`'s constructor.
-- **On the red alliance in sim, the path flips while the simulated robot
-  doesn't move**, and the robot drives off the field. The lesson says to
-  leave the sim on blue, and Try It #6 moves `kSimStartingPose` to the
-  mirrored start, which works (finishes at the mirror of the blue finish).
+- **Revised 2026-10-11, after the user's report** that the first auto in
+  SimGUI started where the robot was placed and drove in odd directions,
+  while later ones looked fine. Reproduced by driving the real `OpModeRobot`
+  loop with `DriverStationSim` the way SimGUI does. **SimGUI starts every
+  launch on Red 1** (alpha-7's `DriverStationGui.cpp`: `DSSimModel`'s
+  constructor, pushed to the HAL on the first mode click), so the path
+  flipped while the robot sat at the blue start. The cameras pulled the
+  estimate's position back within about a second, but not its heading. The
+  later runs only looked right, because by then the truth was off the field
+  where no tag is visible. Re-running on blue went wrong the same way, because
+  nothing put the robot back at the start. **User decision: the simulator
+  plays the field crew.** Each auto opmode's constructor (run on selection,
+  and again on the re-create after each disable) calls
+  `drivetrain.placeSimulatedRobot(Autos.startPose(path))`. That is a no-op on
+  a real robot; `startPose` flips for red the way BLine does. Verified: three
+  consecutive runs on Red 1 and on Blue 1 each start at the correct corner,
+  with truth and estimate within 1 cm, and finish at (10.57, 2.06, −1°) and
+  (5.97, 6.01, 179°) respectively. The lesson gained a §8 for this.
+  Separately measured: re-created opmodes leave their old trigger bindings
+  active (scope is the opmode ID), so run N schedules N `FollowPath`s and the
+  newest cancels the others in the same tick. That's harmless here, but worth
+  knowing for every auto opmode in the track.
 
 `tools/lib/v3-lessons.sh` now maps `code/v3/lesson-N/deploy/**` to
 `src/main/deploy/**` (lists it, and removes it on a rollback along with the

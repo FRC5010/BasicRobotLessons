@@ -49,6 +49,12 @@ public class ChassisSimulation {
     }
   }
 
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * A way to set the simulated chassis down at a chosen spot, standing still — the
+   * job a person does before a real match.
+   */
+
   public Pose2d getPose() {
     return m_pose;
   }

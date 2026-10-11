@@ -257,6 +257,12 @@ public class Drivetrain implements Mechanism, PoseProvider {
     return m_chassisSim != null ? m_chassisSim.getPose() : null;
   }
 
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * A sim-only way to set the simulated robot down at a chosen spot, the way a person
+   * places a real robot before a match. It does nothing on a real robot.
+   */
+
   private void periodic() {
     m_gyroIO.updateInputs(m_gyroInputs);
     Telemetry.log("Drivetrain/Gyro/YawDegrees", m_gyroInputs.yawDegrees);

@@ -1,13 +1,17 @@
 package first.robot.commands;
 
 import org.wpilib.command3.Command;
+import org.wpilib.driverstation.Alliance;
+import org.wpilib.driverstation.MatchState;
 import org.wpilib.math.controller.PIDController;
+import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.telemetry.Telemetry;
 
 import first.robot.Constants.PathConstants;
 import first.robot.subsystems.Drivetrain;
 import first.robot.subsystems.Localizer;
 import frc.robot.lib.BLine.commands.FollowPath;
+import frc.robot.lib.BLine.field.FlippingUtil;
 import frc.robot.lib.BLine.following.DriveType;
 import frc.robot.lib.BLine.path.Path;
 
@@ -40,10 +44,17 @@ public final class Autos {
         .withTelemetry(Telemetry.getTable()); // log what the follower is doing
   }
 
-  /** One drawn path, as a command. The file is deploy/autos/paths/<pathName>.json. */
-  public static Command followPath(FollowPath.Builder pathBuilder, String pathName) {
-    return pathBuilder.build(new Path(pathName))
+  /** One drawn path, as a command. */
+  public static Command followPath(FollowPath.Builder pathBuilder, Path path) {
+    return pathBuilder.build(path)
         .withPoseReset(); // start by telling the estimate we're at the path's start
+  }
+
+  /** Where a path starts, on this alliance's side of the field — the same flip BLine makes. */
+  public static Pose2d startPose(Path path) {
+    Pose2d start = path.getAuthoredStartPose().get(); // every path here starts with a waypoint
+    boolean red = MatchState.getAlliance().orElse(Alliance.BLUE) == Alliance.RED;
+    return red ? FlippingUtil.flipFieldPose(start) : start;
   }
 
   /** Names a path file can fire with lib_key. BLine keeps them for the whole program. */

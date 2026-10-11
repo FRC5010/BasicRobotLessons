@@ -268,10 +268,29 @@ that tag and measured in sim with the real `Robot`:
   file while disabled — what the classic lesson built a chooser and
   `onChange` for. A misspelled path name throws `IllegalArgumentException`
   right then.
-- **Paths start at `kSimStartingPose` (3, 3, 0°)** because `withPoseReset()`
-  resets only the estimate. On a red alliance in sim the path flips and the
-  simulated robot doesn't, and the robot drives off the field; moving
-  `kSimStartingPose` to the mirrored start fixes it (Try It #6).
+- **In sim, selecting an auto sets the simulated robot down at its start**
+  (`Drivetrain.placeSimulatedRobot`, a no-op on a real robot, called from each
+  auto opmode's constructor with `Autos.startPose(path)`, which flips for red
+  like BLine does). `withPoseReset()` resets only the estimate, so without it
+  the estimate is told a pose the robot isn't at: the cameras fix the
+  position within about a second but never the heading, and the robot drives
+  off in odd directions. Two ways that happened, both reproduced by driving the
+  real `OpModeRobot` loop through `DriverStationSim`:
+  - **SimGUI starts every launch on Red 1.** Its `DSSimModel` constructor sets
+    `HAL_ALLIANCE_STATION_RED_1` and pushes it to the HAL on the first mode
+    click (read in alpha-7's `DriverStationGui.cpp`; the DS window's Alliance
+    Station is editable only while Disconnected). So `withDefaultShouldFlip()`
+    flipped the path while the robot sat at the blue start. Later runs only
+    *looked* right: the truth had driven off the field where no tag is visible,
+    so the estimate traced the path unopposed.
+  - **Re-running in one session.** Disabling after an auto rebuilds the opmode
+    (`OpModeRobot` forces a re-create), and the robot used to stay where the
+    last run ended. Now the rebuild sets it back down at the start.
+- **Alpha-7 framework quirk, measured:** a re-created opmode's trigger
+  bindings don't replace the old instance's. `BindingScope.ForOpmode` checks
+  only the opmode *ID*, so on run N, N `FollowPath`s are scheduled and the
+  newest cancels the rest in the same tick. The result is correct; it's
+  recorded, not worked around.
 
 **Lesson 18's lag numbers were remeasured on alpha-7** with the documented
 move (stowed to `kMaxHeight`) at full 20 ms ticks:

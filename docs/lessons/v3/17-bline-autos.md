@@ -20,8 +20,9 @@ path.
 - **Speed limits are physics** — why a corner costs speed, and the arithmetic
   for picking a top speed your robot can actually stop from
 - **Event markers** — firing an action partway along a path
-- **An opmode is built when it's selected** — so an auto's path file is read
-  while the robot is still disabled, not when the match starts
+- **An opmode is built when it's selected** — so an auto's path file is read,
+  and the simulated robot set down at its start, while the robot is still
+  disabled
 
 ---
 
@@ -308,7 +309,7 @@ Read it as a sentence: start at (3, 3) facing 0°, drive through (6, 3), be faci
 90° by halfway up the next leg, and end at (6, 6) facing 180°. That `t_ratio` of
 `0.5` is "halfway along this segment" — rotations get placed by
 fraction-of-segment rather than by coordinate, since they don't have a position
-of their own. The `event_trigger` element is for section 8; leave it in for now.
+of their own. The `event_trigger` element is for section 9; leave it in for now.
 
 **`"profiled_rotation": true`** is what makes "by halfway up the next leg" true.
 With it, the heading the path asks for turns *gradually*, in step with how far
@@ -405,9 +406,8 @@ makes something visible in section 7 that one path would hide.
 }
 ```
 
-It starts at the same place — in this sim the robot always starts at
-(3, 3) — then runs past the middle of the field and turns right, ending up
-facing −90°.
+It starts at the same place as Two Corners, then runs past the middle of the
+field and turns right, ending up facing −90°.
 
 ---
 
@@ -479,7 +479,7 @@ whole path to the far side of the field when the Driver Station reports you're o
 the red alliance — draw once, works on both. `withTelemetry(Telemetry.getTable())`
 tells B-Line to log what it's doing — cross-track error, distance left, which
 point it's heading for — under `FollowPath/`, next to everything else you log.
-Section 9 uses those.
+Section 10 uses those.
 
 Alright — one thing to notice about that list, because it explains the shape of
 the method. The path isn't in it. Every one of those arguments describes how
@@ -493,15 +493,15 @@ ever draw.
 > guarantees only one of them is ever running. And B-Line resets the controllers
 > each time a path starts, so each run starts clean.
 
-With that in place, turning a path's name into something you can schedule is
-one short method.
+With that in place, turning a path into something you can schedule is one short
+method.
 
 **Add to `Autos`, below `makePathBuilder`:**
 
 ```java
-  /** One drawn path, as a command. The file is deploy/autos/paths/<pathName>.json. */
-  public static Command followPath(FollowPath.Builder pathBuilder, String pathName) {
-    return pathBuilder.build(new Path(pathName))
+  /** One drawn path, as a command. */
+  public static Command followPath(FollowPath.Builder pathBuilder, Path path) {
+    return pathBuilder.build(path)
         .withPoseReset(); // start by telling the estimate we're at the path's start
   }
 ```
@@ -512,13 +512,13 @@ one short method.
 import frc.robot.lib.BLine.path.Path;
 ```
 
-`new Path("TwoCorners")` opens `deploy/autos/paths/TwoCorners.json`, reads it,
-and reads `config.json` alongside it — the `.json` is added for you.
-`withPoseReset()` asks B-Line to call `localizer::resetPose` with the path's
-starting pose the moment the path starts: "we're at the start of the path, trust
-me." On a real field that's true because a person put the robot there, which is
-exactly why it's worth doing — the estimate starts the auto knowing where the
-robot is instead of guessing.
+It takes a `Path` — a path file, already read in; section 7 is where that
+happens. `withPoseReset()` asks B-Line to call `localizer::resetPose` with the
+path's starting pose the moment the path starts: "we're at the start of the
+path, trust me." On a real field that's true because a person put the robot
+there, which is exactly why it's worth doing — the estimate starts the auto
+knowing where the robot is instead of guessing. Hold on to that "because a
+person put it there"; section 8 is about what happens when nobody did.
 
 The builder needs a home that's built once and reachable from every autonomous
 opmode. You already have exactly that place.
@@ -570,6 +570,7 @@ import org.wpilib.opmode.PeriodicOpMode;
 
 import first.robot.Robot;
 import first.robot.commands.Autos;
+import frc.robot.lib.BLine.path.Path;
 
 @Autonomous(name = "Two Corners", group = "Paths")
 public class RobotAutoTwoCorners extends PeriodicOpMode {
@@ -578,8 +579,11 @@ public class RobotAutoTwoCorners extends PeriodicOpMode {
   public RobotAutoTwoCorners(Robot robot) {
     this.robot = robot;
 
-    // Built right now, while the robot is still disabled; it runs on enable.
-    RobotModeTriggers.autonomous().onTrue(Autos.followPath(robot.pathBuilder, "TwoCorners"));
+    // Read the path file now, while the robot is still disabled.
+    Path path = new Path("TwoCorners");
+
+    // Runs on enable.
+    RobotModeTriggers.autonomous().onTrue(Autos.followPath(robot.pathBuilder, path));
   }
 
   @Override
@@ -591,18 +595,21 @@ public class RobotAutoTwoCorners extends PeriodicOpMode {
 
 **Create `opmode/RobotAutoFarSide.java`** — the same file with three words
 changed: the class name `RobotAutoFarSide` (in both places), the annotation's
-`name = "Far Side"`, and the path name `"FarSide"`.
+`name = "Far Side"`, and the path file's name, `"FarSide"`.
 
 The `group = "Paths"` sorts both into a group of their own, apart from
 Lesson 9's two.
 
+`new Path("TwoCorners")` opens `deploy/autos/paths/TwoCorners.json`, reads it,
+and reads `config.json` alongside it — the `.json` is added for you.
+
 Now the part worth understanding. **An opmode's constructor runs the moment it's
 selected on the Driver Station** — not when you enable. That's how Lesson 9's
 binding got scoped to its opmode, and it has a second consequence here: the
-`Autos.followPath(...)` call on that line runs at selection time too. So the path
-file is opened, parsed and checked while the robot is still sitting disabled,
-minutes before the match — and when autonomous starts, the command is already
-built and just has to run.
+`new Path(...)` line runs at selection time too. So the path file is opened,
+parsed and checked while the robot is still sitting disabled, minutes before
+the match — and when autonomous starts, the command is already built and just
+has to run.
 
 That matters more than it sounds. Reading and checking a file isn't free, and the
 start of autonomous is the one moment you can't afford to spend on setup. It also
@@ -617,7 +624,126 @@ starts.
 
 ---
 
-## 8. Event markers
+## 8. Put the robot where the path starts
+
+`withPoseReset()` makes a promise on your behalf: "the robot is at the start of
+the path." On a real field a person keeps that promise, by carrying the robot
+out and setting it down there before the match. In the simulator, nobody does.
+The simulated robot sits wherever it already is — at `kSimStartingPose` after a
+fresh launch, or wherever the last run ended.
+
+Break that promise and the robot gets told a pose it isn't at. The cameras
+still see where it really is, so within about a second they drag the
+estimate's *position* back to the truth. They don't fix its *heading*, so the
+robot goes on believing it faces the wrong way and drives off in strange
+directions. That's what happens the second time you run an auto without
+restarting the sim.
+
+It also happens the very first time, for a reason you'd never guess: **SimGUI
+starts out on the red alliance.** Its **DS** window says *Red 1*, and the first
+time you click Autonomous it tells the robot so. `withDefaultShouldFlip()` from
+section 6 does exactly its job — it mirrors the path to the red end of the field
+and resets the estimate there — while the simulated robot is still sitting at
+the blue start, most of a field away.
+
+So do the person's job in the simulator: when an auto is selected, set the
+simulated robot down where that auto starts. It takes three small pieces.
+
+**Add to `ChassisSimulation`, above `getPose`:**
+
+```java
+  /** Set the chassis down at 'pose', at rest — what a person does before a match. */
+  public void placeAt(Pose2d pose) {
+    m_pose = pose;
+    m_velocity = new ChassisVelocities();
+  }
+```
+
+"At rest" is the second line: a robot you've just set down isn't moving, so
+whatever velocity the chassis was carrying goes too.
+
+**Add to `Drivetrain`, below `getSimulatedPose`:**
+
+```java
+  /**
+   * Sim only: set the simulated chassis down at 'pose', the job a person does
+   * before a real match. Does nothing on a real robot.
+   */
+  public void placeSimulatedRobot(Pose2d pose) {
+    if (m_chassisSim != null) {
+      m_chassisSim.placeAt(pose);
+    }
+  }
+```
+
+The same null check as `simulateChassis`: on a real robot there's no
+`m_chassisSim`, because a person does this job. Nothing else needs telling,
+either. Lesson 16's `GyroIOSim` reads its heading straight off the simulated
+chassis, so the gyro turns with it.
+
+The third piece answers "where *does* this auto start?", on whichever side of
+the field the robot is playing.
+
+**Add to `Autos`, below `followPath`:**
+
+```java
+  /** Where a path starts, on this alliance's side of the field — the same flip BLine makes. */
+  public static Pose2d startPose(Path path) {
+    Pose2d start = path.getAuthoredStartPose().get(); // every path here starts with a waypoint
+    boolean red = MatchState.getAlliance().orElse(Alliance.BLUE) == Alliance.RED;
+    return red ? FlippingUtil.flipFieldPose(start) : start;
+  }
+```
+
+**Add to `Autos`'s imports:**
+
+```java
+import org.wpilib.driverstation.Alliance;
+import org.wpilib.driverstation.MatchState;
+import org.wpilib.math.geometry.Pose2d;
+
+import frc.robot.lib.BLine.field.FlippingUtil;
+```
+
+Two `Optional`s, Lesson 15's box that might be empty. `getAuthoredStartPose()`
+is one because a path could begin with a bare rotation and have no starting
+spot of its own. Yours all begin with a waypoint, so `.get()` is safe, and if
+you ever draw one that doesn't, it crashes right there, which is what you'd
+want. `MatchState.getAlliance()` is the other: until the Driver Station says,
+there is no alliance. **`.orElse(Alliance.BLUE)`** takes what's in the box, or
+blue if it's empty, the same rule B-Line's flip follows. Then
+`FlippingUtil.flipFieldPose`, from B-Line, mirrors the pose the same way B-Line
+mirrors the path, so the robot is set down exactly where the flipped path
+starts.
+
+**Then add the placement to both auto opmodes' constructors, between the two lines you have:**
+
+```java
+  public RobotAutoTwoCorners(Robot robot) {
+    this.robot = robot;
+
+    // Read the path file now, while the robot is still disabled.
+    Path path = new Path("TwoCorners");
+
+    // In the simulator, set the robot down at the path's start — the job a
+    // person does on a real field. On a real robot this does nothing.
+    robot.drivetrain.placeSimulatedRobot(Autos.startPose(path));
+
+    // Runs on enable.
+    RobotModeTriggers.autonomous().onTrue(Autos.followPath(robot.pathBuilder, path));
+  }
+```
+
+The constructor is exactly the right moment, for the same reason it's the right
+moment to read the file: it runs when the auto is selected, while the robot is
+disabled — when, on a real field, someone is setting the robot down. And it
+runs again every time you disable after an auto has run, because the framework
+rebuilds the opmode then. So every run starts from the start, on whichever side
+of the field you're playing.
+
+---
+
+## 9. Event markers
 
 Real autos do things along the way — spin up a shooter while still driving, drop an
 intake before arriving. B-Line handles that with **event markers**: a named point on
@@ -628,7 +754,7 @@ registers what that key should do. Registration is `static` — B-Line keeps one
 for the whole program, not one per path — so it happens once, and every path that
 mentions `"shoot"` gets it.
 
-**Add to `Autos`, below `followPath`:**
+**Add to `Autos`, below `startPose`:**
 
 ```java
   /** Names a path file can fire with lib_key. BLine keeps them for the whole program. */
@@ -689,13 +815,17 @@ That's the last piece of `Autos`.
 package first.robot.commands;
 
 import org.wpilib.command3.Command;
+import org.wpilib.driverstation.Alliance;
+import org.wpilib.driverstation.MatchState;
 import org.wpilib.math.controller.PIDController;
+import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.telemetry.Telemetry;
 
 import first.robot.Constants.PathConstants;
 import first.robot.subsystems.Drivetrain;
 import first.robot.subsystems.Localizer;
 import frc.robot.lib.BLine.commands.FollowPath;
+import frc.robot.lib.BLine.field.FlippingUtil;
 import frc.robot.lib.BLine.following.DriveType;
 import frc.robot.lib.BLine.path.Path;
 
@@ -728,10 +858,17 @@ public final class Autos {
         .withTelemetry(Telemetry.getTable()); // log what the follower is doing
   }
 
-  /** One drawn path, as a command. The file is deploy/autos/paths/<pathName>.json. */
-  public static Command followPath(FollowPath.Builder pathBuilder, String pathName) {
-    return pathBuilder.build(new Path(pathName))
+  /** One drawn path, as a command. */
+  public static Command followPath(FollowPath.Builder pathBuilder, Path path) {
+    return pathBuilder.build(path)
         .withPoseReset(); // start by telling the estimate we're at the path's start
+  }
+
+  /** Where a path starts, on this alliance's side of the field — the same flip BLine makes. */
+  public static Pose2d startPose(Path path) {
+    Pose2d start = path.getAuthoredStartPose().get(); // every path here starts with a waypoint
+    boolean red = MatchState.getAlliance().orElse(Alliance.BLUE) == Alliance.RED;
+    return red ? FlippingUtil.flipFieldPose(start) : start;
   }
 
   /** Names a path file can fire with lib_key. BLine keeps them for the whole program. */
@@ -744,13 +881,20 @@ public final class Autos {
 
 ---
 
-## 9. Run it
+## 10. Run it
 
-Run `./gradlew simulateJava` and pick **Two Corners** on SimGUI's opmode
-selector. Before you enable anything, look at the console: the line
+Run `./gradlew simulateJava`. Before you click anything in **Robot State**,
+find SimGUI's **DS** window and set **Alliance Station** to **Blue 1**. You
+can only change it while Robot State says *Disconnected*, which it does when
+SimGUI first opens, and it starts on Red 1 every time. (Red works too now —
+that's Try It #6 — but the numbers below are for blue.)
+
+Then click **Autonomous** and pick **Two Corners** on the opmode selector.
+Before you enable anything, look at the console: the line
 `********** Creating OpMode Two Corners **********` just printed, and that's the
-moment your path file was read. Pick **Far Side** and it prints again for that
-one. Pick **Two Corners** back, then set state to **Enabled**.
+moment your path file was read and the robot was set down at (3, 3). Pick
+**Far Side** and it prints again for that one. Pick **Two Corners** back, then
+set state to **Enabled**.
 
 Then watch it the way you've watched every closed-loop lesson since Lesson 5 —
 asked-for against measured. Open AdvantageScope's **Odometry** tab, put
@@ -775,22 +919,21 @@ starts measuring against the second's. Then watch it shrink back toward zero as
 the cross-track loop pulls the robot onto the second leg. Nothing told the
 follower it was off the line. Correcting is the only thing it ever does.
 
-> **Leave the sim's alliance on blue (or unset).** With `withDefaultShouldFlip()`,
-> choosing a red alliance station flips the whole path to the red end of the
-> field — and resets the estimate there — while the simulated robot is still
-> parked at the blue start. The estimate and the truth then disagree by most of
-> a field, and in this course's sim the robot drives off the edge of the world.
-> On a real field that can't happen, because a person puts the robot at the red
-> start. Try It #6 shows the sim version of that.
+To run it again, set state to **Disabled**. The console shows the opmode
+closing and being created again — which reads the path and sets the robot back
+down at (3, 3) — so just **Enable** again. If you want to watch section 8's
+problem happen, comment out the `placeSimulatedRobot` line and run twice
+without restarting.
 
 ---
 
 ## Try it
 
 1. **Add a third path.** Draw or hand-write one, then make it selectable. It
-   should be one new JSON file and one new opmode whose constructor is a single
-   `Autos.followPath(robot.pathBuilder, "YourPath")` line — if you find yourself
-   building a second `FollowPath.Builder`, re-read section 6.
+   should be one new JSON file and one new opmode whose constructor is Two
+   Corners' three lines with a different file name — if you find yourself
+   building a second `FollowPath.Builder`, re-read section 6. Your path can
+   start anywhere: the robot is set down wherever it begins.
 2. **Break the arithmetic on purpose.** First, predict: what does setting
    `default_intermediate_handoff_radius_meters` to `0.05` do to the corners —
    tighter, or wider? Run it and see. (In this course's sim the robot swings
@@ -821,12 +964,13 @@ follower it was off the line. Correcting is the only thing it ever does.
    `Telemetry.log("Auto/ShootFired", true)`, say — and confirm on the plot
    that it fires where you placed it. Then move the `t_ratio` in the path file
    and watch the timing move with it.
-6. **Run it on red — properly.** The callout in section 9 says the robot has to
-   actually *be* at the red start. So put it there: change `kSimStartingPose`
-   to the mirrored pose, `new Pose2d(16.54 - 3, 8.07 - 3,
-   Rotation2d.fromDegrees(180))`, pick a red alliance station in SimGUI, and run
-   Two Corners. It should trace the same shape rotated half a turn and finish
-   near (10.54, 2.07) facing 0°. Put `kSimStartingPose` back when you're done.
+6. **Run it on red.** Click **Disconnected**, set the DS window's Alliance
+   Station to **Red 1**, click **Autonomous**, and pick **Two Corners** again.
+   The robot is set down at the red end, (13.54, 5.07) facing 180°, and runs
+   the same shape rotated half a turn, finishing near (10.54, 2.07) facing 0°.
+   Nothing in your code changed: `withDefaultShouldFlip()` and `startPose`
+   agree about which side of the field you're on. Predict before you run it:
+   what would happen on red if `startPose` didn't flip?
 
 ---
 
@@ -863,12 +1007,19 @@ opmode's constructor means the file is read when the auto is *selected*, while
 everyone is still standing behind the glass, instead of in the first seconds of
 the match.
 
+Section 8 is worth one more thought, because it'll come back. `withPoseReset()`
+is a promise about the world — "a person put the robot here" — and code that
+makes a promise about the world is only as right as the world is. On a real
+field a person keeps it. In the simulator you had to keep it yourself, and the
+place to do it was the same moment a person would: when the auto is selected.
+
 Underneath all of it the old shapes kept holding. Lesson 16's kinematics-backward
 loop got a name and a second caller. `resetPose` from Lesson 14 got called by
 B-Line instead of by you. And a **method reference** turned out to work just as
 well for handing over a verb (`drivetrain::driveRobotRelative`) as it did for
 handing over a value back in Lesson 2. The only genuinely new plumbing was two
-small public doors on `Drivetrain` — deliberate, named, and narrow.
+small public doors on `Drivetrain` — deliberate, named, and narrow — plus one
+sim-only one that does nothing on a real robot.
 
 The drivetrain half of this course is done. Your robot drives itself along drawn
 paths, knows where it is from three kinds of evidence, and lives in a simulated

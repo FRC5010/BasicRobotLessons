@@ -10,6 +10,7 @@ import org.wpilib.opmode.PeriodicOpMode;
 
 import first.robot.Robot;
 import first.robot.commands.Autos;
+import frc.robot.lib.BLine.path.Path;
 
 @Autonomous(name = "Two Corners", group = "Paths")
 public class RobotAutoTwoCorners extends PeriodicOpMode {
@@ -18,8 +19,15 @@ public class RobotAutoTwoCorners extends PeriodicOpMode {
   public RobotAutoTwoCorners(Robot robot) {
     this.robot = robot;
 
-    // Built right now, while the robot is still disabled; it runs on enable.
-    RobotModeTriggers.autonomous().onTrue(Autos.followPath(robot.pathBuilder, "TwoCorners"));
+    // Read the path file now, while the robot is still disabled.
+    Path path = new Path("TwoCorners");
+
+    // In the simulator, set the robot down at the path's start — the job a
+    // person does on a real field. On a real robot this does nothing.
+    robot.drivetrain.placeSimulatedRobot(Autos.startPose(path));
+
+    // Runs on enable.
+    RobotModeTriggers.autonomous().onTrue(Autos.followPath(robot.pathBuilder, path));
   }
 
   @Override
