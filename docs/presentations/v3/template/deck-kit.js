@@ -369,8 +369,10 @@ function addNumberedSteps(slide, {
  *  top-right corner, the same bold-orange-means-"you type this" language
  *  `addCodeCard`'s `fileLabel` already uses. Leave it off for run-it/predict/
  *  observe items. This needs its own width budget, so a `code` card's title
- *  gets less room — the layout below accounts for that automatically. */
-function addTryItGrid(slide, { cards, x = 0.7, y = 2.45, totalW = 11.9, h, gap = 0.3, cols, bodyFontSize = 20 }) {
+ *  gets less room — the layout below accounts for that automatically.
+ *
+ *  `startNum` numbers the first card, for a Try It list split across two slides. */
+function addTryItGrid(slide, { cards, x = 0.7, y = 2.45, totalW = 11.9, h, gap = 0.3, cols, bodyFontSize = 20, startNum = 1 }) {
   const n = cards.length;
   const nCols = cols || (n <= 2 ? n : 2);
   const nRows = Math.ceil(n / nCols);
@@ -391,7 +393,7 @@ function addTryItGrid(slide, { cards, x = 0.7, y = 2.45, totalW = 11.9, h, gap =
     slide.addShape('ellipse', {
       x: cx + 0.35, y: cy + topPad, w: badgeD, h: badgeD, fill: { color: TEAL }, line: { type: 'none' },
     });
-    slide.addText(String(i + 1), {
+    slide.addText(String(startNum + i), {
       x: cx + 0.35, y: cy + topPad, w: badgeD, h: badgeD, align: 'center', valign: 'middle',
       fontFace: FONT_HEAD, bold: true, fontSize: 22, color: WHITE, margin: 0,
     });

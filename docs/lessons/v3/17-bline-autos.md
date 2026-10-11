@@ -929,12 +929,12 @@ without restarting.
 
 ## Try it
 
-1. **Add a third path.** Draw or hand-write one, then make it selectable. It
+1. **Code — add a third path.** Draw or hand-write one, then make it selectable. It
    should be one new JSON file and one new opmode whose constructor is Two
    Corners' three lines with a different file name — if you find yourself
    building a second `FollowPath.Builder`, re-read section 6. Your path can
    start anywhere: the robot is set down wherever it begins.
-2. **Break the arithmetic on purpose.** First, predict: what does setting
+2. **Code — break the arithmetic on purpose.** First, predict: what does setting
    `default_intermediate_handoff_radius_meters` to `0.05` do to the corners —
    tighter, or wider? Run it and see. (In this course's sim the robot swings
    about half a meter past the first corner instead of 5–12 cm, and takes half a
@@ -944,7 +944,7 @@ without restarting.
    the robot can't stop in time from 3 m/s; watch it sail roughly 30 cm past the
    end and come back, and about 60 cm past the first corner. Then change the
    acceleration so the arithmetic works again, and check that it does.
-3. **Mistune the cross-track gain.** Set `kCrossTrackP` to `0.0` and run the path.
+3. **Code — mistune the cross-track gain.** Set `kCrossTrackP` to `0.0` and run the path.
    The robot still gets to the end, because translation and rotation are handling
    themselves — but it swings about half a meter wide at the corner, because
    nothing is pulling it back onto the second leg. Then try `15.0`: it
@@ -954,12 +954,12 @@ without restarting.
    `FollowPath/crossTrackError` for both. This is the clearest single-loop demo
    in the whole course, because you can see exactly which job that one
    controller was doing.
-4. **Compose a path with a script.** Make an auto that follows `TwoCorners` and
+4. **Code — compose a path with a script.** Make an auto that follows `TwoCorners` and
    *then* runs Lesson 8's `turnToHeading(0)`. A library-built command and one
    you wrote are both just `Command`s, so Lesson 9's
    `Command.noRequirements(coroutine -> { ... })` with two `coroutine.await(...)`
    calls is all it takes.
-5. **Give the marker a real job.** In `registerEventTriggers`, swap the
+5. **Code — give the marker a real job.** In `registerEventTriggers`, swap the
    `System.out.println` for something you can plot —
    `Telemetry.log("Auto/ShootFired", true)`, say — and confirm on the plot
    that it fires where you placed it. Then move the `t_ratio` in the path file

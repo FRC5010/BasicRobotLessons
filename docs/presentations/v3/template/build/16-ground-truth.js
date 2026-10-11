@@ -7,8 +7,8 @@ function buildDeck() {
 
   const titleSlide = K.addTitleSlide(p, {
     tag: 'LESSON 16',
-    title: 'Ground Truth: Give the Simulation a Body',
-    subtitle: 'One shared chassis, grip-limited acceleration, and a second truth to check against',
+    title: 'Ground Truth',
+    subtitle: 'Give the simulation a body, and a second truth to check',
     versionTag: 'WPILib 2027 Alpha  ·  Commands V3',
   });
   titleSlide.addNotes(
@@ -59,7 +59,7 @@ function buildDeck() {
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
-    K.addHeader(s, { icon: 'exclamationtriangle_white.png', eyebrow: 'Section 1 · The picture worth correcting', title: 'Your simulation does not model your robot', badgeColor: ORANGE });
+    K.addSectionHeader(s, { icon: 'exclamationtriangle_white.png', eyebrow: 'Section 1 · The picture worth correcting', title: 'Your simulation does not model your robot', badgeColor: ORANGE });
 
     K.addCard(s, {
       x: 0.7, y: 1.9, w: 11.9, h: 2.4, bg: NAVY2,
@@ -87,7 +87,7 @@ function buildDeck() {
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
-    K.addHeader(s, { icon: 'weight_white.png', eyebrow: 'Section 2 · The physics in one line', title: 'Grip decides the limit — mass cancels right out', badgeColor: ORANGE });
+    K.addSectionHeader(s, { icon: 'weight_white.png', eyebrow: 'Section 2 · The physics in one line', title: 'Grip decides the limit — mass cancels right out', badgeColor: ORANGE });
 
     s.addShape('roundRect', { x: 0.7, y: 1.85, w: 11.9, h: 1.9, rectRadius: 0.12, fill: { color: NAVY2 }, line: { type: 'none' } });
     s.addText(
@@ -218,7 +218,7 @@ function buildDeck() {
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
-    K.addHeader(s, { icon: 'compressarrowsalt_white.png', eyebrow: 'Section 3 · Reading the code', title: 'A vector rate limit, not two separate ones', badgeColor: ORANGE });
+    K.addSectionHeader(s, { icon: 'compressarrowsalt_white.png', eyebrow: 'Section 3 · Reading the code', title: 'A vector rate limit, not two separate ones', badgeColor: ORANGE });
 
     K.addCard(s, {
       x: 0.7, y: 1.9, w: 11.9, h: 2.5, bg: NAVY2,
@@ -282,7 +282,7 @@ function buildDeck() {
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
-    K.addHeader(s, { icon: 'syncalt_white.png', eyebrow: 'Section 3 · Reading the code', title: 'Twist2d.exp() — the same math odometry runs internally', badgeColor: ORANGE });
+    K.addSectionHeader(s, { icon: 'syncalt_white.png', eyebrow: 'Section 3 · Reading the code', title: 'Twist2d.exp() — the same math odometry runs internally', badgeColor: ORANGE });
 
     K.addCard(s, {
       x: 0.7, y: 1.8, w: 11.9, h: 2.3, bg: NAVY2,
@@ -498,7 +498,7 @@ function buildDeck() {
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
-    K.addHeader(s, { icon: 'sitemap_white.png', eyebrow: 'Section 5 · Why the order matters', title: 'Field initializers run top to bottom', badgeColor: ORANGE });
+    K.addSectionHeader(s, { icon: 'sitemap_white.png', eyebrow: 'Section 5 · Why the order matters', title: 'Field initializers run top to bottom', badgeColor: ORANGE });
 
     K.addCard(s, {
       x: 0.7, y: 2.0, w: 11.9, h: 3.5, bg: NAVY2,
@@ -655,21 +655,39 @@ function buildDeck() {
     K.addSectionHeader(s, { icon: 'clipboardcheck_white.png', eyebrow: 'Before you move on', title: 'Try it' });
 
     K.addTryItGrid(s, {
-      y: 1.7, cols: 1, h: 1.45,
+      y: 1.7, h: 4.9,
       cards: [
-        { title: 'Make the tires slicker', body: 'Drop kWheelCoF to 0.4 and repeat hard driving. The estimate should peel away from ground truth far faster. Put it back — and if Lesson 13\'s Try It left a fake 1.1 wheel-slip multiplier in ModuleIOTalonFX, delete it now.', code: true },
-        { title: 'Feel the limit in a spin, not just a line', body: 'Command a fast turnToHeading from a stop and compare Drivetrain/Gyro/YawDegrees against how fast the raw commanded rate would have turned the robot with nothing limiting it.' },
-        { title: 'Push the estimate somewhere wrong on purpose', body: 'Call m_localizer.resetPose(...) from a temporary button binding, half a meter off from the chassis sim, then park where a tag is visible. Watch the estimate get pulled back — toward the truth this time.', code: true },
+        { title: 'Slicker tires', body: 'Drop kWheelCoF to 0.4 and repeat hard driving. The estimate should peel away from ground truth far faster. Put it back — and if Lesson 13\'s Try It left a fake 1.1 wheel-slip multiplier in ModuleIOTalonFX, delete it now.', code: true },
+        { title: 'Spin, not just a line', body: 'Command a fast turnToHeading from a stop and compare Drivetrain/Gyro/YawDegrees against how fast the raw commanded rate would have turned the robot with nothing limiting it.' },
       ],
     });
 
     K.addFooter(s, { pageNum: 22, label: 'Ground Truth', dark: true });
     s.addNotes(
-      'Item 2 is an observe-and-compare exercise — no code changes, just watching the gyro visibly lag the instant command, something Lesson 8\'s fake gyro could never have shown you because it had no concept of "too fast to actually achieve." Items 1 and 3 both involve real code edits.'
+      'Item 1 is a real code edit — and a cleanup, if an earlier Try It left a fake wheel-slip multiplier behind. Item 2 is an observe-and-compare exercise — no code changes, just watching the gyro visibly lag the instant command, something Lesson 8\'s fake gyro could never have shown you because it had no concept of "too fast to actually achieve."'
     );
   }
 
-  // ============================================================ SLIDE 23 — what you learned + next
+  // ============================================================ SLIDE 23 — try it, continued
+  {
+    const s = p.addSlide();
+    s.background = { color: NAVY };
+    K.addSectionHeader(s, { icon: 'clipboardcheck_white.png', eyebrow: 'Before you move on', title: 'Try it, continued' });
+
+    K.addTryItGrid(s, {
+      y: 1.7, h: 2.9, startNum: 3,
+      cards: [
+        { title: 'Push the estimate somewhere wrong on purpose', body: 'Call m_localizer.resetPose(...) from a temporary button binding, half a meter off from the chassis sim, then park where a tag is visible. Watch the estimate get pulled back — toward the truth this time.', code: true },
+      ],
+    });
+
+    K.addFooter(s, { pageNum: 23, label: 'Ground Truth', dark: true });
+    s.addNotes(
+      'Item 3 is a real code edit, and the payoff of the whole lesson: until now vision could only pull the estimate toward the estimate itself. With the camera rendering from ground truth, a deliberately wrong estimate gets pulled back toward where the robot actually is.'
+    );
+  }
+
+  // ============================================================ SLIDE 24 — what you learned + next
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -695,7 +713,7 @@ function buildDeck() {
     s.addShape('ellipse', { x: 8.3, y: 5.6, w: 0.55, h: 0.55, fill: { color: TEAL }, line: { type: 'none' } });
     s.addImage({ path: K.ICON('arrowright_white.png'), x: 8.43, y: 5.73, w: 0.29, h: 0.29 });
 
-    K.addFooter(s, { pageNum: 23, label: 'Ground Truth' });
+    K.addFooter(s, { pageNum: 24, label: 'Ground Truth' });
     s.addNotes(
       'And Lesson 15\'s admitted compromise is gone. Vision checks its simulated eyesight against where the chassis actually is now, not against its own guess — the same one-line supplier swap you\'d make to point a real camera at a real robot\'s real position, because that\'s what a real camera was doing all along.'
     );
