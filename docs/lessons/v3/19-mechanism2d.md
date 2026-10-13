@@ -279,24 +279,24 @@ one from the other.
 
 ## Try it
 
-1. **Color by height band.** Instead of green-when-arrived, color the
+1. **Code — color by height band.** Instead of green-when-arrived, color the
    carriage by where it is: one color below `kScoreMid`, another above.
    You'll need an `if` in `periodic()` and one more constant — nothing
    you haven't done since Lesson 5.
-2. **Add a travel reference.** Ask the canvas for a second root a little to
+2. **Code — add a travel reference.** Ask the canvas for a second root a little to
    the side of `m_base`, and append to it one fixed ligament, 1.5 meters
    long, straight up, in gray. It never changes, so it costs two lines in
    the field block and zero in `periodic()` — a static ruler you can read
    the carriage against. (`MechanismLigament2d` has a five-argument form
    that also takes a line weight and a `Color8Bit`.)
-3. **Wiggle the effector.** In `periodic()`, call
+3. **Code — wiggle the effector.** In `periodic()`, call
    `m_effector.setAngle(45 * Math.sin(Timer.getTimestamp()))` and run it.
    The stub waves back and forth while the carriage does whatever the
    D-pad tells it. Prove to yourself that the two are independent: the
    effector's angle is its own, and its *position* is entirely the
    carriage's business. (`org.wpilib.system.Timer` — and take it back out
    when you're done, since Lesson 20 wants that ligament.)
-4. **Break it on purpose.** Move the `Telemetry.log("Elevator/Mechanism", ...)`
+4. **Code — break it on purpose.** Move the `Telemetry.log("Elevator/Mechanism", ...)`
    line out of `periodic()` and into the constructor, so it runs once.
    Watch the drawing freeze where it started while the graph keeps moving.
    That's what "the log is a snapshot" means, and it's a bug worth having
@@ -330,3 +330,5 @@ right after you change it — the rule Lesson 11's field already follows.
 
 Next up, that placeholder stub on top of the carriage stops being a
 placeholder.
+
+Next: [Lesson 20 — Intake arm: a mechanism that swings](20-intake-arm.md).

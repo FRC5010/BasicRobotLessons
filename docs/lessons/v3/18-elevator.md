@@ -579,18 +579,18 @@ possible trim.
 
 ## Try it
 
-1. **Add a fourth preset.** Give `ElevatorConstants` a `kScoreLow`
+1. **Code — add a fourth preset.** Give `ElevatorConstants` a `kScoreLow`
    between `kStowed` and `kScoreMid`, and bind it to a face button.
-2. **Watch the sag.** Temporarily set `kElevatorKG` to `0.0`, command
+2. **Code — watch the sag.** Temporarily set `kElevatorKG` to `0.0`, command
    `kScoreMid`, and let it settle. Compare the steady-state
    `HeightMeters` against `GoalMeters` on the graph — you should see
    almost exactly the gap §10 measured. Put `0.18` back when you're done.
-3. **Ask for somewhere the elevator can't go.** Bind a spare button to
+3. **Code — ask for somewhere the elevator can't go.** Bind a spare button to
    `elevator.goToHeight(Meters.of(3.0))` — well past `kMaxHeight`. Watch
    `GoalMeters` on the graph clamp to `1.5` instead of jumping to `3.0`,
    confirming `clampToTravel` is doing its job before the request ever
    reaches the motor.
-4. **Halve the motion limits.** Try `kMaxVelocity = MetersPerSecond.of(0.5)`
+4. **Code — halve the motion limits.** Try `kMaxVelocity = MetersPerSecond.of(0.5)`
    and `kMaxAcceleration = MetersPerSecondPerSecond.of(1.0)`. The setpoint
    curve should stretch out — same shape, twice the time to get there —
    while the *steady-state* tracking (setpoint versus height, once
@@ -624,5 +624,7 @@ command-returning method — differs from `Drivetrain`'s shape. That
 repetition isn't an accident; it's the pattern this course keeps handing
 you because it keeps being the right one.
 
-Next: watching the elevator move as more than three numbers on a graph —
+Up next: watching the elevator move as more than three numbers on a graph —
 drawing it.
+
+Next: [Lesson 19 — A picture of the elevator](19-mechanism2d.md).
