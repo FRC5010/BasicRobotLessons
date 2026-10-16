@@ -102,13 +102,21 @@ gear ratio this time, since the gearbox multiplies torque going the other
 way — and the rotor needs `1.246 / 12 ≈ 0.104` N·m. Multiply by the
 torque factor: `0.104 × 1.69 ≈ 0.18` V. That's `kElevatorKG`.
 
-**`kA` — voltage to accelerate.** This one scales with the mechanism's
-effective inertia, which is a smaller and harder-to-eyeball number than
-mass or drum radius. It's the smallest of the three terms here —
-`kElevatorKA = 0.003` — correcting only for how sharply the profile
-speeds up and slows down. You won't derive it by hand the way `kG` and
-`kV` were derived above; §10 shows you how to confirm it's in the right
-neighborhood from a graph instead.
+**`kA` — voltage to accelerate.** Same walk as `kG`, with one extra step
+at the front. `kA` is volts per drum rotation/sec², so first turn that
+acceleration into meters: one drum rotation moves the carriage one drum
+circumference, `2π × 0.0254 ≈ 0.160` m, so speeding the drum up by one
+rotation/sec every second speeds the carriage up by 0.160 m/s². Pushing
+5 kg that hard takes `5 × 0.160 ≈ 0.798` N — `F = m·a`, the same way
+`m·g` gave `kG` its force. At the drum's radius that's
+`0.798 × 0.0254 ≈ 0.0203` N·m; through the gearbox,
+`0.0203 / 12 ≈ 0.00169` N·m at the rotor; times the torque factor,
+`0.00169 × 1.69 ≈ 0.003` V. That's `kElevatorKA`, and it's the smallest
+of the three by far, because it only pays for how sharply the profile
+speeds up and slows down — not for holding still or for cruising. It
+counts only the carriage's mass. On a real elevator the motor's and the
+drum's own spinning parts add a little more, which is one reason §10
+still shows you how to check it against a graph.
 
 **Add to `Constants.java`:**
 
@@ -615,9 +623,9 @@ can only do that by tolerating a permanent, silent error. The fix wasn't
 a bigger `kP`. It was **a term for each physical effect**: `kG` for the
 constant pull of gravity, `kV` for the voltage a steady speed costs,
 `kA` for the extra push a changing speed costs, and `kP` shrunk down to
-what's left over once the model has done its job. `kG` and `kV`
-came straight off the Kraken X60's spec sheet, walked through the gearbox
-by hand, and `kA` got checked against a graph — nothing here was guessed.
+what's left over once the model has done its job. All three feedforward
+gains came straight off the Kraken X60's spec sheet, walked through the
+gearbox by hand — nothing here was guessed.
 
 **Motion Magic** turned "go here" into a real trapezoidal profile
 generated in firmware, and that profile handed you a third number worth

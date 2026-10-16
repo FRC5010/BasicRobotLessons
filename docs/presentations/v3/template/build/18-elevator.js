@@ -20,12 +20,12 @@ function seg(s, x1, y1, x2, y2, color, width) {
 }
 
 /** A row of number boxes joined by arrows — one step of gain arithmetic per box. */
-function chain(s, { x, y, w, h, gap, boxes }) {
+function chain(s, { x, y, w, h, gap, boxes, valueSize = 28 }) {
   const boxW = (w - gap * (boxes.length - 1)) / boxes.length;
   boxes.forEach((b, i) => {
     const bx = x + i * (boxW + gap);
     s.addShape('roundRect', { x: bx, y, w: boxW, h, rectRadius: 0.1, fill: { color: NAVY2 }, line: { type: 'none' } });
-    s.addText(b.value, { x: bx + 0.15, y: y + 0.2, w: boxW - 0.3, h: 0.7, fontFace: FONT_HEAD, bold: true, fontSize: 28, color: b.color || WHITE, align: 'center', valign: 'middle', margin: 0 });
+    s.addText(b.value, { x: bx + 0.15, y: y + 0.2, w: boxW - 0.3, h: 0.7, fontFace: FONT_HEAD, bold: true, fontSize: valueSize, color: b.color || WHITE, align: 'center', valign: 'middle', margin: 0 });
     s.addText(b.how, { x: bx + 0.15, y: y + 0.95, w: boxW - 0.3, h: h - 1.1, fontFace: FONT_BODY, fontSize: 20, color: 'CADCE8', align: 'center', valign: 'top', margin: 0 });
     if (i < boxes.length - 1) {
       s.addText('→', { x: bx + boxW, y: y + 0.2, w: gap, h: 0.7, fontFace: FONT_BODY, bold: true, fontSize: 24, color: TEAL, align: 'center', valign: 'middle', margin: 0 });
@@ -210,7 +210,7 @@ function buildDeck() {
 
     K.addFooter(s, { pageNum: 6, label: LABEL, dark: true });
     s.addNotes(
-      'Every gain on the next two slides comes from one of these two numbers, walked through the gearbox. Free speed: 6000 RPM on 12 V is 100 rotations a second, so it takes 0.12 V to sustain each rotor rotation per second. Stall torque: 7.09 N·m on 12 V, so it takes 1.69 V for each N·m at the rotor. The walk is always the same shape: figure out what the mechanism — the drum — needs, convert that to what the rotor needs, then multiply by whichever factor applies.'
+      'Every gain on the next three slides comes from one of these two numbers, walked through the gearbox. Free speed: 6000 RPM on 12 V is 100 rotations a second, so it takes 0.12 V to sustain each rotor rotation per second. Stall torque: 7.09 N·m on 12 V, so it takes 1.69 V for each N·m at the rotor. The walk is always the same shape: figure out what the mechanism — the drum — needs, convert that to what the rotor needs, then multiply by whichever factor applies.'
     );
   }
 
@@ -218,7 +218,7 @@ function buildDeck() {
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
-    K.addSectionHeader(s, { icon: 'calculator_white.png', eyebrow: 'Section 3 · kV and kA', title: 'kV: the voltage a steady speed costs', badgeColor: ORANGE });
+    K.addSectionHeader(s, { icon: 'calculator_white.png', eyebrow: 'Section 3 · kV', title: 'kV: the voltage a steady speed costs', badgeColor: ORANGE });
 
     chain(s, {
       x: 0.7, y: 1.65, w: 11.9, h: 2.1, gap: 0.5,
@@ -236,13 +236,13 @@ function buildDeck() {
     });
     K.addCard(s, {
       x: 0.7, y: 5.5, w: 11.9, h: 1.3, bg: NAVY2,
-      body: 'kA = 0.003 is the smallest term: it only covers how sharply the profile speeds up and slows down. You\'ll check it from a graph.',
+      body: 'kG and kA walk the same path through the other factor: torque, at 1.69 V per N·m.',
       bodyColor: 'D7E3F4', pad: 0.25, bodySize: 20,
     });
 
     K.addFooter(s, { pageNum: 7, label: LABEL, dark: true });
     s.addNotes(
-      'The elevator\'s gear ratio is 12.0 — twelve rotor rotations per drum rotation — so sustaining one drum rotation per second means sustaining twelve rotor rotations per second. Multiply by the speed factor: 12 × 0.12 = 1.44. That\'s kElevatorKV. Phoenix\'s SensorToMechanismRatio makes the closed loop run in drum rotations, the same way DriveConstants.kDriveKV = 0.8 is volts per wheel rotation per second, not per rotor rotation. kA scales with the mechanism\'s effective inertia, a smaller and harder-to-eyeball number than mass or drum radius. It\'s the smallest of the three terms, and you won\'t derive it by hand — section 10 shows how to confirm it\'s in the right neighborhood from a graph.'
+      'The elevator\'s gear ratio is 12.0 — twelve rotor rotations per drum rotation — so sustaining one drum rotation per second means sustaining twelve rotor rotations per second. Multiply by the speed factor: 12 × 0.12 = 1.44. That\'s kElevatorKV. Phoenix\'s SensorToMechanismRatio makes the closed loop run in drum rotations, the same way DriveConstants.kDriveKV = 0.8 is volts per wheel rotation per second, not per rotor rotation. kG and kA, on the next two slides, take the same walk through the torque factor instead of the speed factor.'
     );
   }
 
@@ -276,7 +276,44 @@ function buildDeck() {
     );
   }
 
-  // ============================================================ SLIDE 9 — Constants part 1
+  // ============================================================ SLIDE 9 — §3 kA
+  {
+    const s = p.addSlide();
+    s.background = { color: NAVY };
+    K.addSectionHeader(s, { icon: 'calculator_white.png', eyebrow: 'Section 3 · kA', title: 'kA: the voltage a change of speed costs', badgeColor: ORANGE });
+
+    chain(s, {
+      x: 0.7, y: 1.65, w: 11.9, h: 2.5, gap: 0.45, valueSize: 24,
+      boxes: [
+        { value: '0.798 N', how: '5 kg × 0.160 m/s²' },
+        { value: '0.0203 N·m', how: 'at the drum: × 0.0254 m radius' },
+        { value: '0.00169 N·m', how: 'at the rotor: ÷ 12' },
+        { value: '0.003 V', how: '× 1.69 = kElevatorKA', color: ORANGE },
+      ],
+    });
+
+    K.addCard(s, {
+      x: 0.7, y: 4.4, w: 5.8, h: 2.4, bg: NAVY2,
+      heading: 'Where 0.160 m/s² comes from',
+      headingSize: 22, headingColor: WHITE,
+      body: 'One drum rotation is 2π × 0.0254 m of travel. Then F = m·a.',
+      bodyColor: 'D7E3F4', pad: 0.25, bodySize: 20,
+    });
+    K.addCard(s, {
+      x: 6.8, y: 4.4, w: 5.8, h: 2.4, bg: NAVY2,
+      heading: 'Only the carriage\'s mass',
+      headingSize: 22, headingColor: WHITE,
+      body: 'A real elevator\'s motor and drum add a little. Section 10 checks it.',
+      bodyColor: 'D7E3F4', pad: 0.25, bodySize: 20,
+    });
+
+    K.addFooter(s, { pageNum: 9, label: LABEL, dark: true });
+    s.addNotes(
+      'Same walk as kG, with one extra step at the front. kA is volts per drum rotation per second squared, so first turn that acceleration into meters: one drum rotation moves the carriage one drum circumference, 2π × 0.0254 ≈ 0.160 m, so speeding the drum up by one rotation per second, every second, speeds the carriage up by 0.160 m/s². Pushing 5 kg that hard takes 5 × 0.160 ≈ 0.798 N — F = m·a, the same way m·g gave kG its force. At the drum\'s radius that\'s 0.798 × 0.0254 ≈ 0.0203 N·m; through the gearbox, 0.0203 / 12 ≈ 0.00169 N·m at the rotor; times the torque factor, 0.00169 × 1.69 ≈ 0.003 V. That\'s kElevatorKA — the smallest of the three by far, because it only pays for how sharply the profile speeds up and slows down, not for holding still or cruising. It counts only the carriage\'s mass; a real elevator\'s motor and drum have spinning parts of their own that add a little more, which is one reason section 10 still checks it against a graph.'
+    );
+  }
+
+  // ============================================================ SLIDE 10 — Constants part 1
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -306,13 +343,13 @@ function buildDeck() {
       pad: 0.25, bodySize: 20,
     });
 
-    K.addFooter(s, { pageNum: 9, label: LABEL });
+    K.addFooter(s, { pageNum: 10, label: LABEL });
     s.addNotes(
       'ElevatorConstants goes inside Constants, alongside DriveConstants, SteerConstants and the rest. kGearRatio, kDrumRadius and kCarriageMass are the three facts the gain arithmetic used. kMinHeight and kMaxHeight are the travel range, which the Elevator will clamp every request to. kMaxVelocity and kMaxAcceleration are the mechanism\'s numbers — meters per second and meters per second squared of carriage travel.'
     );
   }
 
-  // ============================================================ SLIDE 10 — Constants part 2
+  // ============================================================ SLIDE 11 — Constants part 2
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -341,17 +378,17 @@ function buildDeck() {
 
     K.addCard(s, {
       x: 0.7, y: 6.0, w: 11.9, h: 0.9,
-      body: '0.18 and 1.44 are the numbers you just worked out; 20.0 is the trim.',
+      body: '0.18, 1.44 and 0.003 are the numbers you just worked out; 20.0 is the trim.',
       pad: 0.15, bodySize: 20,
     });
 
-    K.addFooter(s, { pageNum: 10, label: LABEL });
+    K.addFooter(s, { pageNum: 11, label: LABEL });
     s.addNotes(
       'kElevatorKG and kElevatorKV are the two numbers worked out on the last two slides. kElevatorKA is the small one you\'ll confirm from a graph. kElevatorKP = 20.0 is the trim. The three presets are what the D-pad will ask for: stowed at 2 cm, mid at 0.75 m, high at 1.45 m. kTolerance is how close counts as "arrived."'
     );
   }
 
-  // ============================================================ SLIDE 11 — Constants imports
+  // ============================================================ SLIDE 12 — Constants imports
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -379,13 +416,13 @@ function buildDeck() {
       bodySize: 19,
     });
 
-    K.addFooter(s, { pageNum: 11, label: LABEL });
+    K.addFooter(s, { pageNum: 12, label: LABEL });
     s.addNotes(
       'Four new static imports — Centimeters, Inches, Kilograms and MetersPerSecondPerSecond — plus the measure types Distance, Mass and LinearAcceleration, next to the AngularVelocity and LinearVelocity imports already there. Every new CAN device needs an ID nobody else has; 20 is just a number that\'s free on the course\'s robot.'
     );
   }
 
-  // ============================================================ SLIDE 12 — §4 Motion Magic
+  // ============================================================ SLIDE 13 — §4 Motion Magic
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
@@ -426,13 +463,13 @@ function buildDeck() {
       bodyColor: 'D7E3F4', pad: 0.25, bodySize: 20,
     });
 
-    K.addFooter(s, { pageNum: 12, label: LABEL, dark: true });
+    K.addFooter(s, { pageNum: 13, label: LABEL, dark: true });
     s.addNotes(
       'PositionVoltage, back in Lesson 5, snaps straight to a target angle — fine for steering, where the whole trip takes a fraction of a second. Ask an elevator to jump from stowed to full height the same way and you\'d get a violent, all-or-nothing lurch. Motion Magic is Phoenix\'s answer: you hand the firmware a cruise velocity and an acceleration, and it generates a smooth trapezoidal profile on its own — ramp up, cruise, ramp down — recalculating it continuously as you change the goal. You still supply the same gains. MotionMagicConfigs wants drum rotations per second and per second squared, the same mechanism-side units the gains use, so section 6 converts kMaxVelocity and kMaxAcceleration from meters.'
     );
   }
 
-  // ============================================================ SLIDE 13 — create the four files
+  // ============================================================ SLIDE 14 — create the four files
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -448,13 +485,13 @@ function buildDeck() {
       ],
     });
 
-    K.addFooter(s, { pageNum: 13, label: LABEL });
+    K.addFooter(s, { pageNum: 14, label: LABEL });
     s.addNotes(
       'All four live in src/main/java/first/robot/subsystems, next to the drivetrain\'s files. If the shape looks familiar, it should: ModuleIO, ModuleIOTalonFX, ModuleIOSim and SwerveModule from Lesson 13 are the same four roles. The next slides fill them in, one file at a time.'
     );
   }
 
-  // ============================================================ SLIDE 14 — ElevatorIO
+  // ============================================================ SLIDE 15 — ElevatorIO
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -489,13 +526,13 @@ function buildDeck() {
       pad: 0.1, bodySize: 20,
     });
 
-    K.addFooter(s, { pageNum: 14, label: LABEL });
+    K.addFooter(s, { pageNum: 15, label: LABEL });
     s.addNotes(
       'Same shape as ModuleIO and GyroIO from Lesson 13 — a bundle of sensor readings, and default do-nothing methods so a REPLAY implementation needs zero code of its own. Look twice at setpointMeters before moving on: it\'s the third number, and the next slide is about why it matters.'
     );
   }
 
-  // ============================================================ SLIDE 15 — goal / setpoint / position
+  // ============================================================ SLIDE 16 — goal / setpoint / position
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
@@ -532,13 +569,13 @@ function buildDeck() {
       bodyColor: 'D7E3F4', pad: 0.2, bodySize: 20,
     });
 
-    K.addFooter(s, { pageNum: 15, label: LABEL, dark: true });
+    K.addFooter(s, { pageNum: 16, label: LABEL, dark: true });
     s.addNotes(
       'It\'s tempting to think a mechanism has only two numbers worth tracking — where you asked it to go, and where it is. There\'s a third: where the profile currently says it should be, mid-ramp. Plot position against the goal alone and you see a step next to a smooth curve, and you can\'t tell whether a gap is the profile still ramping up — which is supposed to happen — or the motor failing to keep up with a profile that\'s already there. Section 10 puts this number to work.'
     );
   }
 
-  // ============================================================ SLIDE 16 — ElevatorIOTalonFX imports
+  // ============================================================ SLIDE 17 — ElevatorIOTalonFX imports
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -569,13 +606,13 @@ function buildDeck() {
       ],
     });
 
-    K.addFooter(s, { pageNum: 16, label: LABEL });
+    K.addFooter(s, { pageNum: 17, label: LABEL });
     s.addNotes(
       'Two imports are new to you: MotionMagicVoltage, the control request that asks for a profiled move, and GravityTypeValue, which tells the closed loop what shape gravity\'s pull has. Everything else you\'ve imported before for the drive and steer motors.'
     );
   }
 
-  // ============================================================ SLIDE 17 — ElevatorIOTalonFX constructor, gains
+  // ============================================================ SLIDE 18 — ElevatorIOTalonFX constructor, gains
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -605,13 +642,13 @@ function buildDeck() {
       ],
     });
 
-    K.addFooter(s, { pageNum: 17, label: LABEL });
+    K.addFooter(s, { pageNum: 18, label: LABEL });
     s.addNotes(
       'm_motor is protected rather than private for the same reason ModuleIOTalonFX\'s motors are: the sim class will extend this one and reach in for the motor\'s sim state. SensorToMechanismRatio = kGearRatio makes every gain, and every position the motor reports, live in drum rotations instead of rotor rotations. Then the full feedforward set: kG with its gravity type, kV, kA, and kP last — the trim.'
     );
   }
 
-  // ============================================================ SLIDE 18 — Motion Magic config + updateInputs
+  // ============================================================ SLIDE 19 — Motion Magic config + updateInputs
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -640,13 +677,13 @@ function buildDeck() {
       ],
     });
 
-    K.addFooter(s, { pageNum: 18, label: LABEL });
+    K.addFooter(s, { pageNum: 19, label: LABEL });
     s.addNotes(
       'The cruise velocity and acceleration go in as drum rotations, converted from the meters in Constants by metersToRotations — written on the next slide. updateInputs reads four things. Three you\'d expect: height, velocity, applied volts. The fourth, getClosedLoopReference(), is the profile\'s own live setpoint straight from the firmware — the third number from two slides ago.'
     );
   }
 
-  // ============================================================ SLIDE 19 — setGoal + conversions
+  // ============================================================ SLIDE 20 — setGoal + conversions
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -680,13 +717,13 @@ function buildDeck() {
       pad: 0.15, bodySize: 20,
     });
 
-    K.addFooter(s, { pageNum: 19, label: LABEL });
+    K.addFooter(s, { pageNum: 20, label: LABEL });
     s.addNotes(
       'One drum rotation lifts the carriage by one drum circumference, 2π × radius — the same way one wheel rotation moves the robot one wheel circumference. setGoalHeightMeters converts the requested height and hands Motion Magic the position as a measure. The conversions are protected, not private, because the sim class reaches straight in and reuses them instead of redefining the same conversion twice.'
     );
   }
 
-  // ============================================================ SLIDE 20 — four things to point at
+  // ============================================================ SLIDE 21 — four things to point at
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
@@ -707,13 +744,13 @@ function buildDeck() {
       });
     });
 
-    K.addFooter(s, { pageNum: 20, label: LABEL, dark: true });
+    K.addFooter(s, { pageNum: 21, label: LABEL, dark: true });
     s.addNotes(
       'GravityTypeValue.Elevator_Static tells the closed loop that kG\'s contribution doesn\'t depend on where the carriage is — full weight, full holding voltage, at the bottom or the top. An arm\'s gravity load does change with angle, which is a different GravityTypeValue a later lesson introduces. SensorToMechanismRatio is the same trick ModuleIOTalonFX already uses for the drive and steer motors. And there\'s no getValueAsDouble() anywhere: every StatusSignal in this API gives you .getValue() and nothing shorter — for a Voltage or an Angle that means unpacking with .in(...), and for a bare Double like getClosedLoopReference()\'s it just auto-unboxes.'
     );
   }
 
-  // ============================================================ SLIDE 21 — ElevatorIOSim imports
+  // ============================================================ SLIDE 22 — ElevatorIOSim imports
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -744,13 +781,13 @@ function buildDeck() {
       pad: 0.2, bodySize: 20,
     });
 
-    K.addFooter(s, { pageNum: 21, label: LABEL });
+    K.addFooter(s, { pageNum: 22, label: LABEL });
     s.addNotes(
       'Extending the real class means inheriting its motor and its configs — every gain you just set runs in the simulated firmware too. The physics model this time is WPILib\'s ElevatorSim: it already knows how to turn a voltage into a height and a velocity, and with simulateGravity on, a carriage that falls when nothing holds it up.'
     );
   }
 
-  // ============================================================ SLIDE 22 — ElevatorIOSim class + constructor
+  // ============================================================ SLIDE 23 — ElevatorIOSim class + constructor
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -780,13 +817,13 @@ function buildDeck() {
       ],
     });
 
-    K.addFooter(s, { pageNum: 22, label: LABEL });
+    K.addFooter(s, { pageNum: 23, label: LABEL });
     s.addNotes(
       'The model takes the same facts the gain arithmetic used — one Kraken X60, the 12:1 gearbox, a 5 kg carriage, a 1-inch drum — plus the travel range and a starting height. Nothing here is tuned for the sim: if the model and the gains disagree, that\'s worth knowing. super() builds the motor and applies the real configs; then the constructor grabs the motor\'s sim state.'
     );
   }
 
-  // ============================================================ SLIDE 23 — ElevatorIOSim stepSim
+  // ============================================================ SLIDE 24 — ElevatorIOSim stepSim
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -819,13 +856,13 @@ function buildDeck() {
       ],
     });
 
-    K.addFooter(s, { pageNum: 23, label: LABEL });
+    K.addFooter(s, { pageNum: 24, label: LABEL });
     s.addNotes(
       'Each tick: tell the simulated motor what the battery is doing, hand the model whatever voltage the simulated firmware decided to apply, advance the physics 20 ms, then feed the result back as rotor position and velocity. The model speaks meters at the carriage; the motor\'s sim state wants rotor rotations, so the height goes through the drum (metersToRotations) and then the gearbox (× kGearRatio). updateInputs steps first and then reads exactly the way the real class does.'
     );
   }
 
-  // ============================================================ SLIDE 24 — Elevator imports
+  // ============================================================ SLIDE 25 — Elevator imports
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -856,13 +893,13 @@ function buildDeck() {
       pad: 0.2, bodySize: 20,
     });
 
-    K.addFooter(s, { pageNum: 24, label: LABEL });
+    K.addFooter(s, { pageNum: 25, label: LABEL });
     s.addNotes(
       'Elevator is the class every command talks to. Nothing outside it knows whether the motor behind it is real, simulated, or a log being replayed.'
     );
   }
 
-  // ============================================================ SLIDE 25 — Elevator fields + constructor
+  // ============================================================ SLIDE 26 — Elevator fields + constructor
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -894,13 +931,13 @@ function buildDeck() {
       pad: 0.15, bodySize: 20,
     });
 
-    K.addFooter(s, { pageNum: 25, label: LABEL });
+    K.addFooter(s, { pageNum: 26, label: LABEL });
     s.addNotes(
       'The mode switch is the same one Drivetrain has used since Lesson 13: real hardware, the simulated version, or an empty IO whose inputs come from the log. m_goal remembers the last height asked for — it starts stowed, where the sim model starts too. Mechanism doesn\'t hand you a periodic() hook of its own, so you ask the scheduler for one the same way Drivetrain already does.'
     );
   }
 
-  // ============================================================ SLIDE 26 — periodic + goToHeight
+  // ============================================================ SLIDE 27 — periodic + goToHeight
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -932,13 +969,13 @@ function buildDeck() {
       ],
     });
 
-    K.addFooter(s, { pageNum: 26, label: LABEL });
+    K.addFooter(s, { pageNum: 27, label: LABEL });
     s.addNotes(
       'periodic reads the IO into the bundle and logs all three of goal, setpoint and height, plus velocity and applied volts — everything section 10 will graph. goToHeight clamps the target to the travel range, hands it to the IO, and finishes once the carriage is within tolerance. It keeps holding after it finishes, because a Motion Magic request is a standing order to the firmware — more on that in two slides.'
     );
   }
 
-  // ============================================================ SLIDE 27 — atGoal + clampToTravel
+  // ============================================================ SLIDE 28 — atGoal + clampToTravel
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -970,13 +1007,13 @@ function buildDeck() {
       ],
     });
 
-    K.addFooter(s, { pageNum: 27, label: LABEL });
+    K.addFooter(s, { pageNum: 28, label: LABEL });
     s.addNotes(
       'atGoal compares the measured height with the goal, inside kTolerance. getHeightMeters is a plain getter. clampToTravel keeps every request inside the travel range before it ever reaches the motor — the next slide is about how it compares two Distances without unpacking them.'
     );
   }
 
-  // ============================================================ SLIDE 28 — two design choices
+  // ============================================================ SLIDE 29 — two design choices
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
@@ -997,13 +1034,13 @@ function buildDeck() {
       bodyColor: 'D7E3F4', bodySize: 20,
     });
 
-    K.addFooter(s, { pageNum: 28, label: LABEL, dark: true });
+    K.addFooter(s, { pageNum: 29, label: LABEL, dark: true });
     s.addNotes(
       'WPILib\'s units library gives every measure type ordering through the Measure interface, so a typed clamp reads almost exactly like the double-based one Drivetrain already has. Every drive command you\'ve written stops the robot on cancellation, because leaving a swerve module spinning is dangerous. An elevator command is the opposite case: the firmware keeps running a Motion Magic request until something replaces it. If goToHeight gets interrupted by a fresh call to itself — pressing a different D-pad direction — the new command\'s runRepeatedly immediately issues a new goal, and the old one\'s absence changes nothing.'
     );
   }
 
-  // ============================================================ SLIDE 29 — Robot.java
+  // ============================================================ SLIDE 30 — Robot.java
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -1031,13 +1068,13 @@ function buildDeck() {
       pad: 0.2, bodySize: 20,
     });
 
-    K.addFooter(s, { pageNum: 29, label: LABEL });
+    K.addFooter(s, { pageNum: 30, label: LABEL });
     s.addNotes(
       'A field on Robot is built once, when the program starts, and every opmode gets the same Robot handed to its constructor — which is how the teleop opmode will reach the elevator on the next slide.'
     );
   }
 
-  // ============================================================ SLIDE 30 — RobotTeleop D-pad
+  // ============================================================ SLIDE 31 — RobotTeleop D-pad
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -1069,13 +1106,13 @@ function buildDeck() {
       pad: 0.2, bodySize: 20,
     });
 
-    K.addFooter(s, { pageNum: 30, label: LABEL });
+    K.addFooter(s, { pageNum: 31, label: LABEL });
     s.addNotes(
       'onTrue schedules the command once per press. Press a different direction mid-move and the new goToHeight takes over immediately — the carriage just gets a new standing order.'
     );
   }
 
-  // ============================================================ SLIDE 31 — run it
+  // ============================================================ SLIDE 32 — run it
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -1091,13 +1128,13 @@ function buildDeck() {
       ],
     });
 
-    K.addFooter(s, { pageNum: 31, label: LABEL });
+    K.addFooter(s, { pageNum: 32, label: LABEL });
     s.addNotes(
       'Run ./gradlew simulateJava, enable Teleoperated, open AdvantageScope, expand NetworkTables → Telemetry → Elevator, tap the D-pad, and watch HeightMeters climb toward whichever preset you asked for and stay there. That "and stay there" is the whole lesson.'
     );
   }
 
-  // ============================================================ SLIDE 32 — §10 the graph
+  // ============================================================ SLIDE 33 — §10 the graph
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -1120,13 +1157,13 @@ function buildDeck() {
       pad: 0.2, bodySize: 20,
     });
 
-    K.addFooter(s, { pageNum: 32, label: LABEL });
+    K.addFooter(s, { pageNum: 33, label: LABEL });
     s.addNotes(
       'Every gain here was computed, not guessed — but "computed" still means "worth checking against what the robot actually does." Each curve answers a different question: the goal is a step (what you asked for), the setpoint is the smooth ramp Motion Magic generated (what the profile is asking for right now), and the height is what the carriage is actually doing. A gap between setpoint and height is the controller failing to keep up; a gap between goal and setpoint is the profile still ramping, which is supposed to happen.'
     );
   }
 
-  // ============================================================ SLIDE 33 — tuning order
+  // ============================================================ SLIDE 34 — tuning order
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
@@ -1147,13 +1184,13 @@ function buildDeck() {
       });
     });
 
-    K.addFooter(s, { pageNum: 33, label: LABEL, dark: true });
+    K.addFooter(s, { pageNum: 34, label: LABEL, dark: true });
     s.addNotes(
       'kG first, then kV, then kA, then kP last, as the smallest possible trim — each wrong gain has its own signature on the graph. A wrong kG is a fixed offset from the setpoint that never goes away on its own: small here, because 0.18 V is small. A wrong kV shows up only while moving — position lagging setpoint during the flat part of the profile, closing again as it decelerates. A wrong kA is the subtlest: a brief spike right at the ramp edges, vanishing at constant speed — easy to miss unless you\'re looking for it. With the model correct, the fully settled gap lands under a quarter of a millimeter; if you find yourself raising kP to chase more than that, the real bug is almost always in kG, kV or kA.'
     );
   }
 
-  // ============================================================ SLIDE 34 — predicting kV's lag
+  // ============================================================ SLIDE 35 — predicting kV's lag
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
@@ -1179,13 +1216,13 @@ function buildDeck() {
       bodyColor: 'D7E3F4', pad: 0.25, bodySize: 20,
     });
 
-    K.addFooter(s, { pageNum: 34, label: LABEL, dark: true });
+    K.addFooter(s, { pageNum: 35, label: LABEL, dark: true });
     s.addNotes(
       'You can predict kV\'s effect before measuring it. A 1.0 m/s cruise is about 6.3 drum rotations a second, which costs 1.44 × 6.3 ≈ 9 V. With no kV, kP = 20 can only make 9 V out of about 0.45 rotations of error — some 7 cm. Measured moving the full travel range with kElevatorKV zeroed: about 9 cm of peak lag — the 7 cm, plus a little extra while the profile is still speeding up. With the model in place, the same move: 1.5 to 2 cm. Both numbers wander by several millimeters from run to run, so don\'t expect to match them to the millimeter. kP = 20 is doing real work either way; the difference is how much it\'s forced to do versus how much the model already handled.'
     );
   }
 
-  // ============================================================ SLIDE 35 — real hardware
+  // ============================================================ SLIDE 36 — real hardware
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -1206,13 +1243,13 @@ function buildDeck() {
       bodySize: 20,
     });
 
-    K.addFooter(s, { pageNum: 35, label: LABEL });
+    K.addFooter(s, { pageNum: 36, label: LABEL });
     s.addNotes(
       'Everything in this lesson runs safely in the simulator, where a wrong gain costs nothing. On a real elevator, a wrong kG means a carriage that drifts or jumps, and you want to find that out on a slow, short move, with hands ready, before you ask for the full range.'
     );
   }
 
-  // ============================================================ SLIDE 36 — try it
+  // ============================================================ SLIDE 37 — try it
   {
     const s = p.addSlide();
     s.background = { color: NAVY };
@@ -1228,13 +1265,13 @@ function buildDeck() {
       ],
     });
 
-    K.addFooter(s, { pageNum: 36, label: LABEL, dark: true });
+    K.addFooter(s, { pageNum: 37, label: LABEL, dark: true });
     s.addNotes(
       '1: Give ElevatorConstants a kScoreLow between kStowed and kScoreMid, and bind it to a face button. 2: Temporarily set kElevatorKG to 0.0, command kScoreMid, let it settle, and compare HeightMeters against GoalMeters — you should see almost exactly the gap section 10 measured. Do this in the simulator only, and put 0.18 back when you\'re done. 3: Bind a spare button to elevator.goToHeight(Meters.of(3.0)) — well past kMaxHeight — and watch GoalMeters clamp to 1.5 instead of jumping to 3.0: clampToTravel doing its job before the request ever reaches the motor. 4: Try kMaxVelocity = 0.5 m/s and kMaxAcceleration = 1.0 m/s². The setpoint curve stretches out — same shape, twice the time — while the tracking of setpoint by height barely changes, since that\'s governed by kV, kA and kP, not by how fast the profile goes.'
     );
   }
 
-  // ============================================================ SLIDE 37 — what you learned + next
+  // ============================================================ SLIDE 38 — what you learned + next
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -1243,7 +1280,7 @@ function buildDeck() {
     const points = [
       'A P controller can only push by being wrong, so kP alone holds an elevator a little low, forever.',
       'A term for each physical effect: kG for gravity, kV for speed, kA for changing speed, kP for what\'s left.',
-      'kG and kV came straight off the Kraken X60\'s spec sheet, walked through the gearbox.',
+      'kG, kV and kA all came straight off the Kraken X60\'s spec sheet, walked through the gearbox.',
       'Motion Magic profiles the move, and its setpoint is the third number: goal, setpoint, position.',
     ];
     s.addText(
@@ -1261,7 +1298,7 @@ function buildDeck() {
     s.addShape('ellipse', { x: 8.3, y: 5.6, w: 0.55, h: 0.55, fill: { color: TEAL }, line: { type: 'none' } });
     s.addImage({ path: K.ICON('arrowright_white.png'), x: 8.43, y: 5.73, w: 0.29, h: 0.29 });
 
-    K.addFooter(s, { pageNum: 37, label: LABEL });
+    K.addFooter(s, { pageNum: 38, label: LABEL });
     s.addNotes(
       'An elevator\'s job is different from anything you\'d automated before: it has to stay, not just arrive. The fix wasn\'t a bigger kP. It was a term for each physical effect, with kP shrunk to what\'s left once the model has done its job. Motion Magic turned "go here" into a real trapezoidal profile, and handed you the setpoint — without it, a lagging elevator and a still-ramping one look identical on a graph. And the IO layer from Lesson 13 paid for itself again: three new IO files, but nothing about how Elevator is used differs from Drivetrain\'s shape. That repetition isn\'t an accident — it\'s the pattern this course keeps handing you because it keeps being the right one. Next: watching the elevator move as more than numbers on a graph — drawing it.'
     );
