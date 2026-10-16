@@ -13,6 +13,8 @@ import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 
+import org.wpilib.hardware.bus.CANPort;
+
 import first.robot.Constants.ArmConstants;
 
 /** Real hardware behind the ArmIO contract: a profiled pivot and a dumb roller. */
@@ -23,8 +25,8 @@ public class ArmIOTalonFX implements ArmIO {
   private final MotionMagicVoltage m_request = new MotionMagicVoltage(0);
 
   public ArmIOTalonFX() {
-    m_pivot = new TalonFX(ArmConstants.kPivotMotorPort, CANBus.systemcore(0));
-    m_roller = new TalonFX(ArmConstants.kRollerMotorPort, CANBus.systemcore(0));
+    m_pivot = new TalonFX(ArmConstants.kPivotMotorPort, new CANBus(CANPort.CAN_S0));
+    m_roller = new TalonFX(ArmConstants.kRollerMotorPort, new CANBus(CANPort.CAN_S0));
 
     TalonFXConfiguration config = new TalonFXConfiguration();
     // One "mechanism rotation" is now one full swing of the arm.

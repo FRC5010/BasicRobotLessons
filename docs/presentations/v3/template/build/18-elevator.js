@@ -733,7 +733,7 @@ function buildDeck() {
       { heading: 'Elevator_Static', body: 'Gravity\'s pull is the same at the bottom and the top, so kG is too. An arm\'s isn\'t.' },
       { heading: 'SensorToMechanismRatio', body: 'Every gain and every reported position is in drum rotations, not rotor rotations.' },
       { heading: 'getClosedLoopReference()', body: 'The profile\'s live setpoint, straight from the firmware: the third number.' },
-      { heading: '.getValue(), nothing shorter', body: 'A Voltage or an Angle unpacks with .in(...); a bare Double just auto-unboxes.' },
+      { heading: 'Every read uses .getValue()', body: 'A Voltage or an Angle unpacks with .in(...); a bare Double just auto-unboxes.' },
     ];
     cards.forEach((c, i) => {
       const col = i % 2, row = Math.floor(i / 2);
@@ -746,7 +746,7 @@ function buildDeck() {
 
     K.addFooter(s, { pageNum: 21, label: LABEL, dark: true });
     s.addNotes(
-      'GravityTypeValue.Elevator_Static tells the closed loop that kG\'s contribution doesn\'t depend on where the carriage is — full weight, full holding voltage, at the bottom or the top. An arm\'s gravity load does change with angle, which is a different GravityTypeValue a later lesson introduces. SensorToMechanismRatio is the same trick ModuleIOTalonFX already uses for the drive and steer motors. And there\'s no getValueAsDouble() anywhere: every StatusSignal in this API gives you .getValue() and nothing shorter — for a Voltage or an Angle that means unpacking with .in(...), and for a bare Double like getClosedLoopReference()\'s it just auto-unboxes.'
+      'GravityTypeValue.Elevator_Static tells the closed loop that kG\'s contribution doesn\'t depend on where the carriage is — full weight, full holding voltage, at the bottom or the top. An arm\'s gravity load does change with angle, which is a different GravityTypeValue a later lesson introduces. SensorToMechanismRatio is the same trick ModuleIOTalonFX already uses for the drive and steer motors. And every read goes through .getValue(), which hands back the signal\'s real type — for a Voltage or an Angle that means unpacking with .in(...), and for a bare Double like getClosedLoopReference()\'s it just auto-unboxes.'
     );
   }
 

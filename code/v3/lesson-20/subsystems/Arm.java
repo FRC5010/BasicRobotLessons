@@ -7,7 +7,7 @@ import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.smartdashboard.MechanismLigament2d;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.Angle;
 
 import first.robot.Constants;
@@ -19,7 +19,7 @@ import first.robot.Constants.ElevatorConstants;
  * current mode, an inputs bundle, and the decision about where it is allowed
  * to swing. Two motors, one mechanism — they are one physical thing.
  */
-public class Arm extends Mechanism {
+public class Arm implements Mechanism {
   private final ArmIO m_io = switch (Constants.kCurrentMode) {
     case REAL -> new ArmIOTalonFX();
     case SIM -> new ArmIOSim();
@@ -37,15 +37,16 @@ public class Arm extends Mechanism {
     Scheduler.getDefault().addPeriodic(this::periodic);
   }
 
+  /** One tick of sensing: read the hardware into the bundle, log it, and move the drawing. */
   private void periodic() {
     m_io.updateInputs(m_inputs);
-    SmartDashboard.putNumber("Arm/AngleDegrees", m_inputs.angleDegrees);
-    SmartDashboard.putNumber("Arm/VelocityDegPerSec", m_inputs.velocityDegPerSec);
-    SmartDashboard.putNumber("Arm/AppliedVolts", m_inputs.appliedVolts);
-    SmartDashboard.putNumber("Arm/SetpointDegrees", m_inputs.setpointDegrees);
-    SmartDashboard.putNumber("Arm/RollerVelocityRotPerSec", m_inputs.rollerVelocityRotPerSec);
-    SmartDashboard.putNumber("Arm/GoalDegrees", m_goal.in(Degrees));
-    SmartDashboard.putBoolean("Arm/AtGoal", atGoal());
+    Telemetry.log("Arm/AngleDegrees", m_inputs.angleDegrees);
+    Telemetry.log("Arm/VelocityDegPerSec", m_inputs.velocityDegPerSec);
+    Telemetry.log("Arm/AppliedVolts", m_inputs.appliedVolts);
+    Telemetry.log("Arm/SetpointDegrees", m_inputs.setpointDegrees);
+    Telemetry.log("Arm/RollerVelocityRotPerSec", m_inputs.rollerVelocityRotPerSec);
+    Telemetry.log("Arm/GoalDegrees", m_goal.in(Degrees));
+    Telemetry.log("Arm/AtGoal", atGoal());
 
     m_ligament.setAngle(toDrawingAngle(Degrees.of(m_inputs.angleDegrees)).in(Degrees));
     m_ligament.setColor(

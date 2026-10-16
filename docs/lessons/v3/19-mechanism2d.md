@@ -295,7 +295,8 @@ one from the other.
    D-pad tells it. Prove to yourself that the two are independent: the
    effector's angle is its own, and its *position* is entirely the
    carriage's business. (`org.wpilib.system.Timer` — and take it back out
-   when you're done, since Lesson 20 wants that ligament.)
+   when you're done, since Lesson 20 replaces that ligament with a real
+   arm.)
 4. **Code — break it on purpose.** Move the `Telemetry.log("Elevator/Mechanism", ...)`
    line out of `periodic()` and into the constructor, so it runs once.
    Watch the drawing freeze where it started while the graph keeps moving.

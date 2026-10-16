@@ -178,5 +178,13 @@ public final class Constants {
     public static final Distance kEffectorLength = Centimeters.of(25);
     public static final Color8Bit kMovingColor = new Color8Bit(Color.ORANGE);
     public static final Color8Bit kAtGoalColor = new Color8Bit(Color.LIME_GREEN);
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Give the carriage's straight-up angle a name, for the arm's drawing to use,
+     * and delete the effector's length above: a real arm replaces the stub. Then,
+     * after this class, add one describing the intake arm: its two motors, its
+     * size, how far it swings, its gains, its two positions and its roller speeds.
+     */
   }
 }

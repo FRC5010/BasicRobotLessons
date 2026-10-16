@@ -109,10 +109,10 @@ where zero is.
 
 ## 3. Describe the arm
 
-**Add to `Constants.java`, as a new nested class:**
+**Add to `Constants.java`, as a new nested class after `ElevatorConstants`:**
 
 ```java
-  public static class ArmConstants {
+  public static final class ArmConstants {
     public static final int kPivotMotorPort = 21; // CAN ID — change to yours
     public static final int kRollerMotorPort = 22; // CAN ID — change to yours
 
@@ -212,7 +212,7 @@ at the rotor 1.62 ÷ 50                  = 0.032 N·m
 volts        0.032 N·m × 1.69           = 0.055 V
 ```
 
-That's twenty times the elevator's `kA`, and the reason is worth noticing:
+That's nearly twenty times the elevator's `kA`, and the reason is worth noticing:
 the elevator's load hangs off a 1-inch drum, while the arm's mass sits 10
 inches out from the pivot. Distance from the axis is squared in the
 moment of inertia, so it dominates. An arm is genuinely harder to start
@@ -295,6 +295,8 @@ import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 
+import org.wpilib.hardware.bus.CANPort;
+
 import first.robot.Constants.ArmConstants;
 
 /** Real hardware behind the ArmIO contract: a profiled pivot and a dumb roller. */
@@ -305,8 +307,8 @@ public class ArmIOTalonFX implements ArmIO {
   private final MotionMagicVoltage m_request = new MotionMagicVoltage(0);
 
   public ArmIOTalonFX() {
-    m_pivot = new TalonFX(ArmConstants.kPivotMotorPort, CANBus.systemcore(0));
-    m_roller = new TalonFX(ArmConstants.kRollerMotorPort, CANBus.systemcore(0));
+    m_pivot = new TalonFX(ArmConstants.kPivotMotorPort, new CANBus(CANPort.CAN_S0));
+    m_roller = new TalonFX(ArmConstants.kRollerMotorPort, new CANBus(CANPort.CAN_S0));
 
     TalonFXConfiguration config = new TalonFXConfiguration();
     // One "mechanism rotation" is now one full swing of the arm.
@@ -371,9 +373,8 @@ going from degrees to rotations is a unit conversion and nothing else —
 `m_request.withPosition(Degrees.of(angleDegrees))` hand the whole job to
 the Units library. The same is true reading back: `getPosition()` gives a
 Phoenix `Angle`, and `.getValue().in(Degrees)` is the entire conversion —
-this alpha's `StatusSignal` has no shortcut past that `.getValue()` step,
-so every read here goes through it, the same as every Phoenix read since
-Lesson 12.
+the same unit-carrying read every Phoenix value in this course has gone
+through.
 
 Everything about the gains transfers from the elevator unchanged except
 one thing, and it's the one this lesson is about: `kG` stopped being a
@@ -385,10 +386,11 @@ mechanism rotates.
 the clamp Lesson 18 wrote.** `clampToTravel` is *your code's* opinion
 about what counts as a valid request, and it only helps if every request
 goes through it. A soft limit lives underneath your code entirely: the
-motor controller compares its own encoder against the threshold, and if a
-command would push past it, the output goes to neutral — no matter which
-line of your program asked, or whether you remembered to clamp. Both
-belong. The clamp keeps bad numbers out of your logic; the soft limit
+motor controller compares its own encoder against the threshold and
+refuses to drive any further that way — no matter which line of your
+program asked, or whether you remembered to clamp. With Motion Magic you
+can watch it happen: the profile's own setpoint stops at the threshold.
+Both belong. The clamp keeps bad numbers out of your logic; the soft limit
 keeps the mechanism off its hard stops when your logic is wrong.
 
 > Soft limits trust the encoder completely. If the arm's zero is wrong,
@@ -493,7 +495,9 @@ inventing a number you can't check.
 
 The arm starts at `kMinAngle`, resting on its lower stop. That's what a
 real one does: switch the robot off and the arm falls until something
-catches it.
+catches it. The model's two limits, `kMinAngle` and `kMaxAngle`, are its
+**hard stops** — the simulated arm physically can't swing past them, the
+same way a real one hits metal.
 
 > `Models.singleJointedArmFromPhysicalConstants` builds the roller's model
 > too, despite the name — it's the same generic "motor with inertia
@@ -511,13 +515,22 @@ Lesson 19 gets paid back.
 
 The arm's ligament doesn't belong to `Arm`'s own canvas, because the arm
 doesn't have one. It belongs on **the elevator's carriage**, so that
-raising the elevator carries the arm up with it for free. To append to the
-carriage, `Arm` needs a reference to it — `Elevator.getCarriage()`, which
-you already added in Lesson 19.
+raising the elevator carries the arm up with it for free. Two things stand
+in the way. `Elevator` keeps its carriage to itself, so `Arm` has no way to
+reach it yet. And the top of the carriage is already taken — by Lesson 19's
+placeholder stub, which has now done its job.
 
-One more small thing. `Arm` needs to know which way the carriage points to
-draw itself correctly, so give that angle a name instead of leaving a bare
-`90` in two files.
+Start with the stub. It goes, and so does the constant that sized it.
+
+**Delete from `ElevatorConstants`:**
+
+```java
+    public static final Distance kEffectorLength = Centimeters.of(25);
+```
+
+While you're in `ElevatorConstants`: `Arm` needs to know which way the
+carriage points to draw itself correctly, so give that angle a name
+instead of leaving a bare `90` in two files.
 
 **Add to `ElevatorConstants`, below `kAtGoalColor`:**
 
@@ -527,13 +540,37 @@ draw itself correctly, so give that angle a name instead of leaving a bare
     public static final Angle kCarriageAngle = Degrees.of(90);
 ```
 
-**And use it in `Elevator`'s carriage ligament, replacing the literal
-`90`:**
+**In `Elevator.java`, replace the carriage ligament with this, and delete
+`m_effector` below it:**
 
 ```java
+  /** Straight up from the base. Its length is the carriage height. */
   private final MechanismLigament2d m_carriage = m_base.append(
       new MechanismLigament2d("Carriage", 0, ElevatorConstants.kCarriageAngle.in(Degrees)));
 ```
+
+**Add the unit it uses to `Elevator.java`'s imports:**
+
+```java
+import static org.wpilib.units.Units.Degrees;
+```
+
+Now the door. A getter is the smallest one there is: it hands out the
+carriage segment and nothing else, so `Arm` can attach to it without
+`Elevator` exposing anything about how it moves.
+
+**Add to `Elevator`, below `getHeightMeters()`:**
+
+```java
+  /** The mount point on top of the carriage. Anything appended here rides along. */
+  public MechanismLigament2d getCarriage() {
+    return m_carriage;
+  }
+```
+
+That comment in `periodic()` about the effector riding along is now out
+of date — change it to say that anything appended to the carriage rides
+along, if you like. The code below it doesn't change.
 
 Now the mechanism itself.
 
@@ -549,7 +586,7 @@ import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.smartdashboard.MechanismLigament2d;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.Angle;
 
 import first.robot.Constants;
@@ -561,7 +598,7 @@ import first.robot.Constants.ElevatorConstants;
  * current mode, an inputs bundle, and the decision about where it is allowed
  * to swing. Two motors, one mechanism — they are one physical thing.
  */
-public class Arm extends Mechanism {
+public class Arm implements Mechanism {
   private final ArmIO m_io = switch (Constants.kCurrentMode) {
     case REAL -> new ArmIOTalonFX();
     case SIM -> new ArmIOSim();
@@ -579,15 +616,16 @@ public class Arm extends Mechanism {
     Scheduler.getDefault().addPeriodic(this::periodic);
   }
 
+  /** One tick of sensing: read the hardware into the bundle, log it, and move the drawing. */
   private void periodic() {
     m_io.updateInputs(m_inputs);
-    SmartDashboard.putNumber("Arm/AngleDegrees", m_inputs.angleDegrees);
-    SmartDashboard.putNumber("Arm/VelocityDegPerSec", m_inputs.velocityDegPerSec);
-    SmartDashboard.putNumber("Arm/AppliedVolts", m_inputs.appliedVolts);
-    SmartDashboard.putNumber("Arm/SetpointDegrees", m_inputs.setpointDegrees);
-    SmartDashboard.putNumber("Arm/RollerVelocityRotPerSec", m_inputs.rollerVelocityRotPerSec);
-    SmartDashboard.putNumber("Arm/GoalDegrees", m_goal.in(Degrees));
-    SmartDashboard.putBoolean("Arm/AtGoal", atGoal());
+    Telemetry.log("Arm/AngleDegrees", m_inputs.angleDegrees);
+    Telemetry.log("Arm/VelocityDegPerSec", m_inputs.velocityDegPerSec);
+    Telemetry.log("Arm/AppliedVolts", m_inputs.appliedVolts);
+    Telemetry.log("Arm/SetpointDegrees", m_inputs.setpointDegrees);
+    Telemetry.log("Arm/RollerVelocityRotPerSec", m_inputs.rollerVelocityRotPerSec);
+    Telemetry.log("Arm/GoalDegrees", m_goal.in(Degrees));
+    Telemetry.log("Arm/AtGoal", atGoal());
 
     m_ligament.setAngle(toDrawingAngle(Degrees.of(m_inputs.angleDegrees)).in(Degrees));
     m_ligament.setColor(
@@ -648,6 +686,14 @@ elevator again — no height, no "if the elevator is up," nothing. The
 arm's drawing tracks the elevator because of one `append` call in one
 line.
 
+> One honest wrinkle. `Elevator` logs the whole drawing in its own
+> `periodic()`, and the scheduler runs that before `Arm`'s, because the
+> elevator registered first. So the arm you see is the arm from one tick
+> earlier — 20 milliseconds, which at full swing speed is about 3.5° — the
+> one place in the drawing where "change it, then log it" runs the other
+> way round. That's far below anything you can see. If it ever mattered,
+> the fix would be to log the drawing once, after both have moved it.
+
 **`runRoller` is the first command in this course that doesn't drive
 toward a goal.** It has no `.until(...)`, because there is nothing to
 arrive at — `runRepeatedly` alone means it runs forever until something
@@ -662,13 +708,19 @@ gone, a roller left spinning stays spinning until someone tells it not to.
 
 ## 8. Wire it up
 
-**In `Robot.java`, add the arm below the elevator:**
+**Add to `Robot.java`, below the `elevator` field:**
 
 ```java
   public final Elevator elevator = new Elevator();
   // Arm reads elevator.getCarriage() in its constructor, so elevator must be
   // a finished object first — it already is, above.
   public final Arm arm = new Arm(elevator);
+```
+
+**Add to `Robot.java`'s imports:**
+
+```java
+import first.robot.subsystems.Arm;
 ```
 
 That line has to come *after* `elevator`, and now there's a hard reason
@@ -678,20 +730,27 @@ bottom, so the order you write them in is the order they happen — the
 same rule Lesson 14 relied on to get `drivetrain` ticking before
 `localizer`.
 
-**Add the bindings to `RobotTeleop`'s constructor:**
+**Add to `RobotTeleop`'s constructor, after the D-pad bindings:**
 
 ```java
-    // West face button drops the arm to the floor, north face tucks it back
-    // up. Hold a bumper to run the roller — it stops on its own when you let go.
-    robot.driverController.westFace().onTrue(robot.arm.goToAngle(ArmConstants.kIntake));
-    robot.driverController.northFace().onTrue(robot.arm.goToAngle(ArmConstants.kStowed));
+    // The left face button drops the arm to the floor; the top one tucks it
+    // back up. Hold a bumper to run the roller — it stops when you let go.
+    robot.driverController.faceLeft().onTrue(robot.arm.goToAngle(ArmConstants.kIntake));
+    robot.driverController.faceUp().onTrue(robot.arm.goToAngle(ArmConstants.kStowed));
     robot.driverController.rightBumper().whileTrue(robot.arm.runRoller(ArmConstants.kIntakeSpeed));
     robot.driverController.leftBumper().whileTrue(robot.arm.runRoller(ArmConstants.kEjectSpeed));
 ```
 
-On a standard Xbox pad, west is X and north is Y — `CommandGamepad`'s
-generic naming from Lesson 1, still paying off. `southFace()` and
-`eastFace()` are already spoken for by the heading bindings from Lesson 8.
+On an Xbox pad the left face button is X and the top one is Y —
+`CommandGamepad` names buttons by where they sit, not by what's printed on
+them, so the same code works on any gamepad. `faceDown()` and
+`faceRight()` are already spoken for by the heading bindings from
+Lesson 8.
+
+The roller goes back to Lesson 1's `whileTrue`: it starts the command when
+you press and cancels it when you let go — which is exactly what "spin
+while I hold this" means, and that cancel is what `runRoller`'s
+`whenCanceled` is waiting for.
 
 **Add the import to `RobotTeleop.java`:**
 
@@ -704,18 +763,21 @@ import first.robot.Constants.ArmConstants;
 ## 9. Run it
 
 `./gradlew simulateJava`, **Teleoperated**. Open AdvantageScope, put the
-**Mechanism** tab on `/SmartDashboard/Elevator/Mechanism`, and press the
-north face button (Y).
+**Mechanism** tab on `/Telemetry/Elevator/Mechanism`, and press the top
+face button (Y).
 
 The arm swings up to vertical. Now press **D-pad up** and watch the whole
 assembly rise — arm still at its angle, riding the carriage, from code
-that never once mentions the elevator's height. Press the west face
+that never once mentions the elevator's height. Press the left face
 button (X) and it drops back down to the floor while staying up high.
 That is the scene graph from Lesson 19 doing exactly what it promised.
 
 Then go find the physics. Put `Arm/AngleDegrees` and `Arm/AppliedVolts` on
-one graph, and hold each preset in turn. Here is what those two traces
-settle at, measured in this simulation:
+one graph and watch what the voltage settles at once the arm stops. Your
+two presets give you two readings: about `+0.24` at the floor (`−20°`,
+where `kG × cos θ` is `0.235`), and `0.00` stowed straight up. Send the
+arm to more angles — Try It #1 shows you how to add one — and you get the
+rest of this table, measured in this simulation:
 
 | Arm angle | Applied volts | `kG × cos θ` |
 |---|---|---|
@@ -741,9 +803,9 @@ Two more traces are worth a look before you move on.
 
 Add `Arm/SetpointDegrees` alongside `Arm/AngleDegrees` and swing between
 the presets. Same story as the elevator: the goal steps, the setpoint
-slides, and the angle trails the setpoint by a handful of degrees — worst
-during the acceleration ramp, under ten at its peak — rather than the
-eighteen it would take to buy that voltage out of error. Lesson 18's
+slides, and the angle trails the setpoint by a few degrees — worst during
+the acceleration ramp, about four at its peak — rather than the eighteen
+it would take to buy that voltage out of error. Lesson 18's
 tuning order — `kG` from the steady hold, `kV` from the flat cruise, `kA`
 from the ramps, `kP` last and small — works here unchanged. The arm just
 gives you a bonus: because `kG` is scaled by `cos θ`, you can check it at
@@ -751,43 +813,55 @@ gives you a bonus: because `kG` is scaled by `cos θ`, you can check it at
 that check. An elevator only ever offers you a single number to verify.
 
 Finally, hold **right bumper** and watch `Arm/RollerVelocityRotPerSec`
-climb to around 60 rotations per second, then let go and watch it coast
-down to zero. No profile, no goal, no gains — a motor and a number.
+climb to around 60 rotations per second, then let go and watch it spin
+down to zero in about half a second. No profile, no goal, no gains — a
+motor and a number.
 
 ---
 
 ## Try it
 
-> **Do these in simulation** (`kSimMode = Mode.SIM`). Three of them
+> **Do these in simulation** (`kSimMode = Mode.SIM`). Two of them
 > deliberately defeat a safety layer or invert the gravity model to show
 > you what that failure looks like, and a real arm answers by slamming
 > into a hard stop under power. An arm is also the first mechanism in this
 > course that can reach *you*. In sim it costs nothing to be wrong, which
 > is the whole reason to be wrong there first.
 
-1. **Add a third position.** A `kScore` angle around 35° on another
+1. **Code — add a third position.** A `kScore` angle around 35° on another
    button. One constant, one binding, same as the elevator.
-2. **Ask for the impossible.** Bind `arm.goToAngle(Degrees.of(270))` to a
-   button and confirm on the plot that `Arm/GoalDegrees` reads `180`, not
-   `270` — the clamp caught it before the firmware ever saw it.
-3. **Then get past the clamp.** Call an IO layer's
-   `setGoalAngleDegrees(270)` directly (build an `ArmIOSim` on its own in a
-   throwaway test, skipping `Arm.clampToTravel` entirely) and watch the arm
-   stop at 180° anyway. Two layers of protection, and you just proved the
-   lower one works on its own.
-4. **Take the model away.** Set `kArmKV` to `0.0` and swing the arm from
-   intake to stow, watching `Arm/AngleDegrees` against
+2. **Code — ask for the impossible.** Bind `arm.goToAngle(Degrees.of(270))`
+   to a button and confirm on the plot that `Arm/GoalDegrees` reads `180`,
+   not `270` — the clamp caught it before the firmware ever saw it.
+3. **Code — then get past the clamp.** In `goToAngle`, temporarily replace
+   `clampToTravel(angle)` with plain `angle` and press that button again.
+   `Arm/GoalDegrees` now reads `270` — but `Arm/SetpointDegrees` stops at
+   `180`: the soft limit cut the firmware's own profile off at the
+   threshold, and `Arm/AppliedVolts` settles near `−0.25`, just `kG`
+   holding the arm up. Now set `ForwardSoftLimitEnable` to `false` as well,
+   run it again, and press the button. The setpoint runs on to `270` and
+   the voltage jumps to `+3` — on a stalled motor that's about 120 amps,
+   as much as the controller allows by default, shoving the arm into its
+   stop. `Arm/AngleDegrees` reads 180 both times, because `ArmIOSim`'s
+   model has hard stops of its own; on a real arm that stop is metal, and
+   the soft limit is the only thing keeping the motor off it. Put both
+   back.
+4. **Code — take the model away.** Set `kArmKV` to `0.0` and swing the arm
+   from intake to stow, watching `Arm/AngleDegrees` against
    `Arm/SetpointDegrees`. It gets there, but it now trails its own plan by
-   something close to the 18 degrees section 3 predicted, because error is
-   the only thing `kP` has to make voltage out of. Put it back.
-5. **Break the zero.** Change `kArmKG` to a negative number and run it
-   again. That's what a 180°-wrong encoder calibration does: the
+   about 21 degrees — the 18 section 3 predicted, plus a little more while
+   the profile speeds up — because error is the only thing `kP` has to make
+   voltage out of. Put it back.
+5. **Code — break the zero.** Change `kArmKG` to a negative number and run
+   it again. That's what a 180°-wrong encoder calibration does: the
    feedforward pulls the arm down exactly when it should be holding it up.
-   Watch how much harder `kP` has to work — and watch `Arm/SetpointDegrees`
-   and `Arm/AngleDegrees` come apart, which is what this failure looks
-   like on a plot when you meet it for real. Put it back. (On actual
-   hardware this experiment drives the arm into its own hard stop under
-   power, which is why it lives in sim.)
+   Watch how much harder `kP` has to work: held out horizontal, the arm now
+   sits about 3° below its goal instead of a tenth of a degree, and
+   mid-swing it trails its setpoint by about 7° instead of 4. That gap
+   between `Arm/SetpointDegrees` and `Arm/AngleDegrees` is what this
+   failure looks like on a plot when you meet it for real. Put it back.
+   (On actual hardware this experiment drives the arm into its own hard
+   stop under power, which is why it lives in sim.)
 6. **Both at once.** Hold a bumper while the arm is still swinging. The
    roller command takes the mechanism and interrupts the pivot command —
    but the arm keeps going anyway, because the pivot command's last act
@@ -831,3 +905,5 @@ One thing both mechanisms are still missing, though: they only know where
 they are because they assume they started at zero. Power the robot on
 with the arm halfway up and every number in this lesson — the angle, the
 cosine, the soft limits — is wrong by the same amount, confidently.
+
+Next: [Lesson 21 — Homing: finding out where you actually are](21-limit-sensors.md).

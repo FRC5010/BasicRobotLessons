@@ -314,11 +314,10 @@ A few things worth pointing at directly:
 - **`getClosedLoopReference()`** is new: it's the profile's own live
   setpoint, straight from the firmware — exactly the third number §5
   flagged.
-- Notice there's no `getValueAsDouble()` anywhere here, even though
-  `getClosedLoopReference()` returns a plain number. Every `StatusSignal`
-  in this API gives you `.getValue()` and nothing shorter — for a
-  `Voltage` or an `Angle` that means unpacking with `.in(...)`, and for a
-  bare `Double` like this one it just auto-unboxes.
+- Every read here goes through `.getValue()`, which hands back the
+  signal's real type: for a `Voltage` or an `Angle` that means unpacking
+  with `.in(...)`, and for a bare `Double` like `getClosedLoopReference()`'s
+  it just auto-unboxes.
 
 ---
 

@@ -29,18 +29,18 @@ public class RobotTeleop extends PeriodicOpMode {
             () -> DriveConstants.kMaxAngularSpeed.times(-robot.driverController.getRightX())));
 
     // Tap the bottom face button to turn and face 90°; the right face button for 0°.
-    robot.driverController.southFace().onTrue(robot.drivetrain.turnToHeading(90));
-    robot.driverController.eastFace().onTrue(robot.drivetrain.turnToHeading(0));
+    robot.driverController.faceDown().onTrue(robot.drivetrain.turnToHeading(90));
+    robot.driverController.faceRight().onTrue(robot.drivetrain.turnToHeading(0));
 
     // D-pad: send the elevator to one of its three preset heights.
     robot.driverController.dpadDown().onTrue(robot.elevator.goToHeight(ElevatorConstants.kStowed));
     robot.driverController.dpadRight().onTrue(robot.elevator.goToHeight(ElevatorConstants.kScoreMid));
     robot.driverController.dpadUp().onTrue(robot.elevator.goToHeight(ElevatorConstants.kScoreHigh));
 
-    // West face button drops the arm to the floor, north face tucks it back
-    // up. Hold a bumper to run the roller — it stops on its own when you let go.
-    robot.driverController.westFace().onTrue(robot.arm.goToAngle(ArmConstants.kIntake));
-    robot.driverController.northFace().onTrue(robot.arm.goToAngle(ArmConstants.kStowed));
+    // The left face button drops the arm to the floor; the top one tucks it
+    // back up. Hold a bumper to run the roller — it stops when you let go.
+    robot.driverController.faceLeft().onTrue(robot.arm.goToAngle(ArmConstants.kIntake));
+    robot.driverController.faceUp().onTrue(robot.arm.goToAngle(ArmConstants.kStowed));
     robot.driverController.rightBumper().whileTrue(robot.arm.runRoller(ArmConstants.kIntakeSpeed));
     robot.driverController.leftBumper().whileTrue(robot.arm.runRoller(ArmConstants.kEjectSpeed));
   }

@@ -534,6 +534,31 @@ Lesson 17 and must carry its additions; Lesson 26's prose introduces
 `getChassisVelocities()` itself, which Lesson 17 now provides. Lesson 25
 (BLine events and `overrideRotation`) is writable now.
 
+**Lesson 20 migrated, 2026-10-16.** Compiles 0–19 and 0–20 with zero
+warnings. `check-lesson-markers-v3.py` is clean for 1–20, and
+`update-lesson-v3.sh 20` builds a student project with all five markers in
+place. The new snapshot was built on the migrated Lesson 19 files. The port
+was the usual categories: `implements Mechanism`, `Telemetry.log`,
+`new CANBus(CANPort.CAN_S0)`, and `faceLeft()`/`faceUp()`.
+
+The old prose also claimed `Elevator.getCarriage()` "already added in
+Lesson 19". The alpha-7 Lesson 19 doesn't add it, so Lesson 20 now adds it
+and deletes Lesson 19's placeholder effector stub, with bold lead-ins for
+each edit. The Lesson 19 snapshot carries copies of `Robot` and
+`RobotTeleop` to hold the new markers.
+
+Measured with the real `Elevator`/`Arm` through the scheduler, and the real
+`Robot` loop for the drawing; the numbers are in CLAUDE.md. The cosine
+holding table reproduces exactly. Two findings changed the lesson:
+
+- The soft limit can't be demonstrated by the arm's angle, because the
+  physics model's own stops sit at the same angles. Try It #3 now watches
+  the setpoint and the volts instead.
+- The drawing lags one tick for the arm, now explained in a callout.
+
+`getValueAsDouble()` turned out to exist on alpha-7's Phoenix, so the
+"no shortcut" claims in Lessons 18 and 20 are gone.
+
 **Each lesson Phase 1b migrates also gets its NEXT LESSON markers
 (added 2026-09-26).** Lessons 1–15 now ship them: the code at the end of
 Lesson N-1 carries a javadoc-style comment at every spot where Lesson N has

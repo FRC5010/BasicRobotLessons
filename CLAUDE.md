@@ -156,7 +156,7 @@ lesson-k/X implies lesson-(k+1)/X exists and replaces it. **Enforce it with
 `./tools/check-lesson-markers-v3.py [N] [--show]`**, which rebuilds each
 lesson's before/after state through the shared lib, diffs them, and reports
 `MISSING` (a change with no marker announcing it) and `ORPHAN` (a marker
-that announces nothing). It's currently clean for 1–19. When Phase 1b
+that announces nothing). It's currently clean for 1–20. When Phase 1b
 migrates a lesson, raise the cut-off and add its markers in the same change.
 The checker's coverage rules are in its docstring. They absorb
 diff-alignment noise (blank lines, a shared `}`), and that absorption can
@@ -310,6 +310,35 @@ replace the lesson's old ≈145/≈34 mm. They match the lesson's arithmetic:
 the transient. The classic track measured 94.5/~23 mm independently. The
 `kG`-zeroed sag (1.56 mm) and settled gap (0.117 mm) repeat exactly on every
 run.
+
+**v3 Lesson 20 (intake arm) on alpha-7, measured with the real `Elevator`
+and `Arm` through the scheduler:**
+
+- The holding table reproduces exactly: +0.25 / +0.18 / 0.00 / −0.18 /
+  −0.25 V at 0° / 45° / 90° / 135° / 180°.
+- Peak lag from intake to stow is ≈4.0° with the model and ≈20.7° with
+  `kV` zeroed (the lesson's 18°, plus the ramp).
+- A negative `kG` costs ≈3° of sag held horizontal and ≈6.9° of peak lag.
+- The roller reaches 60.3 rot/s at 0.6 and stops ≈0.5 s after release.
+  A pivot command interrupting it does run `whenCanceled`.
+- **The soft limit can't be seen in the angle.** `SingleJointedArmSim` has
+  its own hard stops at `kMinAngle`/`kMaxAngle`, the same as the soft-limit
+  thresholds, so a 270° request settles at 179.82° with the limits on *or*
+  off. What differs is that with them on, Motion Magic's setpoint stops at
+  180.00 and the output is just `kG` (−0.25 V, ≈10 A). With them off, the
+  setpoint runs to 270 and the motor holds +3.00 V at 119 A, which is the
+  default 120 A stator limit on a stalled Kraken. The forward-soft-limit
+  fault never sets. Try It #3 is written around the setpoint and the volts.
+  The restructure plan's R24 once read 179.8° as proof of the soft limit;
+  that's corrected there.
+- **The drawing is one tick behind for the arm.** `Elevator` logs it in its
+  periodic, which runs before `Arm`'s (registration order), so the arm's
+  ligament is published a tick late: ≈3.5° mid-swing, measured from the
+  real `Robot` loop. The lesson says so in a callout.
+- **`getValueAsDouble()` exists on alpha-7's Phoenix.** It's on
+  `BaseStatusSignal` in 26.70.0-alpha-2; R7's "it's gone" was true of the
+  alpha-6 Phoenix. The course keeps `.getValue().in(...)` by design, but no
+  lesson may claim the shortcut is missing; Lessons 18 and 20 no longer do.
 
 **Use it instead of reasoning about whether a snippet compiles.** Current state: lessons 0–34 all compile, at every intermediate stopping point, with zero warnings. A regression is therefore a real result, not noise. Run the specific lesson you touched plus the highest one.
 
@@ -629,7 +658,7 @@ a lesson as-is.
 - [docs/lesson-plan-alpha7-upgrade.md](docs/lesson-plan-alpha7-upgrade.md) —
   the impact assessment and phased plan for upgrading the v3 track (only —
   the classic track targets stable 2026 and is unaffected) to WPILib 2027
-  alpha-7, a large breaking-change release. **Lessons 0–19 are migrated and
+  alpha-7, a large breaking-change release. **Lessons 0–20 are migrated and
   verified on alpha-7**: Phoenix 6 cleared the marketplace (Track A, 1–14,
   2026-09-18), and on 2026-09-24 the v3 track switched vision from
   PhotonVision to **LimelightLib 2**, which cleared Track B's vendor gate.
@@ -640,7 +669,7 @@ a lesson as-is.
   (maple-sim, PhotonVision, PathPlanner…) than the `2027_alpha7` folder has
   files for — only a JSON in the folder means a release exists. Lesson 15's simulated camera publishes real results frames to
   the NetworkTables topic a real Limelight uses, so the unmodified library
-  runs in sim. Lessons 20–34 are still pre-alpha-7 code awaiting Phase 1b;
+  runs in sim. Lessons 21–34 are still pre-alpha-7 code awaiting Phase 1b;
   Lessons 27 and 31 need Limelight redesigns first (user decisions). A
   PhotonVision flavor of Lesson 15 may come back as an option once PhotonLib
   ships for alpha-7; the last PhotonVision version is at commit `94fe7b9`.

@@ -29,6 +29,11 @@ public class Elevator implements Mechanism {
       ElevatorConstants.kDisplayWidth.in(Meters), ElevatorConstants.kDisplayHeight.in(Meters));
   private final MechanismRoot2d m_base = m_mechanism.getRoot(
       "Base", ElevatorConstants.kDisplayWidth.in(Meters) / 2, 0);
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * Point the carriage straight up with a named angle instead of a bare 90, and
+   * delete the effector stub below it: the real arm attaches here instead.
+   */
   /** Straight up from the base. Its length is the carriage height. */
   private final MechanismLigament2d m_carriage =
       m_base.append(new MechanismLigament2d("Carriage", 0, 90));
@@ -75,6 +80,11 @@ public class Elevator implements Mechanism {
   public double getHeightMeters() {
     return m_inputs.heightMeters;
   }
+
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Hand out the carriage's segment, so the arm can attach its own drawing to it.
+   */
 
   /** Keeps 'target' inside [kMinHeight, kMaxHeight] — there's no MathUtil.clamp to reach for here. */
   private static Distance clampToTravel(Distance target) {
