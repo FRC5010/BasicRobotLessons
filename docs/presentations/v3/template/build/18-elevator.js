@@ -1161,7 +1161,7 @@ function buildDeck() {
 
     const cols = [
       { label: 'PREDICT, WITH NO kV', a: '≈ 9 V', aHow: 'to cruise: 1.44 × 6.3 drum rot/s', b: '≈ 7 cm', bHow: 'of lag for kP = 20 to make 9 V' },
-      { label: 'MEASURED, FULL TRAVEL', a: '≈ 95 mm', aHow: 'peak lag, kElevatorKV zeroed', b: '≈ 20 mm', bHow: 'peak lag, with the model' },
+      { label: 'MEASURED, FULL TRAVEL', a: '≈ 9 cm', aHow: 'peak lag, kElevatorKV zeroed', b: '1.5–2 cm', bHow: 'peak lag, with the model' },
     ];
     cols.forEach((c, i) => {
       const x = 0.7 + i * 6.1;
@@ -1181,7 +1181,7 @@ function buildDeck() {
 
     K.addFooter(s, { pageNum: 34, label: LABEL, dark: true });
     s.addNotes(
-      'You can predict kV\'s effect before measuring it. A 1.0 m/s cruise is about 6.3 drum rotations a second, which costs 1.44 × 6.3 ≈ 9 V. With no kV, kP = 20 can only make 9 V out of about 0.45 rotations of error — some 7 cm. Measured moving the full travel range with kElevatorKV zeroed: about 95 mm of peak lag — the 7 cm, plus a little extra while the profile is still speeding up. With the model in place, the same move: about 20 mm. kP = 20 is doing real work either way; the difference is how much it\'s forced to do versus how much the model already handled.'
+      'You can predict kV\'s effect before measuring it. A 1.0 m/s cruise is about 6.3 drum rotations a second, which costs 1.44 × 6.3 ≈ 9 V. With no kV, kP = 20 can only make 9 V out of about 0.45 rotations of error — some 7 cm. Measured moving the full travel range with kElevatorKV zeroed: about 9 cm of peak lag — the 7 cm, plus a little extra while the profile is still speeding up. With the model in place, the same move: 1.5 to 2 cm. Both numbers wander by several millimeters from run to run, so don\'t expect to match them to the millimeter. kP = 20 is doing real work either way; the difference is how much it\'s forced to do versus how much the model already handled.'
     );
   }
 

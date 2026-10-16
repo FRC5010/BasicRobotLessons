@@ -552,11 +552,12 @@ possible trim.
   1.0 m/s cruise is about 6.3 drum rotations a second, which costs
   `1.44 × 6.3 ≈ 9 V`, and with no `kV`, `kP = 20` can only make 9 V out
   of about 0.45 rotations of error — some 7 cm. Measured moving the full
-  travel range with `kElevatorKV` zeroed: **≈95 mm** of peak lag, the
-  7 cm plus a little extra while the profile is still speeding up. With
-  the model in place, the same move: **≈20 mm**. `kP = 20` is doing real
-  work either way — the difference is how much work it's *forced* to do
-  versus how much the model already handled for it.
+  travel range with `kElevatorKV` zeroed: about **9 cm** of peak lag —
+  the 7 cm, plus a little extra while the profile is still speeding up.
+  With the model in place, the same move: **1.5–2 cm**. Expect your own
+  numbers to wander by several millimeters from run to run. `kP = 20` is
+  doing real work either way — the difference is how much work it's
+  *forced* to do versus how much the model already handled for it.
 - **`kA` wrong** is the subtlest: a brief spike in the setpoint-vs-height
   gap right at the start and end of the move, where the profile is
   accelerating or decelerating hardest, vanishing once it reaches
@@ -578,6 +579,13 @@ possible trim.
 ---
 
 ## Try it
+
+> **Do these in simulation** (`kSimMode = Mode.SIM`, which is where you
+> already are). Number 2 takes `kG` away on purpose, and on a real elevator
+> `kG` is part of what holds the carriage up: without it, the carriage drops
+> until `kP` has built up enough error to catch it. With this course's
+> numbers that's 1.6 mm; a heavier carriage drops further. In sim, being
+> wrong is free — that's the point of having it.
 
 1. **Code — add a fourth preset.** Give `ElevatorConstants` a `kScoreLow`
    between `kStowed` and `kScoreMid`, and bind it to a face button.
@@ -607,9 +615,9 @@ can only do that by tolerating a permanent, silent error. The fix wasn't
 a bigger `kP`. It was **a term for each physical effect**: `kG` for the
 constant pull of gravity, `kV` for the voltage a steady speed costs,
 `kA` for the extra push a changing speed costs, and `kP` shrunk down to
-what's left over once the model has done its job. All three feedforward
-gains came straight off the Kraken X60's spec sheet, walked through the
-gearbox by hand — nothing here was guessed.
+what's left over once the model has done its job. `kG` and `kV`
+came straight off the Kraken X60's spec sheet, walked through the gearbox
+by hand, and `kA` got checked against a graph — nothing here was guessed.
 
 **Motion Magic** turned "go here" into a real trapezoidal profile
 generated in firmware, and that profile handed you a third number worth

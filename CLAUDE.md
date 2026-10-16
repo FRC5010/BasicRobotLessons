@@ -293,15 +293,23 @@ that tag and measured in sim with the real `Robot`:
   recorded, not worked around.
 
 **Lesson 18's lag numbers were remeasured on alpha-7** with the documented
-move (stowed to `kMaxHeight`) at full 20 ms ticks:
+move (stowed to `kMaxHeight`) at full 20 ms ticks. The peak lag varies from
+run to run, so the lesson gives ranges, not a single figure:
 
-- `kV` zeroed: ≈92–94 mm peak lag.
-- Full model: ≈20–22 mm.
+- `kV` zeroed: about 9 cm. Two runs of five moves each gave medians of
+  88.1 and 91.7 mm; single moves ranged from 82 to 102 mm.
+- Full model: 1.5–2 cm. Medians of 15.7 to 19.8 mm; single moves ranged
+  from 12 to 30 mm.
 
-These replace the lesson's old ≈145/≈34 mm. They match the classic track's
-independent 94.5/~23 mm and the arithmetic in the lesson: 9 V needed from
-`kP = 20` means ≈0.45 drum rotations ≈ 7 cm at cruise, plus the transient.
-The `kG`-zeroed sag (1.56 mm) and settled gap (0.12 mm) reproduced unchanged.
+Measure on a fixed-rate schedule (sleep until the next 20 ms deadline, not
+20 ms after the work), after a couple of seconds of warm-up, and repeat each
+move. A probe that sleeps 20 ms after its work and measures the first move
+after startup read 21–31 and 87–112 mm across three runs. These numbers
+replace the lesson's old ≈145/≈34 mm. They match the lesson's arithmetic:
+9 V needed from `kP = 20` means ≈0.45 drum rotations ≈ 7 cm at cruise, plus
+the transient. The classic track measured 94.5/~23 mm independently. The
+`kG`-zeroed sag (1.56 mm) and settled gap (0.117 mm) repeat exactly on every
+run.
 
 **Use it instead of reasoning about whether a snippet compiles.** Current state: lessons 0–34 all compile, at every intermediate stopping point, with zero warnings. A regression is therefore a real result, not noise. Run the specific lesson you touched plus the highest one.
 

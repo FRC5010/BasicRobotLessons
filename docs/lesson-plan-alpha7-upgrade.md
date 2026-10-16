@@ -453,9 +453,12 @@ CANBus(CANPort.CAN_S0)`. Verified at runtime:
 - **The elevator (Lesson 18).** The real `Robot` runs `goToHeight` through
   the scheduler, finishes in 0.98 s and holds afterwards. The lesson's
   `kG`-zeroed sag (1.56 mm) and settled gap (0.12 mm) reproduce. Its
-  full-travel lag numbers didn't: ≈145/≈34 mm is really ≈94/≈20 mm with
-  `kV` zeroed vs. restored, matching the classic track and the lesson's own
-  arithmetic. The prose now says so and shows the arithmetic.
+  full-travel lag numbers didn't: ≈145/≈34 mm is really about 9 cm vs.
+  1.5–2 cm with `kV` zeroed vs. restored, matching the classic track and the
+  lesson's own arithmetic. The prose now says so and shows the arithmetic.
+  (Remeasured 2026-10-16 with repeated moves on a fixed-rate schedule: the
+  peak lag varies from run to run, so the lesson gives ranges. Details are
+  in `CLAUDE.md`.)
 - **The drawing (Lesson 19).** Its carriage length tracks the height, its
   colour goes orange → green on arrival, and the effector rides along.
 
