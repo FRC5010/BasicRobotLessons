@@ -559,6 +559,36 @@ holding table reproduces exactly. Two findings changed the lesson:
 `getValueAsDouble()` turned out to exist on alpha-7's Phoenix, so the
 "no shortcut" claims in Lessons 18 and 20 are gone.
 
+**Lesson 21 migrated, 2026-10-17.** Compiles 0–20 and 0–21 with zero
+warnings. `check-lesson-markers-v3.py` is clean for 1–21. The snapshot was
+rebuilt on the migrated Lesson 20 files. The only port was the elevator
+motor's `new CANBus(CANPort.CAN_S0)`; `ElevatorIO` and `ElevatorIOSim` came
+out byte-identical to the old snapshot. The Lesson 20 snapshot now carries
+copies of the three elevator IO files, to hold the markers.
+
+Measured with the real `Elevator` through the scheduler, and with the real
+`Robot` loop launched the way SimGUI launches it. The numbers are in
+CLAUDE.md. Three findings changed the lesson:
+
+- **An un-homed carriage doesn't stay put.** Nothing in the sim holds an
+  unpowered carriage, so it sinks at 2 cm/s while the robot sits disabled.
+  It lands on the switch about 18 s after launch, and the `Trigger`
+  re-zeroes it before most students have touched anything. **User
+  decision: teach the sink.** Section 8 now starts by watching the encoder
+  count below zero, then the switch fix itself, then restarts to show
+  `home()` and the pre-homing stall.
+- **D-pad up before homing doesn't reach "really 1.80 m".** `ElevatorSim`'s
+  own travel limit stops the carriage at the 1.5 m frame top, with the
+  encoder reading 1.15 m and the motor stalled at 3 V and 119 A.
+- **Stowing doesn't trip the switch.** Stowed is 2 cm and the switch is at
+  1 cm, so `AtBottomLimit` stays false there.
+
+The text also never told the student to log `AtBottomLimit` and
+`StatorCurrentAmps`, though section 8 and section 9 graph them. It does
+now. Section 2's homing-speed arithmetic was corrected: gravity adds to the
+−0.7 V rather than subtracting from it. The ending now hands off to
+Lesson 22.
+
 **Each lesson Phase 1b migrates also gets its NEXT LESSON markers
 (added 2026-09-26).** Lessons 1–15 now ship them: the code at the end of
 Lesson N-1 carries a javadoc-style comment at every spot where Lesson N has

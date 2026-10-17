@@ -156,7 +156,7 @@ lesson-k/X implies lesson-(k+1)/X exists and replaces it. **Enforce it with
 `./tools/check-lesson-markers-v3.py [N] [--show]`**, which rebuilds each
 lesson's before/after state through the shared lib, diffs them, and reports
 `MISSING` (a change with no marker announcing it) and `ORPHAN` (a marker
-that announces nothing). It's currently clean for 1–20. When Phase 1b
+that announces nothing). It's currently clean for 1–21. When Phase 1b
 migrates a lesson, raise the cut-off and add its markers in the same change.
 The checker's coverage rules are in its docstring. They absorb
 diff-alignment noise (blank lines, a shared `}`), and that absorption can
@@ -339,6 +339,27 @@ and `Arm` through the scheduler:**
   `BaseStatusSignal` in 26.70.0-alpha-2; R7's "it's gone" was true of the
   alpha-6 Phoenix. The course keeps `.getValue().in(...)` by design, but no
   lesson may claim the shortcut is missing; Lessons 18 and 20 no longer do.
+
+**v3 Lesson 21 (homing) on alpha-7, measured with the real `Elevator`
+through the scheduler, and with the real `Robot` loop launched like
+SimGUI:**
+
+- **An unpowered carriage sinks at 2.0 cm/s.** That's `kG` ÷ `kV` × the
+  drum's circumference: 0.18 ÷ 1.44 × 0.16 m. Nothing in the sim holds it.
+- Launched with the elevator un-homed at `kSimStartHeight` (0.35 m), the
+  carriage lands on the switch 18.0 s after launch, while still disabled.
+  The `Trigger` re-zeroes it then (−0.34 → 0.01), or at the moment
+  Teleoperated is selected, if that comes later.
+- **User decision: Lesson 21 teaches the sink** rather than hiding it.
+  Section 8 watches it happen, then restarts the sim to show `home()`.
+- Homing descends at 9.7 cm/s. That's −0.7 V plus gravity's 0.18 V, over
+  1.44 V per rotation/s. From the top stall it takes 15.5 s to trip the
+  switch, and the encoder snaps from −0.34 to 0.01.
+- D-pad up before homing stalls at the 1.5 m frame top: the encoder reads
+  1.15, and the motor holds 3.00 V at 119 A. `ElevatorSim`'s own travel
+  limit stops it; the old "really 1.80 m" was impossible.
+- Holding at −3 V against the bottom draws 119.0 A at 0.000 m/s.
+- Stowed (2 cm) sits 1 cm above the switch, so `AtBottomLimit` stays false.
 
 **Use it instead of reasoning about whether a snippet compiles.** Current state: lessons 0–34 all compile, at every intermediate stopping point, with zero warnings. A regression is therefore a real result, not noise. Run the specific lesson you touched plus the highest one.
 
@@ -658,7 +679,7 @@ a lesson as-is.
 - [docs/lesson-plan-alpha7-upgrade.md](docs/lesson-plan-alpha7-upgrade.md) —
   the impact assessment and phased plan for upgrading the v3 track (only —
   the classic track targets stable 2026 and is unaffected) to WPILib 2027
-  alpha-7, a large breaking-change release. **Lessons 0–20 are migrated and
+  alpha-7, a large breaking-change release. **Lessons 0–21 are migrated and
   verified on alpha-7**: Phoenix 6 cleared the marketplace (Track A, 1–14,
   2026-09-18), and on 2026-09-24 the v3 track switched vision from
   PhotonVision to **LimelightLib 2**, which cleared Track B's vendor gate.
@@ -669,7 +690,7 @@ a lesson as-is.
   (maple-sim, PhotonVision, PathPlanner…) than the `2027_alpha7` folder has
   files for — only a JSON in the folder means a release exists. Lesson 15's simulated camera publishes real results frames to
   the NetworkTables topic a real Limelight uses, so the unmodified library
-  runs in sim. Lessons 21–34 are still pre-alpha-7 code awaiting Phase 1b;
+  runs in sim. Lessons 22–34 are still pre-alpha-7 code awaiting Phase 1b;
   Lessons 27 and 31 need Limelight redesigns first (user decisions). A
   PhotonVision flavor of Lesson 15 may come back as an option once PhotonLib
   ships for alpha-7; the last PhotonVision version is at commit `94fe7b9`.

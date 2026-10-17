@@ -134,10 +134,11 @@ will write down.
 `kHomingVolts` is negative and small. Homing runs **open loop**, driving
 the motor at a fixed voltage rather than toward a position, because the
 position is precisely the thing you don't trust yet. −0.7 V gets a gentle
-descent: `kV` says a volt and a half per drum rotation per second, and
-after `kG`'s 0.18 V of support that leaves enough to sink at about
-9 cm/s. Slow is correct — you are deliberately driving a mechanism into a
-hard stop.
+descent. Gravity pulls the same way, and its pull is worth `kG`'s 0.18 V,
+so the carriage feels about 0.88 V of downhill drive. `kV` says 1.44 V
+buys one drum rotation per second, so that's about 0.6 rotations a second
+of a drum 16 cm around: a sink of about 10 cm/s. Slow is correct — you
+are deliberately driving a mechanism into a hard stop.
 
 ---
 
@@ -219,6 +220,14 @@ aim at.
 `statorCurrentAmps` comes along for the ride. You'll use it in section 9,
 and it's worth logging regardless — a motor pulling current with nothing
 to show for it is how a jam looks in a log.
+
+**Log both new inputs — add to `Elevator`'s `periodic()`, below the
+`GoalMeters` line:**
+
+```java
+    Telemetry.log("Elevator/StatorCurrentAmps", m_inputs.statorCurrentAmps);
+    Telemetry.log("Elevator/AtBottomLimit", m_inputs.atBottomLimit);
+```
 
 ---
 
@@ -335,14 +344,14 @@ Every binding you've written looks like this:
 *Nothing to add — this is code you already have:*
 
 ```java
-robot.driverController.southFace().onTrue(robot.drivetrain.turnToHeading(90));
+robot.driverController.faceDown().onTrue(robot.drivetrain.turnToHeading(90));
 ```
 
-It's easy to read `southFace()` as "the bottom face button" and stop
+It's easy to read `faceDown()` as "the bottom face button" and stop
 there. But look at what it actually returns: a **`Trigger`**. And a
 `Trigger` is not a button — it's a boolean that the scheduler checks
 every tick, plus a set of rules about what to run when that boolean
-changes. `southFace()` is just a convenient way to make one whose boolean
+changes. `faceDown()` is just a convenient way to make one whose boolean
 happens to be "is the bottom face button pressed."
 
 You can make one out of anything.
@@ -433,33 +442,66 @@ anywhere.
 
 ## 8. Run it
 
-`./gradlew simulateJava`, **Teleoperated**. Before you touch anything,
-put `Elevator/HeightMeters` on a graph and look at it.
+`./gradlew simulateJava`. Before you touch anything — before you even
+pick an opmode — put `Elevator/HeightMeters` and `Elevator/AtBottomLimit`
+on a graph and watch.
 
-It says **0.00** — and the simulated carriage is 35 cm in the air. That's
-the bug this whole lesson is about, and now you can see it: press D-pad
-up and the elevator climbs to what it *calls* 1.45 m, which is really
-1.80 m, well past the top of a 1.5 m frame. Nothing complains.
+It starts at **0.00**, with the simulated carriage 35 cm in the air. Then
+the number starts counting *down*: −0.02, −0.04, −0.06, about two
+centimeters every second. The carriage is sinking. Nothing in this
+simulation holds up a carriage the motor isn't driving — there's no
+friction modeled — so it settles slowly under its own weight. The encoder
+dutifully counts every centimeter of that descent from a zero that was
+never the bottom, and before long it's telling you the carriage is 30 cm
+*below the floor*. That's the bug this whole lesson is about, and now
+it's on a graph.
+
+> The speed is section 2's arithmetic with the motor left out. Gravity is
+> worth `kG`'s 0.18 V, and at 1.44 V per drum rotation per second that's
+> 0.125 rotations a second: 2 cm/s on a 16 cm drum. How fast a real
+> elevator sinks when nothing drives it depends on its gearbox, its
+> friction and whether the motor is set to brake, so don't count on
+> seeing this on your robot.
+
+Leave it alone, and about **18 seconds** after launch the carriage
+reaches the bottom. `AtBottomLimit` flips true, and `HeightMeters` snaps
+from about −0.34 to **0.01** — with nobody touching anything, and the
+robot still disabled. That's section 7's `Trigger` doing exactly its job:
+whenever the switch trips, take its word. (If you hadn't picked
+Teleoperated yet, the snap happens the moment you do. That's when the
+binding is made, and the switch is already pressed.)
+
+Now make homing do the same thing on purpose. **Restart the simulation,
+and this time be quick:** pick **Teleoperated** and enable within ten
+seconds or so, before the carriage lands.
+
+Press **D-pad up** first. The elevator climbs toward what it calls
+1.45 m — and stops. `HeightMeters` reads **1.15**, because the carriage
+has hit the top of its 1.5 m frame and the encoder started 35 cm short.
+It never arrives: `AppliedVolts` sits at 3.00 and
+`Elevator/StatorCurrentAmps` at about **119**, a motor pushing its
+carriage into the frame with everything it's allowed. Nothing complains —
+unless you happen to be graphing current, which is section 9's whole
+idea.
 
 Now press **Back**. Three things happen in order, and all three are
 visible:
 
 1. `Elevator/AppliedVolts` drops to −0.7 and stays there. The carriage
-   sinks steadily at about 9 cm/s.
-2. `Elevator/HeightMeters` counts *downward past zero* — −0.10, −0.20,
-   −0.30. This is the encoder faithfully reporting how far it has moved
-   from a starting point that was never right.
-3. At about **3.9 seconds** `Elevator/AtBottomLimit` flips true, the
+   descends steadily at about 10 cm/s.
+2. `Elevator/HeightMeters` counts down from 1.15, past zero, and keeps
+   going: −0.10, −0.20, −0.30. This is the encoder faithfully reporting
+   how far it has moved from a starting point that was never right.
+3. About **15½ seconds** later `Elevator/AtBottomLimit` flips true, the
    voltage goes to zero, and the height snaps from about **−0.34 m to
    0.01 m**. That jump is 35 centimeters of accumulated wrongness being
-   deleted in one tick. Measured in this simulation: 3.88 s to trip the
-   switch, landing at 0.009 m.
+   deleted in one tick.
 
 From then on the elevator is honest. Press D-pad right and it goes to
-0.75 m and *is* at 0.75 m. Press D-pad down and watch `AtBottomLimit` go
-true on arrival — the `Trigger` fires, re-zeroing costs nothing because
-the encoder was already right, and it'll keep being right for the rest of
-the match.
+0.75 m and *is* at 0.75 m. Press D-pad down and it settles at its stowed
+2 cm, a centimeter above the switch, so `AtBottomLimit` stays false. The
+switch only speaks when the carriage really reaches the bottom, and the
+encoder has been right since homing anyway.
 
 ---
 
@@ -473,7 +515,7 @@ going nowhere, and both halves of that are measurable. Drive down slowly
 and watch `Elevator/StatorCurrentAmps`: while the carriage is descending
 it sits low, and the instant it lands the current climbs sharply while
 `VelocityMetersPerSec` sits at zero. In this simulation, held against the
-bottom stop at −3 V, the motor draws **≈120.7 amps** and moves at
+bottom stop at −3 V, the motor draws **≈119 amps** and moves at
 **0.000 m/s**. That pair — current up, speed zero — is a hard stop, and
 you can home against it with no sensor at all.
 
@@ -565,7 +607,7 @@ not a trick — every sensor you add from here has a safe direction to fail
 in, and it's worth two seconds of thought at wiring time.
 
 **A `Trigger` is any boolean, polled.** You'd been writing
-`robot.driverController.southFace().onTrue(...)` since Lesson 1 without
+`robot.driverController.faceDown().onTrue(...)` since Lesson 1 without
 necessarily noticing that the button part is incidental.
 `new Trigger(robot.elevator::atBottomLimit)` binds a command to a limit
 switch with the same three words, and there's nothing special about
@@ -573,7 +615,9 @@ limit switches either. Sensor readings, computed conditions, whether the
 arm is stowed, whether you have a game piece — the scheduler will watch
 any of them for you.
 
-That last one is going to be useful immediately. The robot can now sense
-its own state with real confidence — a height it trusts, an angle it
-trusts, a switch it can build behavior around. Time to start showing some
-of that state to the humans standing around it.
+That last one is going to be useful immediately. The robot can now trust
+its own height. What it still can't tell you is whether it's holding
+anything: the roller spins exactly the same whether the intake is full or
+empty. That takes another sensor, and another `Trigger`.
+
+Next: [Lesson 22 — Beam breaks: knowing you actually have it](22-light-sensors.md).

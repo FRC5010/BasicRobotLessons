@@ -33,8 +33,8 @@ import org.wpilib.units.measure.AngularVelocity;
 import org.wpilib.units.measure.Distance;
 import org.wpilib.units.measure.LinearAcceleration;
 import org.wpilib.units.measure.LinearVelocity;
-import org.wpilib.units.measure.Voltage;
 import org.wpilib.units.measure.Mass;
+import org.wpilib.units.measure.Voltage;
 import org.wpilib.util.Color;
 import org.wpilib.util.Color8Bit;
 
@@ -144,6 +144,15 @@ public final class Constants {
     public static final double kSimMaxRangeMeters = 6.0;
   }
 
+  public static final class PathConstants {
+    // BLine runs three P loops at once. Every gain here is "output per unit of
+    // error", and since error is meters (or radians) and output is per-second,
+    // the units all come out to 1/s.
+    public static final double kTranslationP = 5.0; // m/s per meter of path left
+    public static final double kRotationP = 3.0;    // rad/s per radian of heading error
+    public static final double kCrossTrackP = 2.0;  // m/s per meter off the line
+  }
+
   public static final class ElevatorConstants {
     public static final int kMotorPort = 20; // CAN ID — change to yours
     public static final double kGearRatio = 12.0; // motor rotations per drum rotation
@@ -189,7 +198,7 @@ public final class Constants {
     public static final Angle kCarriageAngle = Degrees.of(90);
   }
 
-  public static class ArmConstants {
+  public static final class ArmConstants {
     public static final int kPivotMotorPort = 21; // CAN ID — change to yours
     public static final int kRollerMotorPort = 22; // CAN ID — change to yours
 

@@ -46,6 +46,10 @@ public class Elevator implements Mechanism {
     Telemetry.log("Elevator/AppliedVolts", m_inputs.appliedVolts);
     Telemetry.log("Elevator/SetpointMeters", m_inputs.setpointMeters);
     Telemetry.log("Elevator/GoalMeters", m_goal.in(Meters));
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Log the motor's current and whether the bottom limit switch is pressed.
+     */
 
     // The picture is built once and changed every tick; only the carriage
     // changes here, and anything appended to it (see getCarriage()) rides
@@ -66,6 +70,13 @@ public class Elevator implements Mechanism {
         .until(this::atGoal)
         .named("Go To Height");
   }
+
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add homing: drive slowly down until the bottom switch trips, then believe it.
+   * Also a command that re-zeroes from the switch without taking over the
+   * elevator, and a way to ask whether the switch is pressed.
+   */
 
   public boolean atGoal() {
     return Math.abs(m_inputs.heightMeters - m_goal.in(Meters)) < ElevatorConstants.kTolerance.in(Meters);
