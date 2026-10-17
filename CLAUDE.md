@@ -681,24 +681,72 @@ a lesson as-is.
 
 ## The lessons are also a website
 
-`docs/` is published by GitHub Pages ("Deploy from a branch", `main`,
-`/docs`) at https://frc5010.github.io/BasicRobotLessons/, once Pages is
-switched on in the repo's settings. Every `.md` file becomes a page as it is;
-[docs/_config.yml](docs/_config.yml) keeps the plan docs and the slide decks
-off the site, and [docs/index.md](docs/index.md) is the home page. Two rules
-keep it working:
+`docs/` is built into https://frc5010.github.io/BasicRobotLessons/ by
+[.github/workflows/pages.yml](.github/workflows/pages.yml) on every push to
+`main` that touches `docs/`. It's Jekyll 4 with the **Just the Docs** theme
+(sidebar and search), with versions pinned in `docs/Gemfile.lock`. The repo's
+Settings → Pages → Source has to be **"GitHub Actions"**: the custom plugin
+below can't run in Pages' own branch builds. Every `.md` file becomes a page
+as it is, with no front matter. [docs/_config.yml](docs/_config.yml) keeps the
+plan docs and the slide decks off the site, and
+[docs/index.md](docs/index.md) is the home page. Material for MkDocs was
+passed over because it went into maintenance mode in November 2025.
+
+**[docs/_plugins/lesson_nav.rb](docs/_plugins/lesson_nav.rb) decides the
+sidebar**, not front matter. `index.md` is Home, each track's `README.md` is
+its track, and every other page in that folder goes under it. A lesson's label
+is `N · ` plus its `#` heading up to the colon ("18 · Scoring elevator"),
+ordered by the number in its file name; the theme alone would sort labels as
+text (1, 10, 2). The setup aside is "Setup", above Lesson 0; the other asides
+follow Lesson 34. What that means when editing:
+
+- A new lesson needs nothing extra: `NN-slug.md` with a `# Lesson N — …`
+  heading lands in the right place. A new track folder needs an entry in the
+  plugin's `TRACKS`.
+- Keep the `·`. "18. Scoring elevator" looks fine in the sidebar, but the
+  theme's SEO tag runs the title through Markdown for the browser tab, where
+  it's a numbered list and the 18 disappears (seen in the built page).
+- Search indexes each page's `#` and `##` sections. Both tracks have a
+  "18 · Scoring elevator"; the page path under each search result is what
+  tells them apart.
+- A shared aside (debugging, branching) sits under the Classic track in the
+  sidebar, because that's the folder it lives in. The OpMode README still
+  links it.
+
+Rules that keep it working:
 
 - **Link to anything outside `docs/` with a full GitHub URL**
   (`https://github.com/FRC5010/BasicRobotLessons/blob/main/...`), never
   `../../`. A relative link out of `docs/` works on GitHub but 404s on the
-  site. Links between lessons stay relative, ending in `.md`; Pages rewrites
-  them to the pages.
-- **No `{{` or `{%` in lesson text.** Pages runs every file through Liquid
-  templating, which would eat them. No lesson has any today.
+  site. Links between lessons stay relative, ending in `.md`;
+  `jekyll-relative-links` points them at the pages.
+- Liquid is off for `lessons/` and `index.md` (`render_with_liquid: false`
+  in the config's `defaults`), so a lesson can show `{{ … }}` or `{% … %}` in
+  a code block. Don't switch it off site-wide: the theme's search index and
+  stylesheets are Liquid templates.
+- [docs/_sass/custom/custom.scss](docs/_sass/custom/custom.scss) holds the two
+  changes to the theme's look. The site title shrinks to fit two lines
+  (otherwise it wraps onto three and runs into the sidebar). Code blocks get
+  line spacing that matches the code: the theme draws code at 12px but spaces
+  its lines for 16px text, 25.6px apart; they're 16.1px apart now, with the
+  font size unchanged.
 
-Preview it with GitHub's own pipeline: `gem "github-pages"` in a scratch
-Gemfile, then `LANG=C.UTF-8 bundle exec github-pages build --source docs`
-(without a UTF-8 locale the theme's stylesheet fails to compile).
+Preview it from `docs/` with Ruby 3.3: `bundle install`, then
+`LANG=C.UTF-8 LC_ALL=C.UTF-8 bundle exec jekyll serve` and open
+http://localhost:4000/BasicRobotLessons/. Without a UTF-8 locale the
+stylesheet fails with "Invalid US-ASCII character". The build prints dozens of
+Sass deprecation warnings (`darken()`, `map-get`); they come from the theme
+and don't affect the output. One known theme bug: clicking away from an open
+search box logs `TypeError: Cannot read properties of null (reading 'id')`
+from `just-the-docs.js` (it reads `evt.relatedTarget.id` without checking),
+and the box still closes.
+
+Checked when it landed, on a local build:
+
+- All 76 pages are in the sidebar and in the search index.
+- All 7,410 internal links and anchors resolve.
+- All 1,001 fenced code blocks come out as highlighted code.
+- Nothing scrolls sideways on a 390 px-wide phone.
 
 ## When adding or editing a lesson
 

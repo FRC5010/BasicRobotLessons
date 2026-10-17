@@ -1,0 +1,17 @@
+# The lessons website: Jekyll with the Just the Docs theme. Exact versions are
+# pinned in Gemfile.lock. To preview it, with Ruby 3.3 installed, from this folder:
+#   bundle install
+#   bundle exec jekyll serve      (then open http://localhost:4000/BasicRobotLessons/)
+# If the stylesheet fails with "Invalid US-ASCII character", set a UTF-8 locale
+# first (LANG=C.UTF-8 LC_ALL=C.UTF-8 on Linux).
+source "https://rubygems.org"
+
+gem "jekyll", "~> 4.4"
+gem "just-the-docs", "0.12.0"
+gem "webrick" # for `jekyll serve` on Ruby 3
+
+group :jekyll_plugins do
+  gem "jekyll-optional-front-matter" # the lesson files have no front matter
+  gem "jekyll-readme-index"          # each README.md becomes its folder's page
+  gem "jekyll-relative-links"        # links to .md files point at the pages
+end

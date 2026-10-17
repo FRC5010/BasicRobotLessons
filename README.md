@@ -14,6 +14,9 @@ each lesson to get to understand the code you've added.
 **The concepts introduced are not explored at the same level as a real programming course.**
 **It would be to your benefit to pair this with an actual course in Java before or during.**
 
+**Read the lessons as a website:** <https://frc5010.github.io/BasicRobotLessons/> —
+the same lessons as the files in this repo, with a sidebar and a search box.
+
 ## Hardware assumed
 
 - **TalonFX** motors (CTRE Phoenix 6) — drive and steering.

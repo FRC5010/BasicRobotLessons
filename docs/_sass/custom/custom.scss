@@ -1,0 +1,22 @@
+// Changes to the theme's own styles. Just the Docs reads this file by
+// this exact name.
+
+// The course's name is long for the sidebar's header. At the theme's size it
+// wraps onto three lines and runs into the lesson list; at this size it fits
+// on two.
+.site-title {
+  font-size: 1.125rem !important;
+  line-height: 1.2;
+}
+
+// Code blocks: the theme draws the code at three-quarters size but spaces its
+// lines for full-size text, so long listings come out nearly double-spaced.
+// This sizes the block itself down instead, so the spacing matches the code.
+div.highlighter-rouge pre.highlight {
+  font-size: 0.75em;
+  line-height: 1.4;
+}
+
+div.highlighter-rouge pre.highlight code {
+  font-size: 1em;
+}
