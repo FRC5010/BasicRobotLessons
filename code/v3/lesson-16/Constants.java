@@ -126,4 +126,10 @@ public final class Constants {
     public static final double kSimVerticalFovDegrees = 56.0;
     public static final double kSimMaxRangeMeters = 6.0;
   }
+
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add a PathConstants class with the gains for the three P loops a path follower
+   * runs at once: distance left along the path, heading, and drift off the line.
+   */
 }

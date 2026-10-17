@@ -93,7 +93,7 @@ public class Drivetrain extends Mechanism implements PoseProvider {
   private final PIDController m_thetaController = makeThetaController();
 
   public Drivetrain() {
-    Scheduler.getDefault().addPeriodic(this::logTelemetry);
+    Scheduler.getDefault().addPeriodic(this::periodic);
   }
 
   /** Builds the shared chassis ground truth. Sim only — null everywhere else. */
@@ -311,7 +311,7 @@ public class Drivetrain extends Mechanism implements PoseProvider {
     return m_chassisSim != null ? m_chassisSim.getPose() : null;
   }
 
-  private void logTelemetry() {
+  private void periodic() {
     m_gyroIO.updateInputs(m_gyroInputs);
     SmartDashboard.putNumber("Drivetrain/Gyro/YawDegrees", m_gyroInputs.yawDegrees);
 

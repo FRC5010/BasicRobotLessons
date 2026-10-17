@@ -47,12 +47,23 @@ public class Robot extends OpModeRobot {
     DataLogManager.start(); // saves every published value to a .wpilog file
     Scheduler.getDefault().addEventListener(this::logCommandStart);
 
+    /**
+     * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+     * Have both simulated cameras look out from where the simulated chassis really is,
+     * not from the estimate they're meant to correct.
+     */
     frontCamera = LimelightPoseProvider.makeCamera(
         VisionConstants.kFrontCameraName, VisionConstants.kFrontRobotToCamera, localizer::getPose);
     backCamera = LimelightPoseProvider.makeCamera(
         VisionConstants.kBackCameraName, VisionConstants.kBackRobotToCamera, localizer::getPose);
     localizer.addProvider(frontCamera);
     localizer.addProvider(backCamera);
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * In simulation, start the estimate where the simulated chassis starts, instead of
+     * at the field's origin.
+     */
   }
 
   /** This function is called exactly once when the DS first connects. */

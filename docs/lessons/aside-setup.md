@@ -20,7 +20,7 @@ Fair warning: this is the least exciting part of the whole course — a chain of
 installers and terminal commands with nothing robot-shaped at the end. It's
 also the part where a wrong turn costs you hours later, so take it slow and
 don't skip the sanity checks. The instructions assume Windows + PowerShell
-because that's what the [README](../../README.md) targets. macOS/Linux flows
+because that's what the [README](https://github.com/FRC5010/BasicRobotLessons/blob/main/README.md) targets. macOS/Linux flows
 are similar; the paths and installer files differ.
 
 ---

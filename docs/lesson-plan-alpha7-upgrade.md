@@ -422,6 +422,143 @@ mechanical ports. Re-run
 `./tools/verify-lessons-v3.sh 34 test` once everything compiles, to catch
 anything only a test surfaces.
 
+**Lesson 16 migrated, 2026-09-27.** Compiles 0–16 with zero warnings; the
+real `Robot` boots and drives in a JUnit probe (`HAL.initialize()` now takes
+no arguments). The port was the usual two categories (`implements
+Mechanism`, `Telemetry.log(..., Pose2d.struct)` in place of a raw
+NetworkTables `StructPublisher`), built on the already-migrated Lesson 14/15
+files rather than by patching the old snapshot, so only Lesson 16's own
+changes differ. Two real changes came out of verifying it:
+
+- **`ChassisSimulation` follows the wheels.** Measured in sim, following the
+  command (the original design) let the "truth" outrun its own wheels.
+  Gentle driving drifted 13 cm in 3 s, and a hard start left the estimate
+  *behind*, contradicting the lesson's prose. A `simulateChassis` periodic
+  now feeds it the wheels' measured velocity, grip-limited: 1.7 cm gentle,
+  27 cm *ahead* on a hard start and held. User decision; the prose and deck
+  follow.
+- **`Drivetrain.logTelemetry()` is `periodic()` from Lesson 13 on**, where it
+  starts reading every sensor. User's call, prompted by the same question of
+  where a once-a-tick update belongs. Lessons 13, 14, 16 and 26's prose,
+  Lesson 13's deck, and the 13+ snapshots follow.
+
+The marker checker also got stricter here: a line edited above a marker
+partway down a folded diff hunk now needs its own marker (see CLAUDE.md).
+
+**Lessons 18 and 19 migrated, 2026-09-27.** Both compile 0–18 and 0–19
+with zero warnings. The port was the known four categories: `implements
+Mechanism`, `Telemetry.log`, `faceDown`/`faceRight`, and `new
+CANBus(CANPort.CAN_S0)`. Verified at runtime:
+
+- **The elevator (Lesson 18).** The real `Robot` runs `goToHeight` through
+  the scheduler, finishes in 0.98 s and holds afterwards. The lesson's
+  `kG`-zeroed sag (1.56 mm) and settled gap (0.12 mm) reproduce. Its
+  full-travel lag numbers didn't: ≈145/≈34 mm is really about 9 cm vs.
+  1.5–2 cm with `kV` zeroed vs. restored, matching the classic track and the
+  lesson's own arithmetic. The prose now says so and shows the arithmetic.
+  (Remeasured 2026-10-16 with repeated moves on a fixed-rate schedule: the
+  peak lag varies from run to run, so the lesson gives ranges. Details are
+  in `CLAUDE.md`.)
+- **The drawing (Lesson 19).** Its carriage length tracks the height, its
+  colour goes orange → green on arrival, and the effector rides along.
+
+The big finding: **`Telemetry.log(widget)` is a snapshot on alpha-7, not a
+live registration** (measured). So Lesson 19's "publish once, mutate
+forever" is replaced by "a drawing is logged like a number", and the frozen
+field view that Phase 1a's one-time `Telemetry.log("Field", ...)` had caused
+in Lessons 11–16 is fixed. Lesson 17 was a gap at the time, so Lesson 18's
+markers lived in the Lesson 16 snapshot, and the checker and
+`update-lesson-v3.sh` learned to understand gaps. (Lesson 17 has since been
+written; see below.)
+
+**Lesson 17 written, 2026-09-27 — on BLine `v2027.0.0-beta.1`.** Compiles
+0–17, and 0–19 on top of it, with zero warnings; `check-lesson-markers-v3.py`
+is clean for 1–19. BLine isn't in the marketplace, and its own vendordep URL
+follows the `wpilib-2027` branch, so `V3_VENDORDEPS` pins it the way
+Limelight is pinned: by the commit its release tag names (`d996781`), whose
+JSON points at the tagged jar on JitPack. The API was read from BLine's
+source at that tag, then checked at runtime in sim with the real `Robot` and
+the lesson's own opmode:
+
+- **Two Corners** finishes in ≈3.9–4.0 s, within the path's 5 cm / 2°
+  tolerance, swinging 5–12 cm past the first corner (run to run, vision
+  varies it). The `"shoot"` event fires 80% up the second leg. Estimate and
+  ground truth stay within 2 cm. **Far Side** finishes in 4.6 s.
+- **The shipped constraints are 2 m/s and 6 m/s², not the classic track's
+  3 and 3.** BLine plans nothing ahead: the translation loop asks for
+  `kTranslationP` × distance left and the acceleration limit does the rest,
+  so at 3/3 the robot overshot the first corner by 1.5 m and the end by
+  0.7 m. The rule the lesson teaches is that the robot stops in time when
+  `max speed² ÷ (2 × max accel)` fits inside `max speed ÷ kTranslationP`.
+- **A rotation target without `"profiled_rotation": true` is aimed at
+  immediately**, not spread along the path — the same default in v0.9.1, so
+  the classic lesson's "come around to 90° partway up the second leg" is
+  inaccurate for its own JSON. The v3 paths set it.
+- **Auto selection is one `@Autonomous` opmode per path** (OD3). An
+  opmode's constructor runs when it's *selected* (read from
+  `OpModeRobot`'s source), so `Autos.followPath(...)` there reads the file
+  while disabled — the classic lesson's `LoggedDashboardChooser` +
+  `onChange` pre-build, for free. The `FollowPath.Builder` is a `Robot`
+  field, and `Autos.registerEventTriggers()` runs in `Robot`'s constructor.
+- **Revised 2026-10-11, after the user's report** that the first auto in
+  SimGUI started where the robot was placed and drove in odd directions,
+  while later ones looked fine. Reproduced by driving the real `OpModeRobot`
+  loop with `DriverStationSim` the way SimGUI does. **SimGUI starts every
+  launch on Red 1** (alpha-7's `DriverStationGui.cpp`: `DSSimModel`'s
+  constructor, pushed to the HAL on the first mode click), so the path
+  flipped while the robot sat at the blue start. The cameras pulled the
+  estimate's position back within about a second, but not its heading. The
+  later runs only looked right, because by then the truth was off the field
+  where no tag is visible. Re-running on blue went wrong the same way, because
+  nothing put the robot back at the start. **User decision: the simulator
+  plays the field crew.** Each auto opmode's constructor (run on selection,
+  and again on the re-create after each disable) calls
+  `drivetrain.placeSimulatedRobot(Autos.startPose(path))`. That is a no-op on
+  a real robot; `startPose` flips for red the way BLine does. Verified: three
+  consecutive runs on Red 1 and on Blue 1 each start at the correct corner,
+  with truth and estimate within 1 cm, and finish at (10.57, 2.06, −1°) and
+  (5.97, 6.01, 179°) respectively. The lesson gained a §8 for this.
+  Separately measured: re-created opmodes leave their old trigger bindings
+  active (scope is the opmode ID), so run N schedules N `FollowPath`s and the
+  newest cancels the others in the same tick. That's harmless here, but worth
+  knowing for every auto opmode in the track.
+
+`tools/lib/v3-lessons.sh` now maps `code/v3/lesson-N/deploy/**` to
+`src/main/deploy/**` (lists it, and removes it on a rollback along with the
+emptied folders). Lesson 18's markers moved into the new Lesson 17 snapshot,
+and Lessons 18–19's `Robot`/`Constants` snapshots now carry Lesson 17's
+additions. **Later lessons, when Phase 1b reaches them:** 26's and 28's
+whole-file `Autos`/`Drivetrain`/`Constants`/`Robot` snapshots predate
+Lesson 17 and must carry its additions; Lesson 26's prose introduces
+`PIDController` as new, which it no longer is; and Lesson 28 adds
+`getChassisVelocities()` itself, which Lesson 17 now provides. Lesson 25
+(BLine events and `overrideRotation`) is writable now.
+
+**Lesson 20 migrated, 2026-10-16.** Compiles 0–19 and 0–20 with zero
+warnings. `check-lesson-markers-v3.py` is clean for 1–20, and
+`update-lesson-v3.sh 20` builds a student project with all five markers in
+place. The new snapshot was built on the migrated Lesson 19 files. The port
+was the usual categories: `implements Mechanism`, `Telemetry.log`,
+`new CANBus(CANPort.CAN_S0)`, and `faceLeft()`/`faceUp()`.
+
+The old prose also claimed `Elevator.getCarriage()` "already added in
+Lesson 19". The alpha-7 Lesson 19 doesn't add it, so Lesson 20 now adds it
+and deletes Lesson 19's placeholder effector stub, with bold lead-ins for
+each edit. The Lesson 19 snapshot carries copies of `Robot` and
+`RobotTeleop` to hold the new markers.
+
+Measured with the real `Elevator`/`Arm` through the scheduler, and the real
+`Robot` loop for the drawing; the numbers are in CLAUDE.md. The cosine
+holding table reproduces exactly. Two findings changed the lesson:
+
+- The soft limit can't be demonstrated by the arm's angle, because the
+  physics model's own stops sit at the same angles. Try It #3 now watches
+  the setpoint and the volts instead.
+- The drawing lags one tick for the arm, now explained in a callout.
+
+`getValueAsDouble()` turned out to exist on alpha-7's Phoenix, so the
+"no shortcut" claims in Lessons 18 and 20 are gone.
+
 **Each lesson Phase 1b migrates also gets its NEXT LESSON markers
 (added 2026-09-26).** Lessons 1–15 now ship them: the code at the end of
 Lesson N-1 carries a javadoc-style comment at every spot where Lesson N has
@@ -539,6 +676,7 @@ can go green while Track B is still red.
 | 2026-09-18 (manual, this session — directly checked `vendor-json-repo`'s live directory listing and CTRE's own `SystemCoreTesting/main/CTR-Phoenix.md` compatibility doc, not just the automated script's cached view) | `v2027.0.0-alpha-7` (confirmed via the GitHub releases page — still nothing newer) | **`2027_alpha7` bucket now holds `Phoenix6-26.70.0-alpha-2.json` and `Phoenix6-replay-26.70.0-alpha-2.json`**, alongside `AdvantageKit`/`ChoreoLib`/`REVLib`. Still no `photonlib` entry | **`26.70.0-alpha-2`, and it's in the `2027_alpha7` bucket** — CTRE's own compatibility doc states this release is `2027_alpha7`-compatible | `v2027.0.0-alpha-2` (unchanged) — still not marketplace-pinned for alpha6/7 | **Ready → Phase 1a executed this session.** `code/OpModeV3Robot` and `tools/verify-lessons-v3.sh` now pin the alpha-7 bucket for Phoenix 6; Lessons 0–14 verified compiling with zero warnings at every intermediate stopping point. See [Phase 1a](#phased-plan) above for what broke and how it was fixed | **Still blocked** — unchanged, needs PhotonVision's own alpha6/7-pinned release |
 | 2026-09-22 (manual, this session — investigated PhotonVision's own `Dev` CI channel directly as a possible shortcut, not just the marketplace) | `v2027.0.0-alpha-7` (unchanged) | Unchanged — still no `photonlib` entry in `2027_alpha7` | Unchanged | **Still no tagged/numbered release beyond `v2027.0.0-alpha-2` (targets alpha-6).** But PhotonVision's `Dev` branch (a continuously-recreated pre-release, not a version tag) does genuinely target alpha-7 in source, confirmed by cloning it directly: `build.gradle` sets `wpilibVersion = "2027.0.0-alpha-7"`. Its real published snapshot (`org.photonvision:photonlib-java:dev-v2027.0.0-alpha-2-66-g18e9cb30` on `maven.photonvision.org`) was hand-assembled into a vendordep JSON via PhotonVision's own documented "install a specific version" workflow and compiled clean against this project in a real sandbox. **Deliberately not adopted as a stand-in** — PhotonVision labels this channel "use at your own risk," and `javap` shows `PhotonPoseEstimator`'s API has been redesigned (no more generic `update()`, replaced by eight separate named strategy methods), the signature of unfinished work rather than a completed migration. Full reasoning in `docs/lesson-plan-opmode-restructure.md`'s R2 section. **User decision: keep waiting for an actual tagged release.** | N/A (this session's Track A already executed; unaffected) | **Still blocked** — the dev-channel shortcut was investigated and rejected; still needs a real, numbered, alpha6/7-targeted PhotonVision release |
 | 2026-09-24 (manual, this session — direct `vendor-json-repo` checkout of `2027_alpha7`, plus LimelightLib 2's own repo history) | `v2027.0.0-alpha-7` (unchanged) | Unchanged: `AdvantageKit-27.0.0-alpha-5`, `ChoreoLib-2027.0.0-alpha-3`, `Phoenix6-26.70.0-alpha-2` (+ replay), `REVLib-2027.0.0-alpha-7`, `ReduxLib-2027.0.0-alpha-7`. No `photonlib`, and no LimelightLib entry either | Unchanged | **No longer needed.** The v3 track switched vision to **LimelightLib 2** (`2.0.0-beta9-alpha7`, `wpilibYear: 2027_alpha7`), pinned by commit `717a921` of `LimelightVision/limelightlib-public` because the vendor's own URL is overwritten on every release (beta5→beta9 in one week). PhotonVision is now informational only for this repo | N/A (unaffected) | **Unblocked vendor-side.** Lesson 15 migrated to Limelight and verified (0–15 compile, zero warnings; runtime-checked in sim). Lessons 16–34 remain pre-alpha-7 code — that's Phase 1b's migration work, gated on nothing external |
+| 2026-09-27 (manual, this session — sparse checkout of `vendor-json-repo`'s `2027_alpha7` folder) | `v2027.0.0-alpha-7` (unchanged) | One new file, `DogLog-2027.2.0.json`; otherwise unchanged. `2027_alpha7_metadata.json` now also names `maplesim`, `photonlib`, `PathplannerLib`, YAGSL and others, but those are metadata entries only — none has a vendordep JSON in the folder, so none is installable | Unchanged | Unchanged (informational only) | N/A (unaffected) | **BLine `2027.0.0-beta.1` pinned by commit `d996781`** (not in the marketplace; its own URL follows a branch). Lesson 17 written and verified; Lessons 20–34 remain pre-alpha-7 code |
 
 ## Monitoring
 

@@ -69,8 +69,16 @@ regardless of which one you run.
    title/detail text defaults to colors meant for a white background, and
    the "Run it" pattern gets reused on navy section slides often enough
    that this actually happened once (Lesson 5's "walk through one tick").
-   Check every helper you call on a `NAVY` slide, not just the ones this
-   note happens to name.
+   Headers are the same story with a different fix: `addHeader` draws its
+   title in dark ink for a white slide, so on a `NAVY` slide it vanishes —
+   use `addSectionHeader` there instead (Lesson 16's deck shipped five
+   invisible titles this way). Check every helper you call on a `NAVY`
+   slide, not just the ones this note happens to name.
+
+   `addTitleSlide` is the one helper that doesn't measure its title: it
+   assumes one line at 60pt, and a title that wraps prints its second line
+   under the subtitle. Keep that title to a short name — "Ground Truth",
+   "B-Line Autos" — and let the subtitle carry the rest.
 7. **Every code card identifies its file and placement, and a brand-new file
    gets its own "create it" slide before any of its content shows up.** These
    mirror rules the lessons themselves already follow (see `CLAUDE.md`'s

@@ -202,20 +202,18 @@ import org.wpilib.smartdashboard.Field2d;
 private final Field2d m_field = new Field2d();
 ```
 
-**Add to `Drivetrain`'s constructor, alongside the periodic registration from Lesson 7:**
-
-```java
-public Drivetrain() {
-  Telemetry.log("Field", m_field);
-  Scheduler.getDefault().addPeriodic(this::logTelemetry);
-}
-```
-
 **Add to `Drivetrain.logTelemetry()`, right after the pose publish:**
 
 ```java
 m_field.setRobotPose(pose);
+Telemetry.log("Field", m_field);
 ```
+
+Order matters: move the robot on the widget first, then log it. Like every
+number you've logged, `Telemetry.log` sends whatever the widget holds *at
+that moment* — log it once in the constructor and the view would show the
+robot where it started, forever. So it goes where the numbers go: in the
+method that runs every tick.
 
 Now in **SimGUI**: menu **NetworkTables → Telemetry → Field**, and a
 top-down field pane opens right in the sim window, robot moving as you

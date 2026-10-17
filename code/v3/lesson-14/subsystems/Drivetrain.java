@@ -55,7 +55,7 @@ public class Drivetrain implements Mechanism, PoseProvider {
   private final GyroIO.GyroIOInputs m_gyroInputs = new GyroIO.GyroIOInputs();
 
   public Drivetrain() {
-    Scheduler.getDefault().addPeriodic(this::logTelemetry);
+    Scheduler.getDefault().addPeriodic(this::periodic);
   }
 
   /** Builds the right ModuleIO for the current mode, then wraps it in a SwerveModule. */
@@ -216,7 +216,7 @@ public class Drivetrain implements Mechanism, PoseProvider {
     estimator.update(getRotation(), getModulePositions());
   }
 
-  private void logTelemetry() {
+  private void periodic() {
     m_gyroIO.updateInputs(m_gyroInputs);
     Telemetry.log("Drivetrain/Gyro/YawDegrees", m_gyroInputs.yawDegrees);
 

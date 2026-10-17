@@ -13,6 +13,8 @@ import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 
+import org.wpilib.hardware.bus.CANPort;
+
 import first.robot.Constants.ElevatorConstants;
 
 /** Real hardware: Motion Magic profiles the move, Slot0's full feedforward set holds it. */
@@ -21,7 +23,7 @@ public class ElevatorIOTalonFX implements ElevatorIO {
   private final MotionMagicVoltage m_request = new MotionMagicVoltage(0);
 
   public ElevatorIOTalonFX() {
-    m_motor = new TalonFX(ElevatorConstants.kMotorPort, CANBus.systemcore(0));
+    m_motor = new TalonFX(ElevatorConstants.kMotorPort, new CANBus(CANPort.CAN_S0));
 
     TalonFXConfiguration config = new TalonFXConfiguration();
     config.Feedback.SensorToMechanismRatio = ElevatorConstants.kGearRatio;

@@ -25,8 +25,9 @@ every later change in that same block, and a "change the code below" marker
 right above a method announces changes anywhere inside that method; a marker at
 class level otherwise announces only the change directly after it. Import lines,
 comment-only edits, lines that are only closing braces, and pure deletions need
-no marker, and new files never do. Exit status is non-zero if anything is
-reported.
+no marker, and new files never do. A lesson with no snapshot directory is a
+gap in the track; it's skipped, and the markers before it are checked against
+the lesson after it. Exit status is non-zero if anything is reported.
 
     ./tools/check-lesson-markers-v3.py            # every lesson through the cut-off
     ./tools/check-lesson-markers-v3.py 8          # just the markers Lesson 8 needs
@@ -151,6 +152,24 @@ def significant(old, new):
     return bool(added) and added != keep(old)
 
 
+def edited(line, new_lines):
+    """True when 'line' was changed rather than deleted or just re-braced.
+
+    A deleted line has nothing like it on the new side, and a line whose only
+    change is its braces (a method body collapsing to "{}") reads the same once
+    braces are ignored. Anything else that closely resembles a new line is an edit.
+    """
+    def bare(l):
+        return re.sub(r'[\s{}]', '', code_of(l))
+    b = bare(line)
+    if not b or is_comment_or_blank(line):
+        return False
+    for n in new_lines:
+        if bare(n) == b:
+            return False
+    return any(difflib.SequenceMatcher(None, b, bare(n)).ratio() >= 0.6 for n in new_lines)
+
+
 def depths(lines):
     """Brace depth at the start of each line (strings and comments ignored)."""
     out, d = [], 0
@@ -246,11 +265,23 @@ def check_lesson(n, prev, cur, show, renamed=()):
             # And the nearest marker above, if it's inside a block that still
             # encloses this change, or right above the method that holds it.
             above = [m for m, (p, _, _) in enumerate(markers) if p <= i1 and m not in covering]
-            if above and region_covers(old, depth, markers[above[-1]][0], i1,
-                                       markers[above[-1]][1].startswith('CHANGE: ')):
+            from_above = bool(above) and region_covers(
+                old, depth, markers[above[-1]][0], i1, markers[above[-1]][1].startswith('CHANGE: '))
+            if from_above:
                 covering.append(above[-1])
             where = f'{path}:{old_lineno[i1] if i1 < len(old) else len(prev[path])}'
             first = next((l.strip() for l in new[j1:j2] if not is_comment_or_blank(l)), '')
+            # A diff can fold two neighbouring changes into one hunk: a rewritten
+            # line, then an insertion just below it. A marker partway down the hunk
+            # announces the insertion, not the code rewritten above it.
+            if covering and not from_above and not any(markers[m][0] == k for m in covering):
+                top = min(markers[m][0] for m in covering)
+                rewritten = [l for l in old[i1:min(top, i2)] if edited(l, new[j1:j2])]
+                if rewritten:
+                    problems.append(f'MISSING  lesson {n}  {where}  ~ {rewritten[0].strip()[:70]}'
+                                    ' (rewritten above the marker that announces the rest)')
+                    used.update(covering)
+                    continue
             if covering:
                 used.update(covering)
                 if show:
@@ -271,7 +302,10 @@ def main():
     show = '--show' in sys.argv
     top = cutoff()
     renamed = renames()
-    lessons = [int(args[0])] if args else list(range(1, top + 1))
+    # A lesson with no snapshot is a gap in the track (Lesson 17, say): it changes
+    # nothing, so the markers before it belong to the lesson after it.
+    lessons = [int(args[0])] if args else [
+        n for n in range(1, top + 1) if os.path.isdir(os.path.join(REPO, 'code', 'v3', f'lesson-{n}'))]
     problems = []
     with tempfile.TemporaryDirectory() as tmp:
         states = {}

@@ -769,7 +769,7 @@ function buildDeck() {
     );
   }
 
-  // ============================================================ SLIDE 24 — logTelemetry gyro read + module.periodic()
+  // ============================================================ SLIDE 24 — periodic(): gyro read + module.periodic()
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -777,9 +777,9 @@ function buildDeck() {
 
     K.addCodeCard(s, {
       x: 0.7, y: 1.2, w: 11.9, h: 4.6, fontSize: 12,
-      fileLabel: 'Add the gyro read to the top of logTelemetry(), and give each module its own read a line above',
+      fileLabel: 'Rename logTelemetry() to periodic() (and its addPeriodic line), then add the gyro and module reads',
       lines: [
-        { text: 'private void logTelemetry() {', color: 'FFD166' },
+        { text: 'private void periodic() {', color: 'FFD166' },
         { text: '  m_gyroIO.updateInputs(m_gyroInputs);', color: '9EF01A' },
         { text: '  Telemetry.log("Drivetrain/Gyro/YawDegrees", m_gyroInputs.yawDegrees);', color: '9EF01A' },
         { text: '', color: 'D7E3F4' },
@@ -801,7 +801,7 @@ function buildDeck() {
 
     K.addFooter(s, { pageNum: 23, label: 'IO Layers' });
     s.addNotes(
-      'That module.periodic() call is new — it\'s the read that used to happen implicitly every time SwerveModule reached straight into its own motors. Now the bundle only refreshes when something asks it to, so something has to ask.'
+      'That module.periodic() call is new — it\'s the read that used to happen implicitly every time SwerveModule reached straight into its own motors. Now the bundle only refreshes when something asks it to, so something has to ask. And that\'s why the method gets a new name: it doesn\'t just report numbers any more, it\'s where the drivetrain reads every sensor once a tick, and every command depends on those reads being fresh. That\'s the job SwerveModule\'s periodic() already does — sense in periodic(), act in a command — so the drivetrain\'s version gets the same name, and the constructor registers it as addPeriodic(this::periodic).'
     );
   }
 

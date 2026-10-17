@@ -262,7 +262,7 @@ function buildDeck() {
     );
   }
 
-  // ============================================================ SLIDE 10 — Field2d field + constructor
+  // ============================================================ SLIDE 10 — Field2d field
   {
     const s = p.addSlide();
     s.background = { color: WHITE };
@@ -276,21 +276,10 @@ function buildDeck() {
       ],
     });
 
-    K.addCodeCard(s, {
-      x: 0.7, y: 3.0, w: 11.9, h: 2.0, fontSize: 15,
-      fileLabel: 'Add to Drivetrain\'s constructor, alongside the periodic registration from Lesson 7',
-      lines: [
-        { text: 'public Drivetrain() {', color: 'FFD166' },
-        { text: '  Telemetry.log("Field", m_field);', color: '9EF01A' },
-        { text: '  Scheduler.getDefault().addPeriodic(this::logTelemetry);', color: 'D7E3F4' },
-        { text: '}', color: 'D7E3F4' },
-      ],
-    });
-
     K.addCard(s, {
-      x: 0.7, y: 5.25, w: 11.9, h: 1.75,
-      body: 'Still a plain Telemetry.log(...) call, same as every number logged since Lesson 3 — but notice what\'s being handed over this time: not a number, a whole widget object, a thing dashboards know how to draw rather than just plot. Telemetry.log tells the two apart automatically from what you pass in.',
-      pad: 0.2, bodySize: 17,
+      x: 0.7, y: 3.0, w: 11.9, h: 2.4,
+      body: 'You\'ll log it with a plain Telemetry.log(...) call, same as every number logged since Lesson 3 — but notice what\'s being handed over this time: not a number, a whole widget object, a thing dashboards know how to draw rather than just plot. Telemetry.log tells the two apart automatically from what you pass in.',
+      pad: 0.25, bodySize: 20,
     });
 
     K.addFooter(s, { pageNum: 10, label: 'Odometry & Field' });
@@ -310,19 +299,20 @@ function buildDeck() {
       fileLabel: "Add to Drivetrain.logTelemetry(), right after the pose publish",
       lines: [
         { text: 'm_field.setRobotPose(pose);', color: '9EF01A' },
+        { text: 'Telemetry.log("Field", m_field);', color: '9EF01A' },
       ],
     });
 
     K.addCard(s, {
       x: 0.7, y: 3.65, w: 11.9, h: 3.3,
-      heading: 'Field for the quick glance, AdvantageScope for everything else.',
+      heading: 'Move it, then log it — every tick, like every number.',
       headingSize: 22,
-      body: 'In SimGUI: menu NetworkTables → Telemetry → Field opens a top-down field pane right in the sim window, robot moving as you drive. Field2d for the quick glance while sim is already open; the logged Pose2d for AdvantageScope\'s field images, replays, and everything else.',
+      body: 'Telemetry.log sends what the widget holds at that moment; logged once in the constructor, the view would show the robot where it started, forever. In SimGUI, NetworkTables → Telemetry → Field opens a field pane right in the sim window; the logged Pose2d is still what AdvantageScope uses.',
     });
 
     K.addFooter(s, { pageNum: 11, label: 'Odometry & Field' });
     s.addNotes(
-      'Now in SimGUI: menu NetworkTables → Telemetry → Field, and a top-down field pane opens right in the sim window, robot moving as you drive. Same pose, two viewers: Field2d for the quick glance while sim is already open, the logged Pose2d for AdvantageScope\'s field images, replays, and everything else.'
+      'Order matters: move the robot on the widget first, then log it. Like every number you\'ve logged, Telemetry.log sends whatever the widget holds at that moment — log it once in the constructor and the view would show the robot where it started, forever. So it goes where the numbers go: in the method that runs every tick. Now in SimGUI: menu NetworkTables → Telemetry → Field, and a top-down field pane opens right in the sim window, robot moving as you drive. Same pose, two viewers: Field2d for the quick glance while sim is already open, the logged Pose2d for AdvantageScope\'s field images, replays, and everything else.'
     );
   }
 

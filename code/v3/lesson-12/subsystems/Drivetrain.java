@@ -83,7 +83,10 @@ public class Drivetrain implements Mechanism {
   private double m_simHeadingDegrees = 0.0;
 
   public Drivetrain() {
-    Telemetry.log("Field", m_field);
+    /**
+     * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+     * Register the method below by its new name, periodic.
+     */
     Scheduler.getDefault().addPeriodic(this::logTelemetry);
   }
 
@@ -255,6 +258,11 @@ public class Drivetrain implements Mechanism {
     return positions;
   }
 
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * This method is about to read every sensor, not just log, so rename it periodic —
+   * the name every class gives its once-a-tick update.
+   */
   private void logTelemetry() {
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
@@ -281,6 +289,7 @@ public class Drivetrain implements Mechanism {
     Pose2d pose = m_odometry.update(Rotation2d.fromDegrees(getHeadingDegrees()), modulePositions());
     Telemetry.log("Drivetrain/Pose", pose, Pose2d.struct);
     m_field.setRobotPose(pose);
+    Telemetry.log("Field", m_field);
   }
 
   /** Advances every module's physics model, then the fake gyro. Only ever called in simulation. */

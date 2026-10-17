@@ -1,0 +1,65 @@
+# The course website: Jekyll with the Just the Docs theme, which gives it a
+# sidebar and a search box. Every .md file becomes a web page, and links between
+# .md files are pointed at those pages, so the lessons need no changes to be
+# published. _plugins/lesson_nav.rb decides where each page sits in the sidebar.
+#
+# GitHub Actions builds and publishes it (.github/workflows/pages.yml) on every
+# push to main that changes this folder. That needs the repo's Settings → Pages
+# → Build and deployment → Source set to "GitHub Actions". The Gemfile has the
+# commands to preview it on your own computer.
+
+title: Learn Java + Robot Programming
+description: A hands-on course that teaches Java while building working swerve-drive robot code.
+theme: just-the-docs
+
+# The site's address is https://frc5010.github.io/BasicRobotLessons/, so every
+# link is built under /BasicRobotLessons. The workflow passes the address
+# GitHub reports instead, so a custom domain would still work.
+url: https://frc5010.github.io
+baseurl: /BasicRobotLessons
+
+plugins:
+  - jekyll-optional-front-matter
+  - jekyll-readme-index
+  - jekyll-relative-links
+
+# Publish each lesson once, as a page, not also as a raw .md download.
+optional_front_matter:
+  remove_originals: true
+readme_index:
+  remove_originals: true
+
+defaults:
+  # The lessons have no front matter, so give them the theme's page layout here.
+  # Liquid is switched off for them: a lesson that shows `{{ ... }}` or `{% ... %}`
+  # in a code block should print it, not run it. (Not for the whole site: the
+  # theme's own search index and stylesheets are Liquid.)
+  - scope:
+      path: lessons
+    values:
+      layout: default
+      render_with_liquid: false
+  - scope:
+      path: index.md
+    values:
+      layout: default
+      render_with_liquid: false
+
+# Kept in the repo but off the website: contributor planning documents, the
+# slide decks (about 160 MB, linked from the home page instead), and the files
+# that only build the site.
+exclude:
+  - lesson-plan-*.md
+  - presentations
+  - Gemfile
+  - Gemfile.lock
+  - vendor
+  - .bundle
+
+# A link to the repo at the top right of every page.
+aux_links:
+  GitHub repository:
+    - https://github.com/FRC5010/BasicRobotLessons
+
+back_to_top: true
+back_to_top_text: Back to top

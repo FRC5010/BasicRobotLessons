@@ -9,7 +9,7 @@ import org.wpilib.command3.Scheduler;
 import org.wpilib.command3.SchedulerEvent;
 import org.wpilib.command3.button.CommandGamepad;
 import org.wpilib.framework.OpModeRobot;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 import org.wpilib.system.DataLogManager;
 
 import first.robot.Constants.DriveConstants;
@@ -34,11 +34,17 @@ public class Robot extends OpModeRobot {
   // Localizer reads the drivetrain's kinematics/rotation/module positions at
   // construction, so drivetrain must be built first — it already is, above.
   public final Localizer localizer = new Localizer(drivetrain);
-  // Blank finals: building a camera needs localizer (for its pose supplier),
-  // so localizer has to be a finished object first. Assigned in the
+  // Blank finals: each camera is built and registered with localizer in the
   // constructor body, below, which runs after every field initializer above.
   public final LimelightPoseProvider frontCamera;
   public final LimelightPoseProvider backCamera;
+
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Build the path follower's setup once, here, for every autonomous opmode to use:
+   * which drivetrain, where the robot is, how to reset that, how fast it's moving,
+   * how to drive it, and three P controllers.
+   */
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -47,6 +53,11 @@ public class Robot extends OpModeRobot {
   public Robot() {
     DataLogManager.start(); // saves every published value to a .wpilog file
     Scheduler.getDefault().addEventListener(this::logCommandStart);
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Register, once for the whole program, what each named event in a path file does.
+     */
 
     // Vision now checks its simulated eyesight against ground truth, not
     // against its own guess — the fix Lesson 15 admitted it was missing.
@@ -77,7 +88,7 @@ public class Robot extends OpModeRobot {
   private void logCommandStart(SchedulerEvent event) {
     if (event instanceof SchedulerEvent.Scheduled scheduled) {
       for (Mechanism mechanism : scheduled.command().requirements()) {
-        SmartDashboard.putString(mechanism.getName() + "/CurrentCommand", scheduled.command().name());
+        Telemetry.log(mechanism.getName() + "/CurrentCommand", scheduled.command().name());
       }
     }
   }

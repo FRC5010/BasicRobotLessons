@@ -61,11 +61,6 @@ public class Drivetrain implements Mechanism {
   private double m_simHeadingDegrees = 0.0;
 
   public Drivetrain() {
-    /**
-     * ====== NEXT LESSON: ADD CODE HERE ======
-     * Publish the field widget once, so it shows up in the sim's dashboard.
-     */
-
     Scheduler.getDefault().addPeriodic(this::logTelemetry);
   }
 
@@ -205,8 +200,8 @@ public class Drivetrain implements Mechanism {
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
      * Update odometry every tick with the heading and the module positions, log the
-     * pose it returns so AdvantageScope can draw the robot, and hand the same pose to
-     * the field widget.
+     * pose it returns so AdvantageScope can draw the robot, then hand the same pose to
+     * the field widget and log the widget too.
      */
   }
 

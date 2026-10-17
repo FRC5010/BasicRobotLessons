@@ -156,11 +156,19 @@ lesson-k/X implies lesson-(k+1)/X exists and replaces it. **Enforce it with
 `./tools/check-lesson-markers-v3.py [N] [--show]`**, which rebuilds each
 lesson's before/after state through the shared lib, diffs them, and reports
 `MISSING` (a change with no marker announcing it) and `ORPHAN` (a marker
-that announces nothing). It's currently clean for 1–15, and both directions
-were checked against deliberately broken markers. When Phase 1b migrates a
-lesson, raise the cut-off and add its markers in the same change. The
-checker's coverage rules are in its docstring; they absorb diff-alignment
-noise (blank lines, a shared `}`), not missing markers.
+that announces nothing). It's currently clean for 1–20. When Phase 1b
+migrates a lesson, raise the cut-off and add its markers in the same change.
+The checker's coverage rules are in its docstring. They absorb
+diff-alignment noise (blank lines, a shared `}`), and that absorption can
+hide a missing marker. A diff can fold a rewritten line into the same hunk
+as an insertion just below it, and the insertion's marker then covered
+both. Lesson 13's rename of the `addPeriodic` line slipped through exactly
+that way. Since then, a line *edited* above a marker partway down a hunk
+needs its own marker (`edited()`: resembles a new line, isn't just a
+deletion or a brace change). Measured by removing each of the 117 markers
+in 0–14 one at a time: the old rules caught 96, the current ones catch 102.
+The 15 uncaught are changes another marker also covers under the rules,
+mostly a later marker inside a block an earlier marker already announces.
 
 The v3 builds need **JDK 25**: this container's `JAVA_HOME` pointed at 21,
 which fails every lesson with `invalid source release: 25` — set
@@ -168,6 +176,169 @@ which fails every lesson with `invalid source release: 25` — set
 `Drivetrain` briefly went back to literal CAN IDs in the module array while
 Lesson 7 and 13+ used the per-corner `DriveConstants`; they now all use the
 constants (same values), so no lesson's diff "undoes" another's.
+
+**v3 `Drivetrain`'s once-a-tick method is `periodic()` from Lesson 13 on.**
+It's `logTelemetry()` in Lessons 3–12, while it only logs. Lesson 13 renames
+it at the point where it starts reading every sensor, matching
+`SwerveModule.periodic()` from the same lesson and every later class
+(`Localizer`, `Elevator`, …).
+
+**Lesson 16's `ChassisSimulation` follows the wheels, not the command.** A
+separate `simulateChassis` periodic feeds it
+`m_kinematics.toChassisVelocities(...)` of the *measured* module states, and
+the grip limit then caps how fast that can change. Following the command
+(the 2026-08-13 design) let the truth outrun its own wheels, measured with
+vision off:
+
+- Gentle driving drifted 13 cm in 3 s.
+- A full-stick start left the estimate 10 cm *behind* the truth, the
+  opposite of what the lesson says.
+
+Following the wheels gives 1.7 cm, and 27 cm *ahead* on a hard start, held
+there. It also advances the truth under every command, `driveDistance`
+included.
+
+Facts from the alpha-7 jars:
+
+- Commands V3's `Scheduler.run()` runs every `addPeriodic` callback, in
+  registration order, before any command (read from bytecode).
+- `HAL.initialize()` takes no arguments in alpha-7, so Lesson 32's test needs
+  that fix when it's migrated.
+- **`Telemetry.log(widget)` writes a snapshot.** It isn't a live
+  registration. `Field2d`/`Mechanism2d` implement `TelemetryLoggable`, whose
+  `logTo` copies the widget's current state; `setRobotPose`/`setLength`
+  only change fields, and nothing is pushed afterwards.
+  - Measured: after `setRobotPose(4, 5)`, `/Telemetry/Field/Robot` still
+    read (1, 1) until the widget was logged again.
+  - So a widget is logged every tick, right after it's changed, like every
+    number. `SmartDashboard.putData`'s "publish once, mutate forever" is gone
+    with `SmartDashboard`. Phase 1a had ported Lesson 11's one-time `putData`
+    into a one-time `Telemetry.log`, which froze the field view in Lessons
+    11–16; that's fixed, and Lesson 19's headline concept is now "a drawing
+    is logged like a number".
+  - Widgets publish under `/Telemetry/<key>`; the `Mechanism2d` layout
+    (`.type = Mechanism2d`, `dims`, roots, ligaments) is unchanged from the
+    SmartDashboard days.
+
+**The tooling understands gaps.** A lesson with no `code/v3/lesson-N` is a
+gap (22 and 25 today, both above the cut-off):
+
+- The marker checker skips it, and checks the markers before it against the
+  lesson after it.
+- `update-lesson-v3.sh` refuses a gap lesson and names the next real one.
+  Its test builds a gap in a copy of the tools, since none is at or below
+  the cut-off right now.
+- The app lists only lessons the README table links, so a `| 22 | — |` row
+  never appears.
+
+**v3 snapshots can ship `deploy/` files.** `code/v3/lesson-N/deploy/**` maps
+to `src/main/deploy/**`, the same as the classic track. `v3-lessons.sh` copies
+them, lists them, and deletes them on a rollback along with any folder the
+deletion empties (stopping at `src/main/deploy`, so the template's
+`example.txt` stays). The marker checker only reads `.java`, so a path file
+never needs a marker, and can't carry one (JSON has no comments).
+
+**v3 Lesson 17 runs on BLine `v2027.0.0-beta.1`.** Read from its source at
+that tag and measured in sim with the real `Robot`:
+
+- **It's pinned by commit** (`d996781`, what the release tag names), like
+  Limelight: it isn't in the marketplace, and its own vendordep URL follows
+  the `wpilib-2027` branch. The file is `BLine-Lib-2027.json`; the 2026
+  build's `BLine-Lib.json` is a different file for Commands V2.
+- **The API differs from the classic track's v0.9.1.** Packages are
+  `frc.robot.lib.BLine.{commands,path,following,field}`. The builder takes
+  nine arguments (`DriveType.SWERVE`, the drivetrain `Mechanism`, pose,
+  `resetPose`, measured velocities, output, then three distinct
+  `PIDController`s — the same object twice throws). `withPoseReset()` is per
+  command, with no argument. `registerEventTrigger` has a `Runnable` overload
+  (Lesson 17 uses it), and events dispatch on the next default-event-loop
+  poll, not inside the follower. `withTelemetry(Telemetry.getTable())` logs
+  its `FollowPath/...` signals.
+- **A rotation target is aimed at immediately unless it says
+  `"profiled_rotation": true`** — the default is false in v0.9.1 too, so the
+  classic lesson's description of its own path is off. The v3 paths set it.
+- **BLine plans nothing ahead**, so the constraints decide whether the robot
+  can stop. The robot stops in time when `max speed² ÷ (2 × max accel)` fits
+  inside `max speed ÷ kTranslationP`. The classic's 3 m/s / 3 m/s² overshot
+  the corner by 1.5 m and the end by 0.7 m here; v3 ships 2 m/s / 6 m/s² with
+  a 0.5 m handoff, which lands 5–12 cm past the corner and finishes Two
+  Corners in ≈4 s.
+- **An opmode is constructed when it's selected** (`OpModeRobot`'s source),
+  so `Autos.followPath(...)` in an auto opmode's constructor reads the path
+  file while disabled — what the classic lesson built a chooser and
+  `onChange` for. A misspelled path name throws `IllegalArgumentException`
+  right then.
+- **In sim, selecting an auto sets the simulated robot down at its start**
+  (`Drivetrain.placeSimulatedRobot`, a no-op on a real robot, called from each
+  auto opmode's constructor with `Autos.startPose(path)`, which flips for red
+  like BLine does). `withPoseReset()` resets only the estimate, so without it
+  the estimate is told a pose the robot isn't at: the cameras fix the
+  position within about a second but never the heading, and the robot drives
+  off in odd directions. Two ways that happened, both reproduced by driving the
+  real `OpModeRobot` loop through `DriverStationSim`:
+  - **SimGUI starts every launch on Red 1.** Its `DSSimModel` constructor sets
+    `HAL_ALLIANCE_STATION_RED_1` and pushes it to the HAL on the first mode
+    click (read in alpha-7's `DriverStationGui.cpp`; the DS window's Alliance
+    Station is editable only while Disconnected). So `withDefaultShouldFlip()`
+    flipped the path while the robot sat at the blue start. Later runs only
+    *looked* right: the truth had driven off the field where no tag is visible,
+    so the estimate traced the path unopposed.
+  - **Re-running in one session.** Disabling after an auto rebuilds the opmode
+    (`OpModeRobot` forces a re-create), and the robot used to stay where the
+    last run ended. Now the rebuild sets it back down at the start.
+- **Alpha-7 framework quirk, measured:** a re-created opmode's trigger
+  bindings don't replace the old instance's. `BindingScope.ForOpmode` checks
+  only the opmode *ID*, so on run N, N `FollowPath`s are scheduled and the
+  newest cancels the rest in the same tick. The result is correct; it's
+  recorded, not worked around.
+
+**Lesson 18's lag numbers were remeasured on alpha-7** with the documented
+move (stowed to `kMaxHeight`) at full 20 ms ticks. The peak lag varies from
+run to run, so the lesson gives ranges, not a single figure:
+
+- `kV` zeroed: about 9 cm. Two runs of five moves each gave medians of
+  88.1 and 91.7 mm; single moves ranged from 82 to 102 mm.
+- Full model: 1.5–2 cm. Medians of 15.7 to 19.8 mm; single moves ranged
+  from 12 to 30 mm.
+
+Measure on a fixed-rate schedule (sleep until the next 20 ms deadline, not
+20 ms after the work), after a couple of seconds of warm-up, and repeat each
+move. A probe that sleeps 20 ms after its work and measures the first move
+after startup read 21–31 and 87–112 mm across three runs. These numbers
+replace the lesson's old ≈145/≈34 mm. They match the lesson's arithmetic:
+9 V needed from `kP = 20` means ≈0.45 drum rotations ≈ 7 cm at cruise, plus
+the transient. The classic track measured 94.5/~23 mm independently. The
+`kG`-zeroed sag (1.56 mm) and settled gap (0.117 mm) repeat exactly on every
+run.
+
+**v3 Lesson 20 (intake arm) on alpha-7, measured with the real `Elevator`
+and `Arm` through the scheduler:**
+
+- The holding table reproduces exactly: +0.25 / +0.18 / 0.00 / −0.18 /
+  −0.25 V at 0° / 45° / 90° / 135° / 180°.
+- Peak lag from intake to stow is ≈4.0° with the model and ≈20.7° with
+  `kV` zeroed (the lesson's 18°, plus the ramp).
+- A negative `kG` costs ≈3° of sag held horizontal and ≈6.9° of peak lag.
+- The roller reaches 60.3 rot/s at 0.6 and stops ≈0.5 s after release.
+  A pivot command interrupting it does run `whenCanceled`.
+- **The soft limit can't be seen in the angle.** `SingleJointedArmSim` has
+  its own hard stops at `kMinAngle`/`kMaxAngle`, the same as the soft-limit
+  thresholds, so a 270° request settles at 179.82° with the limits on *or*
+  off. What differs is that with them on, Motion Magic's setpoint stops at
+  180.00 and the output is just `kG` (−0.25 V, ≈10 A). With them off, the
+  setpoint runs to 270 and the motor holds +3.00 V at 119 A, which is the
+  default 120 A stator limit on a stalled Kraken. The forward-soft-limit
+  fault never sets. Try It #3 is written around the setpoint and the volts.
+  The restructure plan's R24 once read 179.8° as proof of the soft limit;
+  that's corrected there.
+- **The drawing is one tick behind for the arm.** `Elevator` logs it in its
+  periodic, which runs before `Arm`'s (registration order), so the arm's
+  ligament is published a tick late: ≈3.5° mid-swing, measured from the
+  real `Robot` loop. The lesson says so in a callout.
+- **`getValueAsDouble()` exists on alpha-7's Phoenix.** It's on
+  `BaseStatusSignal` in 26.70.0-alpha-2; R7's "it's gone" was true of the
+  alpha-6 Phoenix. The course keeps `.getValue().in(...)` by design, but no
+  lesson may claim the shortcut is missing; Lessons 18 and 20 no longer do.
 
 **Use it instead of reasoning about whether a snippet compiles.** Current state: lessons 0–34 all compile, at every intermediate stopping point, with zero warnings. A regression is therefore a real result, not noise. Run the specific lesson you touched plus the highest one.
 
@@ -487,16 +658,18 @@ a lesson as-is.
 - [docs/lesson-plan-alpha7-upgrade.md](docs/lesson-plan-alpha7-upgrade.md) —
   the impact assessment and phased plan for upgrading the v3 track (only —
   the classic track targets stable 2026 and is unaffected) to WPILib 2027
-  alpha-7, a large breaking-change release. **Lessons 0–15 are migrated and
+  alpha-7, a large breaking-change release. **Lessons 0–20 are migrated and
   verified on alpha-7**: Phoenix 6 cleared the marketplace (Track A, 1–14,
   2026-09-18), and on 2026-09-24 the v3 track switched vision from
   PhotonVision to **LimelightLib 2**, which cleared Track B's vendor gate.
-  LimelightLib isn't in WPILib's marketplace and its own URL is overwritten on
-  every release, so `verify-lessons-v3.sh` pins it **by commit** — the one
-  sanctioned exception to "pin to the marketplace", and the reason for it is
-  in that doc. Lesson 15's simulated camera publishes real results frames to
+  LimelightLib and BLine (Lesson 17) aren't in WPILib's marketplace, and
+  their own URLs move, so `verify-lessons-v3.sh` pins both **by commit** —
+  the sanctioned exceptions to "pin to the marketplace"; the reasons are in
+  that doc. The marketplace's `2027_alpha7_metadata.json` names more vendors
+  (maple-sim, PhotonVision, PathPlanner…) than the `2027_alpha7` folder has
+  files for — only a JSON in the folder means a release exists. Lesson 15's simulated camera publishes real results frames to
   the NetworkTables topic a real Limelight uses, so the unmodified library
-  runs in sim. Lessons 16–34 are still pre-alpha-7 code awaiting Phase 1b;
+  runs in sim. Lessons 21–34 are still pre-alpha-7 code awaiting Phase 1b;
   Lessons 27 and 31 need Limelight redesigns first (user decisions). A
   PhotonVision flavor of Lesson 15 may come back as an option once PhotonLib
   ships for alpha-7; the last PhotonVision version is at commit `94fe7b9`.
@@ -505,6 +678,75 @@ a lesson as-is.
   `org.wpilib.fields.Field.loadField(Fields.DEFAULT_FIELD)` now. A Routine
   checks vendors every 6 hours and updates that doc's vendor-tracking table
   (silently, unless something actually changed).
+
+## The lessons are also a website
+
+`docs/` is built into https://frc5010.github.io/BasicRobotLessons/ by
+[.github/workflows/pages.yml](.github/workflows/pages.yml) on every push to
+`main` that touches `docs/`. It's Jekyll 4 with the **Just the Docs** theme
+(sidebar and search), with versions pinned in `docs/Gemfile.lock`. The repo's
+Settings → Pages → Source has to be **"GitHub Actions"**: the custom plugin
+below can't run in Pages' own branch builds. Every `.md` file becomes a page
+as it is, with no front matter. [docs/_config.yml](docs/_config.yml) keeps the
+plan docs and the slide decks off the site, and
+[docs/index.md](docs/index.md) is the home page. Material for MkDocs was
+passed over because it went into maintenance mode in November 2025.
+
+**[docs/_plugins/lesson_nav.rb](docs/_plugins/lesson_nav.rb) decides the
+sidebar**, not front matter. `index.md` is Home, each track's `README.md` is
+its track, and every other page in that folder goes under it. A lesson's label
+is `N · ` plus its `#` heading up to the colon ("18 · Scoring elevator"),
+ordered by the number in its file name; the theme alone would sort labels as
+text (1, 10, 2). The setup aside is "Setup", above Lesson 0; the other asides
+follow Lesson 34. What that means when editing:
+
+- A new lesson needs nothing extra: `NN-slug.md` with a `# Lesson N — …`
+  heading lands in the right place. A new track folder needs an entry in the
+  plugin's `TRACKS`.
+- Keep the `·`. "18. Scoring elevator" looks fine in the sidebar, but the
+  theme's SEO tag runs the title through Markdown for the browser tab, where
+  it's a numbered list and the 18 disappears (seen in the built page).
+- Search indexes each page's `#` and `##` sections. Both tracks have a
+  "18 · Scoring elevator"; the page path under each search result is what
+  tells them apart.
+- A shared aside (debugging, branching) sits under the Classic track in the
+  sidebar, because that's the folder it lives in. The OpMode README still
+  links it.
+
+Rules that keep it working:
+
+- **Link to anything outside `docs/` with a full GitHub URL**
+  (`https://github.com/FRC5010/BasicRobotLessons/blob/main/...`), never
+  `../../`. A relative link out of `docs/` works on GitHub but 404s on the
+  site. Links between lessons stay relative, ending in `.md`;
+  `jekyll-relative-links` points them at the pages.
+- Liquid is off for `lessons/` and `index.md` (`render_with_liquid: false`
+  in the config's `defaults`), so a lesson can show `{{ … }}` or `{% … %}` in
+  a code block. Don't switch it off site-wide: the theme's search index and
+  stylesheets are Liquid templates.
+- [docs/_sass/custom/custom.scss](docs/_sass/custom/custom.scss) holds the two
+  changes to the theme's look. The site title shrinks to fit two lines
+  (otherwise it wraps onto three and runs into the sidebar). Code blocks get
+  line spacing that matches the code: the theme draws code at 12px but spaces
+  its lines for 16px text, 25.6px apart; they're 16.1px apart now, with the
+  font size unchanged.
+
+Preview it from `docs/` with Ruby 3.3: `bundle install`, then
+`LANG=C.UTF-8 LC_ALL=C.UTF-8 bundle exec jekyll serve` and open
+http://localhost:4000/BasicRobotLessons/. Without a UTF-8 locale the
+stylesheet fails with "Invalid US-ASCII character". The build prints dozens of
+Sass deprecation warnings (`darken()`, `map-get`); they come from the theme
+and don't affect the output. One known theme bug: clicking away from an open
+search box logs `TypeError: Cannot read properties of null (reading 'id')`
+from `just-the-docs.js` (it reads `evt.relatedTarget.id` without checking),
+and the box still closes.
+
+Checked when it landed, on a local build:
+
+- All 76 pages are in the sidebar and in the search index.
+- All 7,410 internal links and anchors resolve.
+- All 1,001 fenced code blocks come out as highlighted code.
+- Nothing scrolls sideways on a 390 px-wide phone.
 
 ## When adding or editing a lesson
 

@@ -73,6 +73,13 @@ public final class Constants {
 
     public static final double kDriveKV = 0.8;          // volts per wheel rotation/sec — the model
     public static final double kDriveKP = 0.1;          // volts per rps of error — the trim
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Give the simulated chassis its grip: a tire friction coefficient, the acceleration
+     * it allows (a = μg, the same for any robot mass), that limit divided by a wheel's
+     * distance from center for turning, and where the simulated robot starts on the field.
+     */
   }
 
   public static final class SteerConstants {

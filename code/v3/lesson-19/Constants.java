@@ -137,6 +137,15 @@ public final class Constants {
     public static final double kSimMaxRangeMeters = 6.0;
   }
 
+  public static final class PathConstants {
+    // BLine runs three P loops at once. Every gain here is "output per unit of
+    // error", and since error is meters (or radians) and output is per-second,
+    // the units all come out to 1/s.
+    public static final double kTranslationP = 5.0; // m/s per meter of path left
+    public static final double kRotationP = 3.0;    // rad/s per radian of heading error
+    public static final double kCrossTrackP = 2.0;  // m/s per meter off the line
+  }
+
   public static final class ElevatorConstants {
     public static final int kMotorPort = 20; // CAN ID — change to yours
     public static final double kGearRatio = 12.0; // motor rotations per drum rotation
@@ -169,5 +178,13 @@ public final class Constants {
     public static final Distance kEffectorLength = Centimeters.of(25);
     public static final Color8Bit kMovingColor = new Color8Bit(Color.ORANGE);
     public static final Color8Bit kAtGoalColor = new Color8Bit(Color.LIME_GREEN);
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Give the carriage's straight-up angle a name, for the arm's drawing to use,
+     * and delete the effector's length above: a real arm replaces the stub. Then,
+     * after this class, add one describing the intake arm: its two motors, its
+     * size, how far it swings, its gains, its two positions and its roller speeds.
+     */
   }
 }

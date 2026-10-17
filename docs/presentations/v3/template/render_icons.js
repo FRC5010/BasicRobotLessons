@@ -72,6 +72,14 @@ const jobs = [
   ['FaLayerGroup', 'FFFFFF', 'layergroup_white'],
   ['FaWeightHanging', 'FFFFFF', 'weight_white'],
   ['FaSatelliteDish', 'FFFFFF', 'satellite_white'],
+  // mechanism lessons (elevator, its drawing)
+  ['FaArrowsAltV', 'FFFFFF', 'arrowsaltv_white'],
+  ['FaTachometerAlt', 'FFFFFF', 'tachometer_white'],
+  ['FaSlidersH', 'FFFFFF', 'sliders_white'],
+  ['FaLink', 'FFFFFF', 'link_white'],
+  ['FaPencilAlt', 'FFFFFF', 'pencil_white'],
+  ['FaPalette', 'FFFFFF', 'palette_white'],
+  ['FaEye', 'FFFFFF', 'eye_white'],
 ];
 
 async function main() {

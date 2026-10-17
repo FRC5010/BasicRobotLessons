@@ -72,8 +72,7 @@ public class Drivetrain implements Mechanism {
   private final Field2d m_field = new Field2d();
 
   public Drivetrain() {
-    Telemetry.log("Field", m_field);
-    Scheduler.getDefault().addPeriodic(this::logTelemetry);
+    Scheduler.getDefault().addPeriodic(this::periodic);
   }
 
   /** Builds the right ModuleIO for the current mode, then wraps it in a SwerveModule. */
@@ -255,7 +254,7 @@ public class Drivetrain implements Mechanism {
    * tick's heading and module positions.
    */
 
-  private void logTelemetry() {
+  private void periodic() {
     m_gyroIO.updateInputs(m_gyroInputs);
     Telemetry.log("Drivetrain/Gyro/YawDegrees", m_gyroInputs.yawDegrees);
 
@@ -276,5 +275,6 @@ public class Drivetrain implements Mechanism {
     Pose2d pose = m_odometry.update(Rotation2d.fromDegrees(getHeadingDegrees()), modulePositions());
     Telemetry.log("Drivetrain/Pose", pose, Pose2d.struct);
     m_field.setRobotPose(pose);
+    Telemetry.log("Field", m_field);
   }
 }

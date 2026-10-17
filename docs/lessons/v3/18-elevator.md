@@ -102,13 +102,21 @@ gear ratio this time, since the gearbox multiplies torque going the other
 way — and the rotor needs `1.246 / 12 ≈ 0.104` N·m. Multiply by the
 torque factor: `0.104 × 1.69 ≈ 0.18` V. That's `kElevatorKG`.
 
-**`kA` — voltage to accelerate.** This one scales with the mechanism's
-effective inertia, which is a smaller and harder-to-eyeball number than
-mass or drum radius. It's the smallest of the three terms here —
-`kElevatorKA = 0.003` — correcting only for how sharply the profile
-speeds up and slows down. You won't derive it by hand the way `kG` and
-`kV` were derived above; §10 shows you how to confirm it's in the right
-neighborhood from a graph instead.
+**`kA` — voltage to accelerate.** Same walk as `kG`, with one extra step
+at the front. `kA` is volts per drum rotation/sec², so first turn that
+acceleration into meters: one drum rotation moves the carriage one drum
+circumference, `2π × 0.0254 ≈ 0.160` m, so speeding the drum up by one
+rotation/sec every second speeds the carriage up by 0.160 m/s². Pushing
+5 kg that hard takes `5 × 0.160 ≈ 0.798` N — `F = m·a`, the same way
+`m·g` gave `kG` its force. At the drum's radius that's
+`0.798 × 0.0254 ≈ 0.0203` N·m; through the gearbox,
+`0.0203 / 12 ≈ 0.00169` N·m at the rotor; times the torque factor,
+`0.00169 × 1.69 ≈ 0.003` V. That's `kElevatorKA`, and it's the smallest
+of the three by far, because it only pays for how sharply the profile
+speeds up and slows down — not for holding still or for cruising. It
+counts only the carriage's mass. On a real elevator the motor's and the
+drum's own spinning parts add a little more, which is one reason §10
+still shows you how to check it against a graph.
 
 **Add to `Constants.java`:**
 
@@ -236,6 +244,8 @@ import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 
+import org.wpilib.hardware.bus.CANPort;
+
 import first.robot.Constants.ElevatorConstants;
 
 /** Real hardware: Motion Magic profiles the move, Slot0's full feedforward set holds it. */
@@ -244,7 +254,7 @@ public class ElevatorIOTalonFX implements ElevatorIO {
   private final MotionMagicVoltage m_request = new MotionMagicVoltage(0);
 
   public ElevatorIOTalonFX() {
-    m_motor = new TalonFX(ElevatorConstants.kMotorPort, CANBus.systemcore(0));
+    m_motor = new TalonFX(ElevatorConstants.kMotorPort, new CANBus(CANPort.CAN_S0));
 
     TalonFXConfiguration config = new TalonFXConfiguration();
     config.Feedback.SensorToMechanismRatio = ElevatorConstants.kGearRatio;
@@ -304,11 +314,10 @@ A few things worth pointing at directly:
 - **`getClosedLoopReference()`** is new: it's the profile's own live
   setpoint, straight from the firmware — exactly the third number §5
   flagged.
-- Notice there's no `getValueAsDouble()` anywhere here, even though
-  `getClosedLoopReference()` returns a plain number. Every `StatusSignal`
-  in this API gives you `.getValue()` and nothing shorter — for a
-  `Voltage` or an `Angle` that means unpacking with `.in(...)`, and for a
-  bare `Double` like this one it just auto-unboxes.
+- Every read here goes through `.getValue()`, which hands back the
+  signal's real type: for a `Voltage` or an `Angle` that means unpacking
+  with `.in(...)`, and for a bare `Double` like `getClosedLoopReference()`'s
+  it just auto-unboxes.
 
 ---
 
@@ -402,14 +411,14 @@ import static org.wpilib.units.Units.Meters;
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.Distance;
 
 import first.robot.Constants;
 import first.robot.Constants.ElevatorConstants;
 
 /** Scoring elevator: Motion Magic profiles the move, Slot0's feedforward model holds it there. */
-public class Elevator extends Mechanism {
+public class Elevator implements Mechanism {
   private final ElevatorIO m_io = switch (Constants.kCurrentMode) {
     case REAL -> new ElevatorIOTalonFX();
     case SIM -> new ElevatorIOSim();
@@ -425,11 +434,11 @@ public class Elevator extends Mechanism {
   /** One tick of sensing: read the hardware into the bundle and log it. */
   private void periodic() {
     m_io.updateInputs(m_inputs);
-    SmartDashboard.putNumber("Elevator/HeightMeters", m_inputs.heightMeters);
-    SmartDashboard.putNumber("Elevator/VelocityMetersPerSec", m_inputs.velocityMetersPerSec);
-    SmartDashboard.putNumber("Elevator/AppliedVolts", m_inputs.appliedVolts);
-    SmartDashboard.putNumber("Elevator/SetpointMeters", m_inputs.setpointMeters);
-    SmartDashboard.putNumber("Elevator/GoalMeters", m_goal.in(Meters));
+    Telemetry.log("Elevator/HeightMeters", m_inputs.heightMeters);
+    Telemetry.log("Elevator/VelocityMetersPerSec", m_inputs.velocityMetersPerSec);
+    Telemetry.log("Elevator/AppliedVolts", m_inputs.appliedVolts);
+    Telemetry.log("Elevator/SetpointMeters", m_inputs.setpointMeters);
+    Telemetry.log("Elevator/GoalMeters", m_goal.in(Meters));
   }
 
   /** Send the carriage to 'target', clamped to safe travel. Keeps holding once it arrives. */
@@ -487,12 +496,18 @@ changes nothing. There's no gap where the carriage is uncommanded.
 
 ## 9. Wire it in: `Robot.java` and the D-pad
 
-**Add to `Robot.java`, alongside the other fields:**
+**Add to `Robot.java`, below the `pathBuilder` field:**
 
 ```java
-public final LimelightPoseProvider frontCamera;
-public final LimelightPoseProvider backCamera;
-public final Elevator elevator = new Elevator();
+  public final FollowPath.Builder pathBuilder = Autos.makePathBuilder(drivetrain, localizer);
+
+  public final Elevator elevator = new Elevator();
+```
+
+**Add to `Robot.java`'s imports:**
+
+```java
+import first.robot.subsystems.Elevator;
 ```
 
 **Add to `RobotTeleop.java`'s constructor, after the heading bindings:**
@@ -507,9 +522,9 @@ robot.driverController.dpadUp().onTrue(robot.elevator.goToHeight(ElevatorConstan
 That needs `import first.robot.Constants.ElevatorConstants;` up top,
 alongside the `DriveConstants` import already there.
 
-Run `./gradlew simulateJava`, open **SmartDashboard** or **Elastic**,
-tap the D-pad, and watch `Elevator/HeightMeters` climb toward whichever
-preset you asked for and stay there.
+Run `./gradlew simulateJava`, open AdvantageScope (Lesson 3), expand
+**NetworkTables → Telemetry → Elevator**, tap the D-pad, and watch
+`HeightMeters` climb toward whichever preset you asked for and stay there.
 
 ---
 
@@ -518,8 +533,9 @@ preset you asked for and stay there.
 Every gain here was computed, not guessed — but "computed" still means
 "worth checking against what the robot actually does." Open
 AdvantageScope (Lesson 3), connect to the simulator, and drag
-`SmartDashboard/Elevator/GoalMeters`, `.../SetpointMeters`, and
-`.../HeightMeters` onto the same **Line Graph** tab. Three curves, and
+`GoalMeters`, `SetpointMeters`, and `HeightMeters` from
+**NetworkTables → Telemetry → Elevator** onto the same **Line Graph**
+tab. Three curves, and
 each one answers a different question: the goal is a step (what you
 asked for), the setpoint is the smooth ramp Motion Magic generated (what
 the profile is asking for *right now*), and the height is what the
@@ -537,13 +553,18 @@ possible trim.
   matter how long you wait. Measured on this course's own numbers:
   zeroing `kElevatorKG` sags the hold by about **1.6 mm**. Small, because
   0.18 V is small, but it never goes away on its own.
-- **`kV` wrong** shows up *only while cruising* — position lagging
-  setpoint by a growing gap during the flat part of the profile, closing
-  again as the profile decelerates. Measured moving the full travel
-  range with `kElevatorKV` zeroed: **≈145 mm** of peak lag. With the
-  model in place, the same move: **≈34 mm**. `kP = 20` is doing real
-  work either way — the difference is how much work it's *forced* to do
-  versus how much the model already handled for it.
+- **`kV` wrong** shows up *only while moving* — position lagging
+  setpoint by a gap that opens up during the flat part of the profile and
+  closes again as the profile decelerates. You can predict its size: a
+  1.0 m/s cruise is about 6.3 drum rotations a second, which costs
+  `1.44 × 6.3 ≈ 9 V`, and with no `kV`, `kP = 20` can only make 9 V out
+  of about 0.45 rotations of error — some 7 cm. Measured moving the full
+  travel range with `kElevatorKV` zeroed: about **9 cm** of peak lag —
+  the 7 cm, plus a little extra while the profile is still speeding up.
+  With the model in place, the same move: **1.5–2 cm**. Expect your own
+  numbers to wander by several millimeters from run to run. `kP = 20` is
+  doing real work either way — the difference is how much work it's
+  *forced* to do versus how much the model already handled for it.
 - **`kA` wrong** is the subtlest: a brief spike in the setpoint-vs-height
   gap right at the start and end of the move, where the profile is
   accelerating or decelerating hardest, vanishing once it reaches
@@ -566,18 +587,25 @@ possible trim.
 
 ## Try it
 
-1. **Add a fourth preset.** Give `ElevatorConstants` a `kScoreLow`
+> **Do these in simulation** (`kSimMode = Mode.SIM`, which is where you
+> already are). Number 2 takes `kG` away on purpose, and on a real elevator
+> `kG` is part of what holds the carriage up: without it, the carriage drops
+> until `kP` has built up enough error to catch it. With this course's
+> numbers that's 1.6 mm; a heavier carriage drops further. In sim, being
+> wrong is free — that's the point of having it.
+
+1. **Code — add a fourth preset.** Give `ElevatorConstants` a `kScoreLow`
    between `kStowed` and `kScoreMid`, and bind it to a face button.
-2. **Watch the sag.** Temporarily set `kElevatorKG` to `0.0`, command
+2. **Code — watch the sag.** Temporarily set `kElevatorKG` to `0.0`, command
    `kScoreMid`, and let it settle. Compare the steady-state
    `HeightMeters` against `GoalMeters` on the graph — you should see
    almost exactly the gap §10 measured. Put `0.18` back when you're done.
-3. **Ask for somewhere the elevator can't go.** Bind a spare button to
+3. **Code — ask for somewhere the elevator can't go.** Bind a spare button to
    `elevator.goToHeight(Meters.of(3.0))` — well past `kMaxHeight`. Watch
    `GoalMeters` on the graph clamp to `1.5` instead of jumping to `3.0`,
    confirming `clampToTravel` is doing its job before the request ever
    reaches the motor.
-4. **Halve the motion limits.** Try `kMaxVelocity = MetersPerSecond.of(0.5)`
+4. **Code — halve the motion limits.** Try `kMaxVelocity = MetersPerSecond.of(0.5)`
    and `kMaxAcceleration = MetersPerSecondPerSecond.of(1.0)`. The setpoint
    curve should stretch out — same shape, twice the time to get there —
    while the *steady-state* tracking (setpoint versus height, once
@@ -611,5 +639,7 @@ command-returning method — differs from `Drivetrain`'s shape. That
 repetition isn't an accident; it's the pattern this course keeps handing
 you because it keeps being the right one.
 
-Next: watching the elevator move as more than three numbers on a graph —
+Up next: watching the elevator move as more than three numbers on a graph —
 drawing it.
+
+Next: [Lesson 19 — A picture of the elevator](19-mechanism2d.md).
