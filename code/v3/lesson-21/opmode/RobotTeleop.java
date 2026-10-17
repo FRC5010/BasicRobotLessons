@@ -52,6 +52,13 @@ public class RobotTeleop extends PeriodicOpMode {
     // A Trigger is any boolean the scheduler polls — it does not have to be
     // a button. Whenever the switch trips, take its word for the height.
     new Trigger(robot.elevator::atBottomLimit).onTrue(robot.elevator.rezeroAtBottom());
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Two bindings off the beam break. When a piece is caught, stow the arm and
+     * raise the elevator together. And score with the right trigger, but only
+     * with a piece on board and the elevator where it was sent.
+     */
   }
 
   @Override

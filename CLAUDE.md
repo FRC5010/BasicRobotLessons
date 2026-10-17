@@ -156,7 +156,7 @@ lesson-k/X implies lesson-(k+1)/X exists and replaces it. **Enforce it with
 `./tools/check-lesson-markers-v3.py [N] [--show]`**, which rebuilds each
 lesson's before/after state through the shared lib, diffs them, and reports
 `MISSING` (a change with no marker announcing it) and `ORPHAN` (a marker
-that announces nothing). It's currently clean for 1–21. When Phase 1b
+that announces nothing). It's currently clean for 1–22. When Phase 1b
 migrates a lesson, raise the cut-off and add its markers in the same change.
 The checker's coverage rules are in its docstring. They absorb
 diff-alignment noise (blank lines, a shared `}`), and that absorption can
@@ -221,14 +221,14 @@ Facts from the alpha-7 jars:
     SmartDashboard days.
 
 **The tooling understands gaps.** A lesson with no `code/v3/lesson-N` is a
-gap (22 and 25 today, both above the cut-off):
+gap (25 today, above the cut-off):
 
 - The marker checker skips it, and checks the markers before it against the
   lesson after it.
 - `update-lesson-v3.sh` refuses a gap lesson and names the next real one.
   Its test builds a gap in a copy of the tools, since none is at or below
   the cut-off right now.
-- The app lists only lessons the README table links, so a `| 22 | — |` row
+- The app lists only lessons the README table links, so a `| 25 | — |` row
   never appears.
 
 **v3 snapshots can ship `deploy/` files.** `code/v3/lesson-N/deploy/**` maps
@@ -360,6 +360,37 @@ SimGUI:**
   limit stops it; the old "really 1.80 m" was impossible.
 - Holding at −3 V against the bottom draws 119.0 A at 0.000 m/s.
 - Stowed (2 cm) sits 1 cm above the switch, so `AtBottomLimit` stays false.
+
+**v3 Lesson 22 (beam breaks) is hand-built, like Lesson 16.** It was
+written on alpha-7 on 2026-10-17, so it was never a gap to port.
+
+- **The simulated beam break must never follow the roller.** `ArmIOSim`
+  keeps the field's game pieces (`ArmConstants.kSimGamePiecePositions`).
+  It catches one only when the roller is told to pull in, the arm is below
+  horizontal, and a piece is in the box past the front bumper. The box is
+  checked against `drivetrain::getSimulatedPose`, the truth.
+- **`Arm(Elevator, Supplier<Pose2d>)`.** The mode `switch` moved into the
+  constructor, because a field initializer can't see a constructor
+  parameter. Snapshots 23–31 still say `new Arm(elevator)` until migrated.
+- **Commands V3's `Trigger.debounce(Time)` takes the measure directly** and
+  defaults to `RISING`, read from the bytecode.
+- **Verified through the real loop with `GamepadSim`.** Build it *after*
+  `HAL.initialize()`; as a field initializer it crashes the JVM in
+  `SetJoystickAxesAvailable`.
+  - Caught when the piece is 0.59 m ahead of the robot's center.
+  - Capture stows the arm and raises the elevator, and the roller stops
+    with the bumper still held.
+  - Open field and arm-up both read `false`.
+  - Pressing the arm button while the roller runs cancels the roller,
+    because both are the arm's mechanism. Arm down first, then the bumper.
+  - A sensor flickering every other tick never passes the 0.1 s debounce.
+- **User decisions for Phase 1b, made the same day:**
+  - Lesson 23 restores the "has a game piece" LED.
+  - Lesson 24 restores the classic six states (`HANDOFF`/`HOLDING` from the
+    beam break).
+  - Lesson 27 stays on PhotonVision and waits for an alpha-7 PhotonLib.
+    GradleRIO alpha-7 rejects the only 2027 release, alpha-2, for declaring
+    `2027_alpha5`; measured.
 
 **Use it instead of reasoning about whether a snippet compiles.** Current state: lessons 0–34 all compile, at every intermediate stopping point, with zero warnings. A regression is therefore a real result, not noise. Run the specific lesson you touched plus the highest one.
 
@@ -679,7 +710,7 @@ a lesson as-is.
 - [docs/lesson-plan-alpha7-upgrade.md](docs/lesson-plan-alpha7-upgrade.md) —
   the impact assessment and phased plan for upgrading the v3 track (only —
   the classic track targets stable 2026 and is unaffected) to WPILib 2027
-  alpha-7, a large breaking-change release. **Lessons 0–21 are migrated and
+  alpha-7, a large breaking-change release. **Lessons 0–22 are migrated and
   verified on alpha-7**: Phoenix 6 cleared the marketplace (Track A, 1–14,
   2026-09-18), and on 2026-09-24 the v3 track switched vision from
   PhotonVision to **LimelightLib 2**, which cleared Track B's vendor gate.
@@ -690,8 +721,8 @@ a lesson as-is.
   (maple-sim, PhotonVision, PathPlanner…) than the `2027_alpha7` folder has
   files for — only a JSON in the folder means a release exists. Lesson 15's simulated camera publishes real results frames to
   the NetworkTables topic a real Limelight uses, so the unmodified library
-  runs in sim. Lessons 22–34 are still pre-alpha-7 code awaiting Phase 1b;
-  Lessons 27 and 31 need Limelight redesigns first (user decisions). A
+  runs in sim. Lessons 23–34 are still pre-alpha-7 code awaiting Phase 1b;
+  Lesson 27 stays on PhotonVision and waits for an alpha-7 PhotonLib (user decision, 2026-10-17); Lesson 31 still needs a Limelight redesign decision. A
   PhotonVision flavor of Lesson 15 may come back as an option once PhotonLib
   ships for alpha-7; the last PhotonVision version is at commit `94fe7b9`.
   Alpha-7

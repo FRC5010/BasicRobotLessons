@@ -232,5 +232,12 @@ public final class Constants {
     // The roller has no goal to profile — just a direction and a speed.
     public static final double kIntakeSpeed = 0.6; // fraction of full output
     public static final double kEjectSpeed = -0.6;
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Add the beam break: its channel, and how long to wait before believing it.
+     * Then, for the simulator only, the box in front of the bumper that the roller
+     * can reach, and where the game pieces lie on the field at the start.
+     */
   }
 }

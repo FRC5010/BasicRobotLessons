@@ -30,7 +30,7 @@ Take stock of what your robot currently knows about itself.
 
 It knows whether the elevator has reached the height it was sent to. It
 knows whether the arm has reached its angle. It knows whether the
-carriage is resting on its bottom limit, and — since last lesson —
+carriage is resting on its bottom limit, and — since Lesson 21 —
 whether it has *ever* been homed at all. Every one of those is a
 `boolean` you can read today, and it took three lessons of mechanisms and
 sensors to earn them.
