@@ -1,0 +1,19 @@
+{%- comment -%}
+  Just the Docs shows this at the bottom of the sidebar, in place of its own
+  credit line. On the OpMode track's pages it starts with the legend for the
+  "under construction" pills (_plugins/lesson_status.rb), and the credit line
+  follows everywhere.
+{%- endcomment -%}
+{%- if page.url contains "/lessons/v3/" and site.data.lesson_status_css != "" %}
+<div class="lesson-status-legend">
+  <p class="lesson-status-legend-title">Under construction</p>
+  <ul>
+  {%- for state in site.data.lesson_status.states %}
+    <li><span class="lesson-status-pill lesson-status-pill--{{ state[0] }}">{{ state[1].pill }}</span></li>
+  {%- endfor %}
+  </ul>
+  <p>No mark: up to date for the 2027 alpha-7.
+    <a href="{{ '/lessons/v3/#lesson-status' | relative_url }}">What the marks mean</a></p>
+</div>
+{%- endif %}
+<p class="mb-0">This site uses <a href="https://github.com/just-the-docs/just-the-docs">Just the Docs</a>, a documentation theme for Jekyll.</p>

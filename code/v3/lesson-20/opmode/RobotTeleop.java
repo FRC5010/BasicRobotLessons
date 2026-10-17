@@ -43,6 +43,12 @@ public class RobotTeleop extends PeriodicOpMode {
     robot.driverController.faceUp().onTrue(robot.arm.goToAngle(ArmConstants.kStowed));
     robot.driverController.rightBumper().whileTrue(robot.arm.runRoller(ArmConstants.kIntakeSpeed));
     robot.driverController.leftBumper().whileTrue(robot.arm.runRoller(ArmConstants.kEjectSpeed));
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Bind Back to homing, and make the limit switch itself a trigger that
+     * re-zeroes the elevator whenever it trips.
+     */
   }
 
   @Override

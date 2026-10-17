@@ -8,6 +8,7 @@ on:
     branches: [main]
     paths:
       - "docs/**"
+      - "tools/lib/v3-lessons.sh" # the alpha-7 cut-off decides the "under construction" marks
       - ".github/workflows/pages.yml"
   workflow_dispatch: # a "Run workflow" button on the Actions tab
 

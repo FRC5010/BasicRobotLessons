@@ -1,0 +1,36 @@
+# How the website marks the OpMode track's lessons that aren't up to date for
+# the 2027 alpha-7 yet. _plugins/lesson_status.rb reads the cut-off from
+# tools/lib/v3-lessons.sh (V3_ALPHA7_THROUGH): every lesson above it is under
+# construction, and shows as "unconverted" unless it's listed under `waiting`.
+# A lesson at or below the cut-off is never marked, so converting one needs no
+# change here. Edit `waiting` when a lesson becomes blocked or unblocked.
+
+# The order here is the order of the legend. The colors are in
+# _sass/custom/custom.scss, under the same names.
+states:
+  unconverted:
+    pill: not updated yet
+    meaning: >-
+      This lesson was written for an earlier 2027 alpha. Some of its code and
+      text don't match alpha-7 yet, and it's in the queue to be updated.
+  library:
+    pill: waiting on a library
+    meaning: >-
+      This lesson can't be updated until a library it uses releases a build
+      for alpha-7.
+  decision:
+    pill: waiting on a decision
+    meaning: >-
+      This lesson needs a design decision before it can be updated.
+
+waiting:
+  27:
+    state: library
+    note: >-
+      Its object-detection camera uses PhotonVision, and PhotonLib has no
+      alpha-7 release yet.
+  31:
+    state: decision
+    note: >-
+      Its camera-disconnect demo has to be redesigned for the Limelight
+      cameras that Lesson 15 now uses.

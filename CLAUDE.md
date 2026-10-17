@@ -156,7 +156,7 @@ lesson-k/X implies lesson-(k+1)/X exists and replaces it. **Enforce it with
 `./tools/check-lesson-markers-v3.py [N] [--show]`**, which rebuilds each
 lesson's before/after state through the shared lib, diffs them, and reports
 `MISSING` (a change with no marker announcing it) and `ORPHAN` (a marker
-that announces nothing). It's currently clean for 1–20. When Phase 1b
+that announces nothing). It's currently clean for 1–22. When Phase 1b
 migrates a lesson, raise the cut-off and add its markers in the same change.
 The checker's coverage rules are in its docstring. They absorb
 diff-alignment noise (blank lines, a shared `}`), and that absorption can
@@ -221,14 +221,14 @@ Facts from the alpha-7 jars:
     SmartDashboard days.
 
 **The tooling understands gaps.** A lesson with no `code/v3/lesson-N` is a
-gap (22 and 25 today, both above the cut-off):
+gap (25 today, above the cut-off):
 
 - The marker checker skips it, and checks the markers before it against the
   lesson after it.
 - `update-lesson-v3.sh` refuses a gap lesson and names the next real one.
   Its test builds a gap in a copy of the tools, since none is at or below
   the cut-off right now.
-- The app lists only lessons the README table links, so a `| 22 | — |` row
+- The app lists only lessons the README table links, so a `| 25 | — |` row
   never appears.
 
 **v3 snapshots can ship `deploy/` files.** `code/v3/lesson-N/deploy/**` maps
@@ -339,6 +339,58 @@ and `Arm` through the scheduler:**
   `BaseStatusSignal` in 26.70.0-alpha-2; R7's "it's gone" was true of the
   alpha-6 Phoenix. The course keeps `.getValue().in(...)` by design, but no
   lesson may claim the shortcut is missing; Lessons 18 and 20 no longer do.
+
+**v3 Lesson 21 (homing) on alpha-7, measured with the real `Elevator`
+through the scheduler, and with the real `Robot` loop launched like
+SimGUI:**
+
+- **An unpowered carriage sinks at 2.0 cm/s.** That's `kG` ÷ `kV` × the
+  drum's circumference: 0.18 ÷ 1.44 × 0.16 m. Nothing in the sim holds it.
+- Launched with the elevator un-homed at `kSimStartHeight` (0.35 m), the
+  carriage lands on the switch 18.0 s after launch, while still disabled.
+  The `Trigger` re-zeroes it then (−0.34 → 0.01), or at the moment
+  Teleoperated is selected, if that comes later.
+- **User decision: Lesson 21 teaches the sink** rather than hiding it.
+  Section 8 watches it happen, then restarts the sim to show `home()`.
+- Homing descends at 9.7 cm/s. That's −0.7 V plus gravity's 0.18 V, over
+  1.44 V per rotation/s. From the top stall it takes 15.5 s to trip the
+  switch, and the encoder snaps from −0.34 to 0.01.
+- D-pad up before homing stalls at the 1.5 m frame top: the encoder reads
+  1.15, and the motor holds 3.00 V at 119 A. `ElevatorSim`'s own travel
+  limit stops it; the old "really 1.80 m" was impossible.
+- Holding at −3 V against the bottom draws 119.0 A at 0.000 m/s.
+- Stowed (2 cm) sits 1 cm above the switch, so `AtBottomLimit` stays false.
+
+**v3 Lesson 22 (beam breaks) is hand-built, like Lesson 16.** It was
+written on alpha-7 on 2026-10-17, so it was never a gap to port.
+
+- **The simulated beam break must never follow the roller.** `ArmIOSim`
+  keeps the field's game pieces (`ArmConstants.kSimGamePiecePositions`).
+  It catches one only when the roller is told to pull in, the arm is below
+  horizontal, and a piece is in the box past the front bumper. The box is
+  checked against `drivetrain::getSimulatedPose`, the truth.
+- **`Arm(Elevator, Supplier<Pose2d>)`.** The mode `switch` moved into the
+  constructor, because a field initializer can't see a constructor
+  parameter. Snapshots 23–31 still say `new Arm(elevator)` until migrated.
+- **Commands V3's `Trigger.debounce(Time)` takes the measure directly** and
+  defaults to `RISING`, read from the bytecode.
+- **Verified through the real loop with `GamepadSim`.** Build it *after*
+  `HAL.initialize()`; as a field initializer it crashes the JVM in
+  `SetJoystickAxesAvailable`.
+  - Caught when the piece is 0.59 m ahead of the robot's center.
+  - Capture stows the arm and raises the elevator, and the roller stops
+    with the bumper still held.
+  - Open field and arm-up both read `false`.
+  - Pressing the arm button while the roller runs cancels the roller,
+    because both are the arm's mechanism. Arm down first, then the bumper.
+  - A sensor flickering every other tick never passes the 0.1 s debounce.
+- **User decisions for Phase 1b, made the same day:**
+  - Lesson 23 restores the "has a game piece" LED.
+  - Lesson 24 restores the classic six states (`HANDOFF`/`HOLDING` from the
+    beam break).
+  - Lesson 27 stays on PhotonVision and waits for an alpha-7 PhotonLib.
+    GradleRIO alpha-7 rejects the only 2027 release, alpha-2, for declaring
+    `2027_alpha5`; measured.
 
 **Use it instead of reasoning about whether a snippet compiles.** Current state: lessons 0–34 all compile, at every intermediate stopping point, with zero warnings. A regression is therefore a real result, not noise. Run the specific lesson you touched plus the highest one.
 
@@ -658,7 +710,7 @@ a lesson as-is.
 - [docs/lesson-plan-alpha7-upgrade.md](docs/lesson-plan-alpha7-upgrade.md) —
   the impact assessment and phased plan for upgrading the v3 track (only —
   the classic track targets stable 2026 and is unaffected) to WPILib 2027
-  alpha-7, a large breaking-change release. **Lessons 0–20 are migrated and
+  alpha-7, a large breaking-change release. **Lessons 0–22 are migrated and
   verified on alpha-7**: Phoenix 6 cleared the marketplace (Track A, 1–14,
   2026-09-18), and on 2026-09-24 the v3 track switched vision from
   PhotonVision to **LimelightLib 2**, which cleared Track B's vendor gate.
@@ -669,8 +721,8 @@ a lesson as-is.
   (maple-sim, PhotonVision, PathPlanner…) than the `2027_alpha7` folder has
   files for — only a JSON in the folder means a release exists. Lesson 15's simulated camera publishes real results frames to
   the NetworkTables topic a real Limelight uses, so the unmodified library
-  runs in sim. Lessons 21–34 are still pre-alpha-7 code awaiting Phase 1b;
-  Lessons 27 and 31 need Limelight redesigns first (user decisions). A
+  runs in sim. Lessons 23–34 are still pre-alpha-7 code awaiting Phase 1b;
+  Lesson 27 stays on PhotonVision and waits for an alpha-7 PhotonLib (user decision, 2026-10-17); Lesson 31 still needs a Limelight redesign decision. A
   PhotonVision flavor of Lesson 15 may come back as an option once PhotonLib
   ships for alpha-7; the last PhotonVision version is at commit `94fe7b9`.
   Alpha-7
@@ -713,6 +765,30 @@ follow Lesson 34. What that means when editing:
   sidebar, because that's the folder it lives in. The OpMode README still
   links it.
 
+**The OpMode track's unconverted lessons are marked "under construction"**
+by [docs/_plugins/lesson_status.rb](docs/_plugins/lesson_status.rb), on the
+website only; the lesson files don't change.
+
+- **Which lessons:** every v3 lesson above `V3_ALPHA7_THROUGH` in
+  `tools/lib/v3-lessons.sh`. Raising the cut-off clears a lesson's mark with
+  no other edit (checked by building with the cut-off at 23).
+- **What each one gets:** a banner under its title, and a pill under its
+  name in the sidebar. The pills are CSS rules on the link's `href`, emitted
+  by `docs/_includes/head_custom.html`. The theme's script removes the
+  `href` from the current page's own link, so that one link gets a rule
+  from `page.lesson_status` instead.
+- **The legend:** `docs/_includes/nav_footer_custom.html` puts a short one at
+  the bottom of the sidebar on OpMode pages. The track's page gets a summary
+  with counts, at `#lesson-status`.
+- **States and wording** are in
+  [docs/_data/lesson_status.yml](docs/_data/lesson_status.yml); colors are
+  in `custom.scss`. A lesson is "not updated yet" unless it's listed under
+  `waiting`: today that's 27 ("waiting on a library", PhotonLib) and 31
+  ("waiting on a decision"). Edit `waiting` when a blocker appears or
+  clears. Converted lessons ignore it.
+- The Pages workflow also rebuilds on changes to `tools/lib/v3-lessons.sh`,
+  so a cut-off change alone refreshes the marks.
+
 Rules that keep it working:
 
 - **Link to anything outside `docs/` with a full GitHub URL**
@@ -724,8 +800,8 @@ Rules that keep it working:
   in the config's `defaults`), so a lesson can show `{{ … }}` or `{% … %}` in
   a code block. Don't switch it off site-wide: the theme's search index and
   stylesheets are Liquid templates.
-- [docs/_sass/custom/custom.scss](docs/_sass/custom/custom.scss) holds the two
-  changes to the theme's look. The site title shrinks to fit two lines
+- [docs/_sass/custom/custom.scss](docs/_sass/custom/custom.scss) holds the
+  status marks' styles and two changes to the theme's look. The site title shrinks to fit two lines
   (otherwise it wraps onto three and runs into the sidebar). Code blocks get
   line spacing that matches the code: the theme draws code at 12px but spaces
   its lines for 16px text, 25.6px apart; they're 16.1px apart now, with the

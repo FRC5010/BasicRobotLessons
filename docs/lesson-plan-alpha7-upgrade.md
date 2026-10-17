@@ -559,6 +559,115 @@ holding table reproduces exactly. Two findings changed the lesson:
 `getValueAsDouble()` turned out to exist on alpha-7's Phoenix, so the
 "no shortcut" claims in Lessons 18 and 20 are gone.
 
+**Lesson 21 migrated, 2026-10-17.** Compiles 0–20 and 0–21 with zero
+warnings. `check-lesson-markers-v3.py` is clean for 1–21. The snapshot was
+rebuilt on the migrated Lesson 20 files. The only port was the elevator
+motor's `new CANBus(CANPort.CAN_S0)`; `ElevatorIO` and `ElevatorIOSim` came
+out byte-identical to the old snapshot. The Lesson 20 snapshot now carries
+copies of the three elevator IO files, to hold the markers.
+
+Measured with the real `Elevator` through the scheduler, and with the real
+`Robot` loop launched the way SimGUI launches it. The numbers are in
+CLAUDE.md. Three findings changed the lesson:
+
+- **An un-homed carriage doesn't stay put.** Nothing in the sim holds an
+  unpowered carriage, so it sinks at 2 cm/s while the robot sits disabled.
+  It lands on the switch about 18 s after launch, and the `Trigger`
+  re-zeroes it before most students have touched anything. **User
+  decision: teach the sink.** Section 8 now starts by watching the encoder
+  count below zero, then the switch fix itself, then restarts to show
+  `home()` and the pre-homing stall.
+- **D-pad up before homing doesn't reach "really 1.80 m".** `ElevatorSim`'s
+  own travel limit stops the carriage at the 1.5 m frame top, with the
+  encoder reading 1.15 m and the motor stalled at 3 V and 119 A.
+- **Stowing doesn't trip the switch.** Stowed is 2 cm and the switch is at
+  1 cm, so `AtBottomLimit` stays false there.
+
+The text also never told the student to log `AtBottomLimit` and
+`StatorCurrentAmps`, though section 8 and section 9 graph them. It does
+now. Section 2's homing-speed arithmetic was corrected: gravity adds to the
+−0.7 V rather than subtracting from it. The ending now hands off to
+Lesson 22.
+
+**Lesson 22 written, 2026-10-17 — no longer a gap.** Compiles 0–22 with
+zero warnings, `check-lesson-markers-v3.py` is clean for 1–22, and
+`update-lesson-v3.sh 22` hands a student project all 14 markers, and the
+project builds. Like Lesson 16, it's hand-built rather than a port: maple-sim
+isn't coming to this alpha, so the simulated intake the classic lesson got
+from `IntakeSimulation` is written out in `ArmIOSim`:
+
+- **The field and the catch.** The game pieces sit at
+  `ArmConstants.kSimGamePiecePositions`, the same three spots Lesson 27's
+  detection scene uses. A piece is caught only when three things are true:
+  the roller is told to pull in, the arm is below horizontal, and a piece is
+  inside a box just past the front bumper (`kIntakeReach` deep,
+  `kIntakeWidth` wide). The box is checked against the simulated chassis's
+  true pose, not the estimate. Running the roller outward drops the piece
+  0.8 m ahead of the robot.
+- **`Arm` takes the true pose.** It's now `Arm(Elevator, Supplier<Pose2d>)`,
+  given `drivetrain::getSimulatedPose`, like the cameras. A field
+  initializer can't see a constructor parameter, so the mode `switch` moved
+  from the `m_io` field into the constructor.
+- **The rest is the classic lesson.** The DIO beam break is read as
+  `!get()`, so an unplugged sensor says "no piece". A debounced `Trigger`
+  starts `Command.parallel(arm stow, elevator to kScoreMid).named("Capture")`.
+  The right trigger scores, guarded with `.and(hasGamePiece).and(atGoal)`.
+
+The alpha-7 `Trigger.debounce(Time)` takes the measure directly. Read from
+the bytecode, it debounces `RISING` only, so the classic lesson's "slow to
+believe yes, quick to believe no" holds.
+
+Verified with the real `Robot` loop and the real bindings, driven by
+`GamepadSim`:
+
+- With the arm down and the roller in, open field reads `false` at
+  60.3 rot/s.
+- Driving at the first piece, it's caught when the piece is 0.59 m ahead of
+  the robot's center.
+- About 0.1 s later, capture stows the arm (89.9°) and raises the elevator
+  (0.750 m). The roller stops while the bumper is still held.
+- The right trigger ejects the piece (back to 3 on the field) and the
+  roller stops. With an empty intake, it does nothing.
+- With the arm up over a piece: no catch. Arm down, then the bumper: caught.
+- Try It #2 was measured too. With a sensor flickering every other tick,
+  the debounced capture never fires; without the debounce, it fires on the
+  first flicker.
+
+What it changed elsewhere:
+
+- Lesson 21's ending now hands off to Lesson 22.
+- Lesson 23's "since last lesson" now says "since Lesson 21".
+- Lesson 34 no longer calls `Trigger.and` new.
+- The v3 README lists Lesson 22 and calls 22 a hand-built lesson like 16.
+
+**Three user decisions, 2026-10-17, for the lessons Phase 1b has left:**
+
+- **Lesson 23: restore the "has a game piece" LED indication** the classic
+  lesson has, now that the beam break exists. The priority example goes
+  back to "not homed outranks has a piece".
+- **Lesson 24: restore the classic six-state superstructure**, with
+  `HANDOFF` and `HOLDING` entered automatically by `periodic()` from the beam
+  break. The four-state "the operator is the sensor" design was a
+  workaround for the missing sensor. Lesson 32's `SuperstructureStateTest`,
+  and any later snapshot that names the states, follow it.
+- **Lesson 27: stay on PhotonVision** for object detection, alongside
+  Lesson 15's Limelight, and **wait for an alpha-7 PhotonLib** rather than
+  redesign around Limelight. Measured on 2026-10-17: the only 2027
+  PhotonLib, `v2027.0.0-alpha-2`, declares `wpilibYear: 2027_alpha5`.
+  GradleRIO alpha-7 refuses it before compiling anything: "Vendor Dependency
+  photonlib has invalid year 2027_alpha5. Expected to be 2027_alpha7". The
+  marketplace's `2027_alpha7` bucket has no PhotonLib. Lessons 28–33 carry
+  27's detector, so everything after 27 waits too. When PhotonLib lands,
+  Lesson 27 needs an install step and pin from 27 on. It also needs to
+  teach `PhotonCamera` and the simulated camera itself, because its text
+  leans on a PhotonVision Lesson 15 that no longer exists.
+
+Snapshots 23–31 still construct `new Arm(elevator)`, and Lesson 23's text
+says `Arm(Elevator)`. Both follow Lesson 22's constructor when migrated.
+Lesson 27's `VisionConstants.kSimGamePiecePositions` duplicates the arm's
+constant with the same values; unify them, or let 27's scene read the live
+pieces, when 27 is migrated.
+
 **Each lesson Phase 1b migrates also gets its NEXT LESSON markers
 (added 2026-09-26).** Lessons 1–15 now ship them: the code at the end of
 Lesson N-1 carries a javadoc-style comment at every spot where Lesson N has

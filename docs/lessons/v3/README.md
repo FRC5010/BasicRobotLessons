@@ -9,10 +9,11 @@ catch up, or to start partway through, see
 below.
 
 **Start on [the classic track](../README.md) unless you specifically want
-this one.** Two lessons (22, 25) are gaps for now: 22 needs a hand-built
-stand-in for maple-sim, which isn't available for this alpha, and 25 is
-waiting its turn now that BLine is. One (16) is a genuinely different, hand-built
-lesson rather than a straight port. See
+this one.** One lesson (25) is a gap for now: it's waiting its turn now
+that BLine is. Two (16 and 22) are genuinely different, hand-built lessons
+rather than straight ports, because maple-sim isn't available for this
+alpha: 16 builds its own simulated chassis, and 22 its own simulated
+intake. See
 [the restructure plan](https://github.com/FRC5010/BasicRobotLessons/blob/main/docs/lesson-plan-opmode-restructure.md) for the full
 status of every lesson, including what changed and why.
 
@@ -40,7 +41,7 @@ status of every lesson, including what changed and why.
 | 19 | [A picture of the elevator](19-mechanism2d.md) | A live stick figure of the mechanism, with a second piece riding on it | Composition as attachment |
 | 20 | [Intake arm](20-intake-arm.md) | A swinging arm with a roller, mounted on the elevator, gravity-compensated by angle | Two motors in one subsystem, a `Mechanism` that takes a `Mechanism` |
 | 21 | [Homing & limit sensors](21-limit-sensors.md) | A limit switch that tells the elevator where zero actually is | `Trigger` from any `BooleanSupplier`, no-requirements commands |
-| 22 | — | *Gap for now* — the old lesson's beam-break sim needs maple-sim's intake simulation. See the plan doc. | — |
+| 22 | [Beam breaks & the handoff](22-light-sensors.md) | A beam break that knows the difference between spinning and holding, and a catch that moves two mechanisms at once | `Trigger.debounce(...)` and `.and(...)` |
 | 23 | [LEDs](23-leds.md) | A strip that shows what the robot knows, and a priority order you chose | Combinator methods |
 | 24 | [A superstructure](24-superstructure.md) | One named state the whole robot reads, with the illegal moves made impossible | Enums with fields and methods, exhaustive `switch`, a hand-built guard |
 | 25 | — | *Gap for now* — its BLine event markers and rotation override now run on this alpha, but the lesson isn't written yet. See the plan doc. | — |

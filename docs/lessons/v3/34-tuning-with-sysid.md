@@ -5,8 +5,8 @@ for, put a number on how close they were, and pick up the tool teams use to
 measure what a spec sheet can't tell you.
 
 **New Java concepts**
-- `Trigger.and(BooleanSupplier)` — combining two buttons into one condition,
-  so a characterization run needs both held at once.
+- `Trigger.and(...)`, from Lesson 22, on two buttons this time — so a
+  characterization run needs both held at once.
 
 **New robot concepts**
 - **`SysIdRoutine`** — a tool that drives a mechanism open loop in two
@@ -445,9 +445,8 @@ only need to name it if this project grew a second characterization opmode
 the way Lesson 9 grew a second autonomous.
 
 **`Trigger.and(...)`** is doing real work here too, not just saving buttons.
-Every `Trigger` you've built since Lesson 21 has answered one boolean
-question; `.and(...)` combines two of them into a `Trigger` that's only true
-while *both* are. Four two-button combinations, inside an opmode you already
+In Lesson 22 it stacked a sensor reading onto a button; here it combines two
+buttons into a `Trigger` that's only true while *both* are held. Four two-button combinations, inside an opmode you already
 can't reach by accident, means nobody trips a characterization run without
 clearing two separate hurdles on purpose.
 

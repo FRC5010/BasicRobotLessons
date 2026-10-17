@@ -177,6 +177,13 @@ public final class Constants {
 
     public static final Distance kTolerance = Centimeters.of(2);
 
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Add homing's numbers: the limit switch's channel and the height it trips at,
+     * the gentle voltage homing drives down with, and, for the simulator only,
+     * the height the carriage really sits at when the robot powers on.
+     */
+
     // The stick-figure view. The canvas is measured in meters, like the field.
     public static final Distance kDisplayWidth = Meters.of(1.0);
     public static final Distance kDisplayHeight = Meters.of(2.0);
