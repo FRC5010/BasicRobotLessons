@@ -20,3 +20,101 @@ div.highlighter-rouge pre.highlight {
 div.highlighter-rouge pre.highlight code {
   font-size: 1em;
 }
+
+// The OpMode track's "under construction" marks, from _plugins/lesson_status.rb.
+// Each state's color, and a text color that reads on it. The states' names
+// match _data/lesson_status.yml.
+:root {
+  --status-unconverted: #{$yellow-300};
+  --status-unconverted-text: #{$grey-dk-300};
+  --status-unconverted-tint: #fff8e1;
+  --status-library: #c62828;
+  --status-library-text: #fff;
+  --status-library-tint: #fdecea;
+  --status-decision: #{$purple-100};
+  --status-decision-text: #fff;
+  --status-decision-tint: #efeafd;
+}
+
+// The pill under a lesson's name in the sidebar. The plugin gives the marked
+// lessons' links their text and colors; a link with no `content` has no
+// ::after at all, so every other lesson stays as it was.
+.site-nav .nav-list-link::after {
+  display: block;
+  width: fit-content;
+  margin-top: 0.125rem;
+  padding: 0 0.45rem;
+  border-radius: 1rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+// The same pill, written into the legends.
+.lesson-status-pill {
+  display: inline-block;
+  padding: 0 0.45rem;
+  border-radius: 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+
+  @each $state in unconverted, library, decision {
+    &--#{$state} {
+      background-color: var(--status-#{$state});
+      color: var(--status-#{$state}-text);
+    }
+  }
+}
+
+// The banner under a marked lesson's title, and the summary on the track page.
+.lesson-status {
+  margin: 1rem 0 1.5rem;
+  padding: 0.75rem 1rem;
+  border-left: 4px solid var(--status-unconverted);
+  border-radius: 4px;
+  background-color: var(--status-unconverted-tint);
+
+  > :first-child {
+    margin-top: 0;
+  }
+
+  > :last-child {
+    margin-bottom: 0;
+  }
+
+  @each $state in library, decision {
+    &--#{$state} {
+      border-left-color: var(--status-#{$state});
+      background-color: var(--status-#{$state}-tint);
+    }
+  }
+
+  &--summary {
+    background-color: $grey-lt-000;
+  }
+}
+
+// The short legend at the bottom of the sidebar.
+.lesson-status-legend {
+  margin-bottom: 0.75rem;
+
+  ul {
+    margin: 0.25rem 0;
+    padding-left: 0;
+    list-style: none;
+  }
+
+  li {
+    margin: 0.2rem 0;
+  }
+
+  p {
+    margin: 0.25rem 0;
+  }
+
+  .lesson-status-legend-title {
+    font-weight: 600;
+  }
+}

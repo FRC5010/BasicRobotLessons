@@ -765,6 +765,30 @@ follow Lesson 34. What that means when editing:
   sidebar, because that's the folder it lives in. The OpMode README still
   links it.
 
+**The OpMode track's unconverted lessons are marked "under construction"**
+by [docs/_plugins/lesson_status.rb](docs/_plugins/lesson_status.rb), on the
+website only; the lesson files don't change.
+
+- **Which lessons:** every v3 lesson above `V3_ALPHA7_THROUGH` in
+  `tools/lib/v3-lessons.sh`. Raising the cut-off clears a lesson's mark with
+  no other edit (checked by building with the cut-off at 23).
+- **What each one gets:** a banner under its title, and a pill under its
+  name in the sidebar. The pills are CSS rules on the link's `href`, emitted
+  by `docs/_includes/head_custom.html`. The theme's script removes the
+  `href` from the current page's own link, so that one link gets a rule
+  from `page.lesson_status` instead.
+- **The legend:** `docs/_includes/nav_footer_custom.html` puts a short one at
+  the bottom of the sidebar on OpMode pages. The track's page gets a summary
+  with counts, at `#lesson-status`.
+- **States and wording** are in
+  [docs/_data/lesson_status.yml](docs/_data/lesson_status.yml); colors are
+  in `custom.scss`. A lesson is "not updated yet" unless it's listed under
+  `waiting`: today that's 27 ("waiting on a library", PhotonLib) and 31
+  ("waiting on a decision"). Edit `waiting` when a blocker appears or
+  clears. Converted lessons ignore it.
+- The Pages workflow also rebuilds on changes to `tools/lib/v3-lessons.sh`,
+  so a cut-off change alone refreshes the marks.
+
 Rules that keep it working:
 
 - **Link to anything outside `docs/` with a full GitHub URL**
@@ -776,8 +800,8 @@ Rules that keep it working:
   in the config's `defaults`), so a lesson can show `{{ … }}` or `{% … %}` in
   a code block. Don't switch it off site-wide: the theme's search index and
   stylesheets are Liquid templates.
-- [docs/_sass/custom/custom.scss](docs/_sass/custom/custom.scss) holds the two
-  changes to the theme's look. The site title shrinks to fit two lines
+- [docs/_sass/custom/custom.scss](docs/_sass/custom/custom.scss) holds the
+  status marks' styles and two changes to the theme's look. The site title shrinks to fit two lines
   (otherwise it wraps onto three and runs into the sidebar). Code blocks get
   line spacing that matches the code: the theme draws code at 12px but spaces
   its lines for 16px text, 25.6px apart; they're 16.1px apart now, with the

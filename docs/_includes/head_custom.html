@@ -1,0 +1,20 @@
+{%- comment -%}
+  Just the Docs puts this file in every page's <head>. It carries the sidebar's
+  "under construction" pills, which _plugins/lesson_status.rb writes for the
+  OpMode track's lessons that aren't up to date yet. The pills match links by
+  their href, and the theme's script removes the href from the link to the
+  page you're on, so that link gets its own rule, from the page's status.
+{%- endcomment -%}
+{%- if site.data.lesson_status_css and site.data.lesson_status_css != "" %}
+<style>
+{{ site.data.lesson_status_css }}
+{%- if page.lesson_status %}
+{%- assign status = site.data.lesson_status.states[page.lesson_status] %}
+.site-nav .nav-list-link.active::after {
+  content: "{{ status.pill }}";
+  background-color: var(--status-{{ page.lesson_status }});
+  color: var(--status-{{ page.lesson_status }}-text);
+}
+{%- endif %}
+</style>
+{%- endif %}
