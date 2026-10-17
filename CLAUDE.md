@@ -679,6 +679,27 @@ a lesson as-is.
   checks vendors every 6 hours and updates that doc's vendor-tracking table
   (silently, unless something actually changed).
 
+## The lessons are also a website
+
+`docs/` is published by GitHub Pages ("Deploy from a branch", `main`,
+`/docs`) at https://frc5010.github.io/BasicRobotLessons/, once Pages is
+switched on in the repo's settings. Every `.md` file becomes a page as it is;
+[docs/_config.yml](docs/_config.yml) keeps the plan docs and the slide decks
+off the site, and [docs/index.md](docs/index.md) is the home page. Two rules
+keep it working:
+
+- **Link to anything outside `docs/` with a full GitHub URL**
+  (`https://github.com/FRC5010/BasicRobotLessons/blob/main/...`), never
+  `../../`. A relative link out of `docs/` works on GitHub but 404s on the
+  site. Links between lessons stay relative, ending in `.md`; Pages rewrites
+  them to the pages.
+- **No `{{` or `{%` in lesson text.** Pages runs every file through Liquid
+  templating, which would eat them. No lesson has any today.
+
+Preview it with GitHub's own pipeline: `gem "github-pages"` in a scratch
+Gemfile, then `LANG=C.UTF-8 bundle exec github-pages build --source docs`
+(without a UTF-8 locale the theme's stylesheet fails to compile).
+
 ## When adding or editing a lesson
 
 - Update the lessons table in [docs/lessons/README.md](docs/lessons/README.md)

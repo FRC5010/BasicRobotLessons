@@ -1,9 +1,9 @@
 # Classic track — roboRIO, WPILib 2026, Commands V2
 
 The version this course has always taught: the roboRIO, WPILib 2026, and
-Commands V2. Reference code lives under [`code/lesson-N/`](../../code/), and
+Commands V2. Reference code lives under [`code/lesson-N/`](https://github.com/FRC5010/BasicRobotLessons/tree/main/code), and
 the whole track rolls forward with `./tools/verify-lessons.sh` — see the
-main [README](../../README.md) for how to use that to jump into a lesson in
+main [README](https://github.com/FRC5010/BasicRobotLessons/blob/main/README.md) for how to use that to jump into a lesson in
 the middle.
 
 This is also the track to be on unless you specifically want

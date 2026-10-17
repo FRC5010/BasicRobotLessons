@@ -1,0 +1,24 @@
+# The course website. GitHub Pages builds this folder as it is: every .md file
+# becomes a web page, and links between .md files are pointed at those pages,
+# so the lessons need no changes to be published.
+#
+# To publish: the repo's Settings → Pages → Build and deployment →
+# "Deploy from a branch", branch main, folder /docs.
+
+# The site's address is https://frc5010.github.io/BasicRobotLessons/, so every
+# link is built under /BasicRobotLessons. (A custom domain would change this.)
+baseurl: /BasicRobotLessons
+
+title: Learn Java + Robot Programming
+description: A hands-on course that teaches Java while building working swerve-drive robot code.
+theme: jekyll-theme-primer
+
+# Kept in the repo but off the website: contributor planning documents, and
+# the slide decks (about 160 MB), which are linked from the home page instead.
+exclude:
+  - lesson-plan-*.md
+  - presentations
+
+# Publish each lesson once, as a page, not also as a raw .md download.
+optional_front_matter:
+  remove_originals: true

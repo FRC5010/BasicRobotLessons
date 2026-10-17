@@ -2,7 +2,7 @@
 
 A newer, still-settling alternative to [the classic track](../README.md):
 SystemCore and the 2027 alpha's OpMode framework, with coroutine-style
-Commands V3. Reference code lives under [`code/v3/lesson-N/`](../../../code/v3/),
+Commands V3. Reference code lives under [`code/v3/lesson-N/`](https://github.com/FRC5010/BasicRobotLessons/tree/main/code/v3),
 and the whole track rolls forward with `./tools/verify-lessons-v3.sh`. To
 catch up, or to start partway through, see
 [Starting a lesson from the reference code](#starting-a-lesson-from-the-reference-code)
@@ -13,7 +13,7 @@ this one.** Two lessons (22, 25) are gaps for now: 22 needs a hand-built
 stand-in for maple-sim, which isn't available for this alpha, and 25 is
 waiting its turn now that BLine is. One (16) is a genuinely different, hand-built
 lesson rather than a straight port. See
-[the restructure plan](../../lesson-plan-opmode-restructure.md) for the full
+[the restructure plan](https://github.com/FRC5010/BasicRobotLessons/blob/main/docs/lesson-plan-opmode-restructure.md) for the full
 status of every lesson, including what changed and why.
 
 | # | Lesson | You'll build | Key Java ideas |
