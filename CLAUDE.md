@@ -801,11 +801,56 @@ Rules that keep it working:
   a code block. Don't switch it off site-wide: the theme's search index and
   stylesheets are Liquid templates.
 - [docs/_sass/custom/custom.scss](docs/_sass/custom/custom.scss) holds the
-  status marks' styles and two changes to the theme's look. The site title shrinks to fit two lines
+  status marks' styles, the dark-mode button's, and two changes to the
+  theme's look. The site title shrinks to fit two lines
   (otherwise it wraps onto three and runs into the sidebar). Code blocks get
   line spacing that matches the code: the theme draws code at 12px but spaces
   its lines for 16px text, 25.6px apart; they're 16.1px apart now, with the
   font size unchanged.
+- **Every color in `custom.scss` must work in both schemes.** The file is
+  compiled into the light and the dark stylesheet, so branch on
+  `$color-scheme` (as `status-tint` and the summary do) rather than writing a
+  pale hex that the dark scheme's light text can't be read on.
+
+**Dark mode layers the theme's dark stylesheet over its light one**
+([docs/_includes/head_custom.html](docs/_includes/head_custom.html)). The
+button is in `header_custom.html`, and the comments in both files explain
+how they work.
+
+- **How it chooses:** `<link id="dark-scheme" media="screen and
+  (prefers-color-scheme: dark)">` follows the system with no script, and works
+  with scripts off. The button sets `media` to `screen` or `not all`. It saves
+  the choice in `localStorage` under `BasicRobotLessons.theme`, because every
+  `frc5010.github.io` site shares that storage. Picking what the system says
+  again clears the saved choice.
+- **Printing is always light**, because of `screen`. Without it, a dark-mode
+  print came out as `rgb(230, 225, 232)` text on white paper.
+- **Don't use the theme's `jtd.setTheme`**. It swaps the light stylesheet out,
+  which leaves the page unstyled until the new one downloads (black-on-white
+  raw HTML for the whole wait, measured). Its own startup `scrollIntoView`
+  then runs on that unstyled layout, so every dark page opened scrolled about
+  a screen down (measured `scrollY` 139), with the sidebar not showing the
+  current lesson.
+- **Layering is safe only while every light rule has a dark twin**,
+  `!important` included. The theme builds both from the same Sass, and it
+  checked out: 2,894 light declarations, none without a twin. Re-check this
+  if a light-only rule is ever added.
+- **On a light system the dark sheet still downloads**, at low priority and
+  then cached: 144 KB before compression. If dark is picked before it
+  arrives, the page waits hidden on `#27262b`. If the download fails, it shows
+  at once, and if the download hangs, it shows after 3 s.
+- **On a phone**, the button sits with the search box, below the lesson list
+  in the opened menu, because that's where the theme puts its whole top bar.
+
+Checked with Playwright, Chromium only (no Firefox or WebKit in the
+container), with a slow, failing or hanging dark sheet. 28 checks pass:
+
+- Following the system, both ways and live, and a saved choice beating it.
+- Opening at the top with the sidebar on the lesson, and anchors landing.
+- Scripts off, storage blocked, junk in storage, and printing.
+- No sideways scroll at 390 px.
+
+Breaking the hide or bringing back the swap fails them.
 
 Preview it from `docs/` with Ruby 3.3: `bundle install`, then
 `LANG=C.UTF-8 LC_ALL=C.UTF-8 bundle exec jekyll serve` and open

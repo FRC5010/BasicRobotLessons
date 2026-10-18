@@ -1,6 +1,8 @@
 // Changes to the theme's own styles. Just the Docs reads this file by
 // this exact name.
 
+@use "sass:color";
+
 // The course's name is long for the sidebar's header. At the theme's size it
 // wraps onto three lines and runs into the lesson list; at this size it fits
 // on two.
@@ -22,18 +24,31 @@ div.highlighter-rouge pre.highlight code {
 }
 
 // The OpMode track's "under construction" marks, from _plugins/lesson_status.rb.
-// Each state's color, and a text color that reads on it. The states' names
-// match _data/lesson_status.yml.
+// Each state's color, a text color that reads on it, and the tint behind its
+// banner. The states' names match _data/lesson_status.yml.
+//
+// This file is built into both color schemes, light and dark ($color-scheme
+// says which). A pale tint would put the dark scheme's light text on a light
+// background, so there the tint is a little of the state's color mixed into
+// the page's own dark background instead.
+@function status-tint($color, $light-tint) {
+  @if $color-scheme == dark {
+    @return color.mix($color, $body-background-color, 18%);
+  }
+
+  @return $light-tint;
+}
+
 :root {
   --status-unconverted: #{$yellow-300};
   --status-unconverted-text: #{$grey-dk-300};
-  --status-unconverted-tint: #fff8e1;
+  --status-unconverted-tint: #{status-tint($yellow-300, #fff8e1)};
   --status-library: #c62828;
   --status-library-text: #fff;
-  --status-library-tint: #fdecea;
+  --status-library-tint: #{status-tint(#c62828, #fdecea)};
   --status-decision: #{$purple-100};
   --status-decision-text: #fff;
-  --status-decision-tint: #efeafd;
+  --status-decision-tint: #{status-tint($purple-100, #efeafd)};
 }
 
 // The pill under a lesson's name in the sidebar. The plugin gives the marked
@@ -92,7 +107,11 @@ div.highlighter-rouge pre.highlight code {
   }
 
   &--summary {
-    background-color: $grey-lt-000;
+    @if $color-scheme == dark {
+      background-color: $grey-dk-250;
+    } @else {
+      background-color: $grey-lt-000;
+    }
   }
 }
 
@@ -116,5 +135,31 @@ div.highlighter-rouge pre.highlight code {
 
   .lesson-status-legend-title {
     font-weight: 600;
+  }
+}
+
+// The light/dark button in the bar along the top (_includes/header_custom.html).
+// It borrows the "GitHub repository" link's look, and sits right beside it.
+.theme-toggle {
+  @include fs-2;
+
+  @include mq(md) {
+    margin-left: auto;
+  }
+}
+
+.theme-toggle-button {
+  width: 100%;
+  font-family: inherit;
+  font-size: inherit;
+  color: $link-color;
+  cursor: pointer;
+  background: none;
+  border: 0;
+
+  // The theme's .site-button sets `display`, which would otherwise beat the
+  // `hidden` attribute and show the button before its script is ready.
+  &[hidden] {
+    display: none;
   }
 }

@@ -1,10 +1,111 @@
 {%- comment -%}
-  Just the Docs puts this file in every page's <head>. It carries the sidebar's
-  "under construction" pills, which _plugins/lesson_status.rb writes for the
-  OpMode track's lessons that aren't up to date yet. The pills match links by
-  their href, and the theme's script removes the href from the link to the
-  page you're on, so that link gets its own rule, from the page's status.
+  Just the Docs puts this file in every page's <head>. It carries two things.
+
+  First, the dark color scheme. The theme loads its light stylesheet; this
+  adds the dark one on top, and the dark one wins wherever they differ. They
+  differ only in colors, and every light rule has a dark twin, so light plus
+  dark looks exactly like dark alone. The `media` attribute decides whether
+  the dark sheet applies: the system's setting at first, so a reader whose
+  computer is set to dark gets dark with no script at all, and "screen" or
+  "not all" once they pick one with the button in header_custom.html. Only
+  ever on screen: a printed lesson is always light, or its light gray text
+  would be all but invisible on paper.
+
+  The theme's own jtd.setTheme swaps the light stylesheet out for the dark one
+  instead. That leaves the page with no styles until the new one downloads,
+  and the theme's script picks that moment to scroll the sidebar to the
+  current lesson: with no styles the sidebar isn't scrollable, so the whole
+  page scrolled down instead.
+
+  Second, the sidebar's "under construction" pills, which
+  _plugins/lesson_status.rb writes for the OpMode track's lessons that aren't
+  up to date yet. The pills match links by their href, and the theme's script
+  removes the href from the link to the page you're on, so that link gets its
+  own rule, from the page's status.
 {%- endcomment -%}
+<link rel="stylesheet" href="{{ '/assets/css/just-the-docs-dark.css' | relative_url }}" id="dark-scheme" media="screen and (prefers-color-scheme: dark)">
+<script>
+(function () {
+  // Every FRC5010 site shares frc5010.github.io's storage, so the name is
+  // specific to this one.
+  var KEY = "BasicRobotLessons.theme";
+  var SYSTEM = "screen and (prefers-color-scheme: dark)";
+  var MEDIA = { dark: "screen", light: "not all" };
+  // The dark scheme's page background ($body-background-color).
+  var DARK_BACKGROUND = "#27262b";
+
+  var link = document.getElementById("dark-scheme");
+  var root = document.documentElement;
+  var system = window.matchMedia(SYSTEM);
+  var loaded = !!link.sheet;
+
+  function current() {
+    return window.matchMedia(link.media).matches ? "dark" : "light";
+  }
+
+  // Storage can be switched off, or throw in a private window. Then the page
+  // follows the system, and the button works until you leave the page.
+  function saved() {
+    try {
+      var choice = localStorage.getItem(KEY);
+      return choice === "dark" || choice === "light" ? choice : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function save(choice) {
+    try {
+      if (choice) localStorage.setItem(KEY, choice);
+      else localStorage.removeItem(KEY);
+    } catch (e) {}
+  }
+
+  function label() {
+    var button = document.getElementById("theme-toggle");
+    if (button) button.textContent = current() === "dark" ? "Switch to light mode" : "Switch to dark mode";
+  }
+
+  function show() {
+    root.style.visibility = "";
+    root.style.backgroundColor = "";
+  }
+
+  // On a light system the dark sheet downloads in the background. If dark is
+  // picked before it has arrived, the page waits for it, hidden on a dark
+  // background, rather than showing light for a moment. If it never arrives,
+  // the page shows anyway after 3 seconds.
+  function use(choice) {
+    link.media = choice ? MEDIA[choice] : SYSTEM;
+    if (current() === "dark" && !loaded) {
+      root.style.visibility = "hidden";
+      root.style.backgroundColor = DARK_BACKGROUND;
+      setTimeout(show, 3000);
+    }
+    label();
+  }
+
+  link.addEventListener("load", function () { loaded = true; show(); });
+  link.addEventListener("error", function () { loaded = true; show(); });
+  if (system.addEventListener) system.addEventListener("change", label);
+
+  use(saved());
+
+  document.addEventListener("DOMContentLoaded", function () {
+    var button = document.getElementById("theme-toggle");
+    if (!button) return;
+    label();
+    button.hidden = false;
+    button.addEventListener("click", function () {
+      var next = current() === "dark" ? "light" : "dark";
+      // Picking what the system says again goes back to following the system.
+      var choice = next === (system.matches ? "dark" : "light") ? null : next;
+      save(choice);
+      use(choice);
+    });
+  });
+})();
+</script>
 {%- if site.data.lesson_status_css and site.data.lesson_status_css != "" %}
 <style>
 {{ site.data.lesson_status_css }}
