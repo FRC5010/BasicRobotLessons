@@ -57,8 +57,10 @@ public final class Autos {
 
   /**
    * ====== NEXT LESSON: ADD CODE HERE ======
-   * A path auto that stows the arm over the last stretch of the drive, and the
-   * wrapper that hands rotation back to the path follower when an auto ends.
+   * A path auto that asks to score over the last stretch of the drive; a
+   * wrapper that homes the elevator and lets the robot settle before any auto
+   * starts; and one that hands rotation back to the path follower when an
+   * auto ends.
    */
 
   /** Where a path starts, on this alliance's side of the field — the same flip BLine makes. */
@@ -76,9 +78,9 @@ public final class Autos {
 
   /**
    * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
-   * The placeholder becomes three real markers: one that drops the intake and
-   * runs the roller until a piece is in, and a pair that hand the path's
-   * rotation to an aiming loop and back.
+   * The placeholder becomes three real markers: one that asks the
+   * superstructure to intake, and a pair that hand the path's rotation to an
+   * aiming loop and back.
    */
   /** Names a path file can fire with lib_key. BLine keeps them for the whole program. */
   public static void registerEventTriggers() {

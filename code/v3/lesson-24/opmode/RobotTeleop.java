@@ -11,7 +11,6 @@ import org.wpilib.opmode.Teleop;
 import first.robot.Constants.DriveConstants;
 import first.robot.Constants.ElevatorConstants;
 import first.robot.Robot;
-import first.robot.subsystems.SuperstructureState;
 
 @Teleop
 public class RobotTeleop extends PeriodicOpMode {
@@ -53,15 +52,6 @@ public class RobotTeleop extends PeriodicOpMode {
     robot.driverController.faceLeft().onTrue(robot.superstructure.requestIntake());
     robot.driverController.faceUp().onTrue(robot.superstructure.requestIdle());
     robot.driverController.rightTrigger().onTrue(robot.superstructure.requestScore());
-
-    // Motion that belongs to a state, bound to being in it. No guard here:
-    // being in the state at all means the state machine already said yes. The
-    // moment the state changes, whileTrue cancels the old motion. HOLDING has
-    // none — the elevator and arm are already where they need to be.
-    robot.superstructure.inState(SuperstructureState.INTAKING).whileTrue(robot.superstructure.intakeMotion());
-    robot.superstructure.inState(SuperstructureState.HANDOFF).whileTrue(robot.superstructure.handoffMotion());
-    robot.superstructure.inState(SuperstructureState.SCORING).whileTrue(robot.superstructure.scoreMotion());
-    robot.superstructure.inState(SuperstructureState.IDLE).whileTrue(robot.superstructure.idleMotion());
   }
 
   @Override

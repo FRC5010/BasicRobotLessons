@@ -684,7 +684,20 @@ rewritten around the six states (new `HANDOFF` explanation, `periodic()`
 transitions, the deletions in `RobotTeleop`, a run section with these
 numbers); Lesson 32's test and text follow the six states.
 
-**Lesson 25 written, 2026-10-19 — no longer a gap.** Compiles 0–24 and 0–25
+**Lesson 24 revised, 2026-10-19: state motion is bound in `Robot`.** The
+user decided the four `inState(...).whileTrue(...)` bindings move out of
+`RobotTeleop` into `Robot`'s constructor, so the motion a state means holds
+in every opmode, autonomous included (Lesson 25 relies on it). Bindings made
+there are `Global`: the opmode ID reads 0 until the program starts. §8 now
+teaches the placement against Lesson 9's opmode scoping. Re-measured through
+the real loop: `Intake Motion` survives selecting another opmode; the cycle
+numbers hold (homing 151 ticks after Back, `HANDOFF` 35 ticks after the
+drive starts, `HOLDING` 56 ticks later at 0.7345 m, score refused/accepted
+as before).
+
+**Lesson 25 written, 2026-10-19 — no longer a gap.** (The design in this
+paragraph and the list below it was replaced the same day; see "Lesson 25
+redesigned" further down. The measurements of BLine still hold.) Compiles 0–24 and 0–25
 with zero warnings; `check-lesson-markers-v3.py` is clean for 1–25;
 `update-lesson-v3.sh 25` hands a student project all 7 markers, and the project
 builds; the 50 tool tests pass. Like Lesson 22 it was written on alpha-7 rather
@@ -739,19 +752,83 @@ What it changed elsewhere:
   longer calls it a gap.
 - The website's status summary counts 26 of 35 lessons as up to date.
 
+**Lesson 25 redesigned, 2026-10-19 (user decisions, same day).** The user asked
+for autos that home before they start, so they can use the superstructure, and
+for `addOpMode` instead of one near-identical class per auto. Answers to three
+questions: `addOpMode` arrives in Lesson 25 (Lesson 17 keeps its two annotated
+classes); Lesson 24 is rewritten so the state-motion bindings live in `Robot`
+(recorded above); and a new pickup path replaces Two Corners as the intake demo.
+What shipped:
+
+- **`opmode/PathAuto`**, unannotated, takes `(Robot, String pathName,
+  Function<Path, Command> recipe)`. `Robot` registers each auto with
+  `addOpMode(RobotMode.AUTONOMOUS, name, "Paths", () -> new PathAuto(...))` and
+  then calls `publishOpModes()`. `RobotAutoTwoCorners`/`RobotAutoFarSide` are
+  deleted in `V3_DELETIONS`; Aim While Driving and Pick Up never get classes.
+- **`Autos.getReadyThen(elevator, superstructure, auto)`**: a no-requirements
+  coroutine that awaits `home()`, waits for the new
+  `Superstructure.isSettled()` (`IDLE` and both mechanisms `atGoal`), then
+  awaits the auto. `PathAuto` wraps every path auto in it.
+- The `intake` marker is `superstructure.requestIntake()`;
+  `registerEventTriggers(Superstructure, Localizer)`. `shoot` is retired and
+  removed from `TwoCorners.json`.
+- **`PickUp.json`**: (6.0, 7.4) → (6.0, 1.0), heading −90°, `intake` at
+  `t_ratio` 0.1. It comes down the field because a straight run at the piece
+  at (6.0, 3.8) along y = 3.8 crosses the blue hub (x 4.02–5.23, y 3.43–4.64,
+  from the alpha-7 2026 field's tag poses).
+- **`followPathAndScore`** replaces `followPathAndStow`: wait for distance
+  above 0, then below `kScoreDistance` (0.5 m, replacing `kStowDistance`),
+  then `requestScore()`.
+
+Measured with the real `Robot` loop (probe recipe in CLAUDE.md):
+
+- **`Command.sequence(home(), waitUntil(isSettled), auto)` never drives.** A
+  `SequentialGroup`'s requirements are the union of its steps' (read in
+  source), so it holds the elevator; the `IDLE` motion scheduled on the tick
+  the state turns `IDLE` evicts the whole auto. The coroutine holds nothing.
+- **Without the settle wait, a fresh launch misses.** The sim arm boots at its
+  −20° stop; the `IDLE` stow was still rising (≈41°) when the intake request
+  came, reversing took 1.3 s, and the roller started after the piece had
+  passed. With the wait: homing 3.3 s, stow ≈1.0 s, drive starts ≈4.4 s
+  after enable.
+- **Pick Up timeline (from drive start):** marker 0.6 s at y ≈ 6.7; arm below
+  horizontal 1.4 s; roller 1.7 s at y ≈ 4.6; caught 1.8 s at y ≈ 4.37
+  (0.57 m); `HANDOFF` +0.1 s; `HOLDING` 3.0 s with 1.0 m left, elevator
+  0.73 m; `SCORING` at 0.48 m left, `IDLE` next tick; path done 3.5 s at
+  (6, 1). Marker 0.15 still catches (0.50 m); 0.2 misses (roller at y ≈ 3.9).
+- Unguarded score trigger: `IDLE -> SCORING` refused on the drive's first
+  tick; the robot ends `HOLDING`. `kScoreDistance` 2 m: `HANDOFF -> SCORING`
+  refused while the elevator rises (0.38 m). At 1 m/s the score lands at
+  y ≈ 1.48 vs 1.44, 6.1 s into the drive vs 3.2 s.
+- A second Pick Up in one session: score refused `INTAKING -> SCORING`, then
+  the running intake catches the piece the first run dropped 0.8 m ahead.
+  The robot stays `INTAKING` into teleop (Try It #5).
+- Without `publishOpModes()` none of the path autos appear; leaving the old
+  annotated Two Corners in throws `IllegalArgumentException: OpMode Two
+  Corners already exists for mode AUTONOMOUS` at boot.
+- Unchanged: Two Corners 4.1 s, Far Side 4.7 s, Aim While Driving finishes at
+  (8.01, 7.02, −1.6°) 5.4 s into the drive with 5.71° mean / 7.71° worst aim
+  error; a drivetrain-requiring event cancels the path the next loop
+  (Pick Up: stops ≈(6.0, 6.5), `Turn To Heading`).
+
 **What Lessons 26 and 28 now owe Lesson 25, when Phase 1b reaches them:**
 
-- 26's whole-file `Autos`, `Constants` and `RobotTeleop` must carry Lesson 25's
-  additions: `followPathAndStow`, `handingRotationBack`, `aimOmega`,
-  `registerEventTriggers(Arm, Localizer)`, the three `PathConstants`, and the
-  opmodes. Without them, `RobotAutoFarSide` and `RobotAutoAimWhileDriving` no
-  longer compile.
-- **Lesson 28 collides with 25.** Its snapshot adds its own
-  `RobotAutoAimWhileDriving` (class and Driver Station name) for a
-  `driveWhileAiming` that isn't BLine. Follow the classic Lesson 28 instead:
-  point 25's `aim` marker at `Aim.omegaTowardTag`, delete `kAimTarget` and
-  `aimOmega`, and give `registerEventTriggers` the drivetrain. Don't add a
-  second opmode with the same name.
+- **Autos are registered with `addOpMode`, not annotated classes.** 26's
+  `RobotAutoDriveToPose` and any later auto become an `addOpMode` line in
+  `Robot` (a `PathAuto` if it follows a drawn path, its own unannotated opmode
+  otherwise), before the `publishOpModes()` call. Every auto that uses the
+  superstructure goes through `Autos.getReadyThen`.
+- 26's whole-file `Autos`, `Constants`, `Robot` and `RobotTeleop` must carry
+  Lesson 25's state: `followPathAndScore`, `getReadyThen`,
+  `handingRotationBack`, `aimOmega`, `registerEventTriggers(Superstructure,
+  Localizer)`, `kScoreDistance`/`kAimP`/`kAimTarget`, `isSettled()`, the
+  `addOpMode` block, and Lesson 24's state-motion bindings in `Robot` (26–29's
+  `RobotTeleop` still bind them; those lines move to `Robot`).
+- **Lesson 28 collides with 25.** Its snapshot adds an annotated
+  `RobotAutoAimWhileDriving` named "Aim While Driving", which would now throw
+  at boot (duplicate name). Follow the classic Lesson 28 instead: point 25's
+  `aim` marker at `Aim.omegaTowardTag`, delete `kAimTarget` and `aimOmega`,
+  and give `registerEventTriggers` the drivetrain.
 
 **Three user decisions, 2026-10-17, for the lessons Phase 1b has left:**
 

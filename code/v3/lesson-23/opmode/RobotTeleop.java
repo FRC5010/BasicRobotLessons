@@ -62,8 +62,8 @@ public class RobotTeleop extends PeriodicOpMode {
     /**
      * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
      * The beam-break capture and the guarded score binding are deleted: the
-     * superstructure reads the beam break itself now, and a state's motion starts
-     * when the robot enters it.
+     * superstructure reads the beam break itself now, and moves the mechanisms
+     * itself whenever its state changes.
      */
     // Capture. The beam break says a piece is really in there, not that the
     // roller is spinning. Debounced, so a piece tumbling past can't trigger it.
@@ -83,8 +83,7 @@ public class RobotTeleop extends PeriodicOpMode {
 
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
-     * Requests for a state (intake, idle, score) on buttons, and the motion that
-     * belongs to each state bound to being in it.
+     * Buttons that ask the superstructure for a state: intake, idle, or score.
      */
   }
 

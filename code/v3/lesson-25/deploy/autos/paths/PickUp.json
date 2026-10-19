@@ -1,0 +1,19 @@
+{
+  "path_elements": [
+    {
+      "type": "waypoint",
+      "translation_target": { "x_meters": 6.0, "y_meters": 7.4 },
+      "rotation_target": { "rotation_radians": -1.5707963 }
+    },
+    {
+      "type": "event_trigger",
+      "t_ratio": 0.1,
+      "lib_key": "intake"
+    },
+    {
+      "type": "waypoint",
+      "translation_target": { "x_meters": 6.0, "y_meters": 1.0 },
+      "rotation_target": { "rotation_radians": -1.5707963 }
+    }
+  ]
+}

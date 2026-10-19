@@ -434,13 +434,27 @@ rate, `GamepadSim`, `DriverStationSim` enabled, the strip read from
   `inState(...).whileTrue(...)`, and `HOLDING` has none.
 - **No premature `HOLDING`.** At the moment of `HANDOFF` the elevator is at
   0.02 m and not `atGoal`, because the registration-order periodics refresh
-  inputs before `Superstructure` reads them. Measured: `HOLDING` arrives 55
-  ticks (1.1 s) after `HANDOFF`, elevator 0.7318→0.75 m.
+  inputs before `Superstructure` reads them. Measured: `HOLDING` arrives 55–56
+  ticks (1.1 s) after `HANDOFF`, elevator 0.7318–0.7345 m (inside 2 cm of
+  0.75).
 - **`SCORING` lasts one or two ticks.** The sim drops the piece the instant
   the roller reverses, so the log shows a flicker and `IDLE`'s stow follows.
   The lesson says so rather than promising a blinking strip.
-- **Timings:** homing from the start height reaches `IDLE` in ~170 ticks
-  (3.4 s) including the button press; with the arm down and a quarter-stick
+- **The four state-motion bindings live in `Robot`'s constructor**, not
+  `RobotTeleop` (user decision, 2026-10-19, so autonomous gets the same
+  motion). `Trigger` bindings take the narrowest scope at bind time, and
+  `RobotState.getOpModeId()` returns 0 until the user program has started
+  (read in `DriverStationBackend`), so bindings made in `Robot`'s
+  constructor are `Global`. Measured: `Intake Motion` keeps running when
+  another opmode is selected, where an opmode-scoped binding would be torn
+  down. Button requests stay in `RobotTeleop`. The lesson states the rule:
+  bind a driver's control in its opmode, what the robot means in `Robot`.
+- **`GamepadSim`'s `set*Available` take bitmasks, not counts**
+  (`setButtonsAvailable(-1L)`, `setAxesAvailable(0x3F)`). A count of 64
+  marks only button 6 available, and every press reads false.
+- **Timings:** homing reaches `IDLE` 150–170 ticks (3–3.4 s) after Back,
+  quicker the later it's pressed, since the carriage sinks meanwhile (151
+  when re-measured 2026-10-19); with the arm down and a quarter-stick
   drive from (3.5, 3.2), the beam break trips `HANDOFF` 35 ticks after the
   drive starts. Strip bytes (RGB): `UNHOMED` 255,0,0 on the blink's on-phase,
   `IDLE` 0,0,63, `INTAKING` 255,255,0, `HOLDING` 50,205,50, disabled `IDLE`
@@ -466,47 +480,73 @@ rate, `GamepadSim`, `DriverStationSim` enabled, the strip read from
   passes.
 
 **v3 Lesson 25 (path events) was written on alpha-7 on 2026-10-19, from the
-classic design, so it was never a port.** It was measured with the real
-`Robot` loop: autos picked through `DriverStationSim` on Blue 1, and every
-tick sampled by a periodic registered on `Scheduler.getDefault()`. BLine
-behavior is read from its source at the pinned commit.
+classic design, so it was never a port, and redesigned the same day at the
+user's request** (autos home first and use the superstructure; `addOpMode`
+replaces a class per auto). It was measured with the real `Robot` loop: autos
+picked through `DriverStationSim` on Blue 1, and every tick sampled by a
+periodic registered on `Scheduler.getDefault()`. BLine behavior is read from its
+source at the pinned commit.
 
+- **One opmode class, many autos.** `opmode/PathAuto` is unannotated (the scan
+  skips it) and takes `(Robot, String pathName, Function<Path, Command> recipe)`.
+  `Robot`'s constructor ends with one `addOpMode(RobotMode.AUTONOMOUS, name,
+  "Paths", () -> new PathAuto(this, ...))` per auto, then `publishOpModes()`:
+  `OpModeRobot`'s constructor scans and publishes *before* the subclass body
+  runs, and without the second publish none of the path autos appear
+  (measured). The factory runs at selection, like an annotated class. Leaving
+  an annotated class with the same name throws `IllegalArgumentException:
+  OpMode Two Corners already exists for mode AUTONOMOUS` at boot.
+  `RobotAutoTwoCorners`/`RobotAutoFarSide` are in `V3_DELETIONS` at 25.
+- **Every path auto gets ready first.** `Autos.getReadyThen(elevator,
+  superstructure, auto)` is a no-requirements coroutine: await `home()` (done
+  at once on the switch), `waitUntil(superstructure::isSettled)` (`IDLE` and
+  both mechanisms `atGoal`, new in 25), then await the auto. **Not
+  `Command.sequence`**: a `SequentialGroup`'s requirements are the union of its
+  steps' (source), so it holds the elevator, and the `IDLE` motion scheduled on
+  the tick the state turns `IDLE` evicts the whole auto. Measured: it never
+  drives. Without the settle wait a fresh launch misses the piece: the sim arm
+  boots at its −20° stop, the `IDLE` stow is still rising when the intake
+  request comes, and reversing costs 1.3 s. Fresh launch: homing 3.3 s, stow
+  ≈1.0 s, drive starts ≈4.4 s after enable; a second run starts at once.
 - **Event markers.** A `Command` event goes to `Scheduler.getDefault().schedule(...)`
   on the next default-event-loop poll, so it starts one loop after the marker,
-  outside the path. It's scoped to the auto opmode, so nothing cancels it when
-  the path ends: an intake that missed kept running after disable until a
-  different opmode was selected. `FollowPath.onCancel` drops the run's unreached
-  events. A finished `Command` object can be scheduled again, so registering
-  one instance in `Robot`'s constructor is fine. An event that requires the
-  drivetrain cancels the path on the next loop (robot stopped at (3.88, 3.02),
-  `Drivetrain/CurrentCommand` = `Turn To Heading`).
-- **Where the marker goes is measured, not assumed.** The simulator boots the
-  arm at −20°, so `goToAngle(kIntake)` finishes at once. With Two Corners'
-  `intake` marker at `t_ratio` 0.2 on the first leg (fires at x ≈ 3.65), the
-  piece at (4.5, 3.2) is caught at (3.93, 3.02), 0.60 m ahead of center. That's
-  where the box's far edge is: bumper 0.3 m out, plus 12 in of reach. At 0.4
-  it's missed. From stowed, it's 0.80 s to clear horizontal and 1.04 s until
-  the roller runs, because the sequence waits for the swing to finish. No
-  marker on Two Corners can make that, and the leg-2 piece passes outside the
-  box when the robot cuts the corner. That's Try It #2. Two Corners still takes
-  ~4.1 s with the pickup.
+  outside the path. `FollowPath.onCancel` drops the run's unreached events. A
+  finished `Command` object can be scheduled again, so registering one instance
+  in `Robot`'s constructor is fine. The `intake` event is
+  `superstructure.requestIntake()`, which requires nothing; Lesson 24's motion
+  bindings (in `Robot`) do the rest. An event that requires the drivetrain
+  cancels the path on the next loop (Pick Up: stops ≈(6.0, 6.5),
+  `Drivetrain/CurrentCommand` = `Turn To Heading`). A missed pickup leaves the
+  state `INTAKING` into teleop (Try It #5).
+- **Pick Up** is (6.0, 7.4) → (6.0, 1.0) at −90°, `intake` at `t_ratio` 0.1,
+  because a run along y = 3.8 at the piece at (6.0, 3.8) crosses the blue hub
+  (x 4.02–5.23, y 3.43–4.64 from the alpha-7 2026 field's tag poses; the sim
+  has no obstacles, the drawing does). From drive start: marker 0.6 s at
+  y ≈ 6.7; arm below horizontal 1.4 s; roller 1.7 s; caught 1.8 s at
+  y ≈ 4.37, 0.57 m ahead of center; `HANDOFF` +0.1 s; `HOLDING` 3.0 s with
+  1.0 m left (elevator 0.73 m); `SCORING` at 0.48 m left, `IDLE` next tick;
+  done 3.5 s. Marker 0.15 still catches (0.50 m); 0.2 misses. From stowed the
+  arm needs 0.80 s to clear horizontal and 1.04 s until the roller runs. A
+  second run in one session has no piece: score refused `INTAKING -> SCORING`,
+  then the running intake catches the piece the first run dropped 0.8 m ahead.
 - **`getRemainingPathDistanceMeters()` is 0.0 before the path's first run, even
   inside `Command.parallel`.** `Scheduler.runCommands` runs the running set in
-  reverse insertion order (there's a TODO about it), so the stow's first check
-  beat the path. The unguarded stow fired on tick 1 and was tucked in after
-  ~1.0 s with 6.48 m left. The shipped stow waits for `> 0` first, then
-  `< kStowDistance`. Far Side then stows at 1.99 m left, at (8.76, 2.97),
-  ~3.1 s in. At 1.0 m/s it's at (8.67, 2.95), ~5.8 s in. With `kStowDistance = 0`
-  the path stops 0.04 m short (5 cm tolerance), so the group never ends.
+  reverse insertion order (there's a TODO about it), so the trigger's first check
+  beats the path. Unguarded, the score request went out on the drive's first
+  tick, was refused `IDLE -> SCORING`, and the robot ended `HOLDING`. The
+  shipped `followPathAndScore` waits for `> 0` first, then `< kScoreDistance`
+  (0.5 m). At 1 m/s it scores at y ≈ 1.48 vs 1.44, 6.1 s into the drive vs 3.2 s.
+  `kScoreDistance` 2 m: refused `HANDOFF -> SCORING` while the elevator rises.
+  With 0, the path stops 0.04 m short (5 cm tolerance), so the group never ends.
 - **Rotation override.** It's an angular velocity (rad/s). The one-argument
   `overrideRotation` is `BYPASS_CONSTRAINTS`. With the target behind the robot
   it sent 11.65 rad/s; `RESPECT_CONSTRAINTS` held 6.28 (`config.json`'s
   360°/s), which is what the lesson uses. On Aim While Driving the two modes
   are indistinguishable: about 5.7° mean lag and 7.7° worst, P only, which is
   Lesson 28's subject. The override goes on and off one loop after
-  `aim`/`release` (0.58 s, 4.26 s), and the path finishes at 5.4 s at
-  (8.01, 7.02, −1.6°). Without `release` it never finishes, and sits at
-  (8.03, 6.98) pointing at (8, 4).
+  `aim`/`release` (0.6 s, 4.3 s into the drive), and the path finishes at
+  5.4 s at (8.01, 7.02, −1.6°). Without `release` it never finishes, and sits
+  at (8.03, 6.98) pointing at (8, 4).
 - **There's no `finallyDo`.** Tested on an independent scheduler: a finishing
   coroutine runs its trailing code and `finally`, but not `whenCanceled`. A
   canceled one runs `whenCanceled` only, never its `finally`, because it simply
@@ -517,9 +557,6 @@ behavior is read from its source at the pinned commit.
   (6.01, 6.05) pointing at (8, 4), never finishing.
 - **`Translation2d.getAngle()` returns `Optional<Rotation2d>`** in alpha-7,
   empty for a zero vector. `Rotation2d.minus` wraps (170° − (−170°) = −20°).
-- **The autos bypass the superstructure on purpose.** It's `UNHOMED` in auto,
-  so requests are refused, and its state motions are bound in `RobotTeleop`.
-  The strip blinks red through every auto, and the lesson says why.
 - **Probe recipe.**
   - Build `Robot` on its own thread after `HAL.initialize()`, register the
     sampler with `Scheduler.getDefault().addPeriodic`, then call
@@ -533,6 +570,8 @@ behavior is read from its source at the pinned commit.
     `cleanTest test`.
   - A fresh container may lack JDK 25: `apt-get install
     openjdk-25-jdk-headless` (Ubuntu 24.04 has it).
+  - A probe's change test must use `Double.compare` for doubles: `fired`
+    reads NaN before the first path, and `NaN != NaN` prints every tick.
 
 **Use it instead of reasoning about whether a snippet compiles.** Current state: lessons 0–34 all compile, at every intermediate stopping point, with zero warnings. A regression is therefore a real result, not noise. Run the specific lesson you touched plus the highest one.
 

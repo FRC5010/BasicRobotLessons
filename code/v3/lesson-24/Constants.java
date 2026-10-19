@@ -159,7 +159,7 @@ public final class Constants {
 
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
-     * How much path has to be left when the arm starts stowing, and the gain
+     * How much path has to be left when the robot asks to score, and the gain
      * and the field point the robot aims with while a path is driving it.
      */
   }

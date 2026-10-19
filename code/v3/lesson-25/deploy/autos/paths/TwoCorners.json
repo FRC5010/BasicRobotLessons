@@ -6,11 +6,6 @@
       "rotation_target": { "rotation_radians": 0.0 }
     },
     {
-      "type": "event_trigger",
-      "t_ratio": 0.2,
-      "lib_key": "intake"
-    },
-    {
       "type": "translation",
       "x_meters": 6.0,
       "y_meters": 3.0

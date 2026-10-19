@@ -78,6 +78,12 @@ public class Superstructure {
     return m_state;
   }
 
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Whether the robot is idle with the elevator and arm where they were sent,
+   * which is what an auto waits for before it starts driving.
+   */
+
   /** True exactly while the robot is in this state, as a Trigger you can bind to. */
   public Trigger inState(SuperstructureState state) {
     return new Trigger(() -> m_state == state);

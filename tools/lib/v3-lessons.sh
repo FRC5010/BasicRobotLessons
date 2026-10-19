@@ -53,6 +53,8 @@ V3_DELETIONS=(
   "9|opmode/MyTeleop.java|opmode/RobotTeleop.java"
   "9|opmode/MyAuto.java|opmode/RobotAuto.java"
   "15|subsystems/VisionPoseProvider.java"  # replaced by LimelightPoseProvider
+  "25|opmode/RobotAutoTwoCorners.java"  # path autos are PathAuto + addOpMode
+  "25|opmode/RobotAutoFarSide.java"
 )
 
 # v3_python

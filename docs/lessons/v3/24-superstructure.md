@@ -26,6 +26,9 @@ cycle.
   about a robot aren't true-or-false checks on a sensor, they're a mode
   the robot is in — "mid-handoff" is the one that needed a name. This
   lesson gives that idea a real type.
+- **Where a binding is made decides how long it lasts.** The driver's
+  buttons belong to teleop. What a state *means* belongs to the robot, in
+  every opmode.
 
 ---
 
@@ -615,9 +618,10 @@ already was.
 
 ## 8. Wiring: requests to buttons, motion to state
 
-Two different kinds of binding, matching the two kinds of command. Most of
-this section is deletions: the bindings from Lessons 20 and 22 that moved
-mechanisms directly are exactly what the state machine replaces.
+Two different kinds of binding, matching the two kinds of command — and,
+it turns out, two different files. Most of this section is deletions: the
+bindings from Lessons 20 and 22 that moved mechanisms directly are exactly
+what the state machine replaces.
 
 **In `RobotTeleop.java`'s constructor, delete the arm buttons and the
 roller bumpers, comment and all:**
@@ -663,23 +667,73 @@ roller bumpers, comment and all:**
     robot.driverController.rightTrigger().onTrue(robot.superstructure.requestScore());
 ```
 
-**Then the motion — bound to the state itself, unguarded:**
+**Delete the two imports that nothing in `RobotTeleop` uses any more —
+`org.wpilib.command3.Command` and `first.robot.Constants.ArmConstants`.**
+
+The homing binding, the re-zero `Trigger`, the D-pad heights, and
+everything to do with driving stay exactly as they are. The D-pad still
+moves the elevator without telling the superstructure — the hole from
+section 1. Try It #4 asks what to do about it.
+
+Now `Robot.java`.
+
+**In `Robot.java`, declare the superstructure after `arm` and change
+`leds` to read it:**
 
 ```java
+  // Superstructure reads both, so elevator and arm must be finished objects
+  // first — they already are, above.
+  public final Superstructure superstructure = new Superstructure(elevator, arm);
+  public final Leds leds = new Leds(superstructure::getState); // reads it; drives nothing
+```
+
+Declaration order still matters: `superstructure` reads the elevator and
+arm, so it comes after both, and `leds` reads the superstructure, so it
+comes last. It also fixes tick order — the scheduler runs periodic
+callbacks in registration order, so the elevator and arm have refreshed
+their inputs by the time `Superstructure` reads them.
+
+That leaves the motion. The obvious home is `RobotTeleop`, right under the
+requests — and it would work, as long as teleop is the opmode you picked.
+That's the catch. Lesson 9 showed you that a binding made in an opmode's
+constructor is *scoped* to that opmode: the moment the Driver Station
+selects a different one, the binding is torn down. That's exactly right for
+a button, because the driver's controls belong to teleop. But what the
+robot does in `INTAKING` isn't a driver's control. It's what `INTAKING`
+*means*, and it should mean the same thing in autonomous, where nobody is
+holding a controller at all.
+
+`Robot`'s constructor runs before any opmode exists, so a binding made there
+belongs to no opmode. It lasts for the whole program. **Bind a driver's
+control in the opmode it belongs to; bind what the robot itself means in
+`Robot`.**
+
+**In `Robot`'s constructor, right after `Autos.registerEventTriggers();`,
+bind the motion to the state itself, unguarded:**
+
+```java
+  public Robot() {
+    // ...
+    Autos.registerEventTriggers(); // once, for the whole program
+
     // Motion that belongs to a state, bound to being in it. No guard here:
     // being in the state at all means the state machine already said yes. The
     // moment the state changes, whileTrue cancels the old motion. HOLDING has
-    // none — the elevator and arm are already where they need to be.
-    robot.superstructure.inState(SuperstructureState.INTAKING).whileTrue(robot.superstructure.intakeMotion());
-    robot.superstructure.inState(SuperstructureState.HANDOFF).whileTrue(robot.superstructure.handoffMotion());
-    robot.superstructure.inState(SuperstructureState.SCORING).whileTrue(robot.superstructure.scoreMotion());
-    robot.superstructure.inState(SuperstructureState.IDLE).whileTrue(robot.superstructure.idleMotion());
+    // none — the elevator and arm are already where they need to be. These are
+    // made here, not in an opmode, so they hold in every opmode there is.
+    superstructure.inState(SuperstructureState.INTAKING).whileTrue(superstructure.intakeMotion());
+    superstructure.inState(SuperstructureState.HANDOFF).whileTrue(superstructure.handoffMotion());
+    superstructure.inState(SuperstructureState.SCORING).whileTrue(superstructure.scoreMotion());
+    superstructure.inState(SuperstructureState.IDLE).whileTrue(superstructure.idleMotion());
+
+    // ...
+  }
 ```
 
-**Add the import, and delete the two that nothing uses any more —
-`org.wpilib.command3.Command` and `first.robot.Constants.ArmConstants`:**
+**Add the imports:**
 
 ```java
+import first.robot.subsystems.Superstructure;
 import first.robot.subsystems.SuperstructureState;
 ```
 
@@ -695,38 +749,11 @@ the same tick. You never touch a motor directly. You say what state you
 want, or the robot notices what state it's in, and the wiring turns that
 into motion.
 
-Read the new bindings and notice what's missing: no `hasGamePiece`, no
-`atGoal`, no debounce, no `and(...)` chain. **Not one binding mentions a
-sensor.** The three buttons name states, and the four state bindings name
-motion. Everything about *when* now lives in `Superstructure`, in one
-method you can read top to bottom.
-
-The homing binding, the re-zero `Trigger`, the D-pad heights, and
-everything to do with driving stay exactly as they are. The D-pad still
-moves the elevator without telling the superstructure — the hole from
-section 1. Try It #4 asks what to do about it.
-
-**In `Robot.java`, declare the superstructure after `arm` and change
-`leds` to read it:**
-
-```java
-  // Superstructure reads both, so elevator and arm must be finished objects
-  // first — they already are, above.
-  public final Superstructure superstructure = new Superstructure(elevator, arm);
-  public final Leds leds = new Leds(superstructure::getState); // reads it; drives nothing
-```
-
-**Add the import:**
-
-```java
-import first.robot.subsystems.Superstructure;
-```
-
-Declaration order still matters: `superstructure` reads the elevator and
-arm, so it comes after both, and `leds` reads the superstructure, so it
-comes last. It also fixes tick order — the scheduler runs periodic
-callbacks in registration order, so the elevator and arm have refreshed
-their inputs by the time `Superstructure` reads them.
+Read the new bindings, in both files, and notice what's missing: no
+`hasGamePiece`, no `atGoal`, no debounce, no `and(...)` chain. **Not one
+binding mentions a sensor.** The three buttons name states, and the four
+state bindings name motion. Everything about *when* now lives in
+`Superstructure`, in one method you can read top to bottom.
 
 ---
 
@@ -764,12 +791,14 @@ Every one of those transitions is visible in exactly two dashboard keys:
 what almost happened and didn't.
 
 Measured in the simulator, with the real `Robot` and the real bindings,
-driven through `GamepadSim` on a fixed 20 ms loop: homing from the start
-height takes about 170 ticks (3.4 s) to reach `IDLE`. With the arm down
-and the robot driving at a piece at a quarter stick, the beam break trips
-the handoff about 35 ticks after the drive starts, and the machine reaches
-`HOLDING` 55 ticks (1.1 s) after that, with the elevator at 0.75 m and the
-arm at its goal. The strip reads solid yellow in `INTAKING`, solid green
+driven through `GamepadSim` on a fixed 20 ms loop: homing reaches `IDLE`
+150 to 170 ticks (3 to 3.4 s) after you press Back. The later you press
+it, the quicker it is, because the unpowered carriage has been sinking
+toward the switch the whole time. With the arm down and the robot driving
+at a piece at a quarter stick, the beam break trips the handoff about 35
+ticks after the drive starts, and the machine reaches `HOLDING` about 55
+ticks (1.1 s) after that, with the elevator inside its 2 cm tolerance of
+0.75 m and the arm at its goal. The strip reads solid yellow in `INTAKING`, solid green
 in `HOLDING`, and dim blue in `IDLE` (breathing while disabled).
 
 ---

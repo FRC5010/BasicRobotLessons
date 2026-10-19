@@ -157,9 +157,9 @@ public final class Constants {
     public static final double kRotationP = 3.0;    // rad/s per radian of heading error
     public static final double kCrossTrackP = 2.0;  // m/s per meter off the line
 
-    // Overlapping work: how much path has to be left when the arm starts stowing.
-    // A distance, not a time — a slow path still stows in the same place.
-    public static final Distance kStowDistance = Meters.of(2.0);
+    // Overlapping work: how much path has to be left when the robot asks to
+    // score. A distance, not a time — a slow path still scores in the same place.
+    public static final Distance kScoreDistance = Meters.of(0.5);
 
     // Aiming while the path drives. The rotation override wants an angular
     // velocity, not a heading, so this gain turns heading error into a rate.

@@ -12,11 +12,11 @@ import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.math.geometry.Rotation2d;
 import org.wpilib.telemetry.Telemetry;
 
-import first.robot.Constants.ArmConstants;
 import first.robot.Constants.PathConstants;
-import first.robot.subsystems.Arm;
 import first.robot.subsystems.Drivetrain;
+import first.robot.subsystems.Elevator;
 import first.robot.subsystems.Localizer;
+import first.robot.subsystems.Superstructure;
 import frc.robot.lib.BLine.commands.FollowPath;
 import frc.robot.lib.BLine.commands.FollowPath.RotationOverrideBehavior;
 import frc.robot.lib.BLine.field.FlippingUtil;
@@ -59,25 +59,42 @@ public final class Autos {
   }
 
   /**
-   * The same path, with the arm stowing itself over the last stretch of it. The
-   * path needs the drivetrain and the stow needs the arm, so they can run at
-   * the same time.
+   * The same path, asking to score over the last stretch of it. Whether the
+   * robot really has something to score is the superstructure's call, not
+   * this command's: if it doesn't, the request is refused and logged.
    */
-  public static Command followPathAndStow(FollowPath.Builder pathBuilder, Path path, Arm arm) {
+  public static Command followPathAndScore(
+      FollowPath.Builder pathBuilder, Path path, Superstructure superstructure) {
     // Keep the FollowPath itself, not just a Command: only it can say how much
     // path is left, and wrapping it would hide that.
     FollowPath follow = pathBuilder.build(path).withPoseReset();
-    Command stowNearTheEnd = Command.noRequirements(coroutine -> {
+    Command scoreNearTheEnd = Command.noRequirements(coroutine -> {
           // Until the path has run once, "distance left" reads 0.0, which looks
           // exactly like "arrived". So first wait for a real answer...
           coroutine.waitUntil(() -> follow.getRemainingPathDistanceMeters() > 0);
           // ...then for the answer you actually want.
           coroutine.waitUntil(() -> follow.getRemainingPathDistanceMeters()
-              < PathConstants.kStowDistance.in(Meters));
-          coroutine.await(arm.goToAngle(ArmConstants.kStowed));
+              < PathConstants.kScoreDistance.in(Meters));
+          coroutine.await(superstructure.requestScore());
         })
-        .named("Stow Near The End");
-    return handingRotationBack(Command.parallel(follow, stowNearTheEnd).named("Follow And Stow"));
+        .named("Score Near The End");
+    return handingRotationBack(Command.parallel(follow, scoreNearTheEnd).named("Follow And Score"));
+  }
+
+  /**
+   * Gets the mechanisms where an auto expects them, then runs it: home the
+   * elevator, wait for the superstructure to settle in IDLE, and only then
+   * start. A coroutine awaiting each step, not Command.sequence: a sequence
+   * holds every step's mechanisms until its last step ends, so it would keep
+   * the elevator from the superstructure for the whole auto.
+   */
+  public static Command getReadyThen(Elevator elevator, Superstructure superstructure, Command auto) {
+    return Command.noRequirements(coroutine -> {
+          coroutine.await(elevator.home()); // done at once if it's already on the switch
+          coroutine.waitUntil(superstructure::isSettled); // IDLE stows everything first
+          coroutine.await(auto);
+        })
+        .named("Get Ready, Then " + auto.name());
   }
 
   /**
@@ -118,13 +135,11 @@ public final class Autos {
   }
 
   /** Names a path file can fire with lib_key. BLine keeps them for the whole program. */
-  public static void registerEventTriggers(Arm arm, Localizer localizer) {
-    // Drop the intake and start the roller before the robot gets there, so it
-    // arrives already collecting. The roller stops once there's a piece in it.
-    FollowPath.registerEventTrigger("intake", Command.sequence(
-            arm.goToAngle(ArmConstants.kIntake),
-            arm.runRoller(ArmConstants.kIntakeSpeed).until(arm::hasGamePiece).named("Roll Until Caught"))
-        .named("Auto Intake"));
+  public static void registerEventTriggers(Superstructure superstructure, Localizer localizer) {
+    // Ask for the intake before the robot gets there, so it arrives already
+    // collecting. The superstructure does the rest: it drops the arm, runs the
+    // roller, and hands the piece off once the beam break sees it.
+    FollowPath.registerEventTrigger("intake", superstructure.requestIntake());
 
     // Hand rotation to the aiming loop, and later give it back. Translation
     // keeps following the path the whole time — only the spin changes hands.

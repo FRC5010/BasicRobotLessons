@@ -70,6 +70,13 @@ public class Robot extends OpModeRobot {
     Scheduler.getDefault().addEventListener(this::logCommandStart);
     Autos.registerEventTriggers(); // once, for the whole program
 
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * The motion that belongs to each superstructure state, bound to being in
+     * it. It goes here rather than in an opmode so it holds in every opmode,
+     * autonomous included.
+     */
+
     // Vision now checks its simulated eyesight against ground truth, not
     // against its own guess — the fix Lesson 15 admitted it was missing.
     frontCamera = LimelightPoseProvider.makeCamera(

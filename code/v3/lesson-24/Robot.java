@@ -22,6 +22,7 @@ import first.robot.subsystems.Leds;
 import first.robot.subsystems.LimelightPoseProvider;
 import first.robot.subsystems.Localizer;
 import first.robot.subsystems.Superstructure;
+import first.robot.subsystems.SuperstructureState;
 import frc.robot.lib.BLine.commands.FollowPath;
 
 /**
@@ -68,10 +69,20 @@ public class Robot extends OpModeRobot {
     Scheduler.getDefault().addEventListener(this::logCommandStart);
     /**
      * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
-     * The path markers move the arm and read the pose now, so registering them
-     * needs the arm and the localizer.
+     * The path markers ask the superstructure for things and read the pose
+     * now, so registering them needs the superstructure and the localizer.
      */
     Autos.registerEventTriggers(); // once, for the whole program
+
+    // Motion that belongs to a state, bound to being in it. No guard here:
+    // being in the state at all means the state machine already said yes. The
+    // moment the state changes, whileTrue cancels the old motion. HOLDING has
+    // none — the elevator and arm are already where they need to be. These are
+    // made here, not in an opmode, so they hold in every opmode there is.
+    superstructure.inState(SuperstructureState.INTAKING).whileTrue(superstructure.intakeMotion());
+    superstructure.inState(SuperstructureState.HANDOFF).whileTrue(superstructure.handoffMotion());
+    superstructure.inState(SuperstructureState.SCORING).whileTrue(superstructure.scoreMotion());
+    superstructure.inState(SuperstructureState.IDLE).whileTrue(superstructure.idleMotion());
 
     // Vision now checks its simulated eyesight against ground truth, not
     // against its own guess — the fix Lesson 15 admitted it was missing.
@@ -87,6 +98,14 @@ public class Robot extends OpModeRobot {
     if (Constants.kCurrentMode == Constants.Mode.SIM) {
       localizer.resetPose(DriveConstants.kSimStartingPose);
     }
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * The path autos, one line each: every one is the same opmode with a
+     * different path and a different plan for the drive, so they're registered
+     * here instead of each getting a class (the two path opmode classes are
+     * deleted). Then the opmode list is sent to the Driver Station again.
+     */
   }
 
   /** This function is called exactly once when the DS first connects. */
