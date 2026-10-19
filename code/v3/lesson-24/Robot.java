@@ -9,11 +9,12 @@ import org.wpilib.command3.Scheduler;
 import org.wpilib.command3.SchedulerEvent;
 import org.wpilib.command3.button.CommandGamepad;
 import org.wpilib.framework.OpModeRobot;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 import org.wpilib.system.DataLogManager;
 
 import first.robot.Constants.DriveConstants;
 import first.robot.Constants.VisionConstants;
+import first.robot.commands.Autos;
 import first.robot.subsystems.Arm;
 import first.robot.subsystems.Drivetrain;
 import first.robot.subsystems.Elevator;
@@ -21,6 +22,7 @@ import first.robot.subsystems.Leds;
 import first.robot.subsystems.LimelightPoseProvider;
 import first.robot.subsystems.Localizer;
 import first.robot.subsystems.Superstructure;
+import frc.robot.lib.BLine.commands.FollowPath;
 
 /**
  * The methods in this class are called automatically as described in the OpModeRobot documentation.
@@ -38,14 +40,19 @@ public class Robot extends OpModeRobot {
   // Localizer reads the drivetrain's kinematics/rotation/module positions at
   // construction, so drivetrain must be built first — it already is, above.
   public final Localizer localizer = new Localizer(drivetrain);
-  // Blank finals: building a camera needs localizer (for its pose supplier),
-  // so localizer has to be a finished object first. Assigned in the
+  // Blank finals: each camera is built and registered with localizer in the
   // constructor body, below, which runs after every field initializer above.
   public final LimelightPoseProvider frontCamera;
   public final LimelightPoseProvider backCamera;
+
+  // How this robot follows a path. It's the same for every path, so it's
+  // built once, here, and every autonomous opmode reaches in and uses it.
+  public final FollowPath.Builder pathBuilder = Autos.makePathBuilder(drivetrain, localizer);
+
   public final Elevator elevator = new Elevator();
   // Arm reads elevator.getCarriage() in its constructor, so elevator must be
-  // a finished object first — it already is, above.
+  // a finished object first — it already is, above. In simulation its intake
+  // also needs to know where the robot really is, which only drivetrain knows.
   public final Arm arm = new Arm(elevator, drivetrain::getSimulatedPose);
   // Superstructure reads both, so elevator and arm must be finished objects
   // first — they already are, above.
@@ -59,6 +66,7 @@ public class Robot extends OpModeRobot {
   public Robot() {
     DataLogManager.start(); // saves every published value to a .wpilog file
     Scheduler.getDefault().addEventListener(this::logCommandStart);
+    Autos.registerEventTriggers(); // once, for the whole program
 
     // Vision now checks its simulated eyesight against ground truth, not
     // against its own guess — the fix Lesson 15 admitted it was missing.
@@ -89,7 +97,7 @@ public class Robot extends OpModeRobot {
   private void logCommandStart(SchedulerEvent event) {
     if (event instanceof SchedulerEvent.Scheduled scheduled) {
       for (Mechanism mechanism : scheduled.command().requirements()) {
-        SmartDashboard.putString(mechanism.getName() + "/CurrentCommand", scheduled.command().name());
+        Telemetry.log(mechanism.getName() + "/CurrentCommand", scheduled.command().name());
       }
     }
   }

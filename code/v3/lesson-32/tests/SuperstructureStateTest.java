@@ -1,5 +1,6 @@
 package first.robot;
 
+import static first.robot.subsystems.SuperstructureState.HOLDING;
 import static first.robot.subsystems.SuperstructureState.IDLE;
 import static first.robot.subsystems.SuperstructureState.INTAKING;
 import static first.robot.subsystems.SuperstructureState.SCORING;
@@ -14,9 +15,10 @@ import first.robot.subsystems.SuperstructureState;
 public class SuperstructureStateTest {
 
   @Test
-  void scoringRequiresHavingIntakenFirst() {
+  void scoringRequiresSomethingToScore() {
     assertFalse(IDLE.canGoTo(SCORING), "cannot score with nothing on board");
-    assertTrue(INTAKING.canGoTo(SCORING), "intaking is exactly when you're ready to score");
+    assertFalse(INTAKING.canGoTo(SCORING), "cannot score mid-intake");
+    assertTrue(HOLDING.canGoTo(SCORING), "holding a piece is exactly when you can");
   }
 
   @Test

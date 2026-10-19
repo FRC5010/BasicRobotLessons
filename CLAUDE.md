@@ -156,7 +156,7 @@ lesson-k/X implies lesson-(k+1)/X exists and replaces it. **Enforce it with
 `./tools/check-lesson-markers-v3.py [N] [--show]`**, which rebuilds each
 lesson's before/after state through the shared lib, diffs them, and reports
 `MISSING` (a change with no marker announcing it) and `ORPHAN` (a marker
-that announces nothing). It's currently clean for 1–22. When Phase 1b
+that announces nothing). It's currently clean for 1–24. When Phase 1b
 migrates a lesson, raise the cut-off and add its markers in the same change.
 The checker's coverage rules are in its docstring. They absorb
 diff-alignment noise (blank lines, a shared `}`), and that absorption can
@@ -418,6 +418,52 @@ strip from `AddressableLEDSim(kPwmPort).getData()`** (RGB bytes, 3 per LED):
   `./gradlew test --info` inside the sandbox directly instead.
 - **This container shipped without JDK 25**; `apt-get install -y
   openjdk-25-jdk-headless` works through the proxy.
+
+**v3 Lesson 24 (superstructure) on alpha-7, the classic six states as the user
+decided, measured with the real `Robot` + `RobotTeleop` loop (20 ms fixed
+rate, `GamepadSim`, `DriverStationSim` enabled, the strip read from
+`AddressableLEDSim`):**
+
+- **`UNHOMED`/`IDLE`/`INTAKING`/`HANDOFF`/`HOLDING`/`SCORING`.** `periodic()`
+  (an `addPeriodic` callback on a plain class, not a `Mechanism`) owns
+  `UNHOMED→IDLE`, `INTAKING→HANDOFF` (debounced beam break),
+  `HANDOFF→HOLDING` (elevator *and* arm `atGoal`), and any of
+  `HANDOFF`/`HOLDING`/`SCORING`→`IDLE` when the piece is gone. It never
+  consults `canGoTo`. Requests are a hand-built `Command.noRequirements`
+  guard (there is no `onlyIf`); each state's motion is bound with
+  `inState(...).whileTrue(...)`, and `HOLDING` has none.
+- **No premature `HOLDING`.** At the moment of `HANDOFF` the elevator is at
+  0.02 m and not `atGoal`, because the registration-order periodics refresh
+  inputs before `Superstructure` reads them. Measured: `HOLDING` arrives 55
+  ticks (1.1 s) after `HANDOFF`, elevator 0.7318→0.75 m.
+- **`SCORING` lasts one or two ticks.** The sim drops the piece the instant
+  the roller reverses, so the log shows a flicker and `IDLE`'s stow follows.
+  The lesson says so rather than promising a blinking strip.
+- **Timings:** homing from the start height reaches `IDLE` in ~170 ticks
+  (3.4 s) including the button press; with the arm down and a quarter-stick
+  drive from (3.5, 3.2), the beam break trips `HANDOFF` 35 ticks after the
+  drive starts. Strip bytes (RGB): `UNHOMED` 255,0,0 on the blink's on-phase,
+  `IDLE` 0,0,63, `INTAKING` 255,255,0, `HOLDING` 50,205,50, disabled `IDLE`
+  breathing (54 sampled).
+- **Refusals** log to `/Telemetry/Superstructure/Rejected`, and
+  `/Telemetry/Superstructure/State` is the state's `name()`. A probe *can*
+  read these back with `NetworkTableInstance.getDefault().getStringTopic(...)`
+  subscribed after the `Robot` is built (Lesson 23's note that it can't was
+  about a different attempt; both are recorded). `Gamepad.Axis` constants are
+  `LEFT_Y` etc., not `kLeftY`.
+- **Face buttons keep Lesson 22's:** `faceLeft` intake, `faceUp` idle,
+  `rightTrigger` score. Lesson 24 deletes the arm buttons, the roller
+  bumpers, the capture `Trigger` and the guarded score binding. The D-pad
+  stays outside the state machine (Try It #4).
+- `Debouncer` is `org.wpilib.math.filter.Debouncer` and takes seconds as a
+  `double` (`kBeamDebounce.in(Seconds)`), unlike `Trigger.debounce(Time)`.
+- **Snapshot 23 carries `RobotTeleop.java`** (copied unchanged from 22) to hold
+  Lesson 24's markers. Lesson 32's `SuperstructureStateTest` follows the six
+  states (`scoringRequiresSomethingToScore`); mutated `IDLE→SCORING` and it
+  fails by name. Snapshots 26–31 still name the four-state design.
+- **Maven Central throws intermittent 429s through the proxy.** A failed
+  run still fills the Gradle cache, so rerun with a short sleep until it
+  passes.
 
 **Use it instead of reasoning about whether a snippet compiles.** Current state: lessons 0–34 all compile, at every intermediate stopping point, with zero warnings. A regression is therefore a real result, not noise. Run the specific lesson you touched plus the highest one.
 
@@ -737,7 +783,7 @@ a lesson as-is.
 - [docs/lesson-plan-alpha7-upgrade.md](docs/lesson-plan-alpha7-upgrade.md) —
   the impact assessment and phased plan for upgrading the v3 track (only —
   the classic track targets stable 2026 and is unaffected) to WPILib 2027
-  alpha-7, a large breaking-change release. **Lessons 0–23 are migrated and
+  alpha-7, a large breaking-change release. **Lessons 0–24 are migrated and
   verified on alpha-7**: Phoenix 6 cleared the marketplace (Track A, 1–14,
   2026-09-18), and on 2026-09-24 the v3 track switched vision from
   PhotonVision to **LimelightLib 2**, which cleared Track B's vendor gate.
@@ -748,7 +794,7 @@ a lesson as-is.
   (maple-sim, PhotonVision, PathPlanner…) than the `2027_alpha7` folder has
   files for — only a JSON in the folder means a release exists. Lesson 15's simulated camera publishes real results frames to
   the NetworkTables topic a real Limelight uses, so the unmodified library
-  runs in sim. Lessons 24–34 are still pre-alpha-7 code awaiting Phase 1b;
+  runs in sim. Lessons 26–34 are still pre-alpha-7 code awaiting Phase 1b;
   Lesson 27 stays on PhotonVision and waits for an alpha-7 PhotonLib (user decision, 2026-10-17); Lesson 31 still needs a Limelight redesign decision. A
   PhotonVision flavor of Lesson 15 may come back as an option once PhotonLib
   ships for alpha-7; the last PhotonVision version is at commit `94fe7b9`.

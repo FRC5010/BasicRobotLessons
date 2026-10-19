@@ -659,6 +659,30 @@ home check. Lesson 23 still teaches no new Java beyond combinators, and
 `kPwmPort = 5` stays clear of DIO channels 0 and 1. The `new Arm(elevator)`
 lines in snapshots 24–31 were updated to match Lesson 22's constructor.
 
+**Lesson 24 migrated, 2026-10-19.** Compiles 0–23 and 0–24 with zero
+warnings; `check-lesson-markers-v3.py` is clean for 1–24; the 50 tool tests
+pass. The old snapshot was a four-state design on pre-Lesson-17/21/22 files,
+so it was rebuilt on Lesson 23: `Constants` and `Robot` from 23 with the
+`LedConstants` and `leds` changes, and a `RobotTeleop` from 22 (face-button
+names, capture and score bindings) with those bindings deleted and the state
+bindings added. The port itself was small: `Telemetry.log` for
+`SmartDashboard.putString`, `org.wpilib.math.filter.Debouncer`,
+`Color.RED`/`BLUE`/`YELLOW`/`LIME_GREEN`, `RobotState.isDisabled()`.
+`Command.onlyIf` doesn't exist, so the request guard is the
+`Command.noRequirements` coroutine that returns early, as before. The user's
+decision is carried out: six states, `HANDOFF` and `HOLDING` entered by
+`periodic()` from the debounced beam break and `atGoal`, requests still
+guarded by `canGoTo`, "the operator is the sensor" gone. Measured with the
+real `Robot`/`RobotTeleop` loop and `GamepadSim`: all three requests are
+refused while `UNHOMED` and logged; homing reaches `IDLE` in ~170 ticks;
+intaking trips `HANDOFF` and then `HOLDING` 55 ticks later with the elevator
+at 0.75 m and no premature `HOLDING`; the right trigger scores and `SCORING`
+lasts one or two ticks (the piece leaves instantly), then `IDLE` stows;
+intake while `HOLDING` and score while `IDLE` are refused. The lesson was
+rewritten around the six states (new `HANDOFF` explanation, `periodic()`
+transitions, the deletions in `RobotTeleop`, a run section with these
+numbers); Lesson 32's test and text follow the six states.
+
 **Three user decisions, 2026-10-17, for the lessons Phase 1b has left:**
 
 - **Lesson 23: restore the "has a game piece" LED indication** the classic

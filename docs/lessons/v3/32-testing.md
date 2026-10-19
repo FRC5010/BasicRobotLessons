@@ -103,6 +103,7 @@ motors at all.
 ```java
 package first.robot;
 
+import static first.robot.subsystems.SuperstructureState.HOLDING;
 import static first.robot.subsystems.SuperstructureState.IDLE;
 import static first.robot.subsystems.SuperstructureState.INTAKING;
 import static first.robot.subsystems.SuperstructureState.SCORING;
@@ -121,9 +122,10 @@ import first.robot.subsystems.SuperstructureState;
 public class SuperstructureStateTest {
 
   @Test
-  void scoringRequiresHavingIntakenFirst() {
+  void scoringRequiresSomethingToScore() {
     assertFalse(IDLE.canGoTo(SCORING), "cannot score with nothing on board");
-    assertTrue(INTAKING.canGoTo(SCORING), "intaking is exactly when you're ready to score");
+    assertFalse(INTAKING.canGoTo(SCORING), "cannot score mid-intake");
+    assertTrue(HOLDING.canGoTo(SCORING), "holding a piece is exactly when you can");
   }
 
   @Test
@@ -149,7 +151,7 @@ public class SuperstructureStateTest {
 Three things about the shape of that.
 
 **`@Test` marks a method as a test.** It takes no arguments, returns
-nothing, and its name is documentation — `scoringRequiresHavingIntakenFirst`
+nothing, and its name is documentation — `scoringRequiresSomethingToScore`
 reads as a claim, which is what a test is. When it fails, that name is
 the first thing you'll see.
 
@@ -399,7 +401,7 @@ You could write tests forever. Most of them wouldn't be worth having.
 The ones that earn their place are **claims a compiler can't check and a
 plot won't show you twice**:
 
-- **Rules with many combinations.** The transition table. Four states,
+- **Rules with many combinations.** The transition table. Six states,
   two loops.
 - **Behaviours that fix something.** Homing. The claim isn't a number,
   it's a before-and-after.
@@ -433,7 +435,7 @@ tells you *which claim* before you've opened a single file.
 
 Now break something on purpose. Change `SuperstructureState.canGoTo` so
 `IDLE` can reach `SCORING`, and run the tests again — measured directly:
-`scoringRequiresHavingIntakenFirst` fails, by name, in about a second.
+`scoringRequiresSomethingToScore` fails, by name, in about a second.
 That's the whole point: you found out immediately, from a machine,
 instead of at an event, from a driver.
 

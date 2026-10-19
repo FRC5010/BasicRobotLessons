@@ -209,6 +209,12 @@ public final class Constants {
 
     // A pattern is a value, not a loop. Build them once, here, next to the
     // colors they use, and hand the finished description to the strip.
+    /**
+     * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+     * One pattern per state the robot can be in, named after it, instead of the two
+     * hand-picked indications. The blink period gets a name, and a couple of the
+     * patterns are built out of others.
+     */
     public static final LEDPattern kNotHomed = LEDPattern.solid(Color.RED).blink(Seconds.of(0.15));
     public static final LEDPattern kHasGamePiece = LEDPattern.solid(Color.LIME_GREEN);
     public static final Time kBreathePeriod = Seconds.of(2);

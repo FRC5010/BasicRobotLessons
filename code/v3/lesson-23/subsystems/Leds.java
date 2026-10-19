@@ -28,6 +28,11 @@ public class Leds {
   private final AddressableLED m_strip = new AddressableLED(LedConstants.kPwmPort);
   private final AddressableLEDBuffer m_buffer = new AddressableLEDBuffer(LedConstants.kLength);
 
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * The strip stops reading the mechanisms: it takes a supplier of the robot's
+   * state and nothing else.
+   */
   private final Elevator m_elevator;
   private final Arm m_arm;
 
@@ -39,6 +44,12 @@ public class Leds {
     Scheduler.getDefault().addPeriodic(this::periodic);
   }
 
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * Ask the state for its pattern, and layer a slow breathe on top while disabled.
+   * The ordered chain of conditions goes away, along with the alliance color,
+   * which a state's fixed pattern can't know.
+   */
   private void periodic() {
     // Ordered on purpose: the first condition that is true wins the strip.
     // Read it top to bottom as "what matters most, if it's happening."

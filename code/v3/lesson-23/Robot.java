@@ -53,6 +53,12 @@ public class Robot extends OpModeRobot {
   // a finished object first — it already is, above. In simulation its intake
   // also needs to know where the robot really is, which only drivetrain knows.
   public final Arm arm = new Arm(elevator, drivetrain::getSimulatedPose);
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * The superstructure comes first, since it reads the elevator and the arm; the
+   * strip then asks it what the robot is doing instead of reading the mechanisms
+   * itself.
+   */
   public final Leds leds = new Leds(elevator, arm); // reads them; drives nothing
 
   /**
