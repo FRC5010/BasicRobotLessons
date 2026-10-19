@@ -156,6 +156,12 @@ public final class Constants {
     public static final double kTranslationP = 5.0; // m/s per meter of path left
     public static final double kRotationP = 3.0;    // rad/s per radian of heading error
     public static final double kCrossTrackP = 2.0;  // m/s per meter off the line
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * How much path has to be left when the arm starts stowing, and the gain
+     * and the field point the robot aims with while a path is driving it.
+     */
   }
 
   public static final class ElevatorConstants {

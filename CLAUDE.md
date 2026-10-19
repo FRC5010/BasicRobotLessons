@@ -156,7 +156,7 @@ lesson-k/X implies lesson-(k+1)/X exists and replaces it. **Enforce it with
 `./tools/check-lesson-markers-v3.py [N] [--show]`**, which rebuilds each
 lesson's before/after state through the shared lib, diffs them, and reports
 `MISSING` (a change with no marker announcing it) and `ORPHAN` (a marker
-that announces nothing). It's currently clean for 1–24. When Phase 1b
+that announces nothing). It's currently clean for 1–25. When Phase 1b
 migrates a lesson, raise the cut-off and add its markers in the same change.
 The checker's coverage rules are in its docstring. They absorb
 diff-alignment noise (blank lines, a shared `}`), and that absorption can
@@ -221,15 +221,15 @@ Facts from the alpha-7 jars:
     SmartDashboard days.
 
 **The tooling understands gaps.** A lesson with no `code/v3/lesson-N` is a
-gap (25 today, above the cut-off):
+gap. There are none today: 25 was the last, and was written on 2026-10-19.
 
 - The marker checker skips it, and checks the markers before it against the
   lesson after it.
 - `update-lesson-v3.sh` refuses a gap lesson and names the next real one.
   Its test builds a gap in a copy of the tools, since none is at or below
   the cut-off right now.
-- The app lists only lessons the README table links, so a `| 25 | — |` row
-  never appears.
+- The app lists only lessons the README table links, so a `| N | — |` gap
+  row never appears.
 
 **v3 snapshots can ship `deploy/` files.** `code/v3/lesson-N/deploy/**` maps
 to `src/main/deploy/**`, the same as the classic track. `v3-lessons.sh` copies
@@ -464,6 +464,75 @@ rate, `GamepadSim`, `DriverStationSim` enabled, the strip read from
 - **Maven Central throws intermittent 429s through the proxy.** A failed
   run still fills the Gradle cache, so rerun with a short sleep until it
   passes.
+
+**v3 Lesson 25 (path events) was written on alpha-7 on 2026-10-19, from the
+classic design, so it was never a port.** It was measured with the real
+`Robot` loop: autos picked through `DriverStationSim` on Blue 1, and every
+tick sampled by a periodic registered on `Scheduler.getDefault()`. BLine
+behavior is read from its source at the pinned commit.
+
+- **Event markers.** A `Command` event goes to `Scheduler.getDefault().schedule(...)`
+  on the next default-event-loop poll, so it starts one loop after the marker,
+  outside the path. It's scoped to the auto opmode, so nothing cancels it when
+  the path ends: an intake that missed kept running after disable until a
+  different opmode was selected. `FollowPath.onCancel` drops the run's unreached
+  events. A finished `Command` object can be scheduled again, so registering
+  one instance in `Robot`'s constructor is fine. An event that requires the
+  drivetrain cancels the path on the next loop (robot stopped at (3.88, 3.02),
+  `Drivetrain/CurrentCommand` = `Turn To Heading`).
+- **Where the marker goes is measured, not assumed.** The simulator boots the
+  arm at −20°, so `goToAngle(kIntake)` finishes at once. With Two Corners'
+  `intake` marker at `t_ratio` 0.2 on the first leg (fires at x ≈ 3.65), the
+  piece at (4.5, 3.2) is caught at (3.93, 3.02), 0.60 m ahead of center. That's
+  where the box's far edge is: bumper 0.3 m out, plus 12 in of reach. At 0.4
+  it's missed. From stowed, it's 0.80 s to clear horizontal and 1.04 s until
+  the roller runs, because the sequence waits for the swing to finish. No
+  marker on Two Corners can make that, and the leg-2 piece passes outside the
+  box when the robot cuts the corner. That's Try It #2. Two Corners still takes
+  ~4.1 s with the pickup.
+- **`getRemainingPathDistanceMeters()` is 0.0 before the path's first run, even
+  inside `Command.parallel`.** `Scheduler.runCommands` runs the running set in
+  reverse insertion order (there's a TODO about it), so the stow's first check
+  beat the path. The unguarded stow fired on tick 1 and was tucked in after
+  ~1.0 s with 6.48 m left. The shipped stow waits for `> 0` first, then
+  `< kStowDistance`. Far Side then stows at 1.99 m left, at (8.76, 2.97),
+  ~3.1 s in. At 1.0 m/s it's at (8.67, 2.95), ~5.8 s in. With `kStowDistance = 0`
+  the path stops 0.04 m short (5 cm tolerance), so the group never ends.
+- **Rotation override.** It's an angular velocity (rad/s). The one-argument
+  `overrideRotation` is `BYPASS_CONSTRAINTS`. With the target behind the robot
+  it sent 11.65 rad/s; `RESPECT_CONSTRAINTS` held 6.28 (`config.json`'s
+  360°/s), which is what the lesson uses. On Aim While Driving the two modes
+  are indistinguishable: about 5.7° mean lag and 7.7° worst, P only, which is
+  Lesson 28's subject. The override goes on and off one loop after
+  `aim`/`release` (0.58 s, 4.26 s), and the path finishes at 5.4 s at
+  (8.01, 7.02, −1.6°). Without `release` it never finishes, and sits at
+  (8.03, 6.98) pointing at (8, 4).
+- **There's no `finallyDo`.** Tested on an independent scheduler: a finishing
+  coroutine runs its trailing code and `finally`, but not `whenCanceled`. A
+  canceled one runs `whenCanceled` only, never its `finally`, because it simply
+  isn't resumed. Canceling a parent cancels the child it awaits. Canceling the
+  child from outside resumes the parent after `await`. So `handingRotationBack`
+  clears the override in both places. Without it, an interrupted no-release
+  auto leaked the static override, and the next Two Corners parked at
+  (6.01, 6.05) pointing at (8, 4), never finishing.
+- **`Translation2d.getAngle()` returns `Optional<Rotation2d>`** in alpha-7,
+  empty for a zero vector. `Rotation2d.minus` wraps (170° − (−170°) = −20°).
+- **The autos bypass the superstructure on purpose.** It's `UNHOMED` in auto,
+  so requests are refused, and its state motions are bound in `RobotTeleop`.
+  The strip blinks red through every auto, and the lesson says why.
+- **Probe recipe.**
+  - Build `Robot` on its own thread after `HAL.initialize()`, register the
+    sampler with `Scheduler.getDefault().addPeriodic`, then call
+    `startCompetition()`.
+  - Find the opmode in `DriverStationSim.getOpModeOptions()`, call
+    `setRobotMode(option.getMode())` and `setOpMode(option.id)`, then
+    `notifyNewData()` and `setEnabled(true)`.
+  - Read telemetry as `NetworkTableInstance.getDefault().getEntry("/Telemetry/<key>")`.
+  - Time is `org.wpilib.system.Timer.getTimestamp()`; `getFPGATime` is gone.
+  - Gradle calls `test` up to date when only a deploy JSON changed, so run
+    `cleanTest test`.
+  - A fresh container may lack JDK 25: `apt-get install
+    openjdk-25-jdk-headless` (Ubuntu 24.04 has it).
 
 **Use it instead of reasoning about whether a snippet compiles.** Current state: lessons 0–34 all compile, at every intermediate stopping point, with zero warnings. A regression is therefore a real result, not noise. Run the specific lesson you touched plus the highest one.
 
@@ -783,8 +852,8 @@ a lesson as-is.
 - [docs/lesson-plan-alpha7-upgrade.md](docs/lesson-plan-alpha7-upgrade.md) —
   the impact assessment and phased plan for upgrading the v3 track (only —
   the classic track targets stable 2026 and is unaffected) to WPILib 2027
-  alpha-7, a large breaking-change release. **Lessons 0–24 are migrated and
-  verified on alpha-7**: Phoenix 6 cleared the marketplace (Track A, 1–14,
+  alpha-7, a large breaking-change release. **Lessons 0–25 are migrated (or,
+  for 22 and 25, written) and verified on alpha-7**: Phoenix 6 cleared the marketplace (Track A, 1–14,
   2026-09-18), and on 2026-09-24 the v3 track switched vision from
   PhotonVision to **LimelightLib 2**, which cleared Track B's vendor gate.
   LimelightLib and BLine (Lesson 17) aren't in WPILib's marketplace, and

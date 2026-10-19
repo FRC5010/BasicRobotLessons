@@ -532,7 +532,8 @@ whole-file `Autos`/`Drivetrain`/`Constants`/`Robot` snapshots predate
 Lesson 17 and must carry its additions; Lesson 26's prose introduces
 `PIDController` as new, which it no longer is; and Lesson 28 adds
 `getChassisVelocities()` itself, which Lesson 17 now provides. Lesson 25
-(BLine events and `overrideRotation`) is writable now.
+(BLine events and `overrideRotation`) was writable from here, and was written
+on 2026-10-19 (below).
 
 **Lesson 20 migrated, 2026-10-16.** Compiles 0–19 and 0–20 with zero
 warnings. `check-lesson-markers-v3.py` is clean for 1–20, and
@@ -682,6 +683,75 @@ intake while `HOLDING` and score while `IDLE` are refused. The lesson was
 rewritten around the six states (new `HANDOFF` explanation, `periodic()`
 transitions, the deletions in `RobotTeleop`, a run section with these
 numbers); Lesson 32's test and text follow the six states.
+
+**Lesson 25 written, 2026-10-19 — no longer a gap.** Compiles 0–24 and 0–25
+with zero warnings; `check-lesson-markers-v3.py` is clean for 1–25;
+`update-lesson-v3.sh 25` hands a student project all 7 markers, and the project
+builds; the 50 tool tests pass. Like Lesson 22 it was written on alpha-7 rather
+than ported: the classic Lesson 25 is the design, and the new snapshot sits on
+the migrated Lesson 24 (`Autos` from Lesson 17, `Constants`/`Robot` from 24).
+The Lesson 24 snapshot now carries copies of `Autos` and `RobotAutoFarSide`, to
+hold the markers.
+
+The design is the classic lesson's, in this track's idioms:
+
+- An `intake` marker on Two Corners' first leg runs
+  `Command.sequence(arm.goToAngle(kIntake), arm.runRoller(...).until(arm::hasGamePiece))`,
+  registered with BLine's `Command` overload.
+- Far Side stows the arm when less than `kStowDistance` (2 m) is left, read from
+  the raw `FollowPath` inside a coroutine with `coroutine.waitUntil`.
+- An `aim`/`release` pair of `Runnable` markers switches
+  `FollowPath.overrideRotation(..., RotationOverrideBehavior.RESPECT_CONSTRAINTS)`
+  on and off for a new **Aim While Driving** auto.
+- There's no `finallyDo` in Commands V3, so `handingRotationBack` wraps every path
+  auto: one line after `await` for finishing, `whenCanceled` for a cancel.
+
+The autos drive the arm directly, not through the superstructure. Requests are
+refused while `UNHOMED`, and the state motions are bound in `RobotTeleop`, so
+they don't exist in autonomous. The lesson says so in a callout.
+
+Read from source or measured with the real `Robot` loop driven through
+`DriverStationSim`; the numbers are in CLAUDE.md. What changed the lesson:
+
+- **The distance sentinel bites inside the parallel group.** The classic
+  lesson measured the group starting the path first. Here the scheduler runs
+  commands in reverse order of starting (`Scheduler.runCommands`, which carries
+  a TODO about it), so the stow's first check saw `0.0` and stowed on the first
+  tick. The stow now waits for a distance above zero before comparing it with
+  2 m, and the lesson shows the rejected version.
+- **Where a marker goes is arithmetic.** From the simulator's boot pose (arm
+  resting at −20°), a marker at `t_ratio` 0.2 catches the piece at (4.5, 3.2)
+  mid-drive; at 0.4 it's too late. From stowed, the arm needs about 1.0 s before
+  the roller runs, and no marker on this path can make it. That's Try It #2, not
+  the main demo, and the lesson says the boot pose is what makes the main demo
+  work.
+- **The one-argument `overrideRotation` bypasses the rotation limits.** With
+  the target behind the robot it spun at 11.65 rad/s against `config.json`'s
+  6.28. So the lesson uses `RESPECT_CONSTRAINTS`.
+- **`Translation2d.getAngle()` returns `Optional<Rotation2d>` in alpha-7**,
+  empty for a zero-length vector. `aimOmega` handles that with Lesson 15's
+  `Optional`. This is a port category for the snapshots that call it: 27
+  (`Autos`) and 28 (`Autos`, `Aim`).
+
+What it changed elsewhere:
+
+- Lesson 24's ending now hands off to 25, and the v3 README lists it and no
+  longer calls it a gap.
+- The website's status summary counts 26 of 35 lessons as up to date.
+
+**What Lessons 26 and 28 now owe Lesson 25, when Phase 1b reaches them:**
+
+- 26's whole-file `Autos`, `Constants` and `RobotTeleop` must carry Lesson 25's
+  additions: `followPathAndStow`, `handingRotationBack`, `aimOmega`,
+  `registerEventTriggers(Arm, Localizer)`, the three `PathConstants`, and the
+  opmodes. Without them, `RobotAutoFarSide` and `RobotAutoAimWhileDriving` no
+  longer compile.
+- **Lesson 28 collides with 25.** Its snapshot adds its own
+  `RobotAutoAimWhileDriving` (class and Driver Station name) for a
+  `driveWhileAiming` that isn't BLine. Follow the classic Lesson 28 instead:
+  point 25's `aim` marker at `Aim.omegaTowardTag`, delete `kAimTarget` and
+  `aimOmega`, and give `registerEventTriggers` the drivetrain. Don't add a
+  second opmode with the same name.
 
 **Three user decisions, 2026-10-17, for the lessons Phase 1b has left:**
 

@@ -66,6 +66,11 @@ public class Robot extends OpModeRobot {
   public Robot() {
     DataLogManager.start(); // saves every published value to a .wpilog file
     Scheduler.getDefault().addEventListener(this::logCommandStart);
+    /**
+     * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+     * The path markers move the arm and read the pose now, so registering them
+     * needs the arm and the localizer.
+     */
     Autos.registerEventTriggers(); // once, for the whole program
 
     // Vision now checks its simulated eyesight against ground truth, not
