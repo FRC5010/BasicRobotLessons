@@ -28,18 +28,18 @@ decide, on purpose, what wins when two things are true at once.
 
 Take stock of what your robot currently knows about itself.
 
-It knows whether the elevator has reached the height it was sent to. It
-knows whether the arm has reached its angle. It knows whether the
-carriage is resting on its bottom limit, and — since Lesson 21 —
-whether it has *ever* been homed at all. Every one of those is a
-`boolean` you can read today, and it took three lessons of mechanisms and
-sensors to earn them.
+It knows whether a game piece is sitting in the intake. It knows whether
+the elevator has reached the height it was sent to, and whether the arm
+has. It knows whether the carriage is resting on its bottom limit, and —
+since Lesson 21 — whether it has *ever* been homed at all. Every one of
+those is a `boolean` you can read today, and it took five lessons of
+mechanisms and sensors to earn them.
 
 Now stand three metres away, behind a field wall, holding a controller.
 How many of them can you see?
 
 None. The robot knows and won't say. That's fine while you're sitting at
-a laptop with SmartDashboard open, and it is useless in a match — and
+a laptop with the dashboard open, and it is useless in a match — and
 worse than useless in the pit, where the person who needs to know
 something about the robot is usually not the person who wrote the code.
 
@@ -68,9 +68,10 @@ every tick, publish it every tick.
     public static final int kPwmPort = 5; // PWM — change to yours
     public static final int kLength = 40; // LEDs on the strip — change to yours
 
-    // A pattern is a value, not a loop. Build it once, here, next to the
-    // color it uses, and hand the finished description to the strip.
+    // A pattern is a value, not a loop. Build them once, here, next to the
+    // colors they use, and hand the finished description to the strip.
     public static final LEDPattern kNotHomed = LEDPattern.solid(Color.RED).blink(Seconds.of(0.15));
+    public static final LEDPattern kHasGamePiece = LEDPattern.solid(Color.LIME_GREEN);
     public static final Time kBreathePeriod = Seconds.of(2);
     public static final Dimensionless kIdleBrightness = Percent.of(25);
   }
@@ -208,7 +209,7 @@ memory of which side of that line it's on.
 **And log it, next to the other outputs in `periodic()`:**
 
 ```java
-    SmartDashboard.putBoolean("Elevator/Homed", m_homed);
+    Telemetry.log("Elevator/Homed", m_homed);
 ```
 
 Three lines and an accessor, for something the robot already knew and
@@ -217,27 +218,29 @@ Lesson 21's, and the only thing missing was somewhere to put the answer.
 
 ---
 
-## 6. Three conditions, one strip
+## 6. Four conditions, one strip
 
 Now the design problem.
 
-You have three things worth showing and one strip to show them on. Here
+You have four things worth showing and one strip to show them on. Here
 they are, and the order is the whole point:
 
 | Priority | When | What the strip does |
 |---|---|---|
 | 1 | not homed | red, blinking fast |
-| 2 | disabled | alliance color, breathing |
-| 3 | anything else | alliance color, dim |
+| 2 | holding a game piece | solid green |
+| 3 | disabled | alliance color, breathing |
+| 4 | anything else | alliance color, dim |
 
-**Two of those can be true at the same time.** Every robot boots
-disabled *and* unhomed at once — that's not a rare edge case, it's every
-single match's opening second. The strip can only say one thing, so you
-have to decide which, and there's a right answer: knowing the robot is
-disabled is background information a pit crew already has (nobody has
-walked over and enabled it yet), but an unhomed elevator is about to
-drive itself into the top of the frame the moment somebody does.
-**The dangerous thing outranks the merely-informative thing.**
+**Two of those can be true at the same time.** A robot can be unhomed
+*and* holding a game piece — somebody loaded a piece into it in the queue
+line before anyone ran homing. That's not a rare edge case, it's a
+Tuesday. The strip can only say one thing, so you have to decide which,
+and there's a right answer: a piece in the intake is nice to know, but an
+unhomed elevator is about to drive itself into the top of the frame the
+moment somebody enables it. **The dangerous thing outranks the useful
+thing.** (Disabled-and-unhomed is the same collision, and it happens at
+every boot.)
 
 That decision has to live somewhere. Writing it as an ordered chain —
 first match wins, read top to bottom — makes it something you can point
@@ -255,7 +258,7 @@ import org.wpilib.driverstation.RobotState;
 import org.wpilib.hardware.led.AddressableLED;
 import org.wpilib.hardware.led.AddressableLEDBuffer;
 import org.wpilib.hardware.led.LEDPattern;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 import org.wpilib.util.Color;
 
 import first.robot.Constants.LedConstants;
@@ -277,9 +280,11 @@ public class Leds {
   private final AddressableLEDBuffer m_buffer = new AddressableLEDBuffer(LedConstants.kLength);
 
   private final Elevator m_elevator;
+  private final Arm m_arm;
 
-  public Leds(Elevator elevator) {
+  public Leds(Elevator elevator, Arm arm) {
     m_elevator = elevator;
+    m_arm = arm;
 
     m_strip.setLength(m_buffer.getLength());
     Scheduler.getDefault().addPeriodic(this::periodic);
@@ -294,6 +299,9 @@ public class Leds {
     if (!m_elevator.isHomed()) {
       showing = "NotHomed";
       pattern = LedConstants.kNotHomed;
+    } else if (m_arm.hasGamePiece()) {
+      showing = "HasGamePiece";
+      pattern = LedConstants.kHasGamePiece;
     } else if (RobotState.isDisabled()) {
       showing = "Disabled";
       pattern = LEDPattern.solid(allianceColor()).breathe(LedConstants.kBreathePeriod);
@@ -304,7 +312,7 @@ public class Leds {
 
     pattern.applyTo(m_buffer);
     m_strip.setData(m_buffer);
-    SmartDashboard.putString("Leds/Showing", showing);
+    Telemetry.log("Leds/Showing", showing);
   }
 
   /** Blue until the field tells us otherwise — getAlliance() is empty before connection. */
@@ -318,11 +326,11 @@ public class Leds {
 
 A few things worth pointing at.
 
-**It takes the subsystem it reads.** `Leds(Elevator)` is the same shape
-as `Arm(Elevator)` from Lesson 20, and it means `Robot.java` must declare
-`leds` after `elevator`. The strip reads it and drives nothing, which is
-a one-directional relationship worth noticing — no other class in this
-robot has one.
+**It takes the subsystems it reads.** `Leds(Elevator, Arm)` is the same
+shape as `Arm(Elevator, ...)` from Lesson 20, and it means `Robot.java`
+must declare `leds` after both. The strip reads them and drives nothing,
+which is a one-directional relationship worth noticing — no other class
+in this robot has one.
 
 **No `.start()` call, and none is needed.** If you've used
 `AddressableLED` before, you may be reaching for one — it doesn't exist
@@ -342,7 +350,7 @@ Lesson 15 for a camera that might not see a tag; this is the same idea
 about a different unknown, and `.map(...).orElse(...)` is how you answer
 anyway.
 
-**The chain is going to get worse.** Three conditions read fine. Eight
+**The chain is going to get worse.** Four conditions read fine. Eight
 won't, and some of what you'll want to say next can't be phrased as "is
 this true" at all — "we're in the middle of a handoff" is a *state*, not
 a condition. Keep that in mind for later.
@@ -354,7 +362,7 @@ a condition. Keep that in mind for later.
 **In `Robot.java`, add the field after the arm:**
 
 ```java
-  public final Leds leds = new Leds(elevator); // reads it; drives nothing
+  public final Leds leds = new Leds(elevator, arm); // reads them; drives nothing
 ```
 
 **Add the import:**
@@ -386,14 +394,27 @@ Now walk it through the chain:
    needs the robot enabled — the same reason Lesson 21's `home()` never
    moved anything while disabled.) The elevator homes, and the moment it
    finishes the strip stops blinking and settles to a dim alliance color
-   — condition 1 stopped being true, and the robot is enabled, so
-   condition 3 took over directly.
-2. **Disable the robot.** The strip switches to breathing in the alliance
-   color — homed is still true, so condition 1 stays out of the way, and
-   condition 2 takes over.
+   — condition 1 stopped being true, and the robot is enabled with an
+   empty intake, so condition 4 took over.
+2. **Drop the arm with the left face button (X), hold the right bumper,
+   and drive into a game piece.** The instant the beam breaks, the strip
+   goes **solid green**.
+3. **Disable the robot.** The strip stays green: holding a piece
+   outranks being disabled.
+4. **Enable again and hold the left bumper** to eject the piece. The
+   strip drops back to the dim alliance color. **Disable once more** and
+   it breathes.
 
-`Leds/Showing` is on the dashboard the whole time, so you can check what
-it decided after the fact rather than squinting at a strip.
+Then go and prove the priority decision to yourself, because it's the
+part you actually designed. Restart the sim, *don't* home, and pick up a
+game piece. The robot is now holding a piece and unhomed at the same
+time — and the strip stays **blinking red**. Condition 1 outranked
+condition 2, exactly as written, and the strip is telling you the thing
+that could break the robot rather than the thing that's merely
+interesting.
+
+`Leds/Showing` is in the log the whole time, so you can check what it
+decided after the fact rather than squinting at a strip.
 
 ---
 
@@ -407,12 +428,11 @@ it decided after the fact rather than squinting at a strip.
 2. **Show the elevator's height as a bar.** `LEDPattern.progressMaskLayer(DoubleSupplier)`
    masks one pattern by a 0–1 fraction. Feed it the elevator's height
    over its max travel and use it to light part of the strip.
-3. **Reorder the chain and find the damage.** Move the `isHomed` check
-   below the disabled check, then reproduce the boot scenario from
-   section 8 — power on, don't home, and just look at the strip while
-   disabled. It now breathes calmly in the alliance color instead of
-   screaming red, and there is nothing about that strip that looks
-   broken. Put it back — and notice that nothing crashed, nothing logged
+3. **Reorder the chain and find the damage.** Move the `hasGamePiece`
+   check above the `isHomed` check, then reproduce the queue-line
+   scenario from section 8 — restart, don't home, and pick up a piece.
+   The strip is now a calm green while the robot is unsafe to enable, and
+   there is nothing about that strip that looks broken. Put it back — and notice that nothing crashed, nothing logged
    an error, and the only symptom was a color meaning something different
    than you designed it to.
 4. **Split the strip.** `m_buffer.createView(int, int)` returns a view of
@@ -429,10 +449,10 @@ The strip is the easy part. Three objects, one write per tick, done.
 
 What's worth keeping is the two decisions around it.
 
-**Priority is design, not plumbing.** Two conditions and one output
+**Priority is design, not plumbing.** Four conditions and one output
 forced you to say which one matters most, and the answer wasn't
-arbitrary — the reading that signals danger beat the reading that's
-merely background information. That ordering is now written down where
+arbitrary — the reading that signals danger beat the reading that
+signals convenience. That ordering is now written down where
 somebody can disagree with it, which is the whole point. A robot that
 shows you the *second* most important thing is not obviously broken, and
 that's exactly what makes it worth getting right on purpose.
@@ -450,7 +470,7 @@ and now `LEDPattern` both work that way, and neither coordinated with the
 other to do it. It's a shape, and you'll start seeing it in libraries
 nobody in this course wrote.
 
-One thing to carry forward. That `if`/`else` chain is fine at three
+One thing to carry forward. That `if`/`else` chain is fine at four
 branches and you can already feel where it goes. Some of what you'll
 want the robot to show isn't a condition at all — "mid-handoff" isn't a
 thing that's true or false about a sensor, it's a thing the robot *is*.

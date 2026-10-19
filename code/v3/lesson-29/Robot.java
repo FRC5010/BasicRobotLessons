@@ -51,7 +51,7 @@ public class Robot extends OpModeRobot {
   public final Elevator elevator = new Elevator();
   // Arm reads elevator.getCarriage() in its constructor, so elevator must be
   // a finished object first — it already is, above.
-  public final Arm arm = new Arm(elevator);
+  public final Arm arm = new Arm(elevator, drivetrain::getSimulatedPose);
   // Superstructure reads both, so elevator and arm must be finished objects
   // first — they already are, above.
   public final Superstructure superstructure = new Superstructure(elevator, arm);

@@ -640,6 +640,25 @@ What it changed elsewhere:
 - Lesson 34 no longer calls `Trigger.and` new.
 - The v3 README lists Lesson 22 and calls 22 a hand-built lesson like 16.
 
+**Lesson 23 migrated, 2026-10-19.** Compiles 0–22 and 0–23 with zero
+warnings; `check-lesson-markers-v3.py` is clean for 1–23; the 50 tool tests
+pass. The old snapshot predated Lessons 21 and 22, so it was rebuilt: the
+Lesson 22 `Constants`/`Robot` plus Lesson 21's `Elevator`, with
+`m_homed`/`isHomed()`, and a `Leds` that reads the elevator and the arm. The
+port itself was `Telemetry.log` for `SmartDashboard.put*`, `implements
+Mechanism` (already in place), `Color.LIME_GREEN` for `kLimeGreen`, and
+`Arm(Elevator, Supplier<Pose2d>)`. The user's decision to restore "has a game
+piece" is carried out: four indications, with "not homed" outranking
+"has a piece" (the lesson's queue-line Tuesday is back). Measured with the
+real subsystems through the scheduler and the strip's pixel data: blinking red
+wins over a held piece; once homed, a held piece is solid (50, 205, 50) enabled
+or disabled; empty is a dim blue byte of 63; disabled breathes. Homing from the
+start height takes 148 ticks. The lesson's Run It section gained the pick-up,
+disable and eject steps, and Try It #3 now reorders the piece check above the
+home check. Lesson 23 still teaches no new Java beyond combinators, and
+`kPwmPort = 5` stays clear of DIO channels 0 and 1. The `new Arm(elevator)`
+lines in snapshots 24–31 were updated to match Lesson 22's constructor.
+
 **Three user decisions, 2026-10-17, for the lessons Phase 1b has left:**
 
 - **Lesson 23: restore the "has a game piece" LED indication** the classic
@@ -662,8 +681,9 @@ What it changed elsewhere:
   teach `PhotonCamera` and the simulated camera itself, because its text
   leans on a PhotonVision Lesson 15 that no longer exists.
 
-Snapshots 23–31 still construct `new Arm(elevator)`, and Lesson 23's text
-says `Arm(Elevator)`. Both follow Lesson 22's constructor when migrated.
+Snapshots 24–31 had their `new Arm(elevator)` line changed to Lesson 22's
+constructor on 2026-10-19 (Lesson 23's own text and snapshot are migrated);
+the rest of each is still to be migrated.
 Lesson 27's `VisionConstants.kSimGamePiecePositions` duplicates the arm's
 constant with the same values; unify them, or let 27's scene read the live
 pieces, when 27 is migrated.

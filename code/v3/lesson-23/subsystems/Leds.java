@@ -7,7 +7,7 @@ import org.wpilib.driverstation.RobotState;
 import org.wpilib.hardware.led.AddressableLED;
 import org.wpilib.hardware.led.AddressableLEDBuffer;
 import org.wpilib.hardware.led.LEDPattern;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 import org.wpilib.util.Color;
 
 import first.robot.Constants.LedConstants;
@@ -29,9 +29,11 @@ public class Leds {
   private final AddressableLEDBuffer m_buffer = new AddressableLEDBuffer(LedConstants.kLength);
 
   private final Elevator m_elevator;
+  private final Arm m_arm;
 
-  public Leds(Elevator elevator) {
+  public Leds(Elevator elevator, Arm arm) {
     m_elevator = elevator;
+    m_arm = arm;
 
     m_strip.setLength(m_buffer.getLength());
     Scheduler.getDefault().addPeriodic(this::periodic);
@@ -46,6 +48,9 @@ public class Leds {
     if (!m_elevator.isHomed()) {
       showing = "NotHomed";
       pattern = LedConstants.kNotHomed;
+    } else if (m_arm.hasGamePiece()) {
+      showing = "HasGamePiece";
+      pattern = LedConstants.kHasGamePiece;
     } else if (RobotState.isDisabled()) {
       showing = "Disabled";
       pattern = LEDPattern.solid(allianceColor()).breathe(LedConstants.kBreathePeriod);
@@ -56,7 +61,7 @@ public class Leds {
 
     pattern.applyTo(m_buffer);
     m_strip.setData(m_buffer);
-    SmartDashboard.putString("Leds/Showing", showing);
+    Telemetry.log("Leds/Showing", showing);
   }
 
   /** Blue until the field tells us otherwise — getAlliance() is empty before connection. */

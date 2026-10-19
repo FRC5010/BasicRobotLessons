@@ -371,7 +371,8 @@ written on alpha-7 on 2026-10-17, so it was never a gap to port.
   checked against `drivetrain::getSimulatedPose`, the truth.
 - **`Arm(Elevator, Supplier<Pose2d>)`.** The mode `switch` moved into the
   constructor, because a field initializer can't see a constructor
-  parameter. Snapshots 23–31 still say `new Arm(elevator)` until migrated.
+  parameter. Every snapshot from 23 on says `new Arm(elevator,
+  drivetrain::getSimulatedPose)`; 24–31 only have that line fixed, not migrated.
 - **Commands V3's `Trigger.debounce(Time)` takes the measure directly** and
   defaults to `RISING`, read from the bytecode.
 - **Verified through the real loop with `GamepadSim`.** Build it *after*
@@ -391,6 +392,32 @@ written on alpha-7 on 2026-10-17, so it was never a gap to port.
   - Lesson 27 stays on PhotonVision and waits for an alpha-7 PhotonLib.
     GradleRIO alpha-7 rejects the only 2027 release, alpha-2, for declaring
     `2027_alpha5`; measured.
+
+**v3 Lesson 23 (LEDs) on alpha-7, built on the Lesson 22 state and measured
+with the real `Elevator`, `Arm` and `Leds` through the scheduler, reading the
+strip from `AddressableLEDSim(kPwmPort).getData()`** (RGB bytes, 3 per LED):
+
+- **Four indications, as the user decided:** not homed (blinking red) >
+  has a game piece (solid `Color.LIME_GREEN`, which is (50, 205, 50)) >
+  disabled (breathing) > idle (alliance color at 25%, a blue byte of 63).
+  `LedConstants.kHasGamePiece` is back; `Leds(Elevator, Arm)`.
+- **Priority holds in both collisions.** Holding a piece and unhomed, 20
+  ticks show red 11 times and green never. Once homed, the same held piece
+  reads (50, 205, 50) enabled *and* disabled; ejecting it drops to (0, 0, 63),
+  and disabling then breathes (4 to 43 over the samples taken).
+- **Homing from `kSimStartHeight` sets `isHomed()` after 148 ticks** (2.96 s).
+- **Snapshot 22 now carries `Elevator.java`** unchanged from 21, to hold
+  Lesson 23's markers (`m_homed`, its log line, setting it in `home()`'s
+  `whenCanceled`, `isHomed()`); `LedConstants` and the `leds` field have
+  markers in 22's `Constants`/`Robot`.
+- **A bare JUnit probe can't read `Telemetry.log` values back from
+  NetworkTables** (no `Leds/Showing` topic appeared under any name), so the
+  probe checks the strip's pixels, which is the real output anyway.
+- **`tools/verify-lessons-v3.sh` deletes its sandbox on every run**, so a
+  probe dropped in `src/test/java` is gone after a `test` run; run
+  `./gradlew test --info` inside the sandbox directly instead.
+- **This container shipped without JDK 25**; `apt-get install -y
+  openjdk-25-jdk-headless` works through the proxy.
 
 **Use it instead of reasoning about whether a snippet compiles.** Current state: lessons 0–34 all compile, at every intermediate stopping point, with zero warnings. A regression is therefore a real result, not noise. Run the specific lesson you touched plus the highest one.
 
@@ -710,7 +737,7 @@ a lesson as-is.
 - [docs/lesson-plan-alpha7-upgrade.md](docs/lesson-plan-alpha7-upgrade.md) —
   the impact assessment and phased plan for upgrading the v3 track (only —
   the classic track targets stable 2026 and is unaffected) to WPILib 2027
-  alpha-7, a large breaking-change release. **Lessons 0–22 are migrated and
+  alpha-7, a large breaking-change release. **Lessons 0–23 are migrated and
   verified on alpha-7**: Phoenix 6 cleared the marketplace (Track A, 1–14,
   2026-09-18), and on 2026-09-24 the v3 track switched vision from
   PhotonVision to **LimelightLib 2**, which cleared Track B's vendor gate.
@@ -721,7 +748,7 @@ a lesson as-is.
   (maple-sim, PhotonVision, PathPlanner…) than the `2027_alpha7` folder has
   files for — only a JSON in the folder means a release exists. Lesson 15's simulated camera publishes real results frames to
   the NetworkTables topic a real Limelight uses, so the unmodified library
-  runs in sim. Lessons 23–34 are still pre-alpha-7 code awaiting Phase 1b;
+  runs in sim. Lessons 24–34 are still pre-alpha-7 code awaiting Phase 1b;
   Lesson 27 stays on PhotonVision and waits for an alpha-7 PhotonLib (user decision, 2026-10-17); Lesson 31 still needs a Limelight redesign decision. A
   PhotonVision flavor of Lesson 15 may come back as an option once PhotonLib
   ships for alpha-7; the last PhotonVision version is at commit `94fe7b9`.
