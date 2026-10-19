@@ -1,0 +1,10 @@
+{%- comment -%}
+  Just the Docs puts this in the bar along the top of every page, between the
+  search box and the "GitHub repository" link. It's the button that switches
+  between the light and dark color schemes; the script that runs it is in
+  head_custom.html. It stays hidden until that script shows it, so a browser
+  with scripts turned off never shows a button that does nothing.
+{%- endcomment -%}
+<div class="theme-toggle">
+  <button type="button" class="site-button theme-toggle-button" id="theme-toggle" hidden>Switch to dark mode</button>
+</div>
