@@ -19,10 +19,7 @@ import org.wpilib.math.kinematics.SwerveDriveKinematics;
 import org.wpilib.math.kinematics.SwerveModulePosition;
 import org.wpilib.math.kinematics.SwerveModuleVelocity;
 import org.wpilib.math.util.MathUtil;
-import org.wpilib.networktables.NetworkTableInstance;
-import org.wpilib.networktables.StructArrayPublisher;
-import org.wpilib.networktables.StructPublisher;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.AngularVelocity;
 import org.wpilib.units.measure.LinearVelocity;
 
@@ -31,7 +28,7 @@ import first.robot.Constants.DriveConstants;
 import first.robot.Constants.HeadingConstants;
 import first.robot.Constants.PathConstants;
 
-public class Drivetrain extends Mechanism implements PoseProvider {
+public class Drivetrain implements Mechanism, PoseProvider {
   // Corner order: FL, FR, BL, BR. Pick a convention and stick to it.
   private final SwerveModule[] m_modules = new SwerveModule[] {
       makeModule(0, DriveConstants.kFrontLeftDrivePort, DriveConstants.kFrontLeftSteerPort,
@@ -65,25 +62,6 @@ public class Drivetrain extends Mechanism implements PoseProvider {
   };
   private final GyroIO.GyroIOInputs m_gyroInputs = new GyroIO.GyroIOInputs();
 
-  // Structured topics: publish a whole labeled value at once, so
-  // AdvantageScope's Swerve tab can draw it, not just plot numbers.
-  private final StructArrayPublisher<SwerveModuleVelocity> m_moduleStatesPublisher =
-      NetworkTableInstance.getDefault()
-          .getStructArrayTopic("Drivetrain/ModuleStates", SwerveModuleVelocity.struct)
-          .publish();
-  private final StructArrayPublisher<SwerveModuleVelocity> m_desiredModuleStatesPublisher =
-      NetworkTableInstance.getDefault()
-          .getStructArrayTopic("Drivetrain/DesiredModuleStates", SwerveModuleVelocity.struct)
-          .publish();
-  private final StructPublisher<Rotation2d> m_headingPublisher =
-      NetworkTableInstance.getDefault()
-          .getStructTopic("Drivetrain/Heading", Rotation2d.struct)
-          .publish();
-  private final StructPublisher<Pose2d> m_simulatedPosePublisher =
-      NetworkTableInstance.getDefault()
-          .getStructTopic("Drivetrain/SimulatedPose", Pose2d.struct)
-          .publish();
-
   // Stage two's close-range controllers. Fields, not locals, because
   // atPose() has to read the same error the last calculate() saw.
   private final PIDController m_xController = makeAlignController(
@@ -94,6 +72,7 @@ public class Drivetrain extends Mechanism implements PoseProvider {
 
   public Drivetrain() {
     Scheduler.getDefault().addPeriodic(this::periodic);
+    Scheduler.getDefault().addPeriodic(this::simulateChassis);
   }
 
   /** Builds the shared chassis ground truth. Sim only — null everywhere else. */
@@ -130,11 +109,7 @@ public class Drivetrain extends Mechanism implements PoseProvider {
       m_modules[i].setDesiredState(states[i]);
     }
 
-    m_desiredModuleStatesPublisher.set(states);
-
-    if (m_chassisSim != null) {
-      m_chassisSim.update(speeds, 0.020);
-    }
+    Telemetry.log("Drivetrain/DesiredModuleStates", states, SwerveModuleVelocity.struct);
   }
 
   /** Drive with full swerve freedom: translate and rotate at once. */
@@ -213,6 +188,21 @@ public class Drivetrain extends Mechanism implements PoseProvider {
         .named("Drive To Pose");
   }
 
+  /** One axis of the close-range controller: a P gain and the tolerance it stops at. */
+  private static PIDController makeAlignController(double kP, double tolerance) {
+    PIDController controller = new PIDController(kP, 0, 0);
+    controller.setTolerance(tolerance);
+    return controller;
+  }
+
+  /** The heading controller, told that -180 and +180 are the same place. */
+  private static PIDController makeThetaController() {
+    PIDController controller = new PIDController(PathConstants.kAlignThetaP, 0, 0);
+    controller.enableContinuousInput(-Math.PI, Math.PI);
+    controller.setTolerance(PathConstants.kAngleTolerance.in(Radians));
+    return controller;
+  }
+
   /**
    * Close the last stretch to an exact pose. Three controllers on field-relative
    * error, and tolerances that decide when "arrived" is true.
@@ -239,21 +229,6 @@ public class Drivetrain extends Mechanism implements PoseProvider {
   /** Arrived — in both senses. Rotation counts, which is what driveToPose forgets. */
   public boolean atPose() {
     return m_xController.atSetpoint() && m_yController.atSetpoint() && m_thetaController.atSetpoint();
-  }
-
-  /** One axis of the close-range controller: a P gain and the tolerance it stops at. */
-  private static PIDController makeAlignController(double kP, double tolerance) {
-    PIDController controller = new PIDController(kP, 0, 0);
-    controller.setTolerance(tolerance);
-    return controller;
-  }
-
-  /** The heading controller, told that -180 and +180 are the same place. */
-  private static PIDController makeThetaController() {
-    PIDController controller = new PIDController(PathConstants.kAlignThetaP, 0, 0);
-    controller.enableContinuousInput(-Math.PI, Math.PI);
-    controller.setTolerance(PathConstants.kAngleTolerance.in(Radians));
-    return controller;
   }
 
   /** One tick of pure rotation: steer every wheel tangent to the circle. */
@@ -300,10 +275,37 @@ public class Drivetrain extends Mechanism implements PoseProvider {
     return positions;
   }
 
+  /**
+   * How the chassis is moving right now, robot-relative — kinematics run
+   * backward: four measured wheel velocities in, one chassis motion out.
+   */
+  public ChassisVelocities getChassisVelocities() {
+    SwerveModuleVelocity[] wheels = new SwerveModuleVelocity[m_modules.length];
+    for (int i = 0; i < m_modules.length; i++) {
+      wheels[i] = new SwerveModuleVelocity(
+          m_modules[i].getDriveVelocityMetersPerSec(),
+          Rotation2d.fromDegrees(m_modules[i].getSteerAngleDegrees()));
+    }
+    return m_kinematics.toChassisVelocities(wheels);
+  }
+
+  /** Drive one tick from a robot-relative chassis motion. The door BLine drives through. */
+  public void driveRobotRelative(ChassisVelocities speeds) {
+    applyChassisSpeeds(speeds);
+  }
+
   /** As a PoseProvider, the drivetrain contributes wheel-and-gyro odometry. */
   @Override
   public void updatePoseEstimate(SwerveDrivePoseEstimator estimator) {
     estimator.update(getRotation(), getModulePositions());
+  }
+
+  /** Moves the simulated chassis the way its wheels actually turned this tick. Sim only. */
+  private void simulateChassis() {
+    if (m_chassisSim == null) {
+      return; // a real robot moves itself
+    }
+    m_chassisSim.update(getChassisVelocities(), 0.020);
   }
 
   /** Where the chassis really is, ground truth — null outside sim. */
@@ -311,9 +313,19 @@ public class Drivetrain extends Mechanism implements PoseProvider {
     return m_chassisSim != null ? m_chassisSim.getPose() : null;
   }
 
+  /**
+   * Sim only: set the simulated chassis down at 'pose', the job a person does
+   * before a real match. Does nothing on a real robot.
+   */
+  public void placeSimulatedRobot(Pose2d pose) {
+    if (m_chassisSim != null) {
+      m_chassisSim.placeAt(pose);
+    }
+  }
+
   private void periodic() {
     m_gyroIO.updateInputs(m_gyroInputs);
-    SmartDashboard.putNumber("Drivetrain/Gyro/YawDegrees", m_gyroInputs.yawDegrees);
+    Telemetry.log("Drivetrain/Gyro/YawDegrees", m_gyroInputs.yawDegrees);
 
     SwerveModuleVelocity[] states = new SwerveModuleVelocity[4];
     int index = 0;
@@ -324,13 +336,13 @@ public class Drivetrain extends Mechanism implements PoseProvider {
           Rotation2d.fromDegrees(module.getSteerAngleDegrees()));
       index++;
     }
-    m_moduleStatesPublisher.set(states);
+    Telemetry.log("Drivetrain/ModuleStates", states, SwerveModuleVelocity.struct);
 
-    SmartDashboard.putNumber("Drivetrain/HeadingDegrees", getHeadingDegrees());
-    m_headingPublisher.set(Rotation2d.fromDegrees(getHeadingDegrees()));
+    Telemetry.log("Drivetrain/HeadingDegrees", getHeadingDegrees());
+    Telemetry.log("Drivetrain/Heading", Rotation2d.fromDegrees(getHeadingDegrees()), Rotation2d.struct);
 
     if (m_chassisSim != null) {
-      m_simulatedPosePublisher.set(m_chassisSim.getPose());
+      Telemetry.log("Drivetrain/SimulatedPose", m_chassisSim.getPose(), Pose2d.struct);
     }
   }
 }

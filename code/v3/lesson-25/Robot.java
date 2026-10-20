@@ -111,6 +111,11 @@ public class Robot extends OpModeRobot {
     addOpMode(RobotMode.AUTONOMOUS, "Pick Up", "Paths",
         () -> new PathAuto(this, "PickUp",
             path -> Autos.followPathAndScore(pathBuilder, path, superstructure)));
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * One more auto, registered like the others. It isn't a drawn path, so it
+     * gets an opmode class of its own, with no annotation.
+     */
     // The list went to the Driver Station before this constructor ran, with
     // only the annotated classes on it. Send it again with these added.
     publishOpModes();

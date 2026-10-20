@@ -859,6 +859,53 @@ Lesson 27's `VisionConstants.kSimGamePiecePositions` duplicates the arm's
 constant with the same values; unify them, or let 27's scene read the live
 pieces, when 27 is migrated.
 
+**Lesson 26 migrated, 2026-10-20.** Compiles 0–25 and 0–26 with zero
+warnings; `check-lesson-markers-v3.py` is clean for 1–26; the 50 tool tests
+pass. The old snapshot predated Lessons 17, 21 and 25, so it was rebuilt from
+the Lesson 25 files (`Drivetrain`, `Constants`, `Autos`, `Robot`, `RobotTeleop`)
+with only Lesson 26's additions on top: `alignToPose`/`atPose` and the three
+`PIDController` fields in `Drivetrain`, `kAlignP`/`kAlignThetaP`/the two
+tolerances/`kScoringPose` in `PathConstants`, `Autos.driveToScoringPose`, the
+left-bumper binding, and `RobotAutoDriveToPose`. The port itself was nothing:
+no alpha-7 API change touches this lesson (`PIDController` and `ChassisVelocities`
+compile as they were). The design carry-over from Lesson 25:
+`RobotAutoDriveToPose` lost its `@Autonomous` annotation and is registered in
+`Robot` with `addOpMode(RobotMode.AUTONOMOUS, "Drive To Pose", "Poses", ...)`
+before `publishOpModes()`, and it does not go through `getReadyThen` because it
+never touches the superstructure. Measured with the real `Robot` loop through
+the scheduler on a 20 ms schedule (scratch probe, not committed), from
+(1, 1, 0°) to (5, 4, 90°), error against the simulated chassis's truth:
+
+- `driveToPose` alone: 3.18–3.20 s, 45–47 mm out (the old 3.02 s / 49 mm).
+- Two stages: 3.48–3.50 s, 15–17 mm, under 0.01° (the old 3.30 s / 20 mm /
+  0.003°). The lesson now says "a third of a second" and "nearly triple".
+- On the target facing backwards, `driveToPose` finishes in 1 tick while 180°
+  out; `alignToPose` alone fixes it in 0.72 s; the two stages in 0.74 s.
+- 179° to −179° takes 0.30 s and turns 2° the short way.
+- The real "Drive To Pose" opmode finishes at 3.4 s at (4.987, 3.995, 90.0°);
+  holding the left bumper in teleop for 5 s ends at (4.987, 3.995, 90.0°).
+- A second run in one session takes the same 175 ticks as the first: the
+  controllers' `atSetpoint()` is stale-true after a run, but `runRepeatedly`
+  runs its body before `until` is checked, so no reset is needed.
+
+Two caveats. The opmode does not place the simulated robot (unlike
+`PathAuto`), so a second run starts on the pose; the lesson says to drive away
+first. And the probe's own gotcha: calling `placeSimulatedRobot` and
+`localizer.resetPose` in the same tick offsets the estimate by the old gyro
+reading (truth ended 10 m away, estimate on target); put them a few ticks
+apart. In the lesson text: `PIDController` is no longer "new" (Lesson 17
+introduced it; the concept bullet and the README row now say tolerances and
+fields), `PathConstants` gains lines instead of being created, the `Autos`
+imports are noted as already there, Try It #4 uses `Telemetry.log`, and the
+wiring section is rewritten for `addOpMode`.
+
+**What Lessons 27–34 now owe Lesson 26, when Phase 1b reaches them:** any
+whole-file snapshot of `Autos`, `Drivetrain`, `Constants`, `Robot` or
+`RobotTeleop` must carry `driveToScoringPose`, `alignToPose`/`atPose` and the
+controller fields, the `PathConstants` align constants and `kScoringPose`, the
+left-bumper binding, and the `Drive To Pose` `addOpMode` line.
+`RobotAutoDriveToPose` must stay unannotated.
+
 **Each lesson Phase 1b migrates also gets its NEXT LESSON markers
 (added 2026-09-26).** Lessons 1–15 now ship them: the code at the end of
 Lesson N-1 carries a javadoc-style comment at every spot where Lesson N has

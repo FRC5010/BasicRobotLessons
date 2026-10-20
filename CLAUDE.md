@@ -156,7 +156,7 @@ lesson-k/X implies lesson-(k+1)/X exists and replaces it. **Enforce it with
 `./tools/check-lesson-markers-v3.py [N] [--show]`**, which rebuilds each
 lesson's before/after state through the shared lib, diffs them, and reports
 `MISSING` (a change with no marker announcing it) and `ORPHAN` (a marker
-that announces nothing). It's currently clean for 1–25. When Phase 1b
+that announces nothing). It's currently clean for 1–26. When Phase 1b
 migrates a lesson, raise the cut-off and add its markers in the same change.
 The checker's coverage rules are in its docstring. They absorb
 diff-alignment noise (blank lines, a shared `}`), and that absorption can
@@ -291,6 +291,26 @@ that tag and measured in sim with the real `Robot`:
   only the opmode *ID*, so on run N, N `FollowPath`s are scheduled and the
   newest cancels the rest in the same tick. The result is correct; it's
   recorded, not worked around.
+
+**v3 Lesson 26 (drive to pose) on alpha-7, measured with the real `Robot`
+loop through the scheduler**, (1, 1, 0°) → (5, 4, 90°), error against the
+simulated truth:
+
+- `driveToPose` alone: 3.2 s, 45–47 mm out. Two stages: 3.5 s, 15–17 mm, under
+  0.01°. Facing backwards on the target, `driveToPose` finishes on tick 1, 180°
+  out.
+- **`RobotAutoDriveToPose` is unannotated** and registered with `addOpMode`
+  (`"Drive To Pose"`, group `"Poses"`). It skips `getReadyThen` (no
+  superstructure) and doesn't place the simulated robot, so a second run
+  starts on the pose.
+- `atSetpoint()` stays true after a finished `alignToPose`, but the next run
+  isn't cut short: `runRepeatedly` runs its body before `until` is checked.
+- **Probe trap:** `placeSimulatedRobot` and `localizer.resetPose` in the same
+  tick leave the estimate offset by the stale gyro reading; the truth then
+  flies off while the estimate reports success. Put them a few ticks apart.
+- After `alignToPose` finishes, the truth keeps creeping about 2–3 mm in the
+  next second (measured; consistent with the last command persisting, which
+  was not checked directly).
 
 **Lesson 18's lag numbers were remeasured on alpha-7** with the documented
 move (stowed to `kMaxHeight`) at full 20 ms ticks. The peak lag varies from
@@ -891,7 +911,7 @@ a lesson as-is.
 - [docs/lesson-plan-alpha7-upgrade.md](docs/lesson-plan-alpha7-upgrade.md) —
   the impact assessment and phased plan for upgrading the v3 track (only —
   the classic track targets stable 2026 and is unaffected) to WPILib 2027
-  alpha-7, a large breaking-change release. **Lessons 0–25 are migrated (or,
+  alpha-7, a large breaking-change release. **Lessons 0–26 are migrated (or,
   for 22 and 25, written) and verified on alpha-7**: Phoenix 6 cleared the marketplace (Track A, 1–14,
   2026-09-18), and on 2026-09-24 the v3 track switched vision from
   PhotonVision to **LimelightLib 2**, which cleared Track B's vendor gate.
@@ -902,7 +922,7 @@ a lesson as-is.
   (maple-sim, PhotonVision, PathPlanner…) than the `2027_alpha7` folder has
   files for — only a JSON in the folder means a release exists. Lesson 15's simulated camera publishes real results frames to
   the NetworkTables topic a real Limelight uses, so the unmodified library
-  runs in sim. Lessons 26–34 are still pre-alpha-7 code awaiting Phase 1b;
+  runs in sim. Lessons 27–34 are still pre-alpha-7 code awaiting Phase 1b;
   Lesson 27 stays on PhotonVision and waits for an alpha-7 PhotonLib (user decision, 2026-10-17); Lesson 31 still needs a Limelight redesign decision. A
   PhotonVision flavor of Lesson 15 may come back as an option once PhotonLib
   ships for alpha-7; the last PhotonVision version is at commit `94fe7b9`.

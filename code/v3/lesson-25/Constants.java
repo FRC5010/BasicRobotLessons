@@ -166,6 +166,12 @@ public final class Constants {
     public static final double kAimP = 4.0; // rad/s per radian of heading error
     /** The point on the field to point at while the "aim" marker is in force. */
     public static final Translation2d kAimTarget = new Translation2d(8.0, 4.0);
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Constants for the close-range stage: two gains, how close counts as
+     * arrived in position and in angle, and the pose to line up on.
+     */
   }
 
   public static final class ElevatorConstants {

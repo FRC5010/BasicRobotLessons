@@ -5,9 +5,9 @@ and landing on a spot are two different jobs — and giving each one its own
 controller.
 
 **New Java concepts**
-- **`PIDController`**, WPILib's own P/I/D loop, in place of the hand-rolled
-  `measure → subtract → multiply → clamp` you've written by hand since
-  Lesson 5. You've built the thing it does; now use the library version.
+- **`PIDController` on your own**. Lesson 17 handed three of them to
+  BLine; now you build them yourself, give them tolerances, and ask them
+  the question BLine asked for you: are we there yet?
 - **Controller objects as fields, not locals.** `atPose()` has to read the
   same error the last `calculate()` saw — a local variable would forget it
   the instant the method returned.
@@ -117,9 +117,11 @@ off and finishes the job properly.
 
 Three `PIDController`s — one per axis — held as **fields**, because
 `atPose()` has to read the same error the last `calculate()` saw. A local
-would forget it the moment the method returned.
+would forget it the moment the method returned. You met the class in
+Lesson 17, where BLine ran three of them for you; this time you're the one
+calling `calculate`.
 
-**Add to `Drivetrain`, below the module array:**
+**Add to `Drivetrain`, below the gyro fields and above the constructor:**
 
 ```java
   // Stage two's close-range controllers. Fields, not locals, because
@@ -203,6 +205,7 @@ robot would get there anyway, just badly. The speed limit here is the
 **Add the imports `Drivetrain.java` needs:**
 
 ```java
+import static org.wpilib.units.Units.Meters;
 import static org.wpilib.units.Units.Radians;
 
 import org.wpilib.math.controller.PIDController;
@@ -210,12 +213,12 @@ import org.wpilib.math.controller.PIDController;
 import first.robot.Constants.PathConstants;
 ```
 
-**Add `PathConstants` to `Constants.java`, as a new nested class:**
+**Add to `PathConstants` in `Constants.java`, below `kAimTarget`:**
 
 ```java
-  public static class PathConstants {
-    // Stage two's gains. Higher than stage one's, because its errors are tiny
-    // by the time it takes over — it only ever starts a short distance away.
+    // Stage two of getting somewhere exactly. Its gains are higher than the
+    // drive-to-pose sketch's, because its errors are tiny by the time it takes
+    // over — it only ever starts a short distance away.
     public static final double kAlignP = 3.0;      // m/s per meter of error
     public static final double kAlignThetaP = 4.0; // rad/s per radian of error
 
@@ -225,8 +228,9 @@ import first.robot.Constants.PathConstants;
 
     /** Where the left bumper lines the robot up. */
     public static final Pose2d kScoringPose = new Pose2d(5.0, 4.0, Rotation2d.fromDegrees(90));
-  }
 ```
+
+`Constants.java` already imports everything those lines need.
 
 ---
 
@@ -235,7 +239,7 @@ import first.robot.Constants.PathConstants;
 The command that actually gets you somewhere exactly is just two `await`s
 in a row — coarse, then fine, at the same target both times.
 
-**Add to `Autos.java`, below `driveTurnDrive`:**
+**Add to `Autos.java`, above `makePathBuilder`:**
 
 ```java
   /**
@@ -252,12 +256,7 @@ in a row — coarse, then fine, at the same target both times.
   }
 ```
 
-**Add the imports:**
-
-```java
-import first.robot.Constants.PathConstants;
-import first.robot.subsystems.Localizer;
-```
+`Autos` already imports `PathConstants` and `Localizer` from Lesson 17.
 
 There's nothing here you haven't written before. `coroutine.await(...)`
 runs a command to completion before moving to the next line — the same
@@ -272,19 +271,21 @@ command, same as `driveTurnDrive` was one command.
 
 ## 6. Wire it up
 
-**Add a third `@Autonomous` opmode, `opmode/RobotAutoDriveToPose.java`:**
+**Create `opmode/RobotAutoDriveToPose.java`:**
 
 ```java
 package first.robot.opmode;
 
 import org.wpilib.command3.button.RobotModeTriggers;
-import org.wpilib.opmode.Autonomous;
 import org.wpilib.opmode.PeriodicOpMode;
 
 import first.robot.Robot;
 import first.robot.commands.Autos;
 
-@Autonomous(name = "Drive To Pose", group = "Group 1")
+/**
+ * Drives to the scoring pose. It has no annotation, so the opmode scan skips
+ * it; Robot registers it with addOpMode, next to the path autos.
+ */
 public class RobotAutoDriveToPose extends PeriodicOpMode {
   private final Robot robot;
 
@@ -302,9 +303,29 @@ public class RobotAutoDriveToPose extends PeriodicOpMode {
 }
 ```
 
-It shows up on the driver station next to **Drive Turn Drive** and **Do
-Nothing** — no chooser code, same as every `@Autonomous` class since
-Lesson 9.
+Look at what's missing: the `@Autonomous` line. Since Lesson 25, autos are
+registered in `Robot`, and an annotated class with the same name as a
+registered one stops the program at boot. This one isn't a drawn path, so it
+gets a class of its own instead of a `PathAuto`, but it's registered the same
+way.
+
+**In `Robot`'s constructor, add this above the comment that ends with
+`publishOpModes()`:**
+
+```java
+    // Not a drawn path, so it has its own opmode class, but registered the same
+    // way: an annotated class would be found by the scan, and this one isn't.
+    addOpMode(RobotMode.AUTONOMOUS, "Drive To Pose", "Poses", () -> new RobotAutoDriveToPose(this));
+```
+
+**Add the import to `Robot.java`:**
+
+```java
+import first.robot.opmode.RobotAutoDriveToPose;
+```
+
+It shows up in the selector under its own group, **Poses**, beside **Paths**.
+The `publishOpModes()` call that was already there announces it too.
 
 The same command is worth having in teleop, too, where lining up on a
 scoring position by hand is the slowest thing a driver does.
@@ -329,23 +350,27 @@ import first.robot.commands.Autos;
 ## 7. Run it
 
 `./gradlew simulateJava`. Select **Drive To Pose** and run autonomous with
-the robot starting well away from the target. Watch it change character
+the robot starting well away from the target. This opmode doesn't set the
+simulated robot down anywhere the way **Paths** does, so a second run starts
+where the first one ended: on the pose. Drive away in teleop first (or hold
+the left bumper from somewhere else). Watch it change character
 partway through: a fast run across most of the field, then a visibly
 slower, more deliberate creep for the last stretch as `alignToPose` takes
 over.
 
 Here's what was actually measured, driving from (1, 1) to (5, 4) facing
-90° — the exact scenario above, checked with a throwaway test harness
-before this page was written, not guessed:
+90° — the exact scenario above, checked with a throwaway test
+that ran the real `Robot` loop in simulation, not guessed. The error is
+measured against the simulated chassis's true position, not the estimate:
 
 | | Time | Where it actually ended up |
 |---|---|---|
-| `driveToPose` alone, at its own finish line | 3.02 s | 49 mm out, rotation unchecked |
-| Two stages | 3.30 s | **20 mm / 0.003°** |
+| `driveToPose` alone, at its own finish line | 3.2 s | 45–47 mm out, rotation unchecked |
+| Two stages | 3.5 s | **15–17 mm / under 0.01°** |
 
-Two stages costs about a quarter of a second here. What that quarter
-second buys is real: **more than double the position accuracy, and a
-rotation guarantee `driveToPose` never had at all.** The backwards-facing
+Two stages costs about a third of a second here. What that third of a
+second buys is real: **nearly triple the position accuracy, and a rotation
+guarantee `driveToPose` never had at all.** The backwards-facing
 demo from section 1 is the sharper way to see why that guarantee matters
 — run it again now, and notice `alignToPose` alone would never make that
 mistake, because rotation is one of the three things `atPose()` checks
@@ -378,9 +403,9 @@ Worth plotting while you watch:
    `driveToPose`'s hardcoded `0.05`, so the handoff distance is a named
    constant instead of a number buried in Lesson 11's code.
 4. **Log `Drivetrain/AtPose`.** Right now the only way to know stage two
-   finished is watching the robot stop. Add `SmartDashboard.putBoolean(...)`
-   for `atPose()` in `periodic()`, the same way every other subsystem
-   in this course reports its own "am I done" answer.
+   finished is watching the robot stop. Add `Telemetry.log("Drivetrain/AtPose", atPose())`
+   to `periodic()`, the same way every other subsystem in this course
+   reports its own "am I done" answer.
 
 ---
 
@@ -401,12 +426,13 @@ be checked against.
 not because the library version is fancier than the hand-rolled one.
 `driveToPose` and `alignToPose` run nearly the same math — the difference
 is that each one only ever has to be good at the job it's actually
-doing. Chaining them cost a quarter of a second and bought back more than
-double the accuracy, plus a guarantee on rotation that never existed
+doing. Chaining them cost a third of a second and bought back nearly
+triple the accuracy, plus a guarantee on rotation that never existed
 before.
 
 **`PIDController` is the library version of five lessons of hand-rolled P
-control** — `setTolerance`/`atSetpoint` turn "how close counts" into
+control**, and Lesson 17 only used it as an ingredient. Here you drive it
+yourself: `setTolerance`/`atSetpoint` turn "how close counts" into
 something you declare instead of something buried in a `.until(...)`
 expression, and `enableContinuousInput` closes the angle-wrap story that's
 been running since Lesson 5.

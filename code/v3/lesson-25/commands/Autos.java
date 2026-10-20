@@ -36,6 +36,13 @@ public final class Autos {
         .named("Drive Turn Drive");
   }
 
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * A command that gets somewhere exactly in two stages: cross the field with
+   * the coarse drive-to-pose, then close the last stretch with the close-range
+   * controllers.
+   */
+
   /** Everything about following a path that doesn't depend on which path it is. */
   public static FollowPath.Builder makePathBuilder(Drivetrain drivetrain, Localizer localizer) {
     return new FollowPath.Builder(

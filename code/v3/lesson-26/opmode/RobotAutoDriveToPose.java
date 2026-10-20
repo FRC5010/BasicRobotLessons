@@ -5,13 +5,15 @@
 package first.robot.opmode;
 
 import org.wpilib.command3.button.RobotModeTriggers;
-import org.wpilib.opmode.Autonomous;
 import org.wpilib.opmode.PeriodicOpMode;
 
 import first.robot.Robot;
 import first.robot.commands.Autos;
 
-@Autonomous(name = "Drive To Pose", group = "Group 1")
+/**
+ * Drives to the scoring pose. It has no annotation, so the opmode scan skips
+ * it; Robot registers it with addOpMode, next to the path autos.
+ */
 public class RobotAutoDriveToPose extends PeriodicOpMode {
   private final Robot robot;
 

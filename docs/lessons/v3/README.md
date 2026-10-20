@@ -44,7 +44,7 @@ status of every lesson, including what changed and why.
 | 23 | [LEDs](23-leds.md) | A strip that shows what the robot knows, and a priority order you chose | Combinator methods |
 | 24 | [A superstructure](24-superstructure.md) | One named state the whole robot reads, with the illegal moves made impossible | Enums with fields and methods, exhaustive `switch`, a hand-built guard |
 | 25 | [Doing two things at once](25-path-events.md) | Autos that home first, then intake, score and aim *while* they drive — one line each | `addOpMode` and `Function`; the rest is composition |
-| 26 | [Getting there exactly](26-drive-to-pose.md) | A two-stage drive-to-pose: fast across the field, then precise onto the spot | `PIDController`, controller objects as fields |
+| 26 | [Getting there exactly](26-drive-to-pose.md) | A two-stage drive-to-pose: fast across the field, then precise onto the spot | `PIDController` tolerances, controller objects as fields |
 | 27 | [Going to get something you just saw](27-object-detection.md) | A camera that finds a game piece, and an approach built while the robot runs | `Command.requiring(...).executing(...)` |
 | 28 | [Keeping the nose on the target](28-aim-at-tag.md) | Aim assist that holds while you drive, shared by the driver and by autos | None — the point is that it needs none |
 | 29 | [A wheel that holds a speed](29-flywheel.md) | A shooter flywheel with a speedometer, and the first mechanism with no destination | None — the spine repeats |
