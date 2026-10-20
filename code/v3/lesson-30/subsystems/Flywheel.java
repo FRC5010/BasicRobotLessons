@@ -7,6 +7,8 @@ import static org.wpilib.units.Units.RotationsPerSecond;
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
+import org.wpilib.driverstation.Alert;
+import org.wpilib.driverstation.Alert.Level;
 import org.wpilib.smartdashboard.Mechanism2d;
 import org.wpilib.smartdashboard.MechanismLigament2d;
 import org.wpilib.smartdashboard.MechanismRoot2d;
@@ -31,6 +33,9 @@ public class Flywheel extends Mechanism {
   private final FlywheelIO.FlywheelIOInputs m_inputs = new FlywheelIO.FlywheelIOInputs();
 
   private AngularVelocity m_goal = RotationsPerSecond.of(0);
+
+  private final Alert m_disconnected =
+      new Alert("Flywheel motor is not on the CAN bus", Level.HIGH);
 
   // A speedometer: one hub, two needles. There is nothing physical to draw
   // here — a spinning wheel looks the same at every speed — so the picture
@@ -62,6 +67,7 @@ public class Flywheel extends Mechanism {
     SmartDashboard.putNumber("Flywheel/SupplyCurrentAmps", m_inputs.supplyCurrentAmps);
     SmartDashboard.putNumber("Flywheel/GoalRps", m_goal.in(RotationsPerSecond));
     SmartDashboard.putBoolean("Flywheel/AtSpeed", atSpeed());
+    m_disconnected.set(!m_inputs.motorConnected);
     updateDial();
   }
 

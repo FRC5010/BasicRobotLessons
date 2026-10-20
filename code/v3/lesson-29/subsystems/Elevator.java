@@ -7,8 +7,6 @@ import static org.wpilib.units.Units.Volts;
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
-import org.wpilib.driverstation.Alert;
-import org.wpilib.driverstation.Alert.Level;
 import org.wpilib.smartdashboard.Mechanism2d;
 import org.wpilib.smartdashboard.MechanismLigament2d;
 import org.wpilib.smartdashboard.MechanismRoot2d;
@@ -28,14 +26,6 @@ public class Elevator extends Mechanism {
   private final ElevatorIO.ElevatorIOInputs m_inputs = new ElevatorIO.ElevatorIOInputs();
   private Distance m_goal = ElevatorConstants.kStowed;
   private boolean m_homed = false;
-
-  // Two things worth saying out loud in the pit, and they are different
-  // kinds of bad: a missing motor means the robot cannot work, an unhomed
-  // elevator means it will work wrongly.
-  private final Alert m_disconnected =
-      new Alert("Elevator motor is not on the CAN bus", Level.HIGH);
-  private final Alert m_notHomed =
-      new Alert("Elevator has never been homed", Level.MEDIUM);
 
   // The picture: a canvas, one point anchored to it, and a chain of segments.
   private final Mechanism2d m_mechanism = new Mechanism2d(
@@ -63,11 +53,6 @@ public class Elevator extends Mechanism {
     SmartDashboard.putNumber("Elevator/SupplyCurrentAmps", m_inputs.supplyCurrentAmps);
     SmartDashboard.putBoolean("Elevator/AtBottomLimit", m_inputs.atBottomLimit);
     SmartDashboard.putBoolean("Elevator/Homed", m_homed);
-
-    // Alerts are set every tick, not raised once: an alert is a statement
-    // about how things are now, so it has to be able to go away again.
-    m_disconnected.set(!m_inputs.motorConnected);
-    m_notHomed.set(!m_homed);
 
     // The picture is built once and mutated every tick; anything appended to
     // the carriage (see getCarriage()) rides along with it for free.

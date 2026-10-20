@@ -67,7 +67,7 @@ from Lesson 8 on (Lesson 8's Try It #4, applied in the reference like Lesson
 `CounterClockwise_Positive`) from Lesson 7 on — applied by a small steering
 `TalonFXConfiguration` above priming, which **Lesson 12 extends rather than
 replaces** (a fresh config applied after it would reset `Inverted`;
-measured in Phoenix sim). Snapshots 16–33 carry both constants too, unverified
+measured in Phoenix sim). Snapshots 16–32 and 34 carry both constants too, unverified
 until Phase 1b. The classic track keeps its Lesson 7 checklist's "only if"
 inversion snippet — it has no update script to preserve values for.
 
@@ -202,7 +202,7 @@ Facts from the alpha-7 jars:
 
 - Commands V3's `Scheduler.run()` runs every `addPeriodic` callback, in
   registration order, before any command (read from bytecode).
-- `HAL.initialize()` takes no arguments in alpha-7, so Lesson 32's test needs
+- `HAL.initialize()` takes no arguments in alpha-7, so Lesson 31's test needs
   that fix when it's migrated.
 - **`Telemetry.log(widget)` writes a snapshot.** It isn't a live
   registration. `Field2d`/`Mechanism2d` implement `TelemetryLoggable`, whose
@@ -219,6 +219,33 @@ Facts from the alpha-7 jars:
   - Widgets publish under `/Telemetry/<key>`; the `Mechanism2d` layout
     (`.type = Mechanism2d`, `dims`, roots, ligaments) is unchanged from the
     SmartDashboard days.
+
+**The OpMode track's order differs from the classic track's from Lesson 27
+on** (user decision, 2026-10-20). Object detection waits on an alpha-7
+PhotonLib, so it moved to the end of this track, and the lessons after it moved
+down one:
+
+| OpMode | Classic | Lesson |
+|---|---|---|
+| 27 | 28 | Aim at tag |
+| 28 | 29 | Flywheel |
+| 29 | 30 | Current limits |
+| 30 | 31 | Alerts |
+| 31 | 32 | Testing |
+| 32 | 33 | Reading a log |
+| 33 | 34 | SysId |
+| 34 | 27 | Object detection |
+
+- **The lessons don't mention the difference** (the user asked for that).
+  Don't add a note comparing the two tracks' order to any lesson or README.
+- When a classic lesson is the design reference for an OpMode one, look it up
+  by the classic number. `docs/lesson-plan-opmode-restructure.md`'s table and
+  every record dated before 2026-10-20 use the old OpMode numbers, which
+  matched the classic ones. Those records say so where it matters.
+- The unmigrated snapshots 27–33 still carry object detection's pieces (its
+  `VisionConstants` constants, `Robot.pieceDetector`, `fetchPiece` and its
+  right-bumper binding). Drop them when migrating each, since those lessons
+  now come first. Lesson 34 re-adds what it needs when it's migrated.
 
 **The tooling understands gaps.** A lesson with no `code/v3/lesson-N` is a
 gap. There are none today: 25 was the last, and was written on 2026-10-19.
@@ -392,7 +419,8 @@ written on alpha-7 on 2026-10-17, so it was never a gap to port.
 - **`Arm(Elevator, Supplier<Pose2d>)`.** The mode `switch` moved into the
   constructor, because a field initializer can't see a constructor
   parameter. Every snapshot from 23 on says `new Arm(elevator,
-  drivetrain::getSimulatedPose)`; 24–31 only have that line fixed, not migrated.
+  drivetrain::getSimulatedPose)`; the unmigrated 27–30 and 34 only have that
+  line fixed.
 - **Commands V3's `Trigger.debounce(Time)` takes the measure directly** and
   defaults to `RISING`, read from the bytecode.
 - **Verified through the real loop with `GamepadSim`.** Build it *after*
@@ -409,7 +437,8 @@ written on alpha-7 on 2026-10-17, so it was never a gap to port.
   - Lesson 23 restores the "has a game piece" LED.
   - Lesson 24 restores the classic six states (`HANDOFF`/`HOLDING` from the
     beam break).
-  - Lesson 27 stays on PhotonVision and waits for an alpha-7 PhotonLib.
+  - Object detection (Lesson 34 since the renumbering below) stays on
+    PhotonVision and waits for an alpha-7 PhotonLib.
     GradleRIO alpha-7 rejects the only 2027 release, alpha-2, for declaring
     `2027_alpha5`; measured.
 
@@ -492,9 +521,10 @@ rate, `GamepadSim`, `DriverStationSim` enabled, the strip read from
 - `Debouncer` is `org.wpilib.math.filter.Debouncer` and takes seconds as a
   `double` (`kBeamDebounce.in(Seconds)`), unlike `Trigger.debounce(Time)`.
 - **Snapshot 23 carries `RobotTeleop.java`** (copied unchanged from 22) to hold
-  Lesson 24's markers. Lesson 32's `SuperstructureStateTest` follows the six
+  Lesson 24's markers. Lesson 31's `SuperstructureStateTest` follows the six
   states (`scoringRequiresSomethingToScore`); mutated `IDLE→SCORING` and it
-  fails by name. Snapshots 26–31 still name the four-state design.
+  fails by name. The unmigrated snapshots 27–30 and 34 still name the
+  four-state design.
 - **Maven Central throws intermittent 429s through the proxy.** A failed
   run still fills the Gradle cache, so rerun with a short sleep until it
   passes.
@@ -563,7 +593,7 @@ source at the pinned commit.
   it sent 11.65 rad/s; `RESPECT_CONSTRAINTS` held 6.28 (`config.json`'s
   360°/s), which is what the lesson uses. On Aim While Driving the two modes
   are indistinguishable: about 5.7° mean lag and 7.7° worst, P only, which is
-  Lesson 28's subject. The override goes on and off one loop after
+  Lesson 27's subject. The override goes on and off one loop after
   `aim`/`release` (0.6 s, 4.3 s into the drive), and the path finishes at
   5.4 s at (8.01, 7.02, −1.6°). Without `release` it never finishes, and sits
   at (8.03, 6.98) pointing at (8, 4).
@@ -923,7 +953,7 @@ a lesson as-is.
   files for — only a JSON in the folder means a release exists. Lesson 15's simulated camera publishes real results frames to
   the NetworkTables topic a real Limelight uses, so the unmodified library
   runs in sim. Lessons 27–34 are still pre-alpha-7 code awaiting Phase 1b;
-  Lesson 27 stays on PhotonVision and waits for an alpha-7 PhotonLib (user decision, 2026-10-17); Lesson 31 still needs a Limelight redesign decision. A
+  object detection (Lesson 34) stays on PhotonVision and waits for an alpha-7 PhotonLib (user decision, 2026-10-17); Lesson 30 (alerts) still needs a Limelight redesign decision. A
   PhotonVision flavor of Lesson 15 may come back as an option once PhotonLib
   ships for alpha-7; the last PhotonVision version is at commit `94fe7b9`.
   Alpha-7
@@ -984,7 +1014,7 @@ website only; the lesson files don't change.
 - **States and wording** are in
   [docs/_data/lesson_status.yml](docs/_data/lesson_status.yml); colors are
   in `custom.scss`. A lesson is "not updated yet" unless it's listed under
-  `waiting`: today that's 27 ("waiting on a library", PhotonLib) and 31
+  `waiting`: today that's 34 ("waiting on a library", PhotonLib) and 30
   ("waiting on a decision"). Edit `waiting` when a blocker appears or
   clears. Converted lessons ignore it.
 - The Pages workflow also rebuilds on changes to `tools/lib/v3-lessons.sh`,

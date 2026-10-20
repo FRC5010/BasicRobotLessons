@@ -4,15 +4,21 @@
 
 package first.robot;
 
+import static org.wpilib.units.Units.Volts;
+
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.command3.SchedulerEvent;
 import org.wpilib.command3.button.CommandGamepad;
 import org.wpilib.framework.OpModeRobot;
+import org.wpilib.simulation.BatterySim;
+import org.wpilib.simulation.RoboRioSim;
 import org.wpilib.smartdashboard.SmartDashboard;
 import org.wpilib.system.DataLogManager;
+import org.wpilib.system.RobotController;
 
 import first.robot.Constants.DriveConstants;
+import first.robot.Constants.PowerConstants;
 import first.robot.Constants.VisionConstants;
 import first.robot.subsystems.Arm;
 import first.robot.subsystems.Drivetrain;
@@ -90,6 +96,22 @@ public class Robot extends OpModeRobot {
   @Override
   public void robotPeriodic() {
     Scheduler.getDefault().run();
+
+    double batteryVolts = RobotController.getBatteryVoltage();
+    SmartDashboard.putNumber("Power/TotalCurrentAmps", getTotalCurrentAmps());
+    SmartDashboard.putNumber("Power/BatteryVolts", batteryVolts);
+    // RobotController.isBrownedOut() never reports true in this alpha's sim,
+    // however low the simulated battery goes — measured, not assumed, so
+    // this compares against the threshold ourselves instead of trusting it.
+    SmartDashboard.putBoolean("Power/BrownedOut", batteryVolts < PowerConstants.kBrownoutVoltage.in(Volts));
+  }
+
+  /**
+   * No single mechanism knows what the others are drawing — this is the one
+   * place that can add all three up.
+   */
+  private double getTotalCurrentAmps() {
+    return elevator.getSupplyCurrentAmps() + arm.getSupplyCurrentAmps() + flywheel.getSupplyCurrentAmps();
   }
 
   private void logCommandStart(SchedulerEvent event) {
@@ -102,7 +124,13 @@ public class Robot extends OpModeRobot {
 
   /** Runs every tick, but only while the code is running in simulation. */
   @Override
-  public void simulationPeriodic() {}
+  public void simulationPeriodic() {
+    // Empty since Lesson 13 moved every mechanism's physics inside its own IO
+    // implementation. The battery doesn't fit that pattern — no single
+    // mechanism owns it, and every one of them changes it — so it's the
+    // first thing since then with a real reason to live here.
+    RoboRioSim.setVInVoltage(BatterySim.calculateDefaultBatteryLoadedVoltage(getTotalCurrentAmps()));
+  }
 
   /**
    * This function is called periodically anytime when no opmode is selected, including when the

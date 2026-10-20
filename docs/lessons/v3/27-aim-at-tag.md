@@ -1,4 +1,4 @@
-# Lesson 28 — Keeping the nose on the target
+# Lesson 27 — Keeping the nose on the target
 
 **Goal:** Let the driver keep both translation sticks while the robot takes
 care of pointing itself at a target — and make that hold up while the robot
@@ -114,8 +114,8 @@ it uses the tag layout — which is a *file*, known before the match — and
 the fused pose, which Lesson 14 built precisely so that it exists whether
 or not a camera can currently see anything.
 
-That's the difference between aiming and Lesson 27's game-piece hunting. A
-game piece is somewhere you don't know, so you have to see it. **A tag is
+That's the difference between aiming at a tag and hunting for a game piece.
+A game piece is somewhere you don't know, so you have to see it. **A tag is
 bolted to a field element and is not going anywhere.** You never needed to
 see it to know where it is; you needed to see it to know where *you* are,
 and the pose estimator already did that for you, whenever it last got a
@@ -572,4 +572,4 @@ Hold that left trigger and drive a few loops around the tag. Watching the
 nose stay locked on while the chassis slides around underneath it is the
 most satisfying thing on this robot.
 
-Next: [Lesson 29 — A wheel that holds a speed](29-flywheel.md).
+Next: [Lesson 28 — A wheel that holds a speed](28-flywheel.md).

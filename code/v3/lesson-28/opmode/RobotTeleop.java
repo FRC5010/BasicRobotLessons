@@ -13,6 +13,7 @@ import org.wpilib.units.measure.AngularVelocity;
 
 import first.robot.Constants.DriveConstants;
 import first.robot.Constants.ElevatorConstants;
+import first.robot.Constants.FlywheelConstants;
 import first.robot.Constants.PathConstants;
 import first.robot.Robot;
 import first.robot.commands.Aim;
@@ -80,6 +81,11 @@ public class RobotTeleop extends PeriodicOpMode {
             () -> DriveConstants.kMaxSpeed.times(-robot.driverController.getLeftY()),
             () -> DriveConstants.kMaxSpeed.times(-robot.driverController.getLeftX()),
             this::aimOmega));
+
+    // Same trigger, different subsystem: lining up and spinning up are the
+    // same decision, so they happen together.
+    robot.driverController.leftTrigger().whileTrue(
+        robot.flywheel.spinUp(FlywheelConstants.kShootSpeed));
 
     // Back homes the elevator: the encoder can't know where the carriage is
     // at power-on, so drive down to the switch and let it say.

@@ -437,4 +437,4 @@ something you declare instead of something buried in a `.until(...)`
 expression, and `enableContinuousInput` closes the angle-wrap story that's
 been running since Lesson 5.
 
-Next: [Lesson 27 — Going to get something you just saw](27-object-detection.md).
+Next: [Lesson 27 — Keeping the nose on the target](27-aim-at-tag.md).

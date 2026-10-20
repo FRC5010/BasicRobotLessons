@@ -10,6 +10,8 @@ import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.command3.SchedulerEvent;
 import org.wpilib.command3.button.CommandGamepad;
+import org.wpilib.driverstation.Alert;
+import org.wpilib.driverstation.Alert.Level;
 import org.wpilib.framework.OpModeRobot;
 import org.wpilib.simulation.BatterySim;
 import org.wpilib.simulation.RoboRioSim;
@@ -26,8 +28,8 @@ import first.robot.subsystems.Elevator;
 import first.robot.subsystems.Flywheel;
 import first.robot.subsystems.GamePieceDetector;
 import first.robot.subsystems.Leds;
-import first.robot.subsystems.LimelightPoseProvider;
 import first.robot.subsystems.Localizer;
+import first.robot.subsystems.PhotonVisionPoseProvider;
 import first.robot.subsystems.Superstructure;
 
 /**
@@ -52,8 +54,8 @@ public class Robot extends OpModeRobot {
   // Blank finals: building a camera needs localizer (for its pose supplier),
   // so localizer has to be a finished object first. Assigned in the
   // constructor body, below, which runs after every field initializer above.
-  public final LimelightPoseProvider frontCamera;
-  public final LimelightPoseProvider backCamera;
+  public final PhotonVisionPoseProvider frontCamera;
+  public final PhotonVisionPoseProvider backCamera;
   public final Elevator elevator = new Elevator();
   // Arm reads elevator.getCarriage() in its constructor, so elevator must be
   // a finished object first — it already is, above.
@@ -63,6 +65,10 @@ public class Robot extends OpModeRobot {
   public final Superstructure superstructure = new Superstructure(elevator, arm);
   public final Leds leds = new Leds(superstructure::getState); // reads it; drives nothing
   public final Flywheel flywheel = new Flywheel();
+
+  /** Not an error — the robot works fine on a low battery, right up until it doesn't. */
+  private final Alert m_lowBattery =
+      new Alert("Battery is low — swap it before the next match", Level.MEDIUM);
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -74,9 +80,9 @@ public class Robot extends OpModeRobot {
 
     // Vision now checks its simulated eyesight against ground truth, not
     // against its own guess — the fix Lesson 15 admitted it was missing.
-    frontCamera = LimelightPoseProvider.makeCamera(
+    frontCamera = PhotonVisionPoseProvider.makeCamera(
         VisionConstants.kFrontCameraName, VisionConstants.kFrontRobotToCamera, drivetrain::getSimulatedPose);
-    backCamera = LimelightPoseProvider.makeCamera(
+    backCamera = PhotonVisionPoseProvider.makeCamera(
         VisionConstants.kBackCameraName, VisionConstants.kBackRobotToCamera, drivetrain::getSimulatedPose);
     localizer.addProvider(frontCamera);
     localizer.addProvider(backCamera);
@@ -104,6 +110,11 @@ public class Robot extends OpModeRobot {
     // however low the simulated battery goes — measured, not assumed, so
     // this compares against the threshold ourselves instead of trusting it.
     SmartDashboard.putBoolean("Power/BrownedOut", batteryVolts < PowerConstants.kBrownoutVoltage.in(Volts));
+
+    // This one belongs to the robot rather than to any subsystem, for the
+    // same reason Lesson 29's current total did: nothing smaller knows
+    // about it.
+    m_lowBattery.set(batteryVolts < PowerConstants.kLowBatteryVoltage.in(Volts));
   }
 
   /**

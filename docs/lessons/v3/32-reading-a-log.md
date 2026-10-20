@@ -1,4 +1,4 @@
-# Lesson 33 — Reading a match log
+# Lesson 32 — Reading a match log
 
 **Goal:** Diagnose a failure that already happened, using nothing but the
 log — find the moment it went wrong, and read the traces together
@@ -263,7 +263,7 @@ Here is one, worked quickly, and entirely narrated: nothing below needs
 you to actually go break it.
 
 Say a mentor updates `PathConstants.kAimTagId` for a new field
-calibration — Lesson 28's aim-assist target — and fat-fingers it: the 2
+calibration — Lesson 27's aim-assist target — and fat-fingers it: the 2
 key sticks, and `20` becomes `220`. Nobody touched a line of drivetrain
 code, and the field only has 32 tags, so `220` is silently, harmlessly
 invalid.
@@ -280,7 +280,7 @@ reads that: *"Zero when the tag isn't on this field — a robot that can't
 find its target should sit still rather than pick a direction."* No
 exception, no console warning either — unlike BLine's `lib_key` lookup
 in the old course, `Aim` doesn't log anything when it comes up empty.
-The `RobotAutoAimWhileDriving` opmode from Lesson 28 runs
+The `RobotAutoAimWhileDriving` opmode from Lesson 27 runs
 `driveWhileAiming` — drive forward at 30% speed for three seconds while
 the omega term tries to hold the nose on the tag. With the typo, that
 omega term is always `0.0`. The robot just drives straight for three
@@ -376,4 +376,4 @@ both were sitting in a log the whole time, waiting to be read.
 Every gain this reading skill has ever pointed at came from a spec
 sheet, not a real motor. The next lesson is where that finally changes.
 
-Next: [Lesson 34 — Tuning your robot when build team hands it over](34-tuning-with-sysid.md)
+Next: [Lesson 33 — Tuning your robot when build team hands it over](33-tuning-with-sysid.md)

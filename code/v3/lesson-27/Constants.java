@@ -288,5 +288,13 @@ public final class Constants {
 
     /** Where the left bumper lines the robot up. */
     public static final Pose2d kScoringPose = new Pose2d(5.0, 4.0, Rotation2d.fromDegrees(90));
+
+    // Aiming. The rotation override wants an angular velocity, not a heading, so
+    // this gain turns heading error into a rate.
+    public static final double kAimP = 4.0; // rad/s per radian of heading error
+    /** The tag to point at. Change it to the one your alliance actually scores on. */
+    public static final int kAimTagId = 20;
+    /** Close enough to call it aimed. */
+    public static final Angle kAimTolerance = Degrees.of(2);
   }
 }

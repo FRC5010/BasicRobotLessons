@@ -1,4 +1,4 @@
-# Lesson 31 — The robot tells you what's wrong
+# Lesson 30 — The robot tells you what's wrong
 
 **Goal:** Make the robot run its own pre-match checklist and say what it
 finds, somewhere a human will actually look.
@@ -27,7 +27,7 @@ Everything you'd want to know, the robot already knows.
 
 It knows whether every motor answered on the CAN bus. It knows whether
 the elevator has ever been homed, because Lesson 21 recorded that. It
-knows what the battery is doing, because Lesson 30 measured it. It knows
+knows what the battery is doing, because Lesson 29 measured it. It knows
 whether the cameras are alive. Every one of those facts is sitting in a
 variable right now.
 
@@ -281,7 +281,7 @@ point is that somebody reads it and immediately knows what to pick up.
 One more, and it belongs to no subsystem at all.
 
 The battery is the robot's, not the elevator's — the same argument
-Lesson 30 made about the current total. So it goes where the robot lives.
+Lesson 29 made about the current total. So it goes where the robot lives.
 
 **Add to `Constants.PowerConstants`, below `kBrownoutVoltage`:**
 
@@ -305,7 +305,7 @@ Lesson 30 made about the current total. So it goes where the robot lives.
 
 ```java
     // This one belongs to the robot rather than to any subsystem, for the
-    // same reason Lesson 30's current total did: nothing smaller knows
+    // same reason Lesson 29's current total did: nothing smaller knows
     // about it.
     m_lowBattery.set(batteryVolts < PowerConstants.kLowBatteryVoltage.in(Volts));
 ```
@@ -318,7 +318,7 @@ import org.wpilib.driverstation.Alert.Level;
 ```
 
 11.5 V is deliberately generous. The rail doesn't sag to real trouble
-until well below that (Lesson 30 measured brownouts happening in the
+until well below that (Lesson 29 measured brownouts happening in the
 5–6 V range under load), and by the time you're anywhere near that it's
 far too late to do anything about it. **An alert that fires when the
 problem is already happening has missed its job** — the useful threshold
@@ -339,8 +339,8 @@ Section 3 already told you why looking at a dashboard widget won't work
 yet on this alpha: nothing publishes to NetworkTables anymore, and
 SimGUI's own Alerts window still expects the old NT-backed mechanism.
 What *does* work, right now, is `AlertSim` — the same simulation-only
-inspection surface this course has used since Lesson 29 for `FlywheelSim`
-and Lesson 30 for `RoboRioSim`, just for alerts instead of physics.
+inspection surface this course has used since Lesson 28 for `FlywheelSim`
+and Lesson 29 for `RoboRioSim`, just for alerts instead of physics.
 
 **Add to `Robot.robotPeriodic()`, temporarily, to watch alert state as you go:**
 
@@ -372,7 +372,7 @@ Now make one appear on purpose, for real this time:
 **Drop the battery.** In SimGUI's Other Devices panel, drag the RoboRIO's
 input voltage down below 11.5 and watch `[MEDIUM] Battery is low — swap
 it before the next match` appear in the console. That's the same rail
-Lesson 30's model drives, so a genuinely heavy moment will trip it too.
+Lesson 29's model drives, so a genuinely heavy moment will trip it too.
 
 > **One demo from the old course doesn't reproduce here, and it's worth
 > knowing why rather than just being told it doesn't work.** Renaming
@@ -396,7 +396,7 @@ back out — it did its job, and a real match won't need a console open.
 
 ## Try it
 
-1. **Pick the battery threshold from real data.** Lesson 30 gave you a
+1. **Pick the battery threshold from real data.** Lesson 29 gave you a
    battery model and a current total. Drive the robot hard, watch how far
    the rail sags under a normal cycle, and choose a threshold that
    doesn't cry wolf every time the elevator moves. Defend your number.
@@ -413,12 +413,12 @@ back out — it did its job, and a real match won't need a console open.
    confirm the alert fires the way it would for a genuinely dead
    coprocessor.
 4. **Alert on something that has never been true.** The flywheel has a
-   tolerance and Lesson 29 logged `AtSpeed`. If it has never once reached
+   tolerance and Lesson 28 logged `AtSpeed`. If it has never once reached
    speed since boot, something is wrong — a jammed wheel, a bad gain, a
    dead motor that still answers on CAN. Detect it and say so.
 5. **Make an alert that would have saved you earlier.** Look back through
    this course for a failure you had to diagnose by reading code — a
-   wrong tag ID from Lesson 28, a class ID mismatch from Lesson 27. Add
+   wrong tag ID from Lesson 27, a misspelled `lib_key` from Lesson 17. Add
    the alert that would have just told you.
 6. **Count your alerts.** If a robot boots with nine warnings showing,
    nobody reads any of them. Decide how many is too many, and what you'd
@@ -475,4 +475,4 @@ Alerts tell you when something is wrong *now*. There's a third question
 neither they nor the logs answer: is the thing that worked last Tuesday
 still working? The next lesson gets a machine to check.
 
-Next: [Lesson 32 — Tests that catch what a plot won't](32-testing.md).
+Next: [Lesson 31 — Tests that catch what a plot won't](31-testing.md).

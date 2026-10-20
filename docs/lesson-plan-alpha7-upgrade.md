@@ -150,8 +150,8 @@ Grouped by relevance to this course, most disruptive first.
   content (Lesson 15 `photonvision.md`, Lesson 28 `aim-at-tag.md`) is
   already written and would need this checked when touched, but nothing
   upstream of it changes today.
-- **`Alert` moved from HAL/wpilib to wpiutil.** Affects Lesson 31
-  (`docs/lessons/v3/31-alerts.md`). Likely just an import path change; worth
+- **`Alert` moved from HAL/wpilib to wpiutil.** Affects Lesson 30, was 31
+  (`docs/lessons/v3/30-alerts.md`). Likely just an import path change; worth
   confirming rather than assuming.
 - **Timestamps now nanoseconds instead of microseconds; `Preferences`
   moved to its own package; `usage reporting` API added.** No known
@@ -412,8 +412,8 @@ landed on it first. What remains is the same lesson-by-lesson fix as 1a,
 starting at Lesson 16: run `./tools/verify-lessons-v3.sh N` for each `N`
 and fix whatever the real compiler reports. Two lessons need more than a
 port, because their PhotonVision-specific designs don't carry over to
-Limelight on their own — **Lesson 27** (object detection: `PhotonCamera`
-detections and a `VisionTargetSim` scene) and **Lesson 31** (camera
+Limelight on their own — **Lesson 34, was 27** (object detection: `PhotonCamera`
+detections and a `VisionTargetSim` scene) and **Lesson 30, was 31** (camera
 disconnect alert: its sim demo relied on `PhotonCamera.isConnected()`; the
 Limelight equivalent, `Limelight.isConnected()`, is honest in sim, but
 renaming a camera renames both the simulated publisher and the reader, so
@@ -421,6 +421,27 @@ the demo needs a different setup). Both are design calls for the user, not
 mechanical ports. Re-run
 `./tools/verify-lessons-v3.sh 34 test` once everything compiles, to catch
 anything only a test surfaces.
+
+> **The OpMode track was renumbered on 2026-10-20 (user decision).** Object
+> detection moved from Lesson 27 to the end, Lesson 34, so it no longer holds
+> up the lessons after it while it waits for PhotonLib. The lessons that
+> followed it each moved down one:
+>
+> | Old | New | Lesson |
+> |---|---|---|
+> | 27 | 34 | Object detection |
+> | 28 | 27 | Aim at tag |
+> | 29 | 28 | Flywheel |
+> | 30 | 29 | Current limits |
+> | 31 | 30 | Alerts |
+> | 32 | 31 | Testing |
+> | 33 | 32 | Reading a log |
+> | 34 | 33 | SysId |
+>
+> Records dated before 2026-10-20 in this doc, in
+> `lesson-plan-opmode-restructure.md`, and in older commits use the **old**
+> numbers. Outstanding work below uses the new ones. The classic track keeps
+> its order, and the lesson text doesn't mention the difference.
 
 **Lesson 16 migrated, 2026-09-27.** Compiles 0–16 with zero warnings; the
 real `Robot` boots and drives in a JUnit probe (`HAL.initialize()` now takes
@@ -527,10 +548,10 @@ the lesson's own opmode:
 `src/main/deploy/**` (lists it, and removes it on a rollback along with the
 emptied folders). Lesson 18's markers moved into the new Lesson 17 snapshot,
 and Lessons 18–19's `Robot`/`Constants` snapshots now carry Lesson 17's
-additions. **Later lessons, when Phase 1b reaches them:** 26's and 28's
-whole-file `Autos`/`Drivetrain`/`Constants`/`Robot` snapshots predate
-Lesson 17 and must carry its additions; Lesson 26's prose introduces
-`PIDController` as new, which it no longer is; and Lesson 28 adds
+additions. **Later lessons, when Phase 1b reaches them:** 26's and 27's
+(aim at tag, was 28) whole-file `Autos`/`Drivetrain`/`Constants`/`Robot`
+snapshots predate Lesson 17 and must carry its additions; Lesson 26's prose
+introduces `PIDController` as new, which it no longer is; and Lesson 27 adds
 `getChassisVelocities()` itself, which Lesson 17 now provides. Lesson 25
 (BLine events and `overrideRotation`) was writable from here, and was written
 on 2026-10-19 (below).
@@ -811,7 +832,8 @@ Measured with the real `Robot` loop (probe recipe in CLAUDE.md):
   error; a drivetrain-requiring event cancels the path the next loop
   (Pick Up: stops ≈(6.0, 6.5), `Turn To Heading`).
 
-**What Lessons 26 and 28 now owe Lesson 25, when Phase 1b reaches them:**
+**What Lessons 26 and 27 now owe Lesson 25, when Phase 1b reaches them**
+(27 is aim at tag, renumbered from 28 on 2026-10-20; 26 is done):
 
 - **Autos are registered with `addOpMode`, not annotated classes.** 26's
   `RobotAutoDriveToPose` and any later auto become an `addOpMode` line in
@@ -822,9 +844,10 @@ Measured with the real `Robot` loop (probe recipe in CLAUDE.md):
   Lesson 25's state: `followPathAndScore`, `getReadyThen`,
   `handingRotationBack`, `aimOmega`, `registerEventTriggers(Superstructure,
   Localizer)`, `kScoreDistance`/`kAimP`/`kAimTarget`, `isSettled()`, the
-  `addOpMode` block, and Lesson 24's state-motion bindings in `Robot` (26–29's
-  `RobotTeleop` still bind them; those lines move to `Robot`).
-- **Lesson 28 collides with 25.** Its snapshot adds an annotated
+  `addOpMode` block, and Lesson 24's state-motion bindings in `Robot` (the
+  unmigrated snapshots 27, 28 and 34 still bind them in `RobotTeleop`; those
+  lines move to `Robot`).
+- **Lesson 27 (aim at tag) collides with 25.** Its snapshot adds an annotated
   `RobotAutoAimWhileDriving` named "Aim While Driving", which would now throw
   at boot (duplicate name). Follow the classic Lesson 28 instead: point 25's
   `aim` marker at `Aim.omegaTowardTag`, delete `kAimTarget` and `aimOmega`,
@@ -838,26 +861,27 @@ Measured with the real `Robot` loop (probe recipe in CLAUDE.md):
 - **Lesson 24: restore the classic six-state superstructure**, with
   `HANDOFF` and `HOLDING` entered automatically by `periodic()` from the beam
   break. The four-state "the operator is the sensor" design was a
-  workaround for the missing sensor. Lesson 32's `SuperstructureStateTest`,
+  workaround for the missing sensor. Lesson 31's (was 32's) `SuperstructureStateTest`,
   and any later snapshot that names the states, follow it.
-- **Lesson 27: stay on PhotonVision** for object detection, alongside
+- **Object detection (Lesson 34 since 2026-10-20, was 27): stay on PhotonVision**, alongside
   Lesson 15's Limelight, and **wait for an alpha-7 PhotonLib** rather than
   redesign around Limelight. Measured on 2026-10-17: the only 2027
   PhotonLib, `v2027.0.0-alpha-2`, declares `wpilibYear: 2027_alpha5`.
   GradleRIO alpha-7 refuses it before compiling anything: "Vendor Dependency
   photonlib has invalid year 2027_alpha5. Expected to be 2027_alpha7". The
-  marketplace's `2027_alpha7` bucket has no PhotonLib. Lessons 28–33 carry
-  27's detector, so everything after 27 waits too. When PhotonLib lands,
-  Lesson 27 needs an install step and pin from 27 on. It also needs to
+  marketplace's `2027_alpha7` bucket has no PhotonLib. The lessons that
+  followed it used to carry its detector, so everything after it waited too;
+  moving it to the end on 2026-10-20 fixed that. When PhotonLib lands,
+  Lesson 34 needs an install step and a pin from 34 on. It also needs to
   teach `PhotonCamera` and the simulated camera itself, because its text
   leans on a PhotonVision Lesson 15 that no longer exists.
 
 Snapshots 24–31 had their `new Arm(elevator)` line changed to Lesson 22's
 constructor on 2026-10-19 (Lesson 23's own text and snapshot are migrated);
 the rest of each is still to be migrated.
-Lesson 27's `VisionConstants.kSimGamePiecePositions` duplicates the arm's
-constant with the same values; unify them, or let 27's scene read the live
-pieces, when 27 is migrated.
+Object detection's (Lesson 34's) `VisionConstants.kSimGamePiecePositions`
+duplicates the arm's constant with the same values; unify them, or let its
+scene read the live pieces, when it is migrated.
 
 **Lesson 26 migrated, 2026-10-20.** Compiles 0–25 and 0–26 with zero
 warnings; `check-lesson-markers-v3.py` is clean for 1–26; the 50 tool tests
@@ -906,6 +930,37 @@ controller fields, the `PathConstants` align constants and `kScoringPose`, the
 left-bumper binding, and the `Drive To Pose` `addOpMode` line.
 `RobotAutoDriveToPose` must stay unannotated.
 
+**OpMode track renumbered, 2026-10-20 (user decision).** Object detection
+waits on an alpha-7 PhotonLib, and before this, every later lesson waited with
+it: snapshots 28–33 carried its detector (the `VisionConstants` detector
+constants, a `pieceDetector` field in `Robot`, `fetchPiece` and its
+right-bumper binding), and four lessons mentioned it in passing. None of those
+lessons used it for its own teaching, so the user moved it to the end (Lesson
+34) and the rest moved down one; the mapping is in the note at the top of
+Phase 1b. Only the OpMode track moved, and the lessons say nothing about the
+classic track's order. What changed:
+
+- `code/v3/lesson-N/` folders and `docs/lessons/v3/NN-*.md` files renamed;
+  every "Lesson N" and link for 27–34 in the track's lessons and snapshot
+  comments remapped in one pass; the README table reordered.
+- Lesson 26 now hands off to aim at tag. SysId (33) hands off to object
+  detection, and object detection (34) carries the track's closing paragraph.
+- The four passing mentions: aim at tag's contrast sentence no longer names a
+  lesson; flywheel Try It #4 drops `fetchPiece`; alerts Try It #5 swaps the
+  class-ID example for a misspelled `lib_key` (Lesson 17); testing Try It #1
+  now tests `Aim.tagPosition`'s empty answer, and the detector test it had
+  became object detection's Try It #6. Two spelled-out lesson counts moved
+  down by one.
+- `docs/_data/lesson_status.yml`: 30 waits on a decision, 34 on a library.
+
+What later migrations owe this: the unmigrated snapshots 27–33 still carry
+object detection's pieces listed above; drop them when migrating each, since
+those lessons now come first. When object detection is migrated as Lesson 34
+it builds on the full Lesson 33 state, re-adds what it needs to `Robot`,
+`Constants`, `Autos` and `RobotTeleop`, and should give its camera a
+connection alert in the pattern Lesson 30 sets (after Lesson 30's own design
+decision). Lesson 30 (alerts) is now the next blocked lesson, after 27–29.
+
 **Each lesson Phase 1b migrates also gets its NEXT LESSON markers
 (added 2026-09-26).** Lessons 1–15 now ship them: the code at the end of
 Lesson N-1 carries a javadoc-style comment at every spot where Lesson N has
@@ -925,7 +980,7 @@ instead of overwriting it, and any hardware value that lives in another file
 is silently reset on update. Two moved in: `DriveConstants.kGyroPort`
 (Lesson 8 on) and `SteerConstants.kSteerInverted` (Lesson 7 on, applied by
 the steering `TalonFXConfiguration`, which Lesson 12 extends). Snapshots
-16–33's `Constants.java` files already carry both — mechanically added, not
+16–32's and 34's `Constants.java` files already carry both — mechanically added, not
 compiled, since those lessons don't build on alpha-7 yet — so migrating a
 lesson that touches the steering motor's configuration must keep the
 `Inverted` line, and a new mechanism's CAN IDs and hardware facts belong in

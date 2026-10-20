@@ -877,7 +877,7 @@ of 0°, about 5.4 s into the drive.
 
 Look closely and the nose isn't *exactly* on the target: it trails by about 6°,
 and a little more at worst. A P loop can only make a turning rate out of an error,
-and the target's direction keeps moving as the robot drives past it. Lesson 28 is
+and the target's direction keeps moving as the robot drives past it. Lesson 27 is
 about that lag.
 
 ---
@@ -916,7 +916,7 @@ about that lag.
    would a driver *want* the intake still running at the start of teleop?
 6. **Aim at something that moves.** `kAimTarget` is a fixed point. Feed `aimOmega`
    a different target — the other alliance's corner, or a pose you compute — and
-   notice that nothing about the override changes. That's the seam Lesson 28 walks
+   notice that nothing about the override changes. That's the seam Lesson 27 walks
    through when the target becomes an AprilTag the robot knows the position of.
 
 ---

@@ -4,7 +4,6 @@
 
 package first.robot;
 
-import static org.wpilib.units.Units.Amps;
 import static org.wpilib.units.Units.Centimeters;
 import static org.wpilib.units.Units.Degrees;
 import static org.wpilib.units.Units.DegreesPerSecond;
@@ -34,7 +33,6 @@ import org.wpilib.math.geometry.Translation3d;
 import org.wpilib.units.measure.Angle;
 import org.wpilib.units.measure.AngularAcceleration;
 import org.wpilib.units.measure.AngularVelocity;
-import org.wpilib.units.measure.Current;
 import org.wpilib.units.measure.Dimensionless;
 import org.wpilib.units.measure.Distance;
 import org.wpilib.units.measure.LinearAcceleration;
@@ -278,63 +276,6 @@ public final class Constants {
     public static final double kEjectSpeed = -0.6;
   }
 
-  public static class FlywheelConstants {
-    public static final int kMotorPort = 23; // CAN ID — change to yours
-
-    // Direct drive: the wheel is on the motor shaft. The first mechanism in this
-    // course with no gearbox at all, which makes the arithmetic short.
-    public static final double kGearRatio = 1.0;
-    /** Wheel, hub and shaft together, from CAD. This is the number that matters. */
-    public static final double kMomentOfInertia = 0.01; // kg m^2
-
-    // Speeds, not places. Idling between shots is not laziness — it is what makes
-    // the wheel ready again quickly, and this lesson measures exactly how much.
-    public static final AngularVelocity kShootSpeed = RotationsPerSecond.of(60);
-    public static final AngularVelocity kIdleSpeed = RotationsPerSecond.of(30);
-    public static final AngularVelocity kTolerance = RotationsPerSecond.of(1.5);
-
-    // The speedometer. Full scale is the motor's free speed, so the needle can
-    // never run off the end of the dial.
-    public static final AngularVelocity kFreeSpeed = RotationsPerSecond.of(100);
-    public static final Distance kDialSize = Meters.of(2.0);
-    public static final Distance kNeedleLength = Meters.of(0.8);
-    /** Where the needle sits at rest: straight down. */
-    public static final Angle kZeroAngle = Degrees.of(-90);
-    /** How far it swings from rest to full scale: down, round, and up. */
-    public static final Angle kFullSweep = Degrees.of(180);
-
-    // The model: what this wheel costs to break free, to spin, and to speed up.
-    // No kG — nothing here is being held up against gravity.
-    public static final double kFlywheelKS = 0.15; // volts to overcome friction
-    public static final double kFlywheelKV = 0.12; // volts per rotation/sec
-    public static final double kFlywheelKA = 0.106; // volts per rotation/sec^2
-    // The trim: whatever the model got wrong.
-    public static final double kFlywheelKP = 0.3; // volts per rotation/sec of error
-  }
-
-  public static final class PowerConstants {
-    // Every mechanism motor shares this cap — the windings don't care which
-    // subsystem they're bolted to.
-    public static final Current kStatorLimit = Amps.of(80);
-
-    // The supply budget, one line per motor, chosen so the three mechanisms
-    // together leave headroom for the drivetrain (not budgeted here — see the
-    // lesson's Try It).
-    public static final Current kElevatorSupplyLimit = Amps.of(40);
-    public static final Current kArmPivotSupplyLimit = Amps.of(30);
-    public static final Current kArmRollerSupplyLimit = Amps.of(20);
-    public static final Current kFlywheelSupplyLimit = Amps.of(40);
-
-    /** Below this, call it a brownout — well above where the RIO itself gives up. */
-    public static final Voltage kBrownoutVoltage = Volts.of(6.3);
-
-    /**
-     * Worth complaining about before a match. Well above the brownout threshold —
-     * the point of an alert is to be early, not accurate.
-     */
-    public static final Voltage kLowBatteryVoltage = Volts.of(11.5);
-  }
-
   public static class PathConstants {
     // Stage two's gains. Higher than stage one's, because its errors are tiny
     // by the time it takes over — it only ever starts a short distance away.
@@ -347,13 +288,5 @@ public final class Constants {
 
     /** Where the left bumper lines the robot up. */
     public static final Pose2d kScoringPose = new Pose2d(5.0, 4.0, Rotation2d.fromDegrees(90));
-
-    // Aiming. The rotation override wants an angular velocity, not a heading, so
-    // this gain turns heading error into a rate.
-    public static final double kAimP = 4.0; // rad/s per radian of heading error
-    /** The tag to point at. Change it to the one your alliance actually scores on. */
-    public static final int kAimTagId = 20;
-    /** Close enough to call it aimed. */
-    public static final Angle kAimTolerance = Degrees.of(2);
   }
 }

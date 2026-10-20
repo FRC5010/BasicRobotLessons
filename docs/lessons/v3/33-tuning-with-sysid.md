@@ -1,4 +1,4 @@
-# Lesson 34 — Tuning your robot when build team hands it over
+# Lesson 33 — Tuning your robot when build team hands it over
 
 **Goal:** Meet the real machine your computed gains have been standing in
 for, put a number on how close they were, and pick up the tool teams use to
@@ -95,7 +95,7 @@ you send voltage into a real motor for the first time:
   buttons by accident while actually playing.
 - **Confirm the CAN ID matches `Constants.java`.** Characterizing the wrong
   motor because two devices share an ID is a Week 1 story every team has.
-- **Confirm the current limits from Lesson 30 are actually in the config that
+- **Confirm the current limits from Lesson 29 are actually in the config that
   ships to this motor.** They already are, if you've followed the course —
   this is the moment to double-check, not assume.
 - **Clear the area.** Nothing above, below, or beside the wheel that a hand,
@@ -103,7 +103,7 @@ you send voltage into a real motor for the first time:
 - **Start disabled, and only enable right before you run one test.** Not
   "enable and then get ready" — get ready, *then* enable.
 - **Watch current, not just speed, the first time.** A locked rotor draws
-  huge current and barely spins — Lesson 30 measured this directly. If the
+  huge current and barely spins — Lesson 29 measured this directly. If the
   wheel isn't turning and the current reading is climbing, that's your
   answer, and it isn't "give it more voltage."
 - **Know where disable is before you need it.** Not as a formality — as the
@@ -408,7 +408,7 @@ import first.robot.commands.SysIdRoutine;
 
 /**
  * A separate opmode for characterization, deliberately reachable only from
- * here — see Lesson 34.
+ * here — see Lesson 33.
  */
 @Utility
 public class RobotUtility extends PeriodicOpMode {
@@ -538,7 +538,7 @@ The fix is one number.
 ```java
 // A quarter of the default ramp rate: this wheel is light and direct-drive,
 // so 1 V/s never lets it sit still long enough to be "quasi" anything — see
-// Lesson 34 section 7. The longer timeout gives the slower climb room to
+// Lesson 33 section 7. The longer timeout gives the slower climb room to
 // reach a useful voltage before the routine gives up on its own.
 private final SysIdRoutine m_sysId = new SysIdRoutine(
     new SysIdRoutine.Config(Volts.of(0.25).per(Second), Volts.of(7), Seconds.of(30)),
@@ -634,14 +634,14 @@ That comment is worth reading twice, because the missing half of this guard
 isn't an oversight — it's a measured trap this lesson walked into and is
 handing you the way out of. A first pass at this section added a matching
 *reverse* soft limit, at `kMinHeight`, the mirror image of the forward one
-above. It broke Lesson 32's already-passing `ElevatorHomingTest` — homing,
+above. It broke Lesson 31's already-passing `ElevatorHomingTest` — homing,
 which used to finish in about 4.6 seconds, was still crawling downward at
 20 seconds and counting, at roughly a quarter of its normal rate. Not
 refused outright — just slower, in a way that looked exactly like a weak
 motor rather than a limit doing its job. **That's the actual danger of a
 misconfigured limit: it doesn't fail loud, it fails by making the mechanism
 seem broken**, the same shape of trap Lesson 21's fail-safe wiring and
-Lesson 30's brownout were both about.
+Lesson 29's brownout were both about.
 
 Here's why it happened. A relative encoder reads zero wherever the carriage
 happens to be sitting the moment power comes on (Lesson 21) — that's not
@@ -737,7 +737,7 @@ forward and reverse genuinely different tests rather than mirror images.
 Here's the honest part, and it's worth sitting with rather than skating past.
 
 `FlywheelSim`, underneath everything in this course, has never modeled
-friction — Lesson 29 already proved this by hand, watching a wheel with
+friction — Lesson 28 already proved this by hand, watching a wheel with
 `kS = 0.05` reach 0.37 rot/s from a standing start instead of staying put.
 So when you characterize the flywheel *in this simulation*, section 7's
 slower-ramp result isn't measuring hardware friction. It's measuring what's
@@ -746,7 +746,7 @@ it down enough to stop mattering. Slow the ramp further and it keeps
 shrinking toward zero, because zero is the actual answer this simulated
 wheel has always had — there was never any friction in it to find.
 
-That's not a failure of the exercise. It's the same thing Lesson 29 told you
+That's not a failure of the exercise. It's the same thing Lesson 28 told you
 about `kS`, confirmed a second way: **a simulation can only teach you what it
 models.** `kV` and `kA` came back honest because `FlywheelSim`'s physics
 genuinely has a back-EMF term and genuinely has inertia — those measurements
@@ -809,7 +809,7 @@ just guessing at.
 ## What you learned
 
 The gains this course taught you to compute were never a finish line — they
-were a stand-in good enough to build thirty-three lessons of simulation on
+were a stand-in good enough to build thirty-two lessons of simulation on
 top of, and today you met the tool that replaces "stand-in" with "measured."
 Since the framework hadn't shipped that tool yet, you built it — a small
 `SysIdRoutine` around the one piece that *had* been ported,
@@ -852,3 +852,8 @@ worth having learned before build team hands you one.
 None of this replaces understanding the model — it confirms it, or it tells
 you honestly where the model and the machine parted ways. Either answer is
 worth having.
+
+One lesson left, and it goes back out onto the field: a camera that finds a
+game piece on its own, and a robot that goes and gets it.
+
+Next: [Lesson 34 — Going to get something you just saw](34-object-detection.md).

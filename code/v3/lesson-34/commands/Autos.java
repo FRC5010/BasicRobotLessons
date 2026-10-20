@@ -1,15 +1,11 @@
 package first.robot.commands;
 
-import static org.wpilib.units.Units.RadiansPerSecond;
-import static org.wpilib.units.Units.Seconds;
-
 import java.util.Optional;
 
 import org.wpilib.command3.Command;
 import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.math.geometry.Translation2d;
 
-import first.robot.Constants.DriveConstants;
 import first.robot.Constants.PathConstants;
 import first.robot.subsystems.Drivetrain;
 import first.robot.subsystems.GamePieceDetector;
@@ -78,20 +74,5 @@ public final class Autos {
               collectPose(localizer.getPose(), piece.get()), localizer::getPose));
         })
         .named("Fetch Piece");
-  }
-
-  /**
-   * Creep forward for three seconds, field-relative, with the chassis's nose
-   * held on the aiming tag the whole time — the same {@code Aim} arithmetic
-   * the driver's left trigger uses, driving the exact same number a second
-   * way. Retune the gain and both improve; fix a bug and it's fixed once.
-   */
-  public static Command driveWhileAiming(Drivetrain drivetrain, Localizer localizer) {
-    return drivetrain.driveFieldRelative(
-            () -> DriveConstants.kMaxSpeed.times(0.3),
-            () -> DriveConstants.kMaxSpeed.times(0.0),
-            () -> RadiansPerSecond.of(
-                Aim.omegaTowardTag(drivetrain, localizer, PathConstants.kAimTagId)))
-        .withTimeout(Seconds.of(3));
   }
 }

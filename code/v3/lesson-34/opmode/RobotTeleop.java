@@ -4,19 +4,13 @@
 
 package first.robot.opmode;
 
-import static org.wpilib.units.Units.RadiansPerSecond;
-
 import org.wpilib.command3.Trigger;
 import org.wpilib.opmode.PeriodicOpMode;
 import org.wpilib.opmode.Teleop;
-import org.wpilib.units.measure.AngularVelocity;
 
 import first.robot.Constants.DriveConstants;
 import first.robot.Constants.ElevatorConstants;
-import first.robot.Constants.FlywheelConstants;
-import first.robot.Constants.PathConstants;
 import first.robot.Robot;
-import first.robot.commands.Aim;
 import first.robot.commands.Autos;
 import first.robot.subsystems.SuperstructureState;
 
@@ -74,19 +68,6 @@ public class RobotTeleop extends PeriodicOpMode {
     robot.driverController.rightBumper().whileTrue(Autos.fetchPiece(
         robot.drivetrain, robot.localizer, robot.pieceDetector, robot.superstructure));
 
-    // Hold the left trigger and the robot takes the rotation stick off you:
-    // you keep both translation axes, it keeps the nose on the tag.
-    robot.driverController.leftTrigger().whileTrue(
-        robot.drivetrain.driveFieldRelative(
-            () -> DriveConstants.kMaxSpeed.times(-robot.driverController.getLeftY()),
-            () -> DriveConstants.kMaxSpeed.times(-robot.driverController.getLeftX()),
-            this::aimOmega));
-
-    // Same trigger, different subsystem: lining up and spinning up are the
-    // same decision, so they happen together.
-    robot.driverController.leftTrigger().whileTrue(
-        robot.flywheel.spinUp(FlywheelConstants.kShootSpeed));
-
     // Back homes the elevator: the encoder can't know where the carriage is
     // at power-on, so drive down to the switch and let it say.
     robot.driverController.back().onTrue(robot.elevator.home());
@@ -94,16 +75,6 @@ public class RobotTeleop extends PeriodicOpMode {
     // A Trigger is any boolean the scheduler polls — it does not have to be
     // a button. Whenever the switch trips, take its word for the height.
     new Trigger(robot.elevator::atBottomLimit).onTrue(robot.elevator.rezeroAtBottom());
-  }
-
-  /**
-   * How fast to spin to keep pointing at the aiming tag, as the drive command
-   * wants it. No camera in sight: this works from the fused pose and the tag
-   * layout, so it keeps working when nothing can see the tag.
-   */
-  private AngularVelocity aimOmega() {
-    return RadiansPerSecond.of(
-        Aim.omegaTowardTag(robot.drivetrain, robot.localizer, PathConstants.kAimTagId));
   }
 
   @Override

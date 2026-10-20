@@ -1,4 +1,4 @@
-# Lesson 32 — Tests that catch what a plot won't
+# Lesson 31 — Tests that catch what a plot won't
 
 **Goal:** Write JUnit tests against your own subsystems, using exactly the
 technique that verified every lesson in this course.
@@ -209,7 +209,7 @@ moment somebody edits the homing routine.
 First, the elevator has to be able to answer the question — and this is
 one place this port is ahead of the original course rather than behind
 it. **`Elevator.getHeightMeters()` already exists**, added back in
-Lesson 30 so the total-current calculation had something to read. It
+Lesson 29 so the total-current calculation had something to read. It
 was written for an unrelated reason and it's exactly what this test
 needs, which is itself worth noticing: **you cannot assert on something
 you cannot observe**, and a getter that turns out to be reusable for
@@ -351,7 +351,7 @@ slack at all. It's not that the trap is smaller in this port — it's that
 it has a cliff rather than a slope, and you won't find the cliff by
 guessing where it is.
 
-The mechanism is the same one named in Lesson 30: the physics model
+The mechanism is the same one named in Lesson 29: the physics model
 advances a fixed 20 ms of simulated time every time you step it, while
 Phoenix's simulated firmware, running the closed loop, advances on the
 **wall clock**. Remove the sleep and the mechanism computes as if a full
@@ -443,10 +443,10 @@ instead of at an event, from a driver.
 
 ## Try it
 
-1. **Test Lesson 27's claim.** `GamePieceDetector` is supposed to find
-   nothing when there's nothing to find. Build one with an empty field
-   and assert its target comes back empty — the same claim the lesson
-   verified by hand.
+1. **Test Lesson 27's claim.** `Aim.tagPosition` is supposed to come
+   back empty for a tag ID that isn't on the field, rather than crash.
+   Ask it for one that doesn't exist and assert what you get — it's pure
+   logic, so it needs no HAL, the same as `SuperstructureStateTest`.
 2. **Test the arm's soft limits.** Lesson 20 put limits in the firmware
    *and* a clamp in the code, deliberately. Bypass the clamp and assert
    the firmware still holds. This one needs its own CAN IDs.
@@ -454,7 +454,7 @@ instead of at an event, from a driver.
    zero and run the suite. Which test catches it? If none does, that's
    information — write the one that would.
 4. **Write the test for a bug you actually had.** Somewhere in the last
-   thirty-one lessons you got something wrong and fixed it. Write the
+   thirty lessons you got something wrong and fixed it. Write the
    test that would have caught it, and notice how much easier it is to
    write now that you know the answer.
 5. **Make a test lie to you.** Delete the `DriverStationSim.setEnabled(true)`
@@ -507,4 +507,4 @@ Tests catch what you already thought to check. The next lesson is for
 the failure nobody thought to write a test for — the one you only find
 out about from a log, after the fact.
 
-Next: [Lesson 33 — Reading a match log](33-reading-a-log.md).
+Next: [Lesson 32 — Reading a match log](32-reading-a-log.md).

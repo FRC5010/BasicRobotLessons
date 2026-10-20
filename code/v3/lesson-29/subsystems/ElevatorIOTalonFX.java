@@ -63,7 +63,6 @@ public class ElevatorIOTalonFX implements ElevatorIO {
     inputs.setpointMeters = rotationsToMeters(m_motor.getClosedLoopReference().getValue());
     inputs.statorCurrentAmps = m_motor.getStatorCurrent().getValue().in(Amps);
     inputs.supplyCurrentAmps = m_motor.getSupplyCurrent().getValue().in(Amps);
-    inputs.motorConnected = m_motor.isConnected();
     // Normally closed to ground: the switch holds this line low while the
     // carriage is clear of it, so "high" means tripped — or a broken wire.
     inputs.atBottomLimit = m_bottomLimit.get();

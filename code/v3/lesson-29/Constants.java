@@ -4,6 +4,7 @@
 
 package first.robot;
 
+import static org.wpilib.units.Units.Amps;
 import static org.wpilib.units.Units.Centimeters;
 import static org.wpilib.units.Units.Degrees;
 import static org.wpilib.units.Units.DegreesPerSecond;
@@ -33,6 +34,7 @@ import org.wpilib.math.geometry.Translation3d;
 import org.wpilib.units.measure.Angle;
 import org.wpilib.units.measure.AngularAcceleration;
 import org.wpilib.units.measure.AngularVelocity;
+import org.wpilib.units.measure.Current;
 import org.wpilib.units.measure.Dimensionless;
 import org.wpilib.units.measure.Distance;
 import org.wpilib.units.measure.LinearAcceleration;
@@ -308,6 +310,23 @@ public final class Constants {
     public static final double kFlywheelKA = 0.106; // volts per rotation/sec^2
     // The trim: whatever the model got wrong.
     public static final double kFlywheelKP = 0.3; // volts per rotation/sec of error
+  }
+
+  public static final class PowerConstants {
+    // Every mechanism motor shares this cap — the windings don't care which
+    // subsystem they're bolted to.
+    public static final Current kStatorLimit = Amps.of(80);
+
+    // The supply budget, one line per motor, chosen so the three mechanisms
+    // together leave headroom for the drivetrain (not budgeted here — see the
+    // lesson's Try It).
+    public static final Current kElevatorSupplyLimit = Amps.of(40);
+    public static final Current kArmPivotSupplyLimit = Amps.of(30);
+    public static final Current kArmRollerSupplyLimit = Amps.of(20);
+    public static final Current kFlywheelSupplyLimit = Amps.of(40);
+
+    /** Below this, call it a brownout — well above where the RIO itself gives up. */
+    public static final Voltage kBrownoutVoltage = Volts.of(6.3);
   }
 
   public static class PathConstants {

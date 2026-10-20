@@ -4,23 +4,15 @@
 
 package first.robot;
 
-import static org.wpilib.units.Units.Volts;
-
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.command3.SchedulerEvent;
 import org.wpilib.command3.button.CommandGamepad;
-import org.wpilib.driverstation.Alert;
-import org.wpilib.driverstation.Alert.Level;
 import org.wpilib.framework.OpModeRobot;
-import org.wpilib.simulation.BatterySim;
-import org.wpilib.simulation.RoboRioSim;
 import org.wpilib.smartdashboard.SmartDashboard;
 import org.wpilib.system.DataLogManager;
-import org.wpilib.system.RobotController;
 
 import first.robot.Constants.DriveConstants;
-import first.robot.Constants.PowerConstants;
 import first.robot.Constants.VisionConstants;
 import first.robot.subsystems.Arm;
 import first.robot.subsystems.Drivetrain;
@@ -28,8 +20,8 @@ import first.robot.subsystems.Elevator;
 import first.robot.subsystems.Flywheel;
 import first.robot.subsystems.GamePieceDetector;
 import first.robot.subsystems.Leds;
+import first.robot.subsystems.LimelightPoseProvider;
 import first.robot.subsystems.Localizer;
-import first.robot.subsystems.PhotonVisionPoseProvider;
 import first.robot.subsystems.Superstructure;
 
 /**
@@ -54,8 +46,8 @@ public class Robot extends OpModeRobot {
   // Blank finals: building a camera needs localizer (for its pose supplier),
   // so localizer has to be a finished object first. Assigned in the
   // constructor body, below, which runs after every field initializer above.
-  public final PhotonVisionPoseProvider frontCamera;
-  public final PhotonVisionPoseProvider backCamera;
+  public final LimelightPoseProvider frontCamera;
+  public final LimelightPoseProvider backCamera;
   public final Elevator elevator = new Elevator();
   // Arm reads elevator.getCarriage() in its constructor, so elevator must be
   // a finished object first — it already is, above.
@@ -65,10 +57,6 @@ public class Robot extends OpModeRobot {
   public final Superstructure superstructure = new Superstructure(elevator, arm);
   public final Leds leds = new Leds(superstructure::getState); // reads it; drives nothing
   public final Flywheel flywheel = new Flywheel();
-
-  /** Not an error — the robot works fine on a low battery, right up until it doesn't. */
-  private final Alert m_lowBattery =
-      new Alert("Battery is low — swap it before the next match", Level.MEDIUM);
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -80,9 +68,9 @@ public class Robot extends OpModeRobot {
 
     // Vision now checks its simulated eyesight against ground truth, not
     // against its own guess — the fix Lesson 15 admitted it was missing.
-    frontCamera = PhotonVisionPoseProvider.makeCamera(
+    frontCamera = LimelightPoseProvider.makeCamera(
         VisionConstants.kFrontCameraName, VisionConstants.kFrontRobotToCamera, drivetrain::getSimulatedPose);
-    backCamera = PhotonVisionPoseProvider.makeCamera(
+    backCamera = LimelightPoseProvider.makeCamera(
         VisionConstants.kBackCameraName, VisionConstants.kBackRobotToCamera, drivetrain::getSimulatedPose);
     localizer.addProvider(frontCamera);
     localizer.addProvider(backCamera);
@@ -102,27 +90,6 @@ public class Robot extends OpModeRobot {
   @Override
   public void robotPeriodic() {
     Scheduler.getDefault().run();
-
-    double batteryVolts = RobotController.getBatteryVoltage();
-    SmartDashboard.putNumber("Power/TotalCurrentAmps", getTotalCurrentAmps());
-    SmartDashboard.putNumber("Power/BatteryVolts", batteryVolts);
-    // RobotController.isBrownedOut() never reports true in this alpha's sim,
-    // however low the simulated battery goes — measured, not assumed, so
-    // this compares against the threshold ourselves instead of trusting it.
-    SmartDashboard.putBoolean("Power/BrownedOut", batteryVolts < PowerConstants.kBrownoutVoltage.in(Volts));
-
-    // This one belongs to the robot rather than to any subsystem, for the
-    // same reason Lesson 30's current total did: nothing smaller knows
-    // about it.
-    m_lowBattery.set(batteryVolts < PowerConstants.kLowBatteryVoltage.in(Volts));
-  }
-
-  /**
-   * No single mechanism knows what the others are drawing — this is the one
-   * place that can add all three up.
-   */
-  private double getTotalCurrentAmps() {
-    return elevator.getSupplyCurrentAmps() + arm.getSupplyCurrentAmps() + flywheel.getSupplyCurrentAmps();
   }
 
   private void logCommandStart(SchedulerEvent event) {
@@ -135,13 +102,7 @@ public class Robot extends OpModeRobot {
 
   /** Runs every tick, but only while the code is running in simulation. */
   @Override
-  public void simulationPeriodic() {
-    // Empty since Lesson 13 moved every mechanism's physics inside its own IO
-    // implementation. The battery doesn't fit that pattern — no single
-    // mechanism owns it, and every one of them changes it — so it's the
-    // first thing since then with a real reason to live here.
-    RoboRioSim.setVInVoltage(BatterySim.calculateDefaultBatteryLoadedVoltage(getTotalCurrentAmps()));
-  }
+  public void simulationPeriodic() {}
 
   /**
    * This function is called periodically anytime when no opmode is selected, including when the

@@ -24,7 +24,7 @@
 #
 #   ./tools/verify-lessons-v3.sh          # roll through the highest lesson present
 #   ./tools/verify-lessons-v3.sh 2        # stop after Lesson 2
-#   ./tools/verify-lessons-v3.sh 32 test  # also run any src/test/java you dropped in
+#   ./tools/verify-lessons-v3.sh 31 test  # also run any src/test/java you dropped in
 #
 # Pass --sandbox to keep the result as a real project instead of a throwaway
 # scratch build — this is how you'd hand yourself a fresh, buildable folder

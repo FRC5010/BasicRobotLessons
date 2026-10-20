@@ -327,6 +327,12 @@ public final class Constants {
 
     /** Below this, call it a brownout — well above where the RIO itself gives up. */
     public static final Voltage kBrownoutVoltage = Volts.of(6.3);
+
+    /**
+     * Worth complaining about before a match. Well above the brownout threshold —
+     * the point of an alert is to be early, not accurate.
+     */
+    public static final Voltage kLowBatteryVoltage = Volts.of(11.5);
   }
 
   public static class PathConstants {

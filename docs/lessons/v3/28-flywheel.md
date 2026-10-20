@@ -1,4 +1,4 @@
-# Lesson 29 — A wheel that holds a speed
+# Lesson 28 — A wheel that holds a speed
 
 **Goal:** Build the fourth mechanism on the same spine — and the first
 whose goal is a *speed* instead of a place, which changes more than it
@@ -637,7 +637,7 @@ comfortably inside the 1.5 rot/s tolerance — holding **7.22 V**, matching
 > **The third time this course has said it, and the clearest.** A P term
 > corrects; it does not sustain. If holding station requires continuous
 > output, calculate that output and hand it over. `kG` for gravity in
-> Lesson 18, a bearing rate in Lesson 28, `kV` for speed here.
+> Lesson 18, a bearing rate in Lesson 27, `kV` for speed here.
 
 ---
 
@@ -750,9 +750,8 @@ Worth doing deliberately:
    through it. Require it to have been in tolerance for a few ticks — a
    plain `org.wpilib.math.filter.Debouncer` field does this: feed it
    `atSpeed()`'s raw answer every tick and read `calculate(...)` instead.
-4. **Spin up on the way in.** `Autos.driveToScoringPose` and `Autos.fetchPiece`
-   both take a few seconds to arrive. Add the flywheel to one of them, so
-   it's already spinning by the time the robot gets there. The interesting
+4. **Spin up on the way in.** `Autos.driveToScoringPose` takes a few
+   seconds to arrive. Add the flywheel to it, so it's already spinning by the time the robot gets there. The interesting
    part isn't the composition, it's deciding what makes a command that
    holds a speed ever *end* — think about it before you write it.
 5. **Put a mark on the dial.** The gauge has two needles and no scale. Add
@@ -814,4 +813,4 @@ mechanisms was tuned on its own, and every one of them draws from the same
 battery. The next lesson is about what happens when they all ask at the
 same moment.
 
-Next: [Lesson 30 — One battery, everything on it](30-current-limits.md).
+Next: [Lesson 29 — One battery, everything on it](29-current-limits.md).

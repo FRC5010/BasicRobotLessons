@@ -6,6 +6,8 @@ import static org.wpilib.units.Units.Meters;
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
+import org.wpilib.driverstation.Alert;
+import org.wpilib.driverstation.Alert.Level;
 import org.wpilib.smartdashboard.MechanismLigament2d;
 import org.wpilib.smartdashboard.SmartDashboard;
 import org.wpilib.units.measure.Angle;
@@ -28,6 +30,9 @@ public class Arm extends Mechanism {
   private final ArmIO.ArmIOInputs m_inputs = new ArmIO.ArmIOInputs();
   private Angle m_goal = ArmConstants.kStowed;
 
+  private final Alert m_disconnected =
+      new Alert("Arm motor is not on the CAN bus", Level.HIGH);
+
   /** The arm's segment in the elevator's drawing — it hangs off the carriage. */
   private final MechanismLigament2d m_ligament;
 
@@ -48,6 +53,9 @@ public class Arm extends Mechanism {
     SmartDashboard.putNumber("Arm/RollerSupplyCurrentAmps", m_inputs.rollerSupplyCurrentAmps);
     SmartDashboard.putNumber("Arm/GoalDegrees", m_goal.in(Degrees));
     SmartDashboard.putBoolean("Arm/AtGoal", atGoal());
+
+    // Either motor missing is the same problem from the pit's point of view.
+    m_disconnected.set(!m_inputs.pivotConnected || !m_inputs.rollerConnected);
 
     m_ligament.setAngle(toDrawingAngle(Degrees.of(m_inputs.angleDegrees)).in(Degrees));
     m_ligament.setColor(

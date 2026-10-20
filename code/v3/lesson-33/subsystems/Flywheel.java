@@ -43,7 +43,7 @@ public class Flywheel extends Mechanism {
 
   // A quarter of the default ramp rate: this wheel is light and direct-drive,
   // so 1 V/s never lets it sit still long enough to be "quasi" anything — see
-  // Lesson 34 section 6. The longer timeout gives the slower climb room to
+  // Lesson 33 section 6. The longer timeout gives the slower climb room to
   // reach a useful voltage before the routine gives up on its own.
   private final SysIdRoutine m_sysId = new SysIdRoutine(
       new SysIdRoutine.Config(Volts.of(0.25).per(Second), Volts.of(7), Seconds.of(30)),

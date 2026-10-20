@@ -11,6 +11,7 @@ import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import first.robot.Constants.FlywheelConstants;
+import first.robot.Constants.PowerConstants;
 
 /** Real hardware behind the FlywheelIO contract: one TalonFX holding a speed. */
 public class FlywheelIOTalonFX implements FlywheelIO {
@@ -32,6 +33,12 @@ public class FlywheelIOTalonFX implements FlywheelIO {
     config.Slot0.kA = FlywheelConstants.kFlywheelKA;
     config.Slot0.kP = FlywheelConstants.kFlywheelKP;
 
+    // The budget: this motor's slice of the battery, plus the shared winding cap.
+    config.CurrentLimits.StatorCurrentLimitEnable = true;
+    config.CurrentLimits.StatorCurrentLimit = PowerConstants.kStatorLimit.in(Amps);
+    config.CurrentLimits.SupplyCurrentLimitEnable = true;
+    config.CurrentLimits.SupplyCurrentLimit = PowerConstants.kFlywheelSupplyLimit.in(Amps);
+
     m_motor.getConfigurator().apply(config);
   }
 
@@ -41,6 +48,7 @@ public class FlywheelIOTalonFX implements FlywheelIO {
     inputs.appliedVolts = m_motor.getMotorVoltage().getValue().in(Volts);
     inputs.setpointRps = m_motor.getClosedLoopReference().getValue();
     inputs.statorCurrentAmps = m_motor.getStatorCurrent().getValue().in(Amps);
+    inputs.supplyCurrentAmps = m_motor.getSupplyCurrent().getValue().in(Amps);
   }
 
   @Override

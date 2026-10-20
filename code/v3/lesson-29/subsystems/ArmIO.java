@@ -9,8 +9,6 @@ public interface ArmIO {
     public double rollerVelocityRotPerSec = 0.0;
     public double pivotSupplyCurrentAmps = 0.0;
     public double rollerSupplyCurrentAmps = 0.0;
-    public boolean pivotConnected = false;
-    public boolean rollerConnected = false;
   }
 
   /** Read every sensor into 'inputs'. Called once per tick, before anything else. */

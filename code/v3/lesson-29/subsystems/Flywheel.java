@@ -59,6 +59,7 @@ public class Flywheel extends Mechanism {
     SmartDashboard.putNumber("Flywheel/AppliedVolts", m_inputs.appliedVolts);
     SmartDashboard.putNumber("Flywheel/SetpointRps", m_inputs.setpointRps);
     SmartDashboard.putNumber("Flywheel/StatorCurrentAmps", m_inputs.statorCurrentAmps);
+    SmartDashboard.putNumber("Flywheel/SupplyCurrentAmps", m_inputs.supplyCurrentAmps);
     SmartDashboard.putNumber("Flywheel/GoalRps", m_goal.in(RotationsPerSecond));
     SmartDashboard.putBoolean("Flywheel/AtSpeed", atSpeed());
     updateDial();
@@ -139,5 +140,10 @@ public class Flywheel extends Mechanism {
 
   public AngularVelocity getSpeed() {
     return RotationsPerSecond.of(m_inputs.velocityRps);
+  }
+
+  /** No subsystem knows the robot's total draw — this is this motor's slice of it. */
+  public double getSupplyCurrentAmps() {
+    return m_inputs.supplyCurrentAmps;
   }
 }

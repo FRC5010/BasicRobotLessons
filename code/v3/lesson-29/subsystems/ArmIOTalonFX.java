@@ -80,8 +80,6 @@ public class ArmIOTalonFX implements ArmIO {
     inputs.rollerVelocityRotPerSec = m_roller.getVelocity().getValue().in(RotationsPerSecond);
     inputs.pivotSupplyCurrentAmps = m_pivot.getSupplyCurrent().getValue().in(Amps);
     inputs.rollerSupplyCurrentAmps = m_roller.getSupplyCurrent().getValue().in(Amps);
-    inputs.pivotConnected = m_pivot.isConnected();
-    inputs.rollerConnected = m_roller.isConnected();
   }
 
   @Override

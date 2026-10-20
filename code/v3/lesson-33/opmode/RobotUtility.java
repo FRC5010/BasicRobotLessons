@@ -12,7 +12,7 @@ import first.robot.commands.SysIdRoutine;
 
 /**
  * A separate opmode for characterization, deliberately reachable only from
- * here — see Lesson 34.
+ * here — see Lesson 33.
  */
 @Utility
 public class RobotUtility extends PeriodicOpMode {

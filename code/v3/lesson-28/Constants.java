@@ -276,6 +276,40 @@ public final class Constants {
     public static final double kEjectSpeed = -0.6;
   }
 
+  public static class FlywheelConstants {
+    public static final int kMotorPort = 23; // CAN ID — change to yours
+
+    // Direct drive: the wheel is on the motor shaft. The first mechanism in this
+    // course with no gearbox at all, which makes the arithmetic short.
+    public static final double kGearRatio = 1.0;
+    /** Wheel, hub and shaft together, from CAD. This is the number that matters. */
+    public static final double kMomentOfInertia = 0.01; // kg m^2
+
+    // Speeds, not places. Idling between shots is not laziness — it is what makes
+    // the wheel ready again quickly, and this lesson measures exactly how much.
+    public static final AngularVelocity kShootSpeed = RotationsPerSecond.of(60);
+    public static final AngularVelocity kIdleSpeed = RotationsPerSecond.of(30);
+    public static final AngularVelocity kTolerance = RotationsPerSecond.of(1.5);
+
+    // The speedometer. Full scale is the motor's free speed, so the needle can
+    // never run off the end of the dial.
+    public static final AngularVelocity kFreeSpeed = RotationsPerSecond.of(100);
+    public static final Distance kDialSize = Meters.of(2.0);
+    public static final Distance kNeedleLength = Meters.of(0.8);
+    /** Where the needle sits at rest: straight down. */
+    public static final Angle kZeroAngle = Degrees.of(-90);
+    /** How far it swings from rest to full scale: down, round, and up. */
+    public static final Angle kFullSweep = Degrees.of(180);
+
+    // The model: what this wheel costs to break free, to spin, and to speed up.
+    // No kG — nothing here is being held up against gravity.
+    public static final double kFlywheelKS = 0.15; // volts to overcome friction
+    public static final double kFlywheelKV = 0.12; // volts per rotation/sec
+    public static final double kFlywheelKA = 0.106; // volts per rotation/sec^2
+    // The trim: whatever the model got wrong.
+    public static final double kFlywheelKP = 0.3; // volts per rotation/sec of error
+  }
+
   public static class PathConstants {
     // Stage two's gains. Higher than stage one's, because its errors are tiny
     // by the time it takes over — it only ever starts a short distance away.

@@ -1,4 +1,4 @@
-# Lesson 27 — Going to get something you just saw
+# Lesson 34 — Going to get something you just saw
 
 **Goal:** Let the robot find a game piece with its camera, work out where on the
 field it actually is, drive there, and pick it up — with no target picked in
@@ -869,6 +869,10 @@ Things worth doing deliberately:
 5. **Reject the impossible.** A detection outside the field boundary is
    wrong no matter how confident the model is. Add that filter and decide
    where it belongs — the IO layer, or the detector.
+6. **Test the empty field.** `GamePieceDetector` is supposed to find
+   nothing when there's nothing to find. Write the JUnit test Lesson 31
+   taught you to write: build one with an empty field and assert its
+   target comes back empty — the same claim this lesson checked by hand.
 
 ---
 
@@ -902,4 +906,9 @@ about your robot. What's real in every case — sim or hardware — is that
 `fetchPiece` commits once and doesn't look back, and knowing that is what
 separates an auto that works in the pit from one that works on the field.
 
-Next: [Lesson 28 — Keeping the nose on the target](28-aim-at-tag.md).
+That's the end of this track. You started with one motor that spun while
+you held a button. The robot you're leaving with knows where it is, homes
+its own mechanisms, runs a state machine, drives paths while it works, tells
+you what's wrong before a match, and now goes after things its camera finds.
+Every piece of it is code you wrote and can explain, which is the part that
+carries over to whatever robot comes next.

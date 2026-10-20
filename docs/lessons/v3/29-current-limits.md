@@ -1,4 +1,4 @@
-# Lesson 30 — One battery, everything on it
+# Lesson 29 — One battery, everything on it
 
 **Goal:** Stop the robot browning out — and cause one on purpose first, so
 you know what it looks like from the inside.
@@ -23,8 +23,8 @@ Every lesson so far has looked at one mechanism at a time. The elevator
 lifts, the arm swings, the flywheel spins, the drivetrain drives — each of
 them tuned, measured, and reasoned about on its own.
 
-Now hold the left trigger while driving hard across the field. Lesson 28
-bound it to the drivetrain, keeping the nose pointed at a tag. Lesson 29
+Now hold the left trigger while driving hard across the field. Lesson 27
+bound it to the drivetrain, keeping the nose pointed at a tag. Lesson 28
 bound the *same trigger* to the flywheel, spinning it to shooting speed.
 Add the D-pad raising the elevator and the right bumper chasing a game
 piece, and that's four mechanisms — twelve motors — all asking for
@@ -523,4 +523,4 @@ and the only time you'll ever get to do it without a crowd watching.
 Notice, though, that finding it took a laptop, a graph, and someone who
 knew which three keys to plot. In a queue line you have none of those.
 
-Next: [Lesson 31 — The robot tells you what's wrong](31-alerts.md).
+Next: [Lesson 30 — The robot tells you what's wrong](30-alerts.md).
