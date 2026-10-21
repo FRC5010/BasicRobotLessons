@@ -241,7 +241,7 @@ control.
 **Add to `Constants.java`, as a new nested class above `PathConstants`:**
 
 ```java
-  public static class FlywheelConstants {
+  public static final class FlywheelConstants {
     public static final int kMotorPort = 23; // CAN ID — change to yours
 
     // Direct drive: the wheel is on the motor shaft. The first mechanism in this
@@ -333,7 +333,7 @@ import org.wpilib.command3.Scheduler;
 import org.wpilib.smartdashboard.Mechanism2d;
 import org.wpilib.smartdashboard.MechanismLigament2d;
 import org.wpilib.smartdashboard.MechanismRoot2d;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.Angle;
 import org.wpilib.units.measure.AngularVelocity;
 
@@ -345,7 +345,7 @@ import first.robot.Constants.FlywheelConstants;
  * A shooter wheel: the fourth mechanism on the same spine, and the first
  * whose goal is a speed rather than a place.
  */
-public class Flywheel extends Mechanism {
+public class Flywheel implements Mechanism {
   private final FlywheelIO m_io = switch (Constants.kCurrentMode) {
     case REAL -> new FlywheelIOTalonFX();
     case SIM -> new FlywheelIOSim();
@@ -368,12 +368,12 @@ won't mind them sitting unused until then.
 
   private void periodic() {
     m_io.updateInputs(m_inputs);
-    SmartDashboard.putNumber("Flywheel/VelocityRps", m_inputs.velocityRps);
-    SmartDashboard.putNumber("Flywheel/AppliedVolts", m_inputs.appliedVolts);
-    SmartDashboard.putNumber("Flywheel/SetpointRps", m_inputs.setpointRps);
-    SmartDashboard.putNumber("Flywheel/StatorCurrentAmps", m_inputs.statorCurrentAmps);
-    SmartDashboard.putNumber("Flywheel/GoalRps", m_goal.in(RotationsPerSecond));
-    SmartDashboard.putBoolean("Flywheel/AtSpeed", atSpeed());
+    Telemetry.log("Flywheel/VelocityRps", m_inputs.velocityRps);
+    Telemetry.log("Flywheel/AppliedVolts", m_inputs.appliedVolts);
+    Telemetry.log("Flywheel/SetpointRps", m_inputs.setpointRps);
+    Telemetry.log("Flywheel/StatorCurrentAmps", m_inputs.statorCurrentAmps);
+    Telemetry.log("Flywheel/GoalRps", m_goal.in(RotationsPerSecond));
+    Telemetry.log("Flywheel/AtSpeed", atSpeed());
   }
 ```
 
@@ -396,8 +396,8 @@ where the heights were.
 import first.robot.subsystems.Flywheel;
 ```
 
-That's the whole wiring step — no default command to set up. Section 5
-explains why.
+That's the wiring step for `Robot`. The wheel's default command goes in
+its own constructor, and section 5 puts it there.
 
 **And add spin-up to the aiming trigger, in `RobotTeleop.java`'s
 constructor, right below the aim binding:**
@@ -469,20 +469,32 @@ elevator's canvas, this one isn't a picture of the robot, so its "metres"
 are just units on a dial. `getRoot` takes plain doubles (the same unpack
 Lesson 19 called out), while the ligament constructors take measures.
 
-**Publish it from the constructor, next to the `addPeriodic` call:**
-
-```java
-    SmartDashboard.putData("Flywheel/Dial", m_dial);
-```
-
 **Add the method `periodic` should already be calling, below `periodic`:**
 
 ```java
-  /** Point both needles and publish the dial. Runs every tick, like any drawing. */
+  /** Point both needles and log the dial. Runs every tick: a logged drawing is a snapshot. */
   private void updateDial() {
     m_goalNeedle.setAngle(toDialAngle(m_goal.in(RotationsPerSecond)).in(Degrees));
     m_needle.setAngle(toDialAngle(m_inputs.velocityRps).in(Degrees));
     m_needle.setColor(atSpeed() ? ElevatorConstants.kAtGoalColor : ElevatorConstants.kMovingColor);
+    Telemetry.log("Flywheel/Dial", m_dial);
+  }
+```
+
+The last line is the same one the elevator ends its `periodic` with:
+`Telemetry.log` of a drawing writes down what the drawing looks like *right
+now*, so it has to run every tick, right after the needles move. Log it once
+in the constructor and the dial would sit at rest forever.
+
+**Add the default command to the constructor, below the `addPeriodic` call:**
+
+```java
+  public Flywheel() {
+    Scheduler.getDefault().addPeriodic(this::periodic);
+    // Whatever the wheel is doing when nothing else asks for it: idling, so
+    // the next shot doesn't start from a standstill. Set here, in the
+    // constructor, so it holds in every opmode.
+    setDefaultCommand(idle());
   }
 ```
 
@@ -537,9 +549,8 @@ constants: orange while it's working, green once `atSpeed()`.
 
   /**
    * Sit at the idle speed, so the next shot doesn't start from nothing.
-   * Overriding this replaces Mechanism's own do-nothing default — the
-   * constructor installs whatever this returns automatically, so nothing
-   * else has to wire a default command for the wheel to idle on its own.
+   * Overriding this replaces Mechanism's own do-nothing default; the
+   * constructor hands the result to setDefaultCommand.
    */
   @Override
   public Command idle() {
@@ -561,14 +572,13 @@ constants: orange while it's working, green once `atSpeed()`.
 ```
 
 Stop and read `idle()` again, because it's doing more than it looks like.
-Every `Mechanism` since Lesson 18 has come with a built-in do-nothing
-`idle()` that its constructor auto-installs as the default command — it's
-how a mechanism with nothing else to do stays put without you writing a
-default command every time. Override the method, and the *override* is
-what the constructor installs, because the call is virtual. That's why
-there's no `setDefaultCommand` call anywhere in this lesson's wiring: the
-moment `Flywheel`'s constructor runs `Mechanism`'s own setup, it asks
-*this* class what `idle()` means, and gets `spinUp(kIdleSpeed)` back.
+Every `Mechanism` comes with a built-in do-nothing `idle()`. **Override
+it, and *your* version is what `idle()` means for this class** — so
+`setDefaultCommand(idle())` in the constructor installs `spinUp(kIdleSpeed)`,
+not a command that does nothing. The drivetrain's default command is set in
+`RobotTeleop`, because driving with the sticks belongs to teleop. Idling
+belongs to the wheel in every opmode, which is why this one lives in the
+constructor.
 
 That one expression is the whole dial.
 
@@ -623,14 +633,15 @@ kP × (goal − ω)  =  kV × ω
 
 Measured here: 43.27. Close enough to confirm the arithmetic, not exact —
 the small remaining gap is this simulator's own motor model, not a flaw in
-the reasoning.
+the reasoning. (Zero both gains, hold the request for five seconds on a
+20 ms schedule, and that is what the wheel reads.)
 
 Notice this is a *fixed point*, not a lag. The elevator's missing `kV`
 produced a gap that trailed the setpoint while moving and closed when it
 stopped. Here there is no stopping: the error is where the wheel lives,
 permanently, and no amount of patience recovers it.
 
-With the model in place, the same request settles at **60.43 rot/s** —
+With the model in place, the same request settles at **60.44 rot/s** —
 comfortably inside the 1.5 rot/s tolerance — holding **7.22 V**, matching
 `kV × 60 = 7.2 V` almost exactly.
 
@@ -655,7 +666,7 @@ sits while it's waiting.
 
 | Idle speed | Time to reach shooting speed |
 |---|---|
-| 0 rot/s (stopped) | 2.32 s |
+| 0 rot/s (stopped) | 2.3 s |
 | 15 rot/s | 1.76 s |
 | 30 rot/s | 1.24 s |
 | 45 rot/s | 0.70 s |
@@ -706,14 +717,14 @@ bearings were pressed, how much the belt is tensioned.
 
 `./gradlew simulateJava`. Enable teleop and watch `Flywheel/GoalRps` and
 `Flywheel/VelocityRps` on the same graph. The wheel should come up to
-30 rot/s on its own and sit there — that's `idle()`, installed as the
-default command without you writing any wiring for it.
+30 rot/s on its own and sit there — that's `idle()`, the default command
+the constructor installed.
 
 Hold the left trigger. The goal jumps to 60, the wheel climbs, and
 `Flywheel/AtSpeed` goes true a bit over a second later. Let go and it
 drops back to idle. Add `Flywheel/AppliedVolts` to the graph and you'll
-see it pin near 12 V during the climb and settle around 7.2 — which is
-`kV × 60`, exactly as computed in section 3.
+see it jump to about 7 V, climb towards 9 V as the wheel speeds up, and
+settle around 7.2 — which is `kV × 60`, exactly as computed in section 3.
 
 Worth doing deliberately:
 
@@ -796,12 +807,11 @@ a measurement agree that closely, you understand the mechanism, and
 that's a much better position to be in than having found some gains that
 seemed to work.
 
-One small structural note worth keeping, too: **overriding a base
-method changes what a constructor does**, even when the constructor was
-written first and knows nothing about the subclass. `Mechanism`'s
-constructor calls `idle()` on whatever `this` turns out to be, and
-`Flywheel` answering that question differently is the entire reason this
-lesson never had to write a `setDefaultCommand` call.
+One small structural note worth keeping, too: **the default command
+belongs wherever its job does.** The drivetrain's sticks are teleop's, so
+that default is set in `RobotTeleop`; the flywheel's idle is the wheel's own
+business, so it is set in the wheel's constructor and holds in every
+opmode.
 
 That's the whole robot built: a drivetrain that knows where it is,
 mechanisms that know where they are, cameras that find things, and now

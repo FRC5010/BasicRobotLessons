@@ -10,6 +10,8 @@ import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 
+import org.wpilib.hardware.bus.CANPort;
+
 import first.robot.Constants.FlywheelConstants;
 
 /** Real hardware behind the FlywheelIO contract: one TalonFX holding a speed. */
@@ -20,7 +22,7 @@ public class FlywheelIOTalonFX implements FlywheelIO {
   private final NeutralOut m_neutral = new NeutralOut();
 
   public FlywheelIOTalonFX() {
-    m_motor = new TalonFX(FlywheelConstants.kMotorPort, CANBus.systemcore(0));
+    m_motor = new TalonFX(FlywheelConstants.kMotorPort, new CANBus(CANPort.CAN_S0));
 
     TalonFXConfiguration config = new TalonFXConfiguration();
     config.Feedback.SensorToMechanismRatio = FlywheelConstants.kGearRatio;

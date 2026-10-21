@@ -149,6 +149,12 @@ public final class Constants {
     public static final double kSimMaxRangeMeters = 6.0;
   }
 
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * A nested class of constants for the shooter flywheel: its CAN ID, gear
+   * ratio and inertia, idle/shoot speeds and tolerance, the speedometer's
+   * dimensions, and the model's gains (no gravity term).
+   */
   public static final class PathConstants {
     // BLine runs three P loops at once. Every gain here is "output per unit of
     // error", and since error is meters (or radians) and output is per-second,

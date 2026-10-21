@@ -62,6 +62,10 @@ public class Robot extends OpModeRobot {
   // first — they already are, above.
   public final Superstructure superstructure = new Superstructure(elevator, arm);
   public final Leds leds = new Leds(superstructure::getState); // reads it; drives nothing
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * The shooter flywheel, built once like every other mechanism.
+   */
 
   /**
    * This function is run when the robot is first started up and should be used for any

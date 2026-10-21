@@ -942,6 +942,23 @@ at 50 Hz did not, so the table now has measured 2 m/s and 3 m/s columns and the
 feedforward gives 0.3–0.4°. Lesson 25's markers for 27 were added to the
 Lesson 26 snapshot (`Constants`, `Autos`, `Robot`, `RobotTeleop`).
 
+**Lesson 28 migrated, 2026-10-21.** Compiles 0–27 and 0–28 with zero
+warnings; `check-lesson-markers-v3.py` is clean for 1–28; the 50 tool tests
+pass. The old snapshot carried object detection's pieces and `RobotTeleop`
+bindings from before Lessons 17–27, so it was rebuilt on Lesson 27: its
+`Constants`, `Robot` and `RobotTeleop` plus the flywheel's four files, with
+only `FlywheelConstants`, the `flywheel` field and the left-trigger
+`spinUp` binding added. The detector, `VisionConstants` pieces, `fetchPiece`
+and the old state bindings are gone. Port: `implements Mechanism`,
+`Telemetry.log` (the dial is now logged every tick instead of one
+`putData`), `new CANBus(CANPort.CAN_S0)`. **One real change:** `Mechanism`
+is an interface now, so the "constructor auto-installs your `idle()`
+override" feature is gone; `Flywheel` calls `setDefaultCommand(idle())`
+itself and the lesson's explanation (section 5, "what you learned") says so.
+Measurements and the one claim that did not reproduce (≈12 V during the climb;
+it is 7–9 V from idle) are in CLAUDE.md. Lesson 27's snapshot got Lesson 28's
+markers (`Constants`, `Robot`, `RobotTeleop`).
+
 **What Lessons 27–34 now owe Lesson 26, when Phase 1b reaches them:** any
 whole-file snapshot of `Autos`, `Drivetrain`, `Constants`, `Robot` or
 `RobotTeleop` must carry `driveToScoringPose`, `alignToPose`/`atPose` and the
@@ -972,7 +989,7 @@ classic track's order. What changed:
   down by one.
 - `docs/_data/lesson_status.yml`: 30 waits on a decision, 34 on a library.
 
-What later migrations owe this: the unmigrated snapshots 27–33 still carry
+What later migrations owe this: the unmigrated snapshots 29–33 still carry
 object detection's pieces listed above; drop them when migrating each, since
 those lessons now come first. When object detection is migrated as Lesson 34
 it builds on the full Lesson 33 state, re-adds what it needs to `Robot`,

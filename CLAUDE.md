@@ -242,7 +242,7 @@ down one:
   by the classic number. `docs/lesson-plan-opmode-restructure.md`'s table and
   every record dated before 2026-10-20 use the old OpMode numbers, which
   matched the classic ones. Those records say so where it matters.
-- The unmigrated snapshots 27–33 still carry object detection's pieces (its
+- The unmigrated snapshots 29–33 still carry object detection's pieces (its
   `VisionConstants` constants, `Robot.pieceDetector`, `fetchPiece` and its
   right-bumper binding). Drop them when migrating each, since those lessons
   now come first. Lesson 34 re-adds what it needs when it's migrated.
@@ -339,6 +339,31 @@ simulated truth:
   next second (measured; consistent with the last command persisting, which
   was not checked directly).
 
+**v3 Lesson 28 (flywheel) on alpha-7, measured with the real `Flywheel`
+through the scheduler and with the real `Robot` loop and `GamepadSim`
+(left trigger), 20 ms fixed rate, `DriverStationSim` enabled:**
+
+- **`Mechanism` is an interface in alpha-7, so nothing installs `idle()`
+  as the default command.** The alpha-6 abstract class's constructor did; now
+  `getDefaultCommand()` is null until you call `setDefaultCommand`. `Flywheel`'s
+  constructor calls `setDefaultCommand(idle())` (overridden to
+  `spinUp(kIdleSpeed)`), so it idles in every opmode. Measured through the
+  real loop: 30.4 rot/s within 1.5 s of enabling.
+- **Reproduced:** rest to 60 rot/s 2.30–2.40 s (old 2.32); idle 15/30/45 to
+  60 rot/s 1.76/1.24/0.70 s; holds 60.44 rot/s on 7.21–7.22 V; with `kV` and
+  `kA` zeroed it sits at 43.27 rot/s after 5 s (predicted 42.86).
+- **Did not reproduce:** "pins near 12 V during the climb". From idle (30 to
+  60) the applied volts jump to ≈7 V and rise to ≈9 V as the wheel speeds up.
+  The lesson says that now.
+- **The dial is logged every tick** (`Telemetry.log("Flywheel/Dial", ...)`
+  at the end of `updateDial`), under `/Telemetry/Flywheel/Dial/Hub/{Speed,Goal}/angle`.
+  At 60 rot/s the goal needle reads −198.0° and the speed needle −198.78°
+  with colour `#32CD32`, matching `−90° − 180° × 0.6`.
+- Release of the trigger falls back to idle in ≈1.5 s (56.4 → 30.4 rot/s).
+- `Models.flywheelFromPhysicalConstants`, `FlywheelSim` and `CANBus(CANPort.CAN_S0)` are unchanged
+  in alpha-7; the port was `implements Mechanism`, `Telemetry.log`, and the
+  `CANBus` line.
+
 **v3 Lesson 27 (aim at tag) on alpha-7, measured with the real `Robot` loop
 through the scheduler (probe recipe above, plus `GamepadSim`):**
 
@@ -366,9 +391,9 @@ through the scheduler (probe recipe above, plus `GamepadSim`):**
 - **Probe trap:** a run that follows the stick-driven phase starts with the
   estimate's heading ~9° off the truth (−170° vs −179.6°) even with the
   `placeSimulatedRobot`/`resetPose` gap; throw the first run away.
-- The unmigrated snapshots 28–34 still carry `kAimTarget`, the old `Autos` and
+- The unmigrated snapshots 29–34 still carry `kAimTarget`, the old `Autos` and
   the `Robot` call `registerEventTriggers(superstructure, localizer)`; whoever
-  rolls them forward on top of 27 must take 27's versions.
+  rolls them forward on top of 28 must take 28's versions.
 
 **Lesson 18's lag numbers were remeasured on alpha-7** with the documented
 move (stowed to `kMaxHeight`) at full 20 ms ticks. The peak lag varies from
@@ -450,7 +475,7 @@ written on alpha-7 on 2026-10-17, so it was never a gap to port.
 - **`Arm(Elevator, Supplier<Pose2d>)`.** The mode `switch` moved into the
   constructor, because a field initializer can't see a constructor
   parameter. Every snapshot from 23 on says `new Arm(elevator,
-  drivetrain::getSimulatedPose)`; the unmigrated 27–30 and 34 only have that
+  drivetrain::getSimulatedPose)`; the unmigrated 29, 30 and 34 only have that
   line fixed.
 - **Commands V3's `Trigger.debounce(Time)` takes the measure directly** and
   defaults to `RISING`, read from the bytecode.
@@ -554,7 +579,7 @@ rate, `GamepadSim`, `DriverStationSim` enabled, the strip read from
 - **Snapshot 23 carries `RobotTeleop.java`** (copied unchanged from 22) to hold
   Lesson 24's markers. Lesson 31's `SuperstructureStateTest` follows the six
   states (`scoringRequiresSomethingToScore`); mutated `IDLE→SCORING` and it
-  fails by name. The unmigrated snapshots 27–30 and 34 still name the
+  fails by name. The unmigrated snapshots 29, 30 and 34 still name the
   four-state design.
 - **Maven Central throws intermittent 429s through the proxy.** A failed
   run still fills the Gradle cache, so rerun with a short sleep until it

@@ -71,6 +71,12 @@ public class RobotTeleop extends PeriodicOpMode {
             () -> DriveConstants.kMaxSpeed.times(-robot.driverController.getLeftY()),
             () -> DriveConstants.kMaxSpeed.times(-robot.driverController.getLeftX()),
             this::aimOmega));
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Spin the flywheel up to shooting speed while the same trigger is held;
+     * it needs a different mechanism from the aiming, so both run.
+     */
   }
 
   /**
