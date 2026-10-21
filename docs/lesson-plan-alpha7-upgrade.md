@@ -923,6 +923,25 @@ fields), `PathConstants` gains lines instead of being created, the `Autos`
 imports are noted as already there, Try It #4 uses `Telemetry.log`, and the
 wiring section is rewritten for `addOpMode`.
 
+**Lesson 27 migrated, 2026-10-21.** Compiles 0–26 and 0–27 with zero
+warnings; `check-lesson-markers-v3.py` is clean for 1–27; the 50 tool tests
+pass. The old snapshot was an annotated-opmode design on pre-Lesson-17 files, so
+it was rebuilt on Lesson 26: `Aim` (ported), `Constants` (`kAimTarget` replaced
+by `kAimTagId`/`kAimTolerance`), `Autos` (`aimOmega` deleted, the `aim` marker
+points at `Aim.omegaTowardTag`, `registerEventTriggers` takes the drivetrain),
+`Robot` (the call) and `RobotTeleop` (left trigger plus `aimOmega()`). The old
+`Drivetrain`, `RobotAutoAimWhileDriving` and `driveWhileAiming` are gone: Lesson
+17 provides `getChassisVelocities()`, and the lesson follows the classic one,
+pointing Lesson 25's marker at the tag instead of adding an opmode (the
+duplicate-name problem the Lesson 25 note warned about). The port was
+`Telemetry.log` for `SmartDashboard.put*`, and `Translation2d.getAngle()` as an
+`Optional`; `Field.getTagPose(int)` still exists. Measured with the real `Robot`
+loop and `GamepadSim` (numbers in CLAUDE.md): the orbit's P-only lag
+reproduces the prediction (14.8° vs 14.32°), but the lesson's old 13.2°/1.1°
+at 50 Hz did not, so the table now has measured 2 m/s and 3 m/s columns and the
+feedforward gives 0.3–0.4°. Lesson 25's markers for 27 were added to the
+Lesson 26 snapshot (`Constants`, `Autos`, `Robot`, `RobotTeleop`).
+
 **What Lessons 27–34 now owe Lesson 26, when Phase 1b reaches them:** any
 whole-file snapshot of `Autos`, `Drivetrain`, `Constants`, `Robot` or
 `RobotTeleop` must carry `driveToScoringPose`, `alignToPose`/`atPose` and the

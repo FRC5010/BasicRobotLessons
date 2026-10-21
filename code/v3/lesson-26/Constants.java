@@ -164,6 +164,12 @@ public final class Constants {
     // Aiming while the path drives. The rotation override wants an angular
     // velocity, not a heading, so this gain turns heading error into a rate.
     public static final double kAimP = 4.0; // rad/s per radian of heading error
+    /**
+     * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+     * Aiming at an invented point is replaced by aiming at a real tag whose
+     * position the field layout already knows: swap this target for a tag ID,
+     * and add a tolerance for "close enough to call it aimed".
+     */
     /** The point on the field to point at while the "aim" marker is in force. */
     public static final Translation2d kAimTarget = new Translation2d(8.0, 4.0);
 

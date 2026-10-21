@@ -72,6 +72,10 @@ public class Robot extends OpModeRobot {
     Scheduler.getDefault().addEventListener(this::logCommandStart);
     // Once, for the whole program. The markers now ask the superstructure for
     // things and read the pose, so they need both — already built, above.
+    /**
+     * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+     * The markers will also need the drivetrain, so pass it along.
+     */
     Autos.registerEventTriggers(superstructure, localizer);
 
     // Motion that belongs to a state, bound to being in it. No guard here:

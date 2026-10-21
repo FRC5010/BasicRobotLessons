@@ -148,6 +148,11 @@ public final class Autos {
   }
 
   /** Names a path file can fire with lib_key. BLine keeps them for the whole program. */
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * The aim marker will need the drivetrain too, to know how fast the robot is
+   * moving, so this takes it as a parameter.
+   */
   public static void registerEventTriggers(Superstructure superstructure, Localizer localizer) {
     // Ask for the intake before the robot gets there, so it arrives already
     // collecting. The superstructure does the rest: it drops the arm, runs the
@@ -156,6 +161,9 @@ public final class Autos {
 
     // Hand rotation to the aiming loop, and later give it back. Translation
     // keeps following the path the whole time — only the spin changes hands.
+    // ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+    // Point the override at the new tag-aiming code instead of aimOmega, which
+    // then has nothing left to do: delete it, and the imports only it used.
     FollowPath.registerEventTrigger("aim", () -> FollowPath.overrideRotation(
         () -> aimOmega(localizer), RotationOverrideBehavior.RESPECT_CONSTRAINTS));
     FollowPath.registerEventTrigger("release", FollowPath::clearRotationOverride);

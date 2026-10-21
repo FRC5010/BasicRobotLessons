@@ -58,7 +58,20 @@ public class RobotTeleop extends PeriodicOpMode {
     robot.driverController.faceLeft().onTrue(robot.superstructure.requestIntake());
     robot.driverController.faceUp().onTrue(robot.superstructure.requestIdle());
     robot.driverController.rightTrigger().onTrue(robot.superstructure.requestScore());
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Aim assist: while the left trigger is held, the driver keeps both
+     * translation sticks and the robot takes over rotation, spinning to keep
+     * its nose on a tag.
+     */
   }
+
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * A small helper that turns the new aiming arithmetic into the angular
+   * velocity the drive command expects.
+   */
 
   @Override
   public void disabledPeriodic() {

@@ -37,9 +37,10 @@ and the robot keeps the nose pointed where it needs to go, which is
 arithmetic.
 
 The pieces are all built. Lesson 14 gave you a fused pose. Lesson 15 loaded
-the AprilTag layout. Lesson 26 already showed `driveFieldRelative` taking an
-omega supplier that doesn't have to come from a stick. This lesson connects
-them and then fixes the problem that shows up when you actually drive.
+the AprilTag layout. Lesson 25 gave autos a way to hand rotation to something
+other than the path, and pointed it at a made-up spot on the field. This lesson
+connects them to a real tag and then fixes the problem that shows up when you
+actually drive.
 
 ---
 
@@ -60,7 +61,7 @@ import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.math.geometry.Rotation2d;
 import org.wpilib.math.geometry.Translation2d;
 import org.wpilib.math.kinematics.ChassisVelocities;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 
 import first.robot.Constants.PathConstants;
 import first.robot.Constants.VisionConstants;
@@ -96,7 +97,9 @@ public final class Aim {
 
   /** Which way the robot would have to face to look straight at the target. */
   public static Rotation2d headingToward(Pose2d robot, Translation2d target) {
-    return target.minus(robot.getTranslation()).getAngle();
+    // The arrow from the robot to the target. It's empty when the arrow has no
+    // length: standing on the target, no way is "toward" it. Keep facing as you are.
+    return target.minus(robot.getTranslation()).getAngle().orElse(robot.getRotation());
   }
 
   /** How far off that heading the robot currently is, wrapped to ±180°. */
@@ -107,6 +110,14 @@ public final class Aim {
 ```
 
 Leave the class open — the rest arrives in section 5.
+
+Both of those methods lean on a box you've met. `getTagPose` hands back an
+`Optional`, the same box Lesson 15 used for a tag that might not be in view: an ID
+that isn't in the layout comes back empty, and `map` only runs when there's
+something inside. And `getAngle()` hands back an `Optional` too: an arrow with no
+length has no direction, so when the robot is
+standing exactly on the target, `headingToward` answers with the way the robot is
+already facing, which makes the error zero instead of inventing a direction.
 
 **This is the design decision of the lesson, and it's in the signatures.**
 There is no camera in any of those methods. Aiming does not use a sighting;
@@ -121,11 +132,11 @@ see it to know where it is; you needed to see it to know where *you* are,
 and the pose estimator already did that for you, whenever it last got a
 look.
 
-**Add to `PathConstants` in `Constants.java`, below `kScoringPose`:**
+**Replace `kAimTarget` in `PathConstants` (in `Constants.java`) with a tag ID and a tolerance:**
 
 ```java
-    // Aiming. The rotation override wants an angular velocity, not a heading, so
-    // this gain turns heading error into a rate.
+    // Aiming while the path drives. The rotation override wants an angular
+    // velocity, not a heading, so this gain turns heading error into a rate.
     public static final double kAimP = 4.0; // rad/s per radian of heading error
     /** The tag to point at. Change it to the one your alliance actually scores on. */
     public static final int kAimTagId = 20;
@@ -133,7 +144,11 @@ look.
     public static final Angle kAimTolerance = Degrees.of(2);
 ```
 
-> **A tag ID is not a guess.** `getTagPose` returns an `Optional` because
+`kAimTarget` from Lesson 25 is gone — that was a made-up point on the field, and
+the whole idea now is that the target is a real thing at a known place. Tag 20
+sits at (5.23, 4.03) on this season's field.
+
+> **A tag ID is not a guess.** `tagPosition` returns an `Optional` because
 > tag 47 is not on the field, and the day you mistype one you want an empty
 > `Optional` rather than a robot spinning towards the origin.
 
@@ -226,16 +241,16 @@ which is **14.32°**.
 That's not a small number. Fourteen degrees is a comfortable miss, and it
 isn't noise or a bad gain — it's the arithmetic above, unavoidably.
 
-**Verified, not just derived.** Driving `Aim`'s own `error`/`bearingRate`
-methods through a scripted orbit — three metres out, three metres a
-second, the exact scenario above — confirms it: run the control loop as
-fine-grained as you like and the steady-state error converges to **14.31°**,
-matching the predicted 14.32° almost to the decimal. Run it at this
-course's actual 50 Hz scheduler rate instead — one control update every
-20 ms, same as the real robot — and it settles a little lower, around
-**13.2°**, because a coarser update rate reacts to error a beat later than
-a continuous loop would. Same physics either way; the exact number just
-depends on how often you're allowed to correct it.
+**Measured, not just derived.** Scripting the orbit with ideal wheels and
+running `Aim`'s own `error` method as the only controller converges to
+**14.32°**, the prediction to the decimal, whether the loop steps every
+millisecond or every 20 ms. The real drivetrain does a little worse. Driving it
+around tag 20 through the scheduler, three metres out at three metres a second,
+with only the P term aiming, the worst `Aim/ErrorDegrees` once it settled was
+**14.8°**: the wheels take a moment to follow what's commanded, and that lag
+adds half a degree. At two metres a second the arithmetic says
+`0.667 ÷ 4 = 0.167 rad = 9.55°`, and the robot sat at **9.8°**. Same physics
+either way.
 
 **If this feels familiar, it should.** Lesson 18 said it about the
 elevator: *a pure feedback loop can only make output by first allowing
@@ -295,9 +310,9 @@ top:**
     Rotation2d error = error(robot, target);
     double feedforward = bearingRate(robot, fieldSpeeds, target);
 
-    SmartDashboard.putNumber("Aim/ErrorDegrees", error.getDegrees());
-    SmartDashboard.putNumber("Aim/FeedforwardRadPerSec", feedforward);
-    SmartDashboard.putBoolean("Aim/IsAimed", isAimedAt(robot, target));
+    Telemetry.log("Aim/ErrorDegrees", error.getDegrees());
+    Telemetry.log("Aim/FeedforwardRadPerSec", feedforward);
+    Telemetry.log("Aim/IsAimed", isAimedAt(robot, target));
 
     return feedforward + error.getRadians() * PathConstants.kAimP;
   }
@@ -323,42 +338,25 @@ top:**
 }
 ```
 
-`getChassisVelocities()` is a small addition to `Drivetrain` — kinematics
-run backward, the same idea as building the pose estimate, just for
-velocity instead of position.
-
-**Add to `Drivetrain`, below `getModulePositions`:**
-
-```java
-  /** How the chassis is actually moving right now, robot-relative — kinematics run backward. */
-  public ChassisVelocities getChassisVelocities() {
-    SwerveModuleVelocity[] states = new SwerveModuleVelocity[m_modules.length];
-    for (int i = 0; i < m_modules.length; i++) {
-      states[i] = new SwerveModuleVelocity(
-          m_modules[i].getDriveVelocityMetersPerSec(),
-          Rotation2d.fromDegrees(m_modules[i].getSteerAngleDegrees()));
-    }
-    return m_kinematics.toChassisVelocities(states);
-  }
-```
-
-It gives robot-relative velocities, and the bearing rate needs
-field-relative ones — `toFieldRelative` converts, the same transform
+`getChassisVelocities()` is the method you wrote in Lesson 17 — kinematics run
+backward, the same idea as building the pose estimate, just for velocity instead
+of position. It gives robot-relative velocities, and the bearing rate needs
+field-relative ones, so `toFieldRelative` converts, the same transform
 `driveFieldRelative` already runs the other way with `toRobotRelative`.
 
-The same orbit, measured again, at this course's 50 Hz control rate:
+The same two orbits, measured again on the real drivetrain, reading
+`Aim/ErrorDegrees` once the robot had settled (the worst of repeated runs):
 
-| | Worst heading error |
-|---|---|
-| P control only | 13.2° |
-| **P + feedforward** | **1.1°** |
+| | 2 m/s | 3 m/s |
+|---|---|---|
+| P control only | 9.8° | 14.8° |
+| **P + feedforward** | **0.3°** | **0.4°** |
 
-Better than ten times over, from one added term, with the gain untouched —
-and the same fine-grained-control-loop check from section 4 confirms it's
-heading toward zero, not just toward "better": at a control rate fast
-enough to approximate continuous time, the residual drops under a tenth of
-a degree. The 50 Hz number isn't the ceiling on how good this gets; it's
-how good it gets once every 20 ms.
+Better than thirty times over at 3 m/s, from one added term, with the gain
+untouched. The log shows you the estimate's opinion. Against the simulated
+chassis's true pose the same runs read 13.5° and 1.1°, because the estimate
+and the truth disagree by about a degree of heading. Either way, the term did
+what the arithmetic said it would.
 
 > **The general rule, stated for the third time in this course.** If a
 > controller has to keep producing output just to stay where it is, work
@@ -372,77 +370,65 @@ how good it gets once every 20 ms.
 
 ## 6. Aiming during an auto
 
-`Aim` doesn't know or care who's asking. The driver's left trigger is one
-caller. Here's a second, in an autonomous routine, using the identical
-method.
+Lesson 25 built the rotation override and pointed it at a made-up spot on the
+field, with a promise that a later lesson would make it a real target. This is
+that lesson, and the change is one expression.
 
-**Add to `Autos.java`:**
+**Change the `"aim"` event trigger in `Autos.registerEventTriggers`:**
 
 ```java
-  /**
-   * Creep forward for three seconds, field-relative, with the chassis's nose
-   * held on the aiming tag the whole time — the same {@code Aim} arithmetic
-   * the driver's left trigger uses, driving the exact same number a second
-   * way. Retune the gain and both improve; fix a bug and it's fixed once.
-   */
-  public static Command driveWhileAiming(Drivetrain drivetrain, Localizer localizer) {
-    return drivetrain.driveFieldRelative(
-            () -> DriveConstants.kMaxSpeed.times(0.3),
-            () -> DriveConstants.kMaxSpeed.times(0.0),
-            () -> RadiansPerSecond.of(
-                Aim.omegaTowardTag(drivetrain, localizer, PathConstants.kAimTagId)))
-        .withTimeout(Seconds.of(3));
+    FollowPath.registerEventTrigger("aim", () -> FollowPath.overrideRotation(
+        () -> Aim.omegaTowardTag(drivetrain, localizer, PathConstants.kAimTagId),
+        RotationOverrideBehavior.RESPECT_CONSTRAINTS));
+```
+
+**Delete the whole `aimOmega` helper from `Autos` — `Aim` does that job now:**
+
+```java
+  private static double aimOmega(Localizer localizer) {
+    Pose2d pose = localizer.getPose();
+    Optional<Rotation2d> desired = PathConstants.kAimTarget.minus(pose.getTranslation()).getAngle();
+    if (desired.isEmpty()) {
+      return 0.0;
+    }
+    return desired.get().minus(pose.getRotation()).getRadians() * PathConstants.kAimP;
   }
 ```
 
-**Add the imports:**
+**That was the last thing in `Autos` using `Optional` and `Rotation2d`, so delete their imports too:**
 
 ```java
-import static org.wpilib.units.Units.RadiansPerSecond;
-import static org.wpilib.units.Units.Seconds;
-
-import first.robot.Constants.DriveConstants;
+import java.util.Optional;
+import org.wpilib.math.geometry.Rotation2d;
 ```
 
-**Add a fourth `@Autonomous` opmode, `opmode/RobotAutoAimWhileDriving.java`:**
+The marker now needs the drivetrain, to read how fast the robot is going.
+
+**Change `registerEventTriggers`'s signature:**
 
 ```java
-package first.robot.opmode;
-
-import org.wpilib.command3.button.RobotModeTriggers;
-import org.wpilib.opmode.Autonomous;
-import org.wpilib.opmode.PeriodicOpMode;
-
-import first.robot.Robot;
-import first.robot.commands.Autos;
-
-@Autonomous(name = "Aim While Driving", group = "Group 1")
-public class RobotAutoAimWhileDriving extends PeriodicOpMode {
-  private final Robot robot;
-
-  public RobotAutoAimWhileDriving(Robot robot) {
-    this.robot = robot;
-
-    RobotModeTriggers.autonomous().onTrue(
-        Autos.driveWhileAiming(robot.drivetrain, robot.localizer));
-  }
-
-  @Override
-  public void periodic() {
-    /* Called periodically (set time interval) while the robot is enabled. */
-  }
-}
+  public static void registerEventTriggers(
+      Superstructure superstructure, Drivetrain drivetrain, Localizer localizer) {
 ```
 
-It shows up on the driver station next to every other `@Autonomous` class,
-no wiring beyond that.
+**And pass it in `Robot`'s constructor, where the markers are registered:**
 
-Worth noticing what just happened: the teleop binding and this auto now run
-**the same aiming code**, computing the same number from the same inputs.
-If you retune the gain, both improve. If you fix a bug, you fix it once.
-That's the payoff for `Aim` being plain static methods rather than a
-command — a command would have been usable by exactly one of those two
-callers.
+```java
+    // Once, for the whole program. The markers now ask the superstructure for
+    // things, read the pose and the wheels' speed, so they need all three —
+    // already built, above.
+    Autos.registerEventTriggers(superstructure, drivetrain, localizer);
+```
+
+There is no new opmode to write. **Aim While Driving** is already registered in
+`Robot` from Lesson 25, and it follows the same path file; only what its `aim`
+marker points at has changed.
+
+Worth noticing what just happened: the teleop binding and this marker now run
+**the same aiming code**, computing the same number from the same inputs. If you
+retune the gain, both improve. If you fix a bug, you fix it once. That's the
+payoff for `Aim` being plain static methods rather than a command — a command
+would have been usable by exactly one of those two callers.
 
 ---
 
@@ -495,6 +481,11 @@ Strafe again. `Aim/ErrorDegrees` will sit at a steady offset the whole time
 you're moving, snap back to near zero when you stop, and grow with your
 speed. Put the feedforward back.
 
+With the feedforward in, the numbers from a scripted run look like this. Placed
+34° off the tag with the trigger held, the robot was within 2° in 0.5 s and held
+0.1°. Strafing at half stick, the error stayed under 1° after the first second,
+and it was back under 0.1° a second after the stick came back to centre.
+
 Three signals tell the whole story:
 
 | Log key | What to look for |
@@ -503,9 +494,13 @@ Three signals tell the whole story:
 | `Aim/FeedforwardRadPerSec` | zero when driving at the tag, large when strafing past it |
 | `Aim/IsAimed` | the boolean a shooter would actually gate on |
 
-Then run the **Aim While Driving** auto. The robot creeps forward while its
-nose stays locked on tag 20 the whole time — the same code the trigger
-binding runs, doing its job with nobody's thumb involved.
+Then run the **Aim While Driving** auto from Lesson 25. It homes the elevator
+first, like every path auto, and then drives. It now points at tag 20 instead of
+a made-up coordinate. From the `aim` marker, the nose swings round in about 0.8 s
+and then stays within 2° of the tag (0.8° on average) until the `release` marker,
+about 4.3 s in, when the path takes the rotation back and the robot finishes at
+(8.01, 7.02), facing 0°. Watch `FollowPath/rotationOverrideActive` go true and
+false around it.
 
 ---
 
@@ -549,12 +544,11 @@ directly, and this is the first lesson where you can feel the difference.
 **P control chases; it doesn't track.** Fourteen degrees of steady lag
 wasn't a tuning failure, it was arithmetic: the controller needed 1.0 rad/s
 of output, and `error × kP` can only make that from 0.25 rad of error. A
-finer-grained version of the same control loop converged to 14.31°,
-matching the prediction almost to the decimal — which is what it looks
+scripted orbit converged to 14.32°, matching the prediction to the decimal,
+and the real drivetrain landed within a degree of it — which is what it looks
 like when you understand a system instead of tuning it. Adding the rate
 the target was already moving at cut the steady-state error by more than
-ten times without touching the gain, and drove it toward zero entirely once
-the control loop got fast enough to approximate continuous time.
+thirty times without touching the gain.
 
 **That's the third time this course has told you the same thing.** `kG`
 for gravity, `kV` for speed, and now a bearing rate for a target sliding
@@ -564,7 +558,7 @@ calculating it is always better than letting error accumulate until
 feedback notices.
 
 And the small structural one: **plain functions compose better than
-commands.** `Aim` is five static methods with no state, and that's exactly
+commands.** `Aim` is a handful of static methods with no state, and that's exactly
 why a driver binding and an autonomous routine can both use it. A command
 would have served one caller and forced the other to duplicate the maths.
 

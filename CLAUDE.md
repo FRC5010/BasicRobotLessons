@@ -339,6 +339,37 @@ simulated truth:
   next second (measured; consistent with the last command persisting, which
   was not checked directly).
 
+**v3 Lesson 27 (aim at tag) on alpha-7, measured with the real `Robot` loop
+through the scheduler (probe recipe above, plus `GamepadSim`):**
+
+- **`Field.getTagPose(int)` exists** (`Optional<Pose3d>`, read with `javap`), so
+  `Aim.tagPosition` keeps its classic shape. Tag 20 is at (5.23, 4.03); an ID
+  not on the field is empty. `Translation2d.getAngle()` is an `Optional`, so
+  `headingToward` falls back to the robot's own heading (error 0) on the target.
+- **There is no new opmode and no `Drivetrain` change.** "Aim While Driving" is
+  Lesson 25's `addOpMode` line; only its `aim` marker changed, to
+  `Aim.omegaTowardTag(...)`. `kAimTarget` and `aimOmega` are gone;
+  `registerEventTriggers(Superstructure, Drivetrain, Localizer)`. The classic
+  `driveWhileAiming` and the old `RobotAutoAimWhileDriving` don't exist here.
+  `getChassisVelocities()` is Lesson 17's.
+- **Orbit around tag 20, 3 m out, driven through the real `Drivetrain`** and read
+  off the estimate (`Aim/ErrorDegrees`): P only 14.7–14.8° at 3 m/s (prediction
+  14.32°; ideal wheels in a script give 14.32° at both 1 ms and 20 ms) and
+  9.7–9.8° at 2 m/s (prediction 9.55°); P + feedforward 0.2–0.4° and
+  0.1–0.3°. Against the simulated truth: 13.5°/1.1° at 3 m/s. The old "13.2° →
+  1.1° at 50 Hz" did not reproduce.
+- Standing 34° off, left trigger held: within 2° in 0.5 s, holds 0.06–0.1°.
+  Strafing at half stick: under 1° after the first second.
+- **Aim While Driving:** the override swings the nose from 32° off to within 2°
+  in 0.8 s, then holds 0.8° mean until `release` at about (7.6, 7.0), 4.3 s in;
+  the robot ends at (8.01, 7.02, −1.1°).
+- **Probe trap:** a run that follows the stick-driven phase starts with the
+  estimate's heading ~9° off the truth (−170° vs −179.6°) even with the
+  `placeSimulatedRobot`/`resetPose` gap; throw the first run away.
+- The unmigrated snapshots 28–34 still carry `kAimTarget`, the old `Autos` and
+  the `Robot` call `registerEventTriggers(superstructure, localizer)`; whoever
+  rolls them forward on top of 27 must take 27's versions.
+
 **Lesson 18's lag numbers were remeasured on alpha-7** with the documented
 move (stowed to `kMaxHeight`) at full 20 ms ticks. The peak lag varies from
 run to run, so the lesson gives ranges, not a single figure:

@@ -8,7 +8,7 @@ import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.math.geometry.Rotation2d;
 import org.wpilib.math.geometry.Translation2d;
 import org.wpilib.math.kinematics.ChassisVelocities;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 
 import first.robot.Constants.PathConstants;
 import first.robot.Constants.VisionConstants;
@@ -40,7 +40,9 @@ public final class Aim {
 
   /** Which way the robot would have to face to look straight at the target. */
   public static Rotation2d headingToward(Pose2d robot, Translation2d target) {
-    return target.minus(robot.getTranslation()).getAngle();
+    // The arrow from the robot to the target. It's empty when the arrow has no
+    // length: standing on the target, no way is "toward" it. Keep facing as you are.
+    return target.minus(robot.getTranslation()).getAngle().orElse(robot.getRotation());
   }
 
   /** How far off that heading the robot currently is, wrapped to ±180°. */
@@ -74,9 +76,9 @@ public final class Aim {
     Rotation2d error = error(robot, target);
     double feedforward = bearingRate(robot, fieldSpeeds, target);
 
-    SmartDashboard.putNumber("Aim/ErrorDegrees", error.getDegrees());
-    SmartDashboard.putNumber("Aim/FeedforwardRadPerSec", feedforward);
-    SmartDashboard.putBoolean("Aim/IsAimed", isAimedAt(robot, target));
+    Telemetry.log("Aim/ErrorDegrees", error.getDegrees());
+    Telemetry.log("Aim/FeedforwardRadPerSec", feedforward);
+    Telemetry.log("Aim/IsAimed", isAimedAt(robot, target));
 
     return feedforward + error.getRadians() * PathConstants.kAimP;
   }
