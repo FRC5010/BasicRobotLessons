@@ -959,6 +959,24 @@ Measurements and the one claim that did not reproduce (≈12 V during the climb;
 it is 7–9 V from idle) are in CLAUDE.md. Lesson 27's snapshot got Lesson 28's
 markers (`Constants`, `Robot`, `RobotTeleop`).
 
+**Lesson 29 migrated, 2026-10-22.** Compiles 0–28 and 0–29 with zero
+warnings; `check-lesson-markers-v3.py` is clean for 1–29; the 50 tool tests
+pass. The old snapshot predated Lessons 17–28, so it was rebuilt from the
+rolled-forward Lesson 28 files: `Constants` (`PowerConstants` added), `Robot`
+(battery logging, `getTotalCurrentAmps`, `simulationPeriodic`), and the
+elevator, arm and flywheel `IO`/`IOTalonFX`/subsystem files. The detector,
+`VisionConstants` pieces and old bindings are gone. Port: `Telemetry.log`,
+`CANPort.CAN_S0`, `implements Mechanism`. Lesson 28's snapshot got Lesson 29's
+markers (and unchanged copies of the elevator and arm files to hold them).
+Measurements are in CLAUDE.md. **One claim did not reproduce:** the lesson's
+"no limits browns out the three mechanisms" (old 366 A / 4.7 V). On alpha-7
+with the real loop it peaks at 201 A and sags to 7.97 V, no brownout. Rather
+than change what the lesson teaches, section 7 now keeps the same three
+configurations and shows both a fresh battery (honest: sags, survives) and a
+tired one (11 V, 40 mΩ), where no limits browns out, defaults barely survive
+and the budget has margin; Try It #4 was reworded since the tired battery is now
+in the text. The section 2 and 3 tables were re-measured with bare rigs.
+
 **What Lessons 27–34 now owe Lesson 26, when Phase 1b reaches them:** any
 whole-file snapshot of `Autos`, `Drivetrain`, `Constants`, `Robot` or
 `RobotTeleop` must carry `driveToScoringPose`, `alignToPose`/`atPose` and the
@@ -989,13 +1007,13 @@ classic track's order. What changed:
   down by one.
 - `docs/_data/lesson_status.yml`: 30 waits on a decision, 34 on a library.
 
-What later migrations owe this: the unmigrated snapshots 29–33 still carry
+What later migrations owe this: the unmigrated snapshots 30–33 still carry
 object detection's pieces listed above; drop them when migrating each, since
 those lessons now come first. When object detection is migrated as Lesson 34
 it builds on the full Lesson 33 state, re-adds what it needs to `Robot`,
 `Constants`, `Autos` and `RobotTeleop`, and should give its camera a
 connection alert in the pattern Lesson 30 sets (after Lesson 30's own design
-decision). Lesson 30 (alerts) is now the next blocked lesson, after 27–29.
+decision). Lesson 30 (alerts) is now the next blocked lesson, after 27–29 (all three done).
 
 **Each lesson Phase 1b migrates also gets its NEXT LESSON markers
 (added 2026-09-26).** Lessons 1–15 now ship them: the code at the end of

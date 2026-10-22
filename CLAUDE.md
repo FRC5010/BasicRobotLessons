@@ -156,7 +156,7 @@ lesson-k/X implies lesson-(k+1)/X exists and replaces it. **Enforce it with
 `./tools/check-lesson-markers-v3.py [N] [--show]`**, which rebuilds each
 lesson's before/after state through the shared lib, diffs them, and reports
 `MISSING` (a change with no marker announcing it) and `ORPHAN` (a marker
-that announces nothing). It's currently clean for 1–26. When Phase 1b
+that announces nothing). It's currently clean for 1–29. When Phase 1b
 migrates a lesson, raise the cut-off and add its markers in the same change.
 The checker's coverage rules are in its docstring. They absorb
 diff-alignment noise (blank lines, a shared `}`), and that absorption can
@@ -242,7 +242,7 @@ down one:
   by the classic number. `docs/lesson-plan-opmode-restructure.md`'s table and
   every record dated before 2026-10-20 use the old OpMode numbers, which
   matched the classic ones. Those records say so where it matters.
-- The unmigrated snapshots 29–33 still carry object detection's pieces (its
+- The unmigrated snapshots 30–33 still carry object detection's pieces (its
   `VisionConstants` constants, `Robot.pieceDetector`, `fetchPiece` and its
   right-bumper binding). Drop them when migrating each, since those lessons
   now come first. Lesson 34 re-adds what it needs when it's migrated.
@@ -339,6 +339,43 @@ simulated truth:
   next second (measured; consistent with the last command persisting, which
   was not checked directly).
 
+**v3 Lesson 29 (current limits) on alpha-7, measured with bare `TalonFX`
+rigs and with the real `Robot` loop and `GamepadSim` (home with Back, then
+D-pad up, left trigger held and the left face button together; 20 ms fixed
+rate, `DriverStationSim` enabled):**
+
+- **Rebuilt on Lesson 28.** The old snapshot predated Lessons 17–28, so it
+  was replaced with 28's `Constants`/`Robot`/mechanism files plus only the
+  lesson's additions. The port was `Telemetry.log` for `SmartDashboard.put*`,
+  `new CANBus(CANPort.CAN_S0)`, and `implements Mechanism`. `Robot` logs
+  `Power/*` in `robotPeriodic()`; keys are under `/Telemetry/Power/`.
+- **Unchanged:** a fresh `TalonFXConfiguration` has stator 120 A, supply 70 A,
+  both enabled, `SupplyCurrentLowerLimit` 40 A after 1.0 s.
+  `RobotController.isBrownedOut()` stays false at 4.0 V held for 2.5 s.
+  `supply ≈ stator × applied/battery` holds (116.3 × 3.00/12 = 29.1 A;
+  115.3 × 7.20/12 = 69.2 A).
+- **Six-motor rig** (every motor stalled at 12 V on defaults, battery closed
+  through `BatterySim.calculateDefaultBatteryLoadedVoltage`, mean of the
+  second after the first): 3 → 109 A / 9.82 V, 6 → 326 A / 5.48 V,
+  9 → 346 A / 5.08 V, 12 → 336 A / 5.32 V. Peaks in the first second are
+  higher and collapse the rail to 0 V at 9 and 12.
+- **The lesson's old in-robot brownout did not reproduce.** The three
+  mechanisms, even unlimited, peak at 201 A and sag a fresh battery only to
+  7.97 V; defaults 139 A / 9.23 V; the budget 87–94 A / 10.1–10.3 V. Nothing
+  stalls and `Power/BrownedOut` stays false. The old 366 A / 4.7 V is gone.
+  Not homing first makes no difference (the elevator stalls on the frame at
+  1.15 m, peak 199 A unlimited).
+- **A tired battery makes the demo.** With
+  `BatterySim.calculateLoadedBatteryVoltage(11.0, 0.04, total)` in
+  `simulationPeriodic`: no limits 645 A / 0.00 V, browned out, elevator stuck
+  near 0.24 m, flywheel peaks 41.6 rot/s and ends at 0; defaults 105–110 A /
+  6.6–6.8 V (survives by 0.3–0.5 V); budget 68–83 A / 7.7–8.3 V. Peaks vary a
+  few amps run to run, so the lesson gives ranges. After a collapse to 0 V the
+  elevator's logged height is garbage (−1742 m); don't quote it.
+- **Probe traps:** Maven 429s ("Too Many Requests") on a cold Gradle cache —
+  retry after 30 s. `GamepadSim` here has `setDpadUpButton`,
+  `setFaceLeftButton`, `setBackButton` and `setLeftTriggerAxis`.
+
 **v3 Lesson 28 (flywheel) on alpha-7, measured with the real `Flywheel`
 through the scheduler and with the real `Robot` loop and `GamepadSim`
 (left trigger), 20 ms fixed rate, `DriverStationSim` enabled:**
@@ -391,7 +428,7 @@ through the scheduler (probe recipe above, plus `GamepadSim`):**
 - **Probe trap:** a run that follows the stick-driven phase starts with the
   estimate's heading ~9° off the truth (−170° vs −179.6°) even with the
   `placeSimulatedRobot`/`resetPose` gap; throw the first run away.
-- The unmigrated snapshots 29–34 still carry `kAimTarget`, the old `Autos` and
+- The unmigrated snapshots 30–34 still carry `kAimTarget`, the old `Autos` and
   the `Robot` call `registerEventTriggers(superstructure, localizer)`; whoever
   rolls them forward on top of 28 must take 28's versions.
 

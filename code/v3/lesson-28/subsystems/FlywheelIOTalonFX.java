@@ -34,6 +34,10 @@ public class FlywheelIOTalonFX implements FlywheelIO {
     config.Slot0.kA = FlywheelConstants.kFlywheelKA;
     config.Slot0.kP = FlywheelConstants.kFlywheelKP;
 
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Give this motor its slice of the battery: turn on a stator limit and a supply limit from the shared power budget, before the configuration is applied.
+     */
     m_motor.getConfigurator().apply(config);
   }
 
@@ -43,6 +47,10 @@ public class FlywheelIOTalonFX implements FlywheelIO {
     inputs.appliedVolts = m_motor.getMotorVoltage().getValue().in(Volts);
     inputs.setpointRps = m_motor.getClosedLoopReference().getValue();
     inputs.statorCurrentAmps = m_motor.getStatorCurrent().getValue().in(Amps);
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Read the battery-side current too, next to the winding-side one.
+     */
   }
 
   @Override

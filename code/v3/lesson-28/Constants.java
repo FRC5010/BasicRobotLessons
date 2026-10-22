@@ -183,6 +183,10 @@ public final class Constants {
     public static final double kFlywheelKP = 0.3; // volts per rotation/sec of error
   }
 
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * The power budget: one shared cap on every mechanism motor's stator current, one supply-current limit per motor, and the voltage below which the robot counts as browned out.
+   */
   public static final class PathConstants {
     // BLine runs three P loops at once. Every gain here is "output per unit of
     // error", and since error is meters (or radians) and output is per-second,

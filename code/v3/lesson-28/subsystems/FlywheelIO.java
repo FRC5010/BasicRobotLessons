@@ -11,6 +11,10 @@ public interface FlywheelIO {
     public double appliedVolts = 0.0;
     public double setpointRps = 0.0;
     public double statorCurrentAmps = 0.0;
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * The current the motor controller pulls from the battery, which is what makes the voltage sag.
+     */
   }
 
   /** Read every sensor into 'inputs'. Called once per tick, before anything else. */

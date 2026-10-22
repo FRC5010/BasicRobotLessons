@@ -131,6 +131,11 @@ public class Robot extends OpModeRobot {
   @Override
   public void robotPeriodic() {
     Scheduler.getDefault().run();
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Log the robot's total battery draw, the battery voltage and whether it has dropped below the brownout line, every tick. Also add a private method after this one that sums the three mechanisms' battery currents, since only this class knows all of them.
+     */
   }
 
   private void logCommandStart(SchedulerEvent event) {
@@ -141,6 +146,10 @@ public class Robot extends OpModeRobot {
     }
   }
 
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * Fill in the simulated battery: set the roboRIO's input voltage to what a battery would sag to under the robot's total draw, so every simulated motor feels it.
+   */
   /** Runs every tick, but only while the code is running in simulation. */
   @Override
   public void simulationPeriodic() {}

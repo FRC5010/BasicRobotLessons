@@ -62,6 +62,10 @@ public class Flywheel implements Mechanism {
     Telemetry.log("Flywheel/AppliedVolts", m_inputs.appliedVolts);
     Telemetry.log("Flywheel/SetpointRps", m_inputs.setpointRps);
     Telemetry.log("Flywheel/StatorCurrentAmps", m_inputs.statorCurrentAmps);
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Log the battery-side current beside the winding-side one.
+     */
     Telemetry.log("Flywheel/GoalRps", m_goal.in(RotationsPerSecond));
     Telemetry.log("Flywheel/AtSpeed", atSpeed());
     updateDial();
@@ -143,4 +147,9 @@ public class Flywheel implements Mechanism {
   public AngularVelocity getSpeed() {
     return RotationsPerSecond.of(m_inputs.velocityRps);
   }
+
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * A getter for this mechanism's battery-side current, so something that sees the whole robot can add them up.
+   */
 }

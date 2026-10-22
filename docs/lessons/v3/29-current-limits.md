@@ -26,8 +26,8 @@ them tuned, measured, and reasoned about on its own.
 Now hold the left trigger while driving hard across the field. Lesson 27
 bound it to the drivetrain, keeping the nose pointed at a tag. Lesson 28
 bound the *same trigger* to the flywheel, spinning it to shooting speed.
-Add the D-pad raising the elevator and the right bumper chasing a game
-piece, and that's four mechanisms — twelve motors — all asking for
+Add the D-pad raising the elevator and the intake button sending the arm
+down with its roller running, and that's four mechanisms — twelve motors — all asking for
 everything they can get, at the same instant.
 
 There is one battery.
@@ -63,10 +63,10 @@ flywheel:
 
 | Time | Speed | Stator | Supply | Applied |
 |---|---|---|---|---|
-| 0.00 s | 0.6 rot/s | 120.6 A | 30.3 A | 3.04 V |
-| 0.60 s | 17.3 rot/s | 119.3 A | 50.2 A | 5.04 V |
-| 0.90 s | 25.9 rot/s | 119.2 A | 60.7 A | 6.10 V |
-| 1.20 s | 34.5 rot/s | 116.7 A | 69.2 A | 7.11 V |
+| 0.00 s | 0.0 rot/s | 116.3 A | 29.1 A | 3.00 V |
+| 0.60 s | 17.0 rot/s | 119.0 A | 50.7 A | 5.12 V |
+| 0.90 s | 25.7 rot/s | 119.0 A | 61.5 A | 6.20 V |
+| 1.20 s | 34.5 rot/s | 115.3 A | 69.2 A | 7.20 V |
 
 Stator current sits pinned near 120 A the whole time. Supply current
 starts at a quarter of that and climbs steadily as the motor speeds up.
@@ -80,8 +80,8 @@ only draws off the battery a quarter of the time.
 ```
 supply current  ≈  stator current × (applied volts / battery volts)
 
-at 3.04 V:  120.6 × 3.04/12 = 30.6 A     ✓ (measured 30.3)
-at 7.11 V:  116.7 × 7.11/12 = 69.1 A     ✓ (measured 69.2)
+at 3.00 V:  116.3 × 3.00/12 = 29.1 A     ✓ (measured 29.1)
+at 7.20 V:  115.3 × 7.20/12 = 69.2 A     ✓ (measured 69.2)
 ```
 
 **So a stalled motor is terrifying for the windings and cheap for the
@@ -113,20 +113,22 @@ motor, and the battery is per robot.** Nothing in that config has any
 idea how many other motors are on the same battery. Twelve motors each
 entitled to 70 A is 840 A of entitlement, and a battery cannot do that.
 
-Watch it break as the robot gets bigger. Same defaults, same jammed
-mechanism, just more motors sharing the one battery:
+Watch it break as the robot gets bigger. Same defaults, every motor
+stalled against a jammed mechanism and commanded at full output, just more
+motors sharing the one battery. The draw and the voltage settle after the
+first second, so these are the averages over the second after that:
 
 | Motors, all on defaults | Total draw | Battery sagged to | |
 |---|---|---|---|
-| 3 | 107 A | 9.86 V | fine |
-| 6 | 328 A | 5.44 V | **brownout** |
-| 9 | 335 A | 5.30 V | **brownout** |
-| 12 | 339 A | 5.23 V | **brownout** |
+| 3 | 109 A | 9.82 V | fine |
+| 6 | 326 A | 5.48 V | **brownout** |
+| 9 | 346 A | 5.08 V | **brownout** |
+| 12 | 336 A | 5.32 V | **brownout** |
 
 Six motors is not an exotic scenario. Six motors is a swerve drivetrain
 plus two mechanisms — an ordinary second of an ordinary match.
 
-Notice the total barely grows past six — it isn't that the extra motors
+Notice the total stops growing past six — it isn't that the extra motors
 want less, it's that there's less battery left to give them. That's the
 death spiral in miniature: once the rail sags, every motor's own duty
 cycle throttles back with it, so the number stops climbing at exactly the
@@ -166,10 +168,11 @@ next to five other numbers should be next to those five numbers.
   }
 ```
 
-**Add the imports:**
+**Add the imports to `Constants.java`:**
 
 ```java
 import static org.wpilib.units.Units.Amps;
+
 import org.wpilib.units.measure.Current;
 ```
 
@@ -252,12 +255,16 @@ default config since Lesson 20.
     m_roller.getConfigurator().apply(rollerConfig);
 ```
 
-**Add the imports each of those three files needs:**
+**Add the import all three of those files need:**
+
+```java
+import first.robot.Constants.PowerConstants;
+```
+
+**And add this one to `ArmIOTalonFX`, which has never read a current before:**
 
 ```java
 import static org.wpilib.units.Units.Amps;
-
-import first.robot.Constants.PowerConstants;
 ```
 
 ---
@@ -295,7 +302,22 @@ nothing on this robot knows its own total draw, so start by measuring.
     inputs.rollerSupplyCurrentAmps = m_roller.getSupplyCurrent().getValue().in(Amps);
 ```
 
-Then each subsystem answers for itself.
+Then each subsystem logs its own reading, and answers for itself.
+
+**Add to `Elevator.periodic()`, `Flywheel.periodic()`, and `Arm.periodic()`, below the lines that already log their other inputs:**
+
+```java
+    // Elevator and Flywheel: below the stator line
+    Telemetry.log("Elevator/SupplyCurrentAmps", m_inputs.supplyCurrentAmps);
+    Telemetry.log("Flywheel/SupplyCurrentAmps", m_inputs.supplyCurrentAmps);
+
+    // Arm: below the roller line, one per motor
+    Telemetry.log("Arm/PivotSupplyCurrentAmps", m_inputs.pivotSupplyCurrentAmps);
+    Telemetry.log("Arm/RollerSupplyCurrentAmps", m_inputs.rollerSupplyCurrentAmps);
+```
+
+Each line goes in its own subsystem — the block above just shows all four
+so you can see the pattern.
 
 **Add to `Elevator` and `Flywheel`, near their other getters:**
 
@@ -348,9 +370,9 @@ every tick whether the code is real or simulated.
     Scheduler.getDefault().run();
 
     double batteryVolts = RobotController.getBatteryVoltage();
-    SmartDashboard.putNumber("Power/TotalCurrentAmps", getTotalCurrentAmps());
-    SmartDashboard.putNumber("Power/BatteryVolts", batteryVolts);
-    SmartDashboard.putBoolean("Power/BrownedOut", batteryVolts < PowerConstants.kBrownoutVoltage.in(Volts));
+    Telemetry.log("Power/TotalCurrentAmps", getTotalCurrentAmps());
+    Telemetry.log("Power/BatteryVolts", batteryVolts);
+    Telemetry.log("Power/BrownedOut", batteryVolts < PowerConstants.kBrownoutVoltage.in(Volts));
   }
 ```
 
@@ -418,11 +440,22 @@ roboRIO gives up.
 ./gradlew simulateJava
 ```
 
-Graph `Power/TotalCurrentAmps` and `Power/BatteryVolts` together on
-SmartDashboard. Drive around normally and you'll see the voltage twitch
-and recover — that's the sag every robot has all the time.
+Graph `Power/TotalCurrentAmps` and `Power/BatteryVolts` together in
+AdvantageScope — they're under `/Telemetry/Power`. Drive around normally and
+you'll see the voltage twitch and recover — that's the sag every robot has
+all the time.
 
-Now cause one deliberately. Turn every limit off:
+Now ask for everything at once. Enable Teleoperated, press **Back** and wait
+for the elevator to home, then press **D-pad up**, hold the **left trigger**,
+and press the **intake button** (the left face button), all together. The
+elevator climbs, the flywheel spins up, and the arm swings down with the
+roller running.
+
+With the budget from section 4, the total draw peaks at **87–94 A** and the
+battery bottoms out around **10.1–10.3 V**. Everything works, and
+`Power/BrownedOut` stays false.
+
+Now see what the budget bought. Turn every limit off:
 
 *Nothing to add — an experiment to run and undo, in all three IO classes:*
 
@@ -431,25 +464,48 @@ Now cause one deliberately. Turn every limit off:
     config.CurrentLimits.StatorCurrentLimitEnable = false;
 ```
 
-Run the elevator to its top height, hold the left trigger, and hold the
-intake button, all together. With three unlimited motors the draw peaks
-near **366 A** and the battery sags to about **4.7 V**. Everything goes
-wrong at once: the elevator stalls partway, the flywheel never reaches
-speed, and `Power/BrownedOut` goes true.
-
-Put the limits back and repeat exactly the same thing. Peak draw around
-**42 A**, battery holds above **11 V**, everything works.
+*(In `ArmIOTalonFX`, that's `rollerConfig` too.)* Repeat exactly the same
+thing. The draw peaks near **201 A** and the battery sags to **8.0 V**:
+worse, and still not a brownout. Delete those limit lines entirely and you're
+on Phoenix's defaults, which peak around **139 A** and sag to **9.2 V**.
 
 | Configuration | Peak draw | Battery low point | |
 |---|---|---|---|
-| No limits at all | 366 A | 4.69 V | brownout |
-| Phoenix defaults | 107 A | 9.86 V | survives, on three motors |
-| The budget above | 42 A | 11.17 V | comfortable |
+| No limits at all | 201 A | 7.97 V | sags, survives |
+| Phoenix defaults | 139 A | 9.23 V | fine |
+| The budget above | 87–94 A | 10.1–10.3 V | comfortable |
 
-Worth staring at the middle row. Phoenix's defaults *did* save this
-robot — because this robot only has three mechanism motors in the sum.
-Add the drivetrain's eight and you're at the six-motor row of section
-3's table, which browns out.
+Three mechanism motors, even unlimited, can't pull a fresh battery under
+6.3 V. That's honest, and it's the same thing section 3 said: this robot has
+only three mechanism motors in the sum. The drivetrain's eight are what
+turn "sags" into "browns out" — Try It #1 adds them.
+
+You don't have to build that to see a brownout, though. A fresh battery is the
+best day your robot will have. **Make it a tired one.** An old battery at the
+end of an event is closer to 11 V with twice the internal resistance.
+
+**Replace the line in `Robot.simulationPeriodic()` while you experiment — and put it back after:**
+
+```java
+    RoboRioSim.setVInVoltage(BatterySim.calculateLoadedBatteryVoltage(11.0, 0.04, getTotalCurrentAmps()));
+```
+
+Run the same three configurations again:
+
+| Configuration, 11 V battery, 40 mΩ | Peak draw | Battery low point | |
+|---|---|---|---|
+| No limits at all | 645 A | 0.00 V | **brownout** |
+| Phoenix defaults | 105–110 A | 6.6–6.8 V | survives, barely |
+| The budget above | 68–83 A | 7.7–8.3 V | survives |
+
+With no limits the whole thing collapses. The elevator gets only partway
+(about 0.24 m on its way to 1.45 m) and stalls, the flywheel reaches 41 rot/s
+and then falls to nothing, and `Power/BrownedOut` goes true. Phoenix's
+defaults get through with a few tenths of a volt to spare. The budget has
+more than a volt.
+
+*(Those peaks come from runs of a few seconds each, so they move by a few
+amps from run to run. That's why some are ranges.)*
 
 > **The one thing to carry away from watching this:** nothing in the log
 > said "brownout" until you added that line. Everything else just looked
@@ -474,10 +530,10 @@ Add the drivetrain's eight and you're at the six-motor row of section
 3. **Make the roller tell you it's jammed.** It's limited to 20 A. If
    it's pulling that for more than a second, something is stuck in the
    intake. Detect it and light the LEDs from Lesson 23.
-4. **Budget for a sag.** The numbers above assume a fresh battery. Re-run
-   with `BatterySim.calculateLoadedBatteryVoltage` and a lower nominal
-   voltage — say 11.5 V, a realistic third-match battery — and see which
-   of your choices stop being comfortable.
+4. **Budget for a sag.** Section 7's tired battery was 11 V and 40 mΩ. Try
+   11.5 V and 30 mΩ, a realistic third-match battery, and then find the
+   internal resistance at which even the budget browns out. That's the
+   battery you should replace before a match.
 5. **Prioritise.** Right now every mechanism gets its budget regardless
    of what else is happening. Make the flywheel's limit drop while the
    elevator is moving. Then decide whether you actually want that,
