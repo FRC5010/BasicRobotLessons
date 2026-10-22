@@ -156,7 +156,7 @@ lesson-k/X implies lesson-(k+1)/X exists and replaces it. **Enforce it with
 `./tools/check-lesson-markers-v3.py [N] [--show]`**, which rebuilds each
 lesson's before/after state through the shared lib, diffs them, and reports
 `MISSING` (a change with no marker announcing it) and `ORPHAN` (a marker
-that announces nothing). It's currently clean for 1–29. When Phase 1b
+that announces nothing). It's currently clean for 1–30. When Phase 1b
 migrates a lesson, raise the cut-off and add its markers in the same change.
 The checker's coverage rules are in its docstring. They absorb
 diff-alignment noise (blank lines, a shared `}`), and that absorption can
@@ -242,7 +242,7 @@ down one:
   by the classic number. `docs/lesson-plan-opmode-restructure.md`'s table and
   every record dated before 2026-10-20 use the old OpMode numbers, which
   matched the classic ones. Those records say so where it matters.
-- The unmigrated snapshots 30–33 still carry object detection's pieces (its
+- The unmigrated snapshots 31–33 still carry object detection's pieces (its
   `VisionConstants` constants, `Robot.pieceDetector`, `fetchPiece` and its
   right-bumper binding). Drop them when migrating each, since those lessons
   now come first. Lesson 34 re-adds what it needs when it's migrated.
@@ -339,6 +339,77 @@ simulated truth:
   next second (measured; consistent with the last command persisting, which
   was not checked directly).
 
+**v3 Lesson 30 (alerts) on alpha-7, rebuilt on Lesson 29 on 2026-10-22,
+measured with the real `Robot` loop (probe recipe below) and by hand in a
+real SimGUI under `Xvfb`:**
+
+- **`Alert` moved again: `org.wpilib.util.Alert(String id, String text,
+  Level)`**, in wpiutil, with `Level.HIGH/MEDIUM/LOW`. The old snapshot's
+  `org.wpilib.driverstation.Alert(text, level)` is alpha-6. A second alert
+  with the same id *and* level throws `AlertException: Alert already
+  allocated` at construction; same id at another level is allowed
+  (measured). Every id in the lesson is log-key shaped
+  (`Elevator/Disconnected`, `Drivetrain/Module0/SteerEncoderDisconnected`).
+- **Nothing in the simulator reads alerts.** Only `libwpiutiljni` imports
+  `WPI_GetAlerts`; SimGUI's only alerts model is the NetworkTables one. So
+  `Robot.showAlerts()`, called at the end of `simulationPeriodic()`, copies
+  `AlertSim.getActive()` into `Telemetry.getTable("Alerts")` with
+  `setType("Alerts")` and `errors`/`warnings`/`infos` string arrays. SimGUI
+  then lists it under **NetworkTables → Telemetry → Alerts** and draws a real
+  panel, errors first with a red mark (seen in screenshots). A plain
+  `String[]` was tried first; it works but SimGUI truncates it.
+- **`OpModeRobot`'s `Loop time of "0.02"s overrun` (id
+  `opmode-loop-overrun`, `MEDIUM`) is only ever `set(true)`** (its watchdog
+  callback, read in the alpha-7 source), and the first loop always overran in
+  every run (one SimGUI run: `robotPeriodic()` 0.465 s). So it's up for the
+  whole session; the lesson uses it as the "raised once" contrast.
+- **The unplug switch (user decision, 2026-10-22: both cameras, the four
+  CANcoders and the gyro; "only flip the reading"; a SimGUI switch).**
+  `subsystems/UnplugSwitch` makes `SimDevice.create("Unplug " + name)` with
+  one `INPUT` boolean, `Unplugged`. The sim IOs AND it into the real reading
+  (`ModuleIOSim`, `VisionIOLimelightSim`, after `super.updateInputs`);
+  `GyroIOSim` has no device, so the switch is its whole answer. Motor
+  switches are Try It #1.
+  - **SimGUI draws an `INPUT` boolean as a false/true drop-down, not a
+    checkbox** (`DeviceTree.cpp`'s `DeviceBooleanImpl`; read-only only for
+    `OUTPUT`). Clicked by hand: true raised the alert in the panel.
+  - **Phoenix 6's sim devices are in Other Devices too** (`Talon FX
+    (v6)[1]`, `…/Rotor Sensor`, `CANcoder (v6)[9]`), so the switches carry
+    the visible word "Unplug": a `Type:` prefix would be hidden by SimGUI.
+  - `SimDevice.create` returns null for a duplicate name (measured), hence
+    the null guard. Tests reach a switch with `new SimDeviceSim("Unplug
+    Gyro").getBoolean("Unplugged")`.
+- **Measured:** an alert follows its switch within one tick both ways. On
+  the first tick the elevator, arm and flywheel motors and both cameras read
+  disconnected, sometimes some CANcoders too, and all clear by the second
+  tick (cameras: no frame yet, since the sim publishes one loop late). The
+  camera "unplugged" at 3 m in front of tag 20 still delivered a pose on
+  50 of 50 ticks.
+- **The battery alert is gated on `RobotState.isDisabled()`.** Ungated on
+  the fresh sim battery (rests at 12.0 V): enabling sagged the rail to
+  11.49 V for 0.72 s (the flywheel's idle spin-up), and a shot spin-up to
+  11.18 V for 1.64 s. Gated: no false alarm in either. With Lesson 29's tired
+  battery (`calculateLoadedBatteryVoltage(11.0, 0.04, …)`) it's up two ticks
+  after boot while disabled, and clears on enable. The old lesson's "drag the
+  RoboRIO voltage in SimGUI" can't work: `simulationPeriodic` sets it every
+  tick.
+- **A plain JUnit test can unplug a device.** `HAL.initialize()`, `new
+  Drivetrain()`, `Scheduler.getDefault().run()`, flip `Unplug Gyro`, run
+  again, and the gyro alert is in `AlertSim.getActive()`; cleared after
+  unflipping. Removing the alert's `set` line fails it by name. In a bare
+  test the four CANcoder alerts are up on the first tick (boot flicker), so
+  a CANcoder test must wait that out. Lesson 31 can use this when migrated.
+- **`./gradlew simulateJava` doesn't start a simulation on alpha-7
+  GradleRIO.** There's no such task; Gradle's abbreviation matching runs
+  `:simulateExternalJava`, which only writes `build/sim/java.json` for VS
+  Code. `./gradlew run` launches the robot with SimGUI. Lesson 30 says `run`;
+  every other v3 lesson still says `simulateJava` (flagged to the user, not
+  swept).
+- **SimGUI in this container:** `Xvfb :99 -screen 0 1600x1000x24`, then
+  `DISPLAY=:99 ./gradlew run`, screenshots with `import -window root`, and
+  clicks with `xdotool` (`apt-get install -y xdotool`). The sim window is
+  "Robot Simulation Window".
+
 **v3 Lesson 29 (current limits) on alpha-7, measured with bare `TalonFX`
 rigs and with the real `Robot` loop and `GamepadSim` (home with Back, then
 D-pad up, left trigger held and the left face button together; 20 ms fixed
@@ -428,7 +499,7 @@ through the scheduler (probe recipe above, plus `GamepadSim`):**
 - **Probe trap:** a run that follows the stick-driven phase starts with the
   estimate's heading ~9° off the truth (−170° vs −179.6°) even with the
   `placeSimulatedRobot`/`resetPose` gap; throw the first run away.
-- The unmigrated snapshots 30–34 still carry `kAimTarget`, the old `Autos` and
+- The unmigrated snapshots 31–34 still carry `kAimTarget`, the old `Autos` and
   the `Robot` call `registerEventTriggers(superstructure, localizer)`; whoever
   rolls them forward on top of 28 must take 28's versions.
 
@@ -512,8 +583,8 @@ written on alpha-7 on 2026-10-17, so it was never a gap to port.
 - **`Arm(Elevator, Supplier<Pose2d>)`.** The mode `switch` moved into the
   constructor, because a field initializer can't see a constructor
   parameter. Every snapshot from 23 on says `new Arm(elevator,
-  drivetrain::getSimulatedPose)`; the unmigrated 29, 30 and 34 only have that
-  line fixed.
+  drivetrain::getSimulatedPose)`; the unmigrated 34 only has that line
+  fixed.
 - **Commands V3's `Trigger.debounce(Time)` takes the measure directly** and
   defaults to `RISING`, read from the bytecode.
 - **Verified through the real loop with `GamepadSim`.** Build it *after*
@@ -616,8 +687,8 @@ rate, `GamepadSim`, `DriverStationSim` enabled, the strip read from
 - **Snapshot 23 carries `RobotTeleop.java`** (copied unchanged from 22) to hold
   Lesson 24's markers. Lesson 31's `SuperstructureStateTest` follows the six
   states (`scoringRequiresSomethingToScore`); mutated `IDLE→SCORING` and it
-  fails by name. The unmigrated snapshots 29, 30 and 34 still name the
-  four-state design.
+  fails by name. The unmigrated snapshot 34 still names the four-state
+  design.
 - **Maven Central throws intermittent 429s through the proxy.** A failed
   run still fills the Gradle cache, so rerun with a short sleep until it
   passes.
@@ -1034,7 +1105,7 @@ a lesson as-is.
 - [docs/lesson-plan-alpha7-upgrade.md](docs/lesson-plan-alpha7-upgrade.md) —
   the impact assessment and phased plan for upgrading the v3 track (only —
   the classic track targets stable 2026 and is unaffected) to WPILib 2027
-  alpha-7, a large breaking-change release. **Lessons 0–26 are migrated (or,
+  alpha-7, a large breaking-change release. **Lessons 0–30 are migrated (or,
   for 22 and 25, written) and verified on alpha-7**: Phoenix 6 cleared the marketplace (Track A, 1–14,
   2026-09-18), and on 2026-09-24 the v3 track switched vision from
   PhotonVision to **LimelightLib 2**, which cleared Track B's vendor gate.
@@ -1045,8 +1116,8 @@ a lesson as-is.
   (maple-sim, PhotonVision, PathPlanner…) than the `2027_alpha7` folder has
   files for — only a JSON in the folder means a release exists. Lesson 15's simulated camera publishes real results frames to
   the NetworkTables topic a real Limelight uses, so the unmodified library
-  runs in sim. Lessons 27–34 are still pre-alpha-7 code awaiting Phase 1b;
-  object detection (Lesson 34) stays on PhotonVision and waits for an alpha-7 PhotonLib (user decision, 2026-10-17); Lesson 30 (alerts) still needs a Limelight redesign decision. A
+  runs in sim. Lessons 31–34 are still pre-alpha-7 code awaiting Phase 1b;
+  object detection (Lesson 34) stays on PhotonVision and waits for an alpha-7 PhotonLib (user decision, 2026-10-17). A
   PhotonVision flavor of Lesson 15 may come back as an option once PhotonLib
   ships for alpha-7; the last PhotonVision version is at commit `94fe7b9`.
   Alpha-7
@@ -1107,8 +1178,8 @@ website only; the lesson files don't change.
 - **States and wording** are in
   [docs/_data/lesson_status.yml](docs/_data/lesson_status.yml); colors are
   in `custom.scss`. A lesson is "not updated yet" unless it's listed under
-  `waiting`: today that's 34 ("waiting on a library", PhotonLib) and 30
-  ("waiting on a decision"). Edit `waiting` when a blocker appears or
+  `waiting`: today that's only 34 ("waiting on a library", PhotonLib).
+  Edit `waiting` when a blocker appears or
   clears. Converted lessons ignore it.
 - The Pages workflow also rebuilds on changes to `tools/lib/v3-lessons.sh`,
   so a cut-off change alone refreshes the marks.

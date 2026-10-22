@@ -11,6 +11,7 @@ public interface ArmIO {
     public double rollerSupplyCurrentAmps = 0.0;
     public boolean pivotConnected = false;
     public boolean rollerConnected = false;
+    public boolean hasGamePiece = false;
   }
 
   /** Read every sensor into 'inputs'. Called once per tick, before anything else. */

@@ -7,14 +7,14 @@ import static org.wpilib.units.Units.RotationsPerSecond;
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
-import org.wpilib.driverstation.Alert;
-import org.wpilib.driverstation.Alert.Level;
 import org.wpilib.smartdashboard.Mechanism2d;
 import org.wpilib.smartdashboard.MechanismLigament2d;
 import org.wpilib.smartdashboard.MechanismRoot2d;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.Angle;
 import org.wpilib.units.measure.AngularVelocity;
+import org.wpilib.util.Alert;
+import org.wpilib.util.Alert.Level;
 
 import first.robot.Constants;
 import first.robot.Constants.ElevatorConstants;
@@ -24,7 +24,7 @@ import first.robot.Constants.FlywheelConstants;
  * A shooter wheel: the fourth mechanism on the same spine, and the first
  * whose goal is a speed rather than a place.
  */
-public class Flywheel extends Mechanism {
+public class Flywheel implements Mechanism {
   private final FlywheelIO m_io = switch (Constants.kCurrentMode) {
     case REAL -> new FlywheelIOTalonFX();
     case SIM -> new FlywheelIOSim();
@@ -35,7 +35,7 @@ public class Flywheel extends Mechanism {
   private AngularVelocity m_goal = RotationsPerSecond.of(0);
 
   private final Alert m_disconnected =
-      new Alert("Flywheel motor is not on the CAN bus", Level.HIGH);
+      new Alert("Flywheel/Disconnected", "Flywheel motor is not on the CAN bus", Level.HIGH);
 
   // A speedometer: one hub, two needles. There is nothing physical to draw
   // here — a spinning wheel looks the same at every speed — so the picture
@@ -54,28 +54,33 @@ public class Flywheel extends Mechanism {
           FlywheelConstants.kZeroAngle.in(Degrees)));
 
   public Flywheel() {
-    SmartDashboard.putData("Flywheel/Dial", m_dial);
     Scheduler.getDefault().addPeriodic(this::periodic);
+    // Whatever the wheel is doing when nothing else asks for it: idling, so
+    // the next shot doesn't start from a standstill. Set here, in the
+    // constructor, so it holds in every opmode.
+    setDefaultCommand(idle());
   }
 
   private void periodic() {
     m_io.updateInputs(m_inputs);
-    SmartDashboard.putNumber("Flywheel/VelocityRps", m_inputs.velocityRps);
-    SmartDashboard.putNumber("Flywheel/AppliedVolts", m_inputs.appliedVolts);
-    SmartDashboard.putNumber("Flywheel/SetpointRps", m_inputs.setpointRps);
-    SmartDashboard.putNumber("Flywheel/StatorCurrentAmps", m_inputs.statorCurrentAmps);
-    SmartDashboard.putNumber("Flywheel/SupplyCurrentAmps", m_inputs.supplyCurrentAmps);
-    SmartDashboard.putNumber("Flywheel/GoalRps", m_goal.in(RotationsPerSecond));
-    SmartDashboard.putBoolean("Flywheel/AtSpeed", atSpeed());
+    Telemetry.log("Flywheel/VelocityRps", m_inputs.velocityRps);
+    Telemetry.log("Flywheel/AppliedVolts", m_inputs.appliedVolts);
+    Telemetry.log("Flywheel/SetpointRps", m_inputs.setpointRps);
+    Telemetry.log("Flywheel/StatorCurrentAmps", m_inputs.statorCurrentAmps);
+    Telemetry.log("Flywheel/SupplyCurrentAmps", m_inputs.supplyCurrentAmps);
+    Telemetry.log("Flywheel/GoalRps", m_goal.in(RotationsPerSecond));
+    Telemetry.log("Flywheel/AtSpeed", atSpeed());
+    Telemetry.log("Flywheel/MotorConnected", m_inputs.motorConnected);
     m_disconnected.set(!m_inputs.motorConnected);
     updateDial();
   }
 
-  /** Point both needles and publish the dial. Runs every tick, like any drawing. */
+  /** Point both needles and log the dial. Runs every tick: a logged drawing is a snapshot. */
   private void updateDial() {
     m_goalNeedle.setAngle(toDialAngle(m_goal.in(RotationsPerSecond)).in(Degrees));
     m_needle.setAngle(toDialAngle(m_inputs.velocityRps).in(Degrees));
     m_needle.setColor(atSpeed() ? ElevatorConstants.kAtGoalColor : ElevatorConstants.kMovingColor);
+    Telemetry.log("Flywheel/Dial", m_dial);
   }
 
   /**
@@ -117,9 +122,8 @@ public class Flywheel extends Mechanism {
 
   /**
    * Sit at the idle speed, so the next shot doesn't start from nothing.
-   * Overriding this replaces Mechanism's own do-nothing default — the
-   * constructor installs whatever this returns automatically, so nothing
-   * else has to wire a default command for the wheel to idle on its own.
+   * Overriding this replaces Mechanism's own do-nothing default; the
+   * constructor hands it to setDefaultCommand.
    */
   @Override
   public Command idle() {

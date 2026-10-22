@@ -9,6 +9,10 @@ public interface ArmIO {
     public double rollerVelocityRotPerSec = 0.0;
     public double pivotSupplyCurrentAmps = 0.0;
     public double rollerSupplyCurrentAmps = 0.0;
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Add whether each of the two motors has answered on the CAN bus lately.
+     */
     public boolean hasGamePiece = false;
   }
 

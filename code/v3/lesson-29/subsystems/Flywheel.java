@@ -31,6 +31,10 @@ public class Flywheel implements Mechanism {
   private final FlywheelIO.FlywheelIOInputs m_inputs = new FlywheelIO.FlywheelIOInputs();
 
   private AngularVelocity m_goal = RotationsPerSecond.of(0);
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add an alert for a flywheel motor that isn't on the CAN bus.
+   */
 
   // A speedometer: one hub, two needles. There is nothing physical to draw
   // here — a spinning wheel looks the same at every speed — so the picture
@@ -65,6 +69,10 @@ public class Flywheel implements Mechanism {
     Telemetry.log("Flywheel/SupplyCurrentAmps", m_inputs.supplyCurrentAmps);
     Telemetry.log("Flywheel/GoalRps", m_goal.in(RotationsPerSecond));
     Telemetry.log("Flywheel/AtSpeed", atSpeed());
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Log whether the motor is connected, and set the alert every tick.
+     */
     updateDial();
   }
 

@@ -200,6 +200,10 @@ public final class Constants {
 
     /** Below this, call it a brownout — well above where the RIO itself gives up. */
     public static final Voltage kBrownoutVoltage = Volts.of(6.3);
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Add the battery voltage worth warning about before a match, set well above the brownout line so the warning comes early.
+     */
   }
 
   public static final class PathConstants {

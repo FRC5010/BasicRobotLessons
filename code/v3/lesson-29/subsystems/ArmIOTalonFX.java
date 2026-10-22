@@ -84,6 +84,10 @@ public class ArmIOTalonFX implements ArmIO {
     inputs.rollerVelocityRotPerSec = m_roller.getVelocity().getValue().in(RotationsPerSecond);
     inputs.pivotSupplyCurrentAmps = m_pivot.getSupplyCurrent().getValue().in(Amps);
     inputs.rollerSupplyCurrentAmps = m_roller.getSupplyCurrent().getValue().in(Amps);
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Ask both motors whether they're connected.
+     */
     // Wired so that a broken beam pulls the line low. An unplugged sensor
     // floats high, which reads as "no game piece": the harmless answer.
     inputs.hasGamePiece = !m_beamBreak.get();

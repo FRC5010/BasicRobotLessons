@@ -26,6 +26,10 @@ public class Elevator implements Mechanism {
   private final ElevatorIO.ElevatorIOInputs m_inputs = new ElevatorIO.ElevatorIOInputs();
   private Distance m_goal = ElevatorConstants.kStowed;
   private boolean m_homed = false;
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add two alerts: one for a motor that isn't on the CAN bus, and one for an elevator that has never been homed.
+   */
 
   // The picture: a canvas, one point anchored to it, and a chain of segments.
   private final Mechanism2d m_mechanism = new Mechanism2d(
@@ -52,6 +56,10 @@ public class Elevator implements Mechanism {
     Telemetry.log("Elevator/SupplyCurrentAmps", m_inputs.supplyCurrentAmps);
     Telemetry.log("Elevator/AtBottomLimit", m_inputs.atBottomLimit);
     Telemetry.log("Elevator/Homed", m_homed);
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Log whether the motor is connected, then set both alerts every tick from what's true right now.
+     */
 
     // The picture is built once and changed every tick; only the carriage
     // changes here, and anything appended to it (see getCarriage()) rides

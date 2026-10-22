@@ -9,6 +9,10 @@ public interface ElevatorIO {
     public double statorCurrentAmps = 0.0;
     public double supplyCurrentAmps = 0.0;
     public boolean atBottomLimit = false;
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Add whether the motor has answered on the CAN bus lately. It's read off the hardware like everything else here.
+     */
   }
 
   /** Read every sensor into 'inputs'. Called once per tick, before anything else. */

@@ -6,31 +6,42 @@ package first.robot;
 
 import static org.wpilib.units.Units.Volts;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.command3.SchedulerEvent;
 import org.wpilib.command3.button.CommandGamepad;
-import org.wpilib.driverstation.Alert;
-import org.wpilib.driverstation.Alert.Level;
+import org.wpilib.driverstation.RobotState;
 import org.wpilib.framework.OpModeRobot;
+import org.wpilib.hardware.hal.RobotMode;
+import org.wpilib.simulation.AlertSim;
 import org.wpilib.simulation.BatterySim;
 import org.wpilib.simulation.RoboRioSim;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
+import org.wpilib.telemetry.TelemetryTable;
 import org.wpilib.system.DataLogManager;
 import org.wpilib.system.RobotController;
+import org.wpilib.util.Alert;
+import org.wpilib.util.Alert.Level;
 
 import first.robot.Constants.DriveConstants;
 import first.robot.Constants.PowerConstants;
 import first.robot.Constants.VisionConstants;
+import first.robot.commands.Autos;
+import first.robot.opmode.PathAuto;
+import first.robot.opmode.RobotAutoDriveToPose;
 import first.robot.subsystems.Arm;
 import first.robot.subsystems.Drivetrain;
 import first.robot.subsystems.Elevator;
 import first.robot.subsystems.Flywheel;
-import first.robot.subsystems.GamePieceDetector;
 import first.robot.subsystems.Leds;
+import first.robot.subsystems.LimelightPoseProvider;
 import first.robot.subsystems.Localizer;
-import first.robot.subsystems.PhotonVisionPoseProvider;
 import first.robot.subsystems.Superstructure;
+import first.robot.subsystems.SuperstructureState;
+import frc.robot.lib.BLine.commands.FollowPath;
 
 /**
  * The methods in this class are called automatically as described in the OpModeRobot documentation.
@@ -48,17 +59,19 @@ public class Robot extends OpModeRobot {
   // Localizer reads the drivetrain's kinematics/rotation/module positions at
   // construction, so drivetrain must be built first — it already is, above.
   public final Localizer localizer = new Localizer(drivetrain);
-  // Same trick as the cameras below: it needs localizer, which is already a
-  // finished object by the time this line runs.
-  public final GamePieceDetector pieceDetector = new GamePieceDetector(localizer::getPose);
-  // Blank finals: building a camera needs localizer (for its pose supplier),
-  // so localizer has to be a finished object first. Assigned in the
+  // Blank finals: each camera is built and registered with localizer in the
   // constructor body, below, which runs after every field initializer above.
-  public final PhotonVisionPoseProvider frontCamera;
-  public final PhotonVisionPoseProvider backCamera;
+  public final LimelightPoseProvider frontCamera;
+  public final LimelightPoseProvider backCamera;
+
+  // How this robot follows a path. It's the same for every path, so it's
+  // built once, here, and every autonomous opmode reaches in and uses it.
+  public final FollowPath.Builder pathBuilder = Autos.makePathBuilder(drivetrain, localizer);
+
   public final Elevator elevator = new Elevator();
   // Arm reads elevator.getCarriage() in its constructor, so elevator must be
-  // a finished object first — it already is, above.
+  // a finished object first — it already is, above. In simulation its intake
+  // also needs to know where the robot really is, which only drivetrain knows.
   public final Arm arm = new Arm(elevator, drivetrain::getSimulatedPose);
   // Superstructure reads both, so elevator and arm must be finished objects
   // first — they already are, above.
@@ -66,9 +79,9 @@ public class Robot extends OpModeRobot {
   public final Leds leds = new Leds(superstructure::getState); // reads it; drives nothing
   public final Flywheel flywheel = new Flywheel();
 
-  /** Not an error — the robot works fine on a low battery, right up until it doesn't. */
-  private final Alert m_lowBattery =
-      new Alert("Battery is low — swap it before the next match", Level.MEDIUM);
+  /** Not an error: the robot works fine on a low battery, right up until it doesn't. */
+  private final Alert m_lowBattery = new Alert(
+      "Power/LowBattery", "Battery is low — swap it before the next match", Level.MEDIUM);
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -77,12 +90,26 @@ public class Robot extends OpModeRobot {
   public Robot() {
     DataLogManager.start(); // saves every published value to a .wpilog file
     Scheduler.getDefault().addEventListener(this::logCommandStart);
+    // Once, for the whole program. The markers now ask the superstructure for
+    // things, read the pose and the wheels' speed, so they need all three —
+    // already built, above.
+    Autos.registerEventTriggers(superstructure, drivetrain, localizer);
+
+    // Motion that belongs to a state, bound to being in it. No guard here:
+    // being in the state at all means the state machine already said yes. The
+    // moment the state changes, whileTrue cancels the old motion. HOLDING has
+    // none — the elevator and arm are already where they need to be. These are
+    // made here, not in an opmode, so they hold in every opmode there is.
+    superstructure.inState(SuperstructureState.INTAKING).whileTrue(superstructure.intakeMotion());
+    superstructure.inState(SuperstructureState.HANDOFF).whileTrue(superstructure.handoffMotion());
+    superstructure.inState(SuperstructureState.SCORING).whileTrue(superstructure.scoreMotion());
+    superstructure.inState(SuperstructureState.IDLE).whileTrue(superstructure.idleMotion());
 
     // Vision now checks its simulated eyesight against ground truth, not
     // against its own guess — the fix Lesson 15 admitted it was missing.
-    frontCamera = PhotonVisionPoseProvider.makeCamera(
+    frontCamera = LimelightPoseProvider.makeCamera(
         VisionConstants.kFrontCameraName, VisionConstants.kFrontRobotToCamera, drivetrain::getSimulatedPose);
-    backCamera = PhotonVisionPoseProvider.makeCamera(
+    backCamera = LimelightPoseProvider.makeCamera(
         VisionConstants.kBackCameraName, VisionConstants.kBackRobotToCamera, drivetrain::getSimulatedPose);
     localizer.addProvider(frontCamera);
     localizer.addProvider(backCamera);
@@ -92,6 +119,26 @@ public class Robot extends OpModeRobot {
     if (Constants.kCurrentMode == Constants.Mode.SIM) {
       localizer.resetPose(DriveConstants.kSimStartingPose);
     }
+
+    // The path autos. Every one is the same opmode with a different path and
+    // a different idea of what to do along it, so each is one line here
+    // instead of a class of its own. The lambda builds the opmode when the
+    // Driver Station selects it, just as an annotated class would be built.
+    addOpMode(RobotMode.AUTONOMOUS, "Two Corners", "Paths",
+        () -> new PathAuto(this, "TwoCorners", path -> Autos.followPath(pathBuilder, path)));
+    addOpMode(RobotMode.AUTONOMOUS, "Far Side", "Paths",
+        () -> new PathAuto(this, "FarSide", path -> Autos.followPath(pathBuilder, path)));
+    addOpMode(RobotMode.AUTONOMOUS, "Aim While Driving", "Paths",
+        () -> new PathAuto(this, "AimWhileDriving", path -> Autos.followPath(pathBuilder, path)));
+    addOpMode(RobotMode.AUTONOMOUS, "Pick Up", "Paths",
+        () -> new PathAuto(this, "PickUp",
+            path -> Autos.followPathAndScore(pathBuilder, path, superstructure)));
+    // Not a drawn path, so it has its own opmode class, but registered the same
+    // way: an annotated class would be found by the scan, and this one isn't.
+    addOpMode(RobotMode.AUTONOMOUS, "Drive To Pose", "Poses", () -> new RobotAutoDriveToPose(this));
+    // The list went to the Driver Station before this constructor ran, with
+    // only the annotated classes on it. Send it again with these added.
+    publishOpModes();
   }
 
   /** This function is called exactly once when the DS first connects. */
@@ -104,17 +151,16 @@ public class Robot extends OpModeRobot {
     Scheduler.getDefault().run();
 
     double batteryVolts = RobotController.getBatteryVoltage();
-    SmartDashboard.putNumber("Power/TotalCurrentAmps", getTotalCurrentAmps());
-    SmartDashboard.putNumber("Power/BatteryVolts", batteryVolts);
-    // RobotController.isBrownedOut() never reports true in this alpha's sim,
-    // however low the simulated battery goes — measured, not assumed, so
-    // this compares against the threshold ourselves instead of trusting it.
-    SmartDashboard.putBoolean("Power/BrownedOut", batteryVolts < PowerConstants.kBrownoutVoltage.in(Volts));
-
-    // This one belongs to the robot rather than to any subsystem, for the
-    // same reason Lesson 29's current total did: nothing smaller knows
-    // about it.
-    m_lowBattery.set(batteryVolts < PowerConstants.kLowBatteryVoltage.in(Volts));
+    Telemetry.log("Power/TotalCurrentAmps", getTotalCurrentAmps());
+    Telemetry.log("Power/BatteryVolts", batteryVolts);
+    // Compared against the threshold here rather than read from a flag, so the
+    // answer is the same on a robot and in simulation, and you choose the line.
+    Telemetry.log("Power/BrownedOut", batteryVolts < PowerConstants.kBrownoutVoltage.in(Volts));
+    // The robot's, not any subsystem's: nothing smaller knows about it. Only
+    // judged while disabled, because a battery under load always reads low;
+    // what says it's flat is the voltage at rest.
+    m_lowBattery.set(
+        RobotState.isDisabled() && batteryVolts < PowerConstants.kLowBatteryVoltage.in(Volts));
   }
 
   /**
@@ -128,7 +174,7 @@ public class Robot extends OpModeRobot {
   private void logCommandStart(SchedulerEvent event) {
     if (event instanceof SchedulerEvent.Scheduled scheduled) {
       for (Mechanism mechanism : scheduled.command().requirements()) {
-        SmartDashboard.putString(mechanism.getName() + "/CurrentCommand", scheduled.command().name());
+        Telemetry.log(mechanism.getName() + "/CurrentCommand", scheduled.command().name());
       }
     }
   }
@@ -141,6 +187,30 @@ public class Robot extends OpModeRobot {
     // mechanism owns it, and every one of them changes it — so it's the
     // first thing since then with a real reason to live here.
     RoboRioSim.setVInVoltage(BatterySim.calculateDefaultBatteryLoadedVoltage(getTotalCurrentAmps()));
+    showAlerts();
+  }
+
+  /**
+   * Sim only. On a real robot the Driver Station shows alerts, but SimGUI
+   * can't read them on this WPILib. It can draw an alerts panel from a table
+   * holding three lists, though, so fill one in from what the simulator knows.
+   */
+  private void showAlerts() {
+    List<String> errors = new ArrayList<>();
+    List<String> warnings = new ArrayList<>();
+    List<String> infos = new ArrayList<>();
+    for (AlertSim.AlertInfo alert : AlertSim.getActive()) {
+      switch (alert.level) {
+        case HIGH -> errors.add(alert.text);
+        case MEDIUM -> warnings.add(alert.text);
+        case LOW -> infos.add(alert.text);
+      }
+    }
+    TelemetryTable panel = Telemetry.getTable("Alerts");
+    panel.setType("Alerts"); // what tells SimGUI to draw this table as a panel
+    panel.log("errors", errors.toArray(new String[0]));
+    panel.log("warnings", warnings.toArray(new String[0]));
+    panel.log("infos", infos.toArray(new String[0]));
   }
 
   /**

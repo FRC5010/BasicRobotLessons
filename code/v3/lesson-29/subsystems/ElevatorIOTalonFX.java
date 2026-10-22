@@ -67,6 +67,10 @@ public class ElevatorIOTalonFX implements ElevatorIO {
     // Normally closed to ground: the switch holds this line low while the
     // carriage is clear of it, so "high" means tripped — or a broken wire.
     inputs.atBottomLimit = m_bottomLimit.get();
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Ask the motor whether it's connected, and put the answer in the inputs.
+     */
   }
 
   @Override

@@ -51,6 +51,10 @@ public class FlywheelIOTalonFX implements FlywheelIO {
     inputs.setpointRps = m_motor.getClosedLoopReference().getValue();
     inputs.statorCurrentAmps = m_motor.getStatorCurrent().getValue().in(Amps);
     inputs.supplyCurrentAmps = m_motor.getSupplyCurrent().getValue().in(Amps);
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Ask the motor whether it's connected.
+     */
   }
 
   @Override

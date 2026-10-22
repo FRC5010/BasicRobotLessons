@@ -152,7 +152,9 @@ Grouped by relevance to this course, most disruptive first.
   upstream of it changes today.
 - **`Alert` moved from HAL/wpilib to wpiutil.** Affects Lesson 30, was 31
   (`docs/lessons/v3/30-alerts.md`). Likely just an import path change; worth
-  confirming rather than assuming.
+  confirming rather than assuming. **Confirmed 2026-10-22: more than an
+  import.** It's `org.wpilib.util.Alert(String id, String text, Level)`, and
+  the new id must be unique per level (a duplicate throws `AlertException`).
 - **Timestamps now nanoseconds instead of microseconds; `Preferences`
   moved to its own package; `usage reporting` API added.** No known
   course-facing surface today — nothing in the v3 lessons manually handles
@@ -418,7 +420,8 @@ disconnect alert: its sim demo relied on `PhotonCamera.isConnected()`; the
 Limelight equivalent, `Limelight.isConnected()`, is honest in sim, but
 renaming a camera renames both the simulated publisher and the reader, so
 the demo needs a different setup). Both are design calls for the user, not
-mechanical ports. Re-run
+mechanical ports. **Lesson 30's was made on 2026-10-22**: a SimGUI unplug
+switch per device (see "Lesson 30 migrated" below). Re-run
 `./tools/verify-lessons-v3.sh 34 test` once everything compiles, to catch
 anything only a test surfaces.
 
@@ -977,6 +980,33 @@ tired one (11 V, 40 mΩ), where no limits browns out, defaults barely survive
 and the budget has margin; Try It #4 was reworded since the tired battery is now
 in the text. The section 2 and 3 tables were re-measured with bare rigs.
 
+**Lesson 30 migrated, 2026-10-22 (in the main session, not the migration
+task).** Compiles 0–29 and 0–30 with zero warnings, and
+`check-lesson-markers-v3.py` is clean for 1–30. Rebuilt on Lesson 29; its
+vision half is Limelight now (`cameraConnected` from `Limelight.isConnected()`).
+The user's design decision replaces the camera-rename demo: **a sim-only
+unplug switch** (`subsystems/UnplugSwitch`, a HAL `SimDevice` boolean that
+SimGUI shows in Other Devices as a false/true drop-down) for both cameras, the
+four CANcoders and the gyro. It **only flips the connected reading**; the rest
+of the sim carries on (user choice; making the fault real is Try It #2). The
+CANcoders and gyro gained `steerEncoderConnected`/`connected` inputs and
+alerts, so Lesson 29's snapshot carries unchanged copies of 12 drivetrain and
+vision files to hold the 38 markers. Other changes found on the way:
+
+- `Alert` is `org.wpilib.util.Alert(id, text, level)` (above).
+- Nothing in alpha-7's simulator reads alerts, so `Robot.showAlerts()` copies
+  `AlertSim.getActive()` into a `setType("Alerts")` table. SimGUI then draws
+  a real alerts panel at NetworkTables → Telemetry → Alerts.
+- The battery alert is judged only while disabled, because the ungated one
+  fired on every enable and every shot.
+- **Open, track-wide: `./gradlew simulateJava` runs `:simulateExternalJava`
+  on alpha-7 GradleRIO**, which writes VS Code's launch file and starts
+  nothing. `./gradlew run` starts the robot with SimGUI (checked here).
+  Lesson 30 says `run`; the other v3 lessons still say `simulateJava`.
+  Flagged to the user, not swept.
+
+Measurements and probe recipes are in CLAUDE.md.
+
 **What Lessons 27–34 now owe Lesson 26, when Phase 1b reaches them:** any
 whole-file snapshot of `Autos`, `Drivetrain`, `Constants`, `Robot` or
 `RobotTeleop` must carry `driveToScoringPose`, `alignToPose`/`atPose` and the
@@ -1012,8 +1042,9 @@ object detection's pieces listed above; drop them when migrating each, since
 those lessons now come first. When object detection is migrated as Lesson 34
 it builds on the full Lesson 33 state, re-adds what it needs to `Robot`,
 `Constants`, `Autos` and `RobotTeleop`, and should give its camera a
-connection alert in the pattern Lesson 30 sets (after Lesson 30's own design
-decision). Lesson 30 (alerts) is now the next blocked lesson, after 27–29 (all three done).
+connection alert in the pattern Lesson 30 sets: a `cameraConnected` input,
+an alert in the subsystem that reads it, and an `UnplugSwitch` in its sim IO.
+Lesson 30 was migrated on 2026-10-22, so Lesson 31 (testing) is next.
 
 **Each lesson Phase 1b migrates also gets its NEXT LESSON markers
 (added 2026-09-26).** Lessons 1–15 now ship them: the code at the end of

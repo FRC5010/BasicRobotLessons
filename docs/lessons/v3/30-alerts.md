@@ -1,18 +1,19 @@
 # Lesson 30 — The robot tells you what's wrong
 
 **Goal:** Make the robot run its own pre-match checklist and say what it
-finds, somewhere a human will actually look.
+finds, somewhere a human will actually look. Then pull a few plugs in
+simulation to prove it works.
 
 **New Java concepts**
 - None.
 
 **New robot concepts**
-- **`Alert`** and `Alert.Level`, and where they surface
-- **Logging a problem and reporting one are different jobs** — you've
-  logged everything since Lesson 3, and nobody reads a log in the queue
-  line
+- **`Alert`** and `Alert.Level`, and where alerts show up
+- **Logging a problem and reporting one are different jobs.** You've logged
+  everything since Lesson 3, and nobody reads a log in the queue line.
 - **"Is this device there?" is a sensor reading**, so it belongs in the
   inputs
+- **A simulated fault**: a switch in SimGUI that a simulated device checks
 - Choosing what's worth alerting on, and what's an error versus a warning
 
 ---
@@ -20,30 +21,30 @@ finds, somewhere a human will actually look.
 ## 1. Five minutes before a match
 
 You're in the queue line. The robot is on its cart, powered on. You have
-about five minutes, no laptop connection worth trusting, and one
-question: **is this thing going to work?**
+about five minutes, no laptop connection worth trusting, and one question:
+**is this thing going to work?**
 
 Everything you'd want to know, the robot already knows.
 
-It knows whether every motor answered on the CAN bus. It knows whether
-the elevator has ever been homed, because Lesson 21 recorded that. It
+It knows whether every motor answered on the CAN bus. It knows whether the
+elevator has ever been homed, because Lesson 23 started recording that. It
 knows what the battery is doing, because Lesson 29 measured it. It knows
-whether the cameras are alive. Every one of those facts is sitting in a
-variable right now.
+whether the cameras are sending pictures. Every one of those facts is
+sitting in a variable right now.
 
 And every one of them is invisible, because the only place any of it goes
-is a log file that gets opened after the match, by which point the
-interesting question has already been answered the hard way.
+is a log file that gets opened after the match. By then the interesting
+question has already been answered the hard way.
 
 ---
 
 ## 2. Logging it and saying it are different jobs
 
 This is worth being precise about, because the course has spent thirty
-lessons building the first one and it is genuinely not the second.
+lessons building the first one, and it is genuinely not the second.
 
 **A log is a record.** It's complete, it's timestamped, it's for later,
-and it answers "what happened?" — usually while sitting down, after
+and it answers "what happened?", usually while sitting down after
 something went wrong. Everything in this course logs, and that has been
 the right call every time.
 
@@ -63,72 +64,157 @@ WPILib has exactly that.
 ## 3. `Alert`
 
 An `Alert` is a message that is either currently true or currently false.
-You make one, and you tell it which it is.
+You make one, and every tick you tell it which.
 
 *Nothing to add yet — this is just the shape:*
 
 ```java
-Alert lowBattery = new Alert("Battery is low", Alert.Level.MEDIUM);
+Alert lowBattery = new Alert("Power/LowBattery", "Battery is low", Alert.Level.MEDIUM);
 lowBattery.set(true);   // now showing
 lowBattery.set(false);  // gone again
 ```
 
+The first string is an **id**, and all it has to be is unique: build a
+second alert with the same id and level and the constructor throws
+`AlertException: Alert already allocated`. You already have a scheme for
+unique names, though. Every log key in this robot is one, so every id in
+this lesson borrows a log key's shape: the subsystem, a slash, what's
+wrong. The second string is the text a human reads.
+
 Three levels, and the difference is what a human should do about it:
 
-- **`HIGH`** — this robot is broken. A motor didn't answer. Do not queue.
-- **`MEDIUM`** — this robot works, but something is off. Fix it if
-  there's time.
-- **`LOW`** — worth knowing. Not a problem.
+- **`HIGH`**: this robot is broken. A motor didn't answer. Do not queue.
+- **`MEDIUM`**: this robot works, but something is off. Fix it if there's
+  time.
+- **`LOW`**: worth knowing. Not a problem.
 
-**The important habit is in that second line.** `set` takes a boolean,
-and you call it *every tick* with the current answer — you don't "raise"
+**The important habit is in those last two lines.** `set` takes a boolean,
+and you call it *every tick* with the current answer. You don't "raise"
 an alert when something breaks. An alert describes how things are right
 now, which means it has to be able to go away by itself when somebody
 plugs the cable back in.
 
-> This is the exact API `OpModeRobot` already uses on itself: its own
-> loop-overrun warning is `new Alert("Loop time of \"" + period + "\"s
-> overrun", Alert.Level.MEDIUM)`. You're not reaching for a course
-> invention — this is the framework's own mechanism, the same one it
-> trusts for its own diagnostics.
+`OpModeRobot` itself has an alert, and it shows what happens when you don't
+do that. Its loop-overrun warning, `Loop time of "0.02"s overrun`, is set to
+true whenever a loop runs long, and nothing ever sets it back. The first
+loop after boot has run long every time we've measured it, while
+everything warms up: in one run its `robotPeriodic()` alone took almost
+half a second, against a 0.02 s budget. So that warning is up from the
+first moment and stays up for the rest of the session. It means "this has happened since boot", which
+is a different kind of statement. Every alert you write in this lesson means
+"this is true right now".
 
-**Where this shows up is worth being honest about, because it's not
-where the old WPILib course expected.** In earlier WPILib versions,
-`Alert` published to NetworkTables under `/SmartDashboard/Alerts/`, which
-is what let AdvantageScope, Elastic, and Shuffleboard render a list with
-no wiring at all. This alpha's `Alert` doesn't do that — confirmed by
-watching NetworkTables directly after calling `set(true)` on one: nothing
-appears, anywhere. Instead it routes through the HAL to the **new 2027
-Driver Station application**, which is a real, documented feature of that
-app, not a gap — WPILib's own compatibility notes say plainly that
-*"newer Driver Station features (for example, OpMode selection and
-Alerts) are only available in the 2027 Driver Station."* Alerts moved
-from being a dashboard trick to being a native part of the driver
-station, which is arguably a better home for "should I be worried right
-now" than a NetworkTables array ever was.
+**Where alerts show up is new.** On a real robot they go to the **2027
+Driver Station** app. WPILib's
+[Systemcore testing notes](https://github.com/wpilibsuite/SystemcoreTesting#readme)
+list Alerts among the features that are *"only available in the 2027 Driver
+Station"*. They used to be a dashboard trick riding on NetworkTables. Now
+they're part of the driver station itself, which is a better home for
+"should I be worried right now".
 
-This course's `simulateJava` workflow doesn't run that new application,
-though, and SimGUI's own Alerts window is still wired to the *old*
-NetworkTables-backed mechanism — so it won't show anything either, for
-now. Section 7 shows how this course checks alert state anyway.
+SimGUI can't show them yet, though. On this version of WPILib, alerts
+are kept inside the robot program, and SimGUI has no way to read them.
+So before writing a single alert of your own, give yourself somewhere to
+see them.
 
 ---
 
-## 4. "Is this device there?" is a sensor reading
+## 4. Somewhere to see them
 
-Start with the most valuable alert on any robot: a motor that never
-showed up.
+WPILib's simulation tools include **`AlertSim`**, which can list every
+alert that's currently active. SimGUI can't read alerts, but it can draw an
+**alerts panel**, the red-and-yellow list a dashboard shows. It draws one
+from a table of three lists of text: `errors`, `warnings` and `infos`. So
+every tick, in simulation only, copy one into the other.
 
-Phoenix will tell you — `TalonFX.isConnected()` is true when the device
-has been answering recently. The question is where to ask it.
+**Add to `Robot`, below `simulationPeriodic()`:**
 
-It goes in the **inputs**. It's a fact read off the hardware once per
-tick, which is the definition the IO layer has used since Lesson 13, and
-putting it there means a replay knows the device was missing. Debugging a
-log where the flywheel did nothing is a great deal easier when the log
-says the flywheel wasn't plugged in.
+```java
+  /**
+   * Sim only. On a real robot the Driver Station shows alerts, but SimGUI
+   * can't read them on this WPILib. It can draw an alerts panel from a table
+   * holding three lists, though, so fill one in from what the simulator knows.
+   */
+  private void showAlerts() {
+    List<String> errors = new ArrayList<>();
+    List<String> warnings = new ArrayList<>();
+    List<String> infos = new ArrayList<>();
+    for (AlertSim.AlertInfo alert : AlertSim.getActive()) {
+      switch (alert.level) {
+        case HIGH -> errors.add(alert.text);
+        case MEDIUM -> warnings.add(alert.text);
+        case LOW -> infos.add(alert.text);
+      }
+    }
+    TelemetryTable panel = Telemetry.getTable("Alerts");
+    panel.setType("Alerts"); // what tells SimGUI to draw this table as a panel
+    panel.log("errors", errors.toArray(new String[0]));
+    panel.log("warnings", warnings.toArray(new String[0]));
+    panel.log("infos", infos.toArray(new String[0]));
+  }
+```
 
-**Add to `ElevatorIO.ElevatorIOInputs` and `FlywheelIO.FlywheelIOInputs`, below `atBottomLimit`/`supplyCurrentAmps`:**
+**And call it at the end of `simulationPeriodic()`, below the battery line:**
+
+```java
+  @Override
+  public void simulationPeriodic() {
+    // ...
+    RoboRioSim.setVInVoltage(BatterySim.calculateDefaultBatteryLoadedVoltage(getTotalCurrentAmps()));
+    showAlerts();
+  }
+```
+
+**Add the imports:**
+
+```java
+import java.util.ArrayList;
+import java.util.List;
+
+import org.wpilib.simulation.AlertSim;
+import org.wpilib.telemetry.TelemetryTable;
+```
+
+The `switch` is the arrow-style one you've used since Lesson 13 to pick an
+IO, used here to do something instead of to produce a value.
+`toArray(new String[0])` turns each list into the plain array
+`TelemetryTable.log` takes. `setType` is the line that matters most: a
+table that announces a type is what SimGUI lists under its NetworkTables
+menu. That's how Lesson 11's field and Lesson 19's mechanism drawing got
+there, and `"Alerts"` is one more type it knows how to draw.
+
+It lives in `simulationPeriodic()` for the same reason Lesson 29's battery
+model does: it isn't any subsystem's job. When SimGUI learns to read alerts
+on its own, delete it.
+
+**Run it:**
+
+```powershell
+./gradlew run
+```
+
+In SimGUI, open **NetworkTables → Telemetry → Alerts**. One line is
+already there: the framework's own `Loop time of "0.02"s overrun`, with a
+yellow warning sign. Everything else in this lesson lands in that same
+panel.
+
+---
+
+## 5. "Is this device there?" is a sensor reading
+
+Start with the most valuable alert on any robot: a motor that never showed
+up.
+
+Phoenix will tell you. `isConnected()` is true when the device has been
+answering on the CAN bus recently. The question is where to ask it.
+
+It goes in the **inputs**. It's a fact read off the hardware once per tick,
+which is the definition the IO layer has used since Lesson 13. Putting it
+there also means the log knows the device was missing. Debugging a log
+where the flywheel did nothing is a great deal easier when the log says the
+flywheel wasn't plugged in.
+
+**Add to `ElevatorIO.ElevatorIOInputs`, below `atBottomLimit`, and to `FlywheelIO.FlywheelIOInputs`, below `supplyCurrentAmps`:**
 
 ```java
     public boolean motorConnected = false;
@@ -141,42 +227,33 @@ says the flywheel wasn't plugged in.
     public boolean rollerConnected = false;
 ```
 
-**Add to `VisionIO.VisionIOInputs`:**
+Each one starts `false`. A device you haven't heard from yet isn't
+connected, as far as anyone can prove.
+
+**Read it in `ElevatorIOTalonFX.updateInputs`, below the bottom-limit line:**
 
 ```java
-    public boolean cameraConnected = false;
+    inputs.atBottomLimit = m_bottomLimit.get();
+    // Has the motor answered on the CAN bus lately? A reading, like the rest.
+    inputs.motorConnected = m_motor.isConnected();
 ```
 
-**Read them, in `ElevatorIOTalonFX` and `FlywheelIOTalonFX`, below the supply-current line:**
+**In `FlywheelIOTalonFX.updateInputs`, below the supply-current line:**
 
 ```java
     inputs.motorConnected = m_motor.isConnected();
 ```
 
-**In `ArmIOTalonFX`:**
+**And in `ArmIOTalonFX.updateInputs`, below the roller's supply-current line:**
 
 ```java
     inputs.pivotConnected = m_pivot.isConnected();
     inputs.rollerConnected = m_roller.isConnected();
 ```
 
-**And in `VisionIOPhotonVision`, below the observations line:**
-
-```java
-    inputs.cameraConnected = m_camera.isConnected();
-```
-
-> **Measured, not assumed: a fresh TalonFX reads disconnected for about a
-> third of a second after construction, then connects and stays that
-> way.** There's no real CAN bus in simulation and nothing to unplug, so
-> you can't make this alert fire for a motor at a laptop — that startup
-> flicker is the only version of "disconnected" sim can show you. That's
-> honest rather than useless: the check costs one line, and it's the one
-> that saves you at an event.
-
 ---
 
-## 5. Alerts that belong to a subsystem
+## 6. Alerts that belong to a subsystem
 
 Each subsystem knows what's wrong with itself, so each one owns its own
 alerts.
@@ -185,40 +262,46 @@ alerts.
 
 ```java
   // Two things worth saying out loud in the pit, and they are different
-  // kinds of bad: a missing motor means the robot cannot work, an
-  // unhomed elevator means it will work wrongly.
+  // kinds of bad: a missing motor means the robot cannot work, an unhomed
+  // elevator means it will work wrongly. Each id only has to be unique, and
+  // a log key is already unique, so they borrow its shape.
   private final Alert m_disconnected =
-      new Alert("Elevator motor is not on the CAN bus", Level.HIGH);
+      new Alert("Elevator/Disconnected", "Elevator motor is not on the CAN bus", Level.HIGH);
   private final Alert m_notHomed =
-      new Alert("Elevator has never been homed", Level.MEDIUM);
+      new Alert("Elevator/NotHomed", "Elevator has never been homed", Level.MEDIUM);
 ```
 
 **Add to `Elevator.periodic()`, below the `Homed` log line:**
 
 ```java
-    // Alerts are set every tick, not raised once: an alert is a statement
-    // about how things are now, so it has to be able to go away again.
+    Telemetry.log("Elevator/MotorConnected", m_inputs.motorConnected);
+
+    // Set every tick, not raised once: an alert is a statement about how
+    // things are now, so it has to be able to go away again.
     m_disconnected.set(!m_inputs.motorConnected);
     m_notHomed.set(!m_homed);
 ```
 
-That pair is the whole lesson in miniature. **A missing motor is
-`HIGH`** — the robot cannot do its job, and nobody should let it onto the
-field. **An unhomed elevator is `MEDIUM`** — everything works, and it
-will work *wrongly*, moving to heights measured from a zero that means
-nothing. Lesson 21 built the machinery to detect that and Lesson 24 made
-it structural; this is the part that tells a human.
+That pair is the whole lesson in miniature. **A missing motor is `HIGH`**:
+the robot cannot do its job, and nobody should let it onto the field. **An
+unhomed elevator is `MEDIUM`**: everything works, and it will work
+*wrongly*, moving to heights measured from a zero that means nothing.
+Lesson 21 built the machinery to fix that and Lesson 24 made it structural;
+this is the part that tells a human.
 
 **Add to `Arm`, below `m_goal`:**
 
 ```java
   private final Alert m_disconnected =
-      new Alert("Arm motor is not on the CAN bus", Level.HIGH);
+      new Alert("Arm/Disconnected", "Arm motor is not on the CAN bus", Level.HIGH);
 ```
 
-**And in `Arm.periodic()`, below the `AtGoal` log line:**
+**And to `Arm.periodic()`, below the `AtGoal` log line:**
 
 ```java
+    Telemetry.log("Arm/PivotConnected", m_inputs.pivotConnected);
+    Telemetry.log("Arm/RollerConnected", m_inputs.rollerConnected);
+
     // Either motor missing is the same problem from the pit's point of view.
     m_disconnected.set(!m_inputs.pivotConnected || !m_inputs.rollerConnected);
 ```
@@ -227,67 +310,336 @@ it structural; this is the part that tells a human.
 
 ```java
   private final Alert m_disconnected =
-      new Alert("Flywheel motor is not on the CAN bus", Level.HIGH);
+      new Alert("Flywheel/Disconnected", "Flywheel motor is not on the CAN bus", Level.HIGH);
 ```
 
-**And in `Flywheel.periodic()`, below the `AtSpeed` log line:**
+**And to `Flywheel.periodic()`, below the `AtSpeed` log line:**
 
 ```java
+    Telemetry.log("Flywheel/MotorConnected", m_inputs.motorConnected);
     m_disconnected.set(!m_inputs.motorConnected);
 ```
 
 **Add the imports to all three:**
 
 ```java
-import org.wpilib.driverstation.Alert;
-import org.wpilib.driverstation.Alert.Level;
+import org.wpilib.util.Alert;
+import org.wpilib.util.Alert.Level;
 ```
 
-The cameras get one too, and theirs needs a detail the others didn't.
+**Run it again.** The panel now says `Elevator has never been homed`,
+which is correct. Enable Teleoperated and press **Back** to home it, and
+watch the line disappear on its own. Nothing clears it explicitly:
+`set(false)` runs every tick once `m_homed` is true.
 
-**Replace `PhotonVisionPoseProvider`'s field block and constructor:**
-
-```java
-  private final StructArrayPublisher<Pose3d> m_observationsPublisher;
-  private final Alert m_disconnected;
-
-  public PhotonVisionPoseProvider(VisionIO io, String logKey) {
-    m_io = io;
-    m_observationsPublisher = NetworkTableInstance.getDefault()
-        .getStructArrayTopic(logKey + "/PoseObservations", Pose3d.struct)
-        .publish();
-    // The name goes in the message: "a camera is missing" is not
-    // actionable when the robot has two of them.
-    m_disconnected = new Alert(logKey + " camera is not connected", Level.HIGH);
-  }
-```
-
-**And in `updatePoseEstimate`, below `m_observationsPublisher.set(poses)`:**
-
-```java
-    m_disconnected.set(!m_inputs.cameraConnected);
-```
-
-**Add the same two imports.**
-
-There are two cameras, so the message has to say *which*. An alert that
-doesn't tell you where to go is barely better than no alert — the whole
-point is that somebody reads it and immediately knows what to pick up.
+You may also catch a burst of red the moment the robot starts. On the very
+first tick, measured, the elevator, arm and flywheel motors all read
+disconnected, and a tick later they're fine. Those motors were built only a
+moment before that first tick, and a device needs a moment to come up on a
+CAN bus, real or simulated. It's the clearest proof there is of why alerts
+are set every tick. An alert raised once on that first tick would never
+have gone away, just like the framework's overrun warning.
 
 ---
 
-## 6. The alert nothing owns
+## 7. The gyro, and a plug you can pull
+
+The mechanisms aren't the only hardware this robot can lose. If the gyro
+falls off the bus, field-relative driving and every pose estimate go with
+it. It gets the same treatment as the motors.
+
+**Add to `GyroIO.GyroIOInputs`, below `yawDegrees`:**
+
+```java
+    public boolean connected = false;
+```
+
+**Read it in `GyroIOPigeon2.updateInputs`, below the yaw line:**
+
+```java
+    inputs.connected = m_gyro.isConnected();
+```
+
+The `Drivetrain` owns the gyro's inputs, so it owns the alert.
+
+**Add to `Drivetrain`, below `m_gyroInputs`:**
+
+```java
+  private final Alert m_gyroDisconnected =
+      new Alert("Drivetrain/Gyro/Disconnected", "Gyro is not on the CAN bus", Level.HIGH);
+```
+
+**And to `Drivetrain.periodic()`, below the yaw log line:**
+
+```java
+    Telemetry.log("Drivetrain/Gyro/Connected", m_gyroInputs.connected);
+    m_gyroDisconnected.set(!m_gyroInputs.connected);
+```
+
+**Add the same two imports to `Drivetrain`.**
+
+Now look at `GyroIOSim`. It doesn't have a gyro. Since Lesson 16 it has
+simply reported the simulated chassis's true heading, so there's no device
+to ask whether it's connected. And `connected` starts `false`. Run the
+robot now and the gyro alert is up, and it stays up.
+
+So the simulated gyro needs an answer. "Always connected" would be honest,
+but it would also mean you can never see this alert fire before the day it
+fires for real. Better to give the simulation something a real gyro has: a
+cable you can pull.
+
+**Create `subsystems/UnplugSwitch.java`:**
+
+```java
+package first.robot.subsystems;
+
+import org.wpilib.hardware.hal.SimBoolean;
+import org.wpilib.hardware.hal.SimDevice;
+import org.wpilib.hardware.hal.SimDevice.Direction;
+
+/**
+ * Sim only: a pretend cable, and a switch for pulling it. It shows up in
+ * SimGUI's Other Devices window as "Unplug" plus the name you give it.
+ * Pulling it changes exactly one thing: a sim IO that checks it reports its
+ * device as not connected. Nothing else in the simulation notices.
+ */
+public class UnplugSwitch {
+  private final SimBoolean m_unplugged;
+
+  public UnplugSwitch(String deviceName) {
+    // Null if a switch with this name already exists.
+    SimDevice device = SimDevice.create("Unplug " + deviceName);
+    // INPUT means the value comes from outside the robot code: from you, in
+    // SimGUI, or from a test.
+    m_unplugged = device != null
+        ? device.createBoolean("Unplugged", Direction.INPUT, false)
+        : null;
+  }
+
+  /** Has someone pulled this cable? */
+  public boolean isUnplugged() {
+    return m_unplugged != null && m_unplugged.get();
+  }
+}
+```
+
+A **`SimDevice`** is the simulator's way of letting code invent a device
+that has no real hardware behind it. Phoenix uses the same mechanism for
+its simulated motors, which is why SimGUI's **Other Devices** window has
+been full of `Talon FX (v6)[1]` entries all along. Each device holds named
+values. This one holds a single boolean, and because it's an `INPUT`,
+SimGUI lets you change it.
+
+**Add to `GyroIOSim`, below `m_chassisSim`:**
+
+```java
+  private final UnplugSwitch m_unplug = new UnplugSwitch("Gyro");
+```
+
+**And to `GyroIOSim.updateInputs`, below the yaw line:**
+
+```java
+    // There's no gyro here to ask, so the switch is the whole answer.
+    inputs.connected = !m_unplug.isUnplugged();
+```
+
+**Run it.** The gyro alert is gone. In the **Other Devices** window,
+scroll past Phoenix's motors to **Unplug Gyro** and expand it. Its
+**Unplugged** value is a false/true drop-down. Set it to **true**, and
+`Gyro is not on the CAN bus` appears in the alerts panel with a red mark.
+Set it back to **false** and the alert goes away. Measured, both happen
+within one tick.
+
+> Notice what *didn't* happen: the robot still knows which way it's
+> facing. The switch changes the gyro's answer to "are you there?" and
+> nothing else. That's the point of it. You're testing the *alert*, which
+> otherwise has no way to fire on a laptop. What the robot should *do*
+> without a gyro is a separate question, and a much bigger one.
+
+---
+
+## 8. The CANcoders
+
+Each swerve module has a CANcoder telling its steering motor where the
+wheel points. Lose one and that wheel no longer knows where it's pointing.
+Four of them, four alerts.
+
+**Add to `ModuleIO.ModuleIOInputs`, below `driveVelocityMetersPerSec`:**
+
+```java
+    public boolean steerEncoderConnected = false;
+```
+
+**Read it at the end of `ModuleIOTalonFX.updateInputs`:**
+
+```java
+    inputs.steerEncoderConnected = m_steerEncoder.isConnected();
+```
+
+The modules aren't subsystems, but each `SwerveModule` owns its own inputs,
+so each owns its own alert. There are four of them, so the alert has to say
+*which*. "A CANcoder is missing" doesn't tell anyone which corner to go and
+look at. The log key already names the module, so it goes in both the id and
+the text.
+
+**Add to `SwerveModule`, below `m_logKey`:**
+
+```java
+  private final Alert m_steerEncoderDisconnected;
+```
+
+**Build it at the end of the `SwerveModule` constructor:**
+
+```java
+    // Four modules, four alerts, so the log key goes in the message too:
+    // "a CANcoder is missing" doesn't say which corner to go and look at.
+    m_steerEncoderDisconnected = new Alert(logKey + "/SteerEncoderDisconnected",
+        logKey + " CANcoder is not on the CAN bus", Level.HIGH);
+```
+
+The field is a blank `final`, built in the constructor rather than up
+with the fields, because its text needs `logKey`, and only the constructor
+is told that.
+
+**And at the end of `SwerveModule.periodic()`:**
+
+```java
+    Telemetry.log(m_logKey + "/SteerEncoderConnected", m_inputs.steerEncoderConnected);
+    m_steerEncoderDisconnected.set(!m_inputs.steerEncoderConnected);
+```
+
+**Add the two `Alert` imports to `SwerveModule`.**
+
+Unlike the gyro, the simulated CANcoder is a real Phoenix sim device, and it
+answers `isConnected()` like a real one. So its switch can only take a
+"yes" away.
+
+**Add to `ModuleIOSim`, below `m_steerEncoderSim`:**
+
+```java
+  private final UnplugSwitch m_unplug;
+```
+
+**Build it at the end of the `ModuleIOSim` constructor:**
+
+```java
+    // Named by CAN ID, because that's the only name this class is given.
+    m_unplug = new UnplugSwitch("CANcoder " + cancoderId);
+```
+
+**And at the end of `ModuleIOSim.updateInputs`, below `super.updateInputs(inputs)`:**
+
+```java
+    // The simulated CANcoder answers like a real one. The switch can only
+    // turn a yes into a no.
+    inputs.steerEncoderConnected = inputs.steerEncoderConnected && !m_unplug.isUnplugged();
+```
+
+The order matters. `super.updateInputs` asks the simulated CANcoder first,
+and only then does the switch get a say.
+
+**Run it** and pull **Unplug CANcoder 9**. The panel says
+`Drivetrain/Module0 CANcoder is not on the CAN bus`. The switch is named by
+CAN ID and the alert by module, because each class names things by what it
+was given. `DriveConstants` is where the two meet: 9 is the front-left
+CANcoder, and front-left is module 0.
+
+---
+
+## 9. The cameras
+
+The cameras get one too, and theirs is the one you'd most want in a queue
+line. A camera that's lost its network cable looks completely normal from
+the outside.
+
+**Add to `VisionIO.VisionIOInputs`, below `poseObservations`:**
+
+```java
+    public boolean cameraConnected = false;
+```
+
+**Read it at the end of `VisionIOLimelight.updateInputs`, below the loop:**
+
+```java
+    // True while frames keep arriving. Seeing no tags still counts: an empty
+    // frame is still a frame.
+    inputs.cameraConnected = m_camera.isConnected();
+```
+
+A Limelight isn't on the CAN bus, so "connected" means something slightly
+different. LimelightLib counts a camera as connected while its frames keep
+arriving. One that has sent nothing yet, or has gone quiet for more than a
+quarter of a second, doesn't count.
+
+**Add to `LimelightPoseProvider`, below `m_logKey`:**
+
+```java
+  private final Alert m_disconnected;
+```
+
+**Build it at the end of the `LimelightPoseProvider` constructor:**
+
+```java
+    // Two cameras, so the message says which one.
+    m_disconnected = new Alert(logKey + "/Disconnected", logKey + " camera is not connected", Level.HIGH);
+```
+
+**And in `updatePoseEstimate`, below the `PoseObservations` log line:**
+
+```java
+    Telemetry.log(m_logKey + "/Connected", m_inputs.cameraConnected);
+    m_disconnected.set(!m_inputs.cameraConnected);
+```
+
+**Add the two `Alert` imports to `LimelightPoseProvider`.**
+
+The simulated camera gets a switch the same way the CANcoder did.
+
+**Add to `VisionIOLimelightSim`, below `m_publisher`:**
+
+```java
+  private final UnplugSwitch m_unplug;
+```
+
+**Build it at the end of the `VisionIOLimelightSim` constructor:**
+
+```java
+    m_unplug = new UnplugSwitch(cameraName);
+```
+
+**And at the end of `VisionIOLimelightSim.updateInputs`, below `super.updateInputs(inputs)`:**
+
+```java
+    // Frames keep coming either way. The switch only changes the answer.
+    inputs.cameraConnected = inputs.cameraConnected && !m_unplug.isUnplugged();
+```
+
+**Run it** and pull **Unplug limelight-front**. The panel says
+`Localizer/limelight-front camera is not connected`.
+
+Two more things to notice. First, that burst of red at startup now
+includes both cameras, because on the first tick no frame has arrived yet:
+Lesson 15's simulated camera publishes each frame one loop after it
+captures it. Second, with the front camera "unplugged", the
+robot keeps using it. Measured with the robot parked 3 m in front of tag
+20: the front camera delivered a pose on every single tick while its alert
+said it wasn't connected. Same reason as the gyro. The switch tests the
+alert, not the robot.
+
+---
+
+## 10. The alert nothing owns
 
 One more, and it belongs to no subsystem at all.
 
-The battery is the robot's, not the elevator's — the same argument
-Lesson 29 made about the current total. So it goes where the robot lives.
+The battery is the robot's, not the elevator's. That's the same argument
+Lesson 29 made about the current total, so it goes where the robot lives.
 
 **Add to `Constants.PowerConstants`, below `kBrownoutVoltage`:**
 
 ```java
     /**
-     * Worth complaining about before a match. Well above the brownout threshold —
+     * Worth complaining about before a match. Well above the brownout line:
      * the point of an alert is to be early, not accurate.
      */
     public static final Voltage kLowBatteryVoltage = Volts.of(11.5);
@@ -296,180 +648,136 @@ Lesson 29 made about the current total. So it goes where the robot lives.
 **Add to `Robot`, below the `flywheel` field:**
 
 ```java
-  /** Not an error — the robot works fine on a low battery, right up until it doesn't. */
-  private final Alert m_lowBattery =
-      new Alert("Battery is low — swap it before the next match", Level.MEDIUM);
+  /** Not an error: the robot works fine on a low battery, right up until it doesn't. */
+  private final Alert m_lowBattery = new Alert(
+      "Power/LowBattery", "Battery is low — swap it before the next match", Level.MEDIUM);
 ```
 
 **Add to `Robot.robotPeriodic()`, below the `Power/BrownedOut` line:**
 
 ```java
-    // This one belongs to the robot rather than to any subsystem, for the
-    // same reason Lesson 29's current total did: nothing smaller knows
-    // about it.
-    m_lowBattery.set(batteryVolts < PowerConstants.kLowBatteryVoltage.in(Volts));
+    // The robot's, not any subsystem's: nothing smaller knows about it. Only
+    // judged while disabled, because a battery under load always reads low;
+    // what says it's flat is the voltage at rest.
+    m_lowBattery.set(
+        RobotState.isDisabled() && batteryVolts < PowerConstants.kLowBatteryVoltage.in(Volts));
 ```
 
 **Add the imports:**
 
 ```java
-import org.wpilib.driverstation.Alert;
-import org.wpilib.driverstation.Alert.Level;
+import org.wpilib.driverstation.RobotState;
+import org.wpilib.util.Alert;
+import org.wpilib.util.Alert.Level;
 ```
 
-11.5 V is deliberately generous. The rail doesn't sag to real trouble
-until well below that (Lesson 29 measured brownouts happening in the
-5–6 V range under load), and by the time you're anywhere near that it's
-far too late to do anything about it. **An alert that fires when the
-problem is already happening has missed its job** — the useful threshold
-is the one that gives you time to fetch a charged battery, not the one
-that's technically correct.
+The `RobotState.isDisabled()` half earns its place, and the numbers show
+why. Measured without it, on a fresh simulated battery that rests at
+12.0 V: enabling the robot set the alert off for about 0.7 s, because the
+flywheel spinning up to idle sagged the rail to 11.5 V. Spinning it up to
+shooting speed set it off for another 1.6 s, with the rail at 11.2 V. A
+low-battery warning that flickers every time you press the trigger teaches
+everyone to ignore it.
 
----
+A sagging rail under load is Lesson 29's problem. *A flat battery* is this
+alert's problem, and a battery's resting voltage is what tells you that.
+The queue line is exactly where the robot sits disabled, so that's where
+it's judged.
 
-## 7. Run it
+**An alert that fires when the problem is already happening has missed its
+job.** 11.5 V is deliberately generous. The useful threshold is the one that
+gives you time to fetch a charged battery, not the one that's technically
+correct.
 
-**Run it:**
+To watch it fire, bring back Lesson 29's tired battery: 11 V, with twice
+the internal resistance.
 
-```powershell
-./gradlew simulateJava
-```
-
-Section 3 already told you why looking at a dashboard widget won't work
-yet on this alpha: nothing publishes to NetworkTables anymore, and
-SimGUI's own Alerts window still expects the old NT-backed mechanism.
-What *does* work, right now, is `AlertSim` — the same simulation-only
-inspection surface this course has used since Lesson 28 for `FlywheelSim`
-and Lesson 29 for `RoboRioSim`, just for alerts instead of physics.
-
-**Add to `Robot.robotPeriodic()`, temporarily, to watch alert state as you go:**
+*Nothing to add — an experiment to run and undo, in `Robot.simulationPeriodic()`:*
 
 ```java
-    for (var alert : org.wpilib.simulation.AlertSim.getActive()) {
-      System.out.println("[" + alert.level + "] " + alert.text);
-    }
+    RoboRioSim.setVInVoltage(BatterySim.calculateLoadedBatteryVoltage(11.0, 0.04, getTotalCurrentAmps()));
 ```
 
-**Straight away you should see one line:** `[MEDIUM] Elevator has never
-been homed`. That's correct. Press Back to home it and watch the line
-disappear on its own within a tick or two, without anything explicitly
-clearing it — because `set(false)` runs every tick once `m_homed` is
-true.
+The warning appears in the panel almost immediately, while the robot is
+disabled. Enable it and the warning goes away, because under load the
+reading is answering a different question. Disable it again and the warning
+is back.
 
-**Watch the very first tick after startup, too.** Building the whole
-robot — twelve motors, two cameras, every subsystem — takes real
-wall-clock time, and a motor genuinely reads disconnected for a moment
-before it does. Measured directly: `[HIGH] Arm motor is not on the CAN
-bus` and `[HIGH] Flywheel motor is not on the CAN bus` on tick zero,
-gone by tick one. That's not a bug in your code and it's not a bug in the
-sim: devices genuinely take a moment to come up on a real CAN bus too.
-It's also the clearest possible demonstration of why alerts are set
-every tick rather than raised once — a `set` that only fired on a
-`true`→`false` edge would have latched that flicker on forever.
-
-Now make one appear on purpose, for real this time:
-
-**Drop the battery.** In SimGUI's Other Devices panel, drag the RoboRIO's
-input voltage down below 11.5 and watch `[MEDIUM] Battery is low — swap
-it before the next match` appear in the console. That's the same rail
-Lesson 29's model drives, so a genuinely heavy moment will trip it too.
-
-> **One demo from the old course doesn't reproduce here, and it's worth
-> knowing why rather than just being told it doesn't work.** Renaming
-> `kFrontCameraName` to something nothing is publishing under, the way
-> the old lesson has you break a camera on purpose, does nothing in this
-> port — verified directly, not assumed. `VisionIOPhotonVisionSim` builds
-> its simulated camera from the *same* `PhotonCamera` object it reads
-> from, so the name the code listens on and the name the simulated
-> coprocessor publishes under always move together; there's no way to
-> desync them with a single constant. On a real robot this isn't true —
-> the constant only controls what *your* code listens for, while an
-> actual coprocessor decides what it publishes under from its own
-> configuration — so the alert is still correct and worth having. It just
-> can't be demonstrated by renaming a constant in *this* simulated setup.
-> Try It #3 picks this back up.
-
-Once you've confirmed it all works, take the temporary `AlertSim` loop
-back out — it did its job, and a real match won't need a console open.
+**Put the original battery line back when you're done.**
 
 ---
 
 ## Try it
 
-1. **Pick the battery threshold from real data.** Lesson 29 gave you a
-   battery model and a current total. Drive the robot hard, watch how far
-   the rail sags under a normal cycle, and choose a threshold that
-   doesn't cry wolf every time the elevator moves. Defend your number.
-2. **Argue about `HIGH` versus `MEDIUM`.** Is an unhomed elevator really
+1. **Give a motor a plug to pull.** The mechanism motors' alerts are the
+   only ones you still can't fire on purpose. `FlywheelIOSim` extends
+   `FlywheelIOTalonFX` just as `ModuleIOSim` extends `ModuleIOTalonFX`.
+   Give it an `UnplugSwitch` and make `Flywheel motor is not on the CAN bus`
+   appear from SimGUI.
+2. **Make the camera fault real.** The switch only changes the answer. Make
+   it also stop `VisionIOLimelightSim` from publishing frames while it's
+   pulled, and remove the `&&` line so LimelightLib has to notice by
+   itself. How long does the alert take to appear now, and why that long?
+   Watch what happens to the pose estimate.
+3. **Name the corner.** `Drivetrain/Module0 CANcoder` is unique, but only
+   someone who knows the corner order can find it. Make the alert say
+   *front left*, without hard-coding four strings in `SwerveModule`.
+4. **Argue about `HIGH` versus `MEDIUM`.** Is an unhomed elevator really
    only a `MEDIUM`? Is a missing back camera a `HIGH` when the front one
-   works? Go through all six alerts and decide, then write one sentence
-   per alert saying what a human should *do* about it. If you can't write
-   that sentence, the alert probably shouldn't exist.
-3. **Make the camera-disconnect alert demonstrable.** Section 7 explained
-   why renaming `kFrontCameraName` doesn't work in this port's simulated
-   setup — the reading name and the publishing name are the same object.
-   Find a way to actually desync them (a second, independently-named
-   `PhotonCamera` reading a table nothing publishes to is one option) and
-   confirm the alert fires the way it would for a genuinely dead
-   coprocessor.
-4. **Alert on something that has never been true.** The flywheel has a
-   tolerance and Lesson 28 logged `AtSpeed`. If it has never once reached
-   speed since boot, something is wrong — a jammed wheel, a bad gain, a
-   dead motor that still answers on CAN. Detect it and say so.
-5. **Make an alert that would have saved you earlier.** Look back through
-   this course for a failure you had to diagnose by reading code — a
-   wrong tag ID from Lesson 27, a misspelled `lib_key` from Lesson 17. Add
-   the alert that would have just told you.
-6. **Count your alerts.** If a robot boots with nine warnings showing,
-   nobody reads any of them. Decide how many is too many, and what you'd
-   cut first.
+   works? Go through every alert in this lesson and decide. Then write one
+   sentence per alert saying what a human should *do* about it. If you
+   can't write that sentence, the alert probably shouldn't exist.
+5. **Another way to stop crying wolf.** Instead of judging the battery only
+   while disabled, Lesson 24's `Debouncer` could insist the voltage stay low
+   for a few seconds first. Build that version and run both through a match
+   in your head. Which one answers "should I swap this battery?" better?
+6. **Alert on something that has never been true.** The flywheel has a
+   tolerance and Lesson 28 logged `AtSpeed`. If the flywheel hasn't reached
+   speed even once since boot, something is wrong: a jammed wheel, a bad
+   gain, a dead motor that still answers on CAN. Detect it and say so.
+7. **Count your alerts.** This robot now has thirteen, counting the
+   framework's own. If one boots with nine warnings showing, nobody reads
+   any of them. Decide how many is too many, and what you'd cut first.
 
 ---
 
 ## What you learned
 
-The robot can now answer "is this thing going to work?" without a
-laptop — or, on this alpha, without anything except the driver station
-software itself, which is arguably the point sharpened rather than
-blunted.
+The robot can now answer "is this thing going to work?" without a laptop.
+On a real robot the 2027 Driver Station shows the answer; in simulation, a
+panel you built shows it.
 
 **Recording and reporting are different jobs.** Thirty lessons of logging
-built a complete record of everything the robot does, and none of it
-helps the person standing next to it with two minutes on the clock.
-Alerts are the other half: short, current, and in front of someone. Most
-of the information was already there — what was missing was somewhere to
-say it.
+built a complete record of everything the robot does, and none of it helps
+the person standing next to it with two minutes on the clock. Alerts are
+the other half: short, current, and in front of someone. Most of the
+information was already there. What was missing was somewhere to say it.
 
-**"Is it plugged in?" is a sensor reading.** Connection state went into
-the IO inputs alongside positions and currents, for exactly the same
-reason everything else did: it's read off hardware, it changes, and a
-replay is far more useful when the log knows the device was missing.
+**"Is it plugged in?" is a sensor reading.** Connection state went into the
+IO inputs alongside positions and currents, for the same reason everything
+else did: it's read off hardware, it changes, and a log is far more useful
+when it knows the device was missing.
 
 **An alert is a statement, not an event.** Setting it every tick with the
-current answer — rather than raising it when something breaks — is what
-lets it clear itself when the problem goes away. It's a small API detail
-that reflects a real distinction, and the startup flicker on tick zero is
-the proof: a `set` that only fired once would have latched that flicker
-on forever.
+current answer is what lets it clear itself, and you saw both sides of that:
+your motor alerts flickered on for a single tick at startup and went away,
+while the framework's overrun warning went up once and never came down.
 
-**And a genuinely new one for this platform: where an alert surfaces
-isn't fixed, and it just moved.** This alpha pulled `Alert` out of
-NetworkTables entirely and gave it to the new Driver Station app
-directly — a real architecture change, not a bug, confirmed against
-WPILib's own compatibility notes. The lesson underneath didn't change at
-all: decide what's worth saying, decide how urgently, and say it exactly
-once per tick. Whatever displays it next season is somebody else's
-problem to solve correctly, which is what a clean API boundary is for.
+**A simulator can fake the fault you want to test.** The unplug switches
+don't make the robot lose anything; they make one reading lie, on purpose,
+where you can control it. That's enough to prove an alert works before the
+day it matters. Making the robot *cope* with a lost device is a different
+job, and Try It #2 is the start of it.
 
-And the one that matters most in practice: **an alert has to arrive
-early enough to act on.** The brownout threshold is 6.3 V and the useful
-warning is at 11.5, because the point isn't to be right, it's to be in
-time. The same test applies to every alert you'll ever add — if a human
-can't do something about it in the window you've given them, you've
-built a log entry with a colour.
+And the one that matters most in practice: **an alert has to arrive early
+enough to act on, and only when it means something.** The brownout line is
+6.3 V and the warning is at 11.5, because the point is to be in time. And the
+warning is judged at rest, because a warning that fires on every shot gets
+ignored. If a human can't do something about an alert in the window you've
+given them, you've built a log entry with a colour.
 
-That's the robot able to tell you it's unwell. Go and break something on
-purpose, and enjoy being told about it for once.
+Go and pull a few plugs. It's the only time you'll get to break the robot
+without anyone minding.
 
 Alerts tell you when something is wrong *now*. There's a third question
 neither they nor the logs answer: is the thing that worked last Tuesday

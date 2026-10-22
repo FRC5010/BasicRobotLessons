@@ -70,6 +70,10 @@ public class Robot extends OpModeRobot {
   public final Superstructure superstructure = new Superstructure(elevator, arm);
   public final Leds leds = new Leds(superstructure::getState); // reads it; drives nothing
   public final Flywheel flywheel = new Flywheel();
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add the low-battery alert. It belongs to the robot rather than to any subsystem, because no single subsystem knows about the battery.
+   */
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -144,6 +148,10 @@ public class Robot extends OpModeRobot {
     // Compared against the threshold here rather than read from a flag, so the
     // answer is the same on a robot and in simulation, and you choose the line.
     Telemetry.log("Power/BrownedOut", batteryVolts < PowerConstants.kBrownoutVoltage.in(Volts));
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Set the low-battery alert every tick, judging it only while disabled, because a battery under load always reads low.
+     */
   }
 
   /**
@@ -170,6 +178,10 @@ public class Robot extends OpModeRobot {
     // mechanism owns it, and every one of them changes it — so it's the
     // first thing since then with a real reason to live here.
     RoboRioSim.setVInVoltage(BatterySim.calculateDefaultBatteryLoadedVoltage(getTotalCurrentAmps()));
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Show the active alerts in SimGUI, which can't read them on its own yet. Add a private method after this one that copies them into a table SimGUI draws as an alerts panel.
+     */
   }
 
   /**

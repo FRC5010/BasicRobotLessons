@@ -24,11 +24,6 @@ states:
       This lesson needs a design decision before it can be updated.
 
 waiting:
-  30:
-    state: decision
-    note: >-
-      Its camera-disconnect demo has to be redesigned for the Limelight
-      cameras that Lesson 15 now uses.
   34:
     state: library
     note: >-

@@ -26,6 +26,10 @@ public class Arm implements Mechanism {
   private final ArmIO m_io;
   private final ArmIO.ArmIOInputs m_inputs = new ArmIO.ArmIOInputs();
   private Angle m_goal = ArmConstants.kStowed;
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add an alert for an arm motor that isn't on the CAN bus.
+   */
 
   /** The arm's segment in the elevator's drawing — it hangs off the carriage. */
   private final MechanismLigament2d m_ligament;
@@ -56,6 +60,10 @@ public class Arm implements Mechanism {
     Telemetry.log("Arm/HasGamePiece", m_inputs.hasGamePiece);
     Telemetry.log("Arm/GoalDegrees", m_goal.in(Degrees));
     Telemetry.log("Arm/AtGoal", atGoal());
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Log both motors' connections, and set the alert every tick if either one is missing.
+     */
 
     m_ligament.setAngle(toDrawingAngle(Degrees.of(m_inputs.angleDegrees)).in(Degrees));
     m_ligament.setColor(

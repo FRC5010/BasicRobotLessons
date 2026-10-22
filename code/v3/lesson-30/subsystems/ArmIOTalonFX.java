@@ -14,6 +14,9 @@ import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 
+import org.wpilib.hardware.bus.CANPort;
+import org.wpilib.hardware.discrete.DigitalInput;
+
 import first.robot.Constants.ArmConstants;
 import first.robot.Constants.PowerConstants;
 
@@ -23,10 +26,11 @@ public class ArmIOTalonFX implements ArmIO {
   protected final TalonFX m_pivot;
   protected final TalonFX m_roller;
   private final MotionMagicVoltage m_request = new MotionMagicVoltage(0);
+  private final DigitalInput m_beamBreak = new DigitalInput(ArmConstants.kBeamBreakChannel);
 
   public ArmIOTalonFX() {
-    m_pivot = new TalonFX(ArmConstants.kPivotMotorPort, CANBus.systemcore(0));
-    m_roller = new TalonFX(ArmConstants.kRollerMotorPort, CANBus.systemcore(0));
+    m_pivot = new TalonFX(ArmConstants.kPivotMotorPort, new CANBus(CANPort.CAN_S0));
+    m_roller = new TalonFX(ArmConstants.kRollerMotorPort, new CANBus(CANPort.CAN_S0));
 
     TalonFXConfiguration config = new TalonFXConfiguration();
     // One "mechanism rotation" is now one full swing of the arm.
@@ -82,6 +86,9 @@ public class ArmIOTalonFX implements ArmIO {
     inputs.rollerSupplyCurrentAmps = m_roller.getSupplyCurrent().getValue().in(Amps);
     inputs.pivotConnected = m_pivot.isConnected();
     inputs.rollerConnected = m_roller.isConnected();
+    // Wired so that a broken beam pulls the line low. An unplugged sensor
+    // floats high, which reads as "no game piece": the harmless answer.
+    inputs.hasGamePiece = !m_beamBreak.get();
   }
 
   @Override
