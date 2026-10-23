@@ -1026,6 +1026,30 @@ Not done, awaiting a user decision: an unplug-switch/`AlertSim` test as an
 extra example, and the track-wide `simulateJava` vs `run` question (Lesson 31
 only uses `./gradlew test`).
 
+**Lesson 32 migrated, 2026-10-23 (scheduled run).** The snapshot is two files,
+`Constants.java` and `Elevator.java`, rebuilt from Lesson 30's (Lesson 31 shipped
+no main code): `kTolerance` becomes `Centimeters.of(0.1)`, and `Elevator` logs
+`AtGoal` and `HeightErrorMeters` with `Telemetry.log`. The old snapshot predated
+Lessons 21–30. Lesson 31's snapshot now carries unchanged copies of both files to
+hold the NEXT LESSON markers. The port was `SmartDashboard.putNumber/putBoolean`
+→ `Telemetry.log` and the AdvantageScope path `Telemetry → Elevator`. Compiles
+0–31 and 0–32 with zero warnings; markers and tool tests clean; cut-off 32.
+Measured (real `Elevator`, fixed 20 ms ticks, homed first): settled error at
+`kScoreMid` is a flat 0.1159 mm; arrives at 1.24 s with a 1 mm tolerance; the
+carriage overshoots by 1.3 mm first. **The lesson's bad tolerance changed from
+`Centimeters.of(0.002)` to `0.00002`**: at 0.002 cm one tick (1.44 s) lands within
+0.001 mm of the goal and the command *ends*, so the failure the lesson hunts
+doesn't happen; at 0.00002 it never finishes (15 s). The lesson says so in a
+callout. Try It #4's toy sequence prints "scored" after 1.26 s fixed and never
+when broken. The second example was rewritten around **Aim While Driving**
+(the old one drove at 30% for 3 s): with `kAimTagId = 220`, `rotationOverrideActive`
+still goes true for ≈3.7 s, but the heading stays 0.0° (fixed: ≈ −100°), the run
+ends at (8.04, 7.00, 0°), and the three `Aim/*` topics never exist (150 NT topics
+vs 153). Real replay is still absent (AdvantageKit), so that section's honesty
+stays. Not done, awaiting a user decision: an `AlertSim` unplug test is not
+relevant here; the `simulateJava` vs `run` question remains (Lesson 32 still says
+`simulateJava`).
+
 **What Lessons 27–34 now owe Lesson 26, when Phase 1b reaches them:** any
 whole-file snapshot of `Autos`, `Drivetrain`, `Constants`, `Robot` or
 `RobotTeleop` must carry `driveToScoringPose`, `alignToPose`/`atPose` and the
@@ -1063,7 +1087,7 @@ it builds on the full Lesson 33 state, re-adds what it needs to `Robot`,
 `Constants`, `Autos` and `RobotTeleop`, and should give its camera a
 connection alert in the pattern Lesson 30 sets: a `cameraConnected` input,
 an alert in the subsystem that reads it, and an `UnplugSwitch` in its sim IO.
-Lesson 31 (testing) was migrated on 2026-10-23, so Lesson 32 is next.
+Lesson 32 (reading a log) was migrated on 2026-10-23, so Lesson 33 is next.
 
 **Each lesson Phase 1b migrates also gets its NEXT LESSON markers
 (added 2026-09-26).** Lessons 1–15 now ship them: the code at the end of

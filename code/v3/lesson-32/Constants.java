@@ -149,37 +149,97 @@ public final class Constants {
     public static final double kSimHorizontalFovDegrees = 80.0;
     public static final double kSimVerticalFovDegrees = 56.0;
     public static final double kSimMaxRangeMeters = 6.0;
+  }
 
-    // --- Object detection ---------------------------------------------------
-    // A detection model reports what it saw as a number, and this pair is the
-    // entire mapping between that number and what it means. There is no
-    // standard class ID — it's the index of a class in the model YOU trained,
-    // so on a real robot this constant is whatever your model emits.
-    public static final String kGamePieceType = "Fuel";
-    public static final int kGamePieceClassId = 0;
+  public static final class FlywheelConstants {
+    public static final int kMotorPort = 23; // CAN ID — change to yours
 
-    /** A Fuel is a 15 cm ball, so its middle sits 8 cm off the floor. */
-    public static final Distance kGamePieceDiameter = Meters.of(0.15);
-    public static final Distance kGamePieceHeight = Meters.of(0.08);
+    // Direct drive: the wheel is on the motor shaft. The first mechanism in this
+    // course with no gearbox at all, which makes the arithmetic short.
+    public static final double kGearRatio = 1.0;
+    /** Wheel, hub and shaft together, from CAD. This is the number that matters. */
+    public static final double kMomentOfInertia = 0.01; // kg m^2
 
-    public static final String kObjectCameraName = "Objects";
+    // Speeds, not places. Idling between shots is not laziness — it is what makes
+    // the wheel ready again quickly, and this lesson measures exactly how much.
+    public static final AngularVelocity kShootSpeed = RotationsPerSecond.of(60);
+    public static final AngularVelocity kIdleSpeed = RotationsPerSecond.of(30);
+    public static final AngularVelocity kTolerance = RotationsPerSecond.of(1.5);
+
+    // The speedometer. Full scale is the motor's free speed, so the needle can
+    // never run off the end of the dial.
+    public static final AngularVelocity kFreeSpeed = RotationsPerSecond.of(100);
+    public static final Distance kDialSize = Meters.of(2.0);
+    public static final Distance kNeedleLength = Meters.of(0.8);
+    /** Where the needle sits at rest: straight down. */
+    public static final Angle kZeroAngle = Degrees.of(-90);
+    /** How far it swings from rest to full scale: down, round, and up. */
+    public static final Angle kFullSweep = Degrees.of(180);
+
+    // The model: what this wheel costs to break free, to spin, and to speed up.
+    // No kG — nothing here is being held up against gravity.
+    public static final double kFlywheelKS = 0.15; // volts to overcome friction
+    public static final double kFlywheelKV = 0.12; // volts per rotation/sec
+    public static final double kFlywheelKA = 0.106; // volts per rotation/sec^2
+    // The trim: whatever the model got wrong.
+    public static final double kFlywheelKP = 0.3; // volts per rotation/sec of error
+  }
+
+  public static final class PowerConstants {
+    // Every mechanism motor shares this cap — the windings don't care
+    // which subsystem they're bolted to.
+    public static final Current kStatorLimit = Amps.of(80);
+
+    // The supply budget, one line per motor, chosen so the three
+    // mechanisms together leave headroom for the drivetrain (not budgeted
+    // here — see the lesson's Try It).
+    public static final Current kElevatorSupplyLimit = Amps.of(40);
+    public static final Current kArmPivotSupplyLimit = Amps.of(30);
+    public static final Current kArmRollerSupplyLimit = Amps.of(20);
+    public static final Current kFlywheelSupplyLimit = Amps.of(40);
+
+    /** Below this, call it a brownout — well above where the RIO itself gives up. */
+    public static final Voltage kBrownoutVoltage = Volts.of(6.3);
+
     /**
-     * The detection camera, tilted down so it can see the floor in front of
-     * the robot. Positive pitch here points the camera DOWN.
+     * Worth complaining about before a match. Well above the brownout line:
+     * the point of an alert is to be early, not accurate.
      */
-    public static final Transform3d kRobotToObjectCamera = new Transform3d(
-        new Translation3d(0.3, 0.0, 0.5),           // 30 cm forward, 50 cm up
-        new Rotation3d(0, Math.toRadians(20), 0));  // 20° down
+    public static final Voltage kLowBatteryVoltage = Volts.of(11.5);
+  }
 
-    /** Below this, the model is guessing and we'd rather not drive at it. */
-    public static final double kMinConfidence = 0.5;
+  public static final class PathConstants {
+    // BLine runs three P loops at once. Every gain here is "output per unit of
+    // error", and since error is meters (or radians) and output is per-second,
+    // the units all come out to 1/s.
+    public static final double kTranslationP = 5.0; // m/s per meter of path left
+    public static final double kRotationP = 3.0;    // rad/s per radian of heading error
+    public static final double kCrossTrackP = 2.0;  // m/s per meter off the line
 
-    /** Sim only: fixed field positions for the fake camera to see. No physics — just a layout. */
-    public static final Translation2d[] kSimGamePiecePositions = {
-        new Translation2d(4.5, 3.2),
-        new Translation2d(2.0, 1.5),
-        new Translation2d(6.0, 3.8),
-    };
+    // Overlapping work: how much path has to be left when the robot asks to
+    // score. A distance, not a time — a slow path still scores in the same place.
+    public static final Distance kScoreDistance = Meters.of(0.5);
+
+    // Aiming while the path drives. The rotation override wants an angular
+    // velocity, not a heading, so this gain turns heading error into a rate.
+    public static final double kAimP = 4.0; // rad/s per radian of heading error
+    /** The tag to point at. Change it to the one your alliance actually scores on. */
+    public static final int kAimTagId = 20;
+    /** Close enough to call it aimed. */
+    public static final Angle kAimTolerance = Degrees.of(2);
+
+    // Stage two of getting somewhere exactly. Its gains are higher than the
+    // drive-to-pose sketch's, because its errors are tiny by the time it takes
+    // over — it only ever starts a short distance away.
+    public static final double kAlignP = 3.0;      // m/s per meter of error
+    public static final double kAlignThetaP = 4.0; // rad/s per radian of error
+
+    // "Arrived" is a decision, and this is where it gets made.
+    public static final Distance kPositionTolerance = Centimeters.of(2);
+    public static final Angle kAngleTolerance = Degrees.of(1);
+
+    /** Where the left bumper lines the robot up. */
+    public static final Pose2d kScoringPose = new Pose2d(5.0, 4.0, Rotation2d.fromDegrees(90));
   }
 
   public static final class ElevatorConstants {
@@ -227,22 +287,28 @@ public final class Constants {
     public static final Angle kCarriageAngle = Degrees.of(90);
   }
 
-  public static class LedConstants {
+  public static final class LedConstants {
     public static final int kPwmPort = 5; // PWM — change to yours
     public static final int kLength = 40; // LEDs on the strip — change to yours
 
-    // One pattern per SuperstructureState, built once, here, next to the
-    // color it uses — SuperstructureState's constructor just picks one up.
-    public static final LEDPattern kUnhomed = LEDPattern.solid(Color.RED).blink(Seconds.of(0.15));
+    // A pattern is a value, not a loop. Build them once, here, next to the
+    // colors they use, and hand the finished description to the strip.
+    // One per state, and named after it — the strip's vocabulary and the
+    // robot's are the same vocabulary.
     public static final Dimensionless kIdleBrightness = Percent.of(25);
+    public static final Time kBlinkPeriod = Seconds.of(0.15);
+
+    public static final LEDPattern kUnhomed = LEDPattern.solid(Color.RED).blink(kBlinkPeriod);
     public static final LEDPattern kIdle = LEDPattern.solid(Color.BLUE).atBrightness(kIdleBrightness);
     public static final LEDPattern kIntaking = LEDPattern.solid(Color.YELLOW);
-    public static final LEDPattern kScoring = LEDPattern.solid(Color.LIME_GREEN).blink(Seconds.of(0.1));
+    public static final LEDPattern kHandoff = kIntaking.blink(kBlinkPeriod);
+    public static final LEDPattern kHolding = LEDPattern.solid(Color.LIME_GREEN);
+    public static final LEDPattern kScoring = kHolding.blink(kBlinkPeriod);
 
     public static final Time kBreathePeriod = Seconds.of(2);
   }
 
-  public static class ArmConstants {
+  public static final class ArmConstants {
     public static final int kPivotMotorPort = 21; // CAN ID — change to yours
     public static final int kRollerMotorPort = 22; // CAN ID — change to yours
 
@@ -276,84 +342,20 @@ public final class Constants {
     // The roller has no goal to profile — just a direction and a speed.
     public static final double kIntakeSpeed = 0.6; // fraction of full output
     public static final double kEjectSpeed = -0.6;
-  }
 
-  public static class FlywheelConstants {
-    public static final int kMotorPort = 23; // CAN ID — change to yours
+    // The beam break: an infrared beam across the throat of the intake, broken
+    // when a game piece is actually sitting where it belongs.
+    public static final int kBeamBreakChannel = 1; // DIO — change to yours
+    public static final Time kBeamDebounce = Seconds.of(0.1);
 
-    // Direct drive: the wheel is on the motor shaft. The first mechanism in this
-    // course with no gearbox at all, which makes the arithmetic short.
-    public static final double kGearRatio = 1.0;
-    /** Wheel, hub and shaft together, from CAD. This is the number that matters. */
-    public static final double kMomentOfInertia = 0.01; // kg m^2
-
-    // Speeds, not places. Idling between shots is not laziness — it is what makes
-    // the wheel ready again quickly, and this lesson measures exactly how much.
-    public static final AngularVelocity kShootSpeed = RotationsPerSecond.of(60);
-    public static final AngularVelocity kIdleSpeed = RotationsPerSecond.of(30);
-    public static final AngularVelocity kTolerance = RotationsPerSecond.of(1.5);
-
-    // The speedometer. Full scale is the motor's free speed, so the needle can
-    // never run off the end of the dial.
-    public static final AngularVelocity kFreeSpeed = RotationsPerSecond.of(100);
-    public static final Distance kDialSize = Meters.of(2.0);
-    public static final Distance kNeedleLength = Meters.of(0.8);
-    /** Where the needle sits at rest: straight down. */
-    public static final Angle kZeroAngle = Degrees.of(-90);
-    /** How far it swings from rest to full scale: down, round, and up. */
-    public static final Angle kFullSweep = Degrees.of(180);
-
-    // The model: what this wheel costs to break free, to spin, and to speed up.
-    // No kG — nothing here is being held up against gravity.
-    public static final double kFlywheelKS = 0.15; // volts to overcome friction
-    public static final double kFlywheelKV = 0.12; // volts per rotation/sec
-    public static final double kFlywheelKA = 0.106; // volts per rotation/sec^2
-    // The trim: whatever the model got wrong.
-    public static final double kFlywheelKP = 0.3; // volts per rotation/sec of error
-  }
-
-  public static final class PowerConstants {
-    // Every mechanism motor shares this cap — the windings don't care which
-    // subsystem they're bolted to.
-    public static final Current kStatorLimit = Amps.of(80);
-
-    // The supply budget, one line per motor, chosen so the three mechanisms
-    // together leave headroom for the drivetrain (not budgeted here — see the
-    // lesson's Try It).
-    public static final Current kElevatorSupplyLimit = Amps.of(40);
-    public static final Current kArmPivotSupplyLimit = Amps.of(30);
-    public static final Current kArmRollerSupplyLimit = Amps.of(20);
-    public static final Current kFlywheelSupplyLimit = Amps.of(40);
-
-    /** Below this, call it a brownout — well above where the RIO itself gives up. */
-    public static final Voltage kBrownoutVoltage = Volts.of(6.3);
-
-    /**
-     * Worth complaining about before a match. Well above the brownout threshold —
-     * the point of an alert is to be early, not accurate.
-     */
-    public static final Voltage kLowBatteryVoltage = Volts.of(11.5);
-  }
-
-  public static class PathConstants {
-    // Stage two's gains. Higher than stage one's, because its errors are tiny
-    // by the time it takes over — it only ever starts a short distance away.
-    public static final double kAlignP = 3.0;      // m/s per meter of error
-    public static final double kAlignThetaP = 4.0; // rad/s per radian of error
-
-    // "Arrived" is a decision, and this is where it gets made.
-    public static final Distance kPositionTolerance = Centimeters.of(2);
-    public static final Angle kAngleTolerance = Degrees.of(1);
-
-    /** Where the left bumper lines the robot up. */
-    public static final Pose2d kScoringPose = new Pose2d(5.0, 4.0, Rotation2d.fromDegrees(90));
-
-    // Aiming. The rotation override wants an angular velocity, not a heading, so
-    // this gain turns heading error into a rate.
-    public static final double kAimP = 4.0; // rad/s per radian of heading error
-    /** The tag to point at. Change it to the one your alliance actually scores on. */
-    public static final int kAimTagId = 20;
-    /** Close enough to call it aimed. */
-    public static final Angle kAimTolerance = Degrees.of(2);
+    // Sim only: the box in front of the bumper that the roller can reach, and
+    // where the game pieces lie on the field when the simulation starts.
+    public static final Distance kIntakeWidth = Inches.of(24);
+    public static final Distance kIntakeReach = Inches.of(12);
+    public static final Translation2d[] kSimGamePiecePositions = {
+        new Translation2d(4.5, 3.2),
+        new Translation2d(2.0, 1.5),
+        new Translation2d(6.0, 3.8),
+    };
   }
 }

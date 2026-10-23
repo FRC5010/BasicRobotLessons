@@ -30,8 +30,8 @@ time you're back at the pit — except for the log. The log is the only
 witness that was there for the whole thing and didn't blink.
 
 This lesson is about reading that witness. There's no new syntax in it —
-`SmartDashboard.putNumber` and `SmartDashboard.putBoolean` are the only
-two calls doing any work, and you've known both since Lesson 3. What's
+`Telemetry.log` is the only call doing any work, and you've known it
+since Lesson 3. What's
 new is the *method*: how to go from "the robot did something wrong" to
 "here is exactly why," using only what the log already recorded.
 
@@ -56,7 +56,7 @@ published its answer.
 **Add to `Elevator.periodic()`, below the `AtBottomLimit` line:**
 
 ```java
-    SmartDashboard.putBoolean("Elevator/AtGoal", atGoal());
+    Telemetry.log("Elevator/AtGoal", atGoal());
 ```
 
 Hold that thought — you'll want it, and the reason you needed it, in
@@ -74,14 +74,14 @@ Here's the story to tell yourself while you do it. Your team wants
 tighter scoring precision for this year's game piece, so someone goes
 into `Constants.java` to tighten `ElevatorConstants.kTolerance`. They
 mean to type `Centimeters.of(0.2)` — two millimetres, still comfortably
-achievable. An extra zero creeps in.
+achievable. A key sticks, and four extra zeros creep in.
 
 This is temporary — section 6 fixes it back.
 
 **Edit `kTolerance` in `ElevatorConstants`:**
 
 ```java
-public static final Distance kTolerance = Centimeters.of(0.002); // was Centimeters.of(2)
+public static final Distance kTolerance = Centimeters.of(0.00002); // was Centimeters.of(2)
 ```
 
 Rebuild. Nothing complains — `kTolerance` is still a perfectly legal
@@ -91,8 +91,8 @@ voltage. It does nothing at all to stop you from meaning millimetres and
 writing micrometres.** The type carries the unit; it was never going to
 carry the magnitude, too.
 
-Run `./gradlew simulateJava`, go **Teleoperated**, and press D-pad right
-(`kScoreMid`). Watch it. The carriage rises, slows, settles at the
+Run `./gradlew simulateJava`, go **Teleoperated**, press Back to home the
+elevator (Lesson 21), and then press D-pad right (`kScoreMid`). Watch it. The carriage rises, slows, settles at the
 scoring height, and holds there — exactly like it always has. Nothing
 about this looks broken. That's the second thing worth sitting with, and
 it's the whole reason this bug survives a bench test: **`goToHeight`
@@ -105,6 +105,15 @@ step onto this one with `Command.sequence(...)`, the way you've built
 routines since Lesson 24. In auto, nothing after this step ever runs. In
 teleop, you'd never know.
 
+> **Why four zeros and not two.** A tolerance that's *slightly* too tight
+> doesn't fail every time, and that's worse. Measured with `Centimeters.of(0.002)`
+> (0.02 mm): the carriage overshoots the goal by about 1.3 mm on the way in,
+> then creeps back down across it. One 20 ms tick landed within 0.001 mm of
+> the goal, so `atGoal()` read `true` for that single tick and the command
+> ended at 1.44 s. A too-tight tolerance can pass by luck of where the ticks
+> fall. At 0.2 micrometres the luck runs out: the command was still running
+> after fifteen seconds.
+
 Drive around for ten or fifteen seconds — hit the scoring binding a
 couple of times — then close the sim. You now have a `.wpilog` in your
 project's `logs/` folder that looks, at a glance, like a robot working
@@ -114,7 +123,7 @@ perfectly.
 
 ## 4. Finding the moment
 
-Open the log in AdvantageScope. Expand `NetworkTables → SmartDashboard →
+Open the log in AdvantageScope. Expand `NetworkTables → Telemetry →
 Elevator` and drop `GoalMeters` on a **Line Graph**. Scrub across the
 whole session and find the step — the instant `GoalMeters` jumps from
 whatever it was sitting at (probably `kStowed`, 0.02 m) to `0.75`
@@ -243,7 +252,7 @@ different bugs wearing the same `false`.
 **Add to `Elevator.periodic()`, below the `GoalMeters` line:**
 
 ```java
-    SmartDashboard.putNumber("Elevator/HeightErrorMeters", m_inputs.heightMeters - m_goal.in(Meters));
+    Telemetry.log("Elevator/HeightErrorMeters", m_inputs.heightMeters - m_goal.in(Meters));
 ```
 
 Signed, not absolute — the sign tells you which direction the miss is
@@ -278,36 +287,44 @@ Recall `Aim.tagPosition`'s own javadoc: *"Empty when that ID is not on
 this field, which is what a typo looks like."* `Aim.omegaTowardTag`
 reads that: *"Zero when the tag isn't on this field — a robot that can't
 find its target should sit still rather than pick a direction."* No
-exception, no console warning either — unlike BLine's `lib_key` lookup
-in the old course, `Aim` doesn't log anything when it comes up empty.
-The `RobotAutoAimWhileDriving` opmode from Lesson 27 runs
-`driveWhileAiming` — drive forward at 30% speed for three seconds while
-the omega term tries to hold the nose on the tag. With the typo, that
-omega term is always `0.0`. The robot just drives straight for three
-seconds. From the driver station, that's what an ordinary autonomous run
-looks like.
+exception, no console warning either — unlike BLine's `lib_key` lookup,
+`Aim` doesn't log anything when it comes up empty. The **Aim While
+Driving** auto from Lesson 25 hands the spin to `Aim.omegaTowardTag` at
+its `aim` marker. With the typo, that spin rate is always `0.0`. The
+robot drives the path with its nose pointing wherever it was. From the
+driver station, that looks like an ordinary autonomous run.
 
 Open that match's log and find the moment the same way you did in
-section 4 — this time by dropping `Localizer/Pose` on the **Odometry**
-tab. The robot drives the expected line, correct heading, correct
-distance. The drivetrain did exactly its job. Now read a second trace
-*together* with it: look for `Aim/ErrorDegrees` over that same window.
-It isn't there. Not zero, not flat — **absent**, because
-`Aim.omegaToward` is the only place that key gets published, and with an
+section 4 — this time the moment is `FollowPath/rotationOverrideActive`
+going `true`, about 0.6 s into the drive. Put it on the same graph as
+`Localizer/Pose`'s heading. Measured in the simulator, the two runs look
+like this:
+
+| | override active | heading while it is |
+|---|---|---|
+| `kAimTagId = 20` | `true`, about 3.7 s | swings to about −100° and tracks the tag |
+| `kAimTagId = 220` | `true`, about 3.7 s | stays at **0.0°** the whole time |
+
+Read them *together*, as in section 5: the override says the aiming code
+has the wheel, and the heading says nobody is turning it. Neither trace
+is wrong. Now look for the third trace, `Aim/ErrorDegrees`, over that same
+window. It isn't there. Not zero, not flat — **absent**: in the fixed
+run the log has `Aim/ErrorDegrees`, `Aim/FeedforwardRadPerSec` and
+`Aim/IsAimed`, and in the typo run it has none of the three, because
+`Aim.omegaToward` is the only place those keys get published, and with an
 invalid tag ID it's never called at all. That's the whole diagnosis,
-found in one trace that never showed up when you went looking for it:
-the path executed perfectly, and the aim assist riding on top of it
-never ran a single tick. The fix isn't a gain or a gearbox — it's one
-`int` a Java review would absolutely have caught, if anyone had thought
-to look at it that day.
+found in a trace that never showed up when you went looking for it: the
+path executed perfectly, and the aim assist riding on top of it never ran
+a single tick. The fix isn't a gain or a gearbox — it's one `int` a Java
+review would absolutely have caught, if anyone had thought to look at it
+that day.
 
 The lack of a console warning here is worth sitting with, not glossing
-past. The old course's equivalent bug at least printed something. This
-one doesn't — which makes the log genuinely the *only* witness, not just
-the more convenient one. A trace that's silently absent is easy to miss
-if you don't know to go looking for it, which is exactly why "find the
-moment, then check what's supposed to be happening around it" is a
-method and not a lucky guess.
+past. It makes the log genuinely the *only* witness, not just the more
+convenient one. A trace that's silently absent is easy to miss if you
+don't know to go looking for it, which is exactly why "find the moment,
+then check what's supposed to be happening around it" is a method and
+not a lucky guess.
 
 ---
 
@@ -344,8 +361,8 @@ method and not a lucky guess.
 
 ## What you learned
 
-Nothing here was new syntax — `SmartDashboard.putNumber` and
-`SmartDashboard.putBoolean` again, calls you've had since Lesson 3 —
+Nothing here was new syntax — `Telemetry.log` again, a call you've had
+since Lesson 3 —
 which is itself the point: by this lesson, the tools were never the hard
 part. The skill is the sequence: find the moment a value changed, put
 the measurement and the decision built from it on the *same* graph, and
