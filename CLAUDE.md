@@ -787,6 +787,14 @@ source at the pinned commit.
   - A probe's change test must use `Double.compare` for doubles: `fired`
     reads NaN before the first path, and `NaN != NaN` prints every tick.
 
+**v3 Lesson 31 (testing) on alpha-7:** only `HAL.initialize()` changed (no
+arguments). Measured with the real `Elevator` homing test: Thread.sleep 20 ms
+→ 0.0090 m, 4 ms → 0.0094 m, 0 ms → −0.31 to −0.34 m in 4 of 5 runs and
+0.0100 m in the fifth, so the real-time trap is intermittent, not just a
+cliff. With `setEnabled(true)` removed the test dies at its own
+`isDisabled()` assertion; with that removed too, at `assertTrue(isHomed())`.
+Making `canGoTo` let IDLE reach SCORING fails `scoringRequiresSomethingToScore`.
+
 **Use it instead of reasoning about whether a snippet compiles.** Current state: lessons 0–34 all compile, at every intermediate stopping point, with zero warnings. A regression is therefore a real result, not noise. Run the specific lesson you touched plus the highest one.
 
 For anything with runtime behavior — a JSON schema, a replacement for a deprecated API, a config with validation — drop a throwaway JUnit test into the sandbox's `src/test/java/` and re-run with `test`. That has caught things compiling never would.

@@ -179,7 +179,7 @@ Three things have to happen before a subsystem will do anything:
 *Nothing to add — the three ideas, before they go into a real test:*
 
 ```java
-    HAL.initialize(500, 0);
+    HAL.initialize();
     DriverStationSim.setEnabled(true);
     Scheduler.getDefault().run();
 ```
@@ -206,12 +206,10 @@ replaces that guess with a fact. That's exactly the kind of thing worth
 pinning down — it's a behaviour, not a value, and it stops being true the
 moment somebody edits the homing routine.
 
-First, the elevator has to be able to answer the question — and this is
-one place this port is ahead of the original course rather than behind
-it. **`Elevator.getHeightMeters()` already exists**, added back in
-Lesson 29 so the total-current calculation had something to read. It
-was written for an unrelated reason and it's exactly what this test
-needs, which is itself worth noticing: **you cannot assert on something
+First, the elevator has to be able to answer the question — and it
+already can. **`Elevator.getHeightMeters()`** has existed since Lesson 18,
+where it was written so the log had something to record. It's exactly what
+this test needs, which is worth noticing: **you cannot assert on something
 you cannot observe**, and a getter that turns out to be reusable for
 testing is a small sign the design is honest about its own state.
 
@@ -257,7 +255,7 @@ public class ElevatorHomingTest {
   @Test
   void homingReplacesTheEncodersGuessWithTheSwitchesFact() {
     // --- arrange ---------------------------------------------------------
-    HAL.initialize(500, 0);
+    HAL.initialize();
     DriverStationSim.setDsAttached(true);
     DriverStationSim.setEnabled(true);
     DriverStationSim.notifyNewData();
@@ -334,31 +332,29 @@ Look at `tick()` again: it sleeps a **full 20 ms**. That looks like a
 waste — the test would finish five times faster without it.
 
 Shorten it and the test starts lying to you — though *how much* you have
-to shorten it turns out to matter, and this is worth measuring rather
-than assuming. On this exact test, measured:
+to shorten it turns out to matter, so measure rather than assume. On this
+exact test (five runs at 0 ms, two at each of the others):
 
 | `Thread.sleep(...)` | Final height | |
 |---|---|---|
-| 20 ms (correct) | 0.0092 m | within tolerance of 0.01 m |
-| 4 ms | 0.0092–0.0095 m | still within tolerance — barely different |
-| 0 ms (no sleep at all) | **−0.34 m** | a third of a metre below the floor |
+| 20 ms (correct) | 0.0090 m | within tolerance of 0.01 m |
+| 4 ms | 0.0094 m | still within tolerance — barely different |
+| 0 ms (no sleep at all) | **−0.31 to −0.34 m** in four runs of five (0.0100 m in the fifth) | up to a third of a metre below the floor |
 
 The middle row is the surprising one: a *partial* shortcut barely moves
-the number here. The physics model only diverges from the firmware once
-the mismatch is severe enough, and for this particular routine (a slow,
-gentle, open-loop creep) that threshold turns out to be close to zero
-slack at all. It's not that the trap is smaller in this port — it's that
-it has a cliff rather than a slope, and you won't find the cliff by
-guessing where it is.
+the number here, and even the zero-sleep row sometimes passes. The physics
+model only diverges from the firmware once the mismatch is severe enough,
+and how severe depends on how the threads happened to interleave that run.
+So the trap has a cliff and not a slope, and **it can be intermittent**,
+which is worse: a test that fails one run in five gets blamed on the robot.
 
-The mechanism is the same one named in Lesson 29: the physics model
-advances a fixed 20 ms of simulated time every time you step it, while
-Phoenix's simulated firmware, running the closed loop, advances on the
-**wall clock**. Remove the sleep and the mechanism computes as if a full
-tick's worth of firmware response happened between calls that are
-actually adjacent — on a real robot that's impossible, and −0.34 m looks
-precisely like a broken homing routine, which is where you'll spend the
-evening.
+The mechanism: the physics model advances a fixed 20 ms of simulated time
+every time you step it, while Phoenix's simulated firmware, running the
+closed loop, advances on the **wall clock**. Remove the sleep and the
+mechanism computes as if a full tick's worth of firmware response happened
+between calls that are actually adjacent — on a real robot that's
+impossible, and −0.34 m looks precisely like a broken homing routine, which
+is where you'll spend the evening.
 
 **If a test involves physics, sleep the full tick.** A slow correct test
 is worth more than a fast one that lies — and "slightly shortened"
@@ -459,8 +455,10 @@ instead of at an event, from a driver.
    write now that you know the answer.
 5. **Make a test lie to you.** Delete the `DriverStationSim.setEnabled(true)`
    line from the homing test and see what happens. It fails — measured,
-   `isHomed()` never becomes true because a disabled scheduler refuses to
-   run the command at all — but work out whether a *differently written*
+   at the `assertFalse(RobotState.isDisabled(), ...)` line, because that
+   assertion exists to catch exactly this. Delete that line too and it
+   fails later, at `assertTrue(elevator.isHomed(), ...)`, because a
+   disabled scheduler refuses to run the command at all. Now work out whether a *differently written*
    test might have passed instead, and what that tells you about
    assertions that only check for absence.
 

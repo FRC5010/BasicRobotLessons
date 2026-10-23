@@ -1007,6 +1007,25 @@ vision files to hold the 38 markers. Other changes found on the way:
 
 Measurements and probe recipes are in CLAUDE.md.
 
+**Lesson 31 migrated, 2026-10-23 (scheduled run).** Smallest port so far:
+the snapshot ships only two test files and no main code, so there are no
+NEXT LESSON markers. The one compile error was `HAL.initialize(500, 0)` →
+`HAL.initialize()` (in the snapshot and the lesson). Compiles 0–31 with zero
+warnings; the four tests pass (`./tools/verify-lessons-v3.sh 31 test`);
+marker checker and `tools/tests` clean; cut-off raised to 31. Re-measured:
+the real-time table is now 20 ms → 0.0090 m, 4 ms → 0.0094 m, and 0 ms →
+−0.31 to −0.34 m in four of five runs but 0.0100 m in the fifth, so the trap
+is intermittent, which the lesson now says. Try It #5 was corrected: with
+`setEnabled(true)` deleted the test fails at its own `isDisabled()` assertion;
+delete that too and it fails at `assertTrue(isHomed())`. The break-it-on-purpose
+claim (IDLE → SCORING fails `scoringRequiresSomethingToScore`) reproduced.
+Text fixes: `getHeightMeters()` dates from Lesson 18, not 29, and the
+"named in Lesson 29" reference to the real-time trap was dropped (no lesson
+text names it). Both tests already follow the six-state superstructure.
+Not done, awaiting a user decision: an unplug-switch/`AlertSim` test as an
+extra example, and the track-wide `simulateJava` vs `run` question (Lesson 31
+only uses `./gradlew test`).
+
 **What Lessons 27–34 now owe Lesson 26, when Phase 1b reaches them:** any
 whole-file snapshot of `Autos`, `Drivetrain`, `Constants`, `Robot` or
 `RobotTeleop` must carry `driveToScoringPose`, `alignToPose`/`atPose` and the
@@ -1044,7 +1063,7 @@ it builds on the full Lesson 33 state, re-adds what it needs to `Robot`,
 `Constants`, `Autos` and `RobotTeleop`, and should give its camera a
 connection alert in the pattern Lesson 30 sets: a `cameraConnected` input,
 an alert in the subsystem that reads it, and an `UnplugSwitch` in its sim IO.
-Lesson 30 was migrated on 2026-10-22, so Lesson 31 (testing) is next.
+Lesson 31 (testing) was migrated on 2026-10-23, so Lesson 32 is next.
 
 **Each lesson Phase 1b migrates also gets its NEXT LESSON markers
 (added 2026-09-26).** Lessons 1–15 now ship them: the code at the end of

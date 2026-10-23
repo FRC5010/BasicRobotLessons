@@ -29,7 +29,7 @@ public class ElevatorHomingTest {
   @Test
   void homingReplacesTheEncodersGuessWithTheSwitchesFact() {
     // --- arrange ---
-    HAL.initialize(500, 0);
+    HAL.initialize();
     DriverStationSim.setDsAttached(true);
     DriverStationSim.setEnabled(true);
     DriverStationSim.notifyNewData();
