@@ -1050,6 +1050,34 @@ stays. Not done, awaiting a user decision: an `AlertSim` unplug test is not
 relevant here; the `simulateJava` vs `run` question remains (Lesson 32 still says
 `simulateJava`).
 
+**Lesson 33 migrated, 2026-10-24 (scheduled run).** Rebuilt on Lessons 28 and
+30: the snapshot is `commands/SysIdRoutine`, `opmode/RobotUtility`, and whole
+`Flywheel`, `FlywheelIO`, `FlywheelIOTalonFX` and `ElevatorIOTalonFX` files taken
+from Lesson 30 (alerts, `Telemetry.log`, `implements Mechanism`, `CANPort`) plus
+the open-loop `setVoltage`, the `SysIdRoutine` field and its two factories, and
+the elevator's forward soft limit. Lesson 32's snapshot carries unchanged copies
+of those four files to hold the markers; `RobotUtility` and `SysIdRoutine` are
+new files, so no markers. Compiles 0–32 and 0–33 with zero warnings; the four
+existing tests pass; marker checker and `tools/tests` clean; cut-off 33. The
+port itself was small (`CANBus.systemcore` → `CANPort`, `northFace`/`southFace`
+→ `faceUp`/`faceDown`, `Telemetry.log` in the prose, `Alert` signature).
+**One real change: `RobotUtility` now owns an `EventLoop`.** With the plain
+`back()`/`faceUp()` triggers, Back and the face buttons are cached for
+`RobotTeleop` (the first opmode to ask), so the Utility opmode's combos never
+fired when Teleop had been selected first; measured, and the reason is in
+CLAUDE.md. The lesson gained `EventLoop` as a new concept and a measured
+explanation. Re-measured: percent-of-steady-state 36.1–81.3 % at 1 V/s and
+75.7–95.3 % at 0.25 V/s (were 42.5–80.6 and 75.4–95.6); the open-loop elevator
+rig now reads 2.565 / 1.502 m for the soft limit, ramps 1.880 / 3.768 / 7.537 m
+and steps 1.101 / 0.623 / 0.300 m (all were a little lower); homing is 3.7 s and
+17.3 s with a reverse limit (was 4.6 s and "20 s and counting"). New facts in the
+lesson: a run starts with the wheel at its 30 rot/s idle speed (the first 2.5 s
+of a ramp are a coast-down, Try It #7), and Try It #6 now says the wheel returns
+to idle rather than stops. The snapshot comment's section number was fixed (7,
+not 6). Not done: the run commands still say `simulateJava`; whether to make
+runs start from rest (drop the idle default in the Utility opmode) is a user
+call.
+
 **What Lessons 27–34 now owe Lesson 26, when Phase 1b reaches them:** any
 whole-file snapshot of `Autos`, `Drivetrain`, `Constants`, `Robot` or
 `RobotTeleop` must carry `driveToScoringPose`, `alignToPose`/`atPose` and the
@@ -1087,7 +1115,7 @@ it builds on the full Lesson 33 state, re-adds what it needs to `Robot`,
 `Constants`, `Autos` and `RobotTeleop`, and should give its camera a
 connection alert in the pattern Lesson 30 sets: a `cameraConnected` input,
 an alert in the subsystem that reads it, and an `UnplugSwitch` in its sim IO.
-Lesson 32 (reading a log) was migrated on 2026-10-23, so Lesson 33 is next.
+Lesson 33 (SysId) was migrated on 2026-10-24, so only Lesson 34 is left.
 
 **Each lesson Phase 1b migrates also gets its NEXT LESSON markers
 (added 2026-09-26).** Lessons 1–15 now ship them: the code at the end of

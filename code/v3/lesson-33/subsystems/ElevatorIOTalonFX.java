@@ -15,6 +15,7 @@ import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 
+import org.wpilib.hardware.bus.CANPort;
 import org.wpilib.hardware.discrete.DigitalInput;
 
 import first.robot.Constants.ElevatorConstants;
@@ -28,7 +29,7 @@ public class ElevatorIOTalonFX implements ElevatorIO {
   private final DigitalInput m_bottomLimit = new DigitalInput(ElevatorConstants.kBottomLimitChannel);
 
   public ElevatorIOTalonFX() {
-    m_motor = new TalonFX(ElevatorConstants.kMotorPort, CANBus.systemcore(0));
+    m_motor = new TalonFX(ElevatorConstants.kMotorPort, new CANBus(CANPort.CAN_S0));
 
     TalonFXConfiguration config = new TalonFXConfiguration();
     config.Feedback.SensorToMechanismRatio = ElevatorConstants.kGearRatio;
@@ -45,12 +46,6 @@ public class ElevatorIOTalonFX implements ElevatorIO {
     config.MotionMagic.MotionMagicAcceleration =
         metersToRotations(ElevatorConstants.kMaxAcceleration.in(MetersPerSecondPerSecond));
 
-    // The budget: this motor's slice of the battery, plus the shared winding cap.
-    config.CurrentLimits.StatorCurrentLimitEnable = true;
-    config.CurrentLimits.StatorCurrentLimit = PowerConstants.kStatorLimit.in(Amps);
-    config.CurrentLimits.SupplyCurrentLimitEnable = true;
-    config.CurrentLimits.SupplyCurrentLimit = PowerConstants.kElevatorSupplyLimit.in(Amps);
-
     // The firmware's own top stop. Open loop bypasses the goal clamp in
     // Elevator.goToHeight; it does not bypass this. There's deliberately no
     // reverse limit here: it would be measured from the same relative zero
@@ -60,6 +55,12 @@ public class ElevatorIOTalonFX implements ElevatorIO {
     config.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
     config.SoftwareLimitSwitch.ForwardSoftLimitThreshold =
         metersToRotations(ElevatorConstants.kMaxHeight.in(Meters));
+
+    // The budget: this motor's slice of the battery, plus the shared winding cap.
+    config.CurrentLimits.StatorCurrentLimitEnable = true;
+    config.CurrentLimits.StatorCurrentLimit = PowerConstants.kStatorLimit.in(Amps);
+    config.CurrentLimits.SupplyCurrentLimitEnable = true;
+    config.CurrentLimits.SupplyCurrentLimit = PowerConstants.kElevatorSupplyLimit.in(Amps);
 
     m_motor.getConfigurator().apply(config);
   }
@@ -73,10 +74,11 @@ public class ElevatorIOTalonFX implements ElevatorIO {
     inputs.setpointMeters = rotationsToMeters(m_motor.getClosedLoopReference().getValue());
     inputs.statorCurrentAmps = m_motor.getStatorCurrent().getValue().in(Amps);
     inputs.supplyCurrentAmps = m_motor.getSupplyCurrent().getValue().in(Amps);
-    inputs.motorConnected = m_motor.isConnected();
     // Normally closed to ground: the switch holds this line low while the
     // carriage is clear of it, so "high" means tripped — or a broken wire.
     inputs.atBottomLimit = m_bottomLimit.get();
+    // Has the motor answered on the CAN bus lately? A reading, like the rest.
+    inputs.motorConnected = m_motor.isConnected();
   }
 
   @Override

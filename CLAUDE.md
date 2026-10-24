@@ -156,7 +156,7 @@ lesson-k/X implies lesson-(k+1)/X exists and replaces it. **Enforce it with
 `./tools/check-lesson-markers-v3.py [N] [--show]`**, which rebuilds each
 lesson's before/after state through the shared lib, diffs them, and reports
 `MISSING` (a change with no marker announcing it) and `ORPHAN` (a marker
-that announces nothing). It's currently clean for 1–30. When Phase 1b
+that announces nothing). It's currently clean for 1–33. When Phase 1b
 migrates a lesson, raise the cut-off and add its markers in the same change.
 The checker's coverage rules are in its docstring. They absorb
 diff-alignment noise (blank lines, a shared `}`), and that absorption can
@@ -242,10 +242,10 @@ down one:
   by the classic number. `docs/lesson-plan-opmode-restructure.md`'s table and
   every record dated before 2026-10-20 use the old OpMode numbers, which
   matched the classic ones. Those records say so where it matters.
-- The unmigrated snapshots 31–33 still carry object detection's pieces (its
-  `VisionConstants` constants, `Robot.pieceDetector`, `fetchPiece` and its
-  right-bumper binding). Drop them when migrating each, since those lessons
-  now come first. Lesson 34 re-adds what it needs when it's migrated.
+- Snapshots 31–33 carried object detection's pieces (its `VisionConstants`
+  constants, `Robot.pieceDetector`, `fetchPiece` and its right-bumper
+  binding) until they were migrated; each migration dropped them, since those
+  lessons now come first. Lesson 34 re-adds what it needs when it's migrated.
 
 **The tooling understands gaps.** A lesson with no `code/v3/lesson-N` is a
 gap. There are none today: 25 was the last, and was written on 2026-10-19.
@@ -801,6 +801,16 @@ Making `canGoTo` let IDLE reach SCORING fails `scoringRequiresSomethingToScore`.
 - **A slightly-too-tight tolerance can pass by luck.** At `Centimeters.of(0.002)` and even `0.0002`, one tick (1.44 s) lands within 0.001 mm of the goal as the carriage comes back through it, so `goToHeight` ends. At `0.00002` it never ends (15 s). The lesson's typo is the latter.
 - **Aim While Driving with `kAimTagId = 220`:** override active ≈3.7 s as normal, heading stays 0.0° (fixed: ≈ −100°), finish (8.04, 7.00) vs (8.01, 7.02); `Aim/ErrorDegrees`, `FeedforwardRadPerSec` and `IsAimed` are never published (150 `/Telemetry/` topics vs 153). `Localizer/Pose` is a struct, so read the pose from `robot.localizer`, not NT.
 - **Probe trap:** a sandbox `kTolerance` left at the broken value makes `Superstructure.isSettled()` never true, so every path auto waits forever at `IDLE` and the robot never drives. Reset it before probing autos.
+
+**v3 Lesson 33 (SysId) on alpha-7, measured with the real `Flywheel`, the real `ElevatorIOTalonFX` and the real `Robot` loop (20 ms ticks):**
+
+- **A button `Trigger` belongs to the first opmode that asks for it.** `CommandGenericHID` caches one `Trigger` per (button, `EventLoop`), and a cached trigger keeps the creation scope it got. `RobotTeleop` binds Back, faceUp, faceDown and so on, so a `@Utility` opmode asking `back()` gets Teleop's trigger, and its bindings never fire. Measured: Teleop selected first, then `RobotUtility`, Back + faceUp held 3 s: wheel stayed at the 30 rot/s idle speed, command `Spin Up`. Even buttons Teleop never touched (Start, right bumper, stick clicks) died on a second selection of the same opmode (Utility → Teleop → Utility). **The fix is an opmode-owned `EventLoop`**: every button is `driverController.back(m_loop)` etc., and `periodic()` calls `m_loop.poll()`. Each instance gets fresh triggers and a loop nothing else polls. Measured through every order: T,U,T,U,U,T all ramp (0.73 V, 5.6 rot/s after 3 s), and holding the buttons while switching to Teleop leaves 3.63 V / idle. Any opmode that rebinds a button another opmode uses needs this, not just `RobotUtility`.
+- **A SysId run starts with the wheel at idle speed**, because `idle()` is the default command: the quasistatic ramp opens with the wheel coasting down 30 → 5.6 rot/s over 2.5 s (ramp at 0.6 V) before it climbs. The lesson says so and offers starting from rest as Try It #7. The percent-of-steady-state figures were measured from a true standstill with a probe driving a second `TalonFX` handle on the same CAN ID.
+- **Percent of steady state** (steady = 8.4 rot/s per volt, measured 1–5 V): 1 V/s ramp 36.1 / 58.0 / 69.8 / 76.8 / 81.3 % at 1–5 V; 0.5 V/s 57.3–90.7 %; 0.25 V/s 75.7 / 88.3 / 92.2 / 94.1 / 95.3 %. Dynamic 7 V reaches 58.5 rot/s (58.6 predicted).
+- **Open-loop elevator limits** (real `ElevatorIOTalonFX`, physics widened to ±20 m, started at 0): 6 V for 4 s ends at 2.565 m without the forward soft limit and 1.502 m with it, applied 0.000 V. Ramp to 6 V travels 1.880 / 3.768 / 7.537 m at 1.0 / 0.5 / 0.25 V/s. A 1.5 s step travels 1.101 / 0.623 / 0.300 m at 7 / 4 / 2 V.
+- **A reverse soft limit at `kMinHeight` still fights homing**: normal homing from the 0.35 m boot height finishes in 3.68 s, with the limit 17.34 s (2 cm/s against 9). It completes, so it looks like a weak motor.
+- `SysIdRoutineLog` still writes through `DataLogManager.getLog()` (bytecode). A real run's `.wpilog` holds `sysid-test-state-flywheel`, `voltage-flywheel-flywheel` and `velocity-flywheel-flywheel`. Alpha-7 has no `SysIdRoutine` in `commandsv3` or `wpilibj` (only `org.wpilib.sysid.SysIdRoutineLog`), so the hand-built `commands/SysIdRoutine` stays. `Flywheel` is `implements Mechanism` now, and the routine takes the `Mechanism` interface.
+- **Probe trap:** `verify-lessons-v3.sh` `rm -rf`s its sandbox every run, probe files included. Copy probes in after it, then run `./gradlew cleanTest test --tests '*Probe'` in the sandbox. Maven Central returned 429 once while resolving `junit-jupiter-params`; a retry fixed it.
 
 **Use it instead of reasoning about whether a snippet compiles.** Current state: lessons 0–34 all compile, at every intermediate stopping point, with zero warnings. A regression is therefore a real result, not noise. Run the specific lesson you touched plus the highest one.
 

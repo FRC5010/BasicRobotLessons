@@ -11,6 +11,8 @@ import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 
+import org.wpilib.hardware.bus.CANPort;
+
 import first.robot.Constants.FlywheelConstants;
 import first.robot.Constants.PowerConstants;
 
@@ -23,7 +25,7 @@ public class FlywheelIOTalonFX implements FlywheelIO {
   private final VoltageOut m_openLoop = new VoltageOut(0);
 
   public FlywheelIOTalonFX() {
-    m_motor = new TalonFX(FlywheelConstants.kMotorPort, CANBus.systemcore(0));
+    m_motor = new TalonFX(FlywheelConstants.kMotorPort, new CANBus(CANPort.CAN_S0));
 
     TalonFXConfiguration config = new TalonFXConfiguration();
     config.Feedback.SensorToMechanismRatio = FlywheelConstants.kGearRatio;

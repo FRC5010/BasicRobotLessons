@@ -7,6 +7,8 @@ measure what a spec sheet can't tell you.
 **New Java concepts**
 - `Trigger.and(...)`, from Lesson 22, on two buttons this time — so a
   characterization run needs both held at once.
+- **`EventLoop`** — a list of button checks that runs only when you say so,
+  here once per tick of one opmode.
 
 **New robot concepts**
 - **`SysIdRoutine`** — a tool that drives a mechanism open loop in two
@@ -389,9 +391,10 @@ particular buttons — a *behavioral* guard. This framework hands you a
 `@Autonomous` — for exactly this: something the robot does that isn't
 driving and isn't an autonomous plan. A `@Utility` opmode is selected
 separately on the driver station, the same way switching between `RobotAuto`
-and `RobotAutoBox` back in Lesson 9 was — which means Lesson 9's own finding
-applies here for free: selecting a different opmode cancels whatever the
-previous one bound, automatically. Put characterization in its own opmode
+and `RobotAutoBox` back in Lesson 9 was — and Lesson 9's finding carries
+over: bindings belong to the opmode that made them, and selecting a
+different opmode switches them off. There's one catch in how buttons are
+shared, handled in the code below. Put characterization in its own opmode
 and there is no button combination on `RobotTeleop`, however unlikely, that
 can reach it. You'd have to select "characterize" on purpose first.
 
@@ -400,6 +403,7 @@ can reach it. You'd have to select "characterize" on purpose first.
 ```java
 package first.robot.opmode;
 
+import org.wpilib.event.EventLoop;
 import org.wpilib.opmode.PeriodicOpMode;
 import org.wpilib.opmode.Utility;
 
@@ -412,37 +416,67 @@ import first.robot.commands.SysIdRoutine;
  */
 @Utility
 public class RobotUtility extends PeriodicOpMode {
-  private final Robot robot;
+  /**
+   * This opmode's own button loop. It is only polled in periodic(), so these
+   * bindings can only fire while this opmode is the one running.
+   */
+  private final EventLoop m_loop = new EventLoop();
 
   /** The Robot instance is passed into the opmode via the constructor. */
   public RobotUtility(Robot robot) {
-    this.robot = robot;
-
     // Four two-button combinations, so nobody trips a characterization run
     // reaching for a single button by accident — the same "hard to do by
     // accident" reasoning that put homing on its own button back in
     // Lesson 21, one guard further out than that.
-    robot.driverController.back().and(robot.driverController.northFace())
+    robot.driverController.back(m_loop).and(robot.driverController.faceUp(m_loop))
         .whileTrue(robot.flywheel.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
-    robot.driverController.back().and(robot.driverController.southFace())
+    robot.driverController.back(m_loop).and(robot.driverController.faceDown(m_loop))
         .whileTrue(robot.flywheel.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
-    robot.driverController.start().and(robot.driverController.northFace())
+    robot.driverController.start(m_loop).and(robot.driverController.faceUp(m_loop))
         .whileTrue(robot.flywheel.sysIdDynamic(SysIdRoutine.Direction.kForward));
-    robot.driverController.start().and(robot.driverController.southFace())
+    robot.driverController.start(m_loop).and(robot.driverController.faceDown(m_loop))
         .whileTrue(robot.flywheel.sysIdDynamic(SysIdRoutine.Direction.kReverse));
   }
 
   @Override
-  public void periodic() {}
+  public void periodic() {
+    m_loop.poll();
+  }
 }
 ```
 
-Nothing here is new syntax — it's built the exact same way `RobotTeleop` and
-`RobotAuto` are: extend `PeriodicOpMode`, take the shared `Robot` in your
-constructor, wire bindings there. `@Utility` is annotated bare, no
+It's built the same way `RobotTeleop` and `RobotAuto` are — extend
+`PeriodicOpMode`, take the shared `Robot` in your constructor, wire bindings
+there — with one addition, the `EventLoop`. `@Utility` is annotated bare, no
 `name`/`group`, because there's only one of them, same as `@Teleop` — you'd
 only need to name it if this project grew a second characterization opmode
 the way Lesson 9 grew a second autonomous.
+
+**Every button needs `m_loop` handed to it, and `periodic()` must call
+`m_loop.poll()`.** Leave the loop off a button (`robot.driverController.back()`
+on its own) and you're back to the shared one. Forget `poll()` and nothing
+ever fires.
+
+Why not just write `back()` like `RobotTeleop` does? Because the controller
+hands out **one `Trigger` per button and remembers it** — and that
+`Trigger` stays tied to whichever opmode asked for it first. `RobotTeleop`
+already asks for `back()`, `faceUp()` and `faceDown()`, so if
+`RobotUtility` asked for them the ordinary way, the first time you selected
+it after Teleop its combos did nothing at all. Measured with the real
+`Robot` loop and `GamepadSim`: Teleop first, then `RobotUtility`, holding
+Back + the top face button for three seconds left the wheel at its 30 rot/s
+idle speed and the command at `Spin Up`. With the opmode's own `EventLoop`,
+the same sequence ramps (0.73 V and 5.6 rot/s after three seconds), and so
+do Teleop → Utility → Teleop → Utility and Utility → Utility. Buttons that
+`RobotTeleop` never touches (Start, the right bumper) dodge the problem too,
+but only until somebody binds them there; a loop of the opmode's own doesn't
+depend on what any other opmode does.
+
+It's also what makes the guard real. The loop is
+only polled while this opmode is running, so there is nothing for Teleop to
+trip, however the buttons are held. Measured: with Back + the top face button
+still held down, switching from `RobotUtility` to `RobotTeleop` leaves the
+flywheel at its idle speed (3.63 V) and `sysIdQuasistatic` stops.
 
 **`Trigger.and(...)`** is doing real work here too, not just saving buttons.
 In Lesson 22 it stacked a sensor reading onto a button; here it combines two
@@ -456,11 +490,11 @@ clearing two separate hurdles on purpose.
 
 `./gradlew simulateJava`. In SimGUI, pick **RobotUtility** from the opmode
 selector — same move as picking **My Teleop** back in Lesson 1, just a
-different opmode — then set Robot State to enabled. Hold **Back + North
-face** for a few seconds — the wheel should spin up slowly and smoothly.
-Let go, let it coast, then hold **Start + North face** — this time it should
+different opmode — then set Robot State to enabled. Hold **Back + the top
+face button** for a few seconds — the wheel should spin up slowly and smoothly.
+Let go, let it coast, then hold **Start + the top face button** — this time it should
 snap forward hard. Both directions work the same in reverse with the
-**south face** button instead.
+bottom face button instead.
 
 Notice what *isn't* happening: nothing about `RobotTeleop` changed, and
 nothing in it needed to know characterization exists. Reselect **My
@@ -469,19 +503,32 @@ command is still there, untouched, because `RobotUtility` never touched it
 either.
 
 Every run writes to the same `.wpilog` file `DataLogManager.start()` already
-opens in `Robot()`'s constructor — the one this whole track's `SmartDashboard.
-put*` calls have been landing in since Lesson 3. That's worth stating plainly,
+opens in `Robot()`'s constructor — the one every `Telemetry.log`
+value has been landing in since Lesson 3. That's worth stating plainly,
 because it's a genuine difference from the course this lesson was ported
 from: on a track with a separate AdvantageKit `Logger`, `SysIdRoutineLog`
 writes through WPILib's own `DataLogManager` instead, landing in a *second*
-file. This track never installed that separate `Logger` — every value has
-always gone through `DataLogManager` — so there was only ever one file to
-begin with, and SysId data joins it, distinguished by its own keys:
+file. This track never installed that separate `Logger` — every value goes
+through `DataLogManager` — so there is only one file, and `SysIdRoutineLog`
+(whose bytecode calls `DataLogManager.getLog()` directly) joins it,
+distinguished by its own keys:
 `sysid-test-state-flywheel` for which test is running, and
 `voltage-flywheel-flywheel` / `velocity-flywheel-flywheel` for the readings
 `log.motor("flywheel")` published (the motor name and the routine's own name
-both happen to be `"flywheel"` here, which is why it repeats). One log, not
+both happen to be `"flywheel"` here, which is why it repeats; all three
+names were read out of a `.wpilog` recorded by a real run). One log, not
 two.
+
+> **The wheel doesn't start from rest.** The `idle()` default command from
+> Lesson 28 is still what the flywheel is doing when you press the buttons,
+> so every run begins with the wheel at the 30 rot/s idle speed, and the
+> routine's first act is to cut its voltage to zero. Measured on a
+> quasistatic run: the wheel coasts down from 30 rot/s to 5.6 rot/s over the
+> first 2.5 seconds — by which point the ramp is only at 0.6 V — and only
+> then starts to climb. Everything in that stretch describes a wheel
+> spinning down, not a wheel being ramped up. Look at the velocity plot
+> before you trust a fit, and ignore the part before speed turns upward.
+> Try It #7 asks what it would take to start from rest.
 
 **Analyze it:** open the SysId tool from the WPILib extension's tool
 launcher, point it at the `.wpilog` you just recorded (log-file mode, not
@@ -514,13 +561,15 @@ difference.
 ## 7. Is it real, or is it the test?
 
 Here's the number, measured in this course's own simulation so you have
-something concrete to check your own run against: characterizing the
-flywheel with `SysIdRoutine.Config()` left at its defaults, using the
-percent of steady-state speed reached at a given voltage as the yardstick
-(the tool's own curve fit isn't available inside this port's sandbox, but
-the shape of the effect is the same thing it would show): the default 1 V/s
-ramp reaches only **42.5%–80.6%** of steady-state speed across 1.0–5.0 V —
-consistently short of where a truly quasistatic run should sit. `kV` comes
+something concrete to check your own run against. The yardstick is the
+percent of steady-state speed the wheel has reached when the ramp passes a
+given voltage, where steady state is what the wheel settles at when that
+voltage is simply held (about 8.4 rot/s per volt, measured at 1–5 V). The
+tool's own curve fit isn't available inside this port's sandbox, but the
+shape of the effect is the same thing it would show. Starting from a
+standstill, the default 1 V/s ramp reaches only **36.1%–81.3%** of
+steady-state speed across 1–5 V — consistently short of where a truly
+quasistatic run should sit. `kV` comes
 back fine either way. Something is wrong, and it isn't the wheel.
 
 **Quasistatic only means something if the mechanism is actually close to
@@ -548,7 +597,7 @@ private final SysIdRoutine m_sysId = new SysIdRoutine(
 A quarter of the ramp rate, and the timeout stretched to 30 seconds so the
 slower climb still has room to reach a useful voltage before the routine
 gives up and stops on its own. Re-run and re-analyze: at that slower ramp,
-this course's own measured run reaches **75.4%–95.6%** of steady-state speed
+this course's own measured run reaches **75.7%–95.3%** of steady-state speed
 across the same voltage range — closer to equilibrium at every point, which
 is exactly the direction a smaller apparent `kS` would move in. `kV` barely
 moves — the back-EMF term was never the problem. `kA`, which had been
@@ -585,14 +634,15 @@ the path.
 **A firmware soft limit, on the other hand, holds.** It's a
 `SoftwareLimitSwitchConfigs` value set once at construction, enforced where
 output leaves the motor controller, so it doesn't care which control mode
-asked. Driving an elevator-shaped rig open loop at 6 V for four seconds,
-against a 1.5 m travel limit, with a forward soft limit in place:
+asked. Driving the real `ElevatorIOTalonFX` open loop at 6 V for four seconds, over
+a physics model widened to ±20 m so nothing but the limit can stop it, first
+with the forward soft limit off and then on:
 
 *Nothing to add — measured, not asserted:*
 
 ```
-no soft limit   : ended at 2.355 m  (well past the top)
-with soft limit : ended at 1.501 m, applied volts 0.000
+no soft limit   : ended at 2.565 m  (well past the top)
+with soft limit : ended at 1.502 m, applied volts 0.000
 ```
 
 That is exactly the distinction Lesson 20 drew when it added soft limits to
@@ -604,8 +654,10 @@ your code's opinion is never consulted at all.
 > you trust a clean sim run.** `ElevatorIOSim` builds its `ElevatorSim` with
 > `kMinHeight` and `kMaxHeight`, which makes the *physics model itself* a
 > wall at 1.5 m. Running the real sim elevator open loop into the top, the
-> carriage stops at exactly the physics wall — before the soft limit's own
-> threshold has any reason to fire. Add the soft limit and sim behaves
+> carriage stops at exactly the physics wall — and because the encoder
+> started at the carriage's 0.35 m boot height, it only reads 1.15 m there,
+> short of the soft limit's 1.5 m threshold, so the limit never gets a reason
+> to fire. Add the soft limit and sim behaves
 > identically, because it was already refusing to go past travel. A real
 > elevator has no such courtesy; it has a hard stop and a gearbox. This is
 > the same lesson section 9 is about, arriving early: **the simulation is
@@ -635,8 +687,8 @@ isn't an oversight — it's a measured trap this lesson walked into and is
 handing you the way out of. A first pass at this section added a matching
 *reverse* soft limit, at `kMinHeight`, the mirror image of the forward one
 above. It broke Lesson 31's already-passing `ElevatorHomingTest` — homing,
-which used to finish in about 4.6 seconds, was still crawling downward at
-20 seconds and counting, at roughly a quarter of its normal rate. Not
+which finishes in about 3.7 seconds, took 17.3, the carriage creeping
+down at about 2 cm/s instead of its usual 9. Not
 refused outright — just slower, in a way that looked exactly like a weak
 motor rather than a limit doing its job. **That's the actual danger of a
 misconfigured limit: it doesn't fail loud, it fails by making the mechanism
@@ -666,20 +718,20 @@ limit at all, because it looks like protection.
 Section 7 told you to slow the ramp down, and it was right — that's what
 made the quasistatic run land closer to equilibrium. It's also the single
 most expensive thing you can do to a mechanism that can run out of room, and
-it's worth seeing the size of it. Same rig, measuring how far the carriage
+it's worth seeing the size of it. Same widened rig, measuring how far the carriage
 travels before the ramp reaches 6 V:
 
 *Nothing to add — measured, not asserted:*
 
 ```
-ramp 1.00 V/s  ->  6 V after 6.0 s,   travelled 1.517 m
-ramp 0.50 V/s  ->  6 V after 12.0 s,  travelled 3.041 m
-ramp 0.25 V/s  ->  6 V after 24.0 s,  travelled 6.284 m
+ramp 1.00 V/s  ->  6 V after 6.0 s,   travelled 1.880 m
+ramp 0.50 V/s  ->  6 V after 12.0 s,  travelled 3.768 m
+ramp 0.25 V/s  ->  6 V after 24.0 s,  travelled 7.537 m
 ```
 
 **Halve the ramp rate and you double the distance.** The mechanism spends
 twice as long at every voltage on the way up, so it covers twice the ground
-getting there. Section 7's recommended 0.25 V/s would need over **6 metres**
+getting there. Section 7's recommended 0.25 V/s would need over **7 metres**
 of elevator to reach 6 V. You have 1.5 m.
 
 So the thing that made the flywheel's quasistatic run trustworthy is the
@@ -693,18 +745,18 @@ that spent its last second driving into a hard stop.
 ### And lower the step voltage
 
 The dynamic test has the same problem in a more concentrated form, since it
-jumps straight to full step voltage and stays there. Same rig, 1.5 seconds:
+jumps straight to full step voltage and stays there. Same widened rig, 1.5 seconds:
 
 *Nothing to add — measured, not asserted:*
 
 ```
-step 7.0 V  ->  travelled 1.010 m
-step 4.0 V  ->  travelled 0.578 m
-step 2.0 V  ->  travelled 0.268 m
+step 7.0 V  ->  travelled 1.101 m
+step 4.0 V  ->  travelled 0.623 m
+step 2.0 V  ->  travelled 0.300 m
 ```
 
-The default 7 V step eats **two-thirds of the elevator's entire travel in a
-second and a half** — and `Config`'s default timeout is ten seconds. Drop the
+The default 7 V step eats **nearly three-quarters of the elevator's entire
+travel in a second and a half** — and `Config`'s default timeout is ten seconds. Drop the
 step voltage until the run fits: 2–4 V is a reasonable starting point for this
 elevator, and you can raise it once you've watched one run finish safely.
 
@@ -799,10 +851,14 @@ just guessing at.
 6. **Watch the opmode guard actually work.** Start a `sysIdQuasistatic` run
    in `RobotUtility`, then switch back to **My Teleop** (disabling first, if
    your driver station's UI insists on that before it lets you switch).
-   Confirm the wheel stops and stays stopped once you re-enable in Teleop —
-   there's no `sysIdQuasistatic` command left running to fight your normal
-   driving. That's the same opmode-scoping Lesson 9 found protecting
+   Confirm the wheel drops back to its idle speed once you re-enable in
+   Teleop — there's no `sysIdQuasistatic` command left running to fight your
+   normal driving. That's the same opmode-scoping Lesson 9 found protecting
    `RobotAuto`'s plan, doing the identical job here.
+7. **Start from rest.** The callout in section 6 says every run begins with
+   the wheel at its idle speed. Work out how you'd make a run start from a
+   standstill, and what it would cost: where is the idle default installed,
+   and does that place know which opmode is selected?
 
 ---
 
@@ -821,9 +877,10 @@ Section 5 added a structural habit worth keeping past this lesson:
 **`@Utility`** gave characterization its own opmode instead of a corner of
 `RobotTeleop`, which turns "don't press these buttons during a match" from
 something you have to remember into something that's true by construction —
-you'd have to select the wrong opmode on purpose. The same opmode-scoping
-Lesson 9 found protecting `RobotAuto`'s plan turned out to protect this too,
-for free.
+you'd have to select the wrong opmode on purpose. The opmode's own
+`EventLoop` is what makes that true — a button check that only runs while its
+opmode does — and it was worth finding out the hard way that the shared
+button `Trigger`s don't give you that.
 
 The harder lesson sat in section 7: **a characterization is only as
 trustworthy as the test that produced it**, and a mechanism that never gets
