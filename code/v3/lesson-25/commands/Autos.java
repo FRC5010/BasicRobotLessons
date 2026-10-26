@@ -38,9 +38,9 @@ public final class Autos {
 
   /**
    * ====== NEXT LESSON: ADD CODE HERE ======
-   * A command that gets somewhere exactly in two stages: cross the field with
-   * the coarse drive-to-pose, then close the last stretch with the close-range
-   * controllers.
+   * A command that gets somewhere exactly in two stages: cover ground on firm
+   * limits, then hand over, still moving, to a gentle approach that finishes
+   * stopped on the spot.
    */
 
   /** Everything about following a path that doesn't depend on which path it is. */

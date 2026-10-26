@@ -14,6 +14,8 @@ import static org.wpilib.units.Units.Meters;
 import static org.wpilib.units.Units.MetersPerSecond;
 import static org.wpilib.units.Units.MetersPerSecondPerSecond;
 import static org.wpilib.units.Units.Percent;
+import static org.wpilib.units.Units.RadiansPerSecond;
+import static org.wpilib.units.Units.RadiansPerSecondPerSecond;
 import static org.wpilib.units.Units.RotationsPerSecond;
 import static org.wpilib.units.Units.Seconds;
 import static org.wpilib.units.Units.Volts;
@@ -30,6 +32,7 @@ import org.wpilib.math.geometry.Rotation3d;
 import org.wpilib.math.geometry.Transform3d;
 import org.wpilib.math.geometry.Translation2d;
 import org.wpilib.math.geometry.Translation3d;
+import org.wpilib.math.trajectory.TrapezoidProfile;
 import org.wpilib.units.measure.Angle;
 import org.wpilib.units.measure.AngularAcceleration;
 import org.wpilib.units.measure.AngularVelocity;
@@ -207,14 +210,41 @@ public final class Constants {
     /** Close enough to call it aimed. */
     public static final Angle kAimTolerance = Degrees.of(2);
 
-    // Stage two of getting somewhere exactly. Its gains are higher than the
-    // drive-to-pose sketch's, because its errors are tiny by the time it takes
-    // over — it only ever starts a short distance away.
-    public static final double kAlignP = 3.0;      // m/s per meter of error
-    public static final double kAlignThetaP = 4.0; // rad/s per radian of error
+    // Getting somewhere on a plan, in two stages. Stage one covers ground, and
+    // can afford to be firm about it.
+    public static final LinearVelocity kTravelSpeed = MetersPerSecond.of(3.0);
+    public static final LinearAcceleration kTravelAccel = MetersPerSecondPerSecond.of(4.0);
 
-    // "Arrived" is a decision, and this is where it gets made.
+    // Where stage one hands over, and how fast the robot may still be going.
+    // Stage two could stop from at most √(2 × 1.5 × 1.0) = 1.73 m/s in that
+    // distance; the drive runs about 0.4 m/s behind the plan while slowing at
+    // 4 m/s², so plan 1.2 and leave it room.
+    public static final Distance kHandoffDistance = Meters.of(1.0);
+    public static final LinearVelocity kHandoffSpeed = MetersPerSecond.of(1.2);
+
+    // Stage two arrives, and gently: the last metre is where accuracy lives.
+    public static final LinearAcceleration kApproachAccel = MetersPerSecondPerSecond.of(1.5);
+
+    // Turning, in both stages: half a turn a second at most.
+    public static final AngularVelocity kTurnSpeed = RadiansPerSecond.of(Math.PI);
+    public static final AngularAcceleration kTurnAccel = RadiansPerSecondPerSecond.of(4.0);
+
+    // The same limits in the form a profile takes them: top speed, then acceleration.
+    public static final TrapezoidProfile.Constraints kTravelLimits = new TrapezoidProfile.Constraints(
+        kTravelSpeed.in(MetersPerSecond), kTravelAccel.in(MetersPerSecondPerSecond));
+    public static final TrapezoidProfile.Constraints kApproachLimits = new TrapezoidProfile.Constraints(
+        kHandoffSpeed.in(MetersPerSecond), kApproachAccel.in(MetersPerSecondPerSecond));
+    public static final TrapezoidProfile.Constraints kTurnLimits = new TrapezoidProfile.Constraints(
+        kTurnSpeed.in(RadiansPerSecond), kTurnAccel.in(RadiansPerSecondPerSecond));
+
+    // The trims: what to do about the robot drifting off its plan.
+    public static final double kAlignP = 3.0;      // m/s per meter behind or ahead of the plan
+    public static final double kAlignThetaP = 4.0; // rad/s per radian of heading error
+
+    // "Arrived" is a decision, and this is where it gets made: close enough,
+    // slow enough, and facing the right way.
     public static final Distance kPositionTolerance = Centimeters.of(2);
+    public static final LinearVelocity kSpeedTolerance = MetersPerSecond.of(0.05);
     public static final Angle kAngleTolerance = Degrees.of(1);
 
     /** Where the left bumper lines the robot up. */

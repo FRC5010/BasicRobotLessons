@@ -169,8 +169,10 @@ public final class Constants {
 
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
-     * Constants for the close-range stage: two gains, how close counts as
-     * arrived in position and in angle, and the pose to line up on.
+     * Constants for getting to a pose on a plan: each stage's speed and
+     * acceleration limits, where the first stage hands over and how fast, the
+     * turning limits, the same limits in the form a profile takes, the two
+     * trims, what counts as arrived, and the pose to line up on.
      */
   }
 

@@ -319,25 +319,68 @@ that tag and measured in sim with the real `Robot`:
   newest cancels the rest in the same tick. The result is correct; it's
   recorded, not worked around.
 
-**v3 Lesson 26 (drive to pose) on alpha-7, measured with the real `Robot`
-loop through the scheduler**, (1, 1, 0°) → (5, 4, 90°), error against the
-simulated truth:
+**v3 Lesson 26 (drive to pose) was redesigned on 2026-10-26 at the user's
+request: two motion-profiled stages, handing over while moving.** The old
+design ran the Lesson 11 sketch to 5 cm, then three `PIDController`s; the user
+asked what happens if the handover is a metre out. User decisions: OpMode
+track only; each stage follows a fixed line from where it started (profile on
+progress along it, cross-track P with Lesson 17's `kCrossTrackP`); the sketch
+stays as section 1's opener and is deleted in the lesson; the drive lag is
+taught and planned around, with drive-motor `kA` left as Try It #5.
 
-- `driveToPose` alone: 3.2 s, 45–47 mm out. Two stages: 3.5 s, 15–17 mm, under
-  0.01°. Facing backwards on the target, `driveToPose` finishes on tick 1, 180°
-  out.
+- **`Drivetrain` now has `travelToward` and `approach`** (no `driveToPose`,
+  `alignToPose` or `atPose` from Lesson 26 on). Two `ProfiledPIDController`
+  fields, `m_alongController` (progress along the line) and
+  `m_headingController` (continuous input). `startStage` seeds both with
+  `reset(position, measured velocity)` from `getChassisVelocities()` in the
+  line's frame, and swaps the along controller's constraints per stage.
+  `followLine` sends the setpoint's velocity plus the P trim. **Call
+  `calculate` before `getSetpoint()`**: it steps the plan. Stage one's goal is
+  `State(length − kHandoffDistance, kHandoffSpeed)` and it finishes when
+  progress passes that, without stopping; stage two is a `do`/`while` (the
+  track's first) until `arrived()`: along `atGoal()` (2 cm and 0.05 m/s),
+  off the line under 2 cm, heading `atGoal()` (1°).
+- **A `TrapezoidProfile` uses one acceleration for speeding up and slowing
+  down**, which is why two stages: travel 3 m/s / 4 m/s², approach
+  ≤ 1.2 m/s / 1.5 m/s², turning π rad/s / 4 rad/s².
+- **The drive lags a speed request by about 0.1 s** (Lesson 12's drive config
+  has `kV` and `kP`, no `kA`; that the missing `kA` is the cause is a guess,
+  not measured). Slowing at 4 m/s² the real speed runs ≈0.4 m/s above the
+  plan, so the handoff is planned at 1.2 m/s, not the √(2 × 1.5 × 1.0) =
+  1.73 m/s limit; the robot really hands over at 1.44–1.47 m/s.
+- **Measured** (real `Robot` loop, 20 ms fixed rate, three runs each, error
+  against the simulated truth), (1, 1, 0°) → (5, 4, 90°): 3.38–3.40 s,
+  7.2–7.6 mm, ≤ 0.01°; top speed 3.23–3.25 m/s; launch mean 4.1 m/s², peak
+  6.3–7.6; handoff at 1.80 s; approach deceleration mean 1.4 m/s², peak 2.4;
+  rolls 36 mm past the target and comes back. From 0.6 m out at (4.52, 3.64,
+  45°) stage one finishes at once: 1.62–1.68 s, 10–11 mm. On the target facing
+  −90°: 2.14–2.22 s, 0.0–0.1 mm, 0.22–0.29°.
+- **The old design, re-measured the same way:** 3.5 s, 14 mm, launch at the
+  grip limit (11.6–11.7 m/s²), handing over nearly stopped (0.08 m/s). P
+  stages handing over at 1 m: the request jumped 1.55 → 3.0 m/s in one tick
+  while moving 1.7, then ≈7 m/s² braking. The sketch alone (2026-10-20): 3.2 s,
+  45–47 mm; facing backwards on the target it finishes on tick 1, 180° out.
+- **Try It numbers:** handoff planned at 1.73 → arrives moving 1.95 m/s,
+  overshoots 460–466 mm, 4.54–4.56 s. Both `reset`s from speed 0 → brakes at
+  the grip limit (11.77 m/s²), 3.84 s. `kSpeedTolerance` 1000 → 3.26–3.32 s,
+  11.9–13.3 mm.
+- **The path bows 263–276 mm off the line while turning 90°.** The same trip
+  with no turn stays within 5–7 mm, so it's turning while translating;
+  `ChassisVelocities.discretize` didn't fix it, and the old design bowed too
+  (38–49 cm). The exact cause isn't established; the lesson says only that
+  turning does it.
+- **A line, not re-aiming at the target:** a re-aimed (radial) version
+  reversed its whole command in one tick when the robot rolled past.
 - **`RobotAutoDriveToPose` is unannotated** and registered with `addOpMode`
   (`"Drive To Pose"`, group `"Poses"`). It skips `getReadyThen` (no
   superstructure) and doesn't place the simulated robot, so a second run
   starts on the pose.
-- `atSetpoint()` stays true after a finished `alignToPose`, but the next run
-  isn't cut short: `runRepeatedly` runs its body before `until` is checked.
-- **Probe trap:** `placeSimulatedRobot` and `localizer.resetPose` in the same
-  tick leave the estimate offset by the stale gyro reading; the truth then
-  flies off while the estimate reports success. Put them a few ticks apart.
-- After `alignToPose` finishes, the truth keeps creeping about 2–3 mm in the
-  next second (measured; consistent with the last command persisting, which
-  was not checked directly).
+- **Probe traps:** `placeSimulatedRobot` and `localizer.resetPose` in the same
+  tick leave the estimate offset by the stale gyro reading; put them a few
+  ticks apart. `Scheduler.isRunning(outer)` read false at the handoff tick
+  while `Approach` was still running, which ended a probe's scenario early;
+  also check the drivetrain's running command names and wait for two idle
+  polls. Use a fixed dt of 0.02 s for accelerations, not the wall clock.
 
 **v3 Lesson 30 (alerts) on alpha-7, rebuilt on Lesson 29 on 2026-10-22,
 measured with the real `Robot` loop (probe recipe below) and by hand in a
@@ -1130,7 +1173,7 @@ a lesson as-is.
 - [docs/lesson-plan-alpha7-upgrade.md](docs/lesson-plan-alpha7-upgrade.md) —
   the impact assessment and phased plan for upgrading the v3 track (only —
   the classic track targets stable 2026 and is unaffected) to WPILib 2027
-  alpha-7, a large breaking-change release. **Lessons 0–30 are migrated (or,
+  alpha-7, a large breaking-change release. **Lessons 0–33 are migrated (or,
   for 22 and 25, written) and verified on alpha-7**: Phoenix 6 cleared the marketplace (Track A, 1–14,
   2026-09-18), and on 2026-09-24 the v3 track switched vision from
   PhotonVision to **LimelightLib 2**, which cleared Track B's vendor gate.
@@ -1141,8 +1184,8 @@ a lesson as-is.
   (maple-sim, PhotonVision, PathPlanner…) than the `2027_alpha7` folder has
   files for — only a JSON in the folder means a release exists. Lesson 15's simulated camera publishes real results frames to
   the NetworkTables topic a real Limelight uses, so the unmodified library
-  runs in sim. Lessons 31–34 are still pre-alpha-7 code awaiting Phase 1b;
-  object detection (Lesson 34) stays on PhotonVision and waits for an alpha-7 PhotonLib (user decision, 2026-10-17). A
+  runs in sim. Lesson 34 is still pre-alpha-7 code awaiting Phase 1b:
+  object detection stays on PhotonVision and waits for an alpha-7 PhotonLib (user decision, 2026-10-17). A
   PhotonVision flavor of Lesson 15 may come back as an option once PhotonLib
   ships for alpha-7; the last PhotonVision version is at commit `94fe7b9`.
   Alpha-7

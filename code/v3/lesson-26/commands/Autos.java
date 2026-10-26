@@ -37,14 +37,14 @@ public final class Autos {
   }
 
   /**
-   * Get somewhere exactly, in two stages: cross the field with the coarse,
-   * five-centimeter sketch from Lesson 11, then close the last stretch with
-   * the align controllers, which check rotation too.
+   * Get somewhere exactly, in two stages: cover ground on firm limits, then hand
+   * over, still moving, to a gentler approach that picks up from however the
+   * robot is really moving and finishes stopped on the spot.
    */
   public static Command driveToScoringPose(Drivetrain drivetrain, Localizer localizer) {
     return Command.noRequirements(coroutine -> {
-          coroutine.await(drivetrain.driveToPose(PathConstants.kScoringPose, localizer::getPose));
-          coroutine.await(drivetrain.alignToPose(PathConstants.kScoringPose, localizer::getPose));
+          coroutine.await(drivetrain.travelToward(PathConstants.kScoringPose, localizer::getPose));
+          coroutine.await(drivetrain.approach(PathConstants.kScoringPose, localizer::getPose));
         })
         .named("Drive To Scoring Pose");
   }

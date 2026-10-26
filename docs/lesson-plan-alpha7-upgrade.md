@@ -1078,12 +1078,54 @@ not 6). Not done: the run commands still say `simulateJava`; whether to make
 runs start from rest (drop the idle default in the Utility opmode) is a user
 call.
 
+**Lesson 26 redesigned, 2026-10-26 (user decision).** The user pointed out
+that the two-stage design only worked because stage one stopped 5 cm out,
+and asked for motion profiles that hand over a metre out while still moving,
+with each stage on its own acceleration so the second can brake gently.
+Decided with the user: OpMode track only (the classic Lesson 26 is
+untouched); each stage follows a fixed line from where it started, profiling
+progress along it with cross-track P on `kCrossTrackP`; the Lesson 11 sketch
+stays as the opener and is deleted in section 7; the drive's lag is taught
+and planned around, with drive-motor `kA` as Try It #5.
+
+- **Code:** `Drivetrain` loses `driveToPose`, `alignToPose`, `atPose` and the
+  three `PIDController`s, and gains two `ProfiledPIDController` fields plus
+  `makeAlongController`, `makeHeadingController`, `inLineFrame`, `startStage`,
+  `followLine`, `travelToward`, `approach` and `arrived`. `PathConstants`
+  swaps the old align block for travel/approach/turn limits, the handoff
+  distance and speed, three `TrapezoidProfile.Constraints`, the two trims and
+  three tolerances (`kScoringPose` unchanged). `Autos.driveToScoringPose`
+  awaits `travelToward` then `approach`. Lesson 25's markers were rewritten to
+  describe the new code.
+- **Carried into the later whole-file copies:** `Drivetrain` in 29 and 30,
+  `Constants` in 27–32, `Autos` in 27, `RobotTeleop`'s comment in 27 and 28.
+  Snapshot 34 was not touched (see below).
+- **Measured,** (1, 1, 0°) → (5, 4, 90°), three runs: 3.38–3.40 s,
+  7.2–7.6 mm, ≤ 0.01°, launch mean 4.1 m/s², handing over at 1.44–1.47 m/s,
+  approach deceleration mean 1.4 m/s², 36 mm roll past. The old design was
+  3.5 s and 14 mm with a launch at the grip limit (11.6–11.7 m/s²). Full
+  numbers, the Try It variants and the probe traps are in CLAUDE.md.
+- **The handoff speed is planned at 1.2 m/s, not the 1.73 m/s limit**,
+  because the drive runs ≈0.1 s behind its speed requests. Planned at the
+  limit, it overshot by 460–466 mm (Try It #1).
+- **Known and in the lesson:** the path bows 26–28 cm off the line while it
+  turns 90° (5–7 mm with no turn; the old design bowed 38–49 cm). The cause
+  beyond "turning while driving" isn't established.
+- **Checks:** compiles 0–26 through 0–33 with zero warnings; marker checker
+  clean for 1–33. The run command still says `simulateJava`, like the rest
+  of the track.
+
 **What Lessons 27–34 now owe Lesson 26, when Phase 1b reaches them:** any
 whole-file snapshot of `Autos`, `Drivetrain`, `Constants`, `Robot` or
-`RobotTeleop` must carry `driveToScoringPose`, `alignToPose`/`atPose` and the
-controller fields, the `PathConstants` align constants and `kScoringPose`, the
-left-bumper binding, and the `Drive To Pose` `addOpMode` line.
-`RobotAutoDriveToPose` must stay unannotated.
+`RobotTeleop` must carry `driveToScoringPose`, the profiled stages from the
+2026-10-26 redesign (`travelToward`/`approach`, the two
+`ProfiledPIDController` fields and their helpers), the `PathConstants`
+travel/approach constants and `kScoringPose`, the left-bumper binding, and the
+`Drive To Pose` `addOpMode` line. `RobotAutoDriveToPose` must stay
+unannotated. **Lesson 34 still uses the old API**: its `fetchPiece` calls
+`drivetrain.driveToPose(...)`, its `driveToScoringPose` copy awaits
+`driveToPose` then `alignToPose`, and its prose (around lines 29, 651, 660 and
+711) names both. Its migration must use `travelToward` + `approach` instead.
 
 **OpMode track renumbered, 2026-10-20 (user decision).** Object detection
 waits on an alpha-7 PhotonLib, and before this, every later lesson waited with

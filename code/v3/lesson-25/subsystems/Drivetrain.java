@@ -60,9 +60,10 @@ public class Drivetrain implements Mechanism, PoseProvider {
 
   /**
    * ====== NEXT LESSON: ADD CODE HERE ======
-   * Three PIDController fields for the close-range stage of getting to a
-   * pose, each told how close counts as arrived. They're fields because the
-   * "are we there" question has to read the error the last tick saw.
+   * Two motion-profiled controllers for getting to a pose on a plan: one for
+   * how far along a straight line the robot should be, one for which way it
+   * faces. They're fields because the "have we arrived" question has to read
+   * what the last tick worked out.
    */
 
   public Drivetrain() {
@@ -163,6 +164,14 @@ public class Drivetrain implements Mechanism, PoseProvider {
         .named("Drive Distance");
   }
 
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * This sketch is replaced by two motion-profiled stages: builders for the two
+   * controllers, a way to measure the robot against a straight line, a start
+   * that plans from how the robot is really moving, one tick of following the
+   * line, a firm stage that covers ground and hands over while still moving, a
+   * gentle stage that arrives, and the check that says it has.
+   */
   /** Drive straight toward 'target' using P control, field-relative. Finishes within 5 cm. */
   public Command driveToPose(Pose2d target, Supplier<Pose2d> pose) {
     double maxMps = DriveConstants.kMaxSpeed.in(MetersPerSecond); // convert once, reuse
@@ -182,13 +191,6 @@ public class Drivetrain implements Mechanism, PoseProvider {
         .until(() -> pose.get().minus(target).getTranslation().getNorm() < 0.05)
         .named("Drive To Pose");
   }
-
-  /**
-   * ====== NEXT LESSON: ADD CODE HERE ======
-   * The close-range stage: a builder for each kind of controller, a command
-   * that drives all three to an exact pose, and a boolean that says whether
-   * position and heading have all arrived.
-   */
 
   /** One tick of pure rotation: steer every wheel tangent to the circle. */
   private void commandRotation(double omegaRevPerSec) {

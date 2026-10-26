@@ -9,7 +9,7 @@ import java.util.function.Supplier;
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
-import org.wpilib.math.controller.PIDController;
+import org.wpilib.math.controller.ProfiledPIDController;
 import org.wpilib.math.estimator.SwerveDrivePoseEstimator;
 import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.math.geometry.Rotation2d;
@@ -18,6 +18,7 @@ import org.wpilib.math.kinematics.ChassisVelocities;
 import org.wpilib.math.kinematics.SwerveDriveKinematics;
 import org.wpilib.math.kinematics.SwerveModulePosition;
 import org.wpilib.math.kinematics.SwerveModuleVelocity;
+import org.wpilib.math.trajectory.TrapezoidProfile;
 import org.wpilib.math.util.MathUtil;
 import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.AngularVelocity;
@@ -66,13 +67,12 @@ public class Drivetrain implements Mechanism, PoseProvider {
   private final Alert m_gyroDisconnected =
       new Alert("Drivetrain/Gyro/Disconnected", "Gyro is not on the CAN bus", Level.HIGH);
 
-  // Stage two's close-range controllers. Fields, not locals, because
-  // atPose() has to read the same error the last calculate() saw.
-  private final PIDController m_xController = makeAlignController(
-      PathConstants.kAlignP, PathConstants.kPositionTolerance.in(Meters));
-  private final PIDController m_yController = makeAlignController(
-      PathConstants.kAlignP, PathConstants.kPositionTolerance.in(Meters));
-  private final PIDController m_thetaController = makeThetaController();
+  // Getting somewhere on a plan. One profile says how far along a straight line
+  // the robot should be by now, and how fast it should be going; the other does
+  // the same for which way it faces. Fields, not locals, because arrived() has
+  // to read what the last tick worked out.
+  private final ProfiledPIDController m_alongController = makeAlongController();
+  private final ProfiledPIDController m_headingController = makeHeadingController();
 
   public Drivetrain() {
     Scheduler.getDefault().addPeriodic(this::periodic);
@@ -172,67 +172,119 @@ public class Drivetrain implements Mechanism, PoseProvider {
         .named("Drive Distance");
   }
 
-  /** Drive straight toward 'target' using P control, field-relative. Finishes within 5 cm. */
-  public Command driveToPose(Pose2d target, Supplier<Pose2d> pose) {
-    double maxMps = DriveConstants.kMaxSpeed.in(MetersPerSecond); // convert once, reuse
-    return runRepeatedly(() -> {
-          Pose2d current = pose.get();
-          double dx = target.getX() - current.getX();
-          double dy = target.getY() - current.getY();
-          double vx = clamp(1.5 * dx, -maxMps, maxMps);
-          double vy = clamp(1.5 * dy, -maxMps, maxMps);
-          double omega = clamp(
-              3.0 * target.getRotation().minus(current.getRotation()).getRadians(),
-              -Math.PI, Math.PI);
-          ChassisVelocities fieldSpeeds = new ChassisVelocities(vx, vy, omega);
-          applyChassisSpeeds(fieldSpeeds.toRobotRelative(current.getRotation()));
-        })
-        .whenCanceled(() -> applyChassisSpeeds(new ChassisVelocities())) // reached it or interrupted — stop
-        .until(() -> pose.get().minus(target).getTranslation().getNorm() < 0.05)
-        .named("Drive To Pose");
-  }
-
-  /** One axis of the close-range controller: a P gain and the tolerance it stops at. */
-  private static PIDController makeAlignController(double kP, double tolerance) {
-    PIDController controller = new PIDController(kP, 0, 0);
-    controller.setTolerance(tolerance);
+  /** Along the line: P to trim the plan, and what counts as arrived — there, and stopped. */
+  private static ProfiledPIDController makeAlongController() {
+    ProfiledPIDController controller =
+        new ProfiledPIDController(PathConstants.kAlignP, 0, 0, PathConstants.kTravelLimits);
+    controller.setTolerance(
+        PathConstants.kPositionTolerance.in(Meters), PathConstants.kSpeedTolerance.in(MetersPerSecond));
     return controller;
   }
 
-  /** The heading controller, told that -180 and +180 are the same place. */
-  private static PIDController makeThetaController() {
-    PIDController controller = new PIDController(PathConstants.kAlignThetaP, 0, 0);
+  /** The heading: profiled too, and told that -180 and +180 are the same place. */
+  private static ProfiledPIDController makeHeadingController() {
+    ProfiledPIDController controller =
+        new ProfiledPIDController(PathConstants.kAlignThetaP, 0, 0, PathConstants.kTurnLimits);
     controller.enableContinuousInput(-Math.PI, Math.PI);
     controller.setTolerance(PathConstants.kAngleTolerance.in(Radians));
     return controller;
   }
 
-  /**
-   * Close the last stretch to an exact pose. Three controllers on field-relative
-   * error, and tolerances that decide when "arrived" is true.
-   *
-   * <p>Deliberately short-range: its top speed is its gain times the distance
-   * it is ever asked to cover, so it is slow by construction rather than by
-   * clamping. Send it across the field and it will get there, eventually.
-   */
-  public Command alignToPose(Pose2d target, Supplier<Pose2d> pose) {
-    return runRepeatedly(() -> {
-          Pose2d current = pose.get();
-          double vx = m_xController.calculate(current.getX(), target.getX());
-          double vy = m_yController.calculate(current.getY(), target.getY());
-          double omega = m_thetaController.calculate(
-              current.getRotation().getRadians(), target.getRotation().getRadians());
-          ChassisVelocities fieldSpeeds = new ChassisVelocities(vx, vy, omega);
-          applyChassisSpeeds(fieldSpeeds.toRobotRelative(current.getRotation()));
-        })
-        .whenCanceled(() -> applyChassisSpeeds(new ChassisVelocities())) // reached it or interrupted — stop
-        .until(this::atPose)
-        .named("Align To Pose");
+  /** Where 'current' sits relative to a line: x is how far along it, y how far off to the left. */
+  private static Translation2d inLineFrame(Translation2d start, Rotation2d direction, Pose2d current) {
+    return current.getTranslation().minus(start).rotateBy(direction.unaryMinus());
   }
 
-  /** Arrived — in both senses. Rotation counts, which is what driveToPose forgets. */
-  public boolean atPose() {
-    return m_xController.atSetpoint() && m_yController.atSetpoint() && m_thetaController.atSetpoint();
+  /**
+   * Start a stage's plan from how the robot is really moving right now, under
+   * this stage's limits. A plan that assumed the robot was standing still
+   * would ask a moving robot to stop dead on its first tick.
+   */
+  private void startStage(Pose2d current, Rotation2d direction, TrapezoidProfile.Constraints limits) {
+    ChassisVelocities moving = getChassisVelocities().toFieldRelative(current.getRotation());
+    Translation2d velocity = new Translation2d(moving.vx, moving.vy);
+    m_alongController.setConstraints(limits);
+    m_alongController.reset(0.0, velocity.rotateBy(direction.unaryMinus()).getX());
+    m_headingController.reset(current.getRotation().getRadians(), moving.omega);
+  }
+
+  /**
+   * One tick of a stage: keep to the plan along the line, steer back onto the
+   * line, and turn toward the target's heading. Each speed is the plan's own
+   * speed, plus P on how far the robot has drifted from the plan.
+   */
+  private void followLine(Translation2d start, Rotation2d direction, Pose2d target, Pose2d current) {
+    Translation2d where = inLineFrame(start, direction, current);
+    double alongCorrection = m_alongController.calculate(where.getX()); // also moves the plan on a tick
+    double alongSpeed = m_alongController.getSetpoint().velocity + alongCorrection;
+    double acrossSpeed = -PathConstants.kCrossTrackP * where.getY();
+    Translation2d velocity = new Translation2d(alongSpeed, acrossSpeed).rotateBy(direction);
+
+    double turnCorrection = m_headingController.calculate(
+        current.getRotation().getRadians(), target.getRotation().getRadians());
+    double omega = m_headingController.getSetpoint().velocity + turnCorrection;
+
+    ChassisVelocities fieldSpeeds = new ChassisVelocities(velocity.getX(), velocity.getY(), omega);
+    applyChassisSpeeds(fieldSpeeds.toRobotRelative(current.getRotation()));
+  }
+
+  /**
+   * Stage one: cover ground. Firm limits, and it finishes a short way out while
+   * still moving, so stage two takes over from a robot in motion.
+   */
+  public Command travelToward(Pose2d target, Supplier<Pose2d> pose) {
+    return run(coroutine -> {
+          Pose2d current = pose.get();
+          Translation2d start = current.getTranslation();
+          Translation2d toTarget = target.getTranslation().minus(start);
+          Rotation2d direction = toTarget.getAngle().orElse(current.getRotation()); // already there: any way will do
+          double handoff = toTarget.getNorm() - PathConstants.kHandoffDistance.in(Meters);
+
+          startStage(current, direction, PathConstants.kTravelLimits);
+          m_alongController.setGoal(
+              new TrapezoidProfile.State(handoff, PathConstants.kHandoffSpeed.in(MetersPerSecond)));
+          while (inLineFrame(start, direction, current).getX() < handoff) {
+            followLine(start, direction, target, current);
+            coroutine.yield();
+            current = pose.get();
+          }
+          // No stop here: stage two takes over from a robot that's still moving.
+        })
+        .whenCanceled(() -> applyChassisSpeeds(new ChassisVelocities())) // interrupted — stop
+        .named("Travel Toward");
+  }
+
+  /**
+   * Stage two: arrive. Gentler limits, a plan that starts from however the robot
+   * is really moving, and a finish that waits until it's there, on the line,
+   * facing the right way, and stopped.
+   */
+  public Command approach(Pose2d target, Supplier<Pose2d> pose) {
+    return run(coroutine -> {
+          Pose2d current = pose.get();
+          Translation2d start = current.getTranslation();
+          Translation2d toTarget = target.getTranslation().minus(start);
+          Rotation2d direction = toTarget.getAngle().orElse(current.getRotation());
+
+          startStage(current, direction, PathConstants.kApproachLimits);
+          m_alongController.setGoal(toTarget.getNorm()); // the end of the line, stopped
+          do {
+            followLine(start, direction, target, current);
+            coroutine.yield();
+            current = pose.get();
+          } while (!arrived(start, direction, current));
+          applyChassisSpeeds(new ChassisVelocities()); // arrived — stop
+        })
+        .whenCanceled(() -> applyChassisSpeeds(new ChassisVelocities())) // interrupted — stop
+        .named("Approach");
+  }
+
+  /** Arrived: at the end of the line and stopped, on the line, and facing the right way. */
+  private boolean arrived(Translation2d start, Rotation2d direction, Pose2d current) {
+    double offLine = Math.abs(inLineFrame(start, direction, current).getY());
+    return m_alongController.atGoal()
+        && offLine < PathConstants.kPositionTolerance.in(Meters)
+        && m_headingController.atGoal();
   }
 
   /** One tick of pure rotation: steer every wheel tangent to the circle. */

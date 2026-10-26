@@ -43,8 +43,8 @@ public class RobotTeleop extends PeriodicOpMode {
     robot.driverController.dpadRight().onTrue(robot.elevator.goToHeight(ElevatorConstants.kScoreMid));
     robot.driverController.dpadUp().onTrue(robot.elevator.goToHeight(ElevatorConstants.kScoreHigh));
 
-    // Hold the left bumper to line up on the scoring pose: coarse across
-    // the field, then slow and exact for the last stretch.
+    // Hold the left bumper to line up on the scoring pose: firm across the
+    // field, then a gentle approach that ends stopped on the spot.
     robot.driverController.leftBumper().whileTrue(
         Autos.driveToScoringPose(robot.drivetrain, robot.localizer));
 
