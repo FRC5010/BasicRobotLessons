@@ -43,7 +43,8 @@ public class SwerveModule {
    * requests and physics models below all move into the ModuleIO implementations — the
    * TalonFX IO and the sim IO — so delete them here, along with simulatePeriodic at the
    * bottom: the sim IO steps its own physics. In their place, hold a ModuleIO, the
-   * inputs bundle it fills, and a log key such as Drivetrain/Module0.
+   * inputs bundle it fills (the logging version AdvantageKit generates), and a log
+   * key such as Drivetrain/Module0.
    */
 
   private final TalonFX m_driveMotor;
@@ -113,8 +114,8 @@ public class SwerveModule {
   /**
    * ====== NEXT LESSON: ADD CODE HERE ======
    * Add periodic(): one tick of sensing — have the IO read the hardware into the inputs
-   * bundle, then log the steering angle, drive position and drive velocity under this
-   * module's log key.
+   * bundle, then hand the bundle to AdvantageKit, which logs every reading under this
+   * module's log key (and, when replaying, fills them in from the log).
    */
 
   /**

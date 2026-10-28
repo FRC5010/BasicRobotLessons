@@ -21,6 +21,8 @@ import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.AngularVelocity;
 import org.wpilib.units.measure.LinearVelocity;
 
+import org.littletonrobotics.junction.Logger;
+
 import first.robot.Constants;
 import first.robot.Constants.DriveConstants;
 import first.robot.Constants.HeadingConstants;
@@ -60,7 +62,7 @@ public class Drivetrain implements Mechanism {
     case SIM -> new GyroIOSim();
     case REPLAY -> new GyroIO() {}; // inputs come from the log
   };
-  private final GyroIO.GyroIOInputs m_gyroInputs = new GyroIO.GyroIOInputs();
+  private final GyroIOInputsAutoLogged m_gyroInputs = new GyroIOInputsAutoLogged();
 
   // Odometry reads the kinematics, the gyro, and the modules' starting
   // positions — everything above this line has to exist first.
@@ -103,7 +105,7 @@ public class Drivetrain implements Mechanism {
       m_modules[i].setDesiredState(states[i]);
     }
 
-    Telemetry.log("Drivetrain/DesiredModuleStates", states, SwerveModuleVelocity.struct);
+    Logger.recordOutput("Drivetrain/DesiredModuleStates", states);
   }
 
   /** Drive with full swerve freedom: translate and rotate at once. */
@@ -256,7 +258,7 @@ public class Drivetrain implements Mechanism {
 
   private void periodic() {
     m_gyroIO.updateInputs(m_gyroInputs);
-    Telemetry.log("Drivetrain/Gyro/YawDegrees", m_gyroInputs.yawDegrees);
+    Logger.processInputs("Drivetrain/Gyro", m_gyroInputs);
 
     SwerveModuleVelocity[] states = new SwerveModuleVelocity[4];
     int index = 0;
@@ -267,14 +269,14 @@ public class Drivetrain implements Mechanism {
           Rotation2d.fromDegrees(module.getSteerAngleDegrees()));
       index++;
     }
-    Telemetry.log("Drivetrain/ModuleStates", states, SwerveModuleVelocity.struct);
+    Logger.recordOutput("Drivetrain/ModuleStates", states);
 
-    Telemetry.log("Drivetrain/HeadingDegrees", getHeadingDegrees());
-    Telemetry.log("Drivetrain/Heading", Rotation2d.fromDegrees(getHeadingDegrees()), Rotation2d.struct);
+    Logger.recordOutput("Drivetrain/HeadingDegrees", getHeadingDegrees());
+    Logger.recordOutput("Drivetrain/Heading", Rotation2d.fromDegrees(getHeadingDegrees()));
 
     Pose2d pose = m_odometry.update(Rotation2d.fromDegrees(getHeadingDegrees()), modulePositions());
-    Telemetry.log("Drivetrain/Pose", pose, Pose2d.struct);
+    Logger.recordOutput("Drivetrain/Pose", pose);
     m_field.setRobotPose(pose);
-    Telemetry.log("Field", m_field);
+    Telemetry.log("Field", m_field); // the widget SimGUI draws; AdvantageKit doesn't record it
   }
 }

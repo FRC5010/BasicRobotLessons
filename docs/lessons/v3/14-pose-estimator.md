@@ -371,7 +371,6 @@ provider.
 
 ```java
   public Robot() {
-    DataLogManager.start();
     Scheduler.getDefault().addEventListener(this::logCommandStart);
     localizer.addProvider(camera); // the second provider — vision
   }

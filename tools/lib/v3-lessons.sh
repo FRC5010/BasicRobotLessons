@@ -38,9 +38,18 @@ V3_BLINE_PIN="https://raw.githubusercontent.com/edanliahovetsky/BLine-Lib/d99678
 # project made from that template.
 V3_VENDORDEPS=(
   "1|$V3_MARKETPLACE/Phoenix6-26.70.0-alpha-2.json"
+  "13|$V3_MARKETPLACE/AdvantageKit-27.0.0-alpha-7.json"  # first with LoggedOpModeRobot
   "15|$V3_LIMELIGHT_PIN/LimelightLib-alpha7.json"   # 2.0.0-beta9-alpha7
   "17|$V3_BLINE_PIN/BLine-Lib-2027.json"            # 2027.0.0-beta.1
 )
+
+# --- build.gradle -----------------------------------------------------------
+# Lesson 13 installs AdvantageKit and has the student edit build.gradle:
+# tools/lib/patch_build_gradle.py makes the same edits and says why. They're
+# made once, from Lesson 13 on, and a rollback leaves them in place, like a
+# vendordep: they only read vendordeps/AdvantageKit.json, which a rollback
+# leaves installed too.
+V3_AKIT_FROM=13
 
 # --- deletions --------------------------------------------------------------
 # Snapshots can only add or replace files, so the removals the lessons
@@ -74,6 +83,16 @@ v3_python() {
   done
   echo "  no working Python 3 found (tried \$PYTHON, python3, python, py) — see docs/lessons/v3/aside-setup.md" >&2
   return 1
+}
+
+# v3_patch_build_gradle REPO THROUGH PROJECT_DIR
+# Makes Lesson 13's build.gradle edits when THROUGH has reached it; prints
+# each change it made.
+v3_patch_build_gradle() {
+  local repo="$1" through="$2" project="$3" py
+  [ "$through" -ge "$V3_AKIT_FROM" ] || return 0
+  py="$(v3_python)" || return 1
+  "$py" "$repo/tools/lib/patch_build_gradle.py" "$project/build.gradle"
 }
 
 # v3_fetch_vendordep URL DEST_DIR

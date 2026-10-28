@@ -760,7 +760,9 @@ assigns each one exactly once, and the compiler checks that it does.
 **Replace Lesson 14's `camera` field in `Robot` with two blank finals:**
 
 ```java
-public class Robot extends OpModeRobot {
+public class Robot extends LoggedOpModeRobot {
+  // ...the logging block from Lesson 13 stays first...
+
   public final CommandGamepad driverController = new CommandGamepad(0);
   public final Drivetrain drivetrain = new Drivetrain();
   public final Localizer localizer = new Localizer(drivetrain);
@@ -775,7 +777,6 @@ public class Robot extends OpModeRobot {
 
 ```java
   public Robot() {
-    DataLogManager.start(); // saves every published value to a .wpilog file
     Scheduler.getDefault().addEventListener(this::logCommandStart);
 
     frontCamera = LimelightPoseProvider.makeCamera(

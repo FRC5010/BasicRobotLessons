@@ -86,6 +86,13 @@ things argue against that, all real and not hedges:
    can continue to use `LoggedRobot`... An equivalent for WPILib's
    `OpModeRobot` will be available in a future release."*
 
+> **Update, 2026-10-28:** that support shipped. AdvantageKit
+> `v27.0.0-alpha-7` (tagged 2026-10-23) added `LoggedOpModeRobot`, and the
+> follow-up pass described below has started: v3 Lesson 13 now records
+> with AdvantageKit and replays (user decisions and measurements in
+> `docs/lesson-plan-alpha7-upgrade.md`, "Lesson 13 records with
+> AdvantageKit"). Lessons 14–34 are converted one at a time after it.
+
 **Team decision (2026-08-10): proceed without AdvantageKit's replay ability
 for now, and do a second pass to add it back once AdvantageKit supports
 `OpModeRobot`.** This resolves point 3 above without waiting on it. In its

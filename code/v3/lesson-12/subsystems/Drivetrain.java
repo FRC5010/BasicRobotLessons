@@ -62,7 +62,8 @@ public class Drivetrain implements Mechanism {
    * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
    * Replace the Pigeon 2 with a GyroIO picked by the same kind of three-arm switch as
    * the modules — the Pigeon 2 implementation, the sim implementation, or an empty one
-   * for replay — plus the inputs bundle it fills. The two sim bookkeeping fields below
+   * for replay — plus the inputs bundle it fills, in the logging version AdvantageKit
+   * generates. The two sim bookkeeping fields below
    * move into the sim gyro, so delete them.
    */
 
@@ -120,6 +121,10 @@ public class Drivetrain implements Mechanism {
       m_modules[i].setDesiredState(states[i]);
     }
 
+    /**
+     * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+     * Record the commanded module states with AdvantageKit's Logger instead.
+     */
     Telemetry.log("Drivetrain/DesiredModuleStates", states, SwerveModuleVelocity.struct);
   }
 
@@ -266,9 +271,9 @@ public class Drivetrain implements Mechanism {
   private void logTelemetry() {
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
-     * Read the gyro into its inputs bundle first thing, and log the yaw. Then, inside
-     * the module loop, have each module read and log its own inputs in place of this
-     * steering-angle log.
+     * Read the gyro into its inputs bundle first thing, and hand the bundle to
+     * AdvantageKit. Then, inside the module loop, have each module read and log its
+     * own inputs in place of this steering-angle log.
      */
 
     SwerveModuleVelocity[] states = new SwerveModuleVelocity[4];
@@ -281,6 +286,12 @@ public class Drivetrain implements Mechanism {
           Rotation2d.fromDegrees(module.getSteerAngleDegrees()));
       index++;
     }
+    /**
+     * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+     * Record everything worked out from here on with AdvantageKit's Logger, so a replay
+     * works it out again: the module states, the heading and the pose. The field widget
+     * stays on Telemetry, because AdvantageKit doesn't record widgets.
+     */
     Telemetry.log("Drivetrain/ModuleStates", states, SwerveModuleVelocity.struct);
 
     Telemetry.log("Drivetrain/HeadingDegrees", getHeadingDegrees());

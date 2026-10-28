@@ -680,9 +680,14 @@ jars rather than guessed:
       see that lesson's "Verified" callout. This may ripple into how later
       lessons (today's Lesson 10 equivalent) introduce Units, since Lesson 3
       already had to use `.in(Rotations)` out of necessity.
-- [ ] Track AdvantageKit's releases for `OpModeRobot` support, and plan the
+- [x] Track AdvantageKit's releases for `OpModeRobot` support, and plan the
       follow-up pass that retrofits real replay onto the IO-layer structure
       once it lands (Lesson 13's equivalent, and everything after it).
+      **Landed 2026-10-28:** AdvantageKit `v27.0.0-alpha-7` has
+      `LoggedOpModeRobot`; Lesson 13 now records and replays, and Lessons
+      14–34 follow one at a time (see `docs/lesson-plan-alpha7-upgrade.md`).
+      Lesson 3 still teaches `Telemetry`/`DataLogManager`; moving
+      AdvantageKit earlier wasn't decided.
 - [x] Lesson 1: **the missing `Scheduler.getDefault().run()` tick** — found
       while writing the lesson, not by more source reading (nothing anywhere
       in `code/v3/` or `docs/lessons/v3/` ticked the scheduler, so no bound

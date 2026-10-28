@@ -21,6 +21,11 @@ import first.robot.subsystems.Drivetrain;
  * or the package after creating this project, you must also update the Main.java file in the
  * project.
  */
+/**
+ * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+ * Become AdvantageKit's version of the opmode robot, and start logging in a block
+ * above every field, so everything the robot builds is built with the logger running.
+ */
 public class Robot extends OpModeRobot {
   // The robot's hardware lives here — built once, when the robot boots, and
   // alive for as long as the robot runs. Opmodes are rebuilt fresh every time
@@ -37,6 +42,14 @@ public class Robot extends OpModeRobot {
     Scheduler.getDefault().addEventListener(this::logCommandStart);
   }
 
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add the method that sets up logging for the current mode. Replaying: read every
+   * input from a saved log, run as fast as possible, and write what the code works
+   * out to a new file. Otherwise: publish live, save to a file, and start the data
+   * log here instead of in the constructor.
+   */
+
   /** This function is called exactly once when the DS first connects. */
   @Override
   public void driverStationConnected() {}
@@ -50,6 +63,10 @@ public class Robot extends OpModeRobot {
   private void logCommandStart(SchedulerEvent event) {
     if (event instanceof SchedulerEvent.Scheduled scheduled) {
       for (Mechanism mechanism : scheduled.command().requirements()) {
+        /**
+         * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+         * Record which command is running with AdvantageKit, so a replay works it out again.
+         */
         Telemetry.log(mechanism.getName() + "/CurrentCommand", scheduled.command().name());
       }
     }

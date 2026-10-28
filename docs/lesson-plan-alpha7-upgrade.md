@@ -1115,6 +1115,76 @@ and planned around, with drive-motor `kA` as Try It #5.
   clean for 1–33. The run command still says `simulateJava`, like the rest
   of the track.
 
+**Lesson 13 records with AdvantageKit and replays, 2026-10-28 (user
+decisions).** AdvantageKit `v27.0.0-alpha-7` (tagged 2026-10-23, built on
+WPILib 2027.0.0-alpha-7) added `LoggedOpModeRobot`, ending the blocker
+recorded under "Open decisions" item 1. The user asked what Lesson 13 could
+now do, saw a tested prototype, and decided: outputs use
+`Logger.recordOutput` (not a bridge that would have sent every
+`Telemetry.log` into AdvantageKit too, which was prototyped and worked);
+Lesson 13 first, later lessons one at a time; replay taught with a
+PowerShell `AKIT_LOG_PATH` line, with `replayWatch` and VS Code's
+Simulate Robot Code given as other options.
+
+- **Code:** `@AutoLog` inputs and `Logger.processInputs` in `SwerveModule`
+  and `Drivetrain`; Lesson 13's own outputs on `Logger.recordOutput`; `Robot
+  extends LoggedOpModeRobot`, with logging started from an instance
+  initializer block above every field and a `startLogging()` holding the
+  REAL/SIM/REPLAY switch. `DataLogManager.start()` stays (non-replay
+  branch), so later lessons' `Telemetry.log` values are still saved.
+  Lesson 12's markers were added and reworded; the change was carried into
+  every later whole-file copy (lines Lesson 13 introduced only).
+- **Tooling:** AdvantageKit pinned from Lesson 13 in `V3_VENDORDEPS`; a new
+  `tools/lib/patch_build_gradle.py` (10 tests) makes Lesson 13's two
+  `build.gradle` edits in both scripts. The GUI line becomes
+  `defaultEnabled = System.getenv("AKIT_LOG_PATH") == null`, because replay
+  refuses to start with SimGUI loaded.
+- **Measured:** replays of a scripted drive matched every recorded output
+  bit-for-bit; one test that moved sticks mid-cycle saw the replayed
+  commands react a tick early. The lesson's demos (×1.1 in a decision vs. in
+  the IO layer, a quartered gain) are recorded in CLAUDE.md.
+- **Checks:** 12–33 compile with zero warnings and 33's tests pass; marker
+  checker clean 1–33; 60 tool tests pass; `update-lesson-v3.sh` to 13, 14,
+  15 and back to 13 and 12 on a fresh project builds every time; the site
+  builds with 0 broken links.
+
+**What Lessons 14–34 now owe Lesson 13.** Their code compiles and runs; what
+they don't have yet is replay. Each lesson's own pass, when the user picks
+it:
+
+- Every IO-backed subsystem needs `@AutoLog` on its inputs and
+  `Logger.processInputs` in place of its per-field `Telemetry.log` calls:
+  vision (15), elevator (18), arm (20), flywheel (28). Measured on the
+  Lesson 33 state: replay reproduces the drivetrain's heading and module
+  states, but the path auto never drives in replay, because the elevator
+  never homes without recorded inputs. Vision's `PoseObservation` record
+  holds a `Vector<N3>`, and AdvantageKit restricts record fields to
+  struct-compatible types; untested.
+- Their computed values move to `Logger.recordOutput` (Localizer pose in
+  14, BLine's `withTelemetry(Telemetry.getTable())` in 17, the mechanism
+  drawings in 19/20/28, which AdvantageKit's `LoggedMechanism2d` can record,
+  and so on). Values moved to AdvantageKit appear in SimGUI under
+  **AdvantageKit**, not **Telemetry**, so lesson text that says where to
+  look changes with them.
+- **Lesson 15:** its `REPLAY` arm comment ("nothing feeds this yet") and Try
+  It #5 ("the empty doorway, vision edition", "same dormant doorway Lesson 13
+  built").
+- **Lesson 30:** the framework's `opmode-loop-overrun` alert, which the
+  lesson shows as its "raised once" example, no longer exists under
+  `LoggedOpModeRobot` (measured: no active alerts after a run). Needs a user
+  decision on what replaces it. Its `SteerEncoderConnected`/`Connected`
+  `Telemetry.log` lines duplicate what `processInputs` will log.
+- **Lesson 32:** says in four places that replay is an empty doorway on this
+  track, and the README row says so too; it can now prove its fix by
+  replay, as the classic track's lesson does.
+- **Lesson 33:** its paragraph on `SysIdRoutineLog` contrasts this track with
+  "a track with a separate AdvantageKit `Logger`". This is now that track:
+  SysId data lands in DataLogManager's file, not AdvantageKit's.
+- **Lesson 34** (unmigrated) must carry Lesson 13's `Robot` when migrated.
+- Lessons 14, 15 and 17 showed `Robot`'s constructor with
+  `DataLogManager.start();`, and 15 showed `extends OpModeRobot`; those
+  context lines were updated with this change.
+
 **What Lessons 27–34 now owe Lesson 26, when Phase 1b reaches them:** any
 whole-file snapshot of `Autos`, `Drivetrain`, `Constants`, `Robot` or
 `RobotTeleop` must carry `driveToScoringPose`, the profiled stages from the
@@ -1251,6 +1321,10 @@ later:
    Worth re-checking AdvantageKit's `OpModeRobot` status again whenever a
    future alpha-7 (or later) vendor-tracking check runs — the original
    blocker may move the same way Phoenix 6's did.
+
+   **Update, 2026-10-28: it moved.** AdvantageKit `v27.0.0-alpha-7` added
+   `LoggedOpModeRobot`, and Lesson 13 is now that conversion, as this item
+   predicted. See "Lesson 13 records with AdvantageKit" in Phase 1b.
 2. **Default gamepad deadband.** Does Lesson 2 keep teaching a hand-rolled
    `applyDeadband` as foundational technique (framed as "here's what the
    default now does for you, and here's how it works"), or does the lesson
@@ -1277,6 +1351,7 @@ can go green while Track B is still red.
 | 2026-09-22 (manual, this session — investigated PhotonVision's own `Dev` CI channel directly as a possible shortcut, not just the marketplace) | `v2027.0.0-alpha-7` (unchanged) | Unchanged — still no `photonlib` entry in `2027_alpha7` | Unchanged | **Still no tagged/numbered release beyond `v2027.0.0-alpha-2` (targets alpha-6).** But PhotonVision's `Dev` branch (a continuously-recreated pre-release, not a version tag) does genuinely target alpha-7 in source, confirmed by cloning it directly: `build.gradle` sets `wpilibVersion = "2027.0.0-alpha-7"`. Its real published snapshot (`org.photonvision:photonlib-java:dev-v2027.0.0-alpha-2-66-g18e9cb30` on `maven.photonvision.org`) was hand-assembled into a vendordep JSON via PhotonVision's own documented "install a specific version" workflow and compiled clean against this project in a real sandbox. **Deliberately not adopted as a stand-in** — PhotonVision labels this channel "use at your own risk," and `javap` shows `PhotonPoseEstimator`'s API has been redesigned (no more generic `update()`, replaced by eight separate named strategy methods), the signature of unfinished work rather than a completed migration. Full reasoning in `docs/lesson-plan-opmode-restructure.md`'s R2 section. **User decision: keep waiting for an actual tagged release.** | N/A (this session's Track A already executed; unaffected) | **Still blocked** — the dev-channel shortcut was investigated and rejected; still needs a real, numbered, alpha6/7-targeted PhotonVision release |
 | 2026-09-24 (manual, this session — direct `vendor-json-repo` checkout of `2027_alpha7`, plus LimelightLib 2's own repo history) | `v2027.0.0-alpha-7` (unchanged) | Unchanged: `AdvantageKit-27.0.0-alpha-5`, `ChoreoLib-2027.0.0-alpha-3`, `Phoenix6-26.70.0-alpha-2` (+ replay), `REVLib-2027.0.0-alpha-7`, `ReduxLib-2027.0.0-alpha-7`. No `photonlib`, and no LimelightLib entry either | Unchanged | **No longer needed.** The v3 track switched vision to **LimelightLib 2** (`2.0.0-beta9-alpha7`, `wpilibYear: 2027_alpha7`), pinned by commit `717a921` of `LimelightVision/limelightlib-public` because the vendor's own URL is overwritten on every release (beta5→beta9 in one week). PhotonVision is now informational only for this repo | N/A (unaffected) | **Unblocked vendor-side.** Lesson 15 migrated to Limelight and verified (0–15 compile, zero warnings; runtime-checked in sim). Lessons 16–34 remain pre-alpha-7 code — that's Phase 1b's migration work, gated on nothing external |
 | 2026-09-27 (manual, this session — sparse checkout of `vendor-json-repo`'s `2027_alpha7` folder) | `v2027.0.0-alpha-7` (unchanged) | One new file, `DogLog-2027.2.0.json`; otherwise unchanged. `2027_alpha7_metadata.json` now also names `maplesim`, `photonlib`, `PathplannerLib`, YAGSL and others, but those are metadata entries only — none has a vendordep JSON in the folder, so none is installable | Unchanged | Unchanged (informational only) | N/A (unaffected) | **BLine `2027.0.0-beta.1` pinned by commit `d996781`** (not in the marketplace; its own URL follows a branch). Lesson 17 written and verified; Lessons 20–34 remain pre-alpha-7 code |
+| 2026-10-28 (manual, this session — sparse checkout of `vendor-json-repo`'s `2027_alpha7` folder, plus AdvantageKit's own tags and source) | `v2027.0.0-alpha-7` (unchanged) | **`AdvantageKit-27.0.0-alpha-7.json` is new** (alpha-6 too), and it's the first AdvantageKit with `LoggedOpModeRobot`; also new since the last row: DogLog 2027.3.0, LumynLabs, PathplannerLib 2027.0.0-alpha-4/4.1, REVLib alpha-8, ReduxLib alpha-7p1, ThriftyLib, YAGSL and YAMS builds. Still no `photonlib` | `26.70.0-alpha-2` (unchanged) | Unchanged — still no alpha-7 PhotonLib | Unaffected | **AdvantageKit unblocked:** v3 Lesson 13 now records and replays with `LoggedOpModeRobot` (pinned from Lesson 13). Object detection (34) still waits on PhotonLib |
 
 ## Monitoring
 

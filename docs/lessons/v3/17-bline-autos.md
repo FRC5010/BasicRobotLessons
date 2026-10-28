@@ -777,7 +777,6 @@ whole program.
 
 ```java
   public Robot() {
-    DataLogManager.start(); // saves every published value to a .wpilog file
     Scheduler.getDefault().addEventListener(this::logCommandStart);
     Autos.registerEventTriggers(); // once, for the whole program
 
