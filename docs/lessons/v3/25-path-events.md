@@ -146,7 +146,7 @@ block:**
 ```java
   public Robot() {
     // ...
-    if (Constants.kCurrentMode == Constants.Mode.SIM) {
+    if (Constants.kCurrentMode != Constants.Mode.REAL) {
       localizer.resetPose(DriveConstants.kSimStartingPose);
     }
 

@@ -109,8 +109,9 @@ public class Robot extends LoggedOpModeRobot {
     localizer.addProvider(backCamera);
 
     // The simulated chassis starts at kSimStartingPose; tell the estimate
-    // where that is instead of guessing from (0, 0, 0°).
-    if (Constants.kCurrentMode == Constants.Mode.SIM) {
+    // where that is instead of guessing from (0, 0, 0°). A replay of a
+    // simulated run has to start from the same spot, so it does this too.
+    if (Constants.kCurrentMode != Constants.Mode.REAL) {
       localizer.resetPose(DriveConstants.kSimStartingPose);
     }
 

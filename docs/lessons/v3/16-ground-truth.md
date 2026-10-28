@@ -378,22 +378,28 @@ encoders the estimate uses. That's no longer true. The chassis sim tracks
 where the chassis actually is, independent of what any wheel reports, and
 it's been running since section 4.
 
-**Log it at the end of `periodic()`:**
+**Record it at the end of `periodic()`:**
 
 ```java
     if (m_chassisSim != null) {
-      Telemetry.log("Drivetrain/SimulatedPose", m_chassisSim.getPose(), Pose2d.struct);
+      Logger.recordOutput("Drivetrain/SimulatedPose", m_chassisSim.getPose());
     }
   }
 ```
 
-It's the same `Telemetry.log` call that publishes `Drivetrain/Heading` a few
-lines up, handed a `Pose2d` and its `.struct` this time.
+It's the same `Logger.recordOutput` call that records `Drivetrain/Heading` a
+few lines up, handed a `Pose2d` this time. The `if` matters in a replay as
+much as on a real robot: neither has a simulated chassis, so neither records
+a truth. A replay of a simulated run still shows the truth from the
+recording under `RealOutputs`; it just has no `ReplayOutputs` twin, because
+nothing in the replay could work it out again.
 
 Open AdvantageScope's **Odometry** tab and put both `Localizer/Pose` and
-`Drivetrain/SimulatedPose` on the field at once. Drive gently and they sit
-on top of each other. Then drive like you mean it — full stick from a
-stop, a hard reversal, a fast spin — and watch them separate. The wheel
+`Drivetrain/SimulatedPose` on the field at once. Both are outputs, so live
+they're under **AdvantageKit → RealOutputs**, not under **Telemetry**.
+Drive gently and they sit on top of each other. Then drive like you mean
+it — full stick from a stop, a hard reversal, a fast spin — and watch them
+separate. The wheel
 motors respond to a velocity command quickly (that's Lesson 12's firmware
 loop doing its job); the chassis is limited by the same grip you just gave
 it a number for. When you ask for more than the tires could really
@@ -436,11 +442,26 @@ places and doubt your own code.
 
 ```java
     // The simulated chassis starts at kSimStartingPose; tell the estimate
-    // where that is instead of guessing from (0, 0, 0°).
-    if (Constants.kCurrentMode == Constants.Mode.SIM) {
+    // where that is instead of guessing from (0, 0, 0°). A replay of a
+    // simulated run has to start from the same spot, so it does this too.
+    if (Constants.kCurrentMode != Constants.Mode.REAL) {
       localizer.resetPose(DriveConstants.kSimStartingPose);
     }
 ```
+
+Read the condition carefully: it's "anything but a real robot," not "only
+in simulation," and the difference is replay. A replay has no chassis to
+place, but its estimate still has to start where the recorded one did. With
+`== Constants.Mode.SIM` here, a replayed run started 4.2 m from the recorded
+one, at (0, 0) instead of (3, 3), and the recorded camera frames took about a
+second to drag it across (measured); after that the two poses agreed only
+to within a few millionths of a meter instead of exactly. With
+`!= Constants.Mode.REAL`, they match on every tick.
+
+> A real robot never makes this reset, and it's right not to: it really
+> doesn't know where it was switched on. So the day you replay a log from a
+> real robot, change the condition to `== Constants.Mode.SIM` for that
+> replay, or the replay will start somewhere the robot never was.
 
 Now run it. `./gradlew simulateJava` → **RobotTeleop**. The first thing
 you'll feel is the grip limit: push the stick to full and the robot doesn't

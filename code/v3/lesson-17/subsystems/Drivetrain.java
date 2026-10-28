@@ -16,7 +16,6 @@ import org.wpilib.math.kinematics.SwerveDriveKinematics;
 import org.wpilib.math.kinematics.SwerveModulePosition;
 import org.wpilib.math.kinematics.SwerveModuleVelocity;
 import org.wpilib.math.util.MathUtil;
-import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.AngularVelocity;
 import org.wpilib.units.measure.LinearVelocity;
 
@@ -289,7 +288,7 @@ public class Drivetrain implements Mechanism, PoseProvider {
     Logger.recordOutput("Drivetrain/Heading", Rotation2d.fromDegrees(getHeadingDegrees()));
 
     if (m_chassisSim != null) {
-      Telemetry.log("Drivetrain/SimulatedPose", m_chassisSim.getPose(), Pose2d.struct);
+      Logger.recordOutput("Drivetrain/SimulatedPose", m_chassisSim.getPose());
     }
   }
 }

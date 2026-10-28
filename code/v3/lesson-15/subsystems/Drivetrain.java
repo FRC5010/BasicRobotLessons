@@ -259,8 +259,8 @@ public class Drivetrain implements Mechanism, PoseProvider {
 
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
-     * In simulation, log where the simulated chassis really is, so it can be plotted
-     * against the estimate.
+     * In simulation, record where the simulated chassis really is with AdvantageKit's
+     * Logger, so it can be plotted against the estimate.
      */
   }
 }

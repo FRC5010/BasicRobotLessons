@@ -402,7 +402,7 @@ public class Drivetrain implements Mechanism, PoseProvider {
     Logger.recordOutput("Drivetrain/Heading", Rotation2d.fromDegrees(getHeadingDegrees()));
 
     if (m_chassisSim != null) {
-      Telemetry.log("Drivetrain/SimulatedPose", m_chassisSim.getPose(), Pose2d.struct);
+      Logger.recordOutput("Drivetrain/SimulatedPose", m_chassisSim.getPose());
     }
   }
 }
