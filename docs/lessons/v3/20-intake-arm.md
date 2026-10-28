@@ -240,7 +240,10 @@ by two different pieces of code that don't know about each other.
 ```java
 package first.robot.subsystems;
 
+import org.littletonrobotics.junction.AutoLog;
+
 public interface ArmIO {
+  @AutoLog
   public static class ArmIOInputs {
     public double angleDegrees = 0.0;
     public double velocityDegPerSec = 0.0;
@@ -586,8 +589,9 @@ import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.smartdashboard.MechanismLigament2d;
-import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.Angle;
+
+import org.littletonrobotics.junction.Logger;
 
 import first.robot.Constants;
 import first.robot.Constants.ArmConstants;
@@ -604,7 +608,7 @@ public class Arm implements Mechanism {
     case SIM -> new ArmIOSim();
     case REPLAY -> new ArmIO() {}; // inputs come from the log
   };
-  private final ArmIO.ArmIOInputs m_inputs = new ArmIO.ArmIOInputs();
+  private final ArmIOInputsAutoLogged m_inputs = new ArmIOInputsAutoLogged();
   private Angle m_goal = ArmConstants.kStowed;
 
   /** The arm's segment in the elevator's drawing — it hangs off the carriage. */
@@ -619,13 +623,9 @@ public class Arm implements Mechanism {
   /** One tick of sensing: read the hardware into the bundle, log it, and move the drawing. */
   private void periodic() {
     m_io.updateInputs(m_inputs);
-    Telemetry.log("Arm/AngleDegrees", m_inputs.angleDegrees);
-    Telemetry.log("Arm/VelocityDegPerSec", m_inputs.velocityDegPerSec);
-    Telemetry.log("Arm/AppliedVolts", m_inputs.appliedVolts);
-    Telemetry.log("Arm/SetpointDegrees", m_inputs.setpointDegrees);
-    Telemetry.log("Arm/RollerVelocityRotPerSec", m_inputs.rollerVelocityRotPerSec);
-    Telemetry.log("Arm/GoalDegrees", m_goal.in(Degrees));
-    Telemetry.log("Arm/AtGoal", atGoal());
+    Logger.processInputs("Arm", m_inputs); // every reading, under Arm/
+    Logger.recordOutput("Arm/GoalDegrees", m_goal.in(Degrees));
+    Logger.recordOutput("Arm/AtGoal", atGoal());
 
     m_ligament.setAngle(toDrawingAngle(Degrees.of(m_inputs.angleDegrees)).in(Degrees));
     m_ligament.setColor(
@@ -673,6 +673,11 @@ public class Arm implements Mechanism {
   }
 }
 ```
+
+The logging is the elevator's again. `processInputs` records all five
+readings, the roller's speed included, under `Arm/`, one key per field,
+and fills them from the log in a replay. The goal and the "am I there?"
+answer are the arm's own decisions, so they're outputs.
 
 `toDrawingAngle` is Lesson 19's rule applied rather than explained: a
 child's angle is measured from its parent, the carriage points straight up
@@ -772,7 +777,9 @@ that never once mentions the elevator's height. Press the left face
 button (X) and it drops back down to the floor while staying up high.
 That is the scene graph from Lesson 19 doing exactly what it promised.
 
-Then go find the physics. Put `Arm/AngleDegrees` and `Arm/AppliedVolts` on
+Then go find the physics. The arm's readings are under **NetworkTables →
+AdvantageKit → Arm**, and its goal and `AtGoal` under **AdvantageKit →
+RealOutputs → Arm**. Put `Arm/AngleDegrees` and `Arm/AppliedVolts` on
 one graph and watch what the voltage settles at once the arm stops. Your
 two presets give you two readings: about `+0.24` at the floor (`−20°`,
 where `kG × cos θ` is `0.235`), and `0.00` stowed straight up. Send the

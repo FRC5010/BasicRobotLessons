@@ -7,8 +7,9 @@ import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.smartdashboard.MechanismLigament2d;
-import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.Angle;
+
+import org.littletonrobotics.junction.Logger;
 
 import first.robot.Constants;
 import first.robot.Constants.ArmConstants;
@@ -31,7 +32,7 @@ public class Arm implements Mechanism {
     case SIM -> new ArmIOSim();
     case REPLAY -> new ArmIO() {}; // inputs come from the log
   };
-  private final ArmIO.ArmIOInputs m_inputs = new ArmIO.ArmIOInputs();
+  private final ArmIOInputsAutoLogged m_inputs = new ArmIOInputsAutoLogged();
   private Angle m_goal = ArmConstants.kStowed;
 
   /** The arm's segment in the elevator's drawing — it hangs off the carriage. */
@@ -50,17 +51,13 @@ public class Arm implements Mechanism {
   /** One tick of sensing: read the hardware into the bundle, log it, and move the drawing. */
   private void periodic() {
     m_io.updateInputs(m_inputs);
-    Telemetry.log("Arm/AngleDegrees", m_inputs.angleDegrees);
-    Telemetry.log("Arm/VelocityDegPerSec", m_inputs.velocityDegPerSec);
-    Telemetry.log("Arm/AppliedVolts", m_inputs.appliedVolts);
-    Telemetry.log("Arm/SetpointDegrees", m_inputs.setpointDegrees);
-    Telemetry.log("Arm/RollerVelocityRotPerSec", m_inputs.rollerVelocityRotPerSec);
+    Logger.processInputs("Arm", m_inputs); // every reading, under Arm/
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
      * Log whether a game piece is in the intake.
      */
-    Telemetry.log("Arm/GoalDegrees", m_goal.in(Degrees));
-    Telemetry.log("Arm/AtGoal", atGoal());
+    Logger.recordOutput("Arm/GoalDegrees", m_goal.in(Degrees));
+    Logger.recordOutput("Arm/AtGoal", atGoal());
 
     m_ligament.setAngle(toDrawingAngle(Degrees.of(m_inputs.angleDegrees)).in(Degrees));
     m_ligament.setColor(
