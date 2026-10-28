@@ -14,7 +14,6 @@ import org.wpilib.command3.Scheduler;
 import org.wpilib.command3.SchedulerEvent;
 import org.wpilib.command3.button.CommandGamepad;
 import org.wpilib.driverstation.RobotState;
-import org.wpilib.framework.OpModeRobot;
 import org.wpilib.hardware.hal.RobotMode;
 import org.wpilib.simulation.AlertSim;
 import org.wpilib.simulation.BatterySim;
@@ -25,6 +24,13 @@ import org.wpilib.system.DataLogManager;
 import org.wpilib.system.RobotController;
 import org.wpilib.util.Alert;
 import org.wpilib.util.Alert.Level;
+
+import org.littletonrobotics.junction.LogFileUtil;
+import org.littletonrobotics.junction.LoggedOpModeRobot;
+import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.NT4Publisher;
+import org.littletonrobotics.junction.wpilog.WPILOGReader;
+import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
 import first.robot.Constants.DriveConstants;
 import first.robot.Constants.PowerConstants;
@@ -50,7 +56,14 @@ import frc.robot.lib.BLine.commands.FollowPath;
  * or the package after creating this project, you must also update the Main.java file in the
  * project.
  */
-public class Robot extends OpModeRobot {
+public class Robot extends LoggedOpModeRobot {
+  // Logging starts before anything else is built. A bare { } block in a class
+  // runs while the object is being built, in order with the fields around it,
+  // so everything declared below this is built with the logger already running.
+  {
+    startLogging();
+  }
+
   // The robot's hardware lives here — built once, when the robot boots, and
   // alive for as long as the robot runs. Opmodes are rebuilt fresh every time
   // they're selected, so they reach in and use these instead of owning them.
@@ -88,7 +101,6 @@ public class Robot extends OpModeRobot {
    * initialization code.
    */
   public Robot() {
-    DataLogManager.start(); // saves every published value to a .wpilog file
     Scheduler.getDefault().addEventListener(this::logCommandStart);
     // Once, for the whole program. The markers now ask the superstructure for
     // things, read the pose and the wheels' speed, so they need all three —
@@ -114,10 +126,17 @@ public class Robot extends OpModeRobot {
     localizer.addProvider(frontCamera);
     localizer.addProvider(backCamera);
 
-    // The simulated chassis starts at kSimStartingPose; tell the estimate
-    // where that is instead of guessing from (0, 0, 0°).
+    // Where was the robot set down at power-on? The simulator knows, because
+    // it put the chassis at kSimStartingPose; a real robot doesn't. Recorded
+    // like any reading, so a replay starts the estimate wherever the run did.
+    StartingPlacementAutoLogged placement = new StartingPlacementAutoLogged();
     if (Constants.kCurrentMode == Constants.Mode.SIM) {
-      localizer.resetPose(DriveConstants.kSimStartingPose);
+      placement.known = true;
+      placement.pose = DriveConstants.kSimStartingPose;
+    }
+    Logger.processInputs("StartingPlacement", placement);
+    if (placement.known) {
+      localizer.resetPose(placement.pose); // instead of guessing (0, 0, 0°)
     }
 
     // The path autos. Every one is the same opmode with a different path and
@@ -139,6 +158,25 @@ public class Robot extends OpModeRobot {
     // The list went to the Driver Station before this constructor ran, with
     // only the annotated classes on it. Send it again with these added.
     publishOpModes();
+  }
+
+  /** Tells AdvantageKit where readings come from and where results go, then starts it. */
+  private void startLogging() {
+    if (Constants.kCurrentMode == Constants.Mode.REPLAY) {
+      // Replay: every reading comes from a saved log, and the code runs as fast
+      // as it can instead of once every 20 ms.
+      setUseTiming(false);
+      String logPath = LogFileUtil.findReplayLog();
+      Logger.setReplaySource(new WPILOGReader(logPath));
+      // What the code works out this time goes to a new file beside it, ending in _sim.
+      Logger.addDataReceiver(new WPILOGWriter(LogFileUtil.addPathSuffix(logPath, "_sim")));
+    } else {
+      // A real robot, or a fresh simulation: publish live, and save it all to a file.
+      Logger.addDataReceiver(new NT4Publisher());
+      Logger.addDataReceiver(new WPILOGWriter());
+      DataLogManager.start(); // still saves everything else that's published, like the field widget
+    }
+    Logger.start();
   }
 
   /** This function is called exactly once when the DS first connects. */
@@ -174,7 +212,7 @@ public class Robot extends OpModeRobot {
   private void logCommandStart(SchedulerEvent event) {
     if (event instanceof SchedulerEvent.Scheduled scheduled) {
       for (Mechanism mechanism : scheduled.command().requirements()) {
-        Telemetry.log(mechanism.getName() + "/CurrentCommand", scheduled.command().name());
+        Logger.recordOutput(mechanism.getName() + "/CurrentCommand", scheduled.command().name());
       }
     }
   }

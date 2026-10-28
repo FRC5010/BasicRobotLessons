@@ -5,8 +5,9 @@ import static org.wpilib.units.Units.Meters;
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
-import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.Distance;
+
+import org.littletonrobotics.junction.Logger;
 
 import first.robot.Constants;
 import first.robot.Constants.ElevatorConstants;
@@ -18,7 +19,7 @@ public class Elevator implements Mechanism {
     case SIM -> new ElevatorIOSim();
     case REPLAY -> new ElevatorIO() {}; // inputs come from the log
   };
-  private final ElevatorIO.ElevatorIOInputs m_inputs = new ElevatorIO.ElevatorIOInputs();
+  private final ElevatorIOInputsAutoLogged m_inputs = new ElevatorIOInputsAutoLogged();
   private Distance m_goal = ElevatorConstants.kStowed;
 
   /**
@@ -35,16 +36,14 @@ public class Elevator implements Mechanism {
   /** One tick of sensing: read the hardware into the bundle and log it. */
   private void periodic() {
     m_io.updateInputs(m_inputs);
-    Telemetry.log("Elevator/HeightMeters", m_inputs.heightMeters);
-    Telemetry.log("Elevator/VelocityMetersPerSec", m_inputs.velocityMetersPerSec);
-    Telemetry.log("Elevator/AppliedVolts", m_inputs.appliedVolts);
-    Telemetry.log("Elevator/SetpointMeters", m_inputs.setpointMeters);
-    Telemetry.log("Elevator/GoalMeters", m_goal.in(Meters));
+    Logger.processInputs("Elevator", m_inputs); // every reading, under Elevator/
+    Logger.recordOutput("Elevator/GoalMeters", m_goal.in(Meters));
 
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
      * Set the carriage segment's length from the height, color it by whether it's at
-     * the goal, then log the whole drawing — every tick, like every number above.
+     * the goal, then record the whole drawing as an output — every tick, like every
+     * number above.
      */
   }
 

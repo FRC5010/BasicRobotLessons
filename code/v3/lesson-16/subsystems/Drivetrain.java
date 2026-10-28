@@ -16,9 +16,10 @@ import org.wpilib.math.kinematics.SwerveDriveKinematics;
 import org.wpilib.math.kinematics.SwerveModulePosition;
 import org.wpilib.math.kinematics.SwerveModuleVelocity;
 import org.wpilib.math.util.MathUtil;
-import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.AngularVelocity;
 import org.wpilib.units.measure.LinearVelocity;
+
+import org.littletonrobotics.junction.Logger;
 
 import first.robot.Constants;
 import first.robot.Constants.DriveConstants;
@@ -56,7 +57,7 @@ public class Drivetrain implements Mechanism, PoseProvider {
     case SIM -> new GyroIOSim(m_chassisSim);
     case REPLAY -> new GyroIO() {}; // inputs come from the log
   };
-  private final GyroIO.GyroIOInputs m_gyroInputs = new GyroIO.GyroIOInputs();
+  private final GyroIOInputsAutoLogged m_gyroInputs = new GyroIOInputsAutoLogged();
 
   public Drivetrain() {
     Scheduler.getDefault().addPeriodic(this::periodic);
@@ -97,7 +98,7 @@ public class Drivetrain implements Mechanism, PoseProvider {
       m_modules[i].setDesiredState(states[i]);
     }
 
-    Telemetry.log("Drivetrain/DesiredModuleStates", states, SwerveModuleVelocity.struct);
+    Logger.recordOutput("Drivetrain/DesiredModuleStates", states);
   }
 
   /** Drive with full swerve freedom: translate and rotate at once. */
@@ -265,7 +266,7 @@ public class Drivetrain implements Mechanism, PoseProvider {
 
   private void periodic() {
     m_gyroIO.updateInputs(m_gyroInputs);
-    Telemetry.log("Drivetrain/Gyro/YawDegrees", m_gyroInputs.yawDegrees);
+    Logger.processInputs("Drivetrain/Gyro", m_gyroInputs);
 
     SwerveModuleVelocity[] states = new SwerveModuleVelocity[4];
     int index = 0;
@@ -276,13 +277,13 @@ public class Drivetrain implements Mechanism, PoseProvider {
           Rotation2d.fromDegrees(module.getSteerAngleDegrees()));
       index++;
     }
-    Telemetry.log("Drivetrain/ModuleStates", states, SwerveModuleVelocity.struct);
+    Logger.recordOutput("Drivetrain/ModuleStates", states);
 
-    Telemetry.log("Drivetrain/HeadingDegrees", getHeadingDegrees());
-    Telemetry.log("Drivetrain/Heading", Rotation2d.fromDegrees(getHeadingDegrees()), Rotation2d.struct);
+    Logger.recordOutput("Drivetrain/HeadingDegrees", getHeadingDegrees());
+    Logger.recordOutput("Drivetrain/Heading", Rotation2d.fromDegrees(getHeadingDegrees()));
 
     if (m_chassisSim != null) {
-      Telemetry.log("Drivetrain/SimulatedPose", m_chassisSim.getPose(), Pose2d.struct);
+      Logger.recordOutput("Drivetrain/SimulatedPose", m_chassisSim.getPose());
     }
   }
 }

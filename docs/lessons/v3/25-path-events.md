@@ -140,14 +140,14 @@ There's no `@Autonomous` on this class, on purpose. The framework's scan only
 offers annotated classes, and it couldn't build this one anyway: it has no way to
 know which path name to pass. So you register each auto yourself.
 
-**In `Robot`'s constructor, add at the very end, after the simulator's `resetPose`
-block:**
+**In `Robot`'s constructor, add at the very end, after the starting-placement
+`resetPose` block:**
 
 ```java
   public Robot() {
     // ...
-    if (Constants.kCurrentMode == Constants.Mode.SIM) {
-      localizer.resetPose(DriveConstants.kSimStartingPose);
+    if (placement.known) {
+      localizer.resetPose(placement.pose); // instead of guessing (0, 0, 0°)
     }
 
     // The path autos. Every one is the same opmode with a different path and
@@ -825,8 +825,9 @@ Lesson 17 — the numbers below are for blue.
 **Run Pick Up first, on a fresh launch,** while the piece at (6.0, 3.8) is still
 on the field. Put `Sim/GamePieces` and `Drivetrain/SimulatedPose` on
 AdvantageScope's field, and graph `Superstructure/State`, `Elevator/HeightMeters`
-and `FollowPath/remainingPathDistanceMeters`. Keep an eye on the LED strip, because
-it tells the whole story.
+and `FollowPath/remainingPathDistanceMeters`. (B-Line's `FollowPath/` keys are under
+**Telemetry**; everything else here is under **AdvantageKit**.) Keep an eye on the
+LED strip, because it tells the whole story.
 
 Here's what happens in this course's sim, timed from when the drive starts, about
 4.4 s after you enable (homing, then the stow):

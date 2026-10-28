@@ -18,7 +18,8 @@ import org.wpilib.math.system.Models;
 import org.wpilib.simulation.DCMotorSim;
 import org.wpilib.simulation.SingleJointedArmSim;
 import org.wpilib.system.RobotController;
-import org.wpilib.telemetry.Telemetry;
+
+import org.littletonrobotics.junction.Logger;
 
 import first.robot.Constants.ArmConstants;
 import first.robot.Constants.DriveConstants;
@@ -93,7 +94,7 @@ public class ArmIOSim extends ArmIOTalonFX {
     for (int i = 0; i < pieces.length; i++) {
       pieces[i] = new Pose2d(m_piecesOnField.get(i), new Rotation2d());
     }
-    Telemetry.log("Sim/GamePieces", pieces, Pose2d.struct);
+    Logger.recordOutput("Sim/GamePieces", pieces); // simulation only: no replay has a field
   }
 
   @Override

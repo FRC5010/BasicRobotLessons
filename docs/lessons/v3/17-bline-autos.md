@@ -478,7 +478,9 @@ Two more settings are chained onto the end. `withDefaultShouldFlip()` mirrors th
 whole path to the far side of the field when the Driver Station reports you're on
 the red alliance — draw once, works on both. `withTelemetry(Telemetry.getTable())`
 tells B-Line to log what it's doing — cross-track error, distance left, which
-point it's heading for — under `FollowPath/`, next to everything else you log.
+point it's heading for — under `FollowPath/` in **Telemetry**. B-Line logs
+those itself, so they aren't AdvantageKit outputs: you see them live, and
+they're saved in the `WPILIB_` log, but not in the `akit_` one a replay reads.
 Section 10 uses those.
 
 Alright — one thing to notice about that list, because it explains the shape of
@@ -777,7 +779,6 @@ whole program.
 
 ```java
   public Robot() {
-    DataLogManager.start(); // saves every published value to a .wpilog file
     Scheduler.getDefault().addEventListener(this::logCommandStart);
     Autos.registerEventTriggers(); // once, for the whole program
 
@@ -898,7 +899,8 @@ set state to **Enabled**.
 
 Then watch it the way you've watched every closed-loop lesson since Lesson 5 —
 asked-for against measured. Open AdvantageScope's **Odometry** tab, put
-`Localizer/Pose` on the field, and look for the robot tracing an actual shape:
+`Localizer/Pose` (under **AdvantageKit → RealOutputs**) on the field, and look
+for the robot tracing an actual shape:
 out along X, turning up the second leg just before the corner, coming around to
 90° partway up, settling at (6, 6) facing 180°. In this course's sim that takes
 about 4 seconds, and `Event: shoot!` shows up in the console about 80% of the way
@@ -910,8 +912,9 @@ Now you can see the whole story at once: the line you drew, where the robot
 thinks it is, and where it actually is. They should sit within a couple of
 centimeters of each other the whole way.
 
-Then plot B-Line's own view of the job. `FollowPath/crossTrackError` is the
-cross-track loop's error — how far off the line the robot is — and
+Then plot B-Line's own view of the job, under **Telemetry**.
+`FollowPath/crossTrackError` is the cross-track loop's error — how far off
+the line the robot is — and
 `FollowPath/remainingPathDistanceMeters` is the translation loop's. Watch the
 cross-track error jump to about half a meter right at the corner: that's the
 0.5 m handoff radius, since the robot is still on the first leg's line when it
@@ -961,8 +964,8 @@ without restarting.
    calls is all it takes.
 5. **Code — give the marker a real job.** In `registerEventTriggers`, swap the
    `System.out.println` for something you can plot —
-   `Telemetry.log("Auto/ShootFired", true)`, say — and confirm on the plot
-   that it fires where you placed it. Then move the `t_ratio` in the path file
+   `Logger.recordOutput("Auto/ShootFired", true)`, say — and confirm on the
+   plot that it fires where you placed it. Then move the `t_ratio` in the path file
    and watch the timing move with it.
 6. **Run it on red.** Click **Disconnected**, set the DS window's Alliance
    Station to **Red 1**, click **Autonomous**, and pick **Two Corners** again.
@@ -971,6 +974,17 @@ without restarting.
    Nothing in your code changed: `withDefaultShouldFlip()` and `startPose`
    agree about which side of the field you're on. Predict before you run it:
    what would happen on red if `startPose` didn't flip?
+7. **Replay an auto.** Record a run of Two Corners, then replay it the way
+   Lesson 13 did (`REPLAY`, `$env:AKIT_LOG_PATH`, `./gradlew run`). The
+   replay builds the opmode, reads the path, and follows it again, so
+   `Event: shoot!` prints in the replay's console too. B-Line times every step with the
+   robot's clock, and AdvantageKit replays the clock along with everything
+   else, so the follower decides exactly what it decided before: measured,
+   `ReplayOutputs/Localizer/Pose` and `ReplayOutputs/Drivetrain/DesiredModuleStates`
+   matched their `RealOutputs` twins on every tick. Look for
+   `FollowPath/crossTrackError` in the replay's file, though, and it isn't
+   there: B-Line logs through Telemetry, not AdvantageKit (section 6). Put
+   both switches back when you're done.
 
 ---
 

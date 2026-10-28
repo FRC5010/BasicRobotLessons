@@ -101,6 +101,8 @@ import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.smartdashboard.Field2d;
 import org.wpilib.telemetry.Telemetry;
 
+import org.littletonrobotics.junction.Logger;
+
 public class Localizer {
   private final Drivetrain m_drivetrain;
   private final SwerveDrivePoseEstimator m_estimator;
@@ -133,7 +135,7 @@ public class Localizer {
     for (PoseProvider provider : m_providers) {
       provider.updatePoseEstimate(m_estimator);
     }
-    Telemetry.log("Localizer/Pose", getPose(), Pose2d.struct);
+    Logger.recordOutput("Localizer/Pose", getPose());
     m_field.setRobotPose(getPose());
     Telemetry.log("Field", m_field); // the SimGUI field view from Lesson 11
   }
@@ -180,6 +182,11 @@ its evidence in, then publish the result. Nothing here drives a motor, so
 running it every tick (even while disabled) is exactly right: you *want*
 the pose to keep tracking if someone shoves the robot on the field.
 
+The fused pose is something the robot works out, not something it read, so
+it goes through `Logger.recordOutput`, the way `Drivetrain/Pose` did in
+Lesson 13, and a replay works it out again. The field widget stays on
+`Telemetry.log` for SimGUI, as it did in `Drivetrain`.
+
 ---
 
 ## 3. Teach the drivetrain to be a provider
@@ -198,19 +205,22 @@ public class Drivetrain implements Mechanism, PoseProvider {
 ```
 
 **Delete** the pose machinery that used to live here — the `m_odometry`
-field, the `Field2d`/`m_field`, and the `Telemetry.log("Drivetrain/Pose",
-...)` call. All of it moves to `Localizer`, which publishes the fused
-result as `Localizer/Pose` instead.
+field, `getPose()` and `resetPose()`, the `Field2d`/`m_field`, and the
+`Logger.recordOutput("Drivetrain/Pose", ...)` call. All of it moves to
+`Localizer`, which records the fused result as `Localizer/Pose` instead.
 
 **Delete from `periodic()`, at the bottom:**
 
 ```java
     // DELETE — odometry lives on Localizer now.
     Pose2d pose = m_odometry.update(Rotation2d.fromDegrees(getHeadingDegrees()), modulePositions());
-    Telemetry.log("Drivetrain/Pose", pose, Pose2d.struct);
+    Logger.recordOutput("Drivetrain/Pose", pose);
     m_field.setRobotPose(pose);
-    Telemetry.log("Field", m_field);
+    Telemetry.log("Field", m_field); // the widget SimGUI draws; AdvantageKit doesn't record it
 ```
+
+**Then delete the three imports only those lines used:** `SwerveDriveOdometry`,
+`Field2d`, and `Telemetry`.
 
 **Add to `Drivetrain` in its place, three small getters and the provider method:**
 
@@ -320,7 +330,8 @@ package first.robot.subsystems;
 import org.wpilib.math.estimator.SwerveDrivePoseEstimator;
 import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.system.Timer;
-import org.wpilib.telemetry.Telemetry;
+
+import org.littletonrobotics.junction.Logger;
 
 public class VisionPoseProvider implements PoseProvider {
   private Pose2d m_pending = null;
@@ -334,7 +345,7 @@ public class VisionPoseProvider implements PoseProvider {
   public void updatePoseEstimate(SwerveDrivePoseEstimator estimator) {
     if (m_pending != null) {
       estimator.addVisionMeasurement(m_pending, Timer.getTimestamp());
-      Telemetry.log("Localizer/VisionPose", m_pending, Pose2d.struct);
+      Logger.recordOutput("Localizer/VisionPose", m_pending);
       m_pending = null;
     }
   }
@@ -343,7 +354,10 @@ public class VisionPoseProvider implements PoseProvider {
 
 (`Timer.getTimestamp()` is the robot's clock, in seconds. "Now" is the
 honest timestamp for a zero-latency fake; a real vision system hands you the
-capture time instead.) Look at what `Localizer` never had to learn: it
+capture time instead.) The sighting it logs is an output, not an input:
+it comes from a button press, and AdvantageKit already records the buttons
+and the clock, so a replay presses the same button on the same tick and
+works the sighting out again. Look at what `Localizer` never had to learn: it
 loops `PoseProvider`s and calls `updatePoseEstimate`. It has no idea one of
 them is a camera. Add a real vision provider next season and `Localizer`
 doesn't change by a line — that's the interface earning its keep, exactly
@@ -371,7 +385,6 @@ provider.
 
 ```java
   public Robot() {
-    DataLogManager.start();
     Scheduler.getDefault().addEventListener(this::logCommandStart);
     localizer.addProvider(camera); // the second provider — vision
   }

@@ -31,7 +31,8 @@ public class VisionIOLimelight implements VisionIO {
     for (int i = 0; i < estimates.length; i++) {
       PoseEstimate estimate = estimates[i];
       inputs.poseObservations[i] = new PoseObservation(
-          estimate.timestampSeconds, estimate.pose, estimate.fieldedTagCount, estimate.stdDevs);
+          estimate.timestampSeconds, estimate.pose, estimate.fieldedTagCount,
+          estimate.stdDevs.get(0), estimate.stdDevs.get(1), estimate.stdDevs.get(2));
     }
     // True while frames keep arriving. Seeing no tags still counts: an empty
     // frame is still a frame.

@@ -247,17 +247,27 @@ package first.robot.subsystems;
 
 import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.math.geometry.Rotation2d;
+import org.wpilib.math.linalg.VecBuilder;
 import org.wpilib.math.linalg.Vector;
 import org.wpilib.math.numbers.N3;
 
+import org.littletonrobotics.junction.AutoLog;
+
 public interface VisionIO {
+  @AutoLog
   public static class VisionIOInputs {
     public PoseObservation[] poseObservations = new PoseObservation[0];
   }
 
   /** One camera frame's worth of evidence: where it put the robot, when, and how far to trust it. */
   public static record PoseObservation(
-      double timestampSeconds, Pose2d pose, int tagCount, Vector<N3> stdDevs) {}
+      double timestampSeconds, Pose2d pose, int tagCount,
+      double xStdDevMeters, double yStdDevMeters, double headingStdDevRadians) {
+    /** The three trust numbers as one column, the shape addVisionMeasurement takes. */
+    public Vector<N3> stdDevs() {
+      return VecBuilder.fill(xStdDevMeters, yStdDevMeters, headingStdDevRadians);
+    }
+  }
 
   public default void updateInputs(VisionIOInputs inputs) {}
 
@@ -268,8 +278,10 @@ public interface VisionIO {
 
 Most of that is familiar. The `default` do-nothing methods and the nested
 `Inputs` class are exactly what `ModuleIO` and `GyroIO` already taught you,
-and `setRobotHeading` is an *output* — something your code tells the
-hardware — the same way `ModuleIO.setSteerAngleDegrees` is.
+and `@AutoLog` is Lesson 13's annotation: AdvantageKit writes a
+`VisionIOInputsAutoLogged` from it as the project compiles.
+`setRobotHeading` is something your code tells the hardware, the same way
+`ModuleIO.setSteerAngleDegrees` is.
 
 What's new is the input itself. A single tick of vision isn't one number: a
 camera can deliver zero, one, or several frames between reads. So the input
@@ -278,11 +290,24 @@ compact way to bundle a few related values that belong together — here,
 exactly what one correction needs: when it was true, where it put the
 robot, how many tags built it, and how far to trust it. Java writes the
 constructor and the getters for you: `observation.pose()`,
-`observation.stdDevs()`, and so on.
+`observation.tagCount()`, and so on.
 
-`Vector<N3>` is WPILib's type for "three numbers in a column" — here the
-trust for x, y, and heading, in that order. It's the same kind of value
-`VecBuilder.fill(0.5, 0.5, 999999)` made in Lesson 14's callout.
+The trust comes as three plain `double`s, one each for x, y and heading,
+and there's a reason it isn't one value. AdvantageKit records a record
+field by field, and it only knows how to write a few kinds of field:
+numbers, `true`/`false`, enums, other records, and WPILib types with a
+fixed layout, like `Pose2d`. The estimator wants the trust as a
+`Vector<N3>`, WPILib's type for "three numbers in a column" (the same kind
+of value `VecBuilder.fill(0.5, 0.5, 999999)` made in Lesson 14's callout),
+and that isn't on the list. Put one in the record anyway and AdvantageKit
+complains that it "failed to load nested struct", then logs the trust as
+nothing; a replay of that run crashes on its first camera frame, when
+`addVisionMeasurement` is handed trust that isn't there.
+
+So the record keeps the three numbers, and a method rebuilds the column
+when it's needed. A record can have methods, like any class, and
+`stdDevs()` is one: `VecBuilder.fill` puts the three numbers back in a
+`Vector<N3>`, in x, y, heading order.
 
 ---
 
@@ -326,7 +351,8 @@ public class VisionIOLimelight implements VisionIO {
     for (int i = 0; i < estimates.length; i++) {
       PoseEstimate estimate = estimates[i];
       inputs.poseObservations[i] = new PoseObservation(
-          estimate.timestampSeconds, estimate.pose, estimate.fieldedTagCount, estimate.stdDevs);
+          estimate.timestampSeconds, estimate.pose, estimate.fieldedTagCount,
+          estimate.stdDevs.get(0), estimate.stdDevs.get(1), estimate.stdDevs.get(2));
     }
   }
 }
@@ -336,7 +362,9 @@ The constructor turns your `Transform3d` into the `Pose3d` the library asks
 for — same translation, same rotation, just "where the camera sits, measured
 from the robot's center" spelled as a pose. `updateInputs` reads every frame
 that arrived since last time, keeps only the ones the library accepted, and
-copies each one into a `PoseObservation`.
+copies each one into a `PoseObservation`. The library hands over its trust
+as a `Vector<N3>`, and `.get(0)`, `.get(1)` and `.get(2)` take the three
+numbers out of it, x first.
 
 Notice what it *doesn't* do. It never touches `Localizer`'s estimator and
 never decides whether a correction is good enough to use. Reading is the
@@ -659,10 +687,10 @@ answers purely from its two arguments. That's the same reason Lesson 13's
 
 All the real work happened in `VisionIO`, so the provider itself is small —
 the same shape `SwerveModule` has had since Lesson 13: own an IO, own an
-inputs bundle, read the bundle. It also picks up one more job you've seen
-before: choosing *which* IO to build. `Drivetrain` does that for its modules
-with `makeModule`; `LimelightPoseProvider` does it for itself with
-`makeCamera`.
+inputs bundle, read the bundle, hand it to `Logger.processInputs`. It also
+picks up one more job you've seen before: choosing *which* IO to build.
+`Drivetrain` does that for its modules with `makeModule`;
+`LimelightPoseProvider` does it for itself with `makeCamera`.
 
 **Create `src/main/java/first/robot/subsystems/LimelightPoseProvider.java`:**
 
@@ -674,14 +702,15 @@ import java.util.function.Supplier;
 import org.wpilib.math.estimator.SwerveDrivePoseEstimator;
 import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.math.geometry.Transform3d;
-import org.wpilib.telemetry.Telemetry;
+
+import org.littletonrobotics.junction.Logger;
 
 import first.robot.Constants;
 
 /** A vision camera, contributing whatever pose corrections its IO reported this tick. */
 public class LimelightPoseProvider implements PoseProvider {
   private final VisionIO m_io;
-  private final VisionIO.VisionIOInputs m_inputs = new VisionIO.VisionIOInputs();
+  private final VisionIOInputsAutoLogged m_inputs = new VisionIOInputsAutoLogged();
   private final String m_logKey;
 
   public LimelightPoseProvider(VisionIO io, String logKey) {
@@ -693,12 +722,7 @@ public class LimelightPoseProvider implements PoseProvider {
   public void updatePoseEstimate(SwerveDrivePoseEstimator estimator) {
     m_io.setRobotHeading(estimator.getEstimatedPosition().getRotation());
     m_io.updateInputs(m_inputs);
-
-    Pose2d[] poses = new Pose2d[m_inputs.poseObservations.length];
-    for (int i = 0; i < poses.length; i++) {
-      poses[i] = m_inputs.poseObservations[i].pose();
-    }
-    Telemetry.log(m_logKey + "/PoseObservations", poses, Pose2d.struct);
+    Logger.processInputs(m_logKey, m_inputs); // in replay, the frames come from the log
 
     for (VisionIO.PoseObservation observation : m_inputs.poseObservations) {
       estimator.addVisionMeasurement(
@@ -712,7 +736,7 @@ public class LimelightPoseProvider implements PoseProvider {
     VisionIO io = switch (Constants.kCurrentMode) {
       case REAL -> new VisionIOLimelight(name, robotToCamera);
       case SIM -> new VisionIOLimelightSim(name, robotToCamera, poseSupplier);
-      case REPLAY -> new VisionIO() {}; // nothing feeds this yet
+      case REPLAY -> new VisionIO() {}; // inputs come from the log
     };
     return new LimelightPoseProvider(io, "Localizer/" + name);
   }
@@ -722,10 +746,14 @@ public class LimelightPoseProvider implements PoseProvider {
 `updatePoseEstimate` runs in a deliberate order. First it tells the camera
 which way the robot faces — MegaTag2 needs that before it can place the
 robot, and the estimator's heading is the best one on the robot. Then it
-reads, logs what the camera said, and only then feeds each observation into
-the estimator, trust and all. That third argument to `addVisionMeasurement`
-is the per-frame version of Lesson 14's trust knob: instead of one setting
-for every frame, each frame brings its own.
+reads, hands what the camera said to `processInputs`, and only then feeds
+each observation into the estimator, trust and all. The frames are readings,
+so they're inputs: `processInputs` records every one under the camera's key
+(`Localizer/limelight-front/PoseObservations`), and in a replay, where
+`makeCamera`'s `REPLAY` arm built a do-nothing `new VisionIO() {}`, it fills
+the bundle from the log instead. That third argument to
+`addVisionMeasurement` is the per-frame version of Lesson 14's trust knob:
+instead of one setting for every frame, each frame brings its own.
 
 Notice what's missing compared to `SwerveModule`: there's no separate
 `periodic()` and `setDesiredState()`. A steering module both senses *and*
@@ -760,7 +788,9 @@ assigns each one exactly once, and the compiler checks that it does.
 **Replace Lesson 14's `camera` field in `Robot` with two blank finals:**
 
 ```java
-public class Robot extends OpModeRobot {
+public class Robot extends LoggedOpModeRobot {
+  // ...the logging block from Lesson 13 stays first...
+
   public final CommandGamepad driverController = new CommandGamepad(0);
   public final Drivetrain drivetrain = new Drivetrain();
   public final Localizer localizer = new Localizer(drivetrain);
@@ -775,7 +805,6 @@ public class Robot extends OpModeRobot {
 
 ```java
   public Robot() {
-    DataLogManager.start(); // saves every published value to a .wpilog file
     Scheduler.getDefault().addEventListener(this::logCommandStart);
 
     frontCamera = LimelightPoseProvider.makeCamera(
@@ -805,7 +834,10 @@ only that method used:** `Command`, `Pose2d`, and `Rotation2d`.
 
 Now run it. `./gradlew simulateJava` → **RobotTeleop**, and watch the
 **Field** widget in SimGUI next to `Localizer/limelight-front/PoseObservations`
-and `Localizer/limelight-back/PoseObservations`. The robot starts at (0, 0),
+and `Localizer/limelight-back/PoseObservations`. They're inputs now, so look
+for them under **NetworkTables → AdvantageKit → Localizer**, not under
+**Telemetry**: SimGUI shows each one as `[]` while its camera has nothing to
+report, and `[...]` once frames arrive. The robot starts at (0, 0),
 in the blue corner, facing down the field — and the front camera can
 already see a pair of tags 4 to 6 m down the field. Nudge the robot off its starting
 spot and the front camera's observations start arriving every loop. Now
@@ -860,10 +892,13 @@ camera misbehaves, this is the first place to look.
    `double avgTagDistanceMeters` to the `PoseObservation` record and fill it
    from `estimate.avgTagDistanceMeters` in `VisionIOLimelight`. (Adding a
    field to a record changes its constructor, so the compiler will point you
-   at every call that needs updating.) Then, in `LimelightPoseProvider`,
-   log the newest observation's distance, its `tagCount()`, and its x/y
-   trust, `stdDevs().get(0, 0)`. Drive at a hub from far away and check a
-   few readings against section 5: `0.3 × distance ÷ √tags`.
+   at every call that needs updating.) The record is part of the inputs, so
+   the new field is recorded with every frame without a logging line of its
+   own. Then, in `LimelightPoseProvider`, record the newest observation's
+   distance, its `tagCount()`, and its x trust, `xStdDevMeters()`, with
+   `Logger.recordOutput`, so you can plot the three side by side. Drive at
+   a hub from far away and check a few readings against section 5:
+   `0.3 × distance ÷ √tags`.
 3. **Code — give the camera a shaky hand, and watch what happens.** A real
    camera's answer scatters a little. Add a `java.util.Random` field to
    `VisionIOLimelightSim`, and in `capture`, report
@@ -894,14 +929,31 @@ camera misbehaves, this is the first place to look.
    exact mistake would quietly offset every correction. Put the number
    back, and take the lesson: some bugs this simulator simply cannot show
    you, and knowing which ones is its own kind of expertise.
-5. **Code — watch the empty doorway, vision edition.** Flip `kSimMode` to
-   `Mode.REPLAY` in `Constants.java` and run `./gradlew simulateJava`. Both
-   cameras build fine — `makeCamera`'s `REPLAY` arm resolves to
-   `new VisionIO() {}` — but `Localizer/limelight-front/PoseObservations`
-   and `Localizer/limelight-back/PoseObservations` never publish a single
-   reading, no matter how you drive. Same dormant doorway Lesson 13 built,
-   now with a camera-shaped lock on it. Flip `kSimMode` back to `Mode.SIM`
-   when you're done.
+5. **Code — replay what the cameras saw.** Record a run that drives past a
+   hub, so both cameras report, then replay it the way Lesson 13 did:
+   `kSimMode` set to `Mode.REPLAY`, `$env:AKIT_LOG_PATH` naming the
+   recording, `./gradlew run`. In the `_sim` file,
+   `Localizer/limelight-front/PoseObservations` holds every frame the camera
+   sent, read back from the recording. No camera ran in the replay:
+   `makeCamera`'s `REPLAY` arm built `new VisionIO() {}`. And
+   `RealOutputs/Localizer/Pose` matches `ReplayOutputs/Localizer/Pose` on
+   every tick. Now change the frames on each side of the door, replaying the
+   same recording after each change. First, in `VisionIOLimelight.updateInputs`,
+   build each observation's pose half a meter further along X:
+   `new Pose2d(estimate.pose.getX() + 0.5, estimate.pose.getY(), estimate.pose.getRotation())`
+   in place of `estimate.pose` (it needs `import org.wpilib.math.geometry.Pose2d;`).
+   Measured, the replayed pose doesn't move at all. Put it back, and make
+   the same change in `LimelightPoseProvider`, to the pose you hand
+   `addVisionMeasurement`. Replay again: measured, the replayed pose ends
+   0.5 m further along X than the recorded one. Work out why before reading
+   on. A replay never builds a `VisionIOLimelight`, so nothing inside it
+   runs; the frames come out of the log exactly as the camera reported
+   them. The provider's loop runs after `processInputs`, so it's a decision,
+   and a replay makes every decision again. That's why a team records its
+   camera frames: when the robot misjudged where it was in a match, they
+   can change how they filter or trust vision, replay the match, and see
+   what the change would have done. Put both back, set `kSimMode` back to
+   `Mode.SIM`, and run `Remove-Item Env:AKIT_LOG_PATH`.
 
 ---
 
@@ -926,7 +978,9 @@ in `whereInView` and opening it in `capture`. **`static`** finally got a name
 for something you've typed since Lesson 1: one copy, owned by the class, like
 the single shared heading every Limelight on the robot reads. A **blank
 `final`** let `Robot` build its cameras after `localizer` existed, and a
-**`record`** bundled one frame's evidence into a single value.
+**`record`** bundled one frame's evidence into a single value, made of
+fields AdvantageKit can write into the log, so a replay feeds your code the
+same frames the camera sent.
 
 The move worth remembering is how the simulated camera works. It doesn't
 imitate the library or reach inside it. It stands where a real camera stands

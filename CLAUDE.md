@@ -103,6 +103,19 @@ After the change:
 - Vendordeps from later lessons are deliberately left installed: an unused
   one costs nothing, and removing it could break an import.
 
+**From Lesson 13 on, both v3 scripts edit `build.gradle`** the way that
+lesson has the student do it, through
+[`tools/lib/patch_build_gradle.py`](tools/lib/patch_build_gradle.py)
+(`v3_patch_build_gradle` in the lib, gated on `V3_AKIT_FROM=13`): it appends
+AdvantageKit's `replayWatch` task and `akit-autolog` annotation processor,
+and rewrites the template's `wpi.sim.addGui().defaultEnabled = true` to
+`= System.getenv("AKIT_LOG_PATH") == null`. Each edit is made once (a file
+that already has `akit-autolog`, or a GUI line that isn't the template's, is
+left alone), line endings are kept, and a rollback leaves the edits in
+place, like a vendordep. Tests: `tools/tests/test_patch_build_gradle.py`,
+including a check that the template still has the exact line the patch
+edits; removing the "already there" guard fails three of them.
+
 **A Tkinter app wraps `update-lesson-v3.sh`** so students never type the
 command: [`tools/update_lesson_app.py`](tools/update_lesson_app.py), started
 by double-clicking `Update Lesson.cmd` (Windows) or `Update Lesson.command`
@@ -319,6 +332,278 @@ that tag and measured in sim with the real `Robot`:
   newest cancels the rest in the same tick. The result is correct; it's
   recorded, not worked around.
 
+**v3 Lesson 13 records with AdvantageKit and replays (user decisions,
+2026-10-28: `Logger.recordOutput` for outputs, Lesson 13 first and later
+lessons one at a time, replay taught with a PowerShell `AKIT_LOG_PATH` line
+and `replayWatch`/VS Code given as other options).** AdvantageKit
+`v27.0.0-alpha-7` (tag 2026-10-23, built against WPILib 2027.0.0-alpha-7)
+is the first with `LoggedOpModeRobot` (added 2026-09-30); its vendordep is
+in the marketplace's `2027_alpha7` folder, pinned from Lesson 13 in
+`V3_VENDORDEPS`. Read from its source and measured with the real `Robot`
+loop:
+
+- **What Lesson 13 changes:** `@AutoLog` on `ModuleIOInputs`/`GyroIOInputs`
+  (the processor generates `…InputsAutoLogged`); `SwerveModule` and
+  `Drivetrain` call `Logger.processInputs` (key `Drivetrain/Module0`…,
+  `Drivetrain/Gyro`); the outputs Lesson 13 owns (`Drivetrain/ModuleStates`,
+  `DesiredModuleStates`, `HeadingDegrees`, `Heading`, `Pose`, and
+  `<mechanism>/CurrentCommand` in `Robot`) use `Logger.recordOutput`. The
+  `Field2d` widget stays on `Telemetry.log`. `Robot extends
+  LoggedOpModeRobot`, starts logging from an **instance initializer block
+  at the top of the class**, and `startLogging()` holds the REAL/SIM/REPLAY
+  switch from the classic track. `DataLogManager.start()` moved into its
+  non-replay branch and stays, so `Telemetry.log` values (Lessons 14–33 still
+  use it for their own values) are still saved, in `WPILIB_*.wpilog` beside
+  AdvantageKit's `akit_*.wpilog`.
+- **Why the initializer block:** `Logger.start()` exits unless a
+  `LoggedOpModeRobot` subclass is on the stack (it scans the stack), and
+  AdvantageKit's docs call a subsystem built in a field initializer, before
+  `Logger.start()`, non-deterministic (it can read the clock or the DS
+  unrecorded). The block runs first, in textual order with the field
+  initializers, so every later lesson's `public final X x = new X();` lines
+  stay as they are. A dummy `boolean` field did the same but VS Code would
+  flag it unused. **Keep the block above every field.** It and the class-line
+  marker in lesson-12 both trigger javac's `dangling-doc-comments` lint, but
+  only under `-Xlint:all`, like the existing ADD markers; the default build
+  has zero warnings.
+- **Replay refuses any HAL sim extension** (it reads `HALSIM_EXTENSIONS`
+  and exits), and the template turns SimGUI on. Hence the `build.gradle`
+  edit above. `./gradlew run` then replays with `AKIT_LOG_PATH` set (a
+  relative `logs\…` path works; `run` starts in the project folder).
+  Without the variable, `LogFileUtil.findReplayLog()` reads the log
+  AdvantageScope has open (`<java.io.tmpdir>/akit-log-path.txt`), else
+  prompts on stdin. `./gradlew replayWatch` (AdvantageKit's `ReplayWatch`)
+  launches `./gradlew run -x test` with `AKIT_LOG_PATH` set itself, so the
+  GUI stays off: tested by writing that hand-off file by hand, since
+  AdvantageScope isn't installed here. At the end of a replay AdvantageKit
+  writes the `_sim` file's path to `<tmpdir>/ascope-log-path.txt` ("Log sent
+  to AdvantageScope."). VS Code's Simulate Robot Code popup was not tested.
+- **The selected opmode replays** (`/DriverStation/OpModeId`, applied with
+  `DriverStationSim.setOpMode`), and `LoggedOpModeRobot` registers annotated
+  opmodes alphabetically so IDs match across runs. NT4Publisher publishes
+  under `/AdvantageKit` (SimGUI: NetworkTables → AdvantageKit).
+- **Measured replay** (scripted Teleop drive with a turn, then `./gradlew
+  run` in REPLAY): `Drivetrain/Pose`, `Heading`, `HeadingDegrees`,
+  `ModuleStates`, `DesiredModuleStates` and `CurrentCommand` matched
+  bit-for-bit on every tick, when the probe changed the sticks *between*
+  cycles. When it changed them from the test thread mid-cycle, the replayed
+  commands reacted one tick early once (the log captured the new axes on the
+  tick the live code missed them); pose still exact. Whether SimGUI or a real
+  DS can do the same wasn't tested; the lesson mentions it and passes on
+  AdvantageKit's advice to check replays. A ~7 s drive replays in ~5 s
+  wall, mostly Gradle.
+- **Lesson demos, measured:** ×1.1 in `SwerveModule.getPosition` during a
+  replay of a clean run puts the replayed pose exactly 1.1× as far from the
+  start (odometry starts at the origin). Recorded *with* that bug and
+  replayed without it: (5.358, 4.193) → (4.871, 3.812), 0.618 m. The same
+  ×1.1 in `ModuleIOTalonFX.updateInputs` (Try It #1, which Lessons 14 and 16
+  refer back to): replay without it moves the pose 0.000 m, because the bug
+  is in the recorded readings. `HeadingConstants.kP` ÷ 4 in replay:
+  `DesiredModuleStates` differs on 38 ticks, `Pose` on none.
+- **Ripple, all compiled (12–33, zero warnings; 33's tests pass):** the
+  lesson-13 changes were carried into every later whole-file copy (`Robot`
+  14–30, `Drivetrain` 14–17/25/26/29/30, `GyroIO` 16/29/30, `ModuleIO` and
+  `SwerveModule` 29/30), converting only the lines Lesson 13 introduced;
+  lines a later lesson added keep `Telemetry.log`. Snapshot 34 (unmigrated)
+  was not touched. The Lesson 33 state still runs Two Corners in sim
+  ((3, 3, 0°) → (5.98, 6.02, 178.7°)). **Replaying it is incomplete:**
+  heading and measured module states match, but the auto never drives,
+  because the elevator's inputs aren't recorded yet and it never homes in
+  replay. Each IO-backed lesson needs `@AutoLog` + `processInputs` before
+  its lesson replays; vision (15), the elevator (18) and the arm (20) have
+  it since the passes below, and with them the Lesson 33 state's path autos
+  drive in replay. The flywheel (28) is the one left.
+- **`Telemetry.log` is not captured by AdvantageKit.** WPILib alpha-7's
+  `TelemetryRegistry.registerBackend(prefix, backend)` would let a bridge
+  record every `Telemetry.log` too (prototyped and working; `RobotBase`'s
+  constructor registers `NetworkTablesTelemetryBackend` at `""` under
+  `/Telemetry`), but the user chose `Logger.recordOutput`.
+
+**v3 Lessons 14–17 record with AdvantageKit (2026-10-28), one lesson at a
+time on Lesson 13's rules.** Each was checked by recording a SIM run with a
+JUnit probe driving the real `Robot` (sticks, buttons and DS changes made on
+the robot thread between cycles), replaying it with `AKIT_LOG_PATH=… ./gradlew
+run` in `REPLAY`, and comparing every `/RealOutputs/…` key with its
+`/ReplayOutputs/…` twin in the `_sim` file:
+
+- **Lesson 14:** `Localizer/Pose` and the fake camera's `Localizer/VisionPose`
+  are outputs (`Logger.recordOutput`); the `Field2d` widget stays on
+  `Telemetry.log`. The fake sighting is an output because the Start button and
+  the clock are replayed. Replay matched every output on every tick, the pose
+  through three sightings included.
+- **Lesson 15:** `@AutoLog` on `VisionIOInputs`, `Logger.processInputs(m_logKey,
+  …)` in `LimelightPoseProvider` in place of the `Pose2d[]` `Telemetry.log`; the
+  key is unchanged (`Localizer/<camera>/PoseObservations`, now the whole record
+  array). **A `Vector<N3>` record field can't be logged** (measured):
+  AdvantageKit's `RecordStruct` looks for a static `struct` field, `Vector` has
+  only `getStruct(Nat)`, so it prints `NoSuchFieldException: struct` and
+  "Failed to load nested struct", logs nothing for the trust, and the replay
+  dies with a `NullPointerException` in `addVisionMeasurement` on the first
+  frame. The record now holds `xStdDevMeters`, `yStdDevMeters`,
+  `headingStdDevRadians` and a `stdDevs()` method that rebuilds the
+  `Vector<N3>` with `VecBuilder.fill`; `VisionIOLimelight` fills them with
+  `estimate.stdDevs.get(0..2)`. LimelightLib's MT2 heading trust measured
+  ~1e7 (ignore). Replay matched on every tick. In SimGUI the input is under
+  **NetworkTables → AdvantageKit → Localizer → <camera>**, shown as `[]` when
+  empty and `[...]` with frames, the same as a WPILib struct array
+  (`RealOutputs/Drivetrain/ModuleStates` shows `[...]` too); a single struct
+  (`Pose2d`) decodes. Try It #5, measured on one recording: +0.5 m in X inside
+  `VisionIOLimelight` moves the replayed pose 0.0000 m (the IO isn't built in
+  replay); the same in `LimelightPoseProvider` ends it 0.5000 m along X.
+- **Lesson 16:** `Drivetrain/SimulatedPose` is an output, recorded only
+  `if (m_chassisSim != null)`, so a replay's file has it under `RealOutputs`
+  with no `ReplayOutputs` twin. **Where the robot was set down at boot is a
+  recorded input** (user decision, 2026-10-28): `first.robot.StartingPlacement`
+  is a two-field `@AutoLog` class (`known`, `pose`); `Robot`'s constructor
+  fills it only in `SIM` (`kSimStartingPose`), calls
+  `Logger.processInputs("StartingPlacement", …)` and resets the estimate only
+  `if (placement.known)`. A real robot records "not known"; a replay reads
+  whichever the run recorded, so neither needs a hand-edited condition. It
+  works from the constructor because `Logger.start()` (in the initializer
+  block) ends with `periodicBeforeUser()`, which in replay loads the log's
+  first entry, the init cycle that `LoggedOpModeRobot.startCompetition` saves
+  with `periodicAfterUser` after the constructor (read in AdvantageKit's
+  source). Measured: a SIM run (`Known` true, (3, 3, 0)) and a run recorded
+  with the SIM branch disabled (`Known` false, a stand-in for a real robot's
+  log) both replayed with `Localizer/Pose` matching on every tick, starting at
+  (3, 3) and (0, 0). History: a plain `== SIM` condition made a sim replay
+  start 4.24 m off (within 1 mm after 0.98 s, never bit-exact); an interim
+  `!= REAL` fixed that but would have reset a real robot's replay. Carried
+  into `Robot` 16–30 and Lesson 25's context snippet; `placeSimulatedRobot`
+  and `withPoseReset` (Lessons 17, 25) are untouched by it.
+- **Lesson 17:** no code change. B-Line's `withTelemetry(Telemetry.getTable())`
+  stays: its values are at `/Telemetry/FollowPath/…`, saved in the `WPILIB_`
+  log, not in the `akit_` one. Two Corners replayed with every output matching
+  on every tick (`Localizer/Pose` 399 changes, `DesiredModuleStates` 201), and
+  `Event: shoot!` printed again in the replay. B-Line's clock replays because
+  `Timer.getTimestamp()` is `RobotController.getTime()` (bytecode) and
+  `Logger.start()` calls `RobotController.setTimeSource(Logger::getTimestamp)`
+  (source); the pose estimator's `MathSharedStore.getTimestamp()` goes through
+  `Timer.getTimestamp()` too. Live run: (3, 3, 0°) → (5.97, 6.01, 178.8°),
+  following for ≈4.0 s.
+- **Opmode selection can replay one tick early.** In two Lesson 16 runs (DS
+  changed from the test thread, then from the robot thread) the replay built
+  `RobotTeleop` one tick before the live robot had, so `Drivetrain/CurrentCommand`
+  and the first `DesiredModuleStates` came a tick sooner (same values, pose
+  unaffected). `LoggedDriverStation` captures `OpModeId` through `ConduitApi`
+  before `loopFunc` reads `DriverStationBackend`'s cache; in the live runs the
+  cache saw the change a tick later. The Lesson 14, 15 and 17 runs didn't
+  show it; every teleop run in Lessons 18–22 did (DS changed on the robot
+  thread), the Lesson 33 auto runs didn't. Recorded, not worked around.
+- **Where things are:** NT4Publisher puts inputs at `/AdvantageKit/<key>` and
+  outputs at `/AdvantageKit/RealOutputs/<key>`; DataLogManager's `WPILIB_` log
+  saves those NT topics too. Lesson 30's text now tells students to import
+  `Telemetry` for its `…/Connected` lines, since `Drivetrain`,
+  `SwerveModule` and `LimelightPoseProvider` no longer import it by then.
+
+**v3 Lessons 18–22 record with AdvantageKit (2026-10-28), same rules and
+method as 14–17:**
+
+- **Lesson 18:** `@AutoLog` on `ElevatorIOInputs`; `processInputs("Elevator",
+  …)` replaces four `Telemetry.log` lines with the same keys (AdvantageKit
+  names each value after its field, capitalized). The profile setpoint
+  (`getClosedLoopReference()`) stays an input: the profile runs in the
+  motor controller. `Elevator/GoalMeters` is an output. Peak lag stowed →
+  `kMaxHeight` in the real `Robot` loop with AdvantageKit running, read
+  from the `akit_` log: 10.6–19.7 mm with the model over ten moves (the old
+  `Telemetry` code under the same probe: 11.0–21.0 mm, read from the
+  `WPILIB_` log), 82–112 mm with `kV` zeroed. Moves cluster near 11 mm or
+  near 20 mm run to run. The lesson's "1.5–2 cm" was left alone; single
+  moves at ~1.1 cm sit below it.
+- **Lesson 19:** **the drawing is AdvantageKit's `LoggedMechanism2d` /
+  `LoggedMechanismRoot2d` / `LoggedMechanismLigament2d`, recorded every tick
+  with `Logger.recordOutput("Elevator/Mechanism", …)`** (user decision,
+  2026-10-28, after first keeping WPILib's `Mechanism2d` on `Telemetry.log`).
+  It replays like any output: a recorded run's `Elevator/Mechanism/...` keys
+  (carriage length 318 changes, color 8) matched their replayed twins. SimGUI
+  lists it in the **NetworkTables** menu under **AdvantageKit → RealOutputs →
+  Elevator** and draws it live (checked under Xvfb with an animated
+  `LoggedMechanism2d` probe); AdvantageScope's live source is
+  `/AdvantageKit/RealOutputs/Elevator/Mechanism`. Alpha-7's AdvantageKit
+  classes take measures everywhere, `getRoot(String, Distance, Distance)`
+  included, so the v3 code passes `Distance`/`Angle` straight in (the old
+  "this corner of WPILib only takes doubles" callout is gone); the classes
+  also implement `TelemetryLoggable`. `Field2d` stays on `Telemetry.log`
+  (AdvantageKit has no equivalent, and the pose is recorded).
+- **Lesson 20:** `@AutoLog` on `ArmIOInputs`, `processInputs("Arm", …)`;
+  `Arm/GoalDegrees` and `Arm/AtGoal` are outputs. The arm's ligament is a
+  `LoggedMechanismLigament2d` on the carriage (`setAngle(Angle)`), recorded
+  with the elevator's drawing. **The drawing is still a tick behind for the
+  arm**, measured from the recorded drawing: on 670 of 671 ticks its arm
+  angle equals the previous tick's `Arm/AngleDegrees` (minus the carriage's
+  90°), the gap to the current tick peaking at 3.69° mid-swing (20° once at
+  boot, when the first reading jumps to the −20° stop).
+- **Lesson 21:** the switch and stator current are fields of the bundle, so
+  they're recorded without the two `Telemetry.log` lines Lesson 21 used to
+  add (removed from 21 on, with Lesson 20's marker). A homing run replayed
+  the `Home` command, the switch, the −0.34 → 0.01 snap (one tick after the
+  switch, in the recording) and every goal after it on the same ticks;
+  `setVoltage`/`setPositionMeters` do nothing in replay, and needn't.
+- **Lesson 22:** `hasGamePiece` likewise needs no log line (removed from 22,
+  28–30, with Lesson 21's marker). `Sim/GamePieces` is sim-only truth,
+  `Logger.recordOutput` from `ArmIOSim`, so only under `RealOutputs` in a
+  replay. A capture run (home, arm down, drive onto (4.5, 3.2) with the
+  roller in, capture stows the arm and raises the elevator to 0.75 m, score
+  with the right trigger) replayed with the beam break, the `Capture`
+  group's commands, both goals, the roller commands and the pose matching.
+- **The Lesson 33 state now replays its path autos** (Blue 1): Two Corners
+  (≈4.2 s getting ready, ≈4.1 s following, ends (5.97, 6.01, 178.7°)) and
+  Pick Up (ends (6.00, 0.96, −90.0°)) replayed with every arm, elevator,
+  drivetrain and localizer output matching on every tick. The one
+  difference: `Alerts/errors` keeps "Flywheel motor is not on the CAN bus"
+  after the boot flicker in replay, because the flywheel's inputs aren't
+  recorded until Lesson 28's pass. AdvantageKit records the WPILib alert
+  group as `RealOutputs/Alerts/…` on its own.
+- **D-pad in `GamepadSim` is buttons** (`setDpadUpButton` etc.), not
+  `setPOV`; a probe that set the POV moved nothing.
+
+**v3 Lessons 23–27 record with AdvantageKit (2026-10-28), same rules and
+method as 14–22:**
+
+- **Lesson 23:** `Leds/Showing` and `Elevator/Homed` are outputs
+  (`Logger.recordOutput`); `Leds` still has no IO layer. **The driver
+  station replays**: `LoggedDriverStation.replayFromLog` sets
+  `AllianceStation`, `Enabled`, the robot mode, `OpModeId` and the joysticks
+  through `DriverStationSim`, and `RobotState.isDisabled()` and
+  `MatchState.getAlliance()` read `DriverStationBackend` (AdvantageKit's
+  source and `javap`). Measured: a run on Red 2 (alliance color logged by a
+  probe-only output) replayed `#FF0000`. **The disable edge replays a tick
+  early, like opmode selection:** the log has `/DriverStation/Enabled` false
+  on the tick before the live loop saw it, so the replay's `Leds/Showing`
+  says "Disabled" one tick sooner (four runs, the DS changed on the robot
+  thread or the test thread). Every other output matched.
+- **Lesson 24:** `Superstructure/State` (kept as `m_state.name()`, so the
+  value is the same string) and `Superstructure/Rejected` are outputs.
+  **The `Debouncer` replays:** `org.wpilib.math.filter.Debouncer` reads
+  `MathSharedStore.getTimestamp()`, which `RobotBase`'s `MathShared` answers
+  with `Timer.getTimestamp()` (bytecode), the clock `Logger.start()`
+  replaces. Measured, a run with a refused intake while disabled and
+  unhomed, homing, intake, a capture, a refused intake in `HOLDING`, a
+  score and a refused score in `IDLE`: every state change and all three
+  refusals on the same ticks in the replay; `HANDOFF` five ticks after the
+  beam break, `HOLDING` 56 ticks after `HANDOFF`. A refusal made while
+  disabled is recorded (the request coroutine runs disabled).
+- **Lesson 25:** no new log lines. **`addOpMode` IDs are stable**: the seven
+  opmode IDs printed in the recording and in the replay were identical
+  (`Pick Up` 72057595124488954, `RobotTeleop` 216172781968692725, …). Pick
+  Up then Aim While Driving in one session replayed with every output
+  matching on every tick, the event-driven `INTAKING`/`HANDOFF`/`HOLDING`/
+  `SCORING` included; the replay built each `PathAuto` one tick sooner (the
+  known skew), invisibly. Pick Up ended (6.00, 0.96, −90.0°), Aim While
+  Driving (8.01, 7.02, −1.2°). The text now says B-Line's `FollowPath/` keys
+  are under **Telemetry** and the rest under **AdvantageKit**.
+- **Lesson 26:** no new log lines; Try It #6 says the plan is an output.
+  Drive To Pose from the boot pose (3, 3, 0°) replayed exactly: `Travel
+  Toward`, `Approach` 1.075 s later, ending bit-identical at (5.007, 4.002,
+  89.99°) about 2.5 s after enable.
+- **Lesson 27:** `Aim/ErrorDegrees`, `Aim/FeedforwardRadPerSec` and
+  `Aim/IsAimed` are outputs, recorded only while something asks `Aim` for a
+  spin rate. Aim While Driving and teleop aiming (left trigger, strafing)
+  replayed with all three matching (388 changes). The teleop leg starts at
+  the auto's start pose, because disabling rebuilds the auto opmode.
+  Lesson 32's "the `Aim/` keys are absent with tag 220" was measured on
+  `Telemetry` and still needs re-measuring on AdvantageKit.
+
 **v3 Lesson 26 (drive to pose) was redesigned on 2026-10-26 at the user's
 request: two motion-profiled stages, handing over while moving.** The old
 design ran the Lesson 11 sketch to 5 cm, then three `PIDController`s; the user
@@ -406,6 +691,12 @@ real SimGUI under `Xvfb`:**
   callback, read in the alpha-7 source), and the first loop always overran in
   every run (one SimGUI run: `robotPeriodic()` 0.465 s). So it's up for the
   whole session; the lesson uses it as the "raised once" contrast.
+  **Since Lesson 13 moved `Robot` to AdvantageKit's `LoggedOpModeRobot`
+  (2026-10-28), that alert no longer exists**: `LoggedOpModeRobot`'s
+  watchdog only prints a warning, after 4 × the period (80 ms). Measured on
+  the Lesson 33 state after a Two Corners run: `AlertSim.getActive()` is
+  empty. Lesson 30's text (lines ~98, ~197, ~341, ~764) still points at it;
+  how to replace that demonstration is waiting on the user.
 - **The unplug switch (user decision, 2026-10-22: both cameras, the four
   CANcoders and the gyro; "only flip the reading"; a SimGUI switch).**
   `subsystems/UnplugSwitch` makes `SimDevice.create("Unplug " + name)` with
@@ -715,8 +1006,10 @@ rate, `GamepadSim`, `DriverStationSim` enabled, the strip read from
   drive starts. Strip bytes (RGB): `UNHOMED` 255,0,0 on the blink's on-phase,
   `IDLE` 0,0,63, `INTAKING` 255,255,0, `HOLDING` 50,205,50, disabled `IDLE`
   breathing (54 sampled).
-- **Refusals** log to `/Telemetry/Superstructure/Rejected`, and
-  `/Telemetry/Superstructure/State` is the state's `name()`. A probe *can*
+- **Refusals** log to `Superstructure/Rejected`, and `Superstructure/State`
+  is the state's `name()`; both were under `/Telemetry/` when measured, and
+  have been AdvantageKit outputs (`/AdvantageKit/RealOutputs/...`) since
+  2026-10-28. A probe *can*
   read these back with `NetworkTableInstance.getDefault().getStringTopic(...)`
   subscribed after the `Robot` is built (Lesson 23's note that it can't was
   about a different attempt; both are recorded). `Gamepad.Axis` constants are
@@ -1161,8 +1454,11 @@ a lesson as-is.
   now ships the `CommandsV3` vendordep (swapped from V2). Planning stage for
   the lessons themselves — none have been written yet — and one blocking
   unknown remains: AdvantageKit's 2027 alpha confirms it does not support
-  `OpModeRobot` yet, which gates Lesson 3 of the new track onward. Read this
-  before touching `code/OpModeV3Robot`.
+  `OpModeRobot` yet, which gates Lesson 3 of the new track onward. (That was
+  true when written. AdvantageKit `v27.0.0-alpha-7`, tagged 2026-10-23,
+  added `LoggedOpModeRobot`, and v3 Lesson 13 uses it from 2026-10-28; see
+  the v3 Lesson 13 notes above.) Read this before touching
+  `code/OpModeV3Robot`.
 - [docs/lesson-plan-v3-0-3.md](docs/lesson-plan-v3-0-3.md) — continues the
   doc above with a detailed plan for that track's first four lessons
   (Orientation, first motor, joystick control, telemetry). Lessons 0–2 are

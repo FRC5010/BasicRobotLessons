@@ -4,7 +4,8 @@ import org.wpilib.math.geometry.Rotation2d;
 import org.wpilib.math.geometry.Translation2d;
 import org.wpilib.math.kinematics.SwerveModulePosition;
 import org.wpilib.math.kinematics.SwerveModuleVelocity;
-import org.wpilib.telemetry.Telemetry;
+
+import org.littletonrobotics.junction.Logger;
 
 /**
  * One swerve corner. No hardware of its own anymore — it owns an IO (whichever
@@ -15,7 +16,7 @@ public class SwerveModule {
   public final Translation2d location;
 
   private final ModuleIO m_io;
-  private final ModuleIO.ModuleIOInputs m_inputs = new ModuleIO.ModuleIOInputs();
+  private final ModuleIOInputsAutoLogged m_inputs = new ModuleIOInputsAutoLogged();
   private final String m_logKey; // e.g. "Drivetrain/Module0"
   /**
    * ====== NEXT LESSON: ADD CODE HERE ======
@@ -35,9 +36,8 @@ public class SwerveModule {
   /** One tick of sensing: read the hardware into the bundle and log it. */
   public void periodic() {
     m_io.updateInputs(m_inputs);
-    Telemetry.log(m_logKey + "/SteerAngleDegrees", m_inputs.steerAngleDegrees);
-    Telemetry.log(m_logKey + "/DrivePositionMeters", m_inputs.drivePositionMeters);
-    Telemetry.log(m_logKey + "/DriveVelocityMetersPerSec", m_inputs.driveVelocityMetersPerSec);
+    // Logs every field of the bundle. In replay, fills them in from the log instead.
+    Logger.processInputs(m_logKey, m_inputs);
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
      * Log whether the CANcoder is connected, and set the alert every tick.

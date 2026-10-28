@@ -10,8 +10,9 @@
 # LESSON is the lesson you are ABOUT TO DO. Its starting point is the
 # finished code of the lesson before it, so this rolls the reference
 # snapshots code/v3/lesson-0 .. lesson-(LESSON-1) onto PROJECT_DIR, replays
-# the file deletions those lessons instruct, and installs the pinned
-# vendordeps they need — the same rules tools/verify-lessons-v3.sh uses
+# the file deletions those lessons instruct, installs the pinned
+# vendordeps they need, and from Lesson 13 on makes that lesson's
+# build.gradle edits — the same rules tools/verify-lessons-v3.sh uses
 # (both read tools/lib/v3-lessons.sh). Unlike that script it works on your
 # project directly instead of a scratch copy, and it doesn't build anything.
 #
@@ -181,6 +182,15 @@ if compgen -G "$STAGE/*.json" >/dev/null; then
     cp "$f" "$PROJECT/vendordeps/"
     echo "  $(basename "$f")"
   done
+fi
+
+if [ "$THROUGH" -ge "$V3_AKIT_FROM" ]; then
+  gradle_changes="$(v3_patch_build_gradle "$REPO" "$THROUGH" "$PROJECT")" ||
+    die "couldn't update build.gradle — the rest of the update is done; make Lesson $V3_AKIT_FROM's build.gradle edits by hand"
+  if [ -n "$gradle_changes" ]; then
+    say "Updating build.gradle"
+    echo "$gradle_changes"
+  fi
 fi
 
 say "Done — ready for Lesson $LESSON"

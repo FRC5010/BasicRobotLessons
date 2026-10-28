@@ -1,15 +1,17 @@
 package first.robot.subsystems;
 
+import static org.wpilib.units.Units.Degrees;
 import static org.wpilib.units.Units.Meters;
 
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
-import org.wpilib.smartdashboard.Mechanism2d;
-import org.wpilib.smartdashboard.MechanismLigament2d;
-import org.wpilib.smartdashboard.MechanismRoot2d;
-import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.Distance;
+
+import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.mechanism.LoggedMechanism2d;
+import org.littletonrobotics.junction.mechanism.LoggedMechanismLigament2d;
+import org.littletonrobotics.junction.mechanism.LoggedMechanismRoot2d;
 
 import first.robot.Constants;
 import first.robot.Constants.ElevatorConstants;
@@ -21,25 +23,25 @@ public class Elevator implements Mechanism {
     case SIM -> new ElevatorIOSim();
     case REPLAY -> new ElevatorIO() {}; // inputs come from the log
   };
-  private final ElevatorIO.ElevatorIOInputs m_inputs = new ElevatorIO.ElevatorIOInputs();
+  private final ElevatorIOInputsAutoLogged m_inputs = new ElevatorIOInputsAutoLogged();
   private Distance m_goal = ElevatorConstants.kStowed;
 
   // The picture: a canvas, one point anchored to it, and a chain of segments.
-  private final Mechanism2d m_mechanism = new Mechanism2d(
-      ElevatorConstants.kDisplayWidth.in(Meters), ElevatorConstants.kDisplayHeight.in(Meters));
-  private final MechanismRoot2d m_base = m_mechanism.getRoot(
-      "Base", ElevatorConstants.kDisplayWidth.in(Meters) / 2, 0);
+  private final LoggedMechanism2d m_mechanism = new LoggedMechanism2d(
+      ElevatorConstants.kDisplayWidth, ElevatorConstants.kDisplayHeight);
+  private final LoggedMechanismRoot2d m_base = m_mechanism.getRoot(
+      "Base", ElevatorConstants.kDisplayWidth.div(2), Meters.of(0));
   /**
    * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
-   * Point the carriage straight up with a named angle instead of a bare 90, and
+   * Point the carriage straight up with a named angle instead of a spelled-out 90°, and
    * delete the effector stub below it: the real arm attaches here instead.
    */
   /** Straight up from the base. Its length is the carriage height. */
-  private final MechanismLigament2d m_carriage =
-      m_base.append(new MechanismLigament2d("Carriage", 0, 90));
+  private final LoggedMechanismLigament2d m_carriage =
+      m_base.append(new LoggedMechanismLigament2d("Carriage", Meters.of(0), Degrees.of(90)));
   /** Rides on top of the carriage. Lesson 20 puts a real arm here. */
-  private final MechanismLigament2d m_effector = m_carriage.append(
-      new MechanismLigament2d("Effector", ElevatorConstants.kEffectorLength.in(Meters), -90));
+  private final LoggedMechanismLigament2d m_effector = m_carriage.append(
+      new LoggedMechanismLigament2d("Effector", ElevatorConstants.kEffectorLength, Degrees.of(-90)));
 
   public Elevator() {
     Scheduler.getDefault().addPeriodic(this::periodic);
@@ -48,11 +50,8 @@ public class Elevator implements Mechanism {
   /** One tick of sensing: read the hardware into the bundle and log it. */
   private void periodic() {
     m_io.updateInputs(m_inputs);
-    Telemetry.log("Elevator/HeightMeters", m_inputs.heightMeters);
-    Telemetry.log("Elevator/VelocityMetersPerSec", m_inputs.velocityMetersPerSec);
-    Telemetry.log("Elevator/AppliedVolts", m_inputs.appliedVolts);
-    Telemetry.log("Elevator/SetpointMeters", m_inputs.setpointMeters);
-    Telemetry.log("Elevator/GoalMeters", m_goal.in(Meters));
+    Logger.processInputs("Elevator", m_inputs); // every reading, under Elevator/
+    Logger.recordOutput("Elevator/GoalMeters", m_goal.in(Meters));
 
     // The picture is built once and changed every tick; only the carriage
     // changes, and the effector rides along with it for free. Then log it,
@@ -60,7 +59,7 @@ public class Elevator implements Mechanism {
     m_carriage.setLength(m_inputs.heightMeters);
     m_carriage.setColor(
         atGoal() ? ElevatorConstants.kAtGoalColor : ElevatorConstants.kMovingColor);
-    Telemetry.log("Elevator/Mechanism", m_mechanism);
+    Logger.recordOutput("Elevator/Mechanism", m_mechanism);
   }
 
   /** Send the carriage to 'target', clamped to safe travel. Keeps holding once it arrives. */

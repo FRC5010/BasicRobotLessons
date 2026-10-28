@@ -719,6 +719,7 @@ Worth plotting while you watch:
    `ModuleIO` and `SwerveModule`, so plan it before you type it.
 6. **Log the plan against reality.** Log the along controller's setpoint
    position next to the robot's real progress along the line, every tick.
+   Your code works out both, so both are outputs: `Logger.recordOutput`.
    Plot both. The gap between them is exactly what the P term is fighting.
 
 ---

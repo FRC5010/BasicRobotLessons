@@ -9,9 +9,10 @@
 # and the vendordep source (WPILib's 2027-alpha marketplace buckets, not the
 # current season — Phoenix 6 pins to the 2027_alpha7 bucket; LimelightLib,
 # which isn't in the marketplace, pins to one commit of Limelight's own repo;
-# see docs/lesson-plan-alpha7-upgrade.md). There is no
-# AdvantageKit build.gradle block to carry over, but lesson-deletion replay
-# does apply here too, the same way it does in the main script (see
+# see docs/lesson-plan-alpha7-upgrade.md). From Lesson 13 on it makes the
+# build.gradle edits that lesson has the student make (AdvantageKit; see
+# tools/lib/patch_build_gradle.py), and lesson-deletion replay applies
+# here too, the same way it does in the main script (see
 # V3_DELETIONS in tools/lib/v3-lessons.sh) — the first one lands at Lesson
 # 7, same rename as the main course.
 #
@@ -163,6 +164,11 @@ v3_apply_snapshots "$REPO" "$THROUGH" "$SANDBOX"
 say "Applying the deletions the lessons instruct"
 v3_apply_deletions "$THROUGH" "$SANDBOX"
 echo "  done"
+
+if [ "$THROUGH" -ge "$V3_AKIT_FROM" ]; then
+  say "Making Lesson $V3_AKIT_FROM's build.gradle edits"
+  v3_patch_build_gradle "$REPO" "$THROUGH" "$SANDBOX" || exit 1
+fi
 fi
 
 say "Gradle: $GRADLE_TASK"

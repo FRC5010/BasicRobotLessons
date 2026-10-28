@@ -6,7 +6,8 @@ import org.wpilib.command3.Command;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.command3.Trigger;
 import org.wpilib.math.filter.Debouncer;
-import org.wpilib.telemetry.Telemetry;
+
+import org.littletonrobotics.junction.Logger;
 
 import first.robot.Constants.ArmConstants;
 import first.robot.Constants.ElevatorConstants;
@@ -70,7 +71,7 @@ public class Superstructure {
       }
     }
 
-    Telemetry.log("Superstructure/State", m_state.name());
+    Logger.recordOutput("Superstructure/State", m_state.name());
   }
 
   /** What the robot is doing. Everything downstream reads this instead of sensors. */
@@ -117,7 +118,7 @@ public class Superstructure {
   private boolean allow(SuperstructureState next) {
     boolean ok = m_state.canGoTo(next);
     if (!ok) {
-      Telemetry.log("Superstructure/Rejected", m_state + " -> " + next);
+      Logger.recordOutput("Superstructure/Rejected", m_state + " -> " + next);
     }
     return ok;
   }

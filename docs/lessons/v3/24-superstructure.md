@@ -272,7 +272,8 @@ import org.wpilib.command3.Command;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.command3.Trigger;
 import org.wpilib.math.filter.Debouncer;
-import org.wpilib.telemetry.Telemetry;
+
+import org.littletonrobotics.junction.Logger;
 
 import first.robot.Constants.ArmConstants;
 import first.robot.Constants.ElevatorConstants;
@@ -341,7 +342,7 @@ itself:**
       }
     }
 
-    Telemetry.log("Superstructure/State", m_state.name());
+    Logger.recordOutput("Superstructure/State", m_state.name());
   }
 ```
 
@@ -369,11 +370,15 @@ scheduler.** (Lesson 7 made the opposite call for `SwerveModule`, which
 stopped being a subsystem because it never decided anything on its own;
 this is the mirror image.)
 
-The last line logs the state by name, so `Superstructure/State` shows up
-as one readable line of text rather than a wall of booleans. It replaces
+The last line records the state by name, so `Superstructure/State` shows
+up as one readable line of text rather than a wall of booleans. It replaces
 Lesson 23's `Leds/Showing`: that one recorded what the strip decided; this
 one records what the robot *was*, which is the thing you want when you're
-reading a log a week later.
+reading a log a week later. The state is an output, worked out from
+readings that are already recorded (the beam break, the switch, the
+mechanisms' positions), so a replay walks through the same states on the
+same ticks. That includes the debounce: the `Debouncer` times itself with
+the robot's clock, and in a replay that clock is the log's.
 
 **Finish the read-side with two small accessors, below `periodic()`:**
 
@@ -443,7 +448,7 @@ anything, and in this framework, a command that requires nothing *can't*
   private boolean allow(SuperstructureState next) {
     boolean ok = m_state.canGoTo(next);
     if (!ok) {
-      Telemetry.log("Superstructure/Rejected", m_state + " -> " + next);
+      Logger.recordOutput("Superstructure/Rejected", m_state + " -> " + next);
     }
     return ok;
   }
@@ -460,7 +465,7 @@ method to reach for here — you don't need one. A coroutine that checks a
 condition and returns early *is* the guard, in one line, with nothing
 hidden behind it.
 
-`allow` logs every refusal to `Superstructure/Rejected`. From the
+`allow` records every refusal to `Superstructure/Rejected`. From the
 driver's seat, a request that got refused looks *exactly* like a request
 that never registered — same nothing happens. Without that log line,
 you'd have no way to tell "the button didn't work" from "the button
@@ -594,7 +599,7 @@ public class Leds {
 }
 ```
 
-Look at what's gone: the `Elevator` field, the `Arm` field, the `Telemetry`
+Look at what's gone: the `Elevator` field, the `Arm` field, the `Logger`
 and alliance-color imports, the whole `if`/`else` chain, and the
 `Leds/Showing` log key. `Leds.java` no longer imports a single subsystem.
 
@@ -763,8 +768,8 @@ state bindings name motion. Everything about *when* now lives in
 before — `UNHOMED` still carries a blinking red.
 
 1. **Press the left face button without homing first.** Nothing happens —
-   not to the arm, not to `m_state`. Check `Superstructure/Rejected`:
-   `UNHOMED -> INTAKING`. Try the right trigger and the top face button
+   not to the arm, not to `m_state`. Check `Superstructure/Rejected`
+   (under **AdvantageKit → RealOutputs**): `UNHOMED -> INTAKING`. Try the right trigger and the top face button
    too; each is refused and logged the same way.
 2. **Enable and press Back.** The elevator homes. The instant
    `elevator.isHomed()` goes true, `periodic()` moves `m_state` to `IDLE`
@@ -786,7 +791,7 @@ before — `UNHOMED` still carries a blinking red.
    one-or-two-tick flicker in the log, which is fine. It's the *piece
    leaving*, not a timer, that ends it.
 
-Every one of those transitions is visible in exactly two dashboard keys:
+Every one of those transitions is visible in exactly two outputs:
 `Superstructure/State` for what's happening, `Superstructure/Rejected` for
 what almost happened and didn't.
 

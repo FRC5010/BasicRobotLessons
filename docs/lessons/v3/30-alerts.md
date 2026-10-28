@@ -369,14 +369,15 @@ The `Drivetrain` owns the gyro's inputs, so it owns the alert.
       new Alert("Drivetrain/Gyro/Disconnected", "Gyro is not on the CAN bus", Level.HIGH);
 ```
 
-**And to `Drivetrain.periodic()`, below the yaw log line:**
+**And to `Drivetrain.periodic()`, below the gyro's `processInputs` line:**
 
 ```java
     Telemetry.log("Drivetrain/Gyro/Connected", m_gyroInputs.connected);
     m_gyroDisconnected.set(!m_gyroInputs.connected);
 ```
 
-**Add the same two imports to `Drivetrain`.**
+**Add the same two imports to `Drivetrain`, and
+`import org.wpilib.telemetry.Telemetry;` for the log line.**
 
 Now look at `GyroIOSim`. It doesn't have a gyro. Since Lesson 16 it has
 simply reported the simulated chassis's true heading, so there's no device
@@ -508,7 +509,8 @@ is told that.
     m_steerEncoderDisconnected.set(!m_inputs.steerEncoderConnected);
 ```
 
-**Add the two `Alert` imports to `SwerveModule`.**
+**Add the two `Alert` imports to `SwerveModule`, and
+`import org.wpilib.telemetry.Telemetry;` for the log line.**
 
 Unlike the gyro, the simulated CANcoder is a real Phoenix sim device, and it
 answers `isConnected()` like a real one. So its switch can only take a
@@ -584,14 +586,15 @@ quarter of a second, doesn't count.
     m_disconnected = new Alert(logKey + "/Disconnected", logKey + " camera is not connected", Level.HIGH);
 ```
 
-**And in `updatePoseEstimate`, below the `PoseObservations` log line:**
+**And in `updatePoseEstimate`, below the `processInputs` line:**
 
 ```java
     Telemetry.log(m_logKey + "/Connected", m_inputs.cameraConnected);
     m_disconnected.set(!m_inputs.cameraConnected);
 ```
 
-**Add the two `Alert` imports to `LimelightPoseProvider`.**
+**Add the two `Alert` imports to `LimelightPoseProvider`, and
+`import org.wpilib.telemetry.Telemetry;` for the log line.**
 
 The simulated camera gets a switch the same way the CANcoder did.
 

@@ -31,7 +31,7 @@ status of every lesson, including what changed and why.
 | 10 | [Full swerve — kinematics](10-kinematics.md) | Drive-and-rotate at once with `SwerveDriveKinematics` | Data-carrier types (`ChassisVelocities`), indexed loops |
 | 11 | [Odometry & the field view](11-odometry-field.md) | Track and draw the robot on a virtual field | Building arrays in loops, small bundle types |
 | 12 | [Model-based control](12-model-based-control.md) | Onboard closed loop with feedforward, replacing boot-time CANcoder priming with continuous remote-sensor feedback | Config objects, control requests |
-| 13 | [IO layers](13-io-replay.md) | Every sensor behind a clean `ModuleIO`/`GyroIO` — the doors real replay will use once this framework's tooling catches up, not replay itself yet | Interfaces & default methods, anonymous classes, enums, `switch` expressions |
+| 13 | [IO layers & replay](13-io-replay.md) | Every sensor behind a clean `ModuleIO`/`GyroIO`, recorded by AdvantageKit, and a recorded run replayed through changed code | Interfaces & default methods, anonymous classes, enums, `switch` expressions, annotations, initializer blocks |
 | 14 | [Pose estimator & localizer](14-pose-estimator.md) | A localization subsystem fused from pluggable pose providers | Interfaces, registries, timestamps |
 | 15 | [Real vision — Limelight](15-limelight.md) | A real Limelight pose provider, plus a simulated camera the real library can't tell apart | `Optional`, `static`, `record` |
 | 16 | [Ground truth — a hand-built stand-in](16-ground-truth.md) | A hand-built chassis body with friction-limited acceleration, standing in for maple-sim until it supports this framework | Friction-limited acceleration, `MathUtil.slewRateLimit`, `Twist2d.exp()` |
@@ -142,6 +142,6 @@ leave it. The next run of the script replaces the file anyway.
   command, which the classic track's traces can't show you at all.
 
 **Not yet ported:** [the odometry-thread aside](../aside-odometry-thread.md)
-leans on AdvantageKit's `Logger`/`@AutoLog`, which this track doesn't have —
-porting it needs a real rewrite of its logging and replay sections, not a
-rename, and it's still open.
+is written for the classic track's drivetrain. This track has AdvantageKit
+from Lesson 13 on, but porting the aside still means rewriting its
+drivetrain and logging sections, not renaming them, and it's still open.

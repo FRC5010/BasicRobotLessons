@@ -5,14 +5,15 @@ import java.util.function.Supplier;
 import org.wpilib.math.estimator.SwerveDrivePoseEstimator;
 import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.math.geometry.Transform3d;
-import org.wpilib.telemetry.Telemetry;
+
+import org.littletonrobotics.junction.Logger;
 
 import first.robot.Constants;
 
 /** A vision camera, contributing whatever pose corrections its IO reported this tick. */
 public class LimelightPoseProvider implements PoseProvider {
   private final VisionIO m_io;
-  private final VisionIO.VisionIOInputs m_inputs = new VisionIO.VisionIOInputs();
+  private final VisionIOInputsAutoLogged m_inputs = new VisionIOInputsAutoLogged();
   private final String m_logKey;
 
   public LimelightPoseProvider(VisionIO io, String logKey) {
@@ -24,12 +25,7 @@ public class LimelightPoseProvider implements PoseProvider {
   public void updatePoseEstimate(SwerveDrivePoseEstimator estimator) {
     m_io.setRobotHeading(estimator.getEstimatedPosition().getRotation());
     m_io.updateInputs(m_inputs);
-
-    Pose2d[] poses = new Pose2d[m_inputs.poseObservations.length];
-    for (int i = 0; i < poses.length; i++) {
-      poses[i] = m_inputs.poseObservations[i].pose();
-    }
-    Telemetry.log(m_logKey + "/PoseObservations", poses, Pose2d.struct);
+    Logger.processInputs(m_logKey, m_inputs); // in replay, the frames come from the log
 
     for (VisionIO.PoseObservation observation : m_inputs.poseObservations) {
       estimator.addVisionMeasurement(
@@ -43,7 +39,7 @@ public class LimelightPoseProvider implements PoseProvider {
     VisionIO io = switch (Constants.kCurrentMode) {
       case REAL -> new VisionIOLimelight(name, robotToCamera);
       case SIM -> new VisionIOLimelightSim(name, robotToCamera, poseSupplier);
-      case REPLAY -> new VisionIO() {}; // nothing feeds this yet
+      case REPLAY -> new VisionIO() {}; // inputs come from the log
     };
     return new LimelightPoseProvider(io, "Localizer/" + name);
   }

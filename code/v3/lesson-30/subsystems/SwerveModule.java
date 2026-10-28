@@ -8,6 +8,8 @@ import org.wpilib.telemetry.Telemetry;
 import org.wpilib.util.Alert;
 import org.wpilib.util.Alert.Level;
 
+import org.littletonrobotics.junction.Logger;
+
 /**
  * One swerve corner. No hardware of its own anymore — it owns an IO (whichever
  * kind), the inputs that IO reports, its targets, and the cosine decision.
@@ -17,7 +19,7 @@ public class SwerveModule {
   public final Translation2d location;
 
   private final ModuleIO m_io;
-  private final ModuleIO.ModuleIOInputs m_inputs = new ModuleIO.ModuleIOInputs();
+  private final ModuleIOInputsAutoLogged m_inputs = new ModuleIOInputsAutoLogged();
   private final String m_logKey; // e.g. "Drivetrain/Module0"
   private final Alert m_steerEncoderDisconnected;
 
@@ -34,9 +36,8 @@ public class SwerveModule {
   /** One tick of sensing: read the hardware into the bundle and log it. */
   public void periodic() {
     m_io.updateInputs(m_inputs);
-    Telemetry.log(m_logKey + "/SteerAngleDegrees", m_inputs.steerAngleDegrees);
-    Telemetry.log(m_logKey + "/DrivePositionMeters", m_inputs.drivePositionMeters);
-    Telemetry.log(m_logKey + "/DriveVelocityMetersPerSec", m_inputs.driveVelocityMetersPerSec);
+    // Logs every field of the bundle. In replay, fills them in from the log instead.
+    Logger.processInputs(m_logKey, m_inputs);
     Telemetry.log(m_logKey + "/SteerEncoderConnected", m_inputs.steerEncoderConnected);
     m_steerEncoderDisconnected.set(!m_inputs.steerEncoderConnected);
   }

@@ -1,6 +1,9 @@
 package first.robot.subsystems;
 
+import org.littletonrobotics.junction.AutoLog;
+
 public interface ModuleIO {
+  @AutoLog // AdvantageKit writes ModuleIOInputsAutoLogged from this class as it compiles
   public static class ModuleIOInputs {
     public double steerAngleDegrees = 0.0;
     public double drivePositionMeters = 0.0;

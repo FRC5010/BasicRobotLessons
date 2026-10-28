@@ -240,7 +240,10 @@ by two different pieces of code that don't know about each other.
 ```java
 package first.robot.subsystems;
 
+import org.littletonrobotics.junction.AutoLog;
+
 public interface ArmIO {
+  @AutoLog
   public static class ArmIOInputs {
     public double angleDegrees = 0.0;
     public double velocityDegPerSec = 0.0;
@@ -545,15 +548,13 @@ instead of leaving a bare `90` in two files.
 
 ```java
   /** Straight up from the base. Its length is the carriage height. */
-  private final MechanismLigament2d m_carriage = m_base.append(
-      new MechanismLigament2d("Carriage", 0, ElevatorConstants.kCarriageAngle.in(Degrees)));
+  private final LoggedMechanismLigament2d m_carriage = m_base.append(
+      new LoggedMechanismLigament2d("Carriage", Meters.of(0), ElevatorConstants.kCarriageAngle));
 ```
 
-**Add the unit it uses to `Elevator.java`'s imports:**
-
-```java
-import static org.wpilib.units.Units.Degrees;
-```
+**Then delete `import static org.wpilib.units.Units.Degrees;` from
+`Elevator.java`.** `kCarriageAngle` is an `Angle`, unit and all, so nothing
+in the file spells out degrees any more.
 
 Now the door. A getter is the smallest one there is: it hands out the
 carriage segment and nothing else, so `Arm` can attach to it without
@@ -563,7 +564,7 @@ carriage segment and nothing else, so `Arm` can attach to it without
 
 ```java
   /** The mount point on top of the carriage. Anything appended here rides along. */
-  public MechanismLigament2d getCarriage() {
+  public LoggedMechanismLigament2d getCarriage() {
     return m_carriage;
   }
 ```
@@ -580,14 +581,14 @@ Now the mechanism itself.
 package first.robot.subsystems;
 
 import static org.wpilib.units.Units.Degrees;
-import static org.wpilib.units.Units.Meters;
 
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
-import org.wpilib.smartdashboard.MechanismLigament2d;
-import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.Angle;
+
+import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.mechanism.LoggedMechanismLigament2d;
 
 import first.robot.Constants;
 import first.robot.Constants.ArmConstants;
@@ -604,30 +605,26 @@ public class Arm implements Mechanism {
     case SIM -> new ArmIOSim();
     case REPLAY -> new ArmIO() {}; // inputs come from the log
   };
-  private final ArmIO.ArmIOInputs m_inputs = new ArmIO.ArmIOInputs();
+  private final ArmIOInputsAutoLogged m_inputs = new ArmIOInputsAutoLogged();
   private Angle m_goal = ArmConstants.kStowed;
 
   /** The arm's segment in the elevator's drawing — it hangs off the carriage. */
-  private final MechanismLigament2d m_ligament;
+  private final LoggedMechanismLigament2d m_ligament;
 
   public Arm(Elevator elevator) {
-    m_ligament = elevator.getCarriage().append(new MechanismLigament2d(
-        "Arm", ArmConstants.kArmLength.in(Meters), toDrawingAngle(ArmConstants.kMinAngle).in(Degrees)));
+    m_ligament = elevator.getCarriage().append(new LoggedMechanismLigament2d(
+        "Arm", ArmConstants.kArmLength, toDrawingAngle(ArmConstants.kMinAngle)));
     Scheduler.getDefault().addPeriodic(this::periodic);
   }
 
   /** One tick of sensing: read the hardware into the bundle, log it, and move the drawing. */
   private void periodic() {
     m_io.updateInputs(m_inputs);
-    Telemetry.log("Arm/AngleDegrees", m_inputs.angleDegrees);
-    Telemetry.log("Arm/VelocityDegPerSec", m_inputs.velocityDegPerSec);
-    Telemetry.log("Arm/AppliedVolts", m_inputs.appliedVolts);
-    Telemetry.log("Arm/SetpointDegrees", m_inputs.setpointDegrees);
-    Telemetry.log("Arm/RollerVelocityRotPerSec", m_inputs.rollerVelocityRotPerSec);
-    Telemetry.log("Arm/GoalDegrees", m_goal.in(Degrees));
-    Telemetry.log("Arm/AtGoal", atGoal());
+    Logger.processInputs("Arm", m_inputs); // every reading, under Arm/
+    Logger.recordOutput("Arm/GoalDegrees", m_goal.in(Degrees));
+    Logger.recordOutput("Arm/AtGoal", atGoal());
 
-    m_ligament.setAngle(toDrawingAngle(Degrees.of(m_inputs.angleDegrees)).in(Degrees));
+    m_ligament.setAngle(toDrawingAngle(Degrees.of(m_inputs.angleDegrees)));
     m_ligament.setColor(
         atGoal() ? ElevatorConstants.kAtGoalColor : ElevatorConstants.kMovingColor);
   }
@@ -674,6 +671,11 @@ public class Arm implements Mechanism {
 }
 ```
 
+The logging is the elevator's again. `processInputs` records all five
+readings, the roller's speed included, under `Arm/`, one key per field,
+and fills them from the log in a replay. The goal and the "am I there?"
+answer are the arm's own decisions, so they're outputs.
+
 `toDrawingAngle` is Lesson 19's rule applied rather than explained: a
 child's angle is measured from its parent, the carriage points straight up
 at 90°, so an arm that is horizontal in the world is at −90° in the
@@ -686,7 +688,7 @@ elevator again — no height, no "if the elevator is up," nothing. The
 arm's drawing tracks the elevator because of one `append` call in one
 line.
 
-> One honest wrinkle. `Elevator` logs the whole drawing in its own
+> One honest wrinkle. `Elevator` records the whole drawing in its own
 > `periodic()`, and the scheduler runs that before `Arm`'s, because the
 > elevator registered first. So the arm you see is the arm from one tick
 > earlier — 20 milliseconds, which at full swing speed is about 3.5° — the
@@ -763,7 +765,7 @@ import first.robot.Constants.ArmConstants;
 ## 9. Run it
 
 `./gradlew simulateJava`, **Teleoperated**. Open AdvantageScope, put the
-**Mechanism** tab on `/Telemetry/Elevator/Mechanism`, and press the top
+**Mechanism** tab on `/AdvantageKit/RealOutputs/Elevator/Mechanism`, and press the top
 face button (Y).
 
 The arm swings up to vertical. Now press **D-pad up** and watch the whole
@@ -772,7 +774,9 @@ that never once mentions the elevator's height. Press the left face
 button (X) and it drops back down to the floor while staying up high.
 That is the scene graph from Lesson 19 doing exactly what it promised.
 
-Then go find the physics. Put `Arm/AngleDegrees` and `Arm/AppliedVolts` on
+Then go find the physics. The arm's readings are under **NetworkTables →
+AdvantageKit → Arm**, and its goal and `AtGoal` under **AdvantageKit →
+RealOutputs → Arm**. Put `Arm/AngleDegrees` and `Arm/AppliedVolts` on
 one graph and watch what the voltage settles at once the arm stops. Your
 two presets give you two readings: about `+0.24` at the floor (`−20°`,
 where `kG × cos θ` is `0.235`), and `0.00` stowed straight up. Send the

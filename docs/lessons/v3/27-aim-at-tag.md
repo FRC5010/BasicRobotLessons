@@ -61,7 +61,8 @@ import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.math.geometry.Rotation2d;
 import org.wpilib.math.geometry.Translation2d;
 import org.wpilib.math.kinematics.ChassisVelocities;
-import org.wpilib.telemetry.Telemetry;
+
+import org.littletonrobotics.junction.Logger;
 
 import first.robot.Constants.PathConstants;
 import first.robot.Constants.VisionConstants;
@@ -75,9 +76,9 @@ import first.robot.subsystems.Localizer;
 /**
  * Pointing the robot at a place on the field.
  *
- * <p>Not a command and not a subsystem — just the arithmetic, so that a
- * driver binding and an autonomous routine can both ask the same question
- * and get the same answer.
+ * <p>Not a command and not a subsystem — just the arithmetic, so that a driver
+ * binding and an autonomous routine can both ask the same question and get
+ * the same answer.
  *
  * <p>Notice what is missing from every signature below: a camera. Aiming is
  * done against the fused pose and the tag layout, both of which exist
@@ -310,9 +311,9 @@ top:**
     Rotation2d error = error(robot, target);
     double feedforward = bearingRate(robot, fieldSpeeds, target);
 
-    Telemetry.log("Aim/ErrorDegrees", error.getDegrees());
-    Telemetry.log("Aim/FeedforwardRadPerSec", feedforward);
-    Telemetry.log("Aim/IsAimed", isAimedAt(robot, target));
+    Logger.recordOutput("Aim/ErrorDegrees", error.getDegrees());
+    Logger.recordOutput("Aim/FeedforwardRadPerSec", feedforward);
+    Logger.recordOutput("Aim/IsAimed", isAimedAt(robot, target));
 
     return feedforward + error.getRadians() * PathConstants.kAimP;
   }
@@ -343,6 +344,12 @@ backward, the same idea as building the pose estimate, just for velocity instead
 of position. It gives robot-relative velocities, and the bearing rate needs
 field-relative ones, so `toFieldRelative` converts, the same transform
 `driveFieldRelative` already runs the other way with `toRobotRelative`.
+
+The three `Logger.recordOutput` lines in `omegaToward` record how the aiming
+is going. Your code works all three out from the pose and the speeds, so
+they're outputs, and a replay works them out again. They're only recorded
+while something is asking `Aim` for a spin rate, so the keys appear the
+first time you aim.
 
 The same two orbits, measured again on the real drivetrain, reading
 `Aim/ErrorDegrees` once the robot had settled (the worst of repeated runs):
@@ -468,8 +475,9 @@ left trigger. The robot swings round to face tag 20 and holds. Let go and
 the rotation stick works again.
 
 Now the interesting part. Keep the trigger held and **strafe sideways** as
-fast as you can, and watch `Aim/ErrorDegrees`. It should stay small. Then,
-to see what you were saved from, comment out the feedforward:
+fast as you can, and watch `Aim/ErrorDegrees` (under **AdvantageKit →
+RealOutputs**). It should stay small. Then, to see what you were saved
+from, comment out the feedforward:
 
 *Nothing to add — an experiment, to run and then undo:*
 

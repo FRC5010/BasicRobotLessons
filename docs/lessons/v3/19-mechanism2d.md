@@ -11,12 +11,14 @@ along without a single line of code telling it to.
   the parent moves the child too, every tick, for free.
 
 **New robot concepts**
-- **`Mechanism2d`** — a small canvas you draw a mechanism on
-- **`MechanismRoot2d`** — a point pinned to that canvas, where the drawing
-  starts
-- **`MechanismLigament2d`** — a segment with a length, an angle, and a color
-- **A drawing is logged like a number** — change it, then log it, every
-  tick, the same rule Lesson 11's field follows
+- **`LoggedMechanism2d`** — a small canvas you draw a mechanism on
+  (AdvantageKit's version of WPILib's `Mechanism2d`)
+- **`LoggedMechanismRoot2d`** — a point pinned to that canvas, where the
+  drawing starts
+- **`LoggedMechanismLigament2d`** — a segment with a length, an angle, and a
+  color
+- **A drawing is logged like a number** — change it, then record it as an
+  output, every tick, so a replay draws it again
 
 ---
 
@@ -34,10 +36,16 @@ to debug something.
 
 You already met the fix in Lesson 11. Odometry gave you an X, a Y, and a
 heading, and you didn't stare at three numbers — you drew a robot on a field
-and watched it drive, through `Field2d`. **`Mechanism2d` is that same move
-for a mechanism.** Instead of a top-down field with a robot on it, you get a
-side-on canvas with a stick figure on it, and the stick figure's shape comes
-from your logged sensor values.
+and watched it drive, through `Field2d`. **A mechanism drawing is that same
+move for a mechanism.** Instead of a top-down field with a robot on it, you
+get a side-on canvas with a stick figure on it, and the stick figure's shape
+comes from your logged sensor values.
+
+WPILib's version is called `Mechanism2d`, and it lives next to `Field2d`.
+You'll use AdvantageKit's copy of it instead, `LoggedMechanism2d`: the same
+canvas, the same calls, with one difference that matters to you. AdvantageKit
+can record it, so the picture goes in the log as an output and a replay
+draws it again from the replayed readings.
 
 By the end of this lesson you'll press D-pad up and watch a line grow.
 
@@ -48,41 +56,39 @@ By the end of this lesson you'll press D-pad up and watch a line grow.
 A mechanism drawing is built from exactly three kinds of thing, and it's
 worth having all three straight before you type any of them.
 
-The **canvas** is a `Mechanism2d`. You give it a width and a height in
-meters, and that's the window the viewer shows you — a coordinate space, not
-a picture. Nothing is drawn on it yet.
+The **canvas** is a `LoggedMechanism2d`. You give it a width and a height,
+and that's the window the viewer shows you — a coordinate space, not a
+picture. Nothing is drawn on it yet.
 
-The **anchor** is a `MechanismRoot2d`, and you get one by asking the canvas
-for it: `getRoot("Base", x, y)`. It's a fixed point in canvas coordinates.
+The **anchor** is a `LoggedMechanismRoot2d`, and you get one by asking the
+canvas for it: `getRoot("Base", x, y)`. It's a fixed point in canvas
+coordinates.
 Fixed is the whole idea — the base of a real elevator is bolted to the
 frame, so its dot on the canvas never moves.
 
-The **segments** are `MechanismLigament2d`s. A ligament is a line with a
-length, an angle, and a color, and it is always drawn *starting from
+The **segments** are `LoggedMechanismLigament2d`s. A ligament is a line
+with a length, an angle, and a color, and it is always drawn *starting from
 whatever it is attached to*. That last clause is doing more work than it
 looks like, and most of this lesson is about nothing else.
 
 *Nothing to add — this is only the shape of the three calls:*
 
 ```java
-Mechanism2d canvas = new Mechanism2d(widthMeters, heightMeters);
-MechanismRoot2d anchor = canvas.getRoot("Name", x, y);
-MechanismLigament2d segment =
-    anchor.append(new MechanismLigament2d("Name", lengthMeters, angleDegrees));
+LoggedMechanism2d canvas = new LoggedMechanism2d(width, height);
+LoggedMechanismRoot2d anchor = canvas.getRoot("Name", x, y);
+LoggedMechanismLigament2d segment =
+    anchor.append(new LoggedMechanismLigament2d("Name", length, angle));
 ```
 
 Angles are measured counter-clockwise from "pointing right" — the same
 CCW-positive convention you've been holding since Lesson 7. So straight up
 is 90°.
 
-> **All three constructors above take plain `double`s, not `Distance`s or
-> `Angle`s.** That's a genuine exception to the "prefer measures" habit
-> you've been building since Lesson 10 — this particular corner of WPILib
-> predates the Units library and was never updated to use it. When you
-> reach for `ElevatorConstants.kDisplayWidth` (a `Distance`) in a moment,
-> you'll unpack it with `.in(Meters)` right at the call site, exactly the
-> "unpack only at a genuine double-only boundary" rule you already know —
-> this is just a boundary you haven't hit yet.
+All three take measures — a `Distance` for every size and position, an
+`Angle` for every angle — so the habit you've had since Lesson 10 holds:
+pass `ElevatorConstants.kDisplayWidth` straight in, and write a bare number
+as `Meters.of(0)` or `Degrees.of(90)`. (Each one also has a version that
+takes plain `double`s, in meters and degrees, if you ever need it.)
 
 ---
 
@@ -132,32 +138,35 @@ it can point at beats a new object every tick.
 
 Now the part that draws.
 
-**Add to `Elevator.java`'s imports:**
+**Add to `Elevator.java`'s imports, in the AdvantageKit group below
+`Logger`:**
 
 ```java
-import org.wpilib.smartdashboard.Mechanism2d;
-import org.wpilib.smartdashboard.MechanismLigament2d;
-import org.wpilib.smartdashboard.MechanismRoot2d;
+import org.littletonrobotics.junction.mechanism.LoggedMechanism2d;
+import org.littletonrobotics.junction.mechanism.LoggedMechanismLigament2d;
+import org.littletonrobotics.junction.mechanism.LoggedMechanismRoot2d;
 ```
 
-Same package as Lesson 11's `Field2d`, `org.wpilib.smartdashboard`. That's
-not a coincidence; you're about to use these three the same way you already
-used `Field2d`.
+**And `Degrees`, beside the `Meters` import at the top:**
+
+```java
+import static org.wpilib.units.Units.Degrees;
+```
 
 **Add to `Elevator`, below `m_goal`:**
 
 ```java
-    // The picture: a canvas, one point anchored to it, and a chain of segments.
-    private final Mechanism2d m_mechanism = new Mechanism2d(
-        ElevatorConstants.kDisplayWidth.in(Meters), ElevatorConstants.kDisplayHeight.in(Meters));
-    private final MechanismRoot2d m_base = m_mechanism.getRoot(
-        "Base", ElevatorConstants.kDisplayWidth.in(Meters) / 2, 0);
-    /** Straight up from the base. Its length is the carriage height. */
-    private final MechanismLigament2d m_carriage =
-        m_base.append(new MechanismLigament2d("Carriage", 0, 90));
-    /** Rides on top of the carriage. Lesson 20 puts a real arm here. */
-    private final MechanismLigament2d m_effector = m_carriage.append(
-        new MechanismLigament2d("Effector", ElevatorConstants.kEffectorLength.in(Meters), -90));
+  // The picture: a canvas, one point anchored to it, and a chain of segments.
+  private final LoggedMechanism2d m_mechanism = new LoggedMechanism2d(
+      ElevatorConstants.kDisplayWidth, ElevatorConstants.kDisplayHeight);
+  private final LoggedMechanismRoot2d m_base = m_mechanism.getRoot(
+      "Base", ElevatorConstants.kDisplayWidth.div(2), Meters.of(0));
+  /** Straight up from the base. Its length is the carriage height. */
+  private final LoggedMechanismLigament2d m_carriage =
+      m_base.append(new LoggedMechanismLigament2d("Carriage", Meters.of(0), Degrees.of(90)));
+  /** Rides on top of the carriage. Lesson 20 puts a real arm here. */
+  private final LoggedMechanismLigament2d m_effector = m_carriage.append(
+      new LoggedMechanismLigament2d("Effector", ElevatorConstants.kEffectorLength, Degrees.of(-90)));
 ```
 
 These are fields, at the top of the class with the rest, for the reason
@@ -168,7 +177,8 @@ scratch forever instead of being a thing that changes.
 
 Read the four declarations top-to-bottom and you're reading the robot from
 the floor up. The canvas is the window. `m_base` sits at the horizontal
-middle (`kDisplayWidth / 2`) and at height 0 — on the floor, dead center.
+middle (`kDisplayWidth.div(2)`, half the width, still a `Distance`) and at
+height 0 — on the floor, dead center.
 `m_carriage` attaches to the base and points straight up at 90°, and it
 starts at length zero because the elevator starts stowed. `m_effector`
 attaches to *the carriage* and points at −90°, which is 90° back from its
@@ -177,7 +187,7 @@ parent — so it sticks out sideways from the top of the carriage.
 Two details in there are worth stopping on.
 
 **`append` hands you back the thing you appended.** That's why
-`m_carriage = m_base.append(new MechanismLigament2d(...))` works as one
+`m_carriage = m_base.append(new LoggedMechanismLigament2d(...))` works as one
 statement: you construct the ligament, hand it to its parent, and get a
 reference to it in return so you can move it later. Without that, you'd
 need two lines and a temporary variable every time.
@@ -196,7 +206,7 @@ it's mounted on, not to the field — arriving in a new place.
 The drawing changes every tick, and it gets logged every tick — the same
 order as Lesson 11's field: change it, then log it.
 
-**Update `periodic()` — add this after the existing telemetry calls:**
+**Update `periodic()` — add this after the `processInputs` and `recordOutput` lines:**
 
 ```java
     // The picture is built once and changed every tick; only the carriage
@@ -205,17 +215,24 @@ order as Lesson 11's field: change it, then log it.
     m_carriage.setLength(m_inputs.heightMeters);
     m_carriage.setColor(
         atGoal() ? ElevatorConstants.kAtGoalColor : ElevatorConstants.kMovingColor);
-    Telemetry.log("Elevator/Mechanism", m_mechanism);
+    Logger.recordOutput("Elevator/Mechanism", m_mechanism);
 ```
 
-`Telemetry.log` treats the drawing exactly the way it treats Lesson 11's
-field: it sends what the drawing looks like *at that moment*. Log it once,
-in the constructor, and the viewer would show a carriage frozen at zero
-forever. So it goes in `periodic()`, right after the two lines that change
-it, and the constructor doesn't change at all.
+`recordOutput` treats the drawing the way `Telemetry.log` treats Lesson
+11's field: it records what the drawing looks like *at that moment*. Record
+it once, in the constructor, and the viewer would show a carriage frozen at
+zero forever. So it goes in `periodic()`, right after the two lines that
+change it, and the constructor doesn't change at all.
+
+And it's an output, like `GoalMeters` a few lines up, because it's
+something your code worked out: a length from the height reading, a color
+from `atGoal()`. That's the whole reason for AdvantageKit's version of the
+classes. In a replay, the code redraws the picture from the replayed
+readings and records the new one beside the old, so you can watch a
+replayed match as a moving mechanism, not just as numbers.
 
 `setColor` is the other new call, and it's carrying information rather than
-decoration: `atGoal()` is already computed for the log, so feeding it into
+decoration: `atGoal()` already exists, for `goToHeight`, so feeding it into
 the color costs nothing and turns the drawing into a status light. Orange
 while it's travelling, green the moment it settles.
 
@@ -255,7 +272,7 @@ the two lines in section 5 that move the carriage won't change at all.
 `./gradlew simulateJava`, **Teleoperated**, and press D-pad up.
 
 In **AdvantageScope** (Lesson 3), add a **Mechanism** tab and select
-`/Telemetry/Elevator/Mechanism` as its source. You get a vertical
+`/AdvantageKit/RealOutputs/Elevator/Mechanism` as its source. You get a vertical
 orange line that grows out of the floor when you press D-pad up, with a
 short stub sticking out sideways at the top, riding along. When the
 carriage settles on the goal, the line turns green.
@@ -265,7 +282,8 @@ and it stops halfway. The picture is `Elevator/HeightMeters` — the same
 number as the graph, drawn instead of printed.
 
 You can also find it inside SimGUI without opening a second tool: menu
-**NetworkTables → Telemetry → Elevator → Mechanism**. Same drawing,
+**NetworkTables → AdvantageKit → RealOutputs → Elevator → Mechanism**. Same
+drawing,
 same two viewers as the field view in Lesson 11 — the quick glance while
 sim is already open, and the full tool for anything careful.
 
@@ -287,8 +305,8 @@ one from the other.
    the side of `m_base`, and append to it one fixed ligament, 1.5 meters
    long, straight up, in gray. It never changes, so it costs two lines in
    the field block and zero in `periodic()` — a static ruler you can read
-   the carriage against. (`MechanismLigament2d` has a five-argument form
-   that also takes a line weight and a `Color8Bit`.)
+   the carriage against. (`LoggedMechanismLigament2d` has a five-argument
+   form that also takes a line weight and a `Color8Bit`.)
 3. **Code — wiggle the effector.** In `periodic()`, call
    `m_effector.setAngle(45 * Math.sin(Timer.getTimestamp()))` and run it.
    The stub waves back and forth while the carriage does whatever the
@@ -297,7 +315,7 @@ one from the other.
    carriage's business. (`org.wpilib.system.Timer` — and take it back out
    when you're done, since Lesson 20 replaces that ligament with a real
    arm.)
-4. **Code — break it on purpose.** Move the `Telemetry.log("Elevator/Mechanism", ...)`
+4. **Code — break it on purpose.** Move the `Logger.recordOutput("Elevator/Mechanism", ...)`
    line out of `periodic()` and into the constructor, so it runs once.
    Watch the drawing freeze where it started while the graph keeps moving.
    That's what "the log is a snapshot" means, and it's a bug worth having
@@ -308,7 +326,7 @@ one from the other.
 ## What you learned
 
 This was a short lesson with one idea in it, so make sure it's the one you
-take away. It isn't `Mechanism2d` — that's three classes and a handful of
+take away. It isn't `LoggedMechanism2d` — that's three classes and a handful of
 method calls, and you'll look up the exact names when you need them. It's
 what `append` does.
 
@@ -326,8 +344,9 @@ transforms, pose composition. Lesson 15 already had you doing it with
 with a picture attached, which is a much easier place to learn it.
 
 The rest was familiar on purpose, once you saw where it pointed: the
-drawing is logged with the same `Telemetry.log` as every number, every tick,
-right after you change it — the rule Lesson 11's field already follows.
+drawing is recorded every tick, right after you change it, like every
+number — it's an output, so a replay draws it again — the rule Lesson 11's
+field already follows.
 
 Next up, that placeholder stub on top of the carriage stops being a
 placeholder.

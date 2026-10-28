@@ -1,7 +1,6 @@
 package first.robot.subsystems;
 
 import static org.wpilib.units.Units.Degrees;
-import static org.wpilib.units.Units.Meters;
 
 import java.util.function.Supplier;
 
@@ -9,9 +8,11 @@ import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.math.geometry.Pose2d;
-import org.wpilib.smartdashboard.MechanismLigament2d;
 import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.Angle;
+
+import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.mechanism.LoggedMechanismLigament2d;
 
 import first.robot.Constants;
 import first.robot.Constants.ArmConstants;
@@ -24,7 +25,7 @@ import first.robot.Constants.ElevatorConstants;
  */
 public class Arm implements Mechanism {
   private final ArmIO m_io;
-  private final ArmIO.ArmIOInputs m_inputs = new ArmIO.ArmIOInputs();
+  private final ArmIOInputsAutoLogged m_inputs = new ArmIOInputsAutoLogged();
   private Angle m_goal = ArmConstants.kStowed;
   /**
    * ====== NEXT LESSON: ADD CODE HERE ======
@@ -32,7 +33,7 @@ public class Arm implements Mechanism {
    */
 
   /** The arm's segment in the elevator's drawing — it hangs off the carriage. */
-  private final MechanismLigament2d m_ligament;
+  private final LoggedMechanismLigament2d m_ligament;
 
   public Arm(Elevator elevator, Supplier<Pose2d> simulatedRobotPose) {
     // Chosen here rather than up with the fields: the simulated intake needs
@@ -42,30 +43,25 @@ public class Arm implements Mechanism {
       case SIM -> new ArmIOSim(simulatedRobotPose);
       case REPLAY -> new ArmIO() {}; // inputs come from the log
     };
-    m_ligament = elevator.getCarriage().append(new MechanismLigament2d(
-        "Arm", ArmConstants.kArmLength.in(Meters), toDrawingAngle(ArmConstants.kMinAngle).in(Degrees)));
+    m_ligament = elevator.getCarriage().append(new LoggedMechanismLigament2d(
+        "Arm", ArmConstants.kArmLength, toDrawingAngle(ArmConstants.kMinAngle)));
     Scheduler.getDefault().addPeriodic(this::periodic);
   }
 
   /** One tick of sensing: read the hardware into the bundle, log it, and move the drawing. */
   private void periodic() {
     m_io.updateInputs(m_inputs);
-    Telemetry.log("Arm/AngleDegrees", m_inputs.angleDegrees);
-    Telemetry.log("Arm/VelocityDegPerSec", m_inputs.velocityDegPerSec);
-    Telemetry.log("Arm/AppliedVolts", m_inputs.appliedVolts);
-    Telemetry.log("Arm/SetpointDegrees", m_inputs.setpointDegrees);
-    Telemetry.log("Arm/RollerVelocityRotPerSec", m_inputs.rollerVelocityRotPerSec);
+    Logger.processInputs("Arm", m_inputs); // every reading, under Arm/
     Telemetry.log("Arm/PivotSupplyCurrentAmps", m_inputs.pivotSupplyCurrentAmps);
     Telemetry.log("Arm/RollerSupplyCurrentAmps", m_inputs.rollerSupplyCurrentAmps);
-    Telemetry.log("Arm/HasGamePiece", m_inputs.hasGamePiece);
-    Telemetry.log("Arm/GoalDegrees", m_goal.in(Degrees));
-    Telemetry.log("Arm/AtGoal", atGoal());
+    Logger.recordOutput("Arm/GoalDegrees", m_goal.in(Degrees));
+    Logger.recordOutput("Arm/AtGoal", atGoal());
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
      * Log both motors' connections, and set the alert every tick if either one is missing.
      */
 
-    m_ligament.setAngle(toDrawingAngle(Degrees.of(m_inputs.angleDegrees)).in(Degrees));
+    m_ligament.setAngle(toDrawingAngle(Degrees.of(m_inputs.angleDegrees)));
     m_ligament.setColor(
         atGoal() ? ElevatorConstants.kAtGoalColor : ElevatorConstants.kMovingColor);
   }
