@@ -64,7 +64,7 @@ every tick, publish it every tick.
 **Add to `Constants.java`, as a new nested class above `ArmConstants`:**
 
 ```java
-  public static class LedConstants {
+  public static final class LedConstants {
     public static final int kPwmPort = 5; // PWM — change to yours
     public static final int kLength = 40; // LEDs on the strip — change to yours
 
@@ -153,13 +153,14 @@ knowing when a pattern doesn't apply is a more useful skill than knowing
 the pattern.
 
 Go back to what the IO layer is *for*. Lesson 13 built it so that a log
-could eventually be replayed: sensor readings become **inputs**, inputs
-get recorded, and re-running them through changed code reproduces the
-session exactly. Every piece of that machinery exists to serve one
-direction of data — hardware into the robot.
+can be replayed: sensor readings become **inputs**, inputs get recorded,
+and re-running them through changed code reproduces the session exactly.
+Every piece of that machinery exists to serve one direction of data —
+hardware into the robot.
 
 An LED strip has no inputs. Nothing about it can be read, nothing about
-it can surprise you, and there is nothing for a replay to reconstruct.
+it can surprise you, and there is nothing a replay would have to feed back
+in.
 Wrapping it in an IO interface would give you a sim implementation that
 does nothing, an inputs class with no fields, and a mode switch with
 three identical arms.
@@ -170,7 +171,9 @@ three identical arms.
 > empty inputs class, stop and ask what you were hoping to replay.
 
 What the strip *does* get is a log line, because "what was the robot
-showing at 14:32?" is a real question after a match.
+showing at 14:32?" is a real question after a match. It's an output — the
+strip's choice is something your code works out — so it goes through
+`Logger.recordOutput`, and a replay works the choice out again.
 
 ---
 
@@ -206,11 +209,14 @@ memory of which side of that line it's on.
   }
 ```
 
-**And log it, next to the other outputs in `periodic()`:**
+**And record it, next to the other outputs in `periodic()`:**
 
 ```java
-    Telemetry.log("Elevator/Homed", m_homed);
+    Logger.recordOutput("Elevator/Homed", m_homed);
 ```
+
+It's an output, not a reading: no sensor says "homed". Your code decided
+it, the moment homing finished, so a replay decides it again.
 
 Three lines and an accessor, for something the robot already knew and
 had no way to say. That's usually how this goes: the sensor work was
@@ -258,8 +264,9 @@ import org.wpilib.driverstation.RobotState;
 import org.wpilib.hardware.led.AddressableLED;
 import org.wpilib.hardware.led.AddressableLEDBuffer;
 import org.wpilib.hardware.led.LEDPattern;
-import org.wpilib.telemetry.Telemetry;
 import org.wpilib.util.Color;
+
+import org.littletonrobotics.junction.Logger;
 
 import first.robot.Constants.LedConstants;
 
@@ -312,7 +319,7 @@ public class Leds {
 
     pattern.applyTo(m_buffer);
     m_strip.setData(m_buffer);
-    Telemetry.log("Leds/Showing", showing);
+    Logger.recordOutput("Leds/Showing", showing);
   }
 
   /** Blue until the field tells us otherwise — getAlliance() is empty before connection. */
@@ -414,7 +421,11 @@ that could break the robot rather than the thing that's merely
 interesting.
 
 `Leds/Showing` is in the log the whole time, so you can check what it
-decided after the fact rather than squinting at a strip.
+decided after the fact rather than squinting at a strip. A replay works
+the choice out again, too: AdvantageKit records the driver station along
+with everything else (enabled or not, the alliance, the opmode), so
+`RobotState.isDisabled()` and the alliance give a replay the same answers
+they gave the robot.
 
 ---
 
@@ -459,7 +470,7 @@ that's exactly what makes it worth getting right on purpose.
 
 **Not every piece of hardware wants the same treatment.** You have
 applied the IO layer four times, and this time you didn't, because a
-write-only device has no inputs and a replay has nothing to reconstruct.
+write-only device has no inputs and nothing for a replay to feed back in.
 Recognizing that took knowing what the pattern was *for* rather than what
 it looked like. That's the difference between following a convention and
 understanding one, and it's the more useful half.

@@ -50,7 +50,7 @@ public class Elevator implements Mechanism {
     Logger.recordOutput("Elevator/GoalMeters", m_goal.in(Meters));
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
-     * Log whether the elevator has been homed.
+     * Record whether the elevator has been homed, with AdvantageKit's Logger.
      */
 
     // The picture is built once and changed every tick; only the carriage

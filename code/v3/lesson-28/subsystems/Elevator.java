@@ -6,7 +6,6 @@ import static org.wpilib.units.Units.Volts;
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
-import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.Distance;
 
 import org.littletonrobotics.junction.Logger;
@@ -50,7 +49,7 @@ public class Elevator implements Mechanism {
      * ====== NEXT LESSON: ADD CODE HERE ======
      * Log the battery-side current beside the winding-side one.
      */
-    Telemetry.log("Elevator/Homed", m_homed);
+    Logger.recordOutput("Elevator/Homed", m_homed);
 
     // The picture is built once and changed every tick; only the carriage
     // changes here, and anything appended to it (see getCarriage()) rides

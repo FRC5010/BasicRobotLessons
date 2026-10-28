@@ -67,7 +67,7 @@ public class Elevator implements Mechanism {
      * ====== NEXT LESSON: ADD CODE HERE ======
      * Log the "at goal" decision itself, next to the measurements it is built from.
      */
-    Telemetry.log("Elevator/Homed", m_homed);
+    Logger.recordOutput("Elevator/Homed", m_homed);
     Telemetry.log("Elevator/MotorConnected", m_inputs.motorConnected);
 
     // Set every tick, not raised once: an alert is a statement about how

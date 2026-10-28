@@ -7,8 +7,9 @@ import org.wpilib.driverstation.RobotState;
 import org.wpilib.hardware.led.AddressableLED;
 import org.wpilib.hardware.led.AddressableLEDBuffer;
 import org.wpilib.hardware.led.LEDPattern;
-import org.wpilib.telemetry.Telemetry;
 import org.wpilib.util.Color;
+
+import org.littletonrobotics.junction.Logger;
 
 import first.robot.Constants.LedConstants;
 
@@ -72,7 +73,7 @@ public class Leds {
 
     pattern.applyTo(m_buffer);
     m_strip.setData(m_buffer);
-    Telemetry.log("Leds/Showing", showing);
+    Logger.recordOutput("Leds/Showing", showing);
   }
 
   /** Blue until the field tells us otherwise — getAlliance() is empty before connection. */

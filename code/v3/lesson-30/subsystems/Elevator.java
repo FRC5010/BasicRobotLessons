@@ -58,7 +58,7 @@ public class Elevator implements Mechanism {
     Logger.processInputs("Elevator", m_inputs); // every reading, under Elevator/
     Logger.recordOutput("Elevator/GoalMeters", m_goal.in(Meters));
     Telemetry.log("Elevator/SupplyCurrentAmps", m_inputs.supplyCurrentAmps);
-    Telemetry.log("Elevator/Homed", m_homed);
+    Logger.recordOutput("Elevator/Homed", m_homed);
     Telemetry.log("Elevator/MotorConnected", m_inputs.motorConnected);
 
     // Set every tick, not raised once: an alert is a statement about how

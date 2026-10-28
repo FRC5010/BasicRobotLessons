@@ -51,7 +51,7 @@ public class Elevator implements Mechanism {
     Logger.processInputs("Elevator", m_inputs); // every reading, under Elevator/
     Logger.recordOutput("Elevator/GoalMeters", m_goal.in(Meters));
     Telemetry.log("Elevator/SupplyCurrentAmps", m_inputs.supplyCurrentAmps);
-    Telemetry.log("Elevator/Homed", m_homed);
+    Logger.recordOutput("Elevator/Homed", m_homed);
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
      * Log whether the motor is connected, then set both alerts every tick from what's true right now.
