@@ -557,6 +557,53 @@ method as 14–17:**
 - **D-pad in `GamepadSim` is buttons** (`setDpadUpButton` etc.), not
   `setPOV`; a probe that set the POV moved nothing.
 
+**v3 Lessons 23–27 record with AdvantageKit (2026-10-28), same rules and
+method as 14–22:**
+
+- **Lesson 23:** `Leds/Showing` and `Elevator/Homed` are outputs
+  (`Logger.recordOutput`); `Leds` still has no IO layer. **The driver
+  station replays**: `LoggedDriverStation.replayFromLog` sets
+  `AllianceStation`, `Enabled`, the robot mode, `OpModeId` and the joysticks
+  through `DriverStationSim`, and `RobotState.isDisabled()` and
+  `MatchState.getAlliance()` read `DriverStationBackend` (AdvantageKit's
+  source and `javap`). Measured: a run on Red 2 (alliance color logged by a
+  probe-only output) replayed `#FF0000`. **The disable edge replays a tick
+  early, like opmode selection:** the log has `/DriverStation/Enabled` false
+  on the tick before the live loop saw it, so the replay's `Leds/Showing`
+  says "Disabled" one tick sooner (four runs, the DS changed on the robot
+  thread or the test thread). Every other output matched.
+- **Lesson 24:** `Superstructure/State` (kept as `m_state.name()`, so the
+  value is the same string) and `Superstructure/Rejected` are outputs.
+  **The `Debouncer` replays:** `org.wpilib.math.filter.Debouncer` reads
+  `MathSharedStore.getTimestamp()`, which `RobotBase`'s `MathShared` answers
+  with `Timer.getTimestamp()` (bytecode), the clock `Logger.start()`
+  replaces. Measured, a run with a refused intake while disabled and
+  unhomed, homing, intake, a capture, a refused intake in `HOLDING`, a
+  score and a refused score in `IDLE`: every state change and all three
+  refusals on the same ticks in the replay; `HANDOFF` five ticks after the
+  beam break, `HOLDING` 56 ticks after `HANDOFF`. A refusal made while
+  disabled is recorded (the request coroutine runs disabled).
+- **Lesson 25:** no new log lines. **`addOpMode` IDs are stable**: the seven
+  opmode IDs printed in the recording and in the replay were identical
+  (`Pick Up` 72057595124488954, `RobotTeleop` 216172781968692725, …). Pick
+  Up then Aim While Driving in one session replayed with every output
+  matching on every tick, the event-driven `INTAKING`/`HANDOFF`/`HOLDING`/
+  `SCORING` included; the replay built each `PathAuto` one tick sooner (the
+  known skew), invisibly. Pick Up ended (6.00, 0.96, −90.0°), Aim While
+  Driving (8.01, 7.02, −1.2°). The text now says B-Line's `FollowPath/` keys
+  are under **Telemetry** and the rest under **AdvantageKit**.
+- **Lesson 26:** no new log lines; Try It #6 says the plan is an output.
+  Drive To Pose from the boot pose (3, 3, 0°) replayed exactly: `Travel
+  Toward`, `Approach` 1.075 s later, ending bit-identical at (5.007, 4.002,
+  89.99°) about 2.5 s after enable.
+- **Lesson 27:** `Aim/ErrorDegrees`, `Aim/FeedforwardRadPerSec` and
+  `Aim/IsAimed` are outputs, recorded only while something asks `Aim` for a
+  spin rate. Aim While Driving and teleop aiming (left trigger, strafing)
+  replayed with all three matching (388 changes). The teleop leg starts at
+  the auto's start pose, because disabling rebuilds the auto opmode.
+  Lesson 32's "the `Aim/` keys are absent with tag 220" was measured on
+  `Telemetry` and still needs re-measuring on AdvantageKit.
+
 **v3 Lesson 26 (drive to pose) was redesigned on 2026-10-26 at the user's
 request: two motion-profiled stages, handing over while moving.** The old
 design ran the Lesson 11 sketch to 5 cm, then three `PIDController`s; the user
@@ -959,8 +1006,10 @@ rate, `GamepadSim`, `DriverStationSim` enabled, the strip read from
   drive starts. Strip bytes (RGB): `UNHOMED` 255,0,0 on the blink's on-phase,
   `IDLE` 0,0,63, `INTAKING` 255,255,0, `HOLDING` 50,205,50, disabled `IDLE`
   breathing (54 sampled).
-- **Refusals** log to `/Telemetry/Superstructure/Rejected`, and
-  `/Telemetry/Superstructure/State` is the state's `name()`. A probe *can*
+- **Refusals** log to `Superstructure/Rejected`, and `Superstructure/State`
+  is the state's `name()`; both were under `/Telemetry/` when measured, and
+  have been AdvantageKit outputs (`/AdvantageKit/RealOutputs/...`) since
+  2026-10-28. A probe *can*
   read these back with `NetworkTableInstance.getDefault().getStringTopic(...)`
   subscribed after the `Robot` is built (Lesson 23's note that it can't was
   about a different attempt; both are recorded). `Gamepad.Axis` constants are

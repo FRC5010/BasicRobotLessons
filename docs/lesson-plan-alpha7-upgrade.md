@@ -1222,8 +1222,36 @@ Each recorded in SIM by a probe driving the real `Robot` and replayed with
 - **Checks:** 17–33 compile with zero warnings after each lesson; marker
   checker clean 1–33.
 
-**What Lessons 23–34 now owe Lesson 13** (this list started as "14–34";
-14–22 are done above). Their code compiles and runs; what they don't have
+**Lessons 23–27 record with AdvantageKit, 2026-10-28 (same rules).**
+Each recorded in SIM by a probe driving the real `Robot` and replayed with
+`./gradlew run`; details in CLAUDE.md.
+
+- **23 (LEDs):** still no IO layer. `Leds/Showing` and `Elevator/Homed` are
+  outputs. The strip's choice reads `RobotState.isDisabled()` and the
+  alliance, and `LoggedDriverStation` replays both (read in AdvantageKit's
+  source; a Red 2 run replayed red). The replay showed "Disabled" one tick
+  sooner than the live run, the same capture-before-consumption skew as
+  opmode selection, now on the disable edge.
+- **24 (superstructure):** `Superstructure/State` (still `.name()`) and
+  `Superstructure/Rejected` are outputs. The beam-break `Debouncer` reads
+  `MathSharedStore.getTimestamp()` → `Timer.getTimestamp()`, the clock
+  AdvantageKit replaces, so `HANDOFF` replayed on the same tick (five ticks
+  after the beam break, `HOLDING` 56 after that), along with three refusals.
+- **25 (path events):** no new log lines, no code change. The seven opmode
+  IDs (the `addOpMode` autos included) were identical in the recording and
+  the replay; Pick Up, then Aim While Driving in the same session, replayed
+  with every output matching, the intake event's states included.
+- **26 (drive to pose):** no new log lines, no code change; Try It #6 says
+  the plan and the progress are outputs. Drive To Pose (`addOpMode`)
+  replayed exactly from (3, 3, 0) to (5.007, 4.002, 89.99°).
+- **27 (aim):** `Aim/ErrorDegrees`, `FeedforwardRadPerSec` and `IsAimed` are
+  outputs. Aim While Driving and teleop aiming replayed with all three
+  matching on every tick.
+- **Checks:** 22–33 compile with zero warnings after each lesson; marker
+  checker clean 1–33.
+
+**What Lessons 28–34 now owe Lesson 13** (this list started as "14–34";
+14–27 are done above). Their code compiles and runs; what they don't have
 yet is replay of their own values. Each lesson's own pass, when the user
 picks it:
 
@@ -1235,19 +1263,22 @@ picks it:
   found a `Vector<N3>` breaks replay. Fields later lessons add to an
   existing bundle (supply current in 29, `…Connected` in 30) are recorded
   already, so those lessons' extra `Telemetry.log` lines for them can go.
-- Their computed values move to `Logger.recordOutput` (Lesson 23's
-  `Elevator/Homed`, the superstructure state in 24, the flywheel dial in
-  28, and so on). Lesson 28's flywheel dial switches to `LoggedMechanism2d`
+- Their computed values move to `Logger.recordOutput` (the flywheel's goal,
+  `AtSpeed` and dial in 28, the `Power/*` totals in 29, Lesson 32's
+  `AtGoal` and `HeightErrorMeters`, and so on). Lesson 28's flywheel dial switches to `LoggedMechanism2d`
   recorded with `Logger.recordOutput`, as Lessons 19 and 20 did; the
   `Field2d` widget stays on `Telemetry.log`. Values
   moved to AdvantageKit appear in SimGUI under
   **AdvantageKit** (inputs at the top level, outputs under `RealOutputs`), not
   **Telemetry**, so lesson text that says where to look changes with them.
 - **Opmode selection can replay a tick early** (seen in the teleop runs of
-  Lessons 16 and 18–22, not in 14, 15, 17 or the Lesson 33 autos): the new
-  opmode is built one tick sooner in the replay, so a default command set in
-  its constructor starts a tick sooner. Values matched; worth knowing when a
-  later lesson compares the first tick of an opmode.
+  Lessons 16 and 18–24 and 27, not in 14, 15, 17, the Lesson 25 and 26
+  autos or the Lesson 33 autos): the new opmode is built one tick sooner in
+  the replay, so a default command set in its constructor starts a tick
+  sooner. Lesson 23 showed the same on the disable edge (`Leds/Showing`
+  reads "Disabled" a tick sooner). Values matched otherwise; worth knowing
+  when a later lesson compares the first tick of an opmode or a mode
+  change.
 - **Lesson 30:** the framework's `opmode-loop-overrun` alert, which the
   lesson shows as its "raised once" example, no longer exists under
   `LoggedOpModeRobot` (measured: no active alerts after a run). Needs a user
@@ -1255,7 +1286,10 @@ picks it:
   `Telemetry.log` lines duplicate what `processInputs` will log.
 - **Lesson 32:** says in four places that replay is an empty doorway on this
   track, and the README row says so too; it can now prove its fix by
-  replay, as the classic track's lesson does.
+  replay, as the classic track's lesson does. Its "the three `Aim/` keys are
+  absent with a typo'd tag ID" should still hold (an output that's never
+  recorded never appears), but it was measured on `Telemetry` and needs
+  re-measuring.
 - **Lesson 33:** its paragraph on `SysIdRoutineLog` contrasts this track with
   "a track with a separate AdvantageKit `Logger`". This is now that track:
   SysId data lands in DataLogManager's file, not AdvantageKit's.
@@ -1265,7 +1299,9 @@ picks it:
   `StartingPlacement` and its boot reset, the elevator's and arm's `@AutoLog` bundles with
   `processInputs` (and no separate log lines for the switch, the current or
   the beam break), `Sim/GamePieces` on `Logger.recordOutput`, and the
-  `LoggedMechanism2d` drawing recorded with `Logger.recordOutput`.
+  `LoggedMechanism2d` drawing recorded with `Logger.recordOutput`; then
+  Lessons 23–27's outputs (`Elevator/Homed`, `Superstructure/State` and
+  `Rejected`, the three `Aim/` values).
 - Lessons 14, 15 and 17 showed `Robot`'s constructor with
   `DataLogManager.start();`, and 15 showed `extends OpModeRobot`; those
   context lines were updated with this change.
