@@ -1186,27 +1186,59 @@ measured details are in CLAUDE.md.
   checker clean 1–33; Lessons 13 and 15's markers reworded where they named
   the old logging.
 
-**What Lessons 18–34 now owe Lesson 13** (this list started as "14–34";
-14–17 are done above). Their code compiles and runs; what they don't have
-yet is replay. Each lesson's own pass, when the user picks it:
+**Lessons 18–22 record with AdvantageKit, 2026-10-28 (same rules).**
+Each recorded in SIM by a probe driving the real `Robot` and replayed with
+`./gradlew run`; details in CLAUDE.md.
 
-- Every IO-backed subsystem needs `@AutoLog` on its inputs and
-  `Logger.processInputs` in place of its per-field `Telemetry.log` calls:
-  elevator (18), arm (20), flywheel (28). (Vision, 15, is done.) Measured on
-  the Lesson 33 state: replay reproduces the drivetrain's heading and module
-  states, but the path auto never drives in replay, because the elevator
-  never homes without recorded inputs. A record field must be a primitive,
-  enum, record or fixed-layout WPILib type; Lesson 15 found a `Vector<N3>`
-  breaks replay.
-- Their computed values move to `Logger.recordOutput` (the mechanism
-  drawings in 19/20/28, which AdvantageKit's `LoggedMechanism2d` can record,
-  and so on). Values moved to AdvantageKit appear in SimGUI under
+- **18 (elevator):** `@AutoLog` inputs and `processInputs("Elevator", …)`
+  with unchanged keys; the profile setpoint stays an input (read from the
+  motor controller); `GoalMeters` is an output. Peak lag in the real loop
+  with AdvantageKit: 10.6–19.7 mm with the model, 82–112 mm with `kV`
+  zeroed — the old code measured the same way gave 11.0–21.0 mm, so the
+  change doesn't move it. The lesson's "1.5–2 cm" stays; single moves at
+  ~1.1 cm fall just under it.
+- **19 (drawing):** stays on `Telemetry.log`, per the widget default; the
+  lesson says why. Tested, not adopted: a `LoggedMechanism2d` recorded with
+  `Logger.recordOutput` draws live in SimGUI (NetworkTables menu →
+  AdvantageKit → RealOutputs → Elevator).
+- **20 (arm):** `@AutoLog` inputs, `processInputs("Arm", …)`; goal and
+  `AtGoal` are outputs.
+- **21 (homing):** the switch and current are bundle fields, so the two log
+  lines Lesson 21 added are gone; the text says why none are needed and
+  what a replay makes of homing. A homing run replayed exactly.
+- **22 (beam break):** same for `HasGamePiece`; `Sim/GamePieces` is a
+  sim-only output. A capture-and-score run replayed exactly.
+- **The Lesson 33 state's Two Corners and Pick Up autos now drive in
+  replay**, every arm, elevator, drivetrain and localizer output matching;
+  only the flywheel's disconnected alert differs, until Lesson 28's pass.
+- **Checks:** 17–33 compile with zero warnings after each lesson; marker
+  checker clean 1–33.
+
+**What Lessons 23–34 now owe Lesson 13** (this list started as "14–34";
+14–22 are done above). Their code compiles and runs; what they don't have
+yet is replay of their own values. Each lesson's own pass, when the user
+picks it:
+
+- The flywheel (28) needs `@AutoLog` on its inputs and
+  `Logger.processInputs` in place of its per-field `Telemetry.log` calls.
+  (Vision 15, elevator 18 and arm 20 are done.) Until then, a replay of the
+  Lesson 33 state keeps the flywheel's disconnected alert up. A record field
+  must be a primitive, enum, record or fixed-layout WPILib type; Lesson 15
+  found a `Vector<N3>` breaks replay. Fields later lessons add to an
+  existing bundle (supply current in 29, `…Connected` in 30) are recorded
+  already, so those lessons' extra `Telemetry.log` lines for them can go.
+- Their computed values move to `Logger.recordOutput` (Lesson 23's
+  `Elevator/Homed`, the superstructure state in 24, the flywheel dial in
+  28, and so on). Drawings stay on `Telemetry.log` unless the user picks
+  `LoggedMechanism2d` (which SimGUI does draw, see Lesson 19 above). Values
+  moved to AdvantageKit appear in SimGUI under
   **AdvantageKit** (inputs at the top level, outputs under `RealOutputs`), not
   **Telemetry**, so lesson text that says where to look changes with them.
-- **Opmode selection can replay a tick early** (seen twice in Lesson 16's
-  runs, not in 14, 15 or 17): the new opmode is built one tick sooner in the
-  replay. Values matched; worth knowing when a later lesson compares the
-  first tick of an opmode.
+- **Opmode selection can replay a tick early** (seen in the teleop runs of
+  Lessons 16 and 18–22, not in 14, 15, 17 or the Lesson 33 autos): the new
+  opmode is built one tick sooner in the replay, so a default command set in
+  its constructor starts a tick sooner. Values matched; worth knowing when a
+  later lesson compares the first tick of an opmode.
 - **Lesson 30:** the framework's `opmode-loop-overrun` alert, which the
   lesson shows as its "raised once" example, no longer exists under
   `LoggedOpModeRobot` (measured: no active alerts after a run). Needs a user
@@ -1219,9 +1251,11 @@ yet is replay. Each lesson's own pass, when the user picks it:
   "a track with a separate AdvantageKit `Logger`". This is now that track:
   SysId data lands in DataLogManager's file, not AdvantageKit's.
 - **Lesson 34** (unmigrated) must carry Lesson 13's `Robot` when migrated,
-  and Lessons 14–16's changes too: the vision record's three trust numbers,
-  `Drivetrain/SimulatedPose` on `Logger.recordOutput`, and the boot reset's
-  `!= Mode.REAL`.
+  and Lessons 14–22's changes too: the vision record's three trust numbers,
+  `Drivetrain/SimulatedPose` on `Logger.recordOutput`, the boot reset's
+  `!= Mode.REAL`, the elevator's and arm's `@AutoLog` bundles with
+  `processInputs` (and no separate log lines for the switch, the current or
+  the beam break), and `Sim/GamePieces` on `Logger.recordOutput`.
 - Lessons 14, 15 and 17 showed `Robot`'s constructor with
   `DataLogManager.start();`, and 15 showed `extends OpModeRobot`; those
   context lines were updated with this change.

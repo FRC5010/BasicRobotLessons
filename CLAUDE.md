@@ -409,9 +409,10 @@ loop:
   ((3, 3, 0°) → (5.98, 6.02, 178.7°)). **Replaying it is incomplete:**
   heading and measured module states match, but the auto never drives,
   because the elevator's inputs aren't recorded yet and it never homes in
-  replay. Each IO-backed lesson (18 elevator, 20 arm, 28 flywheel) needs
-  `@AutoLog` + `processInputs` before its lesson replays; vision (15) has
-  had it since the Lessons 14–17 pass below.
+  replay. Each IO-backed lesson needs `@AutoLog` + `processInputs` before
+  its lesson replays; vision (15), the elevator (18) and the arm (20) have
+  it since the passes below, and with them the Lesson 33 state's path autos
+  drive in replay. The flywheel (28) is the one left.
 - **`Telemetry.log` is not captured by AdvantageKit.** WPILib alpha-7's
   `TelemetryRegistry.registerBackend(prefix, backend)` would let a bridge
   record every `Telemetry.log` too (prototyped and working; `RobotBase`'s
@@ -477,12 +478,62 @@ run` in `REPLAY`, and comparing every `/RealOutputs/…` key with its
   unaffected). `LoggedDriverStation` captures `OpModeId` through `ConduitApi`
   before `loopFunc` reads `DriverStationBackend`'s cache; in the live runs the
   cache saw the change a tick later. The Lesson 14, 15 and 17 runs didn't
-  show it. Recorded, not worked around.
+  show it; every teleop run in Lessons 18–22 did (DS changed on the robot
+  thread), the Lesson 33 auto runs didn't. Recorded, not worked around.
 - **Where things are:** NT4Publisher puts inputs at `/AdvantageKit/<key>` and
   outputs at `/AdvantageKit/RealOutputs/<key>`; DataLogManager's `WPILIB_` log
   saves those NT topics too. Lesson 30's text now tells students to import
   `Telemetry` for its `…/Connected` lines, since `Drivetrain`,
   `SwerveModule` and `LimelightPoseProvider` no longer import it by then.
+
+**v3 Lessons 18–22 record with AdvantageKit (2026-10-28), same rules and
+method as 14–17:**
+
+- **Lesson 18:** `@AutoLog` on `ElevatorIOInputs`; `processInputs("Elevator",
+  …)` replaces four `Telemetry.log` lines with the same keys (AdvantageKit
+  names each value after its field, capitalized). The profile setpoint
+  (`getClosedLoopReference()`) stays an input: the profile runs in the
+  motor controller. `Elevator/GoalMeters` is an output. Peak lag stowed →
+  `kMaxHeight` in the real `Robot` loop with AdvantageKit running, read
+  from the `akit_` log: 10.6–19.7 mm with the model over ten moves (the old
+  `Telemetry` code under the same probe: 11.0–21.0 mm, read from the
+  `WPILIB_` log), 82–112 mm with `kV` zeroed. Moves cluster near 11 mm or
+  near 20 mm run to run. The lesson's "1.5–2 cm" was left alone; single
+  moves at ~1.1 cm sit below it.
+- **Lesson 19:** no new values; the `Mechanism2d` stays on `Telemetry.log`
+  (Lesson 13's widget rule), with Lesson 13's field-widget comment on the
+  line. **AdvantageKit's `LoggedMechanism2d` recorded with
+  `Logger.recordOutput` does draw in SimGUI** (measured under Xvfb with an
+  animated probe): it's listed in SimGUI's **NetworkTables** menu under
+  **AdvantageKit → RealOutputs → Elevator**, and moves live.
+  `LoggedMechanism2d` also implements `TelemetryLoggable`. Not adopted; the
+  user decides.
+- **Lesson 20:** `@AutoLog` on `ArmIOInputs`, `processInputs("Arm", …)`;
+  `Arm/GoalDegrees` and `Arm/AtGoal` are outputs. The drawing is the
+  elevator's, still on `Telemetry`.
+- **Lesson 21:** the switch and stator current are fields of the bundle, so
+  they're recorded without the two `Telemetry.log` lines Lesson 21 used to
+  add (removed from 21 on, with Lesson 20's marker). A homing run replayed
+  the `Home` command, the switch, the −0.34 → 0.01 snap (one tick after the
+  switch, in the recording) and every goal after it on the same ticks;
+  `setVoltage`/`setPositionMeters` do nothing in replay, and needn't.
+- **Lesson 22:** `hasGamePiece` likewise needs no log line (removed from 22,
+  28–30, with Lesson 21's marker). `Sim/GamePieces` is sim-only truth,
+  `Logger.recordOutput` from `ArmIOSim`, so only under `RealOutputs` in a
+  replay. A capture run (home, arm down, drive onto (4.5, 3.2) with the
+  roller in, capture stows the arm and raises the elevator to 0.75 m, score
+  with the right trigger) replayed with the beam break, the `Capture`
+  group's commands, both goals, the roller commands and the pose matching.
+- **The Lesson 33 state now replays its path autos** (Blue 1): Two Corners
+  (≈4.2 s getting ready, ≈4.1 s following, ends (5.97, 6.01, 178.7°)) and
+  Pick Up (ends (6.00, 0.96, −90.0°)) replayed with every arm, elevator,
+  drivetrain and localizer output matching on every tick. The one
+  difference: `Alerts/errors` keeps "Flywheel motor is not on the CAN bus"
+  after the boot flicker in replay, because the flywheel's inputs aren't
+  recorded until Lesson 28's pass. AdvantageKit records the WPILib alert
+  group as `RealOutputs/Alerts/…` on its own.
+- **D-pad in `GamepadSim` is buttons** (`setDpadUpButton` etc.), not
+  `setPOV`; a probe that set the POV moved nothing.
 
 **v3 Lesson 26 (drive to pose) was redesigned on 2026-10-26 at the user's
 request: two motion-profiled stages, handing over while moving.** The old
