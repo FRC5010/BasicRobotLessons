@@ -14,6 +14,8 @@ import static org.wpilib.units.Units.Meters;
 import static org.wpilib.units.Units.MetersPerSecond;
 import static org.wpilib.units.Units.MetersPerSecondPerSecond;
 import static org.wpilib.units.Units.Percent;
+import static org.wpilib.units.Units.RadiansPerSecond;
+import static org.wpilib.units.Units.RadiansPerSecondPerSecond;
 import static org.wpilib.units.Units.RotationsPerSecond;
 import static org.wpilib.units.Units.Seconds;
 import static org.wpilib.units.Units.Volts;
@@ -30,6 +32,7 @@ import org.wpilib.math.geometry.Rotation3d;
 import org.wpilib.math.geometry.Transform3d;
 import org.wpilib.math.geometry.Translation2d;
 import org.wpilib.math.geometry.Translation3d;
+import org.wpilib.math.trajectory.TrapezoidProfile;
 import org.wpilib.units.measure.Angle;
 import org.wpilib.units.measure.AngularAcceleration;
 import org.wpilib.units.measure.AngularVelocity;
@@ -147,37 +150,73 @@ public final class Constants {
     public static final double kSimHorizontalFovDegrees = 80.0;
     public static final double kSimVerticalFovDegrees = 56.0;
     public static final double kSimMaxRangeMeters = 6.0;
+  }
 
-    // --- Object detection ---------------------------------------------------
-    // A detection model reports what it saw as a number, and this pair is the
-    // entire mapping between that number and what it means. There is no
-    // standard class ID — it's the index of a class in the model YOU trained,
-    // so on a real robot this constant is whatever your model emits.
-    public static final String kGamePieceType = "Fuel";
-    public static final int kGamePieceClassId = 0;
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * A nested class of constants for the shooter flywheel: its CAN ID, gear
+   * ratio and inertia, idle/shoot speeds and tolerance, the speedometer's
+   * dimensions, and the model's gains (no gravity term).
+   */
+  public static final class PathConstants {
+    // BLine runs three P loops at once. Every gain here is "output per unit of
+    // error", and since error is meters (or radians) and output is per-second,
+    // the units all come out to 1/s.
+    public static final double kTranslationP = 5.0; // m/s per meter of path left
+    public static final double kRotationP = 3.0;    // rad/s per radian of heading error
+    public static final double kCrossTrackP = 2.0;  // m/s per meter off the line
 
-    /** A Fuel is a 15 cm ball, so its middle sits 8 cm off the floor. */
-    public static final Distance kGamePieceDiameter = Meters.of(0.15);
-    public static final Distance kGamePieceHeight = Meters.of(0.08);
+    // Overlapping work: how much path has to be left when the robot asks to
+    // score. A distance, not a time — a slow path still scores in the same place.
+    public static final Distance kScoreDistance = Meters.of(0.5);
 
-    public static final String kObjectCameraName = "Objects";
-    /**
-     * The detection camera, tilted down so it can see the floor in front of
-     * the robot. Positive pitch here points the camera DOWN.
-     */
-    public static final Transform3d kRobotToObjectCamera = new Transform3d(
-        new Translation3d(0.3, 0.0, 0.5),           // 30 cm forward, 50 cm up
-        new Rotation3d(0, Math.toRadians(20), 0));  // 20° down
+    // Aiming while the path drives. The rotation override wants an angular
+    // velocity, not a heading, so this gain turns heading error into a rate.
+    public static final double kAimP = 4.0; // rad/s per radian of heading error
+    /** The tag to point at. Change it to the one your alliance actually scores on. */
+    public static final int kAimTagId = 20;
+    /** Close enough to call it aimed. */
+    public static final Angle kAimTolerance = Degrees.of(2);
 
-    /** Below this, the model is guessing and we'd rather not drive at it. */
-    public static final double kMinConfidence = 0.5;
+    // Getting somewhere on a plan, in two stages. Stage one covers ground, and
+    // can afford to be firm about it.
+    public static final LinearVelocity kTravelSpeed = MetersPerSecond.of(3.0);
+    public static final LinearAcceleration kTravelAccel = MetersPerSecondPerSecond.of(4.0);
 
-    /** Sim only: fixed field positions for the fake camera to see. No physics — just a layout. */
-    public static final Translation2d[] kSimGamePiecePositions = {
-        new Translation2d(4.5, 3.2),
-        new Translation2d(2.0, 1.5),
-        new Translation2d(6.0, 3.8),
-    };
+    // Where stage one hands over, and how fast the robot may still be going.
+    // Stage two could stop from at most √(2 × 1.5 × 1.0) = 1.73 m/s in that
+    // distance; the drive runs about 0.4 m/s behind the plan while slowing at
+    // 4 m/s², so plan 1.2 and leave it room.
+    public static final Distance kHandoffDistance = Meters.of(1.0);
+    public static final LinearVelocity kHandoffSpeed = MetersPerSecond.of(1.2);
+
+    // Stage two arrives, and gently: the last metre is where accuracy lives.
+    public static final LinearAcceleration kApproachAccel = MetersPerSecondPerSecond.of(1.5);
+
+    // Turning, in both stages: half a turn a second at most.
+    public static final AngularVelocity kTurnSpeed = RadiansPerSecond.of(Math.PI);
+    public static final AngularAcceleration kTurnAccel = RadiansPerSecondPerSecond.of(4.0);
+
+    // The same limits in the form a profile takes them: top speed, then acceleration.
+    public static final TrapezoidProfile.Constraints kTravelLimits = new TrapezoidProfile.Constraints(
+        kTravelSpeed.in(MetersPerSecond), kTravelAccel.in(MetersPerSecondPerSecond));
+    public static final TrapezoidProfile.Constraints kApproachLimits = new TrapezoidProfile.Constraints(
+        kHandoffSpeed.in(MetersPerSecond), kApproachAccel.in(MetersPerSecondPerSecond));
+    public static final TrapezoidProfile.Constraints kTurnLimits = new TrapezoidProfile.Constraints(
+        kTurnSpeed.in(RadiansPerSecond), kTurnAccel.in(RadiansPerSecondPerSecond));
+
+    // The trims: what to do about the robot drifting off its plan.
+    public static final double kAlignP = 3.0;      // m/s per meter behind or ahead of the plan
+    public static final double kAlignThetaP = 4.0; // rad/s per radian of heading error
+
+    // "Arrived" is a decision, and this is where it gets made: close enough,
+    // slow enough, and facing the right way.
+    public static final Distance kPositionTolerance = Centimeters.of(2);
+    public static final LinearVelocity kSpeedTolerance = MetersPerSecond.of(0.05);
+    public static final Angle kAngleTolerance = Degrees.of(1);
+
+    /** Where the left bumper lines the robot up. */
+    public static final Pose2d kScoringPose = new Pose2d(5.0, 4.0, Rotation2d.fromDegrees(90));
   }
 
   public static final class ElevatorConstants {
@@ -225,22 +264,28 @@ public final class Constants {
     public static final Angle kCarriageAngle = Degrees.of(90);
   }
 
-  public static class LedConstants {
+  public static final class LedConstants {
     public static final int kPwmPort = 5; // PWM — change to yours
     public static final int kLength = 40; // LEDs on the strip — change to yours
 
-    // One pattern per SuperstructureState, built once, here, next to the
-    // color it uses — SuperstructureState's constructor just picks one up.
-    public static final LEDPattern kUnhomed = LEDPattern.solid(Color.RED).blink(Seconds.of(0.15));
+    // A pattern is a value, not a loop. Build them once, here, next to the
+    // colors they use, and hand the finished description to the strip.
+    // One per state, and named after it — the strip's vocabulary and the
+    // robot's are the same vocabulary.
     public static final Dimensionless kIdleBrightness = Percent.of(25);
+    public static final Time kBlinkPeriod = Seconds.of(0.15);
+
+    public static final LEDPattern kUnhomed = LEDPattern.solid(Color.RED).blink(kBlinkPeriod);
     public static final LEDPattern kIdle = LEDPattern.solid(Color.BLUE).atBrightness(kIdleBrightness);
     public static final LEDPattern kIntaking = LEDPattern.solid(Color.YELLOW);
-    public static final LEDPattern kScoring = LEDPattern.solid(Color.LIME_GREEN).blink(Seconds.of(0.1));
+    public static final LEDPattern kHandoff = kIntaking.blink(kBlinkPeriod);
+    public static final LEDPattern kHolding = LEDPattern.solid(Color.LIME_GREEN);
+    public static final LEDPattern kScoring = kHolding.blink(kBlinkPeriod);
 
     public static final Time kBreathePeriod = Seconds.of(2);
   }
 
-  public static class ArmConstants {
+  public static final class ArmConstants {
     public static final int kPivotMotorPort = 21; // CAN ID — change to yours
     public static final int kRollerMotorPort = 22; // CAN ID — change to yours
 
@@ -274,19 +319,20 @@ public final class Constants {
     // The roller has no goal to profile — just a direction and a speed.
     public static final double kIntakeSpeed = 0.6; // fraction of full output
     public static final double kEjectSpeed = -0.6;
-  }
 
-  public static class PathConstants {
-    // Stage two's gains. Higher than stage one's, because its errors are tiny
-    // by the time it takes over — it only ever starts a short distance away.
-    public static final double kAlignP = 3.0;      // m/s per meter of error
-    public static final double kAlignThetaP = 4.0; // rad/s per radian of error
+    // The beam break: an infrared beam across the throat of the intake, broken
+    // when a game piece is actually sitting where it belongs.
+    public static final int kBeamBreakChannel = 1; // DIO — change to yours
+    public static final Time kBeamDebounce = Seconds.of(0.1);
 
-    // "Arrived" is a decision, and this is where it gets made.
-    public static final Distance kPositionTolerance = Centimeters.of(2);
-    public static final Angle kAngleTolerance = Degrees.of(1);
-
-    /** Where the left bumper lines the robot up. */
-    public static final Pose2d kScoringPose = new Pose2d(5.0, 4.0, Rotation2d.fromDegrees(90));
+    // Sim only: the box in front of the bumper that the roller can reach, and
+    // where the game pieces lie on the field when the simulation starts.
+    public static final Distance kIntakeWidth = Inches.of(24);
+    public static final Distance kIntakeReach = Inches.of(12);
+    public static final Translation2d[] kSimGamePiecePositions = {
+        new Translation2d(4.5, 3.2),
+        new Translation2d(2.0, 1.5),
+        new Translation2d(6.0, 3.8),
+    };
   }
 }

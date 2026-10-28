@@ -7,7 +7,7 @@ import org.wpilib.driverstation.RobotState;
 import org.wpilib.hardware.led.AddressableLED;
 import org.wpilib.hardware.led.AddressableLEDBuffer;
 import org.wpilib.hardware.led.LEDPattern;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 import org.wpilib.util.Color;
 
 import first.robot.Constants.LedConstants;
@@ -28,15 +28,28 @@ public class Leds {
   private final AddressableLED m_strip = new AddressableLED(LedConstants.kPwmPort);
   private final AddressableLEDBuffer m_buffer = new AddressableLEDBuffer(LedConstants.kLength);
 
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * The strip stops reading the mechanisms: it takes a supplier of the robot's
+   * state and nothing else.
+   */
   private final Elevator m_elevator;
+  private final Arm m_arm;
 
-  public Leds(Elevator elevator) {
+  public Leds(Elevator elevator, Arm arm) {
     m_elevator = elevator;
+    m_arm = arm;
 
     m_strip.setLength(m_buffer.getLength());
     Scheduler.getDefault().addPeriodic(this::periodic);
   }
 
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * Ask the state for its pattern, and layer a slow breathe on top while disabled.
+   * The ordered chain of conditions goes away, along with the alliance color,
+   * which a state's fixed pattern can't know.
+   */
   private void periodic() {
     // Ordered on purpose: the first condition that is true wins the strip.
     // Read it top to bottom as "what matters most, if it's happening."
@@ -46,6 +59,9 @@ public class Leds {
     if (!m_elevator.isHomed()) {
       showing = "NotHomed";
       pattern = LedConstants.kNotHomed;
+    } else if (m_arm.hasGamePiece()) {
+      showing = "HasGamePiece";
+      pattern = LedConstants.kHasGamePiece;
     } else if (RobotState.isDisabled()) {
       showing = "Disabled";
       pattern = LEDPattern.solid(allianceColor()).breathe(LedConstants.kBreathePeriod);
@@ -56,7 +72,7 @@ public class Leds {
 
     pattern.applyTo(m_buffer);
     m_strip.setData(m_buffer);
-    SmartDashboard.putString("Leds/Showing", showing);
+    Telemetry.log("Leds/Showing", showing);
   }
 
   /** Blue until the field tells us otherwise — getAlliance() is empty before connection. */

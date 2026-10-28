@@ -11,9 +11,8 @@ import org.wpilib.hardware.led.LEDPattern;
 import first.robot.Constants.LedConstants;
 
 /**
- * The strip. It owns no motors and makes no decisions about what the robot
- * does — it only decides what a human standing next to the robot gets to
- * know, and every state it might show now lives on SuperstructureState.
+ * The strip. It knows one thing — what the robot is doing — and nothing at
+ * all about how the robot worked that out. No Elevator, no Arm, no sensors.
  *
  * <p>No IO layer here on purpose: an LED strip is write-only, and the IO
  * pattern exists to make sensor *inputs* replayable. There are none to
@@ -35,10 +34,13 @@ public class Leds {
   }
 
   private void periodic() {
+    // The state says what the robot is doing. Being disabled says whether
+    // anyone can act on it. Two questions, so two lines.
     LEDPattern pattern = m_state.get().pattern();
     if (RobotState.isDisabled()) {
       pattern = pattern.breathe(LedConstants.kBreathePeriod);
     }
+
     pattern.applyTo(m_buffer);
     m_strip.setData(m_buffer);
   }

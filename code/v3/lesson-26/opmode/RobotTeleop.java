@@ -12,7 +12,6 @@ import first.robot.Constants.DriveConstants;
 import first.robot.Constants.ElevatorConstants;
 import first.robot.Robot;
 import first.robot.commands.Autos;
-import first.robot.subsystems.SuperstructureState;
 
 @Teleop
 public class RobotTeleop extends PeriodicOpMode {
@@ -31,35 +30,16 @@ public class RobotTeleop extends PeriodicOpMode {
             () -> DriveConstants.kMaxAngularSpeed.times(-robot.driverController.getRightX())));
 
     // Tap the bottom face button to turn and face 90°; the right face button for 0°.
-    robot.driverController.southFace().onTrue(robot.drivetrain.turnToHeading(90));
-    robot.driverController.eastFace().onTrue(robot.drivetrain.turnToHeading(0));
+    robot.driverController.faceDown().onTrue(robot.drivetrain.turnToHeading(90));
+    robot.driverController.faceRight().onTrue(robot.drivetrain.turnToHeading(0));
 
-    // The D-pad still talks straight to the elevator, bypassing Superstructure
-    // entirely — a leftover from before the state machine existed. Right now,
-    // on a fresh boot, nothing stops dpadUp from swinging the carriage to full
-    // height before the robot has ever been homed. That is exactly the hole
-    // canGoTo below closes for the face-button requests. See Try It.
+    // D-pad: send the elevator to one of its three preset heights.
     robot.driverController.dpadDown().onTrue(robot.elevator.goToHeight(ElevatorConstants.kStowed));
     robot.driverController.dpadRight().onTrue(robot.elevator.goToHeight(ElevatorConstants.kScoreMid));
     robot.driverController.dpadUp().onTrue(robot.elevator.goToHeight(ElevatorConstants.kScoreHigh));
 
-    // West face requests INTAKING, north face requests IDLE, right trigger
-    // requests SCORING. Each request only flips Superstructure's state if
-    // canGoTo allows it — the actual arm/elevator motion is bound below,
-    // to the state itself, not to these buttons.
-    robot.driverController.westFace().onTrue(robot.superstructure.requestIntake());
-    robot.driverController.northFace().onTrue(robot.superstructure.requestIdle());
-    robot.driverController.rightTrigger().onTrue(robot.superstructure.requestScore());
-
-    // Arriving in a state already answered the "is this allowed" question,
-    // so these run unguarded — the moment m_state matches, the matching
-    // motion command is scheduled, and it is canceled the moment it doesn't.
-    robot.superstructure.inState(SuperstructureState.IDLE).whileTrue(robot.superstructure.idleMotion());
-    robot.superstructure.inState(SuperstructureState.INTAKING).whileTrue(robot.superstructure.intakeMotion());
-    robot.superstructure.inState(SuperstructureState.SCORING).whileTrue(robot.superstructure.scoreMotion());
-
-    // Hold the left bumper to line up on the scoring pose: coarse across
-    // the field, then slow and exact for the last stretch.
+    // Hold the left bumper to line up on the scoring pose: firm across the
+    // field, then a gentle approach that ends stopped on the spot.
     robot.driverController.leftBumper().whileTrue(
         Autos.driveToScoringPose(robot.drivetrain, robot.localizer));
 
@@ -70,7 +50,28 @@ public class RobotTeleop extends PeriodicOpMode {
     // A Trigger is any boolean the scheduler polls — it does not have to be
     // a button. Whenever the switch trips, take its word for the height.
     new Trigger(robot.elevator::atBottomLimit).onTrue(robot.elevator.rezeroAtBottom());
+
+    // Face buttons ask the superstructure for a state: left to intake, top to
+    // give up and go back to neutral, right trigger to score. They don't check
+    // whether it makes sense — that's the state machine's job, and it refuses
+    // out loud.
+    robot.driverController.faceLeft().onTrue(robot.superstructure.requestIntake());
+    robot.driverController.faceUp().onTrue(robot.superstructure.requestIdle());
+    robot.driverController.rightTrigger().onTrue(robot.superstructure.requestScore());
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Aim assist: while the left trigger is held, the driver keeps both
+     * translation sticks and the robot takes over rotation, spinning to keep
+     * its nose on a tag.
+     */
   }
+
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * A small helper that turns the new aiming arithmetic into the angular
+   * velocity the drive command expects.
+   */
 
   @Override
   public void disabledPeriodic() {

@@ -17,7 +17,7 @@
 # The highest lesson whose code has been migrated to WPILib 2027 alpha-7.
 # Snapshots above it still target alpha-6 and don't compile on the current
 # base; raise this as Phase 1b migrates them (docs/lesson-plan-alpha7-upgrade.md).
-V3_ALPHA7_THROUGH=22
+V3_ALPHA7_THROUGH=33
 
 # --- vendordeps -------------------------------------------------------------
 # Pinned to WPILib's vendordep marketplace's 2027_alpha7 bucket, one
@@ -53,6 +53,8 @@ V3_DELETIONS=(
   "9|opmode/MyTeleop.java|opmode/RobotTeleop.java"
   "9|opmode/MyAuto.java|opmode/RobotAuto.java"
   "15|subsystems/VisionPoseProvider.java"  # replaced by LimelightPoseProvider
+  "25|opmode/RobotAutoTwoCorners.java"  # path autos are PathAuto + addOpMode
+  "25|opmode/RobotAutoFarSide.java"
 )
 
 # v3_python

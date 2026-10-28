@@ -5,15 +5,21 @@ import org.wpilib.hardware.led.LEDPattern;
 import first.robot.Constants.LedConstants;
 
 /**
- * Every mode the superstructure can be in, and the one question an enum
- * constant can answer on its own: is a given move legal from here? Nothing
- * below reads a sensor — that is deliberate. canGoTo is a rulebook, not a
- * measurement.
+ * Everything the robot can be doing, as one value. Not a sensor reading and
+ * not a button press — a name for the situation the whole robot is in, and
+ * the one question an enum constant can answer on its own: is a given move
+ * legal from here?
+ *
+ * <p>Called SuperstructureState and not RobotState because WPILib already
+ * ships a class called RobotState, and having two of those in one file is an
+ * afternoon you don't get back.
  */
 public enum SuperstructureState {
   UNHOMED(LedConstants.kUnhomed),
   IDLE(LedConstants.kIdle),
   INTAKING(LedConstants.kIntaking),
+  HANDOFF(LedConstants.kHandoff),
+  HOLDING(LedConstants.kHolding),
   SCORING(LedConstants.kScoring);
 
   private final LEDPattern m_pattern;
@@ -22,23 +28,26 @@ public enum SuperstructureState {
     m_pattern = pattern;
   }
 
+  /** What the strip shows while the robot is in this state. */
   public LEDPattern pattern() {
     return m_pattern;
   }
 
   /**
-   * Is 'next' a legal move from this state? An exhaustive switch expression:
-   * add a state and this stops compiling until you say what it can do.
+   * Can a request move the robot from here to there? This is a rule about how
+   * the robot is built, not about this instant — no sensor is read to answer
+   * it, and the answer never changes.
+   *
+   * <p>UNHOMED answers no to everything on purpose. The only way out is to
+   * actually home the elevator; no button gets to simply declare it done.
    */
   public boolean canGoTo(SuperstructureState next) {
     return switch (this) {
-      // No request of any kind gets the robot out of UNHOMED. The only exit
-      // is Superstructure.periodic() noticing the elevator homed itself.
       case UNHOMED -> false;
-      // You have to go get a piece before you can claim to be ready to
-      // score one — IDLE can only ask to go collect.
       case IDLE -> next == INTAKING;
-      case INTAKING -> next == IDLE || next == SCORING;
+      case INTAKING -> next == HANDOFF || next == IDLE;
+      case HANDOFF -> next == HOLDING || next == IDLE;
+      case HOLDING -> next == SCORING || next == IDLE;
       case SCORING -> next == IDLE;
     };
   }

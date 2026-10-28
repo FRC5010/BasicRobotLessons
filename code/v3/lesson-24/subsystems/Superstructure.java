@@ -1,33 +1,34 @@
 package first.robot.subsystems;
 
+import static org.wpilib.units.Units.Seconds;
+
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.command3.Trigger;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.math.filter.Debouncer;
+import org.wpilib.telemetry.Telemetry;
 
 import first.robot.Constants.ArmConstants;
 import first.robot.Constants.ElevatorConstants;
 
 /**
- * The one place that knows what the robot is doing right now, and the one
- * place that decides what it is allowed to do next.
+ * What the robot is doing, in one place. It owns no motors — it owns the
+ * single fact every other decision hangs off, and the rules about how that
+ * fact is allowed to change.
  *
- * <p>Owns no motors and requires nothing — every command below either
- * requires nothing itself (the request commands, which only ever touch
- * m_state) or delegates to Elevator/Arm commands that carry their own
- * requirements. A state request can never preempt a mechanism mid-motion by
- * accident, because asking "what state should we be in" and "move the
- * mechanisms" are different commands.
- *
- * <p>Needs the scheduler, for periodic()'s automatic transition below — but
- * needing the scheduler and being a Mechanism turn out to be two different
- * questions in this framework. Nothing ever requires a Superstructure, so it
- * is a plain class with a periodic heartbeat, exactly like Localizer.
+ * <p>Requires nothing, so a state request can never cancel a mechanism that
+ * is already moving. It needs the scheduler for periodic(), but nothing ever
+ * requires a Superstructure, so it is a plain class with a periodic
+ * heartbeat, exactly like Localizer.
  */
 public class Superstructure {
   private final Elevator m_elevator;
   private final Arm m_arm;
+
   private SuperstructureState m_state = SuperstructureState.UNHOMED;
+
+  /** The filter Lesson 22 hung on a Trigger, here in its plain form. */
+  private final Debouncer m_pieceFilter = new Debouncer(ArmConstants.kBeamDebounce.in(Seconds));
 
   public Superstructure(Elevator elevator, Arm arm) {
     m_elevator = elevator;
@@ -35,22 +36,55 @@ public class Superstructure {
     Scheduler.getDefault().addPeriodic(this::periodic);
   }
 
-  /**
-   * The only automatic transition in the whole machine, because it is the
-   * only one backed by a sensor that still exists: the bottom limit switch
-   * from Lesson 21. Every other move in this lesson has to be asked for.
-   */
   private void periodic() {
-    if (m_state == SuperstructureState.UNHOMED && m_elevator.isHomed()) {
-      m_state = SuperstructureState.IDLE;
+    boolean hasPiece = m_pieceFilter.calculate(m_arm.hasGamePiece());
+
+    // The transitions the robot makes for itself, once the hardware has
+    // actually caught up. These don't consult canGoTo: that rule is about
+    // requests, and this is the state machine deciding, not asking.
+    switch (m_state) {
+      case UNHOMED -> {
+        if (m_elevator.isHomed()) {
+          m_state = SuperstructureState.IDLE;
+        }
+      }
+      case INTAKING -> {
+        if (hasPiece) {
+          m_state = SuperstructureState.HANDOFF;
+        }
+      }
+      case HANDOFF -> {
+        if (!hasPiece) {
+          m_state = SuperstructureState.IDLE;
+        } else if (m_elevator.atGoal() && m_arm.atGoal()) {
+          m_state = SuperstructureState.HOLDING;
+        }
+      }
+      case HOLDING, SCORING -> {
+        if (!hasPiece) {
+          m_state = SuperstructureState.IDLE;
+        }
+      }
+      case IDLE -> {
+        // Nothing happens here on its own. Somebody has to ask.
+      }
     }
-    SmartDashboard.putString("Superstructure/State", m_state.name());
+
+    Telemetry.log("Superstructure/State", m_state.name());
   }
 
+  /** What the robot is doing. Everything downstream reads this instead of sensors. */
   public SuperstructureState getState() {
     return m_state;
   }
 
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Whether the robot is idle with the elevator and arm where they were sent,
+   * which is what an auto waits for before it starts driving.
+   */
+
+  /** True exactly while the robot is in this state, as a Trigger you can bind to. */
   public Trigger inState(SuperstructureState state) {
     return new Trigger(() -> m_state == state);
   }
@@ -83,20 +117,12 @@ public class Superstructure {
   private boolean allow(SuperstructureState next) {
     boolean ok = m_state.canGoTo(next);
     if (!ok) {
-      SmartDashboard.putString("Superstructure/Rejected", m_state + " -> " + next);
+      Telemetry.log("Superstructure/Rejected", m_state + " -> " + next);
     }
     return ok;
   }
 
   // --- Motion: inState-bound, unguarded, because arriving already means yes. ---
-
-  /** Arm and elevator require different Mechanisms, so this may run in parallel. */
-  public Command idleMotion() {
-    return Command.parallel(
-            m_elevator.goToHeight(ElevatorConstants.kStowed),
-            m_arm.goToAngle(ArmConstants.kStowed))
-        .named("Idle Motion");
-  }
 
   /** Both steps require Arm — the same Mechanism — so this has to be a sequence, not a parallel. */
   public Command intakeMotion() {
@@ -106,11 +132,27 @@ public class Superstructure {
         .named("Intake Motion");
   }
 
-  /** Elevator and Arm require different Mechanisms, so this may run in parallel too. */
-  public Command scoreMotion() {
+  /**
+   * The handoff — the thing Lesson 22 did without being able to name it. Arm
+   * and elevator require different Mechanisms, so this may run in parallel.
+   */
+  public Command handoffMotion() {
     return Command.parallel(
-            m_elevator.goToHeight(ElevatorConstants.kScoreHigh),
-            m_arm.runRoller(ArmConstants.kEjectSpeed))
-        .named("Score Motion");
+            m_arm.goToAngle(ArmConstants.kStowed),
+            m_elevator.goToHeight(ElevatorConstants.kScoreMid))
+        .named("Handoff Motion");
+  }
+
+  /** Roller out. The piece leaving is what ends the state, not a timer. */
+  public Command scoreMotion() {
+    return m_arm.runRoller(ArmConstants.kEjectSpeed);
+  }
+
+  /** Back to neutral: arm stowed, elevator down. */
+  public Command idleMotion() {
+    return Command.parallel(
+            m_arm.goToAngle(ArmConstants.kStowed),
+            m_elevator.goToHeight(ElevatorConstants.kStowed))
+        .named("Idle Motion");
   }
 }

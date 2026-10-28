@@ -67,7 +67,7 @@ from Lesson 8 on (Lesson 8's Try It #4, applied in the reference like Lesson
 `CounterClockwise_Positive`) from Lesson 7 on — applied by a small steering
 `TalonFXConfiguration` above priming, which **Lesson 12 extends rather than
 replaces** (a fresh config applied after it would reset `Inverted`;
-measured in Phoenix sim). Snapshots 16–33 carry both constants too, unverified
+measured in Phoenix sim). Snapshots 16–32 and 34 carry both constants too, unverified
 until Phase 1b. The classic track keeps its Lesson 7 checklist's "only if"
 inversion snippet — it has no update script to preserve values for.
 
@@ -156,7 +156,7 @@ lesson-k/X implies lesson-(k+1)/X exists and replaces it. **Enforce it with
 `./tools/check-lesson-markers-v3.py [N] [--show]`**, which rebuilds each
 lesson's before/after state through the shared lib, diffs them, and reports
 `MISSING` (a change with no marker announcing it) and `ORPHAN` (a marker
-that announces nothing). It's currently clean for 1–22. When Phase 1b
+that announces nothing). It's currently clean for 1–33. When Phase 1b
 migrates a lesson, raise the cut-off and add its markers in the same change.
 The checker's coverage rules are in its docstring. They absorb
 diff-alignment noise (blank lines, a shared `}`), and that absorption can
@@ -202,7 +202,7 @@ Facts from the alpha-7 jars:
 
 - Commands V3's `Scheduler.run()` runs every `addPeriodic` callback, in
   registration order, before any command (read from bytecode).
-- `HAL.initialize()` takes no arguments in alpha-7, so Lesson 32's test needs
+- `HAL.initialize()` takes no arguments in alpha-7, so Lesson 31's test needs
   that fix when it's migrated.
 - **`Telemetry.log(widget)` writes a snapshot.** It isn't a live
   registration. `Field2d`/`Mechanism2d` implement `TelemetryLoggable`, whose
@@ -220,16 +220,43 @@ Facts from the alpha-7 jars:
     (`.type = Mechanism2d`, `dims`, roots, ligaments) is unchanged from the
     SmartDashboard days.
 
+**The OpMode track's order differs from the classic track's from Lesson 27
+on** (user decision, 2026-10-20). Object detection waits on an alpha-7
+PhotonLib, so it moved to the end of this track, and the lessons after it moved
+down one:
+
+| OpMode | Classic | Lesson |
+|---|---|---|
+| 27 | 28 | Aim at tag |
+| 28 | 29 | Flywheel |
+| 29 | 30 | Current limits |
+| 30 | 31 | Alerts |
+| 31 | 32 | Testing |
+| 32 | 33 | Reading a log |
+| 33 | 34 | SysId |
+| 34 | 27 | Object detection |
+
+- **The lessons don't mention the difference** (the user asked for that).
+  Don't add a note comparing the two tracks' order to any lesson or README.
+- When a classic lesson is the design reference for an OpMode one, look it up
+  by the classic number. `docs/lesson-plan-opmode-restructure.md`'s table and
+  every record dated before 2026-10-20 use the old OpMode numbers, which
+  matched the classic ones. Those records say so where it matters.
+- Snapshots 31–33 carried object detection's pieces (its `VisionConstants`
+  constants, `Robot.pieceDetector`, `fetchPiece` and its right-bumper
+  binding) until they were migrated; each migration dropped them, since those
+  lessons now come first. Lesson 34 re-adds what it needs when it's migrated.
+
 **The tooling understands gaps.** A lesson with no `code/v3/lesson-N` is a
-gap (25 today, above the cut-off):
+gap. There are none today: 25 was the last, and was written on 2026-10-19.
 
 - The marker checker skips it, and checks the markers before it against the
   lesson after it.
 - `update-lesson-v3.sh` refuses a gap lesson and names the next real one.
   Its test builds a gap in a copy of the tools, since none is at or below
   the cut-off right now.
-- The app lists only lessons the README table links, so a `| 25 | — |` row
-  never appears.
+- The app lists only lessons the README table links, so a `| N | — |` gap
+  row never appears.
 
 **v3 snapshots can ship `deploy/` files.** `code/v3/lesson-N/deploy/**` maps
 to `src/main/deploy/**`, the same as the classic track. `v3-lessons.sh` copies
@@ -291,6 +318,233 @@ that tag and measured in sim with the real `Robot`:
   only the opmode *ID*, so on run N, N `FollowPath`s are scheduled and the
   newest cancels the rest in the same tick. The result is correct; it's
   recorded, not worked around.
+
+**v3 Lesson 26 (drive to pose) was redesigned on 2026-10-26 at the user's
+request: two motion-profiled stages, handing over while moving.** The old
+design ran the Lesson 11 sketch to 5 cm, then three `PIDController`s; the user
+asked what happens if the handover is a metre out. User decisions: OpMode
+track only; each stage follows a fixed line from where it started (profile on
+progress along it, cross-track P with Lesson 17's `kCrossTrackP`); the sketch
+stays as section 1's opener and is deleted in the lesson; the drive lag is
+taught and planned around, with drive-motor `kA` left as Try It #5.
+
+- **`Drivetrain` now has `travelToward` and `approach`** (no `driveToPose`,
+  `alignToPose` or `atPose` from Lesson 26 on). Two `ProfiledPIDController`
+  fields, `m_alongController` (progress along the line) and
+  `m_headingController` (continuous input). `startStage` seeds both with
+  `reset(position, measured velocity)` from `getChassisVelocities()` in the
+  line's frame, and swaps the along controller's constraints per stage.
+  `followLine` sends the setpoint's velocity plus the P trim. **Call
+  `calculate` before `getSetpoint()`**: it steps the plan. Stage one's goal is
+  `State(length − kHandoffDistance, kHandoffSpeed)` and it finishes when
+  progress passes that, without stopping; stage two is a `do`/`while` (the
+  track's first) until `arrived()`: along `atGoal()` (2 cm and 0.05 m/s),
+  off the line under 2 cm, heading `atGoal()` (1°).
+- **A `TrapezoidProfile` uses one acceleration for speeding up and slowing
+  down**, which is why two stages: travel 3 m/s / 4 m/s², approach
+  ≤ 1.2 m/s / 1.5 m/s², turning π rad/s / 4 rad/s².
+- **The drive lags a speed request by about 0.1 s** (Lesson 12's drive config
+  has `kV` and `kP`, no `kA`; that the missing `kA` is the cause is a guess,
+  not measured). Slowing at 4 m/s² the real speed runs ≈0.4 m/s above the
+  plan, so the handoff is planned at 1.2 m/s, not the √(2 × 1.5 × 1.0) =
+  1.73 m/s limit; the robot really hands over at 1.44–1.47 m/s.
+- **Measured** (real `Robot` loop, 20 ms fixed rate, three runs each, error
+  against the simulated truth), (1, 1, 0°) → (5, 4, 90°): 3.38–3.40 s,
+  7.2–7.6 mm, ≤ 0.01°; top speed 3.23–3.25 m/s; launch mean 4.1 m/s², peak
+  6.3–7.6; handoff at 1.80 s; approach deceleration mean 1.4 m/s², peak 2.4;
+  rolls 36 mm past the target and comes back. From 0.6 m out at (4.52, 3.64,
+  45°) stage one finishes at once: 1.62–1.68 s, 10–11 mm. On the target facing
+  −90°: 2.14–2.22 s, 0.0–0.1 mm, 0.22–0.29°.
+- **The old design, re-measured the same way:** 3.5 s, 14 mm, launch at the
+  grip limit (11.6–11.7 m/s²), handing over nearly stopped (0.08 m/s). P
+  stages handing over at 1 m: the request jumped 1.55 → 3.0 m/s in one tick
+  while moving 1.7, then ≈7 m/s² braking. The sketch alone (2026-10-20): 3.2 s,
+  45–47 mm; facing backwards on the target it finishes on tick 1, 180° out.
+- **Try It numbers:** handoff planned at 1.73 → arrives moving 1.95 m/s,
+  overshoots 460–466 mm, 4.54–4.56 s. Both `reset`s from speed 0 → brakes at
+  the grip limit (11.77 m/s²), 3.84 s. `kSpeedTolerance` 1000 → 3.26–3.32 s,
+  11.9–13.3 mm.
+- **The path bows 263–276 mm off the line while turning 90°.** The same trip
+  with no turn stays within 5–7 mm, so it's turning while translating;
+  `ChassisVelocities.discretize` didn't fix it, and the old design bowed too
+  (38–49 cm). The exact cause isn't established; the lesson says only that
+  turning does it.
+- **A line, not re-aiming at the target:** a re-aimed (radial) version
+  reversed its whole command in one tick when the robot rolled past.
+- **`RobotAutoDriveToPose` is unannotated** and registered with `addOpMode`
+  (`"Drive To Pose"`, group `"Poses"`). It skips `getReadyThen` (no
+  superstructure) and doesn't place the simulated robot, so a second run
+  starts on the pose.
+- **Probe traps:** `placeSimulatedRobot` and `localizer.resetPose` in the same
+  tick leave the estimate offset by the stale gyro reading; put them a few
+  ticks apart. `Scheduler.isRunning(outer)` read false at the handoff tick
+  while `Approach` was still running, which ended a probe's scenario early;
+  also check the drivetrain's running command names and wait for two idle
+  polls. Use a fixed dt of 0.02 s for accelerations, not the wall clock.
+
+**v3 Lesson 30 (alerts) on alpha-7, rebuilt on Lesson 29 on 2026-10-22,
+measured with the real `Robot` loop (probe recipe below) and by hand in a
+real SimGUI under `Xvfb`:**
+
+- **`Alert` moved again: `org.wpilib.util.Alert(String id, String text,
+  Level)`**, in wpiutil, with `Level.HIGH/MEDIUM/LOW`. The old snapshot's
+  `org.wpilib.driverstation.Alert(text, level)` is alpha-6. A second alert
+  with the same id *and* level throws `AlertException: Alert already
+  allocated` at construction; same id at another level is allowed
+  (measured). Every id in the lesson is log-key shaped
+  (`Elevator/Disconnected`, `Drivetrain/Module0/SteerEncoderDisconnected`).
+- **Nothing in the simulator reads alerts.** Only `libwpiutiljni` imports
+  `WPI_GetAlerts`; SimGUI's only alerts model is the NetworkTables one. So
+  `Robot.showAlerts()`, called at the end of `simulationPeriodic()`, copies
+  `AlertSim.getActive()` into `Telemetry.getTable("Alerts")` with
+  `setType("Alerts")` and `errors`/`warnings`/`infos` string arrays. SimGUI
+  then lists it under **NetworkTables → Telemetry → Alerts** and draws a real
+  panel, errors first with a red mark (seen in screenshots). A plain
+  `String[]` was tried first; it works but SimGUI truncates it.
+- **`OpModeRobot`'s `Loop time of "0.02"s overrun` (id
+  `opmode-loop-overrun`, `MEDIUM`) is only ever `set(true)`** (its watchdog
+  callback, read in the alpha-7 source), and the first loop always overran in
+  every run (one SimGUI run: `robotPeriodic()` 0.465 s). So it's up for the
+  whole session; the lesson uses it as the "raised once" contrast.
+- **The unplug switch (user decision, 2026-10-22: both cameras, the four
+  CANcoders and the gyro; "only flip the reading"; a SimGUI switch).**
+  `subsystems/UnplugSwitch` makes `SimDevice.create("Unplug " + name)` with
+  one `INPUT` boolean, `Unplugged`. The sim IOs AND it into the real reading
+  (`ModuleIOSim`, `VisionIOLimelightSim`, after `super.updateInputs`);
+  `GyroIOSim` has no device, so the switch is its whole answer. Motor
+  switches are Try It #1.
+  - **SimGUI draws an `INPUT` boolean as a false/true drop-down, not a
+    checkbox** (`DeviceTree.cpp`'s `DeviceBooleanImpl`; read-only only for
+    `OUTPUT`). Clicked by hand: true raised the alert in the panel.
+  - **Phoenix 6's sim devices are in Other Devices too** (`Talon FX
+    (v6)[1]`, `…/Rotor Sensor`, `CANcoder (v6)[9]`), so the switches carry
+    the visible word "Unplug": a `Type:` prefix would be hidden by SimGUI.
+  - `SimDevice.create` returns null for a duplicate name (measured), hence
+    the null guard. Tests reach a switch with `new SimDeviceSim("Unplug
+    Gyro").getBoolean("Unplugged")`.
+- **Measured:** an alert follows its switch within one tick both ways. On
+  the first tick the elevator, arm and flywheel motors and both cameras read
+  disconnected, sometimes some CANcoders too, and all clear by the second
+  tick (cameras: no frame yet, since the sim publishes one loop late). The
+  camera "unplugged" at 3 m in front of tag 20 still delivered a pose on
+  50 of 50 ticks.
+- **The battery alert is gated on `RobotState.isDisabled()`.** Ungated on
+  the fresh sim battery (rests at 12.0 V): enabling sagged the rail to
+  11.49 V for 0.72 s (the flywheel's idle spin-up), and a shot spin-up to
+  11.18 V for 1.64 s. Gated: no false alarm in either. With Lesson 29's tired
+  battery (`calculateLoadedBatteryVoltage(11.0, 0.04, …)`) it's up two ticks
+  after boot while disabled, and clears on enable. The old lesson's "drag the
+  RoboRIO voltage in SimGUI" can't work: `simulationPeriodic` sets it every
+  tick.
+- **A plain JUnit test can unplug a device.** `HAL.initialize()`, `new
+  Drivetrain()`, `Scheduler.getDefault().run()`, flip `Unplug Gyro`, run
+  again, and the gyro alert is in `AlertSim.getActive()`; cleared after
+  unflipping. Removing the alert's `set` line fails it by name. In a bare
+  test the four CANcoder alerts are up on the first tick (boot flicker), so
+  a CANcoder test must wait that out. Lesson 31 can use this when migrated.
+- **`./gradlew simulateJava` doesn't start a simulation on alpha-7
+  GradleRIO.** There's no such task; Gradle's abbreviation matching runs
+  `:simulateExternalJava`, which only writes `build/sim/java.json` for VS
+  Code. `./gradlew run` launches the robot with SimGUI. Lesson 30 says `run`;
+  every other v3 lesson still says `simulateJava` (flagged to the user, not
+  swept).
+- **SimGUI in this container:** `Xvfb :99 -screen 0 1600x1000x24`, then
+  `DISPLAY=:99 ./gradlew run`, screenshots with `import -window root`, and
+  clicks with `xdotool` (`apt-get install -y xdotool`). The sim window is
+  "Robot Simulation Window".
+
+**v3 Lesson 29 (current limits) on alpha-7, measured with bare `TalonFX`
+rigs and with the real `Robot` loop and `GamepadSim` (home with Back, then
+D-pad up, left trigger held and the left face button together; 20 ms fixed
+rate, `DriverStationSim` enabled):**
+
+- **Rebuilt on Lesson 28.** The old snapshot predated Lessons 17–28, so it
+  was replaced with 28's `Constants`/`Robot`/mechanism files plus only the
+  lesson's additions. The port was `Telemetry.log` for `SmartDashboard.put*`,
+  `new CANBus(CANPort.CAN_S0)`, and `implements Mechanism`. `Robot` logs
+  `Power/*` in `robotPeriodic()`; keys are under `/Telemetry/Power/`.
+- **Unchanged:** a fresh `TalonFXConfiguration` has stator 120 A, supply 70 A,
+  both enabled, `SupplyCurrentLowerLimit` 40 A after 1.0 s.
+  `RobotController.isBrownedOut()` stays false at 4.0 V held for 2.5 s.
+  `supply ≈ stator × applied/battery` holds (116.3 × 3.00/12 = 29.1 A;
+  115.3 × 7.20/12 = 69.2 A).
+- **Six-motor rig** (every motor stalled at 12 V on defaults, battery closed
+  through `BatterySim.calculateDefaultBatteryLoadedVoltage`, mean of the
+  second after the first): 3 → 109 A / 9.82 V, 6 → 326 A / 5.48 V,
+  9 → 346 A / 5.08 V, 12 → 336 A / 5.32 V. Peaks in the first second are
+  higher and collapse the rail to 0 V at 9 and 12.
+- **The lesson's old in-robot brownout did not reproduce.** The three
+  mechanisms, even unlimited, peak at 201 A and sag a fresh battery only to
+  7.97 V; defaults 139 A / 9.23 V; the budget 87–94 A / 10.1–10.3 V. Nothing
+  stalls and `Power/BrownedOut` stays false. The old 366 A / 4.7 V is gone.
+  Not homing first makes no difference (the elevator stalls on the frame at
+  1.15 m, peak 199 A unlimited).
+- **A tired battery makes the demo.** With
+  `BatterySim.calculateLoadedBatteryVoltage(11.0, 0.04, total)` in
+  `simulationPeriodic`: no limits 645 A / 0.00 V, browned out, elevator stuck
+  near 0.24 m, flywheel peaks 41.6 rot/s and ends at 0; defaults 105–110 A /
+  6.6–6.8 V (survives by 0.3–0.5 V); budget 68–83 A / 7.7–8.3 V. Peaks vary a
+  few amps run to run, so the lesson gives ranges. After a collapse to 0 V the
+  elevator's logged height is garbage (−1742 m); don't quote it.
+- **Probe traps:** Maven 429s ("Too Many Requests") on a cold Gradle cache —
+  retry after 30 s. `GamepadSim` here has `setDpadUpButton`,
+  `setFaceLeftButton`, `setBackButton` and `setLeftTriggerAxis`.
+
+**v3 Lesson 28 (flywheel) on alpha-7, measured with the real `Flywheel`
+through the scheduler and with the real `Robot` loop and `GamepadSim`
+(left trigger), 20 ms fixed rate, `DriverStationSim` enabled:**
+
+- **`Mechanism` is an interface in alpha-7, so nothing installs `idle()`
+  as the default command.** The alpha-6 abstract class's constructor did; now
+  `getDefaultCommand()` is null until you call `setDefaultCommand`. `Flywheel`'s
+  constructor calls `setDefaultCommand(idle())` (overridden to
+  `spinUp(kIdleSpeed)`), so it idles in every opmode. Measured through the
+  real loop: 30.4 rot/s within 1.5 s of enabling.
+- **Reproduced:** rest to 60 rot/s 2.30–2.40 s (old 2.32); idle 15/30/45 to
+  60 rot/s 1.76/1.24/0.70 s; holds 60.44 rot/s on 7.21–7.22 V; with `kV` and
+  `kA` zeroed it sits at 43.27 rot/s after 5 s (predicted 42.86).
+- **Did not reproduce:** "pins near 12 V during the climb". From idle (30 to
+  60) the applied volts jump to ≈7 V and rise to ≈9 V as the wheel speeds up.
+  The lesson says that now.
+- **The dial is logged every tick** (`Telemetry.log("Flywheel/Dial", ...)`
+  at the end of `updateDial`), under `/Telemetry/Flywheel/Dial/Hub/{Speed,Goal}/angle`.
+  At 60 rot/s the goal needle reads −198.0° and the speed needle −198.78°
+  with colour `#32CD32`, matching `−90° − 180° × 0.6`.
+- Release of the trigger falls back to idle in ≈1.5 s (56.4 → 30.4 rot/s).
+- `Models.flywheelFromPhysicalConstants`, `FlywheelSim` and `CANBus(CANPort.CAN_S0)` are unchanged
+  in alpha-7; the port was `implements Mechanism`, `Telemetry.log`, and the
+  `CANBus` line.
+
+**v3 Lesson 27 (aim at tag) on alpha-7, measured with the real `Robot` loop
+through the scheduler (probe recipe above, plus `GamepadSim`):**
+
+- **`Field.getTagPose(int)` exists** (`Optional<Pose3d>`, read with `javap`), so
+  `Aim.tagPosition` keeps its classic shape. Tag 20 is at (5.23, 4.03); an ID
+  not on the field is empty. `Translation2d.getAngle()` is an `Optional`, so
+  `headingToward` falls back to the robot's own heading (error 0) on the target.
+- **There is no new opmode and no `Drivetrain` change.** "Aim While Driving" is
+  Lesson 25's `addOpMode` line; only its `aim` marker changed, to
+  `Aim.omegaTowardTag(...)`. `kAimTarget` and `aimOmega` are gone;
+  `registerEventTriggers(Superstructure, Drivetrain, Localizer)`. The classic
+  `driveWhileAiming` and the old `RobotAutoAimWhileDriving` don't exist here.
+  `getChassisVelocities()` is Lesson 17's.
+- **Orbit around tag 20, 3 m out, driven through the real `Drivetrain`** and read
+  off the estimate (`Aim/ErrorDegrees`): P only 14.7–14.8° at 3 m/s (prediction
+  14.32°; ideal wheels in a script give 14.32° at both 1 ms and 20 ms) and
+  9.7–9.8° at 2 m/s (prediction 9.55°); P + feedforward 0.2–0.4° and
+  0.1–0.3°. Against the simulated truth: 13.5°/1.1° at 3 m/s. The old "13.2° →
+  1.1° at 50 Hz" did not reproduce.
+- Standing 34° off, left trigger held: within 2° in 0.5 s, holds 0.06–0.1°.
+  Strafing at half stick: under 1° after the first second.
+- **Aim While Driving:** the override swings the nose from 32° off to within 2°
+  in 0.8 s, then holds 0.8° mean until `release` at about (7.6, 7.0), 4.3 s in;
+  the robot ends at (8.01, 7.02, −1.1°).
+- **Probe trap:** a run that follows the stick-driven phase starts with the
+  estimate's heading ~9° off the truth (−170° vs −179.6°) even with the
+  `placeSimulatedRobot`/`resetPose` gap; throw the first run away.
+- The unmigrated snapshots 31–34 still carry `kAimTarget`, the old `Autos` and
+  the `Robot` call `registerEventTriggers(superstructure, localizer)`; whoever
+  rolls them forward on top of 28 must take 28's versions.
 
 **Lesson 18's lag numbers were remeasured on alpha-7** with the documented
 move (stowed to `kMaxHeight`) at full 20 ms ticks. The peak lag varies from
@@ -371,7 +625,9 @@ written on alpha-7 on 2026-10-17, so it was never a gap to port.
   checked against `drivetrain::getSimulatedPose`, the truth.
 - **`Arm(Elevator, Supplier<Pose2d>)`.** The mode `switch` moved into the
   constructor, because a field initializer can't see a constructor
-  parameter. Snapshots 23–31 still say `new Arm(elevator)` until migrated.
+  parameter. Every snapshot from 23 on says `new Arm(elevator,
+  drivetrain::getSimulatedPose)`; the unmigrated 34 only has that line
+  fixed.
 - **Commands V3's `Trigger.debounce(Time)` takes the measure directly** and
   defaults to `RISING`, read from the bytecode.
 - **Verified through the real loop with `GamepadSim`.** Build it *after*
@@ -388,9 +644,216 @@ written on alpha-7 on 2026-10-17, so it was never a gap to port.
   - Lesson 23 restores the "has a game piece" LED.
   - Lesson 24 restores the classic six states (`HANDOFF`/`HOLDING` from the
     beam break).
-  - Lesson 27 stays on PhotonVision and waits for an alpha-7 PhotonLib.
+  - Object detection (Lesson 34 since the renumbering below) stays on
+    PhotonVision and waits for an alpha-7 PhotonLib.
     GradleRIO alpha-7 rejects the only 2027 release, alpha-2, for declaring
     `2027_alpha5`; measured.
+
+**v3 Lesson 23 (LEDs) on alpha-7, built on the Lesson 22 state and measured
+with the real `Elevator`, `Arm` and `Leds` through the scheduler, reading the
+strip from `AddressableLEDSim(kPwmPort).getData()`** (RGB bytes, 3 per LED):
+
+- **Four indications, as the user decided:** not homed (blinking red) >
+  has a game piece (solid `Color.LIME_GREEN`, which is (50, 205, 50)) >
+  disabled (breathing) > idle (alliance color at 25%, a blue byte of 63).
+  `LedConstants.kHasGamePiece` is back; `Leds(Elevator, Arm)`.
+- **Priority holds in both collisions.** Holding a piece and unhomed, 20
+  ticks show red 11 times and green never. Once homed, the same held piece
+  reads (50, 205, 50) enabled *and* disabled; ejecting it drops to (0, 0, 63),
+  and disabling then breathes (4 to 43 over the samples taken).
+- **Homing from `kSimStartHeight` sets `isHomed()` after 148 ticks** (2.96 s).
+- **Snapshot 22 now carries `Elevator.java`** unchanged from 21, to hold
+  Lesson 23's markers (`m_homed`, its log line, setting it in `home()`'s
+  `whenCanceled`, `isHomed()`); `LedConstants` and the `leds` field have
+  markers in 22's `Constants`/`Robot`.
+- **A bare JUnit probe can't read `Telemetry.log` values back from
+  NetworkTables** (no `Leds/Showing` topic appeared under any name), so the
+  probe checks the strip's pixels, which is the real output anyway.
+- **`tools/verify-lessons-v3.sh` deletes its sandbox on every run**, so a
+  probe dropped in `src/test/java` is gone after a `test` run; run
+  `./gradlew test --info` inside the sandbox directly instead.
+- **This container shipped without JDK 25**; `apt-get install -y
+  openjdk-25-jdk-headless` works through the proxy.
+
+**v3 Lesson 24 (superstructure) on alpha-7, the classic six states as the user
+decided, measured with the real `Robot` + `RobotTeleop` loop (20 ms fixed
+rate, `GamepadSim`, `DriverStationSim` enabled, the strip read from
+`AddressableLEDSim`):**
+
+- **`UNHOMED`/`IDLE`/`INTAKING`/`HANDOFF`/`HOLDING`/`SCORING`.** `periodic()`
+  (an `addPeriodic` callback on a plain class, not a `Mechanism`) owns
+  `UNHOMED→IDLE`, `INTAKING→HANDOFF` (debounced beam break),
+  `HANDOFF→HOLDING` (elevator *and* arm `atGoal`), and any of
+  `HANDOFF`/`HOLDING`/`SCORING`→`IDLE` when the piece is gone. It never
+  consults `canGoTo`. Requests are a hand-built `Command.noRequirements`
+  guard (there is no `onlyIf`); each state's motion is bound with
+  `inState(...).whileTrue(...)`, and `HOLDING` has none.
+- **No premature `HOLDING`.** At the moment of `HANDOFF` the elevator is at
+  0.02 m and not `atGoal`, because the registration-order periodics refresh
+  inputs before `Superstructure` reads them. Measured: `HOLDING` arrives 55–56
+  ticks (1.1 s) after `HANDOFF`, elevator 0.7318–0.7345 m (inside 2 cm of
+  0.75).
+- **`SCORING` lasts one or two ticks.** The sim drops the piece the instant
+  the roller reverses, so the log shows a flicker and `IDLE`'s stow follows.
+  The lesson says so rather than promising a blinking strip.
+- **The four state-motion bindings live in `Robot`'s constructor**, not
+  `RobotTeleop` (user decision, 2026-10-19, so autonomous gets the same
+  motion). `Trigger` bindings take the narrowest scope at bind time, and
+  `RobotState.getOpModeId()` returns 0 until the user program has started
+  (read in `DriverStationBackend`), so bindings made in `Robot`'s
+  constructor are `Global`. Measured: `Intake Motion` keeps running when
+  another opmode is selected, where an opmode-scoped binding would be torn
+  down. Button requests stay in `RobotTeleop`. The lesson states the rule:
+  bind a driver's control in its opmode, what the robot means in `Robot`.
+- **`GamepadSim`'s `set*Available` take bitmasks, not counts**
+  (`setButtonsAvailable(-1L)`, `setAxesAvailable(0x3F)`). A count of 64
+  marks only button 6 available, and every press reads false.
+- **Timings:** homing reaches `IDLE` 150–170 ticks (3–3.4 s) after Back,
+  quicker the later it's pressed, since the carriage sinks meanwhile (151
+  when re-measured 2026-10-19); with the arm down and a quarter-stick
+  drive from (3.5, 3.2), the beam break trips `HANDOFF` 35 ticks after the
+  drive starts. Strip bytes (RGB): `UNHOMED` 255,0,0 on the blink's on-phase,
+  `IDLE` 0,0,63, `INTAKING` 255,255,0, `HOLDING` 50,205,50, disabled `IDLE`
+  breathing (54 sampled).
+- **Refusals** log to `/Telemetry/Superstructure/Rejected`, and
+  `/Telemetry/Superstructure/State` is the state's `name()`. A probe *can*
+  read these back with `NetworkTableInstance.getDefault().getStringTopic(...)`
+  subscribed after the `Robot` is built (Lesson 23's note that it can't was
+  about a different attempt; both are recorded). `Gamepad.Axis` constants are
+  `LEFT_Y` etc., not `kLeftY`.
+- **Face buttons keep Lesson 22's:** `faceLeft` intake, `faceUp` idle,
+  `rightTrigger` score. Lesson 24 deletes the arm buttons, the roller
+  bumpers, the capture `Trigger` and the guarded score binding. The D-pad
+  stays outside the state machine (Try It #4).
+- `Debouncer` is `org.wpilib.math.filter.Debouncer` and takes seconds as a
+  `double` (`kBeamDebounce.in(Seconds)`), unlike `Trigger.debounce(Time)`.
+- **Snapshot 23 carries `RobotTeleop.java`** (copied unchanged from 22) to hold
+  Lesson 24's markers. Lesson 31's `SuperstructureStateTest` follows the six
+  states (`scoringRequiresSomethingToScore`); mutated `IDLE→SCORING` and it
+  fails by name. The unmigrated snapshot 34 still names the four-state
+  design.
+- **Maven Central throws intermittent 429s through the proxy.** A failed
+  run still fills the Gradle cache, so rerun with a short sleep until it
+  passes.
+
+**v3 Lesson 25 (path events) was written on alpha-7 on 2026-10-19, from the
+classic design, so it was never a port, and redesigned the same day at the
+user's request** (autos home first and use the superstructure; `addOpMode`
+replaces a class per auto). It was measured with the real `Robot` loop: autos
+picked through `DriverStationSim` on Blue 1, and every tick sampled by a
+periodic registered on `Scheduler.getDefault()`. BLine behavior is read from its
+source at the pinned commit.
+
+- **One opmode class, many autos.** `opmode/PathAuto` is unannotated (the scan
+  skips it) and takes `(Robot, String pathName, Function<Path, Command> recipe)`.
+  `Robot`'s constructor ends with one `addOpMode(RobotMode.AUTONOMOUS, name,
+  "Paths", () -> new PathAuto(this, ...))` per auto, then `publishOpModes()`:
+  `OpModeRobot`'s constructor scans and publishes *before* the subclass body
+  runs, and without the second publish none of the path autos appear
+  (measured). The factory runs at selection, like an annotated class. Leaving
+  an annotated class with the same name throws `IllegalArgumentException:
+  OpMode Two Corners already exists for mode AUTONOMOUS` at boot.
+  `RobotAutoTwoCorners`/`RobotAutoFarSide` are in `V3_DELETIONS` at 25.
+- **Every path auto gets ready first.** `Autos.getReadyThen(elevator,
+  superstructure, auto)` is a no-requirements coroutine: await `home()` (done
+  at once on the switch), `waitUntil(superstructure::isSettled)` (`IDLE` and
+  both mechanisms `atGoal`, new in 25), then await the auto. **Not
+  `Command.sequence`**: a `SequentialGroup`'s requirements are the union of its
+  steps' (source), so it holds the elevator, and the `IDLE` motion scheduled on
+  the tick the state turns `IDLE` evicts the whole auto. Measured: it never
+  drives. Without the settle wait a fresh launch misses the piece: the sim arm
+  boots at its −20° stop, the `IDLE` stow is still rising when the intake
+  request comes, and reversing costs 1.3 s. Fresh launch: homing 3.3 s, stow
+  ≈1.0 s, drive starts ≈4.4 s after enable; a second run starts at once.
+- **Event markers.** A `Command` event goes to `Scheduler.getDefault().schedule(...)`
+  on the next default-event-loop poll, so it starts one loop after the marker,
+  outside the path. `FollowPath.onCancel` drops the run's unreached events. A
+  finished `Command` object can be scheduled again, so registering one instance
+  in `Robot`'s constructor is fine. The `intake` event is
+  `superstructure.requestIntake()`, which requires nothing; Lesson 24's motion
+  bindings (in `Robot`) do the rest. An event that requires the drivetrain
+  cancels the path on the next loop (Pick Up: stops ≈(6.0, 6.5),
+  `Drivetrain/CurrentCommand` = `Turn To Heading`). A missed pickup leaves the
+  state `INTAKING` into teleop (Try It #5).
+- **Pick Up** is (6.0, 7.4) → (6.0, 1.0) at −90°, `intake` at `t_ratio` 0.1,
+  because a run along y = 3.8 at the piece at (6.0, 3.8) crosses the blue hub
+  (x 4.02–5.23, y 3.43–4.64 from the alpha-7 2026 field's tag poses; the sim
+  has no obstacles, the drawing does). From drive start: marker 0.6 s at
+  y ≈ 6.7; arm below horizontal 1.4 s; roller 1.7 s; caught 1.8 s at
+  y ≈ 4.37, 0.57 m ahead of center; `HANDOFF` +0.1 s; `HOLDING` 3.0 s with
+  1.0 m left (elevator 0.73 m); `SCORING` at 0.48 m left, `IDLE` next tick;
+  done 3.5 s. Marker 0.15 still catches (0.50 m); 0.2 misses. From stowed the
+  arm needs 0.80 s to clear horizontal and 1.04 s until the roller runs. A
+  second run in one session has no piece: score refused `INTAKING -> SCORING`,
+  then the running intake catches the piece the first run dropped 0.8 m ahead.
+- **`getRemainingPathDistanceMeters()` is 0.0 before the path's first run, even
+  inside `Command.parallel`.** `Scheduler.runCommands` runs the running set in
+  reverse insertion order (there's a TODO about it), so the trigger's first check
+  beats the path. Unguarded, the score request went out on the drive's first
+  tick, was refused `IDLE -> SCORING`, and the robot ended `HOLDING`. The
+  shipped `followPathAndScore` waits for `> 0` first, then `< kScoreDistance`
+  (0.5 m). At 1 m/s it scores at y ≈ 1.48 vs 1.44, 6.1 s into the drive vs 3.2 s.
+  `kScoreDistance` 2 m: refused `HANDOFF -> SCORING` while the elevator rises.
+  With 0, the path stops 0.04 m short (5 cm tolerance), so the group never ends.
+- **Rotation override.** It's an angular velocity (rad/s). The one-argument
+  `overrideRotation` is `BYPASS_CONSTRAINTS`. With the target behind the robot
+  it sent 11.65 rad/s; `RESPECT_CONSTRAINTS` held 6.28 (`config.json`'s
+  360°/s), which is what the lesson uses. On Aim While Driving the two modes
+  are indistinguishable: about 5.7° mean lag and 7.7° worst, P only, which is
+  Lesson 27's subject. The override goes on and off one loop after
+  `aim`/`release` (0.6 s, 4.3 s into the drive), and the path finishes at
+  5.4 s at (8.01, 7.02, −1.6°). Without `release` it never finishes, and sits
+  at (8.03, 6.98) pointing at (8, 4).
+- **There's no `finallyDo`.** Tested on an independent scheduler: a finishing
+  coroutine runs its trailing code and `finally`, but not `whenCanceled`. A
+  canceled one runs `whenCanceled` only, never its `finally`, because it simply
+  isn't resumed. Canceling a parent cancels the child it awaits. Canceling the
+  child from outside resumes the parent after `await`. So `handingRotationBack`
+  clears the override in both places. Without it, an interrupted no-release
+  auto leaked the static override, and the next Two Corners parked at
+  (6.01, 6.05) pointing at (8, 4), never finishing.
+- **`Translation2d.getAngle()` returns `Optional<Rotation2d>`** in alpha-7,
+  empty for a zero vector. `Rotation2d.minus` wraps (170° − (−170°) = −20°).
+- **Probe recipe.**
+  - Build `Robot` on its own thread after `HAL.initialize()`, register the
+    sampler with `Scheduler.getDefault().addPeriodic`, then call
+    `startCompetition()`.
+  - Find the opmode in `DriverStationSim.getOpModeOptions()`, call
+    `setRobotMode(option.getMode())` and `setOpMode(option.id)`, then
+    `notifyNewData()` and `setEnabled(true)`.
+  - Read telemetry as `NetworkTableInstance.getDefault().getEntry("/Telemetry/<key>")`.
+  - Time is `org.wpilib.system.Timer.getTimestamp()`; `getFPGATime` is gone.
+  - Gradle calls `test` up to date when only a deploy JSON changed, so run
+    `cleanTest test`.
+  - A fresh container may lack JDK 25: `apt-get install
+    openjdk-25-jdk-headless` (Ubuntu 24.04 has it).
+  - A probe's change test must use `Double.compare` for doubles: `fired`
+    reads NaN before the first path, and `NaN != NaN` prints every tick.
+
+**v3 Lesson 31 (testing) on alpha-7:** only `HAL.initialize()` changed (no
+arguments). Measured with the real `Elevator` homing test: Thread.sleep 20 ms
+→ 0.0090 m, 4 ms → 0.0094 m, 0 ms → −0.31 to −0.34 m in 4 of 5 runs and
+0.0100 m in the fifth, so the real-time trap is intermittent, not just a
+cliff. With `setEnabled(true)` removed the test dies at its own
+`isDisabled()` assertion; with that removed too, at `assertTrue(isHomed())`.
+Making `canGoTo` let IDLE reach SCORING fails `scoringRequiresSomethingToScore`.
+
+**v3 Lesson 32 (reading a log) on alpha-7, measured with the real `Elevator` homed and ticked at 20 ms, and the real `Robot` loop on Blue 1:**
+
+- The settled error at `kScoreMid` is a flat 0.1159 mm (after a 1.3 mm overshoot); `atGoal()` goes true at 1.24 s with `Centimeters.of(0.1)`.
+- **A slightly-too-tight tolerance can pass by luck.** At `Centimeters.of(0.002)` and even `0.0002`, one tick (1.44 s) lands within 0.001 mm of the goal as the carriage comes back through it, so `goToHeight` ends. At `0.00002` it never ends (15 s). The lesson's typo is the latter.
+- **Aim While Driving with `kAimTagId = 220`:** override active ≈3.7 s as normal, heading stays 0.0° (fixed: ≈ −100°), finish (8.04, 7.00) vs (8.01, 7.02); `Aim/ErrorDegrees`, `FeedforwardRadPerSec` and `IsAimed` are never published (150 `/Telemetry/` topics vs 153). `Localizer/Pose` is a struct, so read the pose from `robot.localizer`, not NT.
+- **Probe trap:** a sandbox `kTolerance` left at the broken value makes `Superstructure.isSettled()` never true, so every path auto waits forever at `IDLE` and the robot never drives. Reset it before probing autos.
+
+**v3 Lesson 33 (SysId) on alpha-7, measured with the real `Flywheel`, the real `ElevatorIOTalonFX` and the real `Robot` loop (20 ms ticks):**
+
+- **A button `Trigger` belongs to the first opmode that asks for it.** `CommandGenericHID` caches one `Trigger` per (button, `EventLoop`), and a cached trigger keeps the creation scope it got. `RobotTeleop` binds Back, faceUp, faceDown and so on, so a `@Utility` opmode asking `back()` gets Teleop's trigger, and its bindings never fire. Measured: Teleop selected first, then `RobotUtility`, Back + faceUp held 3 s: wheel stayed at the 30 rot/s idle speed, command `Spin Up`. Even buttons Teleop never touched (Start, right bumper, stick clicks) died on a second selection of the same opmode (Utility → Teleop → Utility). **The fix is an opmode-owned `EventLoop`**: every button is `driverController.back(m_loop)` etc., and `periodic()` calls `m_loop.poll()`. Each instance gets fresh triggers and a loop nothing else polls. Measured through every order: T,U,T,U,U,T all ramp (0.73 V, 5.6 rot/s after 3 s), and holding the buttons while switching to Teleop leaves 3.63 V / idle. Any opmode that rebinds a button another opmode uses needs this, not just `RobotUtility`.
+- **A SysId run starts with the wheel at idle speed**, because `idle()` is the default command: the quasistatic ramp opens with the wheel coasting down 30 → 5.6 rot/s over 2.5 s (ramp at 0.6 V) before it climbs. The lesson says so and offers starting from rest as Try It #7. The percent-of-steady-state figures were measured from a true standstill with a probe driving a second `TalonFX` handle on the same CAN ID.
+- **Percent of steady state** (steady = 8.4 rot/s per volt, measured 1–5 V): 1 V/s ramp 36.1 / 58.0 / 69.8 / 76.8 / 81.3 % at 1–5 V; 0.5 V/s 57.3–90.7 %; 0.25 V/s 75.7 / 88.3 / 92.2 / 94.1 / 95.3 %. Dynamic 7 V reaches 58.5 rot/s (58.6 predicted).
+- **Open-loop elevator limits** (real `ElevatorIOTalonFX`, physics widened to ±20 m, started at 0): 6 V for 4 s ends at 2.565 m without the forward soft limit and 1.502 m with it, applied 0.000 V. Ramp to 6 V travels 1.880 / 3.768 / 7.537 m at 1.0 / 0.5 / 0.25 V/s. A 1.5 s step travels 1.101 / 0.623 / 0.300 m at 7 / 4 / 2 V.
+- **A reverse soft limit at `kMinHeight` still fights homing**: normal homing from the 0.35 m boot height finishes in 3.68 s, with the limit 17.34 s (2 cm/s against 9). It completes, so it looks like a weak motor.
+- `SysIdRoutineLog` still writes through `DataLogManager.getLog()` (bytecode). A real run's `.wpilog` holds `sysid-test-state-flywheel`, `voltage-flywheel-flywheel` and `velocity-flywheel-flywheel`. Alpha-7 has no `SysIdRoutine` in `commandsv3` or `wpilibj` (only `org.wpilib.sysid.SysIdRoutineLog`), so the hand-built `commands/SysIdRoutine` stays. `Flywheel` is `implements Mechanism` now, and the routine takes the `Mechanism` interface.
+- **Probe trap:** `verify-lessons-v3.sh` `rm -rf`s its sandbox every run, probe files included. Copy probes in after it, then run `./gradlew cleanTest test --tests '*Probe'` in the sandbox. Maven Central returned 429 once while resolving `junit-jupiter-params`; a retry fixed it.
 
 **Use it instead of reasoning about whether a snippet compiles.** Current state: lessons 0–34 all compile, at every intermediate stopping point, with zero warnings. A regression is therefore a real result, not noise. Run the specific lesson you touched plus the highest one.
 
@@ -710,8 +1173,8 @@ a lesson as-is.
 - [docs/lesson-plan-alpha7-upgrade.md](docs/lesson-plan-alpha7-upgrade.md) —
   the impact assessment and phased plan for upgrading the v3 track (only —
   the classic track targets stable 2026 and is unaffected) to WPILib 2027
-  alpha-7, a large breaking-change release. **Lessons 0–22 are migrated and
-  verified on alpha-7**: Phoenix 6 cleared the marketplace (Track A, 1–14,
+  alpha-7, a large breaking-change release. **Lessons 0–33 are migrated (or,
+  for 22 and 25, written) and verified on alpha-7**: Phoenix 6 cleared the marketplace (Track A, 1–14,
   2026-09-18), and on 2026-09-24 the v3 track switched vision from
   PhotonVision to **LimelightLib 2**, which cleared Track B's vendor gate.
   LimelightLib and BLine (Lesson 17) aren't in WPILib's marketplace, and
@@ -721,8 +1184,8 @@ a lesson as-is.
   (maple-sim, PhotonVision, PathPlanner…) than the `2027_alpha7` folder has
   files for — only a JSON in the folder means a release exists. Lesson 15's simulated camera publishes real results frames to
   the NetworkTables topic a real Limelight uses, so the unmodified library
-  runs in sim. Lessons 23–34 are still pre-alpha-7 code awaiting Phase 1b;
-  Lesson 27 stays on PhotonVision and waits for an alpha-7 PhotonLib (user decision, 2026-10-17); Lesson 31 still needs a Limelight redesign decision. A
+  runs in sim. Lesson 34 is still pre-alpha-7 code awaiting Phase 1b:
+  object detection stays on PhotonVision and waits for an alpha-7 PhotonLib (user decision, 2026-10-17). A
   PhotonVision flavor of Lesson 15 may come back as an option once PhotonLib
   ships for alpha-7; the last PhotonVision version is at commit `94fe7b9`.
   Alpha-7
@@ -783,8 +1246,8 @@ website only; the lesson files don't change.
 - **States and wording** are in
   [docs/_data/lesson_status.yml](docs/_data/lesson_status.yml); colors are
   in `custom.scss`. A lesson is "not updated yet" unless it's listed under
-  `waiting`: today that's 27 ("waiting on a library", PhotonLib) and 31
-  ("waiting on a decision"). Edit `waiting` when a blocker appears or
+  `waiting`: today that's only 34 ("waiting on a library", PhotonLib).
+  Edit `waiting` when a blocker appears or
   clears. Converted lessons ignore it.
 - The Pages workflow also rebuilds on changes to `tools/lib/v3-lessons.sh`,
   so a cut-off change alone refreshes the marks.

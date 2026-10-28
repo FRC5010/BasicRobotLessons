@@ -149,6 +149,21 @@ public final class Constants {
     public static final double kSimMaxRangeMeters = 6.0;
   }
 
+  public static final class PathConstants {
+    // BLine runs three P loops at once. Every gain here is "output per unit of
+    // error", and since error is meters (or radians) and output is per-second,
+    // the units all come out to 1/s.
+    public static final double kTranslationP = 5.0; // m/s per meter of path left
+    public static final double kRotationP = 3.0;    // rad/s per radian of heading error
+    public static final double kCrossTrackP = 2.0;  // m/s per meter off the line
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * How much path has to be left when the robot asks to score, and the gain
+     * and the field point the robot aims with while a path is driving it.
+     */
+  }
+
   public static final class ElevatorConstants {
     public static final int kMotorPort = 20; // CAN ID — change to yours
     public static final double kGearRatio = 12.0; // motor rotations per drum rotation
@@ -194,22 +209,28 @@ public final class Constants {
     public static final Angle kCarriageAngle = Degrees.of(90);
   }
 
-  public static class LedConstants {
+  public static final class LedConstants {
     public static final int kPwmPort = 5; // PWM — change to yours
     public static final int kLength = 40; // LEDs on the strip — change to yours
 
-    // One pattern per SuperstructureState, built once, here, next to the
-    // color it uses — SuperstructureState's constructor just picks one up.
-    public static final LEDPattern kUnhomed = LEDPattern.solid(Color.RED).blink(Seconds.of(0.15));
+    // A pattern is a value, not a loop. Build them once, here, next to the
+    // colors they use, and hand the finished description to the strip.
+    // One per state, and named after it — the strip's vocabulary and the
+    // robot's are the same vocabulary.
     public static final Dimensionless kIdleBrightness = Percent.of(25);
+    public static final Time kBlinkPeriod = Seconds.of(0.15);
+
+    public static final LEDPattern kUnhomed = LEDPattern.solid(Color.RED).blink(kBlinkPeriod);
     public static final LEDPattern kIdle = LEDPattern.solid(Color.BLUE).atBrightness(kIdleBrightness);
     public static final LEDPattern kIntaking = LEDPattern.solid(Color.YELLOW);
-    public static final LEDPattern kScoring = LEDPattern.solid(Color.LIME_GREEN).blink(Seconds.of(0.1));
+    public static final LEDPattern kHandoff = kIntaking.blink(kBlinkPeriod);
+    public static final LEDPattern kHolding = LEDPattern.solid(Color.LIME_GREEN);
+    public static final LEDPattern kScoring = kHolding.blink(kBlinkPeriod);
 
     public static final Time kBreathePeriod = Seconds.of(2);
   }
 
-  public static class ArmConstants {
+  public static final class ArmConstants {
     public static final int kPivotMotorPort = 21; // CAN ID — change to yours
     public static final int kRollerMotorPort = 22; // CAN ID — change to yours
 
@@ -243,5 +264,20 @@ public final class Constants {
     // The roller has no goal to profile — just a direction and a speed.
     public static final double kIntakeSpeed = 0.6; // fraction of full output
     public static final double kEjectSpeed = -0.6;
+
+    // The beam break: an infrared beam across the throat of the intake, broken
+    // when a game piece is actually sitting where it belongs.
+    public static final int kBeamBreakChannel = 1; // DIO — change to yours
+    public static final Time kBeamDebounce = Seconds.of(0.1);
+
+    // Sim only: the box in front of the bumper that the roller can reach, and
+    // where the game pieces lie on the field when the simulation starts.
+    public static final Distance kIntakeWidth = Inches.of(24);
+    public static final Distance kIntakeReach = Inches.of(12);
+    public static final Translation2d[] kSimGamePiecePositions = {
+        new Translation2d(4.5, 3.2),
+        new Translation2d(2.0, 1.5),
+        new Translation2d(6.0, 3.8),
+    };
   }
 }

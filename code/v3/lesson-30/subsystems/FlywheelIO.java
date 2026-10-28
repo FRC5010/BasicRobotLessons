@@ -12,6 +12,7 @@ public interface FlywheelIO {
     public double setpointRps = 0.0;
     public double statorCurrentAmps = 0.0;
     public double supplyCurrentAmps = 0.0;
+    public boolean motorConnected = false;
   }
 
   /** Read every sensor into 'inputs'. Called once per tick, before anything else. */

@@ -1,9 +1,11 @@
 # Lesson 24 — Superstructure: one thing that says yes or no
 
-**Goal:** Replace three lessons' worth of buttons that each independently
-move a mechanism with one state machine — an enum that says what's
-*allowed*, and a class that says what's *happening now* — so the robot's
-elevator and arm can only ever be doing one recognizable thing at a time.
+**Goal:** Replace three lessons' worth of buttons and triggers that each
+independently move a mechanism with one state machine — an enum that says
+what's *allowed*, and a class that says what's *happening now* — so the
+robot's elevator and arm can only ever be doing one recognizable thing at a
+time, and the beam break from Lesson 22 moves the robot through its own
+cycle.
 
 **New Java concepts**
 - An **enum with a constructor, a field, and a method.** Every value of
@@ -22,7 +24,11 @@ elevator and arm can only ever be doing one recognizable thing at a time.
   the whole failure mode this lesson exists to prevent.
 - **A state, not a condition.** Lesson 23 ended on this: some things
   about a robot aren't true-or-false checks on a sensor, they're a mode
-  the robot is in. This lesson gives that idea a real type.
+  the robot is in — "mid-handoff" is the one that needed a name. This
+  lesson gives that idea a real type.
+- **Where a binding is made decides how long it lasts.** The driver's
+  buttons belong to teleop. What a state *means* belongs to the robot, in
+  every opmode.
 
 ---
 
@@ -51,6 +57,17 @@ this project, right now, and it's been true since Lesson 18. The reason
 it hasn't bitten you yet is that you've been the one testing it, in
 order, remembering to press Back first.
 
+The D-pad isn't the only thing that's accumulated. Lessons 20 through 22
+left `RobotTeleop` with a button that drops the arm, another that stows
+it, a bumper that spins the roller in and another that spins it out, a
+`Trigger` on the beam break that raises the elevator and stows the arm
+together, and a score binding that's three conditions stapled together —
+a trigger pull, *and* a game piece, *and* the elevator having arrived.
+Every one of them works. Ask a harder question, though: **what is the
+robot doing right now?** You can read a few booleans and infer something,
+but "in the middle of handing a piece off" isn't a reading anything on the
+robot reports.
+
 What you want is a single place that can say **no** — not "the elevator
 declines to move," but "that's not a legal thing to ask for right now" —
 and a way to ask it before the request ever reaches a motor.
@@ -66,8 +83,26 @@ any other object — there are just a fixed number of instances, one per
 name you write.
 
 `SuperstructureState` is going to be the whole vocabulary of what this
-robot's elevator-and-arm combo can be doing: not homed yet, sitting idle,
-reaching for a game piece, or scoring one. Four states.
+robot's elevator-and-arm combo can be doing. Six names cover the whole
+game cycle:
+
+| State | The robot is… |
+|---|---|
+| `UNHOMED` | freshly booted, and doesn't yet know where its own carriage is |
+| `IDLE` | homed, empty, everything stowed, waiting to be asked |
+| `INTAKING` | arm down, roller spinning, looking for a piece |
+| `HANDOFF` | holding a piece, moving the arm and elevator to carry it |
+| `HOLDING` | piece secured, mechanisms in place, ready to score |
+| `SCORING` | pushing the piece out |
+
+`HANDOFF` is the one worth stopping on. It's tempting to leave it out — a
+piece is either in the intake or it isn't, and the mechanisms are either at
+their goals or they aren't, so isn't "handoff" just those two facts? No.
+Both of those facts are also true a moment after you've *finished* handing
+off, and again if the driver moves things by hand. `HANDOFF` isn't a
+reading. It's a stretch of time the robot is passing through, with a
+beginning, an end, and a specific piece of motion that belongs to it.
+**A state machine is for the situations that have duration.**
 
 **Create `subsystems/SuperstructureState.java`:**
 
@@ -82,6 +117,8 @@ public enum SuperstructureState {
   UNHOMED(LedConstants.kUnhomed),
   IDLE(LedConstants.kIdle),
   INTAKING(LedConstants.kIntaking),
+  HANDOFF(LedConstants.kHandoff),
+  HOLDING(LedConstants.kHolding),
   SCORING(LedConstants.kScoring);
 
   private final LEDPattern m_pattern;
@@ -102,24 +139,46 @@ is a constructor call that happens to be the way you *declare* the
 constant. `pattern()` is a completely ordinary accessor. Nothing about
 this half is new except where it's written.
 
-**Add the four patterns it needs, replacing the single `kNotHomed` line
-in `Constants.java`'s `LedConstants`:**
+It's called `SuperstructureState` and not `RobotState` because WPILib
+already ships a class called `RobotState` (Lesson 23's `Leds` imports it),
+and having two of those in one file is a first compile error nobody enjoys.
+
+**In `Constants.java`'s `LedConstants`, replace `kNotHomed`,
+`kHasGamePiece`, and `kBreathePeriod` with one pattern per state. Keep
+`kPwmPort`, `kLength`, and `kIdleBrightness`, with `kIdleBrightness` above
+the lines that use it:**
 
 ```java
     // One pattern per SuperstructureState, built once, here, next to the
     // color it uses — SuperstructureState's constructor just picks one up.
-    public static final LEDPattern kUnhomed = LEDPattern.solid(Color.RED).blink(Seconds.of(0.15));
     public static final Dimensionless kIdleBrightness = Percent.of(25);
+    public static final Time kBlinkPeriod = Seconds.of(0.15);
+
+    public static final LEDPattern kUnhomed = LEDPattern.solid(Color.RED).blink(kBlinkPeriod);
     public static final LEDPattern kIdle = LEDPattern.solid(Color.BLUE).atBrightness(kIdleBrightness);
     public static final LEDPattern kIntaking = LEDPattern.solid(Color.YELLOW);
-    public static final LEDPattern kScoring = LEDPattern.solid(Color.LIME_GREEN).blink(Seconds.of(0.1));
+    public static final LEDPattern kHandoff = kIntaking.blink(kBlinkPeriod);
+    public static final LEDPattern kHolding = LEDPattern.solid(Color.LIME_GREEN);
+    public static final LEDPattern kScoring = kHolding.blink(kBlinkPeriod);
+
+    public static final Time kBreathePeriod = Seconds.of(2);
 ```
+
+Two of those are built out of the two above them — `kHandoff` is
+`kIntaking` blinking, `kScoring` is `kHolding` blinking. That's Lesson 23's
+combinator idea doing real work: a pattern is a value, so of course you can
+build a value out of another one. Lesson 23's "has a game piece" green
+lives on as `kHolding`.
+
+> **Declaration order matters here.** `kIdleBrightness` and `kBlinkPeriod`
+> are used by the constants below them, and a static field can't be read
+> before it's declared.
 
 `kIdle` is a fixed blue, not the alliance color `Leds` used to compute at
 runtime — a `static final` field is built once, when the class first
 loads, long before any driver station has told the robot which alliance
-it's on. That's a real limitation, not an oversight, and it's this
-lesson's Try It rather than something to work around here.
+it's on. That's a real limitation, not an oversight, and it's a Try It
+rather than something to work around here.
 
 ---
 
@@ -133,36 +192,44 @@ for?
 
 ```java
   /**
-   * Is 'next' a legal move from this state? An exhaustive switch expression:
-   * add a state and this stops compiling until you say what it can do.
+   * Can a request move the robot from here to there? This is a rule about how
+   * the robot is built, not about this instant — no sensor is read to answer
+   * it, and the answer never changes.
+   *
+   * <p>UNHOMED answers no to everything on purpose. The only way out is to
+   * actually home the elevator; no button gets to simply declare it done.
    */
   public boolean canGoTo(SuperstructureState next) {
     return switch (this) {
-      // No request of any kind gets the robot out of UNHOMED. The only exit
-      // is Superstructure.periodic() noticing the elevator homed itself.
       case UNHOMED -> false;
-      // You have to go get a piece before you can claim to be ready to
-      // score one — IDLE can only ask to go collect.
       case IDLE -> next == INTAKING;
-      case INTAKING -> next == IDLE || next == SCORING;
+      case INTAKING -> next == HANDOFF || next == IDLE;
+      case HANDOFF -> next == HOLDING || next == IDLE;
+      case HOLDING -> next == SCORING || next == IDLE;
       case SCORING -> next == IDLE;
     };
   }
 ```
+
+Read it as a table and it's the whole robot in a few lines. From `IDLE`
+the only thing you can ask for is intaking. From `HOLDING` you can score,
+or give up and go back to neutral. Everything not listed is refused —
+including scoring from `INTAKING` or `IDLE`, because nothing is on board
+to score.
 
 Read `UNHOMED -> false` first, because it's the one rule the rest of this
 lesson depends on. **No matter what `next` is, `UNHOMED.canGoTo(next)` is
 false.** Not "false unless you're careful" — false, unconditionally,
 forever, for every possible argument. There is exactly one way out of
 `UNHOMED`, and it isn't a request at all — you'll write it in the next
-section, and it's the only transition in this whole file that doesn't go
-through `canGoTo`.
+section, and it's one of the transitions in this whole file that doesn't
+go through `canGoTo`.
 
 Notice this is a **switch expression**, not a switch statement — every
 arm produces a value with `->`, and there's no `default`. That's not a
 style choice. Try commenting out the `SCORING` case and compiling: the
 compiler refuses, because a `switch` expression over an enum has to
-cover every constant. Add a fifth state later — say, for climbing — and
+cover every constant. Add a seventh state later — say, for climbing — and
 the same thing happens: the build breaks at `canGoTo` until you type out
 what the new state is allowed to do. You cannot forget a case. The
 compiler is doing code review on your state machine every time you touch
@@ -179,7 +246,19 @@ That's deliberate, and it's the whole idea of the next section.
 `canGoTo` answers "is this allowed." Something else has to answer "what's
 actually happening," and the two are not the same question. A request can
 be perfectly legal and still be something nobody asked for yet — legality
-is about permission, not action.
+is about permission, not action. And `HANDOFF → HOLDING` is legal at all
+times, but it should only actually *happen* once the elevator and arm have
+finished moving, which depends on where the hardware is this instant.
+Cramming that into `canGoTo` would ruin it: the enum would start reading
+sensors, and you could no longer look at it and see the robot's design.
+
+So they live apart:
+
+- **Legality** is a rule about the robot. It lives in the enum, it reads
+  nothing, and it never changes. It governs what somebody is allowed to
+  *ask for*.
+- **Readiness** is a fact about this instant. It lives in `periodic()`, it
+  reads the mechanisms, and it governs what the robot does *on its own*.
 
 **Create `subsystems/Superstructure.java`, starting with the fields and
 constructor:**
@@ -187,10 +266,13 @@ constructor:**
 ```java
 package first.robot.subsystems;
 
+import static org.wpilib.units.Units.Seconds;
+
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.command3.Trigger;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.math.filter.Debouncer;
+import org.wpilib.telemetry.Telemetry;
 
 import first.robot.Constants.ArmConstants;
 import first.robot.Constants.ElevatorConstants;
@@ -199,6 +281,9 @@ public class Superstructure {
   private final Elevator m_elevator;
   private final Arm m_arm;
   private SuperstructureState m_state = SuperstructureState.UNHOMED;
+
+  /** The filter Lesson 22 hung on a Trigger, here in its plain form. */
+  private final Debouncer m_pieceFilter = new Debouncer(ArmConstants.kBeamDebounce.in(Seconds));
 
   public Superstructure(Elevator elevator, Arm arm) {
     m_elevator = elevator;
@@ -212,49 +297,93 @@ The robot boots into `UNHOMED`. Every robot does, every match, because
 the encoder genuinely doesn't know where the carriage is until homing
 says so — this is the same fact Lesson 21 built `home()` around.
 
-**Add `periodic()`, the one automatic transition in the whole machine:**
+That `Debouncer` is a familiar idea wearing different clothes. In Lesson 22
+you wrote `.debounce(ArmConstants.kBeamDebounce)` on a `Trigger`, and that
+decorator was wrapping this class the whole time. Now that the beam break
+is read here instead of in a binding, you use the filter directly: same
+behavior, same constant, one layer less.
+
+**Add `periodic()` below the constructor — everything the robot decides for
+itself:**
 
 ```java
-  /**
-   * The only automatic transition in the whole machine, because it is the
-   * only one backed by a sensor that still exists: the bottom limit switch
-   * from Lesson 21. Every other move in this lesson has to be asked for.
-   */
   private void periodic() {
-    if (m_state == SuperstructureState.UNHOMED && m_elevator.isHomed()) {
-      m_state = SuperstructureState.IDLE;
+    boolean hasPiece = m_pieceFilter.calculate(m_arm.hasGamePiece());
+
+    // The transitions the robot makes for itself, once the hardware has
+    // actually caught up. These don't consult canGoTo: that rule is about
+    // requests, and this is the state machine deciding, not asking.
+    switch (m_state) {
+      case UNHOMED -> {
+        if (m_elevator.isHomed()) {
+          m_state = SuperstructureState.IDLE;
+        }
+      }
+      case INTAKING -> {
+        if (hasPiece) {
+          m_state = SuperstructureState.HANDOFF;
+        }
+      }
+      case HANDOFF -> {
+        if (!hasPiece) {
+          m_state = SuperstructureState.IDLE;
+        } else if (m_elevator.atGoal() && m_arm.atGoal()) {
+          m_state = SuperstructureState.HOLDING;
+        }
+      }
+      case HOLDING, SCORING -> {
+        if (!hasPiece) {
+          m_state = SuperstructureState.IDLE;
+        }
+      }
+      case IDLE -> {
+        // Nothing happens here on its own. Somebody has to ask.
+      }
     }
-    SmartDashboard.putString("Superstructure/State", m_state.name());
+
+    Telemetry.log("Superstructure/State", m_state.name());
   }
 ```
 
-This is the entire "readiness" side of the machine, and it's short on
-purpose: there is exactly one fact this robot can check for itself
-without being told, which is whether the elevator has ever touched its
-bottom limit switch. Everything else — whether to go get a piece, whether
-to score one — depends on something no sensor on this robot can see: is
-there actually a piece in the mechanism right now? Nothing here reads
-that, because nothing here *can*. Later hardware on a real robot might
-add a sensor for exactly that question. Until then, the honest design is
-to say so out loud rather than pretend: **the operator is the sensor**,
-and every state past `UNHOMED` is something a human has to ask for.
+Walk the cycle once and it reads like a description of a match. Boot into
+`UNHOMED` and sit there until somebody homes — that's the only exit, and
+now it's the only exit in code too. From `INTAKING`, a debounced beam
+break means a piece arrived, so start the handoff. From `HANDOFF`, wait
+until *both* mechanisms report `atGoal` before calling the piece secured.
+And losing the piece drops you back to `IDLE` from anywhere it can happen,
+which is also how `SCORING` ends — the piece leaving is what finishes
+scoring, not a timer.
 
-That split is why `periodic()` never calls `canGoTo`. `canGoTo` is a
-rulebook for *requests* — things a button asks for. The one transition
-here isn't a request; it's Superstructure noticing a fact about the
-world and updating its own belief to match. Mixing those two together —
-letting `periodic()` consult the same legality table a button uses —
-would make the automatic case just another kind of request, and it isn't
-one. Nobody asked to leave `UNHOMED`. The elevator simply stopped being
-un-homed.
+That's why `periodic()` never calls `canGoTo`. `canGoTo` is a rulebook for
+*requests* — things a button asks for. These transitions aren't requests;
+they're `Superstructure` noticing a fact about the world and updating its
+own belief to match. Nobody asked to leave `UNHOMED`. The elevator simply
+stopped being un-homed. Nobody asked for `HOLDING`, either; the arm and
+elevator arrived.
 
-**Finish the read-side with two small accessors:**
+`Superstructure` is a plain class, the same shape as `Localizer` from
+Lesson 14 — it needs the scheduler, for `periodic()`, but nothing ever
+requires *it*, so it never needed to be a `Mechanism`. **What makes
+something worth a heartbeat isn't owning hardware — it's needing the
+scheduler.** (Lesson 7 made the opposite call for `SwerveModule`, which
+stopped being a subsystem because it never decided anything on its own;
+this is the mirror image.)
+
+The last line logs the state by name, so `Superstructure/State` shows up
+as one readable line of text rather than a wall of booleans. It replaces
+Lesson 23's `Leds/Showing`: that one recorded what the strip decided; this
+one records what the robot *was*, which is the thing you want when you're
+reading a log a week later.
+
+**Finish the read-side with two small accessors, below `periodic()`:**
 
 ```java
+  /** What the robot is doing. Everything downstream reads this instead of sensors. */
   public SuperstructureState getState() {
     return m_state;
   }
 
+  /** True exactly while the robot is in this state, as a Trigger you can bind to. */
   public Trigger inState(SuperstructureState state) {
     return new Trigger(() -> m_state == state);
   }
@@ -269,9 +398,11 @@ boolean comes from.
 
 ## 5. Requests: guarded, and empty-handed on purpose
 
-A request is a button asking to change `m_state`. It needs to check
-`canGoTo` before it's allowed to, and — this is the part worth sitting
-with — **it should not require anything.**
+A request is a button asking to change `m_state`. Buttons get pressed at
+the wrong time — that's not a character flaw, it's what happens when
+you're looking at a field instead of a controller — so a request has to
+check `canGoTo` before it's allowed to. And — this is the part worth
+sitting with — **it should not require anything.**
 
 Think about what "requires the elevator" would mean here. If pressing the
 score button scheduled a command that required `Elevator`, and the
@@ -281,7 +412,7 @@ motion. It's a decision. Decisions shouldn't be able to interrupt
 anything, and in this framework, a command that requires nothing *can't*
 — there's nothing for it to preempt.
 
-**Add to `Superstructure`, below the constructor:**
+**Add to `Superstructure`, below the accessors:**
 
 ```java
   // --- Requests: button-bound, guarded, and nothing but a mode switch. ---
@@ -312,7 +443,7 @@ anything, and in this framework, a command that requires nothing *can't*
   private boolean allow(SuperstructureState next) {
     boolean ok = m_state.canGoTo(next);
     if (!ok) {
-      SmartDashboard.putString("Superstructure/Rejected", m_state + " -> " + next);
+      Telemetry.log("Superstructure/Rejected", m_state + " -> " + next);
     }
     return ok;
   }
@@ -346,18 +477,13 @@ need to ask permission, because by the time you're *in* a state, the
 legality question is already answered. Asking again would be redundant at
 best and would give a second, inconsistent opinion at worst.
 
-**Add three motion commands, below `allow`:**
+**The rule that keeps this straight: a command bound to a button guards
+itself; a command bound to a state doesn't.**
+
+**Add four motion commands, below `allow`:**
 
 ```java
   // --- Motion: inState-bound, unguarded, because arriving already means yes. ---
-
-  /** Arm and elevator require different Mechanisms, so this may run in parallel. */
-  public Command idleMotion() {
-    return Command.parallel(
-            m_elevator.goToHeight(ElevatorConstants.kStowed),
-            m_arm.goToAngle(ArmConstants.kStowed))
-        .named("Idle Motion");
-  }
 
   /** Both steps require Arm — the same Mechanism — so this has to be a sequence, not a parallel. */
   public Command intakeMotion() {
@@ -367,18 +493,34 @@ best and would give a second, inconsistent opinion at worst.
         .named("Intake Motion");
   }
 
-  /** Elevator and Arm require different Mechanisms, so this may run in parallel too. */
-  public Command scoreMotion() {
+  /**
+   * The handoff — the thing Lesson 22 did without being able to name it. Arm
+   * and elevator require different Mechanisms, so this may run in parallel.
+   */
+  public Command handoffMotion() {
     return Command.parallel(
-            m_elevator.goToHeight(ElevatorConstants.kScoreHigh),
-            m_arm.runRoller(ArmConstants.kEjectSpeed))
-        .named("Score Motion");
+            m_arm.goToAngle(ArmConstants.kStowed),
+            m_elevator.goToHeight(ElevatorConstants.kScoreMid))
+        .named("Handoff Motion");
+  }
+
+  /** Roller out. The piece leaving is what ends the state, not a timer. */
+  public Command scoreMotion() {
+    return m_arm.runRoller(ArmConstants.kEjectSpeed);
+  }
+
+  /** Back to neutral: arm stowed, elevator down. */
+  public Command idleMotion() {
+    return Command.parallel(
+            m_arm.goToAngle(ArmConstants.kStowed),
+            m_elevator.goToHeight(ElevatorConstants.kStowed))
+        .named("Idle Motion");
   }
 ```
 
-Two different shapes here, and the reason is worth catching. `idleMotion`
-and `scoreMotion` use `Command.parallel(...)` — the elevator move and the
-arm move require different `Mechanism`s, so nothing conflicts. But
+Two different shapes here, and the reason is worth catching. `handoffMotion`
+and `idleMotion` use `Command.parallel(...)` — the arm move and the
+elevator move require different `Mechanism`s, so nothing conflicts. But
 `intakeMotion` swings the arm to `kIntake` *and* runs the arm's roller,
 and Lesson 20 made `Arm` one `Mechanism` for both motors — the pivot and
 the roller are the same physical thing, so both commands require the same
@@ -386,64 +528,157 @@ the roller are the same physical thing, so both commands require the same
 Mechanism; it has no way to decide which one actually owns the motor.
 `Command.sequence` sidesteps the question by never running them at the
 same time — the arm swings down, and only once `goToAngle` finishes does
-`runRoller` start, which is a perfectly sensible way to intake anyway:
-get into position, then spin.
+`runRoller` start, which is a perfectly sensible way to intake anyway: get
+into position, then spin.
 
-`scoreMotion` reaches for `ArmConstants.kEjectSpeed` — a constant that's
-been sitting in `Constants.java` since Lesson 20 with nothing calling it.
-It's the roller running backward, and scoring is exactly the moment for
-it.
+`HOLDING` has no motion at all. By the time the robot gets there the arm
+is stowed and the elevator is at `kScoreMid`, and Phoenix keeps holding
+both — there's nothing left to command.
+
+`scoreMotion` reaches for `ArmConstants.kEjectSpeed` — the roller running
+backward, which has been sitting in `Constants.java` since Lesson 20.
 
 ---
 
-## 7. Wiring: requests to buttons, motion to state
+## 7. The strip forgets everything
 
-Two different kinds of binding, matching the two kinds of command.
+Now the payoff Lesson 23 was set up for.
 
-**In `RobotTeleop.java`'s constructor, add the requests — bound to
-buttons, guarded:**
+`Leds` currently takes an `Elevator` and an `Arm`, reads two booleans off
+them, and runs an ordered chain to decide which one wins. Every one of
+those things is now somebody else's job. The robot is in exactly one state,
+that state carries its own pattern, and there is nothing left to
+prioritize. (Lesson 23's "not homed outranks has a piece" didn't go away —
+it became structural. `UNHOMED` can't turn into anything but `IDLE`, so a
+piece loaded before homing can never make the strip say `HOLDING`.)
+
+**Replace `Leds.java` entirely with:**
 
 ```java
-    // West face requests INTAKING, north face requests IDLE, right trigger
-    // requests SCORING. Each request only flips Superstructure's state if
-    // canGoTo allows it — the actual arm/elevator motion is bound below,
-    // to the state itself, not to these buttons.
-    robot.driverController.westFace().onTrue(robot.superstructure.requestIntake());
-    robot.driverController.northFace().onTrue(robot.superstructure.requestIdle());
+package first.robot.subsystems;
+
+import java.util.function.Supplier;
+
+import org.wpilib.command3.Scheduler;
+import org.wpilib.driverstation.RobotState;
+import org.wpilib.hardware.led.AddressableLED;
+import org.wpilib.hardware.led.AddressableLEDBuffer;
+import org.wpilib.hardware.led.LEDPattern;
+
+import first.robot.Constants.LedConstants;
+
+public class Leds {
+  private final AddressableLED m_strip = new AddressableLED(LedConstants.kPwmPort);
+  private final AddressableLEDBuffer m_buffer = new AddressableLEDBuffer(LedConstants.kLength);
+
+  private final Supplier<SuperstructureState> m_state;
+
+  public Leds(Supplier<SuperstructureState> state) {
+    m_state = state;
+
+    m_strip.setLength(m_buffer.getLength());
+    Scheduler.getDefault().addPeriodic(this::periodic);
+  }
+
+  private void periodic() {
+    // The state says what the robot is doing. Being disabled says whether
+    // anyone can act on it. Two questions, so two lines.
+    LEDPattern pattern = m_state.get().pattern();
+    if (RobotState.isDisabled()) {
+      pattern = pattern.breathe(LedConstants.kBreathePeriod);
+    }
+
+    pattern.applyTo(m_buffer);
+    m_strip.setData(m_buffer);
+  }
+}
+```
+
+Look at what's gone: the `Elevator` field, the `Arm` field, the `Telemetry`
+and alliance-color imports, the whole `if`/`else` chain, and the
+`Leds/Showing` log key. `Leds.java` no longer imports a single subsystem.
+
+The constructor is the interesting part. It takes a
+`Supplier<SuperstructureState>` — "something I can ask for the current
+state" — rather than the object that happens to know it. You've seen this
+before: Lesson 16 handed each camera `drivetrain::getSimulatedPose` instead
+of the `Drivetrain`, for the same reason. **Ask for the narrowest thing
+that does the job.** A class that takes two subsystems can reach into
+either of them and do anything at all; a class that takes a supplier can do
+precisely one thing, and you can tell that from the constructor line
+without reading the body.
+
+Disabled stays a separate question on purpose. The robot is in a state
+whether or not the field has enabled it — being disabled doesn't mean it
+forgot it's holding a game piece. So the state picks the pattern, and
+being disabled layers a slow breathe on top of whatever that pattern
+already was.
+
+---
+
+## 8. Wiring: requests to buttons, motion to state
+
+Two different kinds of binding, matching the two kinds of command — and,
+it turns out, two different files. Most of this section is deletions: the
+bindings from Lessons 20 and 22 that moved mechanisms directly are exactly
+what the state machine replaces.
+
+**In `RobotTeleop.java`'s constructor, delete the arm buttons and the
+roller bumpers, comment and all:**
+
+```java
+    // The left face button drops the arm to the floor; the top one tucks it
+    // back up. Hold a bumper to run the roller — it stops when you let go.
+    robot.driverController.faceLeft().onTrue(robot.arm.goToAngle(ArmConstants.kIntake));
+    robot.driverController.faceUp().onTrue(robot.arm.goToAngle(ArmConstants.kStowed));
+    robot.driverController.rightBumper().whileTrue(robot.arm.runRoller(ArmConstants.kIntakeSpeed));
+    robot.driverController.leftBumper().whileTrue(robot.arm.runRoller(ArmConstants.kEjectSpeed));
+```
+
+**Delete the capture binding and the score binding, comments and all:**
+
+```java
+    // Capture. The beam break says a piece is really in there, not that the
+    // roller is spinning. Debounced, so a piece tumbling past can't trigger it.
+    new Trigger(robot.arm::hasGamePiece)
+        .debounce(ArmConstants.kBeamDebounce)
+        .onTrue(Command.parallel(
+                robot.arm.goToAngle(ArmConstants.kStowed),
+                robot.elevator.goToHeight(ElevatorConstants.kScoreMid))
+            .named("Capture"));
+
+    // Score, but only when it makes sense: a piece on board, and the elevator
+    // actually arrived where it was sent.
+    robot.driverController.rightTrigger()
+        .and(robot.arm::hasGamePiece)
+        .and(robot.elevator::atGoal)
+        .whileTrue(robot.arm.runRoller(ArmConstants.kEjectSpeed));
+```
+
+**Add the requests in their place, bound to buttons and guarded:**
+
+```java
+    // Face buttons ask the superstructure for a state: left to intake, top to
+    // give up and go back to neutral, right trigger to score. They don't check
+    // whether it makes sense — that's the state machine's job, and it refuses
+    // out loud.
+    robot.driverController.faceLeft().onTrue(robot.superstructure.requestIntake());
+    robot.driverController.faceUp().onTrue(robot.superstructure.requestIdle());
     robot.driverController.rightTrigger().onTrue(robot.superstructure.requestScore());
 ```
 
-**Then the motion — bound to the state itself, unguarded:**
+**Delete the two imports that nothing in `RobotTeleop` uses any more —
+`org.wpilib.command3.Command` and `first.robot.Constants.ArmConstants`.**
 
-```java
-    // Arriving in a state already answered the "is this allowed" question,
-    // so these run unguarded — the moment m_state matches, the matching
-    // motion command is scheduled, and it is canceled the moment it doesn't.
-    robot.superstructure.inState(SuperstructureState.IDLE).whileTrue(robot.superstructure.idleMotion());
-    robot.superstructure.inState(SuperstructureState.INTAKING).whileTrue(robot.superstructure.intakeMotion());
-    robot.superstructure.inState(SuperstructureState.SCORING).whileTrue(robot.superstructure.scoreMotion());
-```
+The homing binding, the re-zero `Trigger`, the D-pad heights, and
+everything to do with driving stay exactly as they are. The D-pad still
+moves the elevator without telling the superstructure — the hole from
+section 1. Try It #4 asks what to do about it.
 
-`whileTrue` schedules its command the moment the `Trigger` turns true and
-cancels it the moment the `Trigger` turns false. Press the intake button
-from `IDLE`: `requestIntake()` flips `m_state` to `INTAKING`, and on the
-very next scheduler pass `inState(INTAKING)` goes true and
-`intakeMotion()` starts. Request `SCORING` next: `m_state` changes again,
-`inState(INTAKING)` goes false, `intakeMotion()` is canceled — which
-means `runRoller`'s `.whenCanceled(...)` fires and the roller actually
-stops — and `inState(SCORING)` picks up `scoreMotion()` in the same tick.
-You never touch a motor directly. You only ever say what state you want,
-and the wiring in this section is what turns that into motion.
+Now `Robot.java`.
 
-You still have `Elevator`, `Arm`, and now `Superstructure` all declared
-as fields in `Robot.java`. `Superstructure` is a plain class, the same
-shape as `Localizer` from Lesson 14 — it needs the scheduler, for
-`periodic()`, but nothing ever requires *it*, so it never needed to be a
-`Mechanism`. Needing the scheduler and being requirable turn out to be
-two separate questions, and `Superstructure` is the clearest example yet
-of a class that needs the first without the second.
-
-**In `Robot.java`, declare it after `arm` and before `leds`:**
+**In `Robot.java`, declare the superstructure after `arm` and change
+`leds` to read it:**
 
 ```java
   // Superstructure reads both, so elevator and arm must be finished objects
@@ -452,53 +687,125 @@ of a class that needs the first without the second.
   public final Leds leds = new Leds(superstructure::getState); // reads it; drives nothing
 ```
 
-**Add the import:**
+Declaration order still matters: `superstructure` reads the elevator and
+arm, so it comes after both, and `leds` reads the superstructure, so it
+comes last. It also fixes tick order — the scheduler runs periodic
+callbacks in registration order, so the elevator and arm have refreshed
+their inputs by the time `Superstructure` reads them.
+
+That leaves the motion. The obvious home is `RobotTeleop`, right under the
+requests — and it would work, as long as teleop is the opmode you picked.
+That's the catch. Lesson 9 showed you that a binding made in an opmode's
+constructor is *scoped* to that opmode: the moment the Driver Station
+selects a different one, the binding is torn down. That's exactly right for
+a button, because the driver's controls belong to teleop. But what the
+robot does in `INTAKING` isn't a driver's control. It's what `INTAKING`
+*means*, and it should mean the same thing in autonomous, where nobody is
+holding a controller at all.
+
+`Robot`'s constructor runs before any opmode exists, so a binding made there
+belongs to no opmode. It lasts for the whole program. **Bind a driver's
+control in the opmode it belongs to; bind what the robot itself means in
+`Robot`.**
+
+**In `Robot`'s constructor, right after `Autos.registerEventTriggers();`,
+bind the motion to the state itself, unguarded:**
+
+```java
+  public Robot() {
+    // ...
+    Autos.registerEventTriggers(); // once, for the whole program
+
+    // Motion that belongs to a state, bound to being in it. No guard here:
+    // being in the state at all means the state machine already said yes. The
+    // moment the state changes, whileTrue cancels the old motion. HOLDING has
+    // none — the elevator and arm are already where they need to be. These are
+    // made here, not in an opmode, so they hold in every opmode there is.
+    superstructure.inState(SuperstructureState.INTAKING).whileTrue(superstructure.intakeMotion());
+    superstructure.inState(SuperstructureState.HANDOFF).whileTrue(superstructure.handoffMotion());
+    superstructure.inState(SuperstructureState.SCORING).whileTrue(superstructure.scoreMotion());
+    superstructure.inState(SuperstructureState.IDLE).whileTrue(superstructure.idleMotion());
+
+    // ...
+  }
+```
+
+**Add the imports:**
 
 ```java
 import first.robot.subsystems.Superstructure;
+import first.robot.subsystems.SuperstructureState;
 ```
 
-That last line is the whole reason Lesson 23 built `Leds` around a
-`Supplier<SuperstructureState>` instead of reading `Elevator` directly —
-`new Leds(superstructure::getState)` needed no changes to `Leds` itself
-at all. `Leds` doesn't know a state machine exists underneath it; it just
-asks for the current state and reads `.pattern()` off whatever it gets
-back. Go check: `Leds.java` from last lesson is untouched.
+`whileTrue` schedules its command the moment the `Trigger` turns true and
+cancels it the moment the `Trigger` turns false. Press the intake button
+from `IDLE`: `requestIntake()` flips `m_state` to `INTAKING`, and on the
+very next scheduler pass `inState(INTAKING)` goes true and `intakeMotion()`
+starts. When the beam break fires, `periodic()` moves the state to
+`HANDOFF`, `inState(INTAKING)` goes false, and `intakeMotion()` is canceled
+— which means `runRoller`'s `.whenCanceled(...)` fires and the roller
+actually stops — while `inState(HANDOFF)` picks up `handoffMotion()` in
+the same tick. You never touch a motor directly. You say what state you
+want, or the robot notices what state it's in, and the wiring turns that
+into motion.
+
+Read the new bindings, in both files, and notice what's missing: no
+`hasGamePiece`, no `atGoal`, no debounce, no `and(...)` chain. **Not one
+binding mentions a sensor.** The three buttons name states, and the four
+state bindings name motion. Everything about *when* now lives in
+`Superstructure`, in one method you can read top to bottom.
 
 ---
 
-## 8. Run it
+## 9. Run it
 
 `./gradlew simulateJava`. The strip boots red and blinking, same as
-before — `UNHOMED` still carries `kUnhomed`, and nothing about that
-changed.
+before — `UNHOMED` still carries a blinking red.
 
-1. **Press West without homing first.** Nothing happens — not to the arm,
-   not to `m_state`. Check `Superstructure/Rejected` on the dashboard:
-   `UNHOMED -> INTAKING`. The button worked exactly as designed; the
-   answer was no.
+1. **Press the left face button without homing first.** Nothing happens —
+   not to the arm, not to `m_state`. Check `Superstructure/Rejected`:
+   `UNHOMED -> INTAKING`. Try the right trigger and the top face button
+   too; each is refused and logged the same way.
 2. **Enable and press Back.** The elevator homes. The instant
-   `elevator.isHomed()` goes true, `periodic()` moves `m_state` to
-   `IDLE` on its own — nobody pressed anything for that part — and the
-   strip settles to a dim blue.
-3. **Press West.** `Superstructure/State` reads `INTAKING`, the arm
-   swings down to `kIntake`, and once it arrives the roller starts. The
-   strip goes yellow.
-4. **Press right trigger.** State becomes `SCORING`, the roller reverses,
-   and the elevator drives to `kScoreHigh`. Try pressing West again from
-   here — refused, logged, nothing moves. You have to come back through
-   `IDLE` first.
-5. **Press North.** Back to `IDLE`, everything stows.
+   `elevator.isHomed()` goes true, `periodic()` moves `m_state` to `IDLE`
+   on its own — nobody pressed anything for that part — the strip settles
+   to a dim blue, and the idle motion stows everything.
+3. **Press the left face button.** `Superstructure/State` reads
+   `INTAKING`, the arm swings down to `kIntake`, and once it arrives the
+   roller starts. The strip goes solid yellow. Drive over a game piece.
+4. **Watch the handoff.** The instant the beam break debounces true, the
+   state becomes `HANDOFF` and the strip blinks yellow while the arm
+   stows and the elevator rises to `kScoreMid`. When both arrive it
+   settles to `HOLDING` and solid green.
+5. **Try to break it.** Press the left face button while `HOLDING` —
+   refused, logged as `HOLDING -> INTAKING`. Pull the right trigger while
+   `IDLE` — refused too.
+6. **Pull the right trigger while `HOLDING`.** State becomes `SCORING`
+   and the roller reverses. The piece leaves almost at once, so the state
+   drops to `IDLE` on its own and everything stows — `SCORING` is a
+   one-or-two-tick flicker in the log, which is fine. It's the *piece
+   leaving*, not a timer, that ends it.
 
 Every one of those transitions is visible in exactly two dashboard keys:
-`Superstructure/State` for what's happening, `Superstructure/Rejected`
-for what almost happened and didn't.
+`Superstructure/State` for what's happening, `Superstructure/Rejected` for
+what almost happened and didn't.
+
+Measured in the simulator, with the real `Robot` and the real bindings,
+driven through `GamepadSim` on a fixed 20 ms loop: homing reaches `IDLE`
+150 to 170 ticks (3 to 3.4 s) after you press Back. The later you press
+it, the quicker it is, because the unpowered carriage has been sinking
+toward the switch the whole time. With the arm down and the robot driving
+at a piece at a quarter stick, the beam break trips the handoff about 35
+ticks after the drive starts, and the machine reaches `HOLDING` about 55
+ticks (1.1 s) after that, with the elevator inside its 2 cm tolerance of
+0.75 m and the arm at its goal. The strip reads solid yellow in `INTAKING`, solid green
+in `HOLDING`, and dim blue in `IDLE` (breathing while disabled).
 
 ---
 
 ## Try it
 
-1. **Add `CLIMBING`.** A fifth state, reachable only from `IDLE`, and
+1. **Add `CLIMBING`.** A seventh state, reachable only from `IDLE`, and
    once there the only legal move is staying — nothing, not even `IDLE`,
    can be requested from it (an emergency override is a different
    problem than this lesson solves). Add the constant to
@@ -507,9 +814,10 @@ for what almost happened and didn't.
    state to this machine without being forced to say what it does.
 2. **Make alliance color real.** `kIdle` is a fixed blue because a
    `static final` field is built before any driver station has connected.
-   Find a way to make the strip alliance-aware anyway — you'll need to
-   stop treating the pattern as something baked into the enum constant
-   and compute it somewhere that runs after the alliance is known.
+   Find a way to make the strip alliance-aware anyway — either have the
+   constant carry something that *produces* a pattern rather than a
+   finished one, or special-case `IDLE` back in `Leds`. Pick one,
+   implement it, and be ready to say why the other is worse.
 3. **Show a refusal on the strip, not just the dashboard.** Right now
    `Superstructure/Rejected` is the only sign a request failed, and it's
    easy to miss unless you're staring at the dashboard. Make `Leds`
@@ -518,10 +826,12 @@ for what almost happened and didn't.
    give you.
 4. **Take a side on the D-pad.** Section 1 showed you a real bug: the
    D-pad still drives `Elevator.goToHeight` directly, completely outside
-   `canGoTo`. Now that `Superstructure` exists, is that still acceptable
-   as a manual override, or should the D-pad route through a request
-   too? Either answer is defensible — argue for one, and change the code
-   to match.
+   `canGoTo`. Work out exactly what happens if the driver taps D-pad up
+   in the middle of a handoff — and note that it also cancels
+   `idleMotion` while the state still says `IDLE`. Then decide whether to
+   leave it as a manual override, refuse it while a cycle is running, or
+   give manual control its own state. Any of the three is defensible;
+   write a comment saying which you chose and why.
 
 ---
 
@@ -540,6 +850,11 @@ together — a sensor reading treated as permission, or a request that
 skips the rulebook because "it's probably fine" — you've rebuilt the bug
 from section 1 with extra steps.
 
+**A state is for the situations that have duration.** Nothing on the robot
+reports "mid-handoff," so no stack of conditions could say it. Naming it
+gave the beam break something to *drive*, and gave the strip something to
+show.
+
 **An enum can hold behavior, not just names.** `SuperstructureState`
 carries a pattern and answers its own legality question, and the
 compiler enforces that every state answers it — a switch expression with
@@ -556,4 +871,4 @@ early `return`, because this framework doesn't hand you a shortcut for
 it. Now that you've built it once, you'll recognize the shape instantly
 next time you need it.
 
-Next: [Lesson 26 — Getting there exactly](26-drive-to-pose.md).
+Next: [Lesson 25 — Doing two things at once](25-path-events.md).

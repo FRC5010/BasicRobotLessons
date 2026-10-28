@@ -15,6 +15,8 @@ import static org.wpilib.units.Units.Meters;
 import static org.wpilib.units.Units.MetersPerSecond;
 import static org.wpilib.units.Units.MetersPerSecondPerSecond;
 import static org.wpilib.units.Units.Percent;
+import static org.wpilib.units.Units.RadiansPerSecond;
+import static org.wpilib.units.Units.RadiansPerSecondPerSecond;
 import static org.wpilib.units.Units.RotationsPerSecond;
 import static org.wpilib.units.Units.Seconds;
 import static org.wpilib.units.Units.Volts;
@@ -31,6 +33,7 @@ import org.wpilib.math.geometry.Rotation3d;
 import org.wpilib.math.geometry.Transform3d;
 import org.wpilib.math.geometry.Translation2d;
 import org.wpilib.math.geometry.Translation3d;
+import org.wpilib.math.trajectory.TrapezoidProfile;
 import org.wpilib.units.measure.Angle;
 import org.wpilib.units.measure.AngularAcceleration;
 import org.wpilib.units.measure.AngularVelocity;
@@ -149,136 +152,9 @@ public final class Constants {
     public static final double kSimHorizontalFovDegrees = 80.0;
     public static final double kSimVerticalFovDegrees = 56.0;
     public static final double kSimMaxRangeMeters = 6.0;
-
-    // --- Object detection ---------------------------------------------------
-    // A detection model reports what it saw as a number, and this pair is the
-    // entire mapping between that number and what it means. There is no
-    // standard class ID — it's the index of a class in the model YOU trained,
-    // so on a real robot this constant is whatever your model emits.
-    public static final String kGamePieceType = "Fuel";
-    public static final int kGamePieceClassId = 0;
-
-    /** A Fuel is a 15 cm ball, so its middle sits 8 cm off the floor. */
-    public static final Distance kGamePieceDiameter = Meters.of(0.15);
-    public static final Distance kGamePieceHeight = Meters.of(0.08);
-
-    public static final String kObjectCameraName = "Objects";
-    /**
-     * The detection camera, tilted down so it can see the floor in front of
-     * the robot. Positive pitch here points the camera DOWN.
-     */
-    public static final Transform3d kRobotToObjectCamera = new Transform3d(
-        new Translation3d(0.3, 0.0, 0.5),           // 30 cm forward, 50 cm up
-        new Rotation3d(0, Math.toRadians(20), 0));  // 20° down
-
-    /** Below this, the model is guessing and we'd rather not drive at it. */
-    public static final double kMinConfidence = 0.5;
-
-    /** Sim only: fixed field positions for the fake camera to see. No physics — just a layout. */
-    public static final Translation2d[] kSimGamePiecePositions = {
-        new Translation2d(4.5, 3.2),
-        new Translation2d(2.0, 1.5),
-        new Translation2d(6.0, 3.8),
-    };
   }
 
-  public static final class ElevatorConstants {
-    public static final int kMotorPort = 20; // CAN ID — change to yours
-    public static final double kGearRatio = 12.0; // motor rotations per drum rotation
-    public static final Distance kDrumRadius = Inches.of(1.0);
-    public static final Mass kCarriageMass = Kilograms.of(5.0); // carriage + anything riding on it
-
-    public static final Distance kMinHeight = Meters.of(0.0);
-    public static final Distance kMaxHeight = Meters.of(1.5);
-
-    public static final LinearVelocity kMaxVelocity = MetersPerSecond.of(1.0);
-    public static final LinearAcceleration kMaxAcceleration = MetersPerSecondPerSecond.of(2.0);
-
-    // Feedforward + trim gains, computed from the Kraken X60 spec sheet — see the lesson's §3.
-    // SensorToMechanismRatio makes the closed loop run in drum rotations, so
-    // every gain below is drum-side (mechanism-side), not rotor-side.
-    public static final double kElevatorKG = 0.18; // volts to hold position against gravity
-    public static final double kElevatorKV = 1.44; // volts per drum rotation/sec
-    public static final double kElevatorKA = 0.003; // volts per drum rotation/sec^2
-    public static final double kElevatorKP = 20.0; // volts per drum rotation of error — the trim
-
-    public static final Distance kStowed = Meters.of(0.02);
-    public static final Distance kScoreMid = Meters.of(0.75);
-    public static final Distance kScoreHigh = Meters.of(1.45);
-
-    public static final Distance kTolerance = Centimeters.of(2);
-
-    // Homing. The switch sits at the bottom of the frame; when it trips, the
-    // carriage is at kBottomLimitHeight whatever the encoder currently believes.
-    public static final int kBottomLimitChannel = 0; // DIO — change to yours
-    public static final Distance kBottomLimitHeight = Centimeters.of(1);
-    public static final Voltage kHomingVolts = Volts.of(-0.7);
-    /** Sim only: where the carriage physically sits at power-on. */
-    public static final Distance kSimStartHeight = Centimeters.of(35);
-
-    // The stick-figure view. The canvas is measured in meters, like the field.
-    public static final Distance kDisplayWidth = Meters.of(1.0);
-    public static final Distance kDisplayHeight = Meters.of(2.0);
-    public static final Color8Bit kMovingColor = new Color8Bit(Color.ORANGE);
-    public static final Color8Bit kAtGoalColor = new Color8Bit(Color.LIME_GREEN);
-
-    // The carriage ligament points straight up — named so Arm's drawing math
-    // doesn't carry a bare 90 of its own.
-    public static final Angle kCarriageAngle = Degrees.of(90);
-  }
-
-  public static class LedConstants {
-    public static final int kPwmPort = 5; // PWM — change to yours
-    public static final int kLength = 40; // LEDs on the strip — change to yours
-
-    // One pattern per SuperstructureState, built once, here, next to the
-    // color it uses — SuperstructureState's constructor just picks one up.
-    public static final LEDPattern kUnhomed = LEDPattern.solid(Color.RED).blink(Seconds.of(0.15));
-    public static final Dimensionless kIdleBrightness = Percent.of(25);
-    public static final LEDPattern kIdle = LEDPattern.solid(Color.BLUE).atBrightness(kIdleBrightness);
-    public static final LEDPattern kIntaking = LEDPattern.solid(Color.YELLOW);
-    public static final LEDPattern kScoring = LEDPattern.solid(Color.LIME_GREEN).blink(Seconds.of(0.1));
-
-    public static final Time kBreathePeriod = Seconds.of(2);
-  }
-
-  public static class ArmConstants {
-    public static final int kPivotMotorPort = 21; // CAN ID — change to yours
-    public static final int kRollerMotorPort = 22; // CAN ID — change to yours
-
-    // Mechanism geometry. estimateMOI treats the arm as a uniform rod, so its
-    // length and mass are all the physics model needs.
-    public static final double kGearRatio = 50.0; // rotor : arm
-    public static final Distance kArmLength = Inches.of(20);
-    public static final Mass kArmMass = Kilograms.of(3.0);
-
-    // How far it can swing. Zero is horizontal, and that is not a free choice.
-    public static final Angle kMinAngle = Degrees.of(-20);
-    public static final Angle kMaxAngle = Degrees.of(180);
-
-    public static final AngularVelocity kMaxVelocity = DegreesPerSecond.of(180);
-    public static final AngularAcceleration kMaxAcceleration =
-        DegreesPerSecondPerSecond.of(360);
-
-    // The model: what this arm costs to hold, to move, and to speed up.
-    public static final double kArmKG = 0.25; // volts to hold it out horizontal
-    public static final double kArmKV = 6.0; // volts per arm rotation/sec
-    public static final double kArmKA = 0.055; // volts per arm rotation/sec^2
-    // The trim: whatever the model got wrong.
-    public static final double kArmKP = 60.0; // volts per rotation of error
-
-    // Where the operator actually wants it.
-    public static final Angle kIntake = Degrees.of(-20);
-    public static final Angle kStowed = Degrees.of(90);
-
-    public static final Angle kTolerance = Degrees.of(2);
-
-    // The roller has no goal to profile — just a direction and a speed.
-    public static final double kIntakeSpeed = 0.6; // fraction of full output
-    public static final double kEjectSpeed = -0.6;
-  }
-
-  public static class FlywheelConstants {
+  public static final class FlywheelConstants {
     public static final int kMotorPort = 23; // CAN ID — change to yours
 
     // Direct drive: the wheel is on the motor shaft. The first mechanism in this
@@ -313,13 +189,13 @@ public final class Constants {
   }
 
   public static final class PowerConstants {
-    // Every mechanism motor shares this cap — the windings don't care which
-    // subsystem they're bolted to.
+    // Every mechanism motor shares this cap — the windings don't care
+    // which subsystem they're bolted to.
     public static final Current kStatorLimit = Amps.of(80);
 
-    // The supply budget, one line per motor, chosen so the three mechanisms
-    // together leave headroom for the drivetrain (not budgeted here — see the
-    // lesson's Try It).
+    // The supply budget, one line per motor, chosen so the three
+    // mechanisms together leave headroom for the drivetrain (not budgeted
+    // here — see the lesson's Try It).
     public static final Current kElevatorSupplyLimit = Amps.of(40);
     public static final Current kArmPivotSupplyLimit = Amps.of(30);
     public static final Current kArmRollerSupplyLimit = Amps.of(20);
@@ -329,31 +205,193 @@ public final class Constants {
     public static final Voltage kBrownoutVoltage = Volts.of(6.3);
 
     /**
-     * Worth complaining about before a match. Well above the brownout threshold —
+     * Worth complaining about before a match. Well above the brownout line:
      * the point of an alert is to be early, not accurate.
      */
     public static final Voltage kLowBatteryVoltage = Volts.of(11.5);
   }
 
-  public static class PathConstants {
-    // Stage two's gains. Higher than stage one's, because its errors are tiny
-    // by the time it takes over — it only ever starts a short distance away.
-    public static final double kAlignP = 3.0;      // m/s per meter of error
-    public static final double kAlignThetaP = 4.0; // rad/s per radian of error
+  public static final class PathConstants {
+    // BLine runs three P loops at once. Every gain here is "output per unit of
+    // error", and since error is meters (or radians) and output is per-second,
+    // the units all come out to 1/s.
+    public static final double kTranslationP = 5.0; // m/s per meter of path left
+    public static final double kRotationP = 3.0;    // rad/s per radian of heading error
+    public static final double kCrossTrackP = 2.0;  // m/s per meter off the line
 
-    // "Arrived" is a decision, and this is where it gets made.
-    public static final Distance kPositionTolerance = Centimeters.of(2);
-    public static final Angle kAngleTolerance = Degrees.of(1);
+    // Overlapping work: how much path has to be left when the robot asks to
+    // score. A distance, not a time — a slow path still scores in the same place.
+    public static final Distance kScoreDistance = Meters.of(0.5);
 
-    /** Where the left bumper lines the robot up. */
-    public static final Pose2d kScoringPose = new Pose2d(5.0, 4.0, Rotation2d.fromDegrees(90));
-
-    // Aiming. The rotation override wants an angular velocity, not a heading, so
-    // this gain turns heading error into a rate.
+    // Aiming while the path drives. The rotation override wants an angular
+    // velocity, not a heading, so this gain turns heading error into a rate.
     public static final double kAimP = 4.0; // rad/s per radian of heading error
     /** The tag to point at. Change it to the one your alliance actually scores on. */
     public static final int kAimTagId = 20;
     /** Close enough to call it aimed. */
     public static final Angle kAimTolerance = Degrees.of(2);
+
+    // Getting somewhere on a plan, in two stages. Stage one covers ground, and
+    // can afford to be firm about it.
+    public static final LinearVelocity kTravelSpeed = MetersPerSecond.of(3.0);
+    public static final LinearAcceleration kTravelAccel = MetersPerSecondPerSecond.of(4.0);
+
+    // Where stage one hands over, and how fast the robot may still be going.
+    // Stage two could stop from at most √(2 × 1.5 × 1.0) = 1.73 m/s in that
+    // distance; the drive runs about 0.4 m/s behind the plan while slowing at
+    // 4 m/s², so plan 1.2 and leave it room.
+    public static final Distance kHandoffDistance = Meters.of(1.0);
+    public static final LinearVelocity kHandoffSpeed = MetersPerSecond.of(1.2);
+
+    // Stage two arrives, and gently: the last metre is where accuracy lives.
+    public static final LinearAcceleration kApproachAccel = MetersPerSecondPerSecond.of(1.5);
+
+    // Turning, in both stages: half a turn a second at most.
+    public static final AngularVelocity kTurnSpeed = RadiansPerSecond.of(Math.PI);
+    public static final AngularAcceleration kTurnAccel = RadiansPerSecondPerSecond.of(4.0);
+
+    // The same limits in the form a profile takes them: top speed, then acceleration.
+    public static final TrapezoidProfile.Constraints kTravelLimits = new TrapezoidProfile.Constraints(
+        kTravelSpeed.in(MetersPerSecond), kTravelAccel.in(MetersPerSecondPerSecond));
+    public static final TrapezoidProfile.Constraints kApproachLimits = new TrapezoidProfile.Constraints(
+        kHandoffSpeed.in(MetersPerSecond), kApproachAccel.in(MetersPerSecondPerSecond));
+    public static final TrapezoidProfile.Constraints kTurnLimits = new TrapezoidProfile.Constraints(
+        kTurnSpeed.in(RadiansPerSecond), kTurnAccel.in(RadiansPerSecondPerSecond));
+
+    // The trims: what to do about the robot drifting off its plan.
+    public static final double kAlignP = 3.0;      // m/s per meter behind or ahead of the plan
+    public static final double kAlignThetaP = 4.0; // rad/s per radian of heading error
+
+    // "Arrived" is a decision, and this is where it gets made: close enough,
+    // slow enough, and facing the right way.
+    public static final Distance kPositionTolerance = Centimeters.of(2);
+    public static final LinearVelocity kSpeedTolerance = MetersPerSecond.of(0.05);
+    public static final Angle kAngleTolerance = Degrees.of(1);
+
+    /** Where the left bumper lines the robot up. */
+    public static final Pose2d kScoringPose = new Pose2d(5.0, 4.0, Rotation2d.fromDegrees(90));
+  }
+
+  public static final class ElevatorConstants {
+    public static final int kMotorPort = 20; // CAN ID — change to yours
+    public static final double kGearRatio = 12.0; // motor rotations per drum rotation
+    public static final Distance kDrumRadius = Inches.of(1.0);
+    public static final Mass kCarriageMass = Kilograms.of(5.0); // carriage + anything riding on it
+
+    public static final Distance kMinHeight = Meters.of(0.0);
+    public static final Distance kMaxHeight = Meters.of(1.5);
+
+    public static final LinearVelocity kMaxVelocity = MetersPerSecond.of(1.0);
+    public static final LinearAcceleration kMaxAcceleration = MetersPerSecondPerSecond.of(2.0);
+
+    // Feedforward + trim gains, computed from the Kraken X60 spec sheet — see the lesson's §3.
+    // SensorToMechanismRatio makes the closed loop run in drum rotations, so
+    // every gain below is drum-side (mechanism-side), not rotor-side.
+    public static final double kElevatorKG = 0.18; // volts to hold position against gravity
+    public static final double kElevatorKV = 1.44; // volts per drum rotation/sec
+    public static final double kElevatorKA = 0.003; // volts per drum rotation/sec^2
+    public static final double kElevatorKP = 20.0; // volts per drum rotation of error — the trim
+
+    public static final Distance kStowed = Meters.of(0.02);
+    public static final Distance kScoreMid = Meters.of(0.75);
+    public static final Distance kScoreHigh = Meters.of(1.45);
+
+    /**
+     * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+     * Deliberately mistype this tolerance a thousand times too tight, to make a
+     * failure worth investigating; the lesson then replaces it with a value
+     * measured from how close the elevator really settles.
+     */
+    public static final Distance kTolerance = Centimeters.of(2);
+
+    // Homing. The switch sits at the bottom of the frame; when it trips, the
+    // carriage is at kBottomLimitHeight whatever the encoder currently believes.
+    public static final int kBottomLimitChannel = 0; // DIO — change to yours
+    public static final Distance kBottomLimitHeight = Centimeters.of(1);
+    public static final Voltage kHomingVolts = Volts.of(-0.7);
+    /** Sim only: where the carriage physically sits at power-on. */
+    public static final Distance kSimStartHeight = Centimeters.of(35);
+
+    // The stick-figure view. The canvas is measured in meters, like the field.
+    public static final Distance kDisplayWidth = Meters.of(1.0);
+    public static final Distance kDisplayHeight = Meters.of(2.0);
+    public static final Color8Bit kMovingColor = new Color8Bit(Color.ORANGE);
+    public static final Color8Bit kAtGoalColor = new Color8Bit(Color.LIME_GREEN);
+
+    // The carriage ligament points straight up — named so Arm's drawing math
+    // doesn't carry a bare 90 of its own.
+    public static final Angle kCarriageAngle = Degrees.of(90);
+  }
+
+  public static final class LedConstants {
+    public static final int kPwmPort = 5; // PWM — change to yours
+    public static final int kLength = 40; // LEDs on the strip — change to yours
+
+    // A pattern is a value, not a loop. Build them once, here, next to the
+    // colors they use, and hand the finished description to the strip.
+    // One per state, and named after it — the strip's vocabulary and the
+    // robot's are the same vocabulary.
+    public static final Dimensionless kIdleBrightness = Percent.of(25);
+    public static final Time kBlinkPeriod = Seconds.of(0.15);
+
+    public static final LEDPattern kUnhomed = LEDPattern.solid(Color.RED).blink(kBlinkPeriod);
+    public static final LEDPattern kIdle = LEDPattern.solid(Color.BLUE).atBrightness(kIdleBrightness);
+    public static final LEDPattern kIntaking = LEDPattern.solid(Color.YELLOW);
+    public static final LEDPattern kHandoff = kIntaking.blink(kBlinkPeriod);
+    public static final LEDPattern kHolding = LEDPattern.solid(Color.LIME_GREEN);
+    public static final LEDPattern kScoring = kHolding.blink(kBlinkPeriod);
+
+    public static final Time kBreathePeriod = Seconds.of(2);
+  }
+
+  public static final class ArmConstants {
+    public static final int kPivotMotorPort = 21; // CAN ID — change to yours
+    public static final int kRollerMotorPort = 22; // CAN ID — change to yours
+
+    // Mechanism geometry. estimateMOI treats the arm as a uniform rod, so its
+    // length and mass are all the physics model needs.
+    public static final double kGearRatio = 50.0; // rotor : arm
+    public static final Distance kArmLength = Inches.of(20);
+    public static final Mass kArmMass = Kilograms.of(3.0);
+
+    // How far it can swing. Zero is horizontal, and that is not a free choice.
+    public static final Angle kMinAngle = Degrees.of(-20);
+    public static final Angle kMaxAngle = Degrees.of(180);
+
+    public static final AngularVelocity kMaxVelocity = DegreesPerSecond.of(180);
+    public static final AngularAcceleration kMaxAcceleration =
+        DegreesPerSecondPerSecond.of(360);
+
+    // The model: what this arm costs to hold, to move, and to speed up.
+    public static final double kArmKG = 0.25; // volts to hold it out horizontal
+    public static final double kArmKV = 6.0; // volts per arm rotation/sec
+    public static final double kArmKA = 0.055; // volts per arm rotation/sec^2
+    // The trim: whatever the model got wrong.
+    public static final double kArmKP = 60.0; // volts per rotation of error
+
+    // Where the operator actually wants it.
+    public static final Angle kIntake = Degrees.of(-20);
+    public static final Angle kStowed = Degrees.of(90);
+
+    public static final Angle kTolerance = Degrees.of(2);
+
+    // The roller has no goal to profile — just a direction and a speed.
+    public static final double kIntakeSpeed = 0.6; // fraction of full output
+    public static final double kEjectSpeed = -0.6;
+
+    // The beam break: an infrared beam across the throat of the intake, broken
+    // when a game piece is actually sitting where it belongs.
+    public static final int kBeamBreakChannel = 1; // DIO — change to yours
+    public static final Time kBeamDebounce = Seconds.of(0.1);
+
+    // Sim only: the box in front of the bumper that the roller can reach, and
+    // where the game pieces lie on the field when the simulation starts.
+    public static final Distance kIntakeWidth = Inches.of(24);
+    public static final Distance kIntakeReach = Inches.of(12);
+    public static final Translation2d[] kSimGamePiecePositions = {
+        new Translation2d(4.5, 3.2),
+        new Translation2d(2.0, 1.5),
+        new Translation2d(6.0, 3.8),
+    };
   }
 }

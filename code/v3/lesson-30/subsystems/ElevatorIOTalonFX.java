@@ -15,6 +15,7 @@ import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 
+import org.wpilib.hardware.bus.CANPort;
 import org.wpilib.hardware.discrete.DigitalInput;
 
 import first.robot.Constants.ElevatorConstants;
@@ -28,7 +29,7 @@ public class ElevatorIOTalonFX implements ElevatorIO {
   private final DigitalInput m_bottomLimit = new DigitalInput(ElevatorConstants.kBottomLimitChannel);
 
   public ElevatorIOTalonFX() {
-    m_motor = new TalonFX(ElevatorConstants.kMotorPort, CANBus.systemcore(0));
+    m_motor = new TalonFX(ElevatorConstants.kMotorPort, new CANBus(CANPort.CAN_S0));
 
     TalonFXConfiguration config = new TalonFXConfiguration();
     config.Feedback.SensorToMechanismRatio = ElevatorConstants.kGearRatio;
@@ -66,6 +67,8 @@ public class ElevatorIOTalonFX implements ElevatorIO {
     // Normally closed to ground: the switch holds this line low while the
     // carriage is clear of it, so "high" means tripped — or a broken wire.
     inputs.atBottomLimit = m_bottomLimit.get();
+    // Has the motor answered on the CAN bus lately? A reading, like the rest.
+    inputs.motorConnected = m_motor.isConnected();
   }
 
   @Override

@@ -52,6 +52,11 @@ public class Robot extends OpModeRobot {
   // a finished object first — it already is, above. In simulation its intake
   // also needs to know where the robot really is, which only drivetrain knows.
   public final Arm arm = new Arm(elevator, drivetrain::getSimulatedPose);
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * The LED strip: it reads the elevator and the arm and drives nothing, so it
+   * comes after both.
+   */
 
   /**
    * This function is run when the robot is first started up and should be used for any

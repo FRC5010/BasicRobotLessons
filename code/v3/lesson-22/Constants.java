@@ -200,6 +200,11 @@ public final class Constants {
     public static final Angle kCarriageAngle = Degrees.of(90);
   }
 
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * A class for the LED strip: its port, its length, and the patterns it can show
+   * (a pattern is a value, so the patterns live here next to their colors).
+   */
   public static final class ArmConstants {
     public static final int kPivotMotorPort = 21; // CAN ID — change to yours
     public static final int kRollerMotorPort = 22; // CAN ID — change to yours

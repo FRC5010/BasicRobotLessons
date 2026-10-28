@@ -9,11 +9,12 @@ import org.wpilib.command3.Scheduler;
 import org.wpilib.command3.SchedulerEvent;
 import org.wpilib.command3.button.CommandGamepad;
 import org.wpilib.framework.OpModeRobot;
-import org.wpilib.smartdashboard.SmartDashboard;
+import org.wpilib.telemetry.Telemetry;
 import org.wpilib.system.DataLogManager;
 
 import first.robot.Constants.DriveConstants;
 import first.robot.Constants.VisionConstants;
+import first.robot.commands.Autos;
 import first.robot.subsystems.Arm;
 import first.robot.subsystems.Drivetrain;
 import first.robot.subsystems.Elevator;
@@ -21,6 +22,8 @@ import first.robot.subsystems.Leds;
 import first.robot.subsystems.LimelightPoseProvider;
 import first.robot.subsystems.Localizer;
 import first.robot.subsystems.Superstructure;
+import first.robot.subsystems.SuperstructureState;
+import frc.robot.lib.BLine.commands.FollowPath;
 
 /**
  * The methods in this class are called automatically as described in the OpModeRobot documentation.
@@ -38,15 +41,20 @@ public class Robot extends OpModeRobot {
   // Localizer reads the drivetrain's kinematics/rotation/module positions at
   // construction, so drivetrain must be built first — it already is, above.
   public final Localizer localizer = new Localizer(drivetrain);
-  // Blank finals: building a camera needs localizer (for its pose supplier),
-  // so localizer has to be a finished object first. Assigned in the
+  // Blank finals: each camera is built and registered with localizer in the
   // constructor body, below, which runs after every field initializer above.
   public final LimelightPoseProvider frontCamera;
   public final LimelightPoseProvider backCamera;
+
+  // How this robot follows a path. It's the same for every path, so it's
+  // built once, here, and every autonomous opmode reaches in and uses it.
+  public final FollowPath.Builder pathBuilder = Autos.makePathBuilder(drivetrain, localizer);
+
   public final Elevator elevator = new Elevator();
   // Arm reads elevator.getCarriage() in its constructor, so elevator must be
-  // a finished object first — it already is, above.
-  public final Arm arm = new Arm(elevator);
+  // a finished object first — it already is, above. In simulation its intake
+  // also needs to know where the robot really is, which only drivetrain knows.
+  public final Arm arm = new Arm(elevator, drivetrain::getSimulatedPose);
   // Superstructure reads both, so elevator and arm must be finished objects
   // first — they already are, above.
   public final Superstructure superstructure = new Superstructure(elevator, arm);
@@ -59,6 +67,22 @@ public class Robot extends OpModeRobot {
   public Robot() {
     DataLogManager.start(); // saves every published value to a .wpilog file
     Scheduler.getDefault().addEventListener(this::logCommandStart);
+    /**
+     * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+     * The path markers ask the superstructure for things and read the pose
+     * now, so registering them needs the superstructure and the localizer.
+     */
+    Autos.registerEventTriggers(); // once, for the whole program
+
+    // Motion that belongs to a state, bound to being in it. No guard here:
+    // being in the state at all means the state machine already said yes. The
+    // moment the state changes, whileTrue cancels the old motion. HOLDING has
+    // none — the elevator and arm are already where they need to be. These are
+    // made here, not in an opmode, so they hold in every opmode there is.
+    superstructure.inState(SuperstructureState.INTAKING).whileTrue(superstructure.intakeMotion());
+    superstructure.inState(SuperstructureState.HANDOFF).whileTrue(superstructure.handoffMotion());
+    superstructure.inState(SuperstructureState.SCORING).whileTrue(superstructure.scoreMotion());
+    superstructure.inState(SuperstructureState.IDLE).whileTrue(superstructure.idleMotion());
 
     // Vision now checks its simulated eyesight against ground truth, not
     // against its own guess — the fix Lesson 15 admitted it was missing.
@@ -74,6 +98,14 @@ public class Robot extends OpModeRobot {
     if (Constants.kCurrentMode == Constants.Mode.SIM) {
       localizer.resetPose(DriveConstants.kSimStartingPose);
     }
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * The path autos, one line each: every one is the same opmode with a
+     * different path and a different plan for the drive, so they're registered
+     * here instead of each getting a class (the two path opmode classes are
+     * deleted). Then the opmode list is sent to the Driver Station again.
+     */
   }
 
   /** This function is called exactly once when the DS first connects. */
@@ -89,7 +121,7 @@ public class Robot extends OpModeRobot {
   private void logCommandStart(SchedulerEvent event) {
     if (event instanceof SchedulerEvent.Scheduled scheduled) {
       for (Mechanism mechanism : scheduled.command().requirements()) {
-        SmartDashboard.putString(mechanism.getName() + "/CurrentCommand", scheduled.command().name());
+        Telemetry.log(mechanism.getName() + "/CurrentCommand", scheduled.command().name());
       }
     }
   }

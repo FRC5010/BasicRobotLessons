@@ -4,15 +4,19 @@
 
 package first.robot.opmode;
 
+import static org.wpilib.units.Units.RadiansPerSecond;
+
 import org.wpilib.command3.Trigger;
 import org.wpilib.opmode.PeriodicOpMode;
 import org.wpilib.opmode.Teleop;
+import org.wpilib.units.measure.AngularVelocity;
 
 import first.robot.Constants.DriveConstants;
 import first.robot.Constants.ElevatorConstants;
+import first.robot.Constants.PathConstants;
 import first.robot.Robot;
+import first.robot.commands.Aim;
 import first.robot.commands.Autos;
-import first.robot.subsystems.SuperstructureState;
 
 @Teleop
 public class RobotTeleop extends PeriodicOpMode {
@@ -31,42 +35,18 @@ public class RobotTeleop extends PeriodicOpMode {
             () -> DriveConstants.kMaxAngularSpeed.times(-robot.driverController.getRightX())));
 
     // Tap the bottom face button to turn and face 90°; the right face button for 0°.
-    robot.driverController.southFace().onTrue(robot.drivetrain.turnToHeading(90));
-    robot.driverController.eastFace().onTrue(robot.drivetrain.turnToHeading(0));
+    robot.driverController.faceDown().onTrue(robot.drivetrain.turnToHeading(90));
+    robot.driverController.faceRight().onTrue(robot.drivetrain.turnToHeading(0));
 
-    // The D-pad still talks straight to the elevator, bypassing Superstructure
-    // entirely — a leftover from before the state machine existed. Right now,
-    // on a fresh boot, nothing stops dpadUp from swinging the carriage to full
-    // height before the robot has ever been homed. That is exactly the hole
-    // canGoTo below closes for the face-button requests. See Try It.
+    // D-pad: send the elevator to one of its three preset heights.
     robot.driverController.dpadDown().onTrue(robot.elevator.goToHeight(ElevatorConstants.kStowed));
     robot.driverController.dpadRight().onTrue(robot.elevator.goToHeight(ElevatorConstants.kScoreMid));
     robot.driverController.dpadUp().onTrue(robot.elevator.goToHeight(ElevatorConstants.kScoreHigh));
 
-    // West face requests INTAKING, north face requests IDLE, right trigger
-    // requests SCORING. Each request only flips Superstructure's state if
-    // canGoTo allows it — the actual arm/elevator motion is bound below,
-    // to the state itself, not to these buttons.
-    robot.driverController.westFace().onTrue(robot.superstructure.requestIntake());
-    robot.driverController.northFace().onTrue(robot.superstructure.requestIdle());
-    robot.driverController.rightTrigger().onTrue(robot.superstructure.requestScore());
-
-    // Arriving in a state already answered the "is this allowed" question,
-    // so these run unguarded — the moment m_state matches, the matching
-    // motion command is scheduled, and it is canceled the moment it doesn't.
-    robot.superstructure.inState(SuperstructureState.IDLE).whileTrue(robot.superstructure.idleMotion());
-    robot.superstructure.inState(SuperstructureState.INTAKING).whileTrue(robot.superstructure.intakeMotion());
-    robot.superstructure.inState(SuperstructureState.SCORING).whileTrue(robot.superstructure.scoreMotion());
-
-    // Hold the left bumper to line up on the scoring pose: coarse across
-    // the field, then slow and exact for the last stretch.
+    // Hold the left bumper to line up on the scoring pose: firm across the
+    // field, then a gentle approach that ends stopped on the spot.
     robot.driverController.leftBumper().whileTrue(
         Autos.driveToScoringPose(robot.drivetrain, robot.localizer));
-
-    // Hold the right bumper to go and get a game piece — wherever it is, if
-    // the camera can see one at the moment you press it.
-    robot.driverController.rightBumper().whileTrue(Autos.fetchPiece(
-        robot.drivetrain, robot.localizer, robot.pieceDetector, robot.superstructure));
 
     // Back homes the elevator: the encoder can't know where the carriage is
     // at power-on, so drive down to the switch and let it say.
@@ -75,6 +55,38 @@ public class RobotTeleop extends PeriodicOpMode {
     // A Trigger is any boolean the scheduler polls — it does not have to be
     // a button. Whenever the switch trips, take its word for the height.
     new Trigger(robot.elevator::atBottomLimit).onTrue(robot.elevator.rezeroAtBottom());
+
+    // Face buttons ask the superstructure for a state: left to intake, top to
+    // give up and go back to neutral, right trigger to score. They don't check
+    // whether it makes sense — that's the state machine's job, and it refuses
+    // out loud.
+    robot.driverController.faceLeft().onTrue(robot.superstructure.requestIntake());
+    robot.driverController.faceUp().onTrue(robot.superstructure.requestIdle());
+    robot.driverController.rightTrigger().onTrue(robot.superstructure.requestScore());
+
+    // Hold the left trigger and the robot takes the rotation stick off you:
+    // you keep both translation axes, it keeps the nose on the tag.
+    robot.driverController.leftTrigger().whileTrue(
+        robot.drivetrain.driveFieldRelative(
+            () -> DriveConstants.kMaxSpeed.times(-robot.driverController.getLeftY()),
+            () -> DriveConstants.kMaxSpeed.times(-robot.driverController.getLeftX()),
+            this::aimOmega));
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Spin the flywheel up to shooting speed while the same trigger is held;
+     * it needs a different mechanism from the aiming, so both run.
+     */
+  }
+
+  /**
+   * How fast to spin to keep pointing at the aiming tag, as the drive command
+   * wants it. No camera in sight: this works from the fused pose and the tag
+   * layout, so it keeps working when nothing can see the tag.
+   */
+  private AngularVelocity aimOmega() {
+    return RadiansPerSecond.of(
+        Aim.omegaTowardTag(robot.drivetrain, robot.localizer, PathConstants.kAimTagId));
   }
 
   @Override

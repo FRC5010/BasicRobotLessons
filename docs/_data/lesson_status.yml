@@ -24,13 +24,8 @@ states:
       This lesson needs a design decision before it can be updated.
 
 waiting:
-  27:
+  34:
     state: library
     note: >-
       Its object-detection camera uses PhotonVision, and PhotonLib has no
       alpha-7 release yet.
-  31:
-    state: decision
-    note: >-
-      Its camera-disconnect demo has to be redesigned for the Limelight
-      cameras that Lesson 15 now uses.

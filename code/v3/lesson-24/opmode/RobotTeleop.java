@@ -11,7 +11,6 @@ import org.wpilib.opmode.Teleop;
 import first.robot.Constants.DriveConstants;
 import first.robot.Constants.ElevatorConstants;
 import first.robot.Robot;
-import first.robot.subsystems.SuperstructureState;
 
 @Teleop
 public class RobotTeleop extends PeriodicOpMode {
@@ -30,32 +29,13 @@ public class RobotTeleop extends PeriodicOpMode {
             () -> DriveConstants.kMaxAngularSpeed.times(-robot.driverController.getRightX())));
 
     // Tap the bottom face button to turn and face 90°; the right face button for 0°.
-    robot.driverController.southFace().onTrue(robot.drivetrain.turnToHeading(90));
-    robot.driverController.eastFace().onTrue(robot.drivetrain.turnToHeading(0));
+    robot.driverController.faceDown().onTrue(robot.drivetrain.turnToHeading(90));
+    robot.driverController.faceRight().onTrue(robot.drivetrain.turnToHeading(0));
 
-    // The D-pad still talks straight to the elevator, bypassing Superstructure
-    // entirely — a leftover from before the state machine existed. Right now,
-    // on a fresh boot, nothing stops dpadUp from swinging the carriage to full
-    // height before the robot has ever been homed. That is exactly the hole
-    // canGoTo below closes for the face-button requests. See Try It.
+    // D-pad: send the elevator to one of its three preset heights.
     robot.driverController.dpadDown().onTrue(robot.elevator.goToHeight(ElevatorConstants.kStowed));
     robot.driverController.dpadRight().onTrue(robot.elevator.goToHeight(ElevatorConstants.kScoreMid));
     robot.driverController.dpadUp().onTrue(robot.elevator.goToHeight(ElevatorConstants.kScoreHigh));
-
-    // West face requests INTAKING, north face requests IDLE, right trigger
-    // requests SCORING. Each request only flips Superstructure's state if
-    // canGoTo allows it — the actual arm/elevator motion is bound below,
-    // to the state itself, not to these buttons.
-    robot.driverController.westFace().onTrue(robot.superstructure.requestIntake());
-    robot.driverController.northFace().onTrue(robot.superstructure.requestIdle());
-    robot.driverController.rightTrigger().onTrue(robot.superstructure.requestScore());
-
-    // Arriving in a state already answered the "is this allowed" question,
-    // so these run unguarded — the moment m_state matches, the matching
-    // motion command is scheduled, and it is canceled the moment it doesn't.
-    robot.superstructure.inState(SuperstructureState.IDLE).whileTrue(robot.superstructure.idleMotion());
-    robot.superstructure.inState(SuperstructureState.INTAKING).whileTrue(robot.superstructure.intakeMotion());
-    robot.superstructure.inState(SuperstructureState.SCORING).whileTrue(robot.superstructure.scoreMotion());
 
     // Back homes the elevator: the encoder can't know where the carriage is
     // at power-on, so drive down to the switch and let it say.
@@ -64,6 +44,14 @@ public class RobotTeleop extends PeriodicOpMode {
     // A Trigger is any boolean the scheduler polls — it does not have to be
     // a button. Whenever the switch trips, take its word for the height.
     new Trigger(robot.elevator::atBottomLimit).onTrue(robot.elevator.rezeroAtBottom());
+
+    // Face buttons ask the superstructure for a state: left to intake, top to
+    // give up and go back to neutral, right trigger to score. They don't check
+    // whether it makes sense — that's the state machine's job, and it refuses
+    // out loud.
+    robot.driverController.faceLeft().onTrue(robot.superstructure.requestIntake());
+    robot.driverController.faceUp().onTrue(robot.superstructure.requestIdle());
+    robot.driverController.rightTrigger().onTrue(robot.superstructure.requestScore());
   }
 
   @Override
