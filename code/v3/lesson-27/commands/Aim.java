@@ -8,7 +8,8 @@ import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.math.geometry.Rotation2d;
 import org.wpilib.math.geometry.Translation2d;
 import org.wpilib.math.kinematics.ChassisVelocities;
-import org.wpilib.telemetry.Telemetry;
+
+import org.littletonrobotics.junction.Logger;
 
 import first.robot.Constants.PathConstants;
 import first.robot.Constants.VisionConstants;
@@ -76,9 +77,9 @@ public final class Aim {
     Rotation2d error = error(robot, target);
     double feedforward = bearingRate(robot, fieldSpeeds, target);
 
-    Telemetry.log("Aim/ErrorDegrees", error.getDegrees());
-    Telemetry.log("Aim/FeedforwardRadPerSec", feedforward);
-    Telemetry.log("Aim/IsAimed", isAimedAt(robot, target));
+    Logger.recordOutput("Aim/ErrorDegrees", error.getDegrees());
+    Logger.recordOutput("Aim/FeedforwardRadPerSec", feedforward);
+    Logger.recordOutput("Aim/IsAimed", isAimedAt(robot, target));
 
     return feedforward + error.getRadians() * PathConstants.kAimP;
   }

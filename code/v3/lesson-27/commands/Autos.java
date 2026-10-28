@@ -139,7 +139,8 @@ public final class Autos {
     // Hand rotation to the aiming loop, and later give it back. Translation
     // keeps following the path the whole time — only the spin changes hands.
     FollowPath.registerEventTrigger("aim", () -> FollowPath.overrideRotation(
-        () -> Aim.omegaTowardTag(drivetrain, localizer, PathConstants.kAimTagId), RotationOverrideBehavior.RESPECT_CONSTRAINTS));
+        () -> Aim.omegaTowardTag(drivetrain, localizer, PathConstants.kAimTagId),
+        RotationOverrideBehavior.RESPECT_CONSTRAINTS));
     FollowPath.registerEventTrigger("release", FollowPath::clearRotationOverride);
   }
 }
