@@ -196,7 +196,7 @@ it's mounted on, not to the field — arriving in a new place.
 The drawing changes every tick, and it gets logged every tick — the same
 order as Lesson 11's field: change it, then log it.
 
-**Update `periodic()` — add this after the existing telemetry calls:**
+**Update `periodic()` — add this after the `processInputs` and `recordOutput` lines:**
 
 ```java
     // The picture is built once and changed every tick; only the carriage
@@ -205,7 +205,7 @@ order as Lesson 11's field: change it, then log it.
     m_carriage.setLength(m_inputs.heightMeters);
     m_carriage.setColor(
         atGoal() ? ElevatorConstants.kAtGoalColor : ElevatorConstants.kMovingColor);
-    Telemetry.log("Elevator/Mechanism", m_mechanism);
+    Telemetry.log("Elevator/Mechanism", m_mechanism); // a widget; AdvantageKit doesn't record it
 ```
 
 `Telemetry.log` treats the drawing exactly the way it treats Lesson 11's
@@ -214,8 +214,15 @@ in the constructor, and the viewer would show a carriage frozen at zero
 forever. So it goes in `periodic()`, right after the two lines that change
 it, and the constructor doesn't change at all.
 
+It's `Telemetry.log` and not AdvantageKit's `Logger`, for the reason the
+field widget stayed on `Telemetry.log` in Lesson 13: AdvantageKit records
+values, not widgets. Nothing is lost by it. The drawing shows the height,
+which `processInputs` already records, and a color worked out from the
+height and the goal, which is recorded too — so a replay has every number
+the picture was drawn from.
+
 `setColor` is the other new call, and it's carrying information rather than
-decoration: `atGoal()` is already computed for the log, so feeding it into
+decoration: `atGoal()` already exists, for `goToHeight`, so feeding it into
 the color costs nothing and turns the drawing into a status light. Orange
 while it's travelling, green the moment it settles.
 
@@ -326,8 +333,9 @@ transforms, pose composition. Lesson 15 already had you doing it with
 with a picture attached, which is a much easier place to learn it.
 
 The rest was familiar on purpose, once you saw where it pointed: the
-drawing is logged with the same `Telemetry.log` as every number, every tick,
-right after you change it — the rule Lesson 11's field already follows.
+drawing is logged every tick, right after you change it, like every number
+— through `Telemetry.log`, because it's a widget — the rule Lesson 11's
+field already follows.
 
 Next up, that placeholder stub on top of the carriage stops being a
 placeholder.

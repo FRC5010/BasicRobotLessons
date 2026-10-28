@@ -59,7 +59,7 @@ public class Elevator implements Mechanism {
     m_carriage.setLength(m_inputs.heightMeters);
     m_carriage.setColor(
         atGoal() ? ElevatorConstants.kAtGoalColor : ElevatorConstants.kMovingColor);
-    Telemetry.log("Elevator/Mechanism", m_mechanism);
+    Telemetry.log("Elevator/Mechanism", m_mechanism); // a widget; AdvantageKit doesn't record it
   }
 
   /** Send the carriage to 'target', clamped to safe travel. Keeps holding once it arrives. */
