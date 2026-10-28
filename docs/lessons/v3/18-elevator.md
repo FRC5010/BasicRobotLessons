@@ -189,15 +189,19 @@ is exactly the meters-to-rotations conversion you'll write in §6.
 ## 5. The contract: `ElevatorIO`
 
 Same shape as `ModuleIO` and `GyroIO` from Lesson 13 — a bundle of sensor
-readings, and `default` do-nothing methods so a `REPLAY` implementation
-needs zero code of its own.
+readings, marked `@AutoLog` so AdvantageKit writes its logging code, and
+`default` do-nothing methods so a `REPLAY` implementation needs zero code
+of its own.
 
 **Create `subsystems/ElevatorIO.java`:**
 
 ```java
 package first.robot.subsystems;
 
+import org.littletonrobotics.junction.AutoLog;
+
 public interface ElevatorIO {
+  @AutoLog
   public static class ElevatorIOInputs {
     public double heightMeters = 0.0;
     public double velocityMetersPerSec = 0.0;
@@ -221,6 +225,12 @@ plotting position against the goal shows a step function next to a smooth
 curve, and you can't tell whether a gap is the profile still ramping up
 or the motor failing to keep up with a profile that's already there. §10
 puts that number to work.
+
+It's an input, too, even though it sounds like something your code worked
+out. The profile runs in the motor controller's firmware, and your code
+only asks the controller where the profile is right now — a reading, like
+the height. So it goes in the bundle, gets recorded, and comes back out of
+the log in a replay.
 
 ---
 
@@ -411,8 +421,9 @@ import static org.wpilib.units.Units.Meters;
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
-import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.Distance;
+
+import org.littletonrobotics.junction.Logger;
 
 import first.robot.Constants;
 import first.robot.Constants.ElevatorConstants;
@@ -424,7 +435,7 @@ public class Elevator implements Mechanism {
     case SIM -> new ElevatorIOSim();
     case REPLAY -> new ElevatorIO() {}; // inputs come from the log
   };
-  private final ElevatorIO.ElevatorIOInputs m_inputs = new ElevatorIO.ElevatorIOInputs();
+  private final ElevatorIOInputsAutoLogged m_inputs = new ElevatorIOInputsAutoLogged();
   private Distance m_goal = ElevatorConstants.kStowed;
 
   public Elevator() {
@@ -434,11 +445,8 @@ public class Elevator implements Mechanism {
   /** One tick of sensing: read the hardware into the bundle and log it. */
   private void periodic() {
     m_io.updateInputs(m_inputs);
-    Telemetry.log("Elevator/HeightMeters", m_inputs.heightMeters);
-    Telemetry.log("Elevator/VelocityMetersPerSec", m_inputs.velocityMetersPerSec);
-    Telemetry.log("Elevator/AppliedVolts", m_inputs.appliedVolts);
-    Telemetry.log("Elevator/SetpointMeters", m_inputs.setpointMeters);
-    Telemetry.log("Elevator/GoalMeters", m_goal.in(Meters));
+    Logger.processInputs("Elevator", m_inputs); // every reading, under Elevator/
+    Logger.recordOutput("Elevator/GoalMeters", m_goal.in(Meters));
   }
 
   /** Send the carriage to 'target', clamped to safe travel. Keeps holding once it arrives. */
@@ -471,6 +479,13 @@ public class Elevator implements Mechanism {
   }
 }
 ```
+
+The logging is Lesson 13's rule again. `processInputs` records all four
+readings as `Elevator/HeightMeters`, `Elevator/VelocityMetersPerSec`,
+`Elevator/AppliedVolts` and `Elevator/SetpointMeters` — it names each one
+after its field — and fills them from the log in a replay. The goal is
+different: nothing measured it, your code chose it, so it's an output and
+goes through `recordOutput`.
 
 Two design choices worth calling out:
 
@@ -523,7 +538,7 @@ That needs `import first.robot.Constants.ElevatorConstants;` up top,
 alongside the `DriveConstants` import already there.
 
 Run `./gradlew simulateJava`, open AdvantageScope (Lesson 3), expand
-**NetworkTables → Telemetry → Elevator**, tap the D-pad, and watch
+**NetworkTables → AdvantageKit → Elevator**, tap the D-pad, and watch
 `HeightMeters` climb toward whichever preset you asked for and stay there.
 
 ---
@@ -533,9 +548,10 @@ Run `./gradlew simulateJava`, open AdvantageScope (Lesson 3), expand
 Every gain here was computed, not guessed — but "computed" still means
 "worth checking against what the robot actually does." Open
 AdvantageScope (Lesson 3), connect to the simulator, and drag
-`GoalMeters`, `SetpointMeters`, and `HeightMeters` from
-**NetworkTables → Telemetry → Elevator** onto the same **Line Graph**
-tab. Three curves, and
+`SetpointMeters` and `HeightMeters` from
+**NetworkTables → AdvantageKit → Elevator**, and `GoalMeters` from
+**AdvantageKit → RealOutputs → Elevator** (it's an output), onto the same
+**Line Graph** tab. Three curves, and
 each one answers a different question: the goal is a step (what you
 asked for), the setpoint is the smooth ramp Motion Magic generated (what
 the profile is asking for *right now*), and the height is what the

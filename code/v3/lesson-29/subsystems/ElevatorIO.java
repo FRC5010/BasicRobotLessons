@@ -1,6 +1,9 @@
 package first.robot.subsystems;
 
+import org.littletonrobotics.junction.AutoLog;
+
 public interface ElevatorIO {
+  @AutoLog
   public static class ElevatorIOInputs {
     public double heightMeters = 0.0;
     public double velocityMetersPerSec = 0.0;

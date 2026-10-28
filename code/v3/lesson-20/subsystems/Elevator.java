@@ -12,6 +12,8 @@ import org.wpilib.smartdashboard.MechanismRoot2d;
 import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.Distance;
 
+import org.littletonrobotics.junction.Logger;
+
 import first.robot.Constants;
 import first.robot.Constants.ElevatorConstants;
 
@@ -22,7 +24,7 @@ public class Elevator implements Mechanism {
     case SIM -> new ElevatorIOSim();
     case REPLAY -> new ElevatorIO() {}; // inputs come from the log
   };
-  private final ElevatorIO.ElevatorIOInputs m_inputs = new ElevatorIO.ElevatorIOInputs();
+  private final ElevatorIOInputsAutoLogged m_inputs = new ElevatorIOInputsAutoLogged();
   private Distance m_goal = ElevatorConstants.kStowed;
 
   // The picture: a canvas, one point anchored to it, and a chain of segments.
@@ -41,11 +43,8 @@ public class Elevator implements Mechanism {
   /** One tick of sensing: read the hardware into the bundle and log it. */
   private void periodic() {
     m_io.updateInputs(m_inputs);
-    Telemetry.log("Elevator/HeightMeters", m_inputs.heightMeters);
-    Telemetry.log("Elevator/VelocityMetersPerSec", m_inputs.velocityMetersPerSec);
-    Telemetry.log("Elevator/AppliedVolts", m_inputs.appliedVolts);
-    Telemetry.log("Elevator/SetpointMeters", m_inputs.setpointMeters);
-    Telemetry.log("Elevator/GoalMeters", m_goal.in(Meters));
+    Logger.processInputs("Elevator", m_inputs); // every reading, under Elevator/
+    Logger.recordOutput("Elevator/GoalMeters", m_goal.in(Meters));
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
      * Log the motor's current and whether the bottom limit switch is pressed.
