@@ -452,15 +452,25 @@ run` in `REPLAY`, and comparing every `/RealOutputs/…` key with its
   replay); the same in `LimelightPoseProvider` ends it 0.5000 m along X.
 - **Lesson 16:** `Drivetrain/SimulatedPose` is an output, recorded only
   `if (m_chassisSim != null)`, so a replay's file has it under `RealOutputs`
-  with no `ReplayOutputs` twin. **The boot `resetPose(kSimStartingPose)` runs
-  `!= Mode.REAL`, not `== Mode.SIM`**, so a replay of a simulated run starts
-  where the recording did. Measured with `== SIM`: the replayed estimate
-  started 4.24 m off, was within 1 mm after 0.98 s (the recorded camera
-  frames pull it over), within 1e-6 m after 2.04 s, and never bit-exact
-  (an earlier run: 448 of 583 samples differed); with `!= REAL`, exact. The
-  cost: a replay of a real robot's log would make a reset the robot never
-  made, and the lesson says to switch back to `== SIM` for that. Carried
-  into `Robot` 16–30, and Lesson 25's context snippet.
+  with no `ReplayOutputs` twin. **Where the robot was set down at boot is a
+  recorded input** (user decision, 2026-10-28): `first.robot.StartingPlacement`
+  is a two-field `@AutoLog` class (`known`, `pose`); `Robot`'s constructor
+  fills it only in `SIM` (`kSimStartingPose`), calls
+  `Logger.processInputs("StartingPlacement", …)` and resets the estimate only
+  `if (placement.known)`. A real robot records "not known"; a replay reads
+  whichever the run recorded, so neither needs a hand-edited condition. It
+  works from the constructor because `Logger.start()` (in the initializer
+  block) ends with `periodicBeforeUser()`, which in replay loads the log's
+  first entry, the init cycle that `LoggedOpModeRobot.startCompetition` saves
+  with `periodicAfterUser` after the constructor (read in AdvantageKit's
+  source). Measured: a SIM run (`Known` true, (3, 3, 0)) and a run recorded
+  with the SIM branch disabled (`Known` false, a stand-in for a real robot's
+  log) both replayed with `Localizer/Pose` matching on every tick, starting at
+  (3, 3) and (0, 0). History: a plain `== SIM` condition made a sim replay
+  start 4.24 m off (within 1 mm after 0.98 s, never bit-exact); an interim
+  `!= REAL` fixed that but would have reset a real robot's replay. Carried
+  into `Robot` 16–30 and Lesson 25's context snippet; `placeSimulatedRobot`
+  and `withPoseReset` (Lessons 17, 25) are untouched by it.
 - **Lesson 17:** no code change. B-Line's `withTelemetry(Telemetry.getTable())`
   stays: its values are at `/Telemetry/FollowPath/…`, saved in the `WPILIB_`
   log, not in the `akit_` one. Two Corners replayed with every output matching

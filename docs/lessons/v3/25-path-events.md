@@ -140,14 +140,14 @@ There's no `@Autonomous` on this class, on purpose. The framework's scan only
 offers annotated classes, and it couldn't build this one anyway: it has no way to
 know which path name to pass. So you register each auto yourself.
 
-**In `Robot`'s constructor, add at the very end, after the simulator's `resetPose`
-block:**
+**In `Robot`'s constructor, add at the very end, after the starting-placement
+`resetPose` block:**
 
 ```java
   public Robot() {
     // ...
-    if (Constants.kCurrentMode != Constants.Mode.REAL) {
-      localizer.resetPose(DriveConstants.kSimStartingPose);
+    if (placement.known) {
+      localizer.resetPose(placement.pose); // instead of guessing (0, 0, 0°)
     }
 
     // The path autos. Every one is the same opmode with a different path and

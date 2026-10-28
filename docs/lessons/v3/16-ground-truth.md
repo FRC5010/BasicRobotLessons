@@ -82,9 +82,9 @@ public static final double kWheelCoF = 1.2;
 // and proportionally more grip to supply it.
 public static final double kMaxAccelMps2 = kWheelCoF * 9.81;
 
-// The same grip limit, applied at each wheel's distance from center — a
-// wheel spinning the chassis in place still can't push harder than the
-// tire allows.
+// The same grip limit, applied at each wheel's distance from center —
+// a wheel spinning the chassis in place still can't push harder than
+// the tire allows.
 public static final double kMaxAngularAccelRadPerSec2 =
     kMaxAccelMps2 / Math.hypot(kHalfLength, kHalfWidth);
 
@@ -438,31 +438,69 @@ One loose end. The chassis sim starts at `kSimStartingPose`, but
 where it was switched on. Left alone, you'd watch two robots in different
 places and doubt your own code.
 
+The fix is to tell the estimate where the robot was set down. But think
+about what that fact *is*. It isn't something your code works out; it's
+something the world knows. The simulator knows it, because it put the chassis
+there. A real robot doesn't — nobody tells it where on the field it was
+switched on. And a replay has no chassis and no world at all, so it can only
+know what the recorded run knew, whichever kind of run that was.
+
+That's the description of a reading. So it goes in a small inputs bundle of
+its own, recorded with `processInputs` like every sensor.
+
+**Create `src/main/java/first/robot/StartingPlacement.java`, next to `Robot.java`:**
+
+```java
+package first.robot;
+
+import org.wpilib.math.geometry.Pose2d;
+
+import org.littletonrobotics.junction.AutoLog;
+
+/**
+ * Where the robot was set down when it powered on, if anyone knows. The
+ * simulator does, because it put the robot there; a real robot doesn't. It's
+ * recorded like any other reading, so a replay knows exactly what the run knew.
+ */
+@AutoLog
+public class StartingPlacement {
+  public boolean known = false;
+  public Pose2d pose = new Pose2d();
+}
+```
+
 **Add to `Robot`'s constructor, after the cameras are registered:**
 
 ```java
-    // The simulated chassis starts at kSimStartingPose; tell the estimate
-    // where that is instead of guessing from (0, 0, 0°). A replay of a
-    // simulated run has to start from the same spot, so it does this too.
-    if (Constants.kCurrentMode != Constants.Mode.REAL) {
-      localizer.resetPose(DriveConstants.kSimStartingPose);
+    // Where was the robot set down at power-on? The simulator knows, because
+    // it put the chassis at kSimStartingPose; a real robot doesn't. Recorded
+    // like any reading, so a replay starts the estimate wherever the run did.
+    StartingPlacementAutoLogged placement = new StartingPlacementAutoLogged();
+    if (Constants.kCurrentMode == Constants.Mode.SIM) {
+      placement.known = true;
+      placement.pose = DriveConstants.kSimStartingPose;
+    }
+    Logger.processInputs("StartingPlacement", placement);
+    if (placement.known) {
+      localizer.resetPose(placement.pose); // instead of guessing (0, 0, 0°)
     }
 ```
 
-Read the condition carefully: it's "anything but a real robot," not "only
-in simulation," and the difference is replay. A replay has no chassis to
-place, but its estimate still has to start where the recorded one did. With
-`== Constants.Mode.SIM` here, a replayed run started 4.2 m from the recorded
-one, at (0, 0) instead of (3, 3), and the recorded camera frames took about a
-second to drag it across (measured); after that the two poses agreed only
-to within a few millionths of a meter instead of exactly. With
-`!= Constants.Mode.REAL`, they match on every tick.
+Read it the way you'd read any IO: fill the bundle, hand it to
+`processInputs`, then act on what's in it. In simulation the bundle says
+"known, at (3, 3)". On a real robot nothing fills it, so it says "not
+known", and the estimate stays at (0, 0, 0°) until the cameras or an
+autonomous routine place it. In a replay, nothing fills it either, but
+`processInputs` loads whatever the recorded run wrote: a simulated run's
+log says (3, 3), so the replay starts there; a real robot's says "not
+known", so the replay doesn't move the estimate. Every replay starts where
+its run did, and nothing has to be switched by hand. Measured: a simulated
+run and a run recorded with "not known" both replayed with `Localizer/Pose`
+matching the recording on every tick, starting at (3, 3) and at (0, 0).
 
-> A real robot never makes this reset, and it's right not to: it really
-> doesn't know where it was switched on. So the day you replay a log from a
-> real robot, change the condition to `== Constants.Mode.SIM` for that
-> replay, or the replay will start somewhere the robot never was.
-
+It can sit in the constructor because logging already started, in the block
+at the top of `Robot`. A replay loads the log's first tick before anything is
+built, and that tick holds what the constructor recorded.
 Now run it. `./gradlew simulateJava` → **RobotTeleop**. The first thing
 you'll feel is the grip limit: push the stick to full and the robot doesn't
 reach speed instantly — it ramps, the way a real chassis with real tires

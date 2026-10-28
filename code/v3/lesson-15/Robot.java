@@ -72,8 +72,9 @@ public class Robot extends LoggedOpModeRobot {
 
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
-     * In simulation, and when replaying a simulated run, start the estimate where the
-     * simulated chassis starts, instead of at the field's origin.
+     * Record where the robot was set down at power-on, as a reading: known in
+     * simulation, unknown on a real robot. When it's known, start the estimate there
+     * instead of at the field's origin.
      */
   }
 

@@ -1172,11 +1172,15 @@ measured details are in CLAUDE.md.
   import `Telemetry` for it.
 - **Lesson 16:** `Drivetrain/SimulatedPose` became an output, recorded only
   when the simulated chassis exists. The boot `resetPose(kSimStartingPose)`
-  now runs whenever the mode isn't `REAL`, so a replay of a simulated run
-  starts where it did: with `== SIM` the replay began 4.24 m off and only
-  converged (to 1 mm in ≈1 s) through the recorded camera frames. The lesson
-  says to switch it back to `== SIM` when replaying a real robot's log. This
-  is a judgment call flagged for the user. Carried into `Robot` 16–30.
+  first became `!= Mode.REAL` (with `== SIM` a replay began 4.24 m off and
+  only converged through the recorded camera frames). **Revised the same day
+  (user decision): the starting placement is a recorded input.** A two-field
+  `@AutoLog` class, `StartingPlacement` (`known`, `pose`), is filled only in
+  simulation and passed through `processInputs` in `Robot`'s constructor;
+  the reset happens only if it's known. A real robot records "not known", and
+  a replay reads whatever its run recorded, so students never edit a
+  condition. Measured: a sim log and a "not known" log both replayed exactly,
+  starting at (3, 3) and (0, 0). Carried into `Robot` 16–30.
 - **Lesson 17:** no code change; B-Line's own telemetry stays in
   **Telemetry** (library-internal, not in the `akit_` log). Two Corners
   replayed with every output matching on every tick; the text says where each
@@ -1252,8 +1256,8 @@ picks it:
   SysId data lands in DataLogManager's file, not AdvantageKit's.
 - **Lesson 34** (unmigrated) must carry Lesson 13's `Robot` when migrated,
   and Lessons 14–22's changes too: the vision record's three trust numbers,
-  `Drivetrain/SimulatedPose` on `Logger.recordOutput`, the boot reset's
-  `!= Mode.REAL`, the elevator's and arm's `@AutoLog` bundles with
+  `Drivetrain/SimulatedPose` on `Logger.recordOutput`, the recorded
+  `StartingPlacement` and its boot reset, the elevator's and arm's `@AutoLog` bundles with
   `processInputs` (and no separate log lines for the switch, the current or
   the beam break), and `Sim/GamePieces` on `Logger.recordOutput`.
 - Lessons 14, 15 and 17 showed `Robot`'s constructor with

@@ -104,11 +104,17 @@ public class Robot extends LoggedOpModeRobot {
     localizer.addProvider(frontCamera);
     localizer.addProvider(backCamera);
 
-    // The simulated chassis starts at kSimStartingPose; tell the estimate
-    // where that is instead of guessing from (0, 0, 0°). A replay of a
-    // simulated run has to start from the same spot, so it does this too.
-    if (Constants.kCurrentMode != Constants.Mode.REAL) {
-      localizer.resetPose(DriveConstants.kSimStartingPose);
+    // Where was the robot set down at power-on? The simulator knows, because
+    // it put the chassis at kSimStartingPose; a real robot doesn't. Recorded
+    // like any reading, so a replay starts the estimate wherever the run did.
+    StartingPlacementAutoLogged placement = new StartingPlacementAutoLogged();
+    if (Constants.kCurrentMode == Constants.Mode.SIM) {
+      placement.known = true;
+      placement.pose = DriveConstants.kSimStartingPose;
+    }
+    Logger.processInputs("StartingPlacement", placement);
+    if (placement.known) {
+      localizer.resetPose(placement.pose); // instead of guessing (0, 0, 0°)
     }
 
     /**
