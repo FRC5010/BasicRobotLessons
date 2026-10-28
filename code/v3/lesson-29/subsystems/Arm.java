@@ -55,7 +55,6 @@ public class Arm implements Mechanism {
     Logger.processInputs("Arm", m_inputs); // every reading, under Arm/
     Telemetry.log("Arm/PivotSupplyCurrentAmps", m_inputs.pivotSupplyCurrentAmps);
     Telemetry.log("Arm/RollerSupplyCurrentAmps", m_inputs.rollerSupplyCurrentAmps);
-    Telemetry.log("Arm/HasGamePiece", m_inputs.hasGamePiece);
     Logger.recordOutput("Arm/GoalDegrees", m_goal.in(Degrees));
     Logger.recordOutput("Arm/AtGoal", atGoal());
     /**

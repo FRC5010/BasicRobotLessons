@@ -64,7 +64,7 @@ public class ArmIOSim extends ArmIOTalonFX {
      * ====== NEXT LESSON: ADD CODE HERE ======
      * Catch a piece if the roller is pulling in, the arm is down, and a piece is
      * really in reach. Report what the intake holds as the beam break's reading,
-     * and log where the pieces on the field are.
+     * and record where the pieces on the field are with AdvantageKit's Logger.
      */
   }
 

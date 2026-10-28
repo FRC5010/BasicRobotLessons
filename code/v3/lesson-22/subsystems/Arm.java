@@ -10,7 +10,6 @@ import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.smartdashboard.MechanismLigament2d;
-import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.Angle;
 
 import org.littletonrobotics.junction.Logger;
@@ -49,7 +48,6 @@ public class Arm implements Mechanism {
   private void periodic() {
     m_io.updateInputs(m_inputs);
     Logger.processInputs("Arm", m_inputs); // every reading, under Arm/
-    Telemetry.log("Arm/HasGamePiece", m_inputs.hasGamePiece);
     Logger.recordOutput("Arm/GoalDegrees", m_goal.in(Degrees));
     Logger.recordOutput("Arm/AtGoal", atGoal());
 

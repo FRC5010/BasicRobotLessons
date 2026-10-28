@@ -110,9 +110,10 @@ robot starts, which is on purpose. You'll drive to it in section 8.
 
 ## 3. Add it to `ArmIO`
 
-One more input, same as every sensor since Lesson 13 — and one more line in
-`periodic()`, so it lands in the log where you can see exactly when the robot
-believed it was holding something.
+One more input, same as every sensor since Lesson 13. It lands in the log, where
+you can see exactly when the robot believed it was holding something, without a
+line of logging code: `processInputs` records every field of the arm's bundle,
+so a new field shows up as `Arm/HasGamePiece` on its own.
 
 **Add to `ArmIOInputs` in `ArmIO.java`:**
 
@@ -138,12 +139,6 @@ import org.wpilib.hardware.discrete.DigitalInput;
     // Wired so that a broken beam pulls the line low. An unplugged sensor
     // floats high, which reads as "no game piece": the harmless answer.
     inputs.hasGamePiece = !m_beamBreak.get();
-```
-
-**Log it in `Arm`'s `periodic()`, below the roller velocity:**
-
-```java
-    Telemetry.log("Arm/HasGamePiece", m_inputs.hasGamePiece);
 ```
 
 **And add the accessor to `Arm`, above `atGoal`:**
@@ -246,7 +241,7 @@ import org.wpilib.math.geometry.Translation2d;
 ```
 
 ```java
-import org.wpilib.telemetry.Telemetry;
+import org.littletonrobotics.junction.Logger;
 
 import first.robot.Constants.DriveConstants;
 ```
@@ -302,12 +297,16 @@ intake knows:**
     for (int i = 0; i < pieces.length; i++) {
       pieces[i] = new Pose2d(m_piecesOnField.get(i), new Rotation2d());
     }
-    Telemetry.log("Sim/GamePieces", pieces, Pose2d.struct);
+    Logger.recordOutput("Sim/GamePieces", pieces); // simulation only: no replay has a field
 ```
 
 The intake holds one piece, so the moment it catches one it stops looking —
-that's what the `break` is for. And the last few lines publish where the pieces
-are, as poses, which is the shape AdvantageScope draws on its field.
+that's what the `break` is for. And the last few lines record where the pieces
+are, as poses, which is the shape AdvantageScope draws on its field. It's an
+output, like Lesson 16's `Drivetrain/SimulatedPose`, and for the same reason it
+only exists in simulation: a replay builds no `ArmIOSim` and has no field, so it
+gets the beam break's answer straight from the log, and the pieces show up only
+under `RealOutputs`.
 
 **Add two methods to `ArmIOSim`, below `updateInputs`. First, the roller reaching
 into the world:**
@@ -483,8 +482,9 @@ by writing any of it.
 
 `./gradlew simulateJava`, **Teleoperated**. Open AdvantageScope with an
 **Odometry** tab showing `Drivetrain/SimulatedPose` — where the robot really is —
-and `Sim/GamePieces`, plus a graph of `Arm/HasGamePiece` and
-`Arm/RollerVelocityRotPerSec`.
+and `Sim/GamePieces` (both under **AdvantageKit → RealOutputs**), plus a graph of
+`Arm/HasGamePiece` and `Arm/RollerVelocityRotPerSec` (under **AdvantageKit →
+Arm**).
 
 **Home the elevator first** (Back), the way Lesson 21 taught you — or wait the
 eighteen seconds it takes to land on its switch by itself. A catch is about to
