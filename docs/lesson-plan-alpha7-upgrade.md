@@ -1201,10 +1201,14 @@ Each recorded in SIM by a probe driving the real `Robot` and replayed with
   zeroed — the old code measured the same way gave 11.0–21.0 mm, so the
   change doesn't move it. The lesson's "1.5–2 cm" stays; single moves at
   ~1.1 cm fall just under it.
-- **19 (drawing):** stays on `Telemetry.log`, per the widget default; the
-  lesson says why. Tested, not adopted: a `LoggedMechanism2d` recorded with
-  `Logger.recordOutput` draws live in SimGUI (NetworkTables menu →
-  AdvantageKit → RealOutputs → Elevator).
+- **19 (drawing):** first kept on `Telemetry.log` per the widget default,
+  then switched the same day (user decision) to `LoggedMechanism2d` and its
+  root/ligament classes, recorded with `Logger.recordOutput`, after measuring
+  that SimGUI draws it live (NetworkTables menu → AdvantageKit → RealOutputs
+  → Elevator). It replays like any output. The AdvantageKit classes take
+  measures, so the code passes `Distance`/`Angle` straight in. Lesson 20's
+  arm ligament follows; its "a tick behind" callout still holds (measured,
+  peak 3.69° mid-swing).
 - **20 (arm):** `@AutoLog` inputs, `processInputs("Arm", …)`; goal and
   `AtGoal` are outputs.
 - **21 (homing):** the switch and current are bundle fields, so the two log
@@ -1233,8 +1237,9 @@ picks it:
   already, so those lessons' extra `Telemetry.log` lines for them can go.
 - Their computed values move to `Logger.recordOutput` (Lesson 23's
   `Elevator/Homed`, the superstructure state in 24, the flywheel dial in
-  28, and so on). Drawings stay on `Telemetry.log` unless the user picks
-  `LoggedMechanism2d` (which SimGUI does draw, see Lesson 19 above). Values
+  28, and so on). Lesson 28's flywheel dial switches to `LoggedMechanism2d`
+  recorded with `Logger.recordOutput`, as Lessons 19 and 20 did; the
+  `Field2d` widget stays on `Telemetry.log`. Values
   moved to AdvantageKit appear in SimGUI under
   **AdvantageKit** (inputs at the top level, outputs under `RealOutputs`), not
   **Telemetry**, so lesson text that says where to look changes with them.
@@ -1259,7 +1264,8 @@ picks it:
   `Drivetrain/SimulatedPose` on `Logger.recordOutput`, the recorded
   `StartingPlacement` and its boot reset, the elevator's and arm's `@AutoLog` bundles with
   `processInputs` (and no separate log lines for the switch, the current or
-  the beam break), and `Sim/GamePieces` on `Logger.recordOutput`.
+  the beam break), `Sim/GamePieces` on `Logger.recordOutput`, and the
+  `LoggedMechanism2d` drawing recorded with `Logger.recordOutput`.
 - Lessons 14, 15 and 17 showed `Robot`'s constructor with
   `DataLogManager.start();`, and 15 showed `extends OpModeRobot`; those
   context lines were updated with this change.

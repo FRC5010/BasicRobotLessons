@@ -42,7 +42,8 @@ public class Elevator implements Mechanism {
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
      * Set the carriage segment's length from the height, color it by whether it's at
-     * the goal, then log the whole drawing — every tick, like every number above.
+     * the goal, then record the whole drawing as an output — every tick, like every
+     * number above.
      */
   }
 

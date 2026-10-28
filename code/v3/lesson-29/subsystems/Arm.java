@@ -1,7 +1,6 @@
 package first.robot.subsystems;
 
 import static org.wpilib.units.Units.Degrees;
-import static org.wpilib.units.Units.Meters;
 
 import java.util.function.Supplier;
 
@@ -9,11 +8,11 @@ import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.math.geometry.Pose2d;
-import org.wpilib.smartdashboard.MechanismLigament2d;
 import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.Angle;
 
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.mechanism.LoggedMechanismLigament2d;
 
 import first.robot.Constants;
 import first.robot.Constants.ArmConstants;
@@ -34,7 +33,7 @@ public class Arm implements Mechanism {
    */
 
   /** The arm's segment in the elevator's drawing — it hangs off the carriage. */
-  private final MechanismLigament2d m_ligament;
+  private final LoggedMechanismLigament2d m_ligament;
 
   public Arm(Elevator elevator, Supplier<Pose2d> simulatedRobotPose) {
     // Chosen here rather than up with the fields: the simulated intake needs
@@ -44,8 +43,8 @@ public class Arm implements Mechanism {
       case SIM -> new ArmIOSim(simulatedRobotPose);
       case REPLAY -> new ArmIO() {}; // inputs come from the log
     };
-    m_ligament = elevator.getCarriage().append(new MechanismLigament2d(
-        "Arm", ArmConstants.kArmLength.in(Meters), toDrawingAngle(ArmConstants.kMinAngle).in(Degrees)));
+    m_ligament = elevator.getCarriage().append(new LoggedMechanismLigament2d(
+        "Arm", ArmConstants.kArmLength, toDrawingAngle(ArmConstants.kMinAngle)));
     Scheduler.getDefault().addPeriodic(this::periodic);
   }
 
@@ -62,7 +61,7 @@ public class Arm implements Mechanism {
      * Log both motors' connections, and set the alert every tick if either one is missing.
      */
 
-    m_ligament.setAngle(toDrawingAngle(Degrees.of(m_inputs.angleDegrees)).in(Degrees));
+    m_ligament.setAngle(toDrawingAngle(Degrees.of(m_inputs.angleDegrees)));
     m_ligament.setColor(
         atGoal() ? ElevatorConstants.kAtGoalColor : ElevatorConstants.kMovingColor);
   }

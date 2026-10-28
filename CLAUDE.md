@@ -510,17 +510,29 @@ method as 14–17:**
   `WPILIB_` log), 82–112 mm with `kV` zeroed. Moves cluster near 11 mm or
   near 20 mm run to run. The lesson's "1.5–2 cm" was left alone; single
   moves at ~1.1 cm sit below it.
-- **Lesson 19:** no new values; the `Mechanism2d` stays on `Telemetry.log`
-  (Lesson 13's widget rule), with Lesson 13's field-widget comment on the
-  line. **AdvantageKit's `LoggedMechanism2d` recorded with
-  `Logger.recordOutput` does draw in SimGUI** (measured under Xvfb with an
-  animated probe): it's listed in SimGUI's **NetworkTables** menu under
-  **AdvantageKit → RealOutputs → Elevator**, and moves live.
-  `LoggedMechanism2d` also implements `TelemetryLoggable`. Not adopted; the
-  user decides.
+- **Lesson 19:** **the drawing is AdvantageKit's `LoggedMechanism2d` /
+  `LoggedMechanismRoot2d` / `LoggedMechanismLigament2d`, recorded every tick
+  with `Logger.recordOutput("Elevator/Mechanism", …)`** (user decision,
+  2026-10-28, after first keeping WPILib's `Mechanism2d` on `Telemetry.log`).
+  It replays like any output: a recorded run's `Elevator/Mechanism/...` keys
+  (carriage length 318 changes, color 8) matched their replayed twins. SimGUI
+  lists it in the **NetworkTables** menu under **AdvantageKit → RealOutputs →
+  Elevator** and draws it live (checked under Xvfb with an animated
+  `LoggedMechanism2d` probe); AdvantageScope's live source is
+  `/AdvantageKit/RealOutputs/Elevator/Mechanism`. Alpha-7's AdvantageKit
+  classes take measures everywhere, `getRoot(String, Distance, Distance)`
+  included, so the v3 code passes `Distance`/`Angle` straight in (the old
+  "this corner of WPILib only takes doubles" callout is gone); the classes
+  also implement `TelemetryLoggable`. `Field2d` stays on `Telemetry.log`
+  (AdvantageKit has no equivalent, and the pose is recorded).
 - **Lesson 20:** `@AutoLog` on `ArmIOInputs`, `processInputs("Arm", …)`;
-  `Arm/GoalDegrees` and `Arm/AtGoal` are outputs. The drawing is the
-  elevator's, still on `Telemetry`.
+  `Arm/GoalDegrees` and `Arm/AtGoal` are outputs. The arm's ligament is a
+  `LoggedMechanismLigament2d` on the carriage (`setAngle(Angle)`), recorded
+  with the elevator's drawing. **The drawing is still a tick behind for the
+  arm**, measured from the recorded drawing: on 670 of 671 ticks its arm
+  angle equals the previous tick's `Arm/AngleDegrees` (minus the carriage's
+  90°), the gap to the current tick peaking at 3.69° mid-swing (20° once at
+  boot, when the first reading jumps to the −20° stop).
 - **Lesson 21:** the switch and stator current are fields of the bundle, so
   they're recorded without the two `Telemetry.log` lines Lesson 21 used to
   add (removed from 21 on, with Lesson 20's marker). A homing run replayed

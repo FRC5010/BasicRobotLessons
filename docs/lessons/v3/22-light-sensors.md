@@ -510,7 +510,7 @@ you. The moment it reaches the box just past the bumper — when its center is a
   doesn't matter.
 
 Watch it happen on the **Mechanism** tab from Lesson 19 while you're at it
-(`/Telemetry/Elevator/Mechanism`). Both segments of the stick figure move at once,
+(`/AdvantageKit/RealOutputs/Elevator/Mechanism`). Both segments of the stick figure move at once,
 off a boolean.
 
 Then pull the **right trigger**. The piece is ejected and lands back on the field
