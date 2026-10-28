@@ -63,9 +63,7 @@ public class Elevator implements Mechanism {
      * Log the signed gap between the height and the goal, so the number that
      * explains the "at goal" decision is in the log instead of in your head.
      */
-    Telemetry.log("Elevator/StatorCurrentAmps", m_inputs.statorCurrentAmps);
     Telemetry.log("Elevator/SupplyCurrentAmps", m_inputs.supplyCurrentAmps);
-    Telemetry.log("Elevator/AtBottomLimit", m_inputs.atBottomLimit);
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
      * Log the "at goal" decision itself, next to the measurements it is built from.

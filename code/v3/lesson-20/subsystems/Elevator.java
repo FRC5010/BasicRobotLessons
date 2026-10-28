@@ -45,10 +45,6 @@ public class Elevator implements Mechanism {
     m_io.updateInputs(m_inputs);
     Logger.processInputs("Elevator", m_inputs); // every reading, under Elevator/
     Logger.recordOutput("Elevator/GoalMeters", m_goal.in(Meters));
-    /**
-     * ====== NEXT LESSON: ADD CODE HERE ======
-     * Log the motor's current and whether the bottom limit switch is pressed.
-     */
 
     // The picture is built once and changed every tick; only the carriage
     // changes here, and anything appended to it (see getCarriage()) rides

@@ -46,8 +46,6 @@ public class Elevator implements Mechanism {
     m_io.updateInputs(m_inputs);
     Logger.processInputs("Elevator", m_inputs); // every reading, under Elevator/
     Logger.recordOutput("Elevator/GoalMeters", m_goal.in(Meters));
-    Telemetry.log("Elevator/StatorCurrentAmps", m_inputs.statorCurrentAmps);
-    Telemetry.log("Elevator/AtBottomLimit", m_inputs.atBottomLimit);
 
     // The picture is built once and changed every tick; only the carriage
     // changes here, and anything appended to it (see getCarriage()) rides

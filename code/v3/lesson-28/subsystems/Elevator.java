@@ -47,12 +47,10 @@ public class Elevator implements Mechanism {
     m_io.updateInputs(m_inputs);
     Logger.processInputs("Elevator", m_inputs); // every reading, under Elevator/
     Logger.recordOutput("Elevator/GoalMeters", m_goal.in(Meters));
-    Telemetry.log("Elevator/StatorCurrentAmps", m_inputs.statorCurrentAmps);
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
      * Log the battery-side current beside the winding-side one.
      */
-    Telemetry.log("Elevator/AtBottomLimit", m_inputs.atBottomLimit);
     Telemetry.log("Elevator/Homed", m_homed);
 
     // The picture is built once and changed every tick; only the carriage

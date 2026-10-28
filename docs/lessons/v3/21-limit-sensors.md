@@ -145,8 +145,8 @@ are deliberately driving a mechanism into a hard stop.
 ## 3. Teach `ElevatorIO` to read it
 
 The switch is a sensor, so it's an **input** — same as every other sensor
-since Lesson 13, and it will replay for the same reason once this track's
-replay tooling exists.
+since Lesson 13, recorded with the rest of the bundle and played back in a
+replay.
 
 **Add to `ElevatorIOInputs` in `ElevatorIO.java`:**
 
@@ -221,13 +221,13 @@ aim at.
 and it's worth logging regardless — a motor pulling current with nothing
 to show for it is how a jam looks in a log.
 
-**Log both new inputs — add to `Elevator`'s `periodic()`, below the
-`GoalMeters` line:**
-
-```java
-    Telemetry.log("Elevator/StatorCurrentAmps", m_inputs.statorCurrentAmps);
-    Telemetry.log("Elevator/AtBottomLimit", m_inputs.atBottomLimit);
-```
+And logging both new readings takes no code at all. `ElevatorIOInputs` is
+marked `@AutoLog`, so the class AdvantageKit writes for it logs *every*
+field, and `Elevator`'s `processInputs` line already hands it the whole
+bundle. Add a field to the bundle and it's in the log, as
+`Elevator/StatorCurrentAmps` and `Elevator/AtBottomLimit`, the next time
+you build. That's the payoff of putting readings in one bundle: there's no
+second list of log lines to keep in step with it.
 
 ---
 
@@ -444,7 +444,8 @@ anywhere.
 
 `./gradlew simulateJava`. Before you touch anything — before you even
 pick an opmode — put `Elevator/HeightMeters` and `Elevator/AtBottomLimit`
-on a graph and watch.
+(both readings, so under **NetworkTables → AdvantageKit → Elevator**) on a
+graph and watch.
 
 It starts at **0.00**, with the simulated carriage 35 cm in the air. Then
 the number starts counting *down*: −0.02, −0.04, −0.06, about two
@@ -502,6 +503,15 @@ From then on the elevator is honest. Press D-pad right and it goes to
 2 cm, a centimeter above the switch, so `AtBottomLimit` stays false. The
 switch only speaks when the carriage really reaches the bottom, and the
 encoder has been right since homing anyway.
+
+> **What a replay makes of homing.** `home()` and the `Trigger` both run
+> again in a replay, because the switch reading that drives them is in the
+> recording. Their writes — `setVoltage` and `setPositionMeters` — reach the
+> do-nothing `REPLAY` IO and change nothing, and they don't need to: the
+> recording already holds what the encoder read *after* the real re-zero.
+> Measured, replaying a homing run reproduced the `Home` command, the
+> switch tripping, the −0.34 → 0.01 snap and every goal after it, on the
+> same ticks.
 
 ---
 

@@ -50,8 +50,6 @@ public class Elevator implements Mechanism {
     m_io.updateInputs(m_inputs);
     Logger.processInputs("Elevator", m_inputs); // every reading, under Elevator/
     Logger.recordOutput("Elevator/GoalMeters", m_goal.in(Meters));
-    Telemetry.log("Elevator/StatorCurrentAmps", m_inputs.statorCurrentAmps);
-    Telemetry.log("Elevator/AtBottomLimit", m_inputs.atBottomLimit);
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
      * Log whether the elevator has been homed.
