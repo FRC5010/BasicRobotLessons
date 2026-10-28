@@ -409,15 +409,80 @@ loop:
   ((3, 3, 0°) → (5.98, 6.02, 178.7°)). **Replaying it is incomplete:**
   heading and measured module states match, but the auto never drives,
   because the elevator's inputs aren't recorded yet and it never homes in
-  replay. Each IO-backed lesson (15 vision, 18 elevator, 20 arm, 28
-  flywheel) needs `@AutoLog` + `processInputs` before its lesson replays;
-  vision's `PoseObservation` record carries a `Vector<N3>`, and AdvantageKit
-  only allows struct-compatible record fields (not tested).
+  replay. Each IO-backed lesson (18 elevator, 20 arm, 28 flywheel) needs
+  `@AutoLog` + `processInputs` before its lesson replays; vision (15) has
+  had it since the Lessons 14–17 pass below.
 - **`Telemetry.log` is not captured by AdvantageKit.** WPILib alpha-7's
   `TelemetryRegistry.registerBackend(prefix, backend)` would let a bridge
   record every `Telemetry.log` too (prototyped and working; `RobotBase`'s
   constructor registers `NetworkTablesTelemetryBackend` at `""` under
   `/Telemetry`), but the user chose `Logger.recordOutput`.
+
+**v3 Lessons 14–17 record with AdvantageKit (2026-10-28), one lesson at a
+time on Lesson 13's rules.** Each was checked by recording a SIM run with a
+JUnit probe driving the real `Robot` (sticks, buttons and DS changes made on
+the robot thread between cycles), replaying it with `AKIT_LOG_PATH=… ./gradlew
+run` in `REPLAY`, and comparing every `/RealOutputs/…` key with its
+`/ReplayOutputs/…` twin in the `_sim` file:
+
+- **Lesson 14:** `Localizer/Pose` and the fake camera's `Localizer/VisionPose`
+  are outputs (`Logger.recordOutput`); the `Field2d` widget stays on
+  `Telemetry.log`. The fake sighting is an output because the Start button and
+  the clock are replayed. Replay matched every output on every tick, the pose
+  through three sightings included.
+- **Lesson 15:** `@AutoLog` on `VisionIOInputs`, `Logger.processInputs(m_logKey,
+  …)` in `LimelightPoseProvider` in place of the `Pose2d[]` `Telemetry.log`; the
+  key is unchanged (`Localizer/<camera>/PoseObservations`, now the whole record
+  array). **A `Vector<N3>` record field can't be logged** (measured):
+  AdvantageKit's `RecordStruct` looks for a static `struct` field, `Vector` has
+  only `getStruct(Nat)`, so it prints `NoSuchFieldException: struct` and
+  "Failed to load nested struct", logs nothing for the trust, and the replay
+  dies with a `NullPointerException` in `addVisionMeasurement` on the first
+  frame. The record now holds `xStdDevMeters`, `yStdDevMeters`,
+  `headingStdDevRadians` and a `stdDevs()` method that rebuilds the
+  `Vector<N3>` with `VecBuilder.fill`; `VisionIOLimelight` fills them with
+  `estimate.stdDevs.get(0..2)`. LimelightLib's MT2 heading trust measured
+  ~1e7 (ignore). Replay matched on every tick. In SimGUI the input is under
+  **NetworkTables → AdvantageKit → Localizer → <camera>**, shown as `[]` when
+  empty and `[...]` with frames, the same as a WPILib struct array
+  (`RealOutputs/Drivetrain/ModuleStates` shows `[...]` too); a single struct
+  (`Pose2d`) decodes. Try It #5, measured on one recording: +0.5 m in X inside
+  `VisionIOLimelight` moves the replayed pose 0.0000 m (the IO isn't built in
+  replay); the same in `LimelightPoseProvider` ends it 0.5000 m along X.
+- **Lesson 16:** `Drivetrain/SimulatedPose` is an output, recorded only
+  `if (m_chassisSim != null)`, so a replay's file has it under `RealOutputs`
+  with no `ReplayOutputs` twin. **The boot `resetPose(kSimStartingPose)` runs
+  `!= Mode.REAL`, not `== Mode.SIM`**, so a replay of a simulated run starts
+  where the recording did. Measured with `== SIM`: the replayed estimate
+  started 4.24 m off, was within 1 mm after 0.98 s (the recorded camera
+  frames pull it over), within 1e-6 m after 2.04 s, and never bit-exact
+  (an earlier run: 448 of 583 samples differed); with `!= REAL`, exact. The
+  cost: a replay of a real robot's log would make a reset the robot never
+  made, and the lesson says to switch back to `== SIM` for that. Carried
+  into `Robot` 16–30, and Lesson 25's context snippet.
+- **Lesson 17:** no code change. B-Line's `withTelemetry(Telemetry.getTable())`
+  stays: its values are at `/Telemetry/FollowPath/…`, saved in the `WPILIB_`
+  log, not in the `akit_` one. Two Corners replayed with every output matching
+  on every tick (`Localizer/Pose` 399 changes, `DesiredModuleStates` 201), and
+  `Event: shoot!` printed again in the replay. B-Line's clock replays because
+  `Timer.getTimestamp()` is `RobotController.getTime()` (bytecode) and
+  `Logger.start()` calls `RobotController.setTimeSource(Logger::getTimestamp)`
+  (source); the pose estimator's `MathSharedStore.getTimestamp()` goes through
+  `Timer.getTimestamp()` too. Live run: (3, 3, 0°) → (5.97, 6.01, 178.8°),
+  following for ≈4.0 s.
+- **Opmode selection can replay one tick early.** In two Lesson 16 runs (DS
+  changed from the test thread, then from the robot thread) the replay built
+  `RobotTeleop` one tick before the live robot had, so `Drivetrain/CurrentCommand`
+  and the first `DesiredModuleStates` came a tick sooner (same values, pose
+  unaffected). `LoggedDriverStation` captures `OpModeId` through `ConduitApi`
+  before `loopFunc` reads `DriverStationBackend`'s cache; in the live runs the
+  cache saw the change a tick later. The Lesson 14, 15 and 17 runs didn't
+  show it. Recorded, not worked around.
+- **Where things are:** NT4Publisher puts inputs at `/AdvantageKit/<key>` and
+  outputs at `/AdvantageKit/RealOutputs/<key>`; DataLogManager's `WPILIB_` log
+  saves those NT topics too. Lesson 30's text now tells students to import
+  `Telemetry` for its `…/Connected` lines, since `Drivetrain`,
+  `SwerveModule` and `LimelightPoseProvider` no longer import it by then.
 
 **v3 Lesson 26 (drive to pose) was redesigned on 2026-10-26 at the user's
 request: two motion-profiled stages, handing over while moving.** The old

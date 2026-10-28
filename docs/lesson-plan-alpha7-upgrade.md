@@ -1148,27 +1148,65 @@ Simulate Robot Code given as other options.
   15 and back to 13 and 12 on a fresh project builds every time; the site
   builds with 0 broken links.
 
-**What Lessons 14–34 now owe Lesson 13.** Their code compiles and runs; what
-they don't have yet is replay. Each lesson's own pass, when the user picks
-it:
+**Lessons 14–17 record with AdvantageKit, 2026-10-28 (the user's rules from
+the Lesson 13 decision: readings through `@AutoLog` + `processInputs`,
+computed values through `Logger.recordOutput`, no `Telemetry.log` bridge,
+one lesson at a time).** Each lesson was recorded in SIM by a JUnit probe
+driving the real `Robot` and replayed with `./gradlew run` in `REPLAY`; the
+measured details are in CLAUDE.md.
+
+- **Lesson 14:** `Localizer/Pose` and the fake camera's `Localizer/VisionPose`
+  became outputs; the field widget stays on `Telemetry.log`. The text's
+  deletion block now shows Lesson 13's real lines (`Logger.recordOutput(
+  "Drivetrain/Pose", …)`) and also names `getPose()`/`resetPose()` and the
+  three imports that go. Replay matched every output.
+- **Lesson 15:** vision's inputs are `@AutoLog`'d and go through
+  `processInputs` under the same key. The `Vector<N3>` in `PoseObservation`
+  did not work (measured: "Failed to load nested struct", and the replay
+  crashed on the first frame), so the record holds three `double`s and a
+  `stdDevs()` method rebuilds the vector; the lesson explains why. The
+  `REPLAY` arm says "inputs come from the log". Try It #5 is now "replay what
+  the cameras saw": the same 0.5 m error replays as 0.0000 m inside the IO
+  layer and 0.5000 m in the provider (measured). Carried into the 29/30
+  copies; Lesson 30's text now says where its `Connected` line goes and to
+  import `Telemetry` for it.
+- **Lesson 16:** `Drivetrain/SimulatedPose` became an output, recorded only
+  when the simulated chassis exists. The boot `resetPose(kSimStartingPose)`
+  now runs whenever the mode isn't `REAL`, so a replay of a simulated run
+  starts where it did: with `== SIM` the replay began 4.24 m off and only
+  converged (to 1 mm in ≈1 s) through the recorded camera frames. The lesson
+  says to switch it back to `== SIM` when replaying a real robot's log. This
+  is a judgment call flagged for the user. Carried into `Robot` 16–30.
+- **Lesson 17:** no code change; B-Line's own telemetry stays in
+  **Telemetry** (library-internal, not in the `akit_` log). Two Corners
+  replayed with every output matching on every tick; the text says where each
+  value is, Try It #5 records with `Logger.recordOutput`, and a new Try It #7
+  replays an auto.
+- **Checks:** 13–33 compile with zero warnings after each lesson; marker
+  checker clean 1–33; Lessons 13 and 15's markers reworded where they named
+  the old logging.
+
+**What Lessons 18–34 now owe Lesson 13** (this list started as "14–34";
+14–17 are done above). Their code compiles and runs; what they don't have
+yet is replay. Each lesson's own pass, when the user picks it:
 
 - Every IO-backed subsystem needs `@AutoLog` on its inputs and
   `Logger.processInputs` in place of its per-field `Telemetry.log` calls:
-  vision (15), elevator (18), arm (20), flywheel (28). Measured on the
-  Lesson 33 state: replay reproduces the drivetrain's heading and module
+  elevator (18), arm (20), flywheel (28). (Vision, 15, is done.) Measured on
+  the Lesson 33 state: replay reproduces the drivetrain's heading and module
   states, but the path auto never drives in replay, because the elevator
-  never homes without recorded inputs. Vision's `PoseObservation` record
-  holds a `Vector<N3>`, and AdvantageKit restricts record fields to
-  struct-compatible types; untested.
-- Their computed values move to `Logger.recordOutput` (Localizer pose in
-  14, BLine's `withTelemetry(Telemetry.getTable())` in 17, the mechanism
+  never homes without recorded inputs. A record field must be a primitive,
+  enum, record or fixed-layout WPILib type; Lesson 15 found a `Vector<N3>`
+  breaks replay.
+- Their computed values move to `Logger.recordOutput` (the mechanism
   drawings in 19/20/28, which AdvantageKit's `LoggedMechanism2d` can record,
   and so on). Values moved to AdvantageKit appear in SimGUI under
-  **AdvantageKit**, not **Telemetry**, so lesson text that says where to
-  look changes with them.
-- **Lesson 15:** its `REPLAY` arm comment ("nothing feeds this yet") and Try
-  It #5 ("the empty doorway, vision edition", "same dormant doorway Lesson 13
-  built").
+  **AdvantageKit** (inputs at the top level, outputs under `RealOutputs`), not
+  **Telemetry**, so lesson text that says where to look changes with them.
+- **Opmode selection can replay a tick early** (seen twice in Lesson 16's
+  runs, not in 14, 15 or 17): the new opmode is built one tick sooner in the
+  replay. Values matched; worth knowing when a later lesson compares the
+  first tick of an opmode.
 - **Lesson 30:** the framework's `opmode-loop-overrun` alert, which the
   lesson shows as its "raised once" example, no longer exists under
   `LoggedOpModeRobot` (measured: no active alerts after a run). Needs a user
@@ -1180,7 +1218,10 @@ it:
 - **Lesson 33:** its paragraph on `SysIdRoutineLog` contrasts this track with
   "a track with a separate AdvantageKit `Logger`". This is now that track:
   SysId data lands in DataLogManager's file, not AdvantageKit's.
-- **Lesson 34** (unmigrated) must carry Lesson 13's `Robot` when migrated.
+- **Lesson 34** (unmigrated) must carry Lesson 13's `Robot` when migrated,
+  and Lessons 14–16's changes too: the vision record's three trust numbers,
+  `Drivetrain/SimulatedPose` on `Logger.recordOutput`, and the boot reset's
+  `!= Mode.REAL`.
 - Lessons 14, 15 and 17 showed `Robot`'s constructor with
   `DataLogManager.start();`, and 15 showed `extends OpModeRobot`; those
   context lines were updated with this change.
