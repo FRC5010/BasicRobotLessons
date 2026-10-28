@@ -44,7 +44,7 @@ public class Robot extends LoggedOpModeRobot {
    * ====== NEXT LESSON: ADD CODE HERE ======
    * Add the localizer, which owns the fused pose estimate, and a vision pose provider.
    * Declare them after the drivetrain: the localizer reads the drivetrain when it's
-   * built, and the drivetrain's telemetry has to tick before the localizer's does.
+   * built, and the drivetrain has to read its sensors each tick before the localizer does.
    */
 
   /**

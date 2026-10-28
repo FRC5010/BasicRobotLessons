@@ -3,7 +3,8 @@ package first.robot.subsystems;
 import org.wpilib.math.estimator.SwerveDrivePoseEstimator;
 import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.system.Timer;
-import org.wpilib.telemetry.Telemetry;
+
+import org.littletonrobotics.junction.Logger;
 
 public class VisionPoseProvider implements PoseProvider {
   private Pose2d m_pending = null;
@@ -17,7 +18,7 @@ public class VisionPoseProvider implements PoseProvider {
   public void updatePoseEstimate(SwerveDrivePoseEstimator estimator) {
     if (m_pending != null) {
       estimator.addVisionMeasurement(m_pending, Timer.getTimestamp());
-      Telemetry.log("Localizer/VisionPose", m_pending, Pose2d.struct);
+      Logger.recordOutput("Localizer/VisionPose", m_pending);
       m_pending = null;
     }
   }

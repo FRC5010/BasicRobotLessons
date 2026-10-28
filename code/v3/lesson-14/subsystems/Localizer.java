@@ -9,6 +9,8 @@ import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.smartdashboard.Field2d;
 import org.wpilib.telemetry.Telemetry;
 
+import org.littletonrobotics.junction.Logger;
+
 /**
  * Owns the fused pose estimate. Not a Mechanism — it drives no motors and no
  * command ever needs to require it, so all it needs from the scheduler is a
@@ -47,7 +49,7 @@ public class Localizer {
     for (PoseProvider provider : m_providers) {
       provider.updatePoseEstimate(m_estimator);
     }
-    Telemetry.log("Localizer/Pose", getPose(), Pose2d.struct);
+    Logger.recordOutput("Localizer/Pose", getPose());
     m_field.setRobotPose(getPose());
     Telemetry.log("Field", m_field); // the SimGUI field view from Lesson 11
   }
