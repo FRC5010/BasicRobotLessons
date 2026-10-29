@@ -8,7 +8,6 @@ import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.math.geometry.Pose2d;
-import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.Angle;
 import org.wpilib.util.Alert;
 import org.wpilib.util.Alert.Level;
@@ -55,8 +54,6 @@ public class Arm implements Mechanism {
     Logger.processInputs("Arm", m_inputs); // every reading, under Arm/
     Logger.recordOutput("Arm/GoalDegrees", m_goal.in(Degrees));
     Logger.recordOutput("Arm/AtGoal", atGoal());
-    Telemetry.log("Arm/PivotConnected", m_inputs.pivotConnected);
-    Telemetry.log("Arm/RollerConnected", m_inputs.rollerConnected);
 
     // Either motor missing is the same problem from the pit's point of view.
     m_disconnected.set(!m_inputs.pivotConnected || !m_inputs.rollerConnected);

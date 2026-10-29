@@ -20,7 +20,6 @@ import org.wpilib.math.kinematics.SwerveModulePosition;
 import org.wpilib.math.kinematics.SwerveModuleVelocity;
 import org.wpilib.math.trajectory.TrapezoidProfile;
 import org.wpilib.math.util.MathUtil;
-import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.AngularVelocity;
 import org.wpilib.units.measure.LinearVelocity;
 import org.wpilib.util.Alert;
@@ -384,7 +383,6 @@ public class Drivetrain implements Mechanism, PoseProvider {
   private void periodic() {
     m_gyroIO.updateInputs(m_gyroInputs);
     Logger.processInputs("Drivetrain/Gyro", m_gyroInputs);
-    Telemetry.log("Drivetrain/Gyro/Connected", m_gyroInputs.connected);
     m_gyroDisconnected.set(!m_gyroInputs.connected);
 
     SwerveModuleVelocity[] states = new SwerveModuleVelocity[4];

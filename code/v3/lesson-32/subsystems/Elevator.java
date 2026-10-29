@@ -60,7 +60,6 @@ public class Elevator implements Mechanism {
     Telemetry.log("Elevator/HeightErrorMeters", m_inputs.heightMeters - m_goal.in(Meters));
     Telemetry.log("Elevator/AtGoal", atGoal());
     Logger.recordOutput("Elevator/Homed", m_homed);
-    Telemetry.log("Elevator/MotorConnected", m_inputs.motorConnected);
 
     // Set every tick, not raised once: an alert is a statement about how
     // things are now, so it has to be able to go away again.

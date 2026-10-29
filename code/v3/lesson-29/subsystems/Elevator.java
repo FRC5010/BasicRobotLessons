@@ -52,7 +52,7 @@ public class Elevator implements Mechanism {
     Logger.recordOutput("Elevator/Homed", m_homed);
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
-     * Log whether the motor is connected, then set both alerts every tick from what's true right now.
+     * Set both alerts every tick from what's true right now.
      */
 
     // The picture is built once and changed every tick; only the carriage

@@ -219,10 +219,6 @@ public class Robot extends LoggedOpModeRobot {
     // mechanism owns it, and every one of them changes it — so it's the
     // first thing since then with a real reason to live here.
     RoboRioSim.setVInVoltage(BatterySim.calculateDefaultBatteryLoadedVoltage(getTotalCurrentAmps()));
-    /**
-     * ====== NEXT LESSON: ADD CODE HERE ======
-     * Show the active alerts in SimGUI, which can't read them on its own yet. Add a private method after this one that copies them into a table SimGUI draws as an alerts panel.
-     */
   }
 
   /**

@@ -4,7 +4,6 @@ import org.wpilib.math.geometry.Rotation2d;
 import org.wpilib.math.geometry.Translation2d;
 import org.wpilib.math.kinematics.SwerveModulePosition;
 import org.wpilib.math.kinematics.SwerveModuleVelocity;
-import org.wpilib.telemetry.Telemetry;
 import org.wpilib.util.Alert;
 import org.wpilib.util.Alert.Level;
 
@@ -38,7 +37,6 @@ public class SwerveModule {
     m_io.updateInputs(m_inputs);
     // Logs every field of the bundle. In replay, fills them in from the log instead.
     Logger.processInputs(m_logKey, m_inputs);
-    Telemetry.log(m_logKey + "/SteerEncoderConnected", m_inputs.steerEncoderConnected);
     m_steerEncoderDisconnected.set(!m_inputs.steerEncoderConnected);
   }
 

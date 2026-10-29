@@ -64,7 +64,7 @@ public class Flywheel implements Mechanism {
     Logger.recordOutput("Flywheel/AtSpeed", atSpeed());
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
-     * Log whether the motor is connected, and set the alert every tick.
+     * Set the alert every tick, from whether the motor is connected.
      */
     updateDial();
   }

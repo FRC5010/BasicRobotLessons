@@ -55,7 +55,7 @@ public class Arm implements Mechanism {
     Logger.recordOutput("Arm/AtGoal", atGoal());
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
-     * Log both motors' connections, and set the alert every tick if either one is missing.
+     * Set the alert every tick if either motor is missing.
      */
 
     m_ligament.setAngle(toDrawingAngle(Degrees.of(m_inputs.angleDegrees)));

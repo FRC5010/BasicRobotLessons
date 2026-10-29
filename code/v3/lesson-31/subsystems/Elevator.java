@@ -6,7 +6,6 @@ import static org.wpilib.units.Units.Volts;
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
-import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.Distance;
 import org.wpilib.util.Alert;
 import org.wpilib.util.Alert.Level;
@@ -67,7 +66,6 @@ public class Elevator implements Mechanism {
      * Log the "at goal" decision itself, next to the measurements it is built from.
      */
     Logger.recordOutput("Elevator/Homed", m_homed);
-    Telemetry.log("Elevator/MotorConnected", m_inputs.motorConnected);
 
     // Set every tick, not raised once: an alert is a statement about how
     // things are now, so it has to be able to go away again.

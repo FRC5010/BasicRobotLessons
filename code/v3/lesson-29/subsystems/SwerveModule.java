@@ -40,7 +40,7 @@ public class SwerveModule {
     Logger.processInputs(m_logKey, m_inputs);
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
-     * Log whether the CANcoder is connected, and set the alert every tick.
+     * Set the alert every tick, from whether the CANcoder is connected.
      */
   }
 

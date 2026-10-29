@@ -5,7 +5,6 @@ import java.util.function.Supplier;
 import org.wpilib.math.estimator.SwerveDrivePoseEstimator;
 import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.math.geometry.Transform3d;
-import org.wpilib.telemetry.Telemetry;
 import org.wpilib.util.Alert;
 import org.wpilib.util.Alert.Level;
 
@@ -32,7 +31,6 @@ public class LimelightPoseProvider implements PoseProvider {
     m_io.setRobotHeading(estimator.getEstimatedPosition().getRotation());
     m_io.updateInputs(m_inputs);
     Logger.processInputs(m_logKey, m_inputs); // in replay, the frames come from the log
-    Telemetry.log(m_logKey + "/Connected", m_inputs.cameraConnected);
     m_disconnected.set(!m_inputs.cameraConnected);
 
     for (VisionIO.PoseObservation observation : m_inputs.poseObservations) {

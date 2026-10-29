@@ -6,20 +6,14 @@ package first.robot;
 
 import static org.wpilib.units.Units.Volts;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.command3.SchedulerEvent;
 import org.wpilib.command3.button.CommandGamepad;
 import org.wpilib.driverstation.RobotState;
 import org.wpilib.hardware.hal.RobotMode;
-import org.wpilib.simulation.AlertSim;
 import org.wpilib.simulation.BatterySim;
 import org.wpilib.simulation.RoboRioSim;
-import org.wpilib.telemetry.Telemetry;
-import org.wpilib.telemetry.TelemetryTable;
 import org.wpilib.system.DataLogManager;
 import org.wpilib.system.RobotController;
 import org.wpilib.util.Alert;
@@ -229,30 +223,6 @@ public class Robot extends LoggedOpModeRobot {
     // mechanism owns it, and every one of them changes it — so it's the
     // first thing since then with a real reason to live here.
     RoboRioSim.setVInVoltage(BatterySim.calculateDefaultBatteryLoadedVoltage(getTotalCurrentAmps()));
-    showAlerts();
-  }
-
-  /**
-   * Sim only. On a real robot the Driver Station shows alerts, but SimGUI
-   * can't read them on this WPILib. It can draw an alerts panel from a table
-   * holding three lists, though, so fill one in from what the simulator knows.
-   */
-  private void showAlerts() {
-    List<String> errors = new ArrayList<>();
-    List<String> warnings = new ArrayList<>();
-    List<String> infos = new ArrayList<>();
-    for (AlertSim.AlertInfo alert : AlertSim.getActive()) {
-      switch (alert.level) {
-        case HIGH -> errors.add(alert.text);
-        case MEDIUM -> warnings.add(alert.text);
-        case LOW -> infos.add(alert.text);
-      }
-    }
-    TelemetryTable panel = Telemetry.getTable("Alerts");
-    panel.setType("Alerts"); // what tells SimGUI to draw this table as a panel
-    panel.log("errors", errors.toArray(new String[0]));
-    panel.log("warnings", warnings.toArray(new String[0]));
-    panel.log("infos", infos.toArray(new String[0]));
   }
 
   /**
