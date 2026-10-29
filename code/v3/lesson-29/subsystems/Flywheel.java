@@ -5,7 +5,6 @@ import static org.wpilib.units.Units.RotationsPerSecond;
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
-import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.Angle;
 import org.wpilib.units.measure.AngularVelocity;
 
@@ -61,7 +60,6 @@ public class Flywheel implements Mechanism {
   private void periodic() {
     m_io.updateInputs(m_inputs);
     Logger.processInputs("Flywheel", m_inputs); // every reading, under Flywheel/
-    Telemetry.log("Flywheel/SupplyCurrentAmps", m_inputs.supplyCurrentAmps);
     Logger.recordOutput("Flywheel/GoalRps", m_goal.in(RotationsPerSecond));
     Logger.recordOutput("Flywheel/AtSpeed", atSpeed());
     /**

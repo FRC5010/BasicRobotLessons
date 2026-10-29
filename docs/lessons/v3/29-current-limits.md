@@ -245,8 +245,8 @@ default config since Lesson 20.
 
     m_pivot.getConfigurator().apply(config);
 
-    // The roller had been getting a bare default config since it was
-    // built — it draws current too, and now it budgets like everything else.
+    // The roller had been getting a bare default config since it was built —
+    // it draws current too, and now it budgets like everything else.
     TalonFXConfiguration rollerConfig = new TalonFXConfiguration();
     rollerConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     rollerConfig.CurrentLimits.StatorCurrentLimit = PowerConstants.kStatorLimit.in(Amps);
@@ -302,22 +302,11 @@ nothing on this robot knows its own total draw, so start by measuring.
     inputs.rollerSupplyCurrentAmps = m_roller.getSupplyCurrent().getValue().in(Amps);
 ```
 
-Then each subsystem logs its own reading, and answers for itself.
-
-**Add to `Elevator.periodic()`, `Flywheel.periodic()`, and `Arm.periodic()`, below the lines that already log their other inputs:**
-
-```java
-    // Elevator and Flywheel: below the stator line
-    Telemetry.log("Elevator/SupplyCurrentAmps", m_inputs.supplyCurrentAmps);
-    Telemetry.log("Flywheel/SupplyCurrentAmps", m_inputs.supplyCurrentAmps);
-
-    // Arm: below the roller line, one per motor
-    Telemetry.log("Arm/PivotSupplyCurrentAmps", m_inputs.pivotSupplyCurrentAmps);
-    Telemetry.log("Arm/RollerSupplyCurrentAmps", m_inputs.rollerSupplyCurrentAmps);
-```
-
-Each line goes in its own subsystem — the block above just shows all four
-so you can see the pattern.
+There's no log line to add. Each bundle is `@AutoLog`'d, so
+`processInputs` records the new fields along with the old ones the moment
+they exist: `Elevator/SupplyCurrentAmps`, `Flywheel/SupplyCurrentAmps`,
+`Arm/PivotSupplyCurrentAmps` and `Arm/RollerSupplyCurrentAmps`. All that's
+left is for each subsystem to answer for itself.
 
 **Add to `Elevator` and `Flywheel`, near their other getters:**
 
@@ -362,6 +351,32 @@ The logging belongs on a real robot too — a real brownout is exactly the
 thing you'd want in the log — so it goes in `robotPeriodic()`, which runs
 every tick whether the code is real or simulated.
 
+Three numbers go in, and one of them is different. The total current and
+the brownout flag are things your code works out, so they're outputs. The
+battery voltage is a **reading**: on a real robot it's measured, the same
+as an encoder's position. So it's recorded as one, through
+`processInputs`, in a bundle of its own. You've done this once before —
+Lesson 16's `StartingPlacement` was a reading that belonged to no
+subsystem either.
+
+**Create `PowerReadings.java`, next to `Robot.java`:**
+
+```java
+package first.robot;
+
+import org.littletonrobotics.junction.AutoLog;
+
+/**
+ * The battery, the one reading on the robot that belongs to no subsystem.
+ * Recorded like a sensor's, so a replay uses the voltage the robot really
+ * had instead of working one out again.
+ */
+@AutoLog
+public class PowerReadings {
+  public double batteryVolts = 0.0;
+}
+```
+
 **Add to `Robot.robotPeriodic()`, below `Scheduler.getDefault().run()`:**
 
 ```java
@@ -369,12 +384,25 @@ every tick whether the code is real or simulated.
   public void robotPeriodic() {
     Scheduler.getDefault().run();
 
-    double batteryVolts = RobotController.getBatteryVoltage();
-    Telemetry.log("Power/TotalCurrentAmps", getTotalCurrentAmps());
-    Telemetry.log("Power/BatteryVolts", batteryVolts);
-    Telemetry.log("Power/BrownedOut", batteryVolts < PowerConstants.kBrownoutVoltage.in(Volts));
+    // The battery's voltage is a reading, like a sensor's, so it's recorded as
+    // one: a replay gets the voltage the robot really had, not a fresh guess.
+    PowerReadingsAutoLogged power = new PowerReadingsAutoLogged();
+    power.batteryVolts = RobotController.getBatteryVoltage();
+    Logger.processInputs("Power", power);
+    Logger.recordOutput("Power/TotalCurrentAmps", getTotalCurrentAmps());
+    // Compared against the threshold here rather than read from a flag, so the
+    // answer is the same on a robot and in simulation, and you choose the line.
+    Logger.recordOutput(
+        "Power/BrownedOut", power.batteryVolts < PowerConstants.kBrownoutVoltage.in(Volts));
   }
 ```
+
+`processInputs("Power", power)` records the voltage as `Power/BatteryVolts`.
+In a replay it does the opposite, the same as every bundle since Lesson 13:
+it overwrites `power.batteryVolts` with the voltage from the log. That's
+why everything after it reads `power.batteryVolts` and never asks
+`RobotController` again — the brownout flag in a replay is worked out from
+the voltage the robot really had.
 
 > Worth trying, and worth not being surprised by: `RobotController.isBrownedOut()`
 > looks like the obvious call for that boolean, and it exists. It just
@@ -401,6 +429,13 @@ reason to live in that method instead.
     RoboRioSim.setVInVoltage(BatterySim.calculateDefaultBatteryLoadedVoltage(getTotalCurrentAmps()));
   }
 ```
+
+> A replay runs on your laptop, so it's a simulation too, and
+> `simulationPeriodic()` runs in one as well. It works out a battery of its
+> own from the replayed currents — and nothing reads it, because the
+> voltage your code uses came out of the log. Replay a run from a real
+> robot, or one recorded on a different simulated battery, and
+> `Power/BatteryVolts` is still the voltage that run really had.
 
 **Add the imports:**
 
@@ -441,7 +476,8 @@ roboRIO gives up.
 ```
 
 Graph `Power/TotalCurrentAmps` and `Power/BatteryVolts` together in
-AdvantageScope — they're under `/Telemetry/Power`. Drive around normally and
+AdvantageScope. The voltage is a reading, so it's at `/AdvantageKit/Power`;
+the total is an output, at `/AdvantageKit/RealOutputs/Power`. Drive around normally and
 you'll see the voltage twitch and recover — that's the sag every robot has
 all the time.
 
@@ -539,6 +575,15 @@ amps from run to run. That's why some are ranges.)*
    elevator is moving. Then decide whether you actually want that,
    because a shooter that quietly gets slower is worse than one that's
    honestly unavailable.
+6. **Replay a tired battery.** Record the everything-at-once run on
+   section 7's tired battery, put the fresh battery's line back, and
+   replay the log the way Lesson 13 did. `Power/BatteryVolts` in the
+   replay is still the tired battery's, even though the code you replayed
+   simulates a fresh one. Then swap `Logger.processInputs("Power", power)`
+   for `Logger.recordOutput("Power/BatteryVolts", power.batteryVolts)`,
+   do the same again, and compare `RealOutputs/Power/BatteryVolts` with
+   `ReplayOutputs/Power/BatteryVolts`. Explain the gap before you put
+   `processInputs` back.
 
 ---
 
@@ -570,7 +615,9 @@ And the practical one: **a brownout doesn't announce itself.** It looks
 like every subsystem breaking at once for unrelated reasons, which is the
 single most misleading symptom a robot can produce. Three keys — total
 current, battery voltage, and the brownout flag — turn an evening of
-suspicion into a ten-second diagnosis. Put them in before you need them.
+suspicion into a ten-second diagnosis. Put them in before you need them,
+and record the voltage as the reading it is, so a replay looks at the
+battery the robot really had.
 
 That's the robot protected from itself. Go and brown it out a few times
 on purpose — it's the cheapest way to learn what the trace looks like,

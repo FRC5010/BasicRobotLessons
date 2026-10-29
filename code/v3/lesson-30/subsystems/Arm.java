@@ -53,8 +53,6 @@ public class Arm implements Mechanism {
   private void periodic() {
     m_io.updateInputs(m_inputs);
     Logger.processInputs("Arm", m_inputs); // every reading, under Arm/
-    Telemetry.log("Arm/PivotSupplyCurrentAmps", m_inputs.pivotSupplyCurrentAmps);
-    Telemetry.log("Arm/RollerSupplyCurrentAmps", m_inputs.rollerSupplyCurrentAmps);
     Logger.recordOutput("Arm/GoalDegrees", m_goal.in(Degrees));
     Logger.recordOutput("Arm/AtGoal", atGoal());
     Telemetry.log("Arm/PivotConnected", m_inputs.pivotConnected);

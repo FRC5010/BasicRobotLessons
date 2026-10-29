@@ -56,10 +56,6 @@ public class Flywheel implements Mechanism {
   private void periodic() {
     m_io.updateInputs(m_inputs);
     Logger.processInputs("Flywheel", m_inputs); // every reading, under Flywheel/
-    /**
-     * ====== NEXT LESSON: ADD CODE HERE ======
-     * Log the battery-side current beside the winding-side one.
-     */
     Logger.recordOutput("Flywheel/GoalRps", m_goal.in(RotationsPerSecond));
     Logger.recordOutput("Flywheel/AtSpeed", atSpeed());
     updateDial();

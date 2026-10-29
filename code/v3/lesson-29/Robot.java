@@ -13,7 +13,6 @@ import org.wpilib.command3.button.CommandGamepad;
 import org.wpilib.hardware.hal.RobotMode;
 import org.wpilib.simulation.BatterySim;
 import org.wpilib.simulation.RoboRioSim;
-import org.wpilib.telemetry.Telemetry;
 import org.wpilib.system.DataLogManager;
 import org.wpilib.system.RobotController;
 
@@ -180,12 +179,16 @@ public class Robot extends LoggedOpModeRobot {
   public void robotPeriodic() {
     Scheduler.getDefault().run();
 
-    double batteryVolts = RobotController.getBatteryVoltage();
-    Telemetry.log("Power/TotalCurrentAmps", getTotalCurrentAmps());
-    Telemetry.log("Power/BatteryVolts", batteryVolts);
+    // The battery's voltage is a reading, like a sensor's, so it's recorded as
+    // one: a replay gets the voltage the robot really had, not a fresh guess.
+    PowerReadingsAutoLogged power = new PowerReadingsAutoLogged();
+    power.batteryVolts = RobotController.getBatteryVoltage();
+    Logger.processInputs("Power", power);
+    Logger.recordOutput("Power/TotalCurrentAmps", getTotalCurrentAmps());
     // Compared against the threshold here rather than read from a flag, so the
     // answer is the same on a robot and in simulation, and you choose the line.
-    Telemetry.log("Power/BrownedOut", batteryVolts < PowerConstants.kBrownoutVoltage.in(Volts));
+    Logger.recordOutput(
+        "Power/BrownedOut", power.batteryVolts < PowerConstants.kBrownoutVoltage.in(Volts));
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
      * Set the low-battery alert every tick, judging it only while disabled, because a battery under load always reads low.

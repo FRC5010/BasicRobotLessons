@@ -58,7 +58,6 @@ public class Elevator implements Mechanism {
     Logger.processInputs("Elevator", m_inputs); // every reading, under Elevator/
     Logger.recordOutput("Elevator/GoalMeters", m_goal.in(Meters));
     Telemetry.log("Elevator/HeightErrorMeters", m_inputs.heightMeters - m_goal.in(Meters));
-    Telemetry.log("Elevator/SupplyCurrentAmps", m_inputs.supplyCurrentAmps);
     Telemetry.log("Elevator/AtGoal", atGoal());
     Logger.recordOutput("Elevator/Homed", m_homed);
     Telemetry.log("Elevator/MotorConnected", m_inputs.motorConnected);
