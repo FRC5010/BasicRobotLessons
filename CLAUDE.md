@@ -637,13 +637,31 @@ method as 14–27:**
   samples, by up to 2.45 V. The four supply-current `Telemetry.log` lines
   went (recorded with the bundles). New Try It #6 replays a tired-battery
   log.
-- **Lesson 29's peak-draw table didn't reproduce in the real loop.** Eleven
-  runs of home → D-pad up + left trigger + intake together, on the budget:
-  peaks 57.5–102.2 A, lows 9.96–10.85 V (text: 87–94 A, 10.1–10.3 V, measured
-  with a fixed-step probe). Every run did the same thing; the peaks are
-  short spikes (the elevator's supply peak was 6.8 A in one run, 32.4 A in
-  another, on the same climb) that 20 ms samples catch or miss. The table was
-  left alone and flagged to the user.
+- **Lesson 29's tables, re-measured (user decision, 2026-10-29: every row,
+  about ten runs each).** Real `Robot` loop at its 20 ms rate, the same moves
+  every run (Back to home, then D-pad up, left trigger held and the left
+  face button together), ten runs per configuration; peak total draw,
+  battery low point, `BrownedOut`, and the elevator's and flywheel's state
+  when the trigger is released 3 s later.
+  - **Fresh battery** (text rewritten): no limits 199.5–202.4 A /
+    7.95–8.01 V; defaults 96.8–143.7 A / 9.13–10.06 V; budget 58.4–87.4 A /
+    10.25–10.83 V. No brownout in 30 runs; elevator at 1.450 m and flywheel
+    at 60.4 rot/s every time.
+  - **Tired battery** (11 V, 40 mΩ; **text not rewritten, it contradicts
+    the story**): budget 67.4–87.5 A / 7.50–8.31 V, no brownout, everything
+    finishes. **Defaults browned out in 2 of 10 runs** (153 A / 4.87 V, four
+    samples under 6.3 V spread over 0.4–0.8 s; the mechanisms still
+    finished); the other eight 83.8–110.9 A / 6.56–7.65 V. **No limits
+    browned out in 10 of 10**, starting at enable (the flywheel's idle
+    spin-up, before the moves); in 7 runs it collapsed to 0.00 V (peaks
+    368–619 A, elevator reaching 0.13–0.52 m, flywheel peaking 39–51 rot/s
+    and ending at 0), in 3 it dipped to 1.0–2.9 V and the mechanisms
+    finished anyway (flywheel 60.4 or 25 rot/s at release). The story the
+    lesson tells — defaults survive — held in 8 of 10; options are with the
+    user.
+  - Why peaks vary: they're spikes a few ticks long that 20 ms samples
+    catch or miss (the elevator's own supply peak was 6.8 A in one run and
+    32.4 A in another, on the same climb). The fresh table says so.
 - **Lesson 30:** the duplicate `…Connected` log lines went (recorded with
   the bundles). **AdvantageKit records the alerts itself**: `AlertLogger`
   (source) writes each WPILib alert group as outputs every tick, the default
@@ -872,8 +890,10 @@ rate, `DriverStationSim` enabled):**
   higher and collapse the rail to 0 V at 9 and 12.
 - **The lesson's old in-robot brownout did not reproduce.** The three
   mechanisms, even unlimited, peak at 201 A and sag a fresh battery only to
-  7.97 V; defaults 139 A / 9.23 V; the budget 87–94 A / 10.1–10.3 V. Nothing
-  stalls and `Power/BrownedOut` stays false. The old 366 A / 4.7 V is gone.
+  7.97 V; defaults 139 A / 9.23 V; the budget 87–94 A / 10.1–10.3 V (re-
+  measured 2026-10-29 over ten runs each: 200–202 A, 97–144 A and 58–87 A;
+  see the Lessons 28–30 notes). Nothing stalls and `Power/BrownedOut` stays
+  false. The old 366 A / 4.7 V is gone.
   Not homing first makes no difference (the elevator stalls on the frame at
   1.15 m, peak 199 A unlimited).
 - **A tired battery makes the demo.** With
@@ -882,7 +902,9 @@ rate, `DriverStationSim` enabled):**
   near 0.24 m, flywheel peaks 41.6 rot/s and ends at 0; defaults 105–110 A /
   6.6–6.8 V (survives by 0.3–0.5 V); budget 68–83 A / 7.7–8.3 V. Peaks vary a
   few amps run to run, so the lesson gives ranges. After a collapse to 0 V the
-  elevator's logged height is garbage (−1742 m); don't quote it.
+  elevator's logged height is garbage (−1742 m); don't quote it. Re-measured
+  2026-10-29 over ten runs each, the tired rows don't hold as stated
+  (defaults browned out twice in ten); see the Lessons 28–30 notes.
 - **Probe traps:** Maven 429s ("Too Many Requests") on a cold Gradle cache —
   retry after 30 s. `GamepadSim` here has `setDpadUpButton`,
   `setFaceLeftButton`, `setBackButton` and `setLeftTriggerAxis`.

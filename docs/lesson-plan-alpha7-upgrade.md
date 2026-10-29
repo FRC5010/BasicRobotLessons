@@ -1269,10 +1269,16 @@ Each recorded in SIM by a probe driving the real `Robot` and replayed with
   `processInputs("Power", …)` in `robotPeriodic()` (Lesson 16's principle;
   the battery model stays where it was). Measured: a tired-battery log
   replayed through fresh-battery code matched on every `Power` key; logging
-  the voltage as an output instead differed by up to 2.45 V. **Open:** the
-  lesson's peak-draw table (87–94 A, 10.1–10.3 V on the budget) didn't
-  reproduce in the real loop: eleven runs gave 57.5–102.2 A and
-  9.96–10.85 V. Left as is; flagged to the user.
+  the voltage as an output instead differed by up to 2.45 V.
+  **Tables re-measured (user decision, 2026-10-29),** ten runs per
+  configuration in the real loop. Fresh battery, rewritten in the lesson:
+  no limits 200–202 A / 7.95–8.01 V, defaults 97–144 A / 9.13–10.06 V,
+  budget 58–87 A / 10.25–10.83 V, no brownouts. **Open — tired battery,
+  left as it was:** the budget survives (67–88 A, 7.50–8.31 V), but the
+  defaults browned out in 2 of 10 runs (4.87 V), and no limits browned out
+  in all 10 from the moment of enabling, collapsing to 0 V in 7 and
+  finishing anyway in 3. That contradicts "defaults survive", so the text
+  waits on the user.
 - **30 (alerts):** duplicate connected log lines removed. AdvantageKit
   records the alert group itself (`RealOutputs/Alerts`, `.type = "Alerts"`),
   and SimGUI draws it exactly like the hand-built `/Telemetry/Alerts`

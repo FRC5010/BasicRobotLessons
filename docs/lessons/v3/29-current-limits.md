@@ -487,8 +487,8 @@ and press the **intake button** (the left face button), all together. The
 elevator climbs, the flywheel spins up, and the arm swings down with the
 roller running.
 
-With the budget from section 4, the total draw peaks at **87–94 A** and the
-battery bottoms out around **10.1–10.3 V**. Everything works, and
+With the budget from section 4, the total draw peaks at **58–87 A** and the
+battery bottoms out around **10.3–10.8 V**. Everything works, and
 `Power/BrownedOut` stays false.
 
 Now see what the budget bought. Turn every limit off:
@@ -501,15 +501,21 @@ Now see what the budget bought. Turn every limit off:
 ```
 
 *(In `ArmIOTalonFX`, that's `rollerConfig` too.)* Repeat exactly the same
-thing. The draw peaks near **201 A** and the battery sags to **8.0 V**:
+thing. The draw peaks near **200 A** and the battery sags to **8.0 V**:
 worse, and still not a brownout. Delete those limit lines entirely and you're
-on Phoenix's defaults, which peak around **139 A** and sag to **9.2 V**.
+on Phoenix's defaults, which peak around **97–144 A** and sag to
+**9.1–10.1 V**.
 
 | Configuration | Peak draw | Battery low point | |
 |---|---|---|---|
-| No limits at all | 201 A | 7.97 V | sags, survives |
-| Phoenix defaults | 139 A | 9.23 V | fine |
-| The budget above | 87–94 A | 10.1–10.3 V | comfortable |
+| No limits at all | 200–202 A | 7.95–8.01 V | sags, survives |
+| Phoenix defaults | 97–144 A | 9.13–10.06 V | fine |
+| The budget above | 58–87 A | 10.25–10.83 V | comfortable |
+
+*(Ten runs of each, the same moves every time. The peaks are spikes a few
+ticks long, and a 20 ms sample catches some of them and misses others, so
+the same moves read differently from run to run. That's why most of these
+are ranges.)*
 
 Three mechanism motors, even unlimited, can't pull a fresh battery under
 6.3 V. That's honest, and it's the same thing section 3 said: this robot has
