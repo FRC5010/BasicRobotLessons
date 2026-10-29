@@ -50,7 +50,7 @@ status of every lesson, including what changed and why.
 | 29 | [One battery, everything on it](29-current-limits.md) | Current limits chosen as a budget, and a brownout you cause on purpose | None |
 | 30 | [The robot tells you what's wrong](30-alerts.md) | A pre-match checklist the robot runs on itself, surfaced where a human looks, and plugs to pull in sim to prove it | None |
 | 31 | [Tests that catch what a plot won't](31-testing.md) | JUnit tests against your own subsystems, with the simulation running inside them | JUnit, arrange/act/assert |
-| 32 | [Reading a match log](32-reading-a-log.md) | Diagnose a failure that already happened, from the log alone — real replay isn't available on this track yet, so the fix is proven by re-running the same script instead | None |
+| 32 | [Reading a match log](32-reading-a-log.md) | Diagnose a failure that already happened from the log alone, then prove the fix by replaying that same match through the corrected code | None |
 | 33 | [Tuning your robot when build team hands it over](33-tuning-with-sysid.md) | Measure a real machine's gains with a hand-built `SysIdRoutine`, since WPILib's own isn't ported to this framework yet | `Trigger.and(...)`, `EventLoop` |
 | 34 | [Going to get something you just saw](34-object-detection.md) | A camera that finds a game piece, and an approach built while the robot runs | `Command.requiring(...).executing(...)` |
 

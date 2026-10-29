@@ -58,12 +58,12 @@ public class Elevator implements Mechanism {
     Logger.recordOutput("Elevator/GoalMeters", m_goal.in(Meters));
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
-     * Log the signed gap between the height and the goal, so the number that
+     * Record the signed gap between the height and the goal, so the number that
      * explains the "at goal" decision is in the log instead of in your head.
      */
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
-     * Log the "at goal" decision itself, next to the measurements it is built from.
+     * Record the "at goal" decision itself, next to the measurements it is built from.
      */
     Logger.recordOutput("Elevator/Homed", m_homed);
 
