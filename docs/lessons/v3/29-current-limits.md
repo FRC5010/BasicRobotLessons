@@ -532,22 +532,35 @@ end of an event is closer to 11 V with twice the internal resistance.
     RoboRioSim.setVInVoltage(BatterySim.calculateLoadedBatteryVoltage(11.0, 0.04, getTotalCurrentAmps()));
 ```
 
-Run the same three configurations again:
+Run the same three configurations again, ten times each:
 
-| Configuration, 11 V battery, 40 mΩ | Peak draw | Battery low point | |
+| Configuration, 11 V battery, 40 mΩ | Peak draw | Battery low point | Browned out |
 |---|---|---|---|
-| No limits at all | 645 A | 0.00 V | **brownout** |
-| Phoenix defaults | 105–110 A | 6.6–6.8 V | survives, barely |
-| The budget above | 68–83 A | 7.7–8.3 V | survives |
+| No limits at all | 204–619 A | 0.00–2.86 V | **10 of 10** |
+| Phoenix defaults | 84–153 A | 4.87–7.65 V | **2 of 10** |
+| The budget above | 67–88 A | 7.50–8.31 V | 0 of 10 |
 
-With no limits the whole thing collapses. The elevator gets only partway
-(about 0.24 m on its way to 1.45 m) and stalls, the flywheel reaches 41 rot/s
-and then falls to nothing, and `Power/BrownedOut` goes true. Phoenix's
-defaults get through with a few tenths of a volt to spare. The budget has
-more than a volt.
+With no limits the robot browns out the moment you enable it, before you've
+pressed a thing: the flywheel's idle spin-up alone drags the rail under
+6.3 V and `Power/BrownedOut` goes true. Then ask for everything at once. In
+seven of the ten runs the battery collapsed all the way to 0 V. The elevator
+got only 0.13–0.52 m on its way to 1.45 m and stalled, and the flywheel
+reached 39–51 rot/s and then fell to nothing. In the other three the rail
+dipped to 1.0–2.9 V and the robot carried on: the elevator reached the top
+every time, and the flywheel made its 60 rot/s in two of them.
 
-*(Those peaks come from runs of a few seconds each, so they move by a few
-amps from run to run. That's why some are ranges.)*
+Phoenix's defaults are a gamble on this battery. Eight runs got through with
+0.3–1.4 V to spare. The other two browned out partway through the moves,
+dipping to 4.87 V for a few ticks, and still finished. Those two were the
+runs whose peak reached 153 A; none of the other eight passed 111 A. Same
+code, same moves, so you can't know beforehand which kind of run you'll get.
+
+Only the budget was safe every time. Its worst run stayed 1.2 V above the
+line.
+
+*(The peaks vary for the same reason as on the fresh battery, and the
+no-limits ones vary the most: the seven runs that collapsed peaked at
+368–619 A, the three that didn't at 204–249 A.)*
 
 > **The one thing to carry away from watching this:** nothing in the log
 > said "brownout" until you added that line. Everything else just looked
@@ -574,7 +587,8 @@ amps from run to run. That's why some are ranges.)*
    intake. Detect it and light the LEDs from Lesson 23.
 4. **Budget for a sag.** Section 7's tired battery was 11 V and 40 mΩ. Try
    11.5 V and 30 mΩ, a realistic third-match battery, and then find the
-   internal resistance at which even the budget browns out. That's the
+   internal resistance at which even the budget browns out. Run each
+   setting a few times, because one run can get lucky. That's the
    battery you should replace before a match.
 5. **Prioritise.** Right now every mechanism gets its budget regardless
    of what else is happening. Make the flywheel's limit drop while the

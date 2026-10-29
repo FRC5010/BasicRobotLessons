@@ -647,8 +647,8 @@ method as 14–27:**
     7.95–8.01 V; defaults 96.8–143.7 A / 9.13–10.06 V; budget 58.4–87.4 A /
     10.25–10.83 V. No brownout in 30 runs; elevator at 1.450 m and flywheel
     at 60.4 rot/s every time.
-  - **Tired battery** (11 V, 40 mΩ; **text not rewritten, it contradicts
-    the story**): budget 67.4–87.5 A / 7.50–8.31 V, no brownout, everything
+  - **Tired battery** (11 V, 40 mΩ; **text rewritten to report how often,
+    user decision 2026-10-29, option A**): budget 67.4–87.5 A / 7.50–8.31 V, no brownout, everything
     finishes. **Defaults browned out in 2 of 10 runs** (153 A / 4.87 V, four
     samples under 6.3 V spread over 0.4–0.8 s; the mechanisms still
     finished); the other eight 83.8–110.9 A / 6.56–7.65 V. **No limits
@@ -656,9 +656,15 @@ method as 14–27:**
     spin-up, before the moves); in 7 runs it collapsed to 0.00 V (peaks
     368–619 A, elevator reaching 0.13–0.52 m, flywheel peaking 39–51 rot/s
     and ending at 0), in 3 it dipped to 1.0–2.9 V and the mechanisms
-    finished anyway (flywheel 60.4 or 25 rot/s at release). The story the
-    lesson tells — defaults survive — held in 8 of 10; options are with the
-    user.
+    finished anyway (flywheel 60.4 or 25 rot/s at release). The old story,
+    "defaults survive", held in only 8 of 10. The table now has a "Browned
+    out" column (10, 2 and 0 of 10), and the text calls the defaults a
+    gamble and the budget the only configuration safe every time (worst run
+    1.2 V above 6.3 V). The two default brownouts were the two runs that
+    peaked at 153 A; the other eight stayed at or under 111 A. At the first
+    no-limits brownout (0.22–0.24 s after enable) the flywheel is the only
+    motor drawing (126–132 A). Try It #4 now says to run each setting a few
+    times.
   - Why peaks vary: they're spikes a few ticks long that 20 ms samples
     catch or miss (the elevator's own supply peak was 6.8 A in one run and
     32.4 A in another, on the same climb). The fresh table says so.
@@ -903,8 +909,9 @@ rate, `DriverStationSim` enabled):**
   6.6–6.8 V (survives by 0.3–0.5 V); budget 68–83 A / 7.7–8.3 V. Peaks vary a
   few amps run to run, so the lesson gives ranges. After a collapse to 0 V the
   elevator's logged height is garbage (−1742 m); don't quote it. Re-measured
-  2026-10-29 over ten runs each, the tired rows don't hold as stated
-  (defaults browned out twice in ten); see the Lessons 28–30 notes.
+  2026-10-29 over ten runs each: defaults browned out twice in ten, so the
+  lesson now reports how often (user decision, option A); see the Lessons
+  28–30 notes.
 - **Probe traps:** Maven 429s ("Too Many Requests") on a cold Gradle cache —
   retry after 30 s. `GamepadSim` here has `setDpadUpButton`,
   `setFaceLeftButton`, `setBackButton` and `setLeftTriggerAxis`.

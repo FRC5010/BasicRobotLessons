@@ -977,7 +977,9 @@ with the real loop it peaks at 201 A and sags to 7.97 V, no brownout. Rather
 than change what the lesson teaches, section 7 now keeps the same three
 configurations and shows both a fresh battery (honest: sags, survives) and a
 tired one (11 V, 40 mΩ), where no limits browns out, defaults barely survive
-and the budget has margin; Try It #4 was reworded since the tired battery is now
+and the budget has margin (re-measured 2026-10-29: the defaults browned out in
+2 of 10 runs, and the text now says how often; see the 28–30 record below);
+Try It #4 was reworded since the tired battery is now
 in the text. The section 2 and 3 tables were re-measured with bare rigs.
 
 **Lesson 30 migrated, 2026-10-22 (in the main session, not the migration
@@ -1273,12 +1275,14 @@ Each recorded in SIM by a probe driving the real `Robot` and replayed with
   **Tables re-measured (user decision, 2026-10-29),** ten runs per
   configuration in the real loop. Fresh battery, rewritten in the lesson:
   no limits 200–202 A / 7.95–8.01 V, defaults 97–144 A / 9.13–10.06 V,
-  budget 58–87 A / 10.25–10.83 V, no brownouts. **Open — tired battery,
-  left as it was:** the budget survives (67–88 A, 7.50–8.31 V), but the
-  defaults browned out in 2 of 10 runs (4.87 V), and no limits browned out
-  in all 10 from the moment of enabling, collapsing to 0 V in 7 and
-  finishing anyway in 3. That contradicts "defaults survive", so the text
-  waits on the user.
+  budget 58–87 A / 10.25–10.83 V, no brownouts. **Tired battery, decided
+  (user, 2026-10-29, option A: report how often):** the budget survives
+  (67–88 A, 7.50–8.31 V), but the defaults browned out in 2 of 10 runs
+  (4.87 V), and no limits browned out in all 10 from the moment of
+  enabling, collapsing to 0 V in 7 and finishing anyway in 3. The table has
+  a "Browned out" column (10, 2 and 0 of 10); the text calls the defaults a
+  gamble and the budget the only configuration safe every time, and
+  Try It #4 says to run each setting a few times.
 - **30 (alerts):** duplicate connected log lines removed. AdvantageKit
   records the alert group itself (`RealOutputs/Alerts`, `.type = "Alerts"`),
   and SimGUI draws it exactly like the hand-built `/Telemetry/Alerts`
