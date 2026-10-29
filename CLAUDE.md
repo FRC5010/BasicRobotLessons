@@ -412,7 +412,8 @@ loop:
   replay. Each IO-backed lesson needs `@AutoLog` + `processInputs` before
   its lesson replays; vision (15), the elevator (18) and the arm (20) have
   it since the passes below, and with them the Lesson 33 state's path autos
-  drive in replay. The flywheel (28) is the one left.
+  drive in replay. The flywheel (28) has it since 2026-10-29, and the
+  Lesson 33 state's Two Corners now replays with no differing sample.
 - **`Telemetry.log` is not captured by AdvantageKit.** WPILib alpha-7's
   `TelemetryRegistry.registerBackend(prefix, backend)` would let a bridge
   record every `Telemetry.log` too (prototyped and working; `RobotBase`'s
@@ -604,6 +605,75 @@ method as 14–22:**
   Lesson 32's "the `Aim/` keys are absent with tag 220" was measured on
   `Telemetry` and still needs re-measuring on AdvantageKit.
 
+**v3 Lessons 28–30 record with AdvantageKit (2026-10-29), same rules and
+method as 14–27:**
+
+- **Lesson 28:** `@AutoLog` on `FlywheelIOInputs`, `processInputs("Flywheel",
+  …)` (same keys); `GoalRps` and `AtSpeed` are outputs. The speedometer is
+  `LoggedMechanism2d`/`LoggedMechanismRoot2d`/`LoggedMechanismLigament2d`,
+  recorded with `Logger.recordOutput("Flywheel/Dial", …)`, measures passed
+  straight in (`kDialSize.div(2)`, `setAngle(Angle)`). SimGUI draws it live
+  under **NetworkTables → AdvantageKit → RealOutputs → Flywheel → Dial**
+  (Xvfb, needles at the 30 rot/s idle). A teleop spin-up replayed with every
+  flywheel key matching; idle to `AtSpeed` at 60 took 1.21 s. The text's
+  `FlywheelIOTalonFX` had built its motor on `CANBus.systemcore(0)`, which
+  the snapshot never used; fixed.
+- **Lesson 29: the battery voltage is a recorded reading.** AdvantageKit
+  doesn't replay it: `LoggedSystemStats` only saves `SystemStats/BatteryVoltage`
+  (no replay path), and nothing feeds `RobotController.getBatteryVoltage()`
+  from a log. `simulationPeriodic()` does run in `REPLAY`
+  (`LoggedOpModeRobot` calls it whenever `isSimulation()`), so the battery
+  model works out a voltage of its own from the replayed currents. Lesson
+  16's `StartingPlacement` principle, smallest form: `first.robot.PowerReadings`
+  (`@AutoLog`, one field `batteryVolts`), a local in `robotPeriodic()` filled
+  from `RobotController` and passed through `processInputs("Power", …)`, so
+  the key stays `Power/BatteryVolts`. `TotalCurrentAmps` and `BrownedOut` are
+  outputs and read `power.batteryVolts`; so does Lesson 30's low-battery
+  alert. The model stays in `simulationPeriodic()`. Measured: a run recorded
+  on the tired battery (low 8.17 V) and replayed with the default battery
+  line, a stand-in for a real robot's log, matched on every `Power` key; the
+  same run with the voltage as a `recordOutput` differed on 456 of 457
+  samples, by up to 2.45 V. The four supply-current `Telemetry.log` lines
+  went (recorded with the bundles). New Try It #6 replays a tired-battery
+  log.
+- **Lesson 29's peak-draw table didn't reproduce in the real loop.** Eleven
+  runs of home → D-pad up + left trigger + intake together, on the budget:
+  peaks 57.5–102.2 A, lows 9.96–10.85 V (text: 87–94 A, 10.1–10.3 V, measured
+  with a fixed-step probe). Every run did the same thing; the peaks are
+  short spikes (the elevator's supply peak was 6.8 A in one run, 32.4 A in
+  another, on the same climb) that 20 ms samples catch or miss. The table was
+  left alone and flagged to the user.
+- **Lesson 30:** the duplicate `…Connected` log lines went (recorded with
+  the bundles). **AdvantageKit records the alerts itself**: `AlertLogger`
+  (source) writes each WPILib alert group as outputs every tick, the default
+  group as `Alerts` with `.type = "Alerts"` and `errors`/`warnings`/`infos`,
+  most recent first; AdvantageKit's own group is `AlertGroups/AdvantageKit`.
+  A group appears once any `Alert` exists. In SimGUI, **AdvantageKit →
+  RealOutputs → Alerts** drew the same panel as the old `/Telemetry/Alerts`,
+  side by side, and both cleared together, so `showAlerts()` and its imports
+  are gone and §4 points at AdvantageKit's copy. **The "raised once" demo is
+  now the student's own:** §7 has them write `if (!m_gyroInputs.connected) {
+  m_gyroDisconnected.set(true); }`, flip **Unplug Gyro** true then false
+  (measured: up within a tick, still up at the end), and restore the
+  one-line `set`. Try It #8 is a sticky "browned out since boot" alert:
+  measured on the tired battery with every limit off, `BrownedOut` changed
+  119 times and read false at the end at 11.0 V, while the sticky alert
+  stayed up.
+- **Lesson 30 measurements, real `Robot` loop:** boot flicker on 10 of 10
+  fresh launches (elevator, arm and flywheel motors, both cameras and the
+  CANcoders on modules 1–3, all clear the next tick, 0.15–0.27 s later;
+  the flywheel one tick more in 2 of 10). Each unplug switch (gyro,
+  CANcoder 9, limelight-front) raised and cleared its alert on the first
+  tick that read it. Fresh battery: no low-battery warning while enabled;
+  the recorded rail was below 11.5 V for 0.72 s (to 11.26 V) on enable and
+  1.64 s (to 11.19 V) on a shot. Tired battery: warning on the second tick
+  after boot, cleared on enable, back on disable. **Alerts replay:** all
+  five runs (switches, tired battery, raised-once gyro, sticky brownout)
+  replayed with every `Alerts` error and warning on the same ticks.
+- **The Lesson 33 state's Two Corners replays with 0 differing samples**
+  since Lesson 28's pass; the flywheel's disconnected alert clears in the
+  replay as it did live.
+
 **v3 Lesson 26 (drive to pose) was redesigned on 2026-10-26 at the user's
 request: two motion-profiled stages, handing over while moving.** The old
 design ran the Lesson 11 sketch to 5 cm, then three `PIDController`s; the user
@@ -686,6 +756,9 @@ real SimGUI under `Xvfb`:**
   then lists it under **NetworkTables → Telemetry → Alerts** and draws a real
   panel, errors first with a red mark (seen in screenshots). A plain
   `String[]` was tried first; it works but SimGUI truncates it.
+  **Superseded 2026-10-29:** AdvantageKit records the same table on its own
+  (`RealOutputs/Alerts`), and SimGUI draws it the same way, so
+  `showAlerts()` is gone; see the Lessons 28–30 AdvantageKit notes.
 - **`OpModeRobot`'s `Loop time of "0.02"s overrun` (id
   `opmode-loop-overrun`, `MEDIUM`) is only ever `set(true)`** (its watchdog
   callback, read in the alpha-7 source), and the first loop always overran in
@@ -695,8 +768,8 @@ real SimGUI under `Xvfb`:**
   (2026-10-28), that alert no longer exists**: `LoggedOpModeRobot`'s
   watchdog only prints a warning, after 4 × the period (80 ms). Measured on
   the Lesson 33 state after a Two Corners run: `AlertSim.getActive()` is
-  empty. Lesson 30's text (lines ~98, ~197, ~341, ~764) still points at it;
-  how to replace that demonstration is waiting on the user.
+  empty. **Replaced 2026-10-29** by a "raised once" version the student
+  writes on purpose (see the Lessons 28–30 AdvantageKit notes).
 - **The unplug switch (user decision, 2026-10-22: both cameras, the four
   CANcoders and the gyro; "only flip the reading"; a SimGUI switch).**
   `subsystems/UnplugSwitch` makes `SimDevice.create("Unplug " + name)` with
@@ -753,7 +826,8 @@ rate, `DriverStationSim` enabled):**
   was replaced with 28's `Constants`/`Robot`/mechanism files plus only the
   lesson's additions. The port was `Telemetry.log` for `SmartDashboard.put*`,
   `new CANBus(CANPort.CAN_S0)`, and `implements Mechanism`. `Robot` logs
-  `Power/*` in `robotPeriodic()`; keys are under `/Telemetry/Power/`.
+  `Power/*` in `robotPeriodic()`; keys were under `/Telemetry/Power/` (since
+  2026-10-29, the voltage is an AdvantageKit input and the rest outputs).
 - **Unchanged:** a fresh `TalonFXConfiguration` has stator 120 A, supply 70 A,
   both enabled, `SupplyCurrentLowerLimit` 40 A after 1.0 s.
   `RobotController.isBrownedOut()` stays false at 4.0 V held for 2.5 s.
@@ -797,10 +871,12 @@ through the scheduler and with the real `Robot` loop and `GamepadSim`
 - **Did not reproduce:** "pins near 12 V during the climb". From idle (30 to
   60) the applied volts jump to ≈7 V and rise to ≈9 V as the wheel speeds up.
   The lesson says that now.
-- **The dial is logged every tick** (`Telemetry.log("Flywheel/Dial", ...)`
-  at the end of `updateDial`), under `/Telemetry/Flywheel/Dial/Hub/{Speed,Goal}/angle`.
+- **The dial is recorded every tick** (a `LoggedMechanism2d` since
+  2026-10-29, `Logger.recordOutput("Flywheel/Dial", ...)` at the end of
+  `updateDial`), under `/RealOutputs/Flywheel/Dial/Hub/{Speed,Goal}/angle`.
   At 60 rot/s the goal needle reads −198.0° and the speed needle −198.78°
-  with colour `#32CD32`, matching `−90° − 180° × 0.6`.
+  (−198.79° re-measured after the switch) with colour `#32CD32`, matching
+  `−90° − 180° × 0.6`.
 - Release of the trigger falls back to idle in ≈1.5 s (56.4 → 30.4 rot/s).
 - `Models.flywheelFromPhysicalConstants`, `FlywheelSim` and `CANBus(CANPort.CAN_S0)` are unchanged
   in alpha-7; the port was `implements Mechanism`, `Telemetry.log`, and the

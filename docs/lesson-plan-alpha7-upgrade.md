@@ -1250,40 +1250,62 @@ Each recorded in SIM by a probe driving the real `Robot` and replayed with
 - **Checks:** 22–33 compile with zero warnings after each lesson; marker
   checker clean 1–33.
 
-**What Lessons 28–34 now owe Lesson 13** (this list started as "14–34";
-14–27 are done above). Their code compiles and runs; what they don't have
+**Lessons 28–30 record with AdvantageKit, 2026-10-29 (same rules).**
+Each recorded in SIM by a probe driving the real `Robot` and replayed with
+`./gradlew run`; details in CLAUDE.md.
+
+- **28 (flywheel):** `@AutoLog` inputs and `processInputs("Flywheel", …)`;
+  goal and `AtSpeed` are outputs; the speedometer is a `LoggedMechanism2d`
+  recorded with `Logger.recordOutput` (the user's drawing decision), drawn
+  live by SimGUI under AdvantageKit → RealOutputs → Flywheel → Dial. Needle
+  angles re-measured: −198.0° (goal) and −198.79° (speed) at 60 rot/s. The
+  Lesson 33 state now replays Two Corners with no differing sample: the
+  flywheel's disconnected alert clears in replay too.
+- **29 (current limits):** the battery voltage is a recorded reading.
+  AdvantageKit records `SystemStats/BatteryVoltage` but doesn't replay it,
+  and `simulationPeriodic()` runs in `REPLAY`, so a voltage read from
+  `RobotController` would be re-guessed by the battery model in a replay.
+  A one-field `@AutoLog` class, `PowerReadings`, goes through
+  `processInputs("Power", …)` in `robotPeriodic()` (Lesson 16's principle;
+  the battery model stays where it was). Measured: a tired-battery log
+  replayed through fresh-battery code matched on every `Power` key; logging
+  the voltage as an output instead differed by up to 2.45 V. **Open:** the
+  lesson's peak-draw table (87–94 A, 10.1–10.3 V on the budget) didn't
+  reproduce in the real loop: eleven runs gave 57.5–102.2 A and
+  9.96–10.85 V. Left as is; flagged to the user.
+- **30 (alerts):** duplicate connected log lines removed. AdvantageKit
+  records the alert group itself (`RealOutputs/Alerts`, `.type = "Alerts"`),
+  and SimGUI draws it exactly like the hand-built `/Telemetry/Alerts`
+  (checked side by side), so `showAlerts()` is gone and §4 points at
+  AdvantageKit's copy. The "raised once" contrast is now the gyro alert
+  written wrong on purpose and flipped with its unplug switch (§7); a
+  sticky "browned out since boot" alert is Try It #8. Boot flicker 10 of 10
+  launches; every alert follows its switch in a tick; the battery alert's
+  gating holds; every alert replays on the same ticks.
+- **Checks:** 27–33 compile with zero warnings after each lesson; marker
+  checker clean 1–33.
+
+**What Lessons 31–34 now owe Lesson 13** (this list started as "14–34";
+14–30 are done above). Their code compiles and runs; what they don't have
 yet is replay of their own values. Each lesson's own pass, when the user
 picks it:
 
-- The flywheel (28) needs `@AutoLog` on its inputs and
-  `Logger.processInputs` in place of its per-field `Telemetry.log` calls.
-  (Vision 15, elevator 18 and arm 20 are done.) Until then, a replay of the
-  Lesson 33 state keeps the flywheel's disconnected alert up. A record field
-  must be a primitive, enum, record or fixed-layout WPILib type; Lesson 15
-  found a `Vector<N3>` breaks replay. Fields later lessons add to an
-  existing bundle (supply current in 29, `…Connected` in 30) are recorded
-  already, so those lessons' extra `Telemetry.log` lines for them can go.
-- Their computed values move to `Logger.recordOutput` (the flywheel's goal,
-  `AtSpeed` and dial in 28, the `Power/*` totals in 29, Lesson 32's
-  `AtGoal` and `HeightErrorMeters`, and so on). Lesson 28's flywheel dial switches to `LoggedMechanism2d`
-  recorded with `Logger.recordOutput`, as Lessons 19 and 20 did; the
-  `Field2d` widget stays on `Telemetry.log`. Values
-  moved to AdvantageKit appear in SimGUI under
-  **AdvantageKit** (inputs at the top level, outputs under `RealOutputs`), not
-  **Telemetry**, so lesson text that says where to look changes with them.
+- Their computed values move to `Logger.recordOutput`: Lesson 32's
+  `Elevator/AtGoal` and `Elevator/HeightErrorMeters` are the last
+  `Telemetry.log` lines in 31–33. The `Field2d` widget stays on
+  `Telemetry.log`. Values moved to AdvantageKit appear in SimGUI under
+  **AdvantageKit** (inputs at the top level, outputs under `RealOutputs`),
+  not **Telemetry**, so lesson text that says where to look changes with
+  them (Lesson 32's AdvantageScope walkthrough opens `NetworkTables →
+  Telemetry → …`).
 - **Opmode selection can replay a tick early** (seen in the teleop runs of
-  Lessons 16 and 18–24 and 27, not in 14, 15, 17, the Lesson 25 and 26
+  Lessons 16, 18–24 and 27–30, not in 14, 15, 17, the Lesson 25 and 26
   autos or the Lesson 33 autos): the new opmode is built one tick sooner in
   the replay, so a default command set in its constructor starts a tick
   sooner. Lesson 23 showed the same on the disable edge (`Leds/Showing`
   reads "Disabled" a tick sooner). Values matched otherwise; worth knowing
   when a later lesson compares the first tick of an opmode or a mode
   change.
-- **Lesson 30:** the framework's `opmode-loop-overrun` alert, which the
-  lesson shows as its "raised once" example, no longer exists under
-  `LoggedOpModeRobot` (measured: no active alerts after a run). Needs a user
-  decision on what replaces it. Its `SteerEncoderConnected`/`Connected`
-  `Telemetry.log` lines duplicate what `processInputs` will log.
 - **Lesson 32:** says in four places that replay is an empty doorway on this
   track, and the README row says so too; it can now prove its fix by
   replay, as the classic track's lesson does. Its "the three `Aim/` keys are
@@ -1301,7 +1323,9 @@ picks it:
   the beam break), `Sim/GamePieces` on `Logger.recordOutput`, and the
   `LoggedMechanism2d` drawing recorded with `Logger.recordOutput`; then
   Lessons 23–27's outputs (`Elevator/Homed`, `Superstructure/State` and
-  `Rejected`, the three `Aim/` values).
+  `Rejected`, the three `Aim/` values); then Lessons 28–30's (the flywheel's
+  `@AutoLog` bundle and `LoggedMechanism2d` dial, `PowerReadings` and the
+  `Power` outputs, no `…Connected` log lines, no `showAlerts()`).
 - Lessons 14, 15 and 17 showed `Robot`'s constructor with
   `DataLogManager.start();`, and 15 showed `extends OpModeRobot`; those
   context lines were updated with this change.
