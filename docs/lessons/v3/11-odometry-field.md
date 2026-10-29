@@ -167,7 +167,7 @@ Telemetry.log("Drivetrain/Pose", pose, Pose2d.struct);
 
 `Pose2d` is a structured value, like the module states from Lesson 7 — and
 AdvantageScope knows how to *draw* a logged pose, not just plot it. Run
-`./gradlew simulateJava`, then in AdvantageScope:
+the robot in simulation, then in AdvantageScope:
 
 1. Connect to the sim (**File → Connect to Simulator**).
 2. Add an **📐 Odometry** tab and drag `Telemetry/Drivetrain/Pose` onto it.

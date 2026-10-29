@@ -378,7 +378,7 @@ needs the magnet-offset ritual real hardware does.
 
 ## 7. Run it and feel the difference
 
-`./gradlew simulateJava` → **RobotTeleop**, Swerve tab open with both
+Run the robot in simulation → **RobotTeleop**, Swerve tab open with both
 `Telemetry/Drivetrain/ModuleStates` and `Telemetry/Drivetrain/DesiredModuleStates` showing.
 Drive hard, reverse abruptly, spin while translating. The measured arrows
 should hug the desired arrows noticeably tighter than last lesson —

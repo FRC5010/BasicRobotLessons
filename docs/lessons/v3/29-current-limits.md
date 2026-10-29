@@ -469,14 +469,8 @@ roboRIO gives up.
 
 ## 7. Watch one happen
 
-**Run it:**
-
-```powershell
-./gradlew simulateJava
-```
-
-Graph `Power/TotalCurrentAmps` and `Power/BatteryVolts` together in
-AdvantageScope. The voltage is a reading, so it's at `/AdvantageKit/Power`;
+**Run the robot in simulation.** Graph `Power/TotalCurrentAmps` and
+`Power/BatteryVolts` together in AdvantageScope. The voltage is a reading, so it's at `/AdvantageKit/Power`;
 the total is an output, at `/AdvantageKit/RealOutputs/Power`. Drive around normally and
 you'll see the voltage twitch and recover — that's the sag every robot has
 all the time.

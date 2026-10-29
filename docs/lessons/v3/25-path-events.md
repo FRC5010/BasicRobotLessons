@@ -813,14 +813,8 @@ The `release` marker is the plan; `handingRotationBack` is the guarantee.
 
 ## 8. Run it
 
-**Run it:**
-
-```powershell
-./gradlew simulateJava
-```
-
-Set the DS window's **Alliance Station** to **Blue 1** first, the way you did in
-Lesson 17 — the numbers below are for blue.
+**Run the robot in simulation.** Set the DS window's **Alliance Station**
+to **Blue 1** first, the way you did in Lesson 17 — the numbers below are for blue.
 
 **Run Pick Up first, on a fresh launch,** while the piece at (6.0, 3.8) is still
 on the field. Put `Sim/GamePieces` and `Drivetrain/SimulatedPose` on

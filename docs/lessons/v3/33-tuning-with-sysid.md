@@ -488,7 +488,7 @@ clearing two separate hurdles on purpose.
 
 ## 6. Run it, and read what happened
 
-`./gradlew simulateJava`. In SimGUI, pick **RobotUtility** from the opmode
+Run the robot in simulation. In SimGUI, pick **RobotUtility** from the opmode
 selector — same move as picking **My Teleop** back in Lesson 1, just a
 different opmode — then set Robot State to enabled. Hold **Back + the top
 face button** for a few seconds — the wheel should spin up slowly and smoothly.

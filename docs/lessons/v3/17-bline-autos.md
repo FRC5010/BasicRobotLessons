@@ -884,7 +884,7 @@ public final class Autos {
 
 ## 10. Run it
 
-Run `./gradlew simulateJava`. Before you click anything in **Robot State**,
+Run the robot in simulation. Before you click anything in **Robot State**,
 find SimGUI's **DS** window and set **Alliance Station** to **Blue 1**. You
 can only change it while Robot State says *Disconnected*, which it does when
 SimGUI first opens, and it starts on Red 1 every time. (Red works too now —

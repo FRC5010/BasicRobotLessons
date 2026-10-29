@@ -628,7 +628,7 @@ import first.robot.commands.Autos;
 
 ## 11. Run it
 
-`./gradlew simulateJava`. Select **Drive To Pose** and run autonomous with
+Run the robot in simulation. Select **Drive To Pose** and run autonomous with
 the robot starting well away from the target. This opmode doesn't set the
 simulated robot down anywhere the way **Paths** does, so a second run starts
 where the first one ended: on the pose. Drive away in teleop first (or hold

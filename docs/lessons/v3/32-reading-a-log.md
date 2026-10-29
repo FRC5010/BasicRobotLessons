@@ -89,7 +89,7 @@ voltage. It does nothing at all to stop you from meaning millimetres and
 writing micrometres.** The type carries the unit; it was never going to
 carry the magnitude, too.
 
-Run `./gradlew simulateJava`, go **Teleoperated**, press Back to home the
+Run the robot in simulation, go **Teleoperated**, press Back to home the
 elevator (Lesson 21), and then press D-pad right (`kScoreMid`). Watch it. The carriage rises, slows, settles at the
 scoring height, and holds there — exactly like it always has. Nothing
 about this looks broken. That's the second thing worth sitting with, and

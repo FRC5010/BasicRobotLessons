@@ -269,7 +269,7 @@ the two lines in section 5 that move the carriage won't change at all.
 
 ## 7. Watch it
 
-`./gradlew simulateJava`, **Teleoperated**, and press D-pad up.
+Run the robot in simulation, go **Teleoperated**, and press D-pad up.
 
 In **AdvantageScope** (Lesson 3), add a **Mechanism** tab and select
 `/AdvantageKit/RealOutputs/Elevator/Mechanism` as its source. You get a vertical

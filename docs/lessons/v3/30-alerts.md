@@ -255,13 +255,8 @@ import org.wpilib.util.Alert;
 import org.wpilib.util.Alert.Level;
 ```
 
-**Run it:**
-
-```powershell
-./gradlew run
-```
-
-In SimGUI, open **NetworkTables → AdvantageKit → RealOutputs → Alerts**.
+**Run the robot in simulation.** In SimGUI, open **NetworkTables →
+AdvantageKit → RealOutputs → Alerts**.
 The panel says `Elevator has never been homed`, with a yellow warning sign,
 which is correct. Enable Teleoperated and press **Back** to home it, and
 watch the line disappear on its own. Nothing clears it explicitly:

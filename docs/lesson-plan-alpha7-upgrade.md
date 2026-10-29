@@ -1005,7 +1005,8 @@ vision files to hold the 38 markers. Other changes found on the way:
   on alpha-7 GradleRIO**, which writes VS Code's launch file and starts
   nothing. `./gradlew run` starts the robot with SimGUI (checked here).
   Lesson 30 says `run`; the other v3 lessons still say `simulateJava`.
-  Flagged to the user, not swept.
+  Flagged to the user, not swept. *(Decided 2026-10-29: see "The run
+  command, 2026-10-29" below.)*
 
 Measurements and probe recipes are in CLAUDE.md.
 
@@ -1315,6 +1316,19 @@ completes the pass.** Details in CLAUDE.md.
   file. `RobotUtility`'s `EventLoop` replays.
 - **Checks:** 12–33 compile with zero warnings; marker checker clean 1–33;
   33's tests pass; a fresh project updates to 33 and builds.
+
+**The run command, 2026-10-29 (user decision, OpMode track only).** Every
+v3 lesson now says "run the robot in simulation" instead of naming
+`./gradlew simulateJava`, which on alpha-7 GradleRIO runs
+`:simulateExternalJava` and starts nothing (re-checked on the Lesson 0
+state; `./gradlew run` there loads `libhalsim_gui` and starts the robot
+program). Lesson 0 §3 teaches both ways, VS Code's **WPILib: Simulate Robot
+Code** or `./gradlew run`, and says later lessons use the general wording;
+Lessons 13 and 30's plain `./gradlew run` blocks became the same sentence.
+Replay steps (13, 15, 17, 32) keep `./gradlew run`, since they set
+`AKIT_LOG_PATH` in that terminal. The setup aside's build check runs
+`./gradlew run`. The classic track is unchanged. VS Code's button stays
+unverified on alpha-7, as the setup aside says.
 
 **What the AdvantageKit pass leaves: only Lesson 34.** Lessons 13–33 record
 their readings with `processInputs`, their decisions with `recordOutput`,

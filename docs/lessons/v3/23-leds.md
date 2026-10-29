@@ -386,7 +386,7 @@ tick, forever.
 
 ## 8. Run it
 
-`./gradlew simulateJava`. Before you enable anything, find the LED view
+Run the robot in simulation. Before you enable anything, find the LED view
 in **SimGUI** — the strip shows up as a row of colored pixels you can
 watch change.
 

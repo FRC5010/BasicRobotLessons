@@ -149,14 +149,15 @@ Time to see it. Either:
 **Run:**
 
 ```powershell
-./gradlew simulateJava
+./gradlew run
 ```
 
 The very first run downloads a pile of dependencies and can take several
 minutes. Grab a drink.
 
-When the build finishes, VS Code asks if you want Sim GUI and/or Real
-Driverstation. **Sim GUI** is correct for now. When the SimGUI window opens:
+If you started it from VS Code, it asks when the build finishes whether you
+want Sim GUI and/or Real Driverstation. **Sim GUI** is correct for now.
+From the terminal, the SimGUI window just opens. When it does:
 
 - Find the **opmode selector** and pick **My Teleop**.
 - Find the **Robot State** panel and change it from *Disabled* to *Enabled*.
@@ -164,6 +165,10 @@ Driverstation. **Sim GUI** is correct for now. When the SimGUI window opens:
   because there's no motor yet. That's Lesson 1.
 
 Close the window (or hit `Ctrl+C` in the terminal) when you're done.
+
+**From here on, a lesson just says "run the robot in simulation."** That
+means either of the two ways above. Use whichever you like; most people
+end up clicking the button in VS Code.
 
 ---
 
@@ -193,7 +198,7 @@ Every statement in Java does. Forgetting the semicolon is the number-one
 beginner compile error — better to meet the error message now than be
 surprised by it later.
 
-Run `./gradlew simulateJava` again, pick **My Teleop**, flip to
+Run the robot in simulation again, pick **My Teleop**, flip to
 **Enabled**, and glance at the terminal. Your message should be sitting
 right there. You just changed what the robot does.
 

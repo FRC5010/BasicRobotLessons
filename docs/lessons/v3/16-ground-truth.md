@@ -501,7 +501,7 @@ matching the recording on every tick, starting at (3, 3) and at (0, 0).
 It can sit in the constructor because logging already started, in the block
 at the top of `Robot`. A replay loads the log's first tick before anything is
 built, and that tick holds what the constructor recorded.
-Now run it. `./gradlew simulateJava` → **RobotTeleop**. The first thing
+Now run the robot in simulation → **RobotTeleop**. The first thing
 you'll feel is the grip limit: push the stick to full and the robot doesn't
 reach speed instantly — it ramps, the way a real chassis with real tires
 does, and letting go coasts it back down instead of stopping dead. Drive

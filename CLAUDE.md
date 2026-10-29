@@ -865,9 +865,16 @@ real SimGUI under `Xvfb`:**
 - **`./gradlew simulateJava` doesn't start a simulation on alpha-7
   GradleRIO.** There's no such task; Gradle's abbreviation matching runs
   `:simulateExternalJava`, which only writes `build/sim/java.json` for VS
-  Code. `./gradlew run` launches the robot with SimGUI. Lesson 30 says `run`;
-  every other v3 lesson still says `simulateJava` (flagged to the user, not
-  swept).
+  Code. `./gradlew run` launches the robot with SimGUI (re-checked on the
+  Lesson 0 state, 2026-10-29: `libhalsim_gui` loads and the robot program
+  starts). **User decision, 2026-10-29, OpMode track only: no lesson names a
+  sim command any more.** Lesson 0 §3 teaches two ways (VS Code's **WPILib:
+  Simulate Robot Code**, or `./gradlew run` in a terminal) and says every
+  later lesson just says "run the robot in simulation"; the setup aside's
+  build check uses `./gradlew run`. Replay steps (Lessons 13, 15, 17, 32)
+  keep `./gradlew run`, because they need `$env:AKIT_LOG_PATH` set in that
+  terminal. The classic track keeps `./gradlew simulateJava`, which works on
+  WPILib 2026. VS Code's button is still unverified on alpha-7.
 - **SimGUI in this container:** `Xvfb :99 -screen 0 1600x1000x24`, then
   `DISPLAY=:99 ./gradlew run`, screenshots with `import -window root`, and
   clicks with `xdotool` (`apt-get install -y xdotool`). The sim window is
@@ -1462,7 +1469,7 @@ Prose conventions used consistently across lessons:
 - **Bold** on first introduction of a term.
 - Code style in examples: private fields prefixed `m_` (e.g. `m_driveMotor`), constants under nested `public static class XxxConstants` inside [Constants.java](../src/main/java/frc/robot/Constants.java) (student's file), CAN IDs as placeholder integers with an inline `// change to yours` comment.
 - Commands (WPILib `Command`) are produced by factory methods on the subsystem (e.g. `run(() -> …).finallyDo(…)`), not by subclassing `CommandBase`.
-- PowerShell is the assumed shell (`./gradlew simulateJava`), matching a Windows dev environment.
+- PowerShell is the assumed shell (`./gradlew simulateJava`), matching a Windows dev environment. The OpMode track names no sim command: its lessons say "run the robot in simulation" (VS Code's button or `./gradlew run`, both taught in its Lesson 0).
 - When a walkthrough adds code to an **existing** file, never hand the student a bare snippet. Show it inside its surroundings (the enclosing method or class line, with `// ...` anchor comments standing in for neighboring code) and say in prose where it goes **and why it belongs there** — students don't yet know Java file anatomy, and placement reasoning ("fields hold data the object keeps for life, so they go at the top of the class") is part of the lesson. When a lesson introduces a whole new file with several new concepts, build it in labeled pieces top-to-bottom rather than presenting one large block, then show the assembled file for checking.
 - Every code snippet that instructs a change gets a **bold action lead-in** naming the file and where the code goes, on its own line right before the fenced block — e.g. **Edit `Drivetrain.java`:**, **Add to `SwerveModule`, below the fields:**, **Replace `setDesiredState` with:**, **Delete from `Drivetrain`:**. This is the scannable "what to type" header; the surrounding prose still carries the "why".
 - **Mark illustration blocks so they can't be mistaken for instructions.** A snippet that only demonstrates semantics — an API's shape, code the student already has, or a deliberately-wrong version being set up for rejection — gets an *italic* lead-in on its own line saying there's nothing to add, e.g. *Nothing to add — this is just how the class is used:*, *Nothing to add — this is code you already have:*, *Nothing to add — this is the version we're about to reject:*. Italic is the visual opposite of the bold "type this" lead-in, so a skimmer can tell them apart at a glance. Every fenced block should carry one or the other.

@@ -764,7 +764,7 @@ state bindings name motion. Everything about *when* now lives in
 
 ## 9. Run it
 
-`./gradlew simulateJava`. The strip boots red and blinking, same as
+Run the robot in simulation. The strip boots red and blinking, same as
 before — `UNHOMED` still carries a blinking red.
 
 1. **Press the left face button without homing first.** Nothing happens —

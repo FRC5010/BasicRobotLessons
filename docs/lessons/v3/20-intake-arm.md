@@ -764,7 +764,7 @@ import first.robot.Constants.ArmConstants;
 
 ## 9. Run it
 
-`./gradlew simulateJava`, **Teleoperated**. Open AdvantageScope, put the
+Run the robot in simulation and go **Teleoperated**. Open AdvantageScope, put the
 **Mechanism** tab on `/AdvantageKit/RealOutputs/Elevator/Mechanism`, and press the top
 face button (Y).
 

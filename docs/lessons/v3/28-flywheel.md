@@ -721,7 +721,7 @@ bearings were pressed, how much the belt is tensioned.
 
 ## 9. Run it
 
-`./gradlew simulateJava`. Enable teleop and watch `Flywheel/GoalRps` and
+Run the robot in simulation. Enable teleop and watch `Flywheel/GoalRps` and
 `Flywheel/VelocityRps` on the same graph. The wheel should come up to
 30 rot/s on its own and sit there — that's `idle()`, the default command
 the constructor installed.
