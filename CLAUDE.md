@@ -335,7 +335,11 @@ that tag and measured in sim with the real `Robot`:
 **v3 Lesson 13 records with AdvantageKit and replays (user decisions,
 2026-10-28: `Logger.recordOutput` for outputs, Lesson 13 first and later
 lessons one at a time, replay taught with a PowerShell `AKIT_LOG_PATH` line
-and `replayWatch`/VS Code given as other options).** AdvantageKit
+and `replayWatch`/VS Code given as other options). The conversion is
+complete through Lesson 33 (2026-10-29): every lesson 13–33 records its
+readings with `processInputs` and its decisions with `recordOutput`, and
+replays; the per-lesson notes follow this block. Only the unmigrated
+Lesson 34 is left.** AdvantageKit
 `v27.0.0-alpha-7` (tag 2026-10-23, built against WPILib 2027.0.0-alpha-7)
 is the first with `LoggedOpModeRobot` (added 2026-09-30); its vendordep is
 in the marketplace's `2027_alpha7` folder, pinned from Lesson 13 in
@@ -352,9 +356,11 @@ loop:
   LoggedOpModeRobot`, starts logging from an **instance initializer block
   at the top of the class**, and `startLogging()` holds the REAL/SIM/REPLAY
   switch from the classic track. `DataLogManager.start()` moved into its
-  non-replay branch and stays, so `Telemetry.log` values (Lessons 14–33 still
-  use it for their own values) are still saved, in `WPILIB_*.wpilog` beside
-  AdvantageKit's `akit_*.wpilog`.
+  non-replay branch and stays, so what's still published outside
+  AdvantageKit is saved too, in `WPILIB_*.wpilog` beside AdvantageKit's
+  `akit_*.wpilog`: the `Field2d` widget, B-Line's `FollowPath/` values,
+  Lesson 33's SysId signals, and (through NetworkTables) a copy of
+  AdvantageKit's own outputs.
 - **Why the initializer block:** `Logger.start()` exits unless a
   `LoggedOpModeRobot` subclass is on the stack (it scans the stack), and
   AdvantageKit's docs call a subsystem built in a field initializer, before
@@ -403,17 +409,12 @@ loop:
 - **Ripple, all compiled (12–33, zero warnings; 33's tests pass):** the
   lesson-13 changes were carried into every later whole-file copy (`Robot`
   14–30, `Drivetrain` 14–17/25/26/29/30, `GyroIO` 16/29/30, `ModuleIO` and
-  `SwerveModule` 29/30), converting only the lines Lesson 13 introduced;
-  lines a later lesson added keep `Telemetry.log`. Snapshot 34 (unmigrated)
-  was not touched. The Lesson 33 state still runs Two Corners in sim
-  ((3, 3, 0°) → (5.98, 6.02, 178.7°)). **Replaying it is incomplete:**
-  heading and measured module states match, but the auto never drives,
-  because the elevator's inputs aren't recorded yet and it never homes in
-  replay. Each IO-backed lesson needs `@AutoLog` + `processInputs` before
-  its lesson replays; vision (15), the elevator (18) and the arm (20) have
-  it since the passes below, and with them the Lesson 33 state's path autos
-  drive in replay. The flywheel (28) has it since 2026-10-29, and the
-  Lesson 33 state's Two Corners now replays with no differing sample.
+  `SwerveModule` 29/30), converting only the lines Lesson 13 introduced.
+  Each later lesson then had its own pass (14–17, 18–22, 23–27, 28–30,
+  31–33, notes below), which converted its own lines the same way.
+  Snapshot 34 (unmigrated) was not touched. The Lesson 33 state runs Two
+  Corners in sim ((3, 3, 0°) → (5.98, 6.01, 178.9°)) and replays it with
+  no differing sample.
 - **`Telemetry.log` is not captured by AdvantageKit.** WPILib alpha-7's
   `TelemetryRegistry.registerBackend(prefix, backend)` would let a bridge
   record every `Telemetry.log` too (prototyped and working; `RobotBase`'s
@@ -673,6 +674,37 @@ method as 14–27:**
 - **The Lesson 33 state's Two Corners replays with 0 differing samples**
   since Lesson 28's pass; the flywheel's disconnected alert clears in the
   replay as it did live.
+
+**v3 Lessons 31–33 record with AdvantageKit (2026-10-29), the last pass:**
+
+- **Lesson 31:** every `Logger.processInputs` and `recordOutput` overload
+  starts with `if (running)`, and only `Logger.start()` sets it (source). A
+  test never builds `Robot`, so in a test those calls do nothing:
+  `updateInputs` still fills the inputs object, `processInputs` leaves it
+  alone, and no output exists anywhere a test could read back. A callout in
+  §5 says so and points at getters and the inputs. The snapshot's two test
+  files now match the lesson's blocks (comments only had differed).
+- **Lesson 32 replays its fix.** `Elevator/AtGoal` and
+  `HeightErrorMeters` became outputs (the last `Telemetry.log` lines in
+  31–33). Recorded in the real `Robot` loop with the typo (Back, then D-pad
+  right twice): `RealOutputs/Elevator/AtGoal` false all session. The same
+  log replayed through `Centimeters.of(0.1)`: `ReplayOutputs` true 1.20 s
+  after each goal step to 0.75, false for one or two ticks while the
+  carriage overshoots (1.29 mm in the loop), true for good from 1.26 s (two
+  recordings, both presses). Replayed through the typo code it matches the
+  recording. The lesson uses Lesson 13's method and mentions `replayWatch`;
+  every "empty doorway" sentence and the README row are gone. **The v3
+  second example is the `kAimTagId = 220` typo, not the classic's `lib_key`
+  case mismatch** (that one was never in this track); kept, with a note that
+  B-Line's `FollowPath/` values are only in the `WPILIB_` log, which also
+  carries AdvantageKit's outputs via NetworkTables.
+- **Lesson 33:** the SysId signals are in `WPILIB_*.wpilog`, not
+  `akit_*.wpilog`; the lesson now says to open the `WPILIB_` file. Under
+  replay, `RobotUtility`'s own `EventLoop` fires on the replayed buttons and
+  every output matched (`Flywheel/CurrentCommand`'s SysId commands
+  included). The replay also writes a second `WPILIB_` file, because
+  `SysIdRoutineLog` starts `DataLogManager` on first use; its SysId values
+  matched the recording's, with different timestamps.
 
 **v3 Lesson 26 (drive to pose) was redesigned on 2026-10-26 at the user's
 request: two motion-profiled stages, handing over while moving.** The old
@@ -1203,15 +1235,18 @@ source at the pinned commit.
 arguments). Measured with the real `Elevator` homing test: Thread.sleep 20 ms
 → 0.0090 m, 4 ms → 0.0094 m, 0 ms → −0.31 to −0.34 m in 4 of 5 runs and
 0.0100 m in the fifth, so the real-time trap is intermittent, not just a
-cliff. With `setEnabled(true)` removed the test dies at its own
-`isDisabled()` assertion; with that removed too, at `assertTrue(isHomed())`.
+cliff. Re-measured 2026-10-29 (each run its own JVM): 20 ms 0.0090 m twice,
+4 ms 0.0090 and 0.0094 m, 0 ms −0.340 m in 4 of 5 and 0.0094 m in the
+fifth; the lesson's table says that now. With `setEnabled(true)` removed the
+test dies at its own `isDisabled()` assertion; with that removed too, at
+`assertTrue(isHomed())` (re-measured, same).
 Making `canGoTo` let IDLE reach SCORING fails `scoringRequiresSomethingToScore`.
 
 **v3 Lesson 32 (reading a log) on alpha-7, measured with the real `Elevator` homed and ticked at 20 ms, and the real `Robot` loop on Blue 1:**
 
-- The settled error at `kScoreMid` is a flat 0.1159 mm (after a 1.3 mm overshoot); `atGoal()` goes true at 1.24 s with `Centimeters.of(0.1)`.
-- **A slightly-too-tight tolerance can pass by luck.** At `Centimeters.of(0.002)` and even `0.0002`, one tick (1.44 s) lands within 0.001 mm of the goal as the carriage comes back through it, so `goToHeight` ends. At `0.00002` it never ends (15 s). The lesson's typo is the latter.
-- **Aim While Driving with `kAimTagId = 220`:** override active ≈3.7 s as normal, heading stays 0.0° (fixed: ≈ −100°), finish (8.04, 7.00) vs (8.01, 7.02); `Aim/ErrorDegrees`, `FeedforwardRadPerSec` and `IsAimed` are never published (150 `/Telemetry/` topics vs 153). `Localizer/Pose` is a struct, so read the pose from `robot.localizer`, not NT.
+- The settled error at `kScoreMid` is a flat 0.1159 mm (after a 1.3 mm overshoot); `atGoal()` goes true at 1.24 s with `Centimeters.of(0.1)`. Re-measured 2026-10-29 on the AdvantageKit code, fixed 20 ms rate: −0.1159 mm (short of the goal), overshoot 1.36 mm, `goToHeight` ends at 1.26 s.
+- **A slightly-too-tight tolerance can pass by luck.** At `Centimeters.of(0.002)` and even `0.0002`, one tick (1.44 s; 1.46 s re-measured, within 0.00094 mm) lands within 0.001 mm of the goal as the carriage comes back through it, so `goToHeight` ends. At `0.00002` it never ends (15 s). The lesson's typo is the latter.
+- **Aim While Driving with `kAimTagId = 220`:** override active ≈3.7 s as normal, heading stays 0.0° (fixed: ≈ −100°), finish (8.04, 7.00) vs (8.01, 7.02); `Aim/ErrorDegrees`, `FeedforwardRadPerSec` and `IsAimed` are never published (150 `/Telemetry/` topics vs 153). Re-measured on AdvantageKit (2026-10-29): with tag 20 the three keys are in the `akit_` log and (via NetworkTables) the `WPILIB_` log, with 220 in neither; override 3.72 / 3.70 s, on 0.58 s into the drive; with tag 20 the heading follows the bearing to about −124° by `release`. `Localizer/Pose` is a struct, so read the pose from `robot.localizer`, not NT.
 - **Probe trap:** a sandbox `kTolerance` left at the broken value makes `Superstructure.isSettled()` never true, so every path auto waits forever at `IDLE` and the robot never drives. Reset it before probing autos.
 
 **v3 Lesson 33 (SysId) on alpha-7, measured with the real `Flywheel`, the real `ElevatorIOTalonFX` and the real `Robot` loop (20 ms ticks):**
@@ -1221,7 +1256,7 @@ Making `canGoTo` let IDLE reach SCORING fails `scoringRequiresSomethingToScore`.
 - **Percent of steady state** (steady = 8.4 rot/s per volt, measured 1–5 V): 1 V/s ramp 36.1 / 58.0 / 69.8 / 76.8 / 81.3 % at 1–5 V; 0.5 V/s 57.3–90.7 %; 0.25 V/s 75.7 / 88.3 / 92.2 / 94.1 / 95.3 %. Dynamic 7 V reaches 58.5 rot/s (58.6 predicted).
 - **Open-loop elevator limits** (real `ElevatorIOTalonFX`, physics widened to ±20 m, started at 0): 6 V for 4 s ends at 2.565 m without the forward soft limit and 1.502 m with it, applied 0.000 V. Ramp to 6 V travels 1.880 / 3.768 / 7.537 m at 1.0 / 0.5 / 0.25 V/s. A 1.5 s step travels 1.101 / 0.623 / 0.300 m at 7 / 4 / 2 V.
 - **A reverse soft limit at `kMinHeight` still fights homing**: normal homing from the 0.35 m boot height finishes in 3.68 s, with the limit 17.34 s (2 cm/s against 9). It completes, so it looks like a weak motor.
-- `SysIdRoutineLog` still writes through `DataLogManager.getLog()` (bytecode). A real run's `.wpilog` holds `sysid-test-state-flywheel`, `voltage-flywheel-flywheel` and `velocity-flywheel-flywheel`. Alpha-7 has no `SysIdRoutine` in `commandsv3` or `wpilibj` (only `org.wpilib.sysid.SysIdRoutineLog`), so the hand-built `commands/SysIdRoutine` stays. `Flywheel` is `implements Mechanism` now, and the routine takes the `Mechanism` interface.
+- `SysIdRoutineLog` still writes through `DataLogManager.getLog()` (bytecode). A real run's `.wpilog` holds `sysid-test-state-flywheel`, `voltage-flywheel-flywheel` and `velocity-flywheel-flywheel`. Since Lesson 13's AdvantageKit that's the `WPILIB_*.wpilog`, never the `akit_*.wpilog` beside it (measured 2026-10-29), and the lesson says to open the `WPILIB_` file. Alpha-7 has no `SysIdRoutine` in `commandsv3` or `wpilibj` (only `org.wpilib.sysid.SysIdRoutineLog`), so the hand-built `commands/SysIdRoutine` stays. `Flywheel` is `implements Mechanism` now, and the routine takes the `Mechanism` interface.
 - **Probe trap:** `verify-lessons-v3.sh` `rm -rf`s its sandbox every run, probe files included. Copy probes in after it, then run `./gradlew cleanTest test --tests '*Probe'` in the sandbox. Maven Central returned 429 once while resolving `junit-jupiter-params`; a retry fixed it.
 
 **Use it instead of reasoning about whether a snippet compiles.** Current state: lessons 0–34 all compile, at every intermediate stopping point, with zero warnings. A regression is therefore a real result, not noise. Run the specific lesson you touched plus the highest one.

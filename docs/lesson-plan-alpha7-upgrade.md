@@ -1285,47 +1285,55 @@ Each recorded in SIM by a probe driving the real `Robot` and replayed with
 - **Checks:** 27–33 compile with zero warnings after each lesson; marker
   checker clean 1–33.
 
-**What Lessons 31–34 now owe Lesson 13** (this list started as "14–34";
-14–30 are done above). Their code compiles and runs; what they don't have
-yet is replay of their own values. Each lesson's own pass, when the user
-picks it:
+**Lessons 31–33 record with AdvantageKit, 2026-10-29 (same rules), which
+completes the pass.** Details in CLAUDE.md.
 
-- Their computed values move to `Logger.recordOutput`: Lesson 32's
-  `Elevator/AtGoal` and `Elevator/HeightErrorMeters` are the last
-  `Telemetry.log` lines in 31–33. The `Field2d` widget stays on
-  `Telemetry.log`. Values moved to AdvantageKit appear in SimGUI under
-  **AdvantageKit** (inputs at the top level, outputs under `RealOutputs`),
-  not **Telemetry**, so lesson text that says where to look changes with
-  them (Lesson 32's AdvantageScope walkthrough opens `NetworkTables →
-  Telemetry → …`).
-- **Opmode selection can replay a tick early** (seen in the teleop runs of
-  Lessons 16, 18–24 and 27–30, not in 14, 15, 17, the Lesson 25 and 26
-  autos or the Lesson 33 autos): the new opmode is built one tick sooner in
-  the replay, so a default command set in its constructor starts a tick
-  sooner. Lesson 23 showed the same on the disable edge (`Leds/Showing`
-  reads "Disabled" a tick sooner). Values matched otherwise; worth knowing
-  when a later lesson compares the first tick of an opmode or a mode
-  change.
-- **Lesson 32:** says in four places that replay is an empty doorway on this
-  track, and the README row says so too; it can now prove its fix by
-  replay, as the classic track's lesson does. Its "the three `Aim/` keys are
-  absent with a typo'd tag ID" should still hold (an output that's never
-  recorded never appears), but it was measured on `Telemetry` and needs
-  re-measuring.
-- **Lesson 33:** its paragraph on `SysIdRoutineLog` contrasts this track with
-  "a track with a separate AdvantageKit `Logger`". This is now that track:
-  SysId data lands in DataLogManager's file, not AdvantageKit's.
-- **Lesson 34** (unmigrated) must carry Lesson 13's `Robot` when migrated,
-  and Lessons 14–22's changes too: the vision record's three trust numbers,
-  `Drivetrain/SimulatedPose` on `Logger.recordOutput`, the recorded
-  `StartingPlacement` and its boot reset, the elevator's and arm's `@AutoLog` bundles with
-  `processInputs` (and no separate log lines for the switch, the current or
-  the beam break), `Sim/GamePieces` on `Logger.recordOutput`, and the
-  `LoggedMechanism2d` drawing recorded with `Logger.recordOutput`; then
-  Lessons 23–27's outputs (`Elevator/Homed`, `Superstructure/State` and
-  `Rejected`, the three `Aim/` values); then Lessons 28–30's (the flywheel's
-  `@AutoLog` bundle and `LoggedMechanism2d` dial, `PowerReadings` and the
-  `Power` outputs, no `…Connected` log lines, no `showAlerts()`).
+- **31 (testing):** `processInputs`/`recordOutput` do nothing until
+  `Logger.start()` (every overload checks `running`), and a test never
+  builds `Robot`; the lesson says a test reads getters and inputs, not the
+  log. The sleep-trap table re-measured: 0.0090 m at 20 ms, 0.0090–0.0094 m
+  at 4 ms, −0.34 m in 4 of 5 at 0 ms (0.0094 m in the fifth).
+- **32 (reading a log):** proves its fix by replay, as classic Lesson 33
+  does. Recorded with the typo, replayed through the fix:
+  `ReplayOutputs/Elevator/AtGoal` true 1.20 s after the goal steps to 0.75,
+  for good from 1.26 s, while `RealOutputs` stays false. `AtGoal` and
+  `HeightErrorMeters` are outputs. Every "empty doorway" reference and the
+  README row are gone. The tag-ID typo example stays, now opened from the
+  `WPILIB_` log, because B-Line's values are only there.
+- **33 (SysId):** the SysId signals land in `WPILIB_*.wpilog`, beside
+  AdvantageKit's `akit_*.wpilog`; the lesson says to open the `WPILIB_`
+  file. `RobotUtility`'s `EventLoop` replays.
+- **Checks:** 12–33 compile with zero warnings; marker checker clean 1–33;
+  33's tests pass; a fresh project updates to 33 and builds.
+
+**What the AdvantageKit pass leaves: only Lesson 34.** Lessons 13–33 record
+their readings with `processInputs`, their decisions with `recordOutput`,
+and replay. The `Field2d` widget, B-Line's own values and the SysId signals
+stay outside AdvantageKit on purpose, in the `WPILIB_` log.
+
+- **Opmode selection and mode changes can replay a tick early** (seen in
+  the teleop runs of Lessons 16, 18–24 and 27–30, not in 14, 15, 17, the
+  Lesson 25 and 26 autos, the Lesson 33 autos or its Utility run): the new
+  opmode is built, or the disable seen, one tick sooner in the replay.
+  Values matched otherwise.
+- **Lesson 34** (unmigrated, waiting on an alpha-7 PhotonLib) must, when
+  migrated, carry Lesson 13's `Robot` and every later lesson's changes:
+  the vision record's three trust numbers, `Drivetrain/SimulatedPose` on
+  `Logger.recordOutput`, the recorded `StartingPlacement`, the elevator's,
+  arm's and flywheel's `@AutoLog` bundles with `processInputs` (no separate
+  log lines for the switch, currents, beam break or `…Connected`),
+  `Sim/GamePieces`, the `LoggedMechanism2d` drawings (elevator and arm from
+  19/20, the dial from 28) recorded with `Logger.recordOutput`, Lessons
+  23–27's outputs (`Elevator/Homed`, `Superstructure/State` and `Rejected`,
+  the three `Aim/` values), `PowerReadings` and the `Power` outputs, no
+  `showAlerts()` (AdvantageKit records the alerts), and Lesson 32's
+  `AtGoal`/`HeightErrorMeters` outputs. Its own object detection follows
+  the same rules: the detections are an `@AutoLog` input through
+  `processInputs` (record fields must be primitives, enums, records or
+  fixed-layout WPILib types; Lesson 15 found a `Vector<N3>` breaks replay),
+  the chosen target and anything worked out from them are outputs, any
+  drawing is a `Logged…` class on `recordOutput`, and its alerts follow
+  Lesson 30 (set every tick from recorded inputs).
 - Lessons 14, 15 and 17 showed `Robot`'s constructor with
   `DataLogManager.start();`, and 15 showed `extends OpModeRobot`; those
   context lines were updated with this change.
