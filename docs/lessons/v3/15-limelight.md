@@ -832,7 +832,7 @@ it.
 anymore, because there's no fake camera left. **Then delete the three imports
 only that method used:** `Command`, `Pose2d`, and `Rotation2d`.
 
-Now run it. `./gradlew simulateJava` → **RobotTeleop**, and watch the
+Now run the robot in simulation → **RobotTeleop**, and watch the
 **Field** widget in SimGUI next to `Localizer/limelight-front/PoseObservations`
 and `Localizer/limelight-back/PoseObservations`. They're inputs now, so look
 for them under **NetworkTables → AdvantageKit → Localizer**, not under

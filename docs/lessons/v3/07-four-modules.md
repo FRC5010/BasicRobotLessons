@@ -643,7 +643,7 @@ project should compile clean again.
 
 ## 7. Run it
 
-`./gradlew simulateJava` → **My Teleop** → **Enabled**. In AdvantageScope, connect to
+Run the robot in simulation → **My Teleop** → **Enabled**. In AdvantageScope, connect to
 the sim and plot all four `Drivetrain/Module0..3/SteerAngleDegrees` values on
 one graph. Push the stick — all four traces should snap to the same value.
 Hold the left bumper — they should split into the four rotate-in-place angles

@@ -92,17 +92,8 @@ Three levels, and the difference is what a human should do about it:
 and you call it *every tick* with the current answer. You don't "raise"
 an alert when something breaks. An alert describes how things are right
 now, which means it has to be able to go away by itself when somebody
-plugs the cable back in.
-
-`OpModeRobot` itself has an alert, and it shows what happens when you don't
-do that. Its loop-overrun warning, `Loop time of "0.02"s overrun`, is set to
-true whenever a loop runs long, and nothing ever sets it back. The first
-loop after boot has run long every time we've measured it, while
-everything warms up: in one run its `robotPeriodic()` alone took almost
-half a second, against a 0.02 s budget. So that warning is up from the
-first moment and stays up for the rest of the session. It means "this has happened since boot", which
-is a different kind of statement. Every alert you write in this lesson means
-"this is true right now".
+plugs the cable back in. Section 7 has you write the other version on
+purpose, so you can watch exactly what goes wrong.
 
 **Where alerts show up is new.** On a real robot they go to the **2027
 Driver Station** app. WPILib's
@@ -112,91 +103,29 @@ Station"*. They used to be a dashboard trick riding on NetworkTables. Now
 they're part of the driver station itself, which is a better home for
 "should I be worried right now".
 
-SimGUI can't show them yet, though. On this version of WPILib, alerts
-are kept inside the robot program, and SimGUI has no way to read them.
-So before writing a single alert of your own, give yourself somewhere to
-see them.
+SimGUI can't read them on its own, though. On this version of WPILib,
+alerts are kept inside the robot program, and SimGUI has no way in.
+Something already running in your robot can, which is the next section.
 
 ---
 
 ## 4. Somewhere to see them
 
-WPILib's simulation tools include **`AlertSim`**, which can list every
-alert that's currently active. SimGUI can't read alerts, but it can draw an
-**alerts panel**, the red-and-yellow list a dashboard shows. It draws one
-from a table of three lists of text: `errors`, `warnings` and `infos`. So
-every tick, in simulation only, copy one into the other.
+There's nothing to build here. Since Lesson 13, AdvantageKit has recorded
+everything the robot works out, every tick, and alerts are part of that.
+Each tick it collects every active alert and records them as outputs under
+`Alerts`, sorted into three lists of text: `errors`, `warnings` and
+`infos`. It also marks that group with the type `Alerts`, and that's a type
+SimGUI knows how to draw: an **alerts panel**, the red-and-yellow list a
+dashboard shows.
 
-**Add to `Robot`, below `simulationPeriodic()`:**
+It's an output like any other, which means a replay rebuilds it. Every
+alert in this lesson is set from readings the log already has, so a replay
+raises the same alerts on the same ticks the robot did.
 
-```java
-  /**
-   * Sim only. On a real robot the Driver Station shows alerts, but SimGUI
-   * can't read them on this WPILib. It can draw an alerts panel from a table
-   * holding three lists, though, so fill one in from what the simulator knows.
-   */
-  private void showAlerts() {
-    List<String> errors = new ArrayList<>();
-    List<String> warnings = new ArrayList<>();
-    List<String> infos = new ArrayList<>();
-    for (AlertSim.AlertInfo alert : AlertSim.getActive()) {
-      switch (alert.level) {
-        case HIGH -> errors.add(alert.text);
-        case MEDIUM -> warnings.add(alert.text);
-        case LOW -> infos.add(alert.text);
-      }
-    }
-    TelemetryTable panel = Telemetry.getTable("Alerts");
-    panel.setType("Alerts"); // what tells SimGUI to draw this table as a panel
-    panel.log("errors", errors.toArray(new String[0]));
-    panel.log("warnings", warnings.toArray(new String[0]));
-    panel.log("infos", infos.toArray(new String[0]));
-  }
-```
-
-**And call it at the end of `simulationPeriodic()`, below the battery line:**
-
-```java
-  @Override
-  public void simulationPeriodic() {
-    // ...
-    RoboRioSim.setVInVoltage(BatterySim.calculateDefaultBatteryLoadedVoltage(getTotalCurrentAmps()));
-    showAlerts();
-  }
-```
-
-**Add the imports:**
-
-```java
-import java.util.ArrayList;
-import java.util.List;
-
-import org.wpilib.simulation.AlertSim;
-import org.wpilib.telemetry.TelemetryTable;
-```
-
-The `switch` is the arrow-style one you've used since Lesson 13 to pick an
-IO, used here to do something instead of to produce a value.
-`toArray(new String[0])` turns each list into the plain array
-`TelemetryTable.log` takes. `setType` is the line that matters most: a
-table that announces a type is what SimGUI lists under its NetworkTables
-menu. That's how Lesson 11's field and Lesson 19's mechanism drawing got
-there, and `"Alerts"` is one more type it knows how to draw.
-
-It lives in `simulationPeriodic()` for the same reason Lesson 29's battery
-model does: it isn't any subsystem's job. When SimGUI learns to read alerts
-on its own, delete it.
-
-**Run it:**
-
-```powershell
-./gradlew run
-```
-
-In SimGUI, open **NetworkTables → Telemetry → Alerts**. One line is
-already there: the framework's own `Loop time of "0.02"s overrun`, with a
-yellow warning sign. Everything else in this lesson lands in that same
-panel.
+The group only appears once the robot has an alert to put in it, so there's
+nothing to look at yet. Section 6 writes the first ones, and you'll open
+the panel then.
 
 ---
 
@@ -251,6 +180,11 @@ connected, as far as anyone can prove.
     inputs.rollerConnected = m_roller.isConnected();
 ```
 
+That's all it takes to get them into the log. The bundles are `@AutoLog`'d,
+so `processInputs` records the new fields the moment they exist:
+`Elevator/MotorConnected`, `Flywheel/MotorConnected`, `Arm/PivotConnected`
+and `Arm/RollerConnected`.
+
 ---
 
 ## 6. Alerts that belong to a subsystem
@@ -271,11 +205,9 @@ alerts.
       new Alert("Elevator/NotHomed", "Elevator has never been homed", Level.MEDIUM);
 ```
 
-**Add to `Elevator.periodic()`, below the `Homed` log line:**
+**Add to `Elevator.periodic()`, below the `Homed` line:**
 
 ```java
-    Telemetry.log("Elevator/MotorConnected", m_inputs.motorConnected);
-
     // Set every tick, not raised once: an alert is a statement about how
     // things are now, so it has to be able to go away again.
     m_disconnected.set(!m_inputs.motorConnected);
@@ -296,12 +228,9 @@ this is the part that tells a human.
       new Alert("Arm/Disconnected", "Arm motor is not on the CAN bus", Level.HIGH);
 ```
 
-**And to `Arm.periodic()`, below the `AtGoal` log line:**
+**And to `Arm.periodic()`, below the `AtGoal` line:**
 
 ```java
-    Telemetry.log("Arm/PivotConnected", m_inputs.pivotConnected);
-    Telemetry.log("Arm/RollerConnected", m_inputs.rollerConnected);
-
     // Either motor missing is the same problem from the pit's point of view.
     m_disconnected.set(!m_inputs.pivotConnected || !m_inputs.rollerConnected);
 ```
@@ -313,10 +242,9 @@ this is the part that tells a human.
       new Alert("Flywheel/Disconnected", "Flywheel motor is not on the CAN bus", Level.HIGH);
 ```
 
-**And to `Flywheel.periodic()`, below the `AtSpeed` log line:**
+**And to `Flywheel.periodic()`, below the `AtSpeed` line:**
 
 ```java
-    Telemetry.log("Flywheel/MotorConnected", m_inputs.motorConnected);
     m_disconnected.set(!m_inputs.motorConnected);
 ```
 
@@ -327,18 +255,21 @@ import org.wpilib.util.Alert;
 import org.wpilib.util.Alert.Level;
 ```
 
-**Run it again.** The panel now says `Elevator has never been homed`,
+**Run the robot in simulation.** In SimGUI, open **NetworkTables →
+AdvantageKit → RealOutputs → Alerts**.
+The panel says `Elevator has never been homed`, with a yellow warning sign,
 which is correct. Enable Teleoperated and press **Back** to home it, and
 watch the line disappear on its own. Nothing clears it explicitly:
 `set(false)` runs every tick once `m_homed` is true.
 
-You may also catch a burst of red the moment the robot starts. On the very
-first tick, measured, the elevator, arm and flywheel motors all read
-disconnected, and a tick later they're fine. Those motors were built only a
-moment before that first tick, and a device needs a moment to come up on a
-CAN bus, real or simulated. It's the clearest proof there is of why alerts
-are set every tick. An alert raised once on that first tick would never
-have gone away, just like the framework's overrun warning.
+You may also catch a burst of red the moment the robot starts. It happens on
+every launch: measured over ten fresh launches, on the very first tick the
+elevator, arm and flywheel motors read disconnected every time, and by the
+next tick, about a fifth of a second later, they were fine. Those motors
+were built only a moment before that first tick, and a device needs a
+moment to come up on a CAN bus, real or simulated. It's the clearest proof
+there is of why alerts are set every tick. An alert raised once on that
+first tick would never go away, on any boot, on any robot.
 
 ---
 
@@ -372,12 +303,10 @@ The `Drivetrain` owns the gyro's inputs, so it owns the alert.
 **And to `Drivetrain.periodic()`, below the gyro's `processInputs` line:**
 
 ```java
-    Telemetry.log("Drivetrain/Gyro/Connected", m_gyroInputs.connected);
     m_gyroDisconnected.set(!m_gyroInputs.connected);
 ```
 
-**Add the same two imports to `Drivetrain`, and
-`import org.wpilib.telemetry.Telemetry;` for the log line.**
+**Add the same two imports to `Drivetrain`.**
 
 Now look at `GyroIOSim`. It doesn't have a gyro. Since Lesson 16 it has
 simply reported the simulated chassis's true heading, so there's no device
@@ -457,6 +386,32 @@ within one tick.
 > otherwise has no way to fire on a laptop. What the robot should *do*
 > without a gyro is a separate question, and a much bigger one.
 
+Now you have a cable you can pull whenever you like, which makes this the
+place to see what "raised once" does. Write the alert the tempting way — set
+it when something breaks, and otherwise leave it alone.
+
+*Nothing to add — an experiment to run and undo, in `Drivetrain.periodic()`, in place of the `set` line:*
+
+```java
+    if (!m_gyroInputs.connected) {
+      m_gyroDisconnected.set(true);
+    }
+```
+
+Run it, set **Unplug Gyro** to **true**, then back to **false**. The alert
+appears within a tick, as before, and then it stays. The gyro is answering
+again and the panel still says it isn't, and nothing in that code can ever
+change its mind: the only call left says `true`. Measured, it was still up
+at the end of the run. A replay of that log raises it on the same tick and
+keeps it up just the same, because the mistake is in the code, not the
+readings.
+
+**Put the one-line `m_gyroDisconnected.set(!m_gyroInputs.connected);` back**,
+and the same flip clears it within a tick.
+
+That's what every motor alert in section 6 would have done on its first
+tick, on every boot: a panel full of red that never goes away, which
+everyone learns to ignore by the second day.
 ---
 
 ## 8. The CANcoders
@@ -505,12 +460,10 @@ is told that.
 **And at the end of `SwerveModule.periodic()`:**
 
 ```java
-    Telemetry.log(m_logKey + "/SteerEncoderConnected", m_inputs.steerEncoderConnected);
     m_steerEncoderDisconnected.set(!m_inputs.steerEncoderConnected);
 ```
 
-**Add the two `Alert` imports to `SwerveModule`, and
-`import org.wpilib.telemetry.Telemetry;` for the log line.**
+**Add the two `Alert` imports to `SwerveModule`.**
 
 Unlike the gyro, the simulated CANcoder is a real Phoenix sim device, and it
 answers `isConnected()` like a real one. So its switch can only take a
@@ -589,12 +542,10 @@ quarter of a second, doesn't count.
 **And in `updatePoseEstimate`, below the `processInputs` line:**
 
 ```java
-    Telemetry.log(m_logKey + "/Connected", m_inputs.cameraConnected);
     m_disconnected.set(!m_inputs.cameraConnected);
 ```
 
-**Add the two `Alert` imports to `LimelightPoseProvider`, and
-`import org.wpilib.telemetry.Telemetry;` for the log line.**
+**Add the two `Alert` imports to `LimelightPoseProvider`.**
 
 The simulated camera gets a switch the same way the CANcoder did.
 
@@ -663,8 +614,11 @@ Lesson 29 made about the current total, so it goes where the robot lives.
     // judged while disabled, because a battery under load always reads low;
     // what says it's flat is the voltage at rest.
     m_lowBattery.set(
-        RobotState.isDisabled() && batteryVolts < PowerConstants.kLowBatteryVoltage.in(Volts));
+        RobotState.isDisabled() && power.batteryVolts < PowerConstants.kLowBatteryVoltage.in(Volts));
 ```
+
+It reads `power.batteryVolts`, Lesson 29's recorded reading, not
+`RobotController`, so a replay judges the battery the robot really had.
 
 **Add the imports:**
 
@@ -675,12 +629,12 @@ import org.wpilib.util.Alert.Level;
 ```
 
 The `RobotState.isDisabled()` half earns its place, and the numbers show
-why. Measured without it, on a fresh simulated battery that rests at
-12.0 V: enabling the robot set the alert off for about 0.7 s, because the
-flywheel spinning up to idle sagged the rail to 11.5 V. Spinning it up to
-shooting speed set it off for another 1.6 s, with the rail at 11.2 V. A
-low-battery warning that flickers every time you press the trigger teaches
-everyone to ignore it.
+why. Measured on a fresh simulated battery that rests at 12.0 V: enabling
+the robot pulls the rail below 11.5 V for about 0.7 s, down to 11.3 V, as
+the flywheel spins up to idle. Spinning it up to shooting speed holds it
+there for another 1.6 s, down to 11.2 V. Without that half, the alert would
+go off both times. A low-battery warning that flickers every time you press
+the trigger teaches everyone to ignore it.
 
 A sagging rail under load is Lesson 29's problem. *A flat battery* is this
 alert's problem, and a battery's resting voltage is what tells you that.
@@ -701,8 +655,8 @@ the internal resistance.
     RoboRioSim.setVInVoltage(BatterySim.calculateLoadedBatteryVoltage(11.0, 0.04, getTotalCurrentAmps()));
 ```
 
-The warning appears in the panel almost immediately, while the robot is
-disabled. Enable it and the warning goes away, because under load the
+The warning appears in the panel almost immediately (measured: on the
+second tick after boot), while the robot is disabled. Enable it and the warning goes away, because under load the
 reading is answering a different question. Disable it again and the warning
 is back.
 
@@ -738,17 +692,27 @@ is back.
    tolerance and Lesson 28 logged `AtSpeed`. If the flywheel hasn't reached
    speed even once since boot, something is wrong: a jammed wheel, a bad
    gain, a dead motor that still answers on CAN. Detect it and say so.
-7. **Count your alerts.** This robot now has thirteen, counting the
-   framework's own. If one boots with nine warnings showing, nobody reads
-   any of them. Decide how many is too many, and what you'd cut first.
+7. **Count your alerts.** This robot now has twelve. If one boots with
+   nine warnings showing, nobody reads any of them. Decide how many is too
+   many, and what you'd cut first.
+8. **Remember a brownout.** `Power/BrownedOut` is a statement about now, and
+   that's not always what you want. Turn every current limit off, put
+   Lesson 29's tired battery in, and do the everything-at-once run again:
+   measured, `BrownedOut` switched between true and false over a hundred
+   times in a few seconds, and read false at the end with the battery back
+   at 11 V. Build an alert that says the battery has browned out *since
+   boot*. It's the one alert on this robot that should be raised once and
+   never cleared, so write it the way section 7 told you not to, and say in
+   a comment why this one is different. Then put the limits and the battery
+   back.
 
 ---
 
 ## What you learned
 
 The robot can now answer "is this thing going to work?" without a laptop.
-On a real robot the 2027 Driver Station shows the answer; in simulation, a
-panel you built shows it.
+On a real robot the 2027 Driver Station shows the answer; in simulation,
+SimGUI draws the panel AdvantageKit records, and a replay rebuilds it.
 
 **Recording and reporting are different jobs.** Thirty lessons of logging
 built a complete record of everything the robot does, and none of it helps
@@ -764,7 +728,8 @@ when it knows the device was missing.
 **An alert is a statement, not an event.** Setting it every tick with the
 current answer is what lets it clear itself, and you saw both sides of that:
 your motor alerts flickered on for a single tick at startup and went away,
-while the framework's overrun warning went up once and never came down.
+while the gyro alert you wrote the wrong way went up once and never came
+down.
 
 **A simulator can fake the fault you want to test.** The unplug switches
 don't make the robot lose anything; they make one reading lie, on purpose,

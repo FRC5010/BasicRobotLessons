@@ -442,7 +442,7 @@ anywhere.
 
 ## 8. Run it
 
-`./gradlew simulateJava`. Before you touch anything — before you even
+Run the robot in simulation. Before you touch anything — before you even
 pick an opmode — put `Elevator/HeightMeters` and `Elevator/AtBottomLimit`
 (both readings, so under **NetworkTables → AdvantageKit → Elevator**) on a
 graph and watch.

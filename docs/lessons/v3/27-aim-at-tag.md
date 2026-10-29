@@ -470,7 +470,7 @@ the fused pose is smooth, current, and degrades gently.
 
 ## 8. Run it
 
-`./gradlew simulateJava`. Drive out to the middle of the field and hold the
+Run the robot in simulation. Drive out to the middle of the field and hold the
 left trigger. The robot swings round to face tag 20 and holds. Let go and
 the rotation stick works again.
 

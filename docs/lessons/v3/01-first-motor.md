@@ -435,11 +435,7 @@ selected.
 
 ## 7. Run it
 
-**Start the simulator:**
-
-```powershell
-./gradlew simulateJava
-```
+**Run the robot in simulation,** the way you did in Lesson 0.
 
 Before the button can do anything, you have to hand SimGUI a controller. It
 doesn't pick one up on its own, and this is the step everybody misses the

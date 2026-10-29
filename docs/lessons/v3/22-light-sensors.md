@@ -480,7 +480,7 @@ by writing any of it.
 
 ## 8. Run it
 
-`./gradlew simulateJava`, **Teleoperated**. Open AdvantageScope with an
+Run the robot in simulation and go **Teleoperated**. Open AdvantageScope with an
 **Odometry** tab showing `Drivetrain/SimulatedPose` — where the robot really is —
 and `Sim/GamePieces` (both under **AdvantageKit → RealOutputs**), plus a graph of
 `Arm/HasGamePiece` and `Arm/RollerVelocityRotPerSec` (under **AdvantageKit →

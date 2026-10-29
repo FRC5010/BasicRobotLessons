@@ -335,7 +335,11 @@ that tag and measured in sim with the real `Robot`:
 **v3 Lesson 13 records with AdvantageKit and replays (user decisions,
 2026-10-28: `Logger.recordOutput` for outputs, Lesson 13 first and later
 lessons one at a time, replay taught with a PowerShell `AKIT_LOG_PATH` line
-and `replayWatch`/VS Code given as other options).** AdvantageKit
+and `replayWatch`/VS Code given as other options). The conversion is
+complete through Lesson 33 (2026-10-29): every lesson 13–33 records its
+readings with `processInputs` and its decisions with `recordOutput`, and
+replays; the per-lesson notes follow this block. Only the unmigrated
+Lesson 34 is left.** AdvantageKit
 `v27.0.0-alpha-7` (tag 2026-10-23, built against WPILib 2027.0.0-alpha-7)
 is the first with `LoggedOpModeRobot` (added 2026-09-30); its vendordep is
 in the marketplace's `2027_alpha7` folder, pinned from Lesson 13 in
@@ -352,9 +356,11 @@ loop:
   LoggedOpModeRobot`, starts logging from an **instance initializer block
   at the top of the class**, and `startLogging()` holds the REAL/SIM/REPLAY
   switch from the classic track. `DataLogManager.start()` moved into its
-  non-replay branch and stays, so `Telemetry.log` values (Lessons 14–33 still
-  use it for their own values) are still saved, in `WPILIB_*.wpilog` beside
-  AdvantageKit's `akit_*.wpilog`.
+  non-replay branch and stays, so what's still published outside
+  AdvantageKit is saved too, in `WPILIB_*.wpilog` beside AdvantageKit's
+  `akit_*.wpilog`: the `Field2d` widget, B-Line's `FollowPath/` values,
+  Lesson 33's SysId signals, and (through NetworkTables) a copy of
+  AdvantageKit's own outputs.
 - **Why the initializer block:** `Logger.start()` exits unless a
   `LoggedOpModeRobot` subclass is on the stack (it scans the stack), and
   AdvantageKit's docs call a subsystem built in a field initializer, before
@@ -403,16 +409,12 @@ loop:
 - **Ripple, all compiled (12–33, zero warnings; 33's tests pass):** the
   lesson-13 changes were carried into every later whole-file copy (`Robot`
   14–30, `Drivetrain` 14–17/25/26/29/30, `GyroIO` 16/29/30, `ModuleIO` and
-  `SwerveModule` 29/30), converting only the lines Lesson 13 introduced;
-  lines a later lesson added keep `Telemetry.log`. Snapshot 34 (unmigrated)
-  was not touched. The Lesson 33 state still runs Two Corners in sim
-  ((3, 3, 0°) → (5.98, 6.02, 178.7°)). **Replaying it is incomplete:**
-  heading and measured module states match, but the auto never drives,
-  because the elevator's inputs aren't recorded yet and it never homes in
-  replay. Each IO-backed lesson needs `@AutoLog` + `processInputs` before
-  its lesson replays; vision (15), the elevator (18) and the arm (20) have
-  it since the passes below, and with them the Lesson 33 state's path autos
-  drive in replay. The flywheel (28) is the one left.
+  `SwerveModule` 29/30), converting only the lines Lesson 13 introduced.
+  Each later lesson then had its own pass (14–17, 18–22, 23–27, 28–30,
+  31–33, notes below), which converted its own lines the same way.
+  Snapshot 34 (unmigrated) was not touched. The Lesson 33 state runs Two
+  Corners in sim ((3, 3, 0°) → (5.98, 6.01, 178.9°)) and replays it with
+  no differing sample.
 - **`Telemetry.log` is not captured by AdvantageKit.** WPILib alpha-7's
   `TelemetryRegistry.registerBackend(prefix, backend)` would let a bridge
   record every `Telemetry.log` too (prototyped and working; `RobotBase`'s
@@ -604,6 +606,130 @@ method as 14–22:**
   Lesson 32's "the `Aim/` keys are absent with tag 220" was measured on
   `Telemetry` and still needs re-measuring on AdvantageKit.
 
+**v3 Lessons 28–30 record with AdvantageKit (2026-10-29), same rules and
+method as 14–27:**
+
+- **Lesson 28:** `@AutoLog` on `FlywheelIOInputs`, `processInputs("Flywheel",
+  …)` (same keys); `GoalRps` and `AtSpeed` are outputs. The speedometer is
+  `LoggedMechanism2d`/`LoggedMechanismRoot2d`/`LoggedMechanismLigament2d`,
+  recorded with `Logger.recordOutput("Flywheel/Dial", …)`, measures passed
+  straight in (`kDialSize.div(2)`, `setAngle(Angle)`). SimGUI draws it live
+  under **NetworkTables → AdvantageKit → RealOutputs → Flywheel → Dial**
+  (Xvfb, needles at the 30 rot/s idle). A teleop spin-up replayed with every
+  flywheel key matching; idle to `AtSpeed` at 60 took 1.21 s. The text's
+  `FlywheelIOTalonFX` had built its motor on `CANBus.systemcore(0)`, which
+  the snapshot never used; fixed.
+- **Lesson 29: the battery voltage is a recorded reading.** AdvantageKit
+  doesn't replay it: `LoggedSystemStats` only saves `SystemStats/BatteryVoltage`
+  (no replay path), and nothing feeds `RobotController.getBatteryVoltage()`
+  from a log. `simulationPeriodic()` does run in `REPLAY`
+  (`LoggedOpModeRobot` calls it whenever `isSimulation()`), so the battery
+  model works out a voltage of its own from the replayed currents. Lesson
+  16's `StartingPlacement` principle, smallest form: `first.robot.PowerReadings`
+  (`@AutoLog`, one field `batteryVolts`), a local in `robotPeriodic()` filled
+  from `RobotController` and passed through `processInputs("Power", …)`, so
+  the key stays `Power/BatteryVolts`. `TotalCurrentAmps` and `BrownedOut` are
+  outputs and read `power.batteryVolts`; so does Lesson 30's low-battery
+  alert. The model stays in `simulationPeriodic()`. Measured: a run recorded
+  on the tired battery (low 8.17 V) and replayed with the default battery
+  line, a stand-in for a real robot's log, matched on every `Power` key; the
+  same run with the voltage as a `recordOutput` differed on 456 of 457
+  samples, by up to 2.45 V. The four supply-current `Telemetry.log` lines
+  went (recorded with the bundles). New Try It #6 replays a tired-battery
+  log.
+- **Lesson 29's tables, re-measured (user decision, 2026-10-29: every row,
+  about ten runs each).** Real `Robot` loop at its 20 ms rate, the same moves
+  every run (Back to home, then D-pad up, left trigger held and the left
+  face button together), ten runs per configuration; peak total draw,
+  battery low point, `BrownedOut`, and the elevator's and flywheel's state
+  when the trigger is released 3 s later.
+  - **Fresh battery** (text rewritten): no limits 199.5–202.4 A /
+    7.95–8.01 V; defaults 96.8–143.7 A / 9.13–10.06 V; budget 58.4–87.4 A /
+    10.25–10.83 V. No brownout in 30 runs; elevator at 1.450 m and flywheel
+    at 60.4 rot/s every time.
+  - **Tired battery** (11 V, 40 mΩ; **text rewritten to report how often,
+    user decision 2026-10-29, option A**): budget 67.4–87.5 A / 7.50–8.31 V, no brownout, everything
+    finishes. **Defaults browned out in 2 of 10 runs** (153 A / 4.87 V, four
+    samples under 6.3 V spread over 0.4–0.8 s; the mechanisms still
+    finished); the other eight 83.8–110.9 A / 6.56–7.65 V. **No limits
+    browned out in 10 of 10**, starting at enable (the flywheel's idle
+    spin-up, before the moves); in 7 runs it collapsed to 0.00 V (peaks
+    368–619 A, elevator reaching 0.13–0.52 m, flywheel peaking 39–51 rot/s
+    and ending at 0), in 3 it dipped to 1.0–2.9 V and the mechanisms
+    finished anyway (flywheel 60.4 or 25 rot/s at release). The old story,
+    "defaults survive", held in only 8 of 10. The table now has a "Browned
+    out" column (10, 2 and 0 of 10), and the text calls the defaults a
+    gamble and the budget the only configuration safe every time (worst run
+    1.2 V above 6.3 V). The two default brownouts were the two runs that
+    peaked at 153 A; the other eight stayed at or under 111 A. At the first
+    no-limits brownout (0.22–0.24 s after enable) the flywheel is the only
+    motor drawing (126–132 A). Try It #4 now says to run each setting a few
+    times.
+  - Why peaks vary: they're spikes a few ticks long that 20 ms samples
+    catch or miss (the elevator's own supply peak was 6.8 A in one run and
+    32.4 A in another, on the same climb). The fresh table says so.
+- **Lesson 30:** the duplicate `…Connected` log lines went (recorded with
+  the bundles). **AdvantageKit records the alerts itself**: `AlertLogger`
+  (source) writes each WPILib alert group as outputs every tick, the default
+  group as `Alerts` with `.type = "Alerts"` and `errors`/`warnings`/`infos`,
+  most recent first; AdvantageKit's own group is `AlertGroups/AdvantageKit`.
+  A group appears once any `Alert` exists. In SimGUI, **AdvantageKit →
+  RealOutputs → Alerts** drew the same panel as the old `/Telemetry/Alerts`,
+  side by side, and both cleared together, so `showAlerts()` and its imports
+  are gone and §4 points at AdvantageKit's copy. **The "raised once" demo is
+  now the student's own:** §7 has them write `if (!m_gyroInputs.connected) {
+  m_gyroDisconnected.set(true); }`, flip **Unplug Gyro** true then false
+  (measured: up within a tick, still up at the end), and restore the
+  one-line `set`. Try It #8 is a sticky "browned out since boot" alert:
+  measured on the tired battery with every limit off, `BrownedOut` changed
+  119 times and read false at the end at 11.0 V, while the sticky alert
+  stayed up.
+- **Lesson 30 measurements, real `Robot` loop:** boot flicker on 10 of 10
+  fresh launches (elevator, arm and flywheel motors, both cameras and the
+  CANcoders on modules 1–3, all clear the next tick, 0.15–0.27 s later;
+  the flywheel one tick more in 2 of 10). Each unplug switch (gyro,
+  CANcoder 9, limelight-front) raised and cleared its alert on the first
+  tick that read it. Fresh battery: no low-battery warning while enabled;
+  the recorded rail was below 11.5 V for 0.72 s (to 11.26 V) on enable and
+  1.64 s (to 11.19 V) on a shot. Tired battery: warning on the second tick
+  after boot, cleared on enable, back on disable. **Alerts replay:** all
+  five runs (switches, tired battery, raised-once gyro, sticky brownout)
+  replayed with every `Alerts` error and warning on the same ticks.
+- **The Lesson 33 state's Two Corners replays with 0 differing samples**
+  since Lesson 28's pass; the flywheel's disconnected alert clears in the
+  replay as it did live.
+
+**v3 Lessons 31–33 record with AdvantageKit (2026-10-29), the last pass:**
+
+- **Lesson 31:** every `Logger.processInputs` and `recordOutput` overload
+  starts with `if (running)`, and only `Logger.start()` sets it (source). A
+  test never builds `Robot`, so in a test those calls do nothing:
+  `updateInputs` still fills the inputs object, `processInputs` leaves it
+  alone, and no output exists anywhere a test could read back. A callout in
+  §5 says so and points at getters and the inputs. The snapshot's two test
+  files now match the lesson's blocks (comments only had differed).
+- **Lesson 32 replays its fix.** `Elevator/AtGoal` and
+  `HeightErrorMeters` became outputs (the last `Telemetry.log` lines in
+  31–33). Recorded in the real `Robot` loop with the typo (Back, then D-pad
+  right twice): `RealOutputs/Elevator/AtGoal` false all session. The same
+  log replayed through `Centimeters.of(0.1)`: `ReplayOutputs` true 1.20 s
+  after each goal step to 0.75, false for one or two ticks while the
+  carriage overshoots (1.29 mm in the loop), true for good from 1.26 s (two
+  recordings, both presses). Replayed through the typo code it matches the
+  recording. The lesson uses Lesson 13's method and mentions `replayWatch`;
+  every "empty doorway" sentence and the README row are gone. **The v3
+  second example is the `kAimTagId = 220` typo, not the classic's `lib_key`
+  case mismatch** (that one was never in this track); kept, with a note that
+  B-Line's `FollowPath/` values are only in the `WPILIB_` log, which also
+  carries AdvantageKit's outputs via NetworkTables.
+- **Lesson 33:** the SysId signals are in `WPILIB_*.wpilog`, not
+  `akit_*.wpilog`; the lesson now says to open the `WPILIB_` file. Under
+  replay, `RobotUtility`'s own `EventLoop` fires on the replayed buttons and
+  every output matched (`Flywheel/CurrentCommand`'s SysId commands
+  included). The replay also writes a second `WPILIB_` file, because
+  `SysIdRoutineLog` starts `DataLogManager` on first use; its SysId values
+  matched the recording's, with different timestamps.
+
 **v3 Lesson 26 (drive to pose) was redesigned on 2026-10-26 at the user's
 request: two motion-profiled stages, handing over while moving.** The old
 design ran the Lesson 11 sketch to 5 cm, then three `PIDController`s; the user
@@ -686,6 +812,9 @@ real SimGUI under `Xvfb`:**
   then lists it under **NetworkTables → Telemetry → Alerts** and draws a real
   panel, errors first with a red mark (seen in screenshots). A plain
   `String[]` was tried first; it works but SimGUI truncates it.
+  **Superseded 2026-10-29:** AdvantageKit records the same table on its own
+  (`RealOutputs/Alerts`), and SimGUI draws it the same way, so
+  `showAlerts()` is gone; see the Lessons 28–30 AdvantageKit notes.
 - **`OpModeRobot`'s `Loop time of "0.02"s overrun` (id
   `opmode-loop-overrun`, `MEDIUM`) is only ever `set(true)`** (its watchdog
   callback, read in the alpha-7 source), and the first loop always overran in
@@ -695,8 +824,8 @@ real SimGUI under `Xvfb`:**
   (2026-10-28), that alert no longer exists**: `LoggedOpModeRobot`'s
   watchdog only prints a warning, after 4 × the period (80 ms). Measured on
   the Lesson 33 state after a Two Corners run: `AlertSim.getActive()` is
-  empty. Lesson 30's text (lines ~98, ~197, ~341, ~764) still points at it;
-  how to replace that demonstration is waiting on the user.
+  empty. **Replaced 2026-10-29** by a "raised once" version the student
+  writes on purpose (see the Lessons 28–30 AdvantageKit notes).
 - **The unplug switch (user decision, 2026-10-22: both cameras, the four
   CANcoders and the gyro; "only flip the reading"; a SimGUI switch).**
   `subsystems/UnplugSwitch` makes `SimDevice.create("Unplug " + name)` with
@@ -736,9 +865,16 @@ real SimGUI under `Xvfb`:**
 - **`./gradlew simulateJava` doesn't start a simulation on alpha-7
   GradleRIO.** There's no such task; Gradle's abbreviation matching runs
   `:simulateExternalJava`, which only writes `build/sim/java.json` for VS
-  Code. `./gradlew run` launches the robot with SimGUI. Lesson 30 says `run`;
-  every other v3 lesson still says `simulateJava` (flagged to the user, not
-  swept).
+  Code. `./gradlew run` launches the robot with SimGUI (re-checked on the
+  Lesson 0 state, 2026-10-29: `libhalsim_gui` loads and the robot program
+  starts). **User decision, 2026-10-29, OpMode track only: no lesson names a
+  sim command any more.** Lesson 0 §3 teaches two ways (VS Code's **WPILib:
+  Simulate Robot Code**, or `./gradlew run` in a terminal) and says every
+  later lesson just says "run the robot in simulation"; the setup aside's
+  build check uses `./gradlew run`. Replay steps (Lessons 13, 15, 17, 32)
+  keep `./gradlew run`, because they need `$env:AKIT_LOG_PATH` set in that
+  terminal. The classic track keeps `./gradlew simulateJava`, which works on
+  WPILib 2026. VS Code's button is still unverified on alpha-7.
 - **SimGUI in this container:** `Xvfb :99 -screen 0 1600x1000x24`, then
   `DISPLAY=:99 ./gradlew run`, screenshots with `import -window root`, and
   clicks with `xdotool` (`apt-get install -y xdotool`). The sim window is
@@ -753,7 +889,8 @@ rate, `DriverStationSim` enabled):**
   was replaced with 28's `Constants`/`Robot`/mechanism files plus only the
   lesson's additions. The port was `Telemetry.log` for `SmartDashboard.put*`,
   `new CANBus(CANPort.CAN_S0)`, and `implements Mechanism`. `Robot` logs
-  `Power/*` in `robotPeriodic()`; keys are under `/Telemetry/Power/`.
+  `Power/*` in `robotPeriodic()`; keys were under `/Telemetry/Power/` (since
+  2026-10-29, the voltage is an AdvantageKit input and the rest outputs).
 - **Unchanged:** a fresh `TalonFXConfiguration` has stator 120 A, supply 70 A,
   both enabled, `SupplyCurrentLowerLimit` 40 A after 1.0 s.
   `RobotController.isBrownedOut()` stays false at 4.0 V held for 2.5 s.
@@ -766,8 +903,10 @@ rate, `DriverStationSim` enabled):**
   higher and collapse the rail to 0 V at 9 and 12.
 - **The lesson's old in-robot brownout did not reproduce.** The three
   mechanisms, even unlimited, peak at 201 A and sag a fresh battery only to
-  7.97 V; defaults 139 A / 9.23 V; the budget 87–94 A / 10.1–10.3 V. Nothing
-  stalls and `Power/BrownedOut` stays false. The old 366 A / 4.7 V is gone.
+  7.97 V; defaults 139 A / 9.23 V; the budget 87–94 A / 10.1–10.3 V (re-
+  measured 2026-10-29 over ten runs each: 200–202 A, 97–144 A and 58–87 A;
+  see the Lessons 28–30 notes). Nothing stalls and `Power/BrownedOut` stays
+  false. The old 366 A / 4.7 V is gone.
   Not homing first makes no difference (the elevator stalls on the frame at
   1.15 m, peak 199 A unlimited).
 - **A tired battery makes the demo.** With
@@ -776,7 +915,10 @@ rate, `DriverStationSim` enabled):**
   near 0.24 m, flywheel peaks 41.6 rot/s and ends at 0; defaults 105–110 A /
   6.6–6.8 V (survives by 0.3–0.5 V); budget 68–83 A / 7.7–8.3 V. Peaks vary a
   few amps run to run, so the lesson gives ranges. After a collapse to 0 V the
-  elevator's logged height is garbage (−1742 m); don't quote it.
+  elevator's logged height is garbage (−1742 m); don't quote it. Re-measured
+  2026-10-29 over ten runs each: defaults browned out twice in ten, so the
+  lesson now reports how often (user decision, option A); see the Lessons
+  28–30 notes.
 - **Probe traps:** Maven 429s ("Too Many Requests") on a cold Gradle cache —
   retry after 30 s. `GamepadSim` here has `setDpadUpButton`,
   `setFaceLeftButton`, `setBackButton` and `setLeftTriggerAxis`.
@@ -797,10 +939,12 @@ through the scheduler and with the real `Robot` loop and `GamepadSim`
 - **Did not reproduce:** "pins near 12 V during the climb". From idle (30 to
   60) the applied volts jump to ≈7 V and rise to ≈9 V as the wheel speeds up.
   The lesson says that now.
-- **The dial is logged every tick** (`Telemetry.log("Flywheel/Dial", ...)`
-  at the end of `updateDial`), under `/Telemetry/Flywheel/Dial/Hub/{Speed,Goal}/angle`.
+- **The dial is recorded every tick** (a `LoggedMechanism2d` since
+  2026-10-29, `Logger.recordOutput("Flywheel/Dial", ...)` at the end of
+  `updateDial`), under `/RealOutputs/Flywheel/Dial/Hub/{Speed,Goal}/angle`.
   At 60 rot/s the goal needle reads −198.0° and the speed needle −198.78°
-  with colour `#32CD32`, matching `−90° − 180° × 0.6`.
+  (−198.79° re-measured after the switch) with colour `#32CD32`, matching
+  `−90° − 180° × 0.6`.
 - Release of the trigger falls back to idle in ≈1.5 s (56.4 → 30.4 rot/s).
 - `Models.flywheelFromPhysicalConstants`, `FlywheelSim` and `CANBus(CANPort.CAN_S0)` are unchanged
   in alpha-7; the port was `implements Mechanism`, `Telemetry.log`, and the
@@ -1127,15 +1271,18 @@ source at the pinned commit.
 arguments). Measured with the real `Elevator` homing test: Thread.sleep 20 ms
 → 0.0090 m, 4 ms → 0.0094 m, 0 ms → −0.31 to −0.34 m in 4 of 5 runs and
 0.0100 m in the fifth, so the real-time trap is intermittent, not just a
-cliff. With `setEnabled(true)` removed the test dies at its own
-`isDisabled()` assertion; with that removed too, at `assertTrue(isHomed())`.
+cliff. Re-measured 2026-10-29 (each run its own JVM): 20 ms 0.0090 m twice,
+4 ms 0.0090 and 0.0094 m, 0 ms −0.340 m in 4 of 5 and 0.0094 m in the
+fifth; the lesson's table says that now. With `setEnabled(true)` removed the
+test dies at its own `isDisabled()` assertion; with that removed too, at
+`assertTrue(isHomed())` (re-measured, same).
 Making `canGoTo` let IDLE reach SCORING fails `scoringRequiresSomethingToScore`.
 
 **v3 Lesson 32 (reading a log) on alpha-7, measured with the real `Elevator` homed and ticked at 20 ms, and the real `Robot` loop on Blue 1:**
 
-- The settled error at `kScoreMid` is a flat 0.1159 mm (after a 1.3 mm overshoot); `atGoal()` goes true at 1.24 s with `Centimeters.of(0.1)`.
-- **A slightly-too-tight tolerance can pass by luck.** At `Centimeters.of(0.002)` and even `0.0002`, one tick (1.44 s) lands within 0.001 mm of the goal as the carriage comes back through it, so `goToHeight` ends. At `0.00002` it never ends (15 s). The lesson's typo is the latter.
-- **Aim While Driving with `kAimTagId = 220`:** override active ≈3.7 s as normal, heading stays 0.0° (fixed: ≈ −100°), finish (8.04, 7.00) vs (8.01, 7.02); `Aim/ErrorDegrees`, `FeedforwardRadPerSec` and `IsAimed` are never published (150 `/Telemetry/` topics vs 153). `Localizer/Pose` is a struct, so read the pose from `robot.localizer`, not NT.
+- The settled error at `kScoreMid` is a flat 0.1159 mm (after a 1.3 mm overshoot); `atGoal()` goes true at 1.24 s with `Centimeters.of(0.1)`. Re-measured 2026-10-29 on the AdvantageKit code, fixed 20 ms rate: −0.1159 mm (short of the goal), overshoot 1.36 mm, `goToHeight` ends at 1.26 s.
+- **A slightly-too-tight tolerance can pass by luck.** At `Centimeters.of(0.002)` and even `0.0002`, one tick (1.44 s; 1.46 s re-measured, within 0.00094 mm) lands within 0.001 mm of the goal as the carriage comes back through it, so `goToHeight` ends. At `0.00002` it never ends (15 s). The lesson's typo is the latter.
+- **Aim While Driving with `kAimTagId = 220`:** override active ≈3.7 s as normal, heading stays 0.0° (fixed: ≈ −100°), finish (8.04, 7.00) vs (8.01, 7.02); `Aim/ErrorDegrees`, `FeedforwardRadPerSec` and `IsAimed` are never published (150 `/Telemetry/` topics vs 153). Re-measured on AdvantageKit (2026-10-29): with tag 20 the three keys are in the `akit_` log and (via NetworkTables) the `WPILIB_` log, with 220 in neither; override 3.72 / 3.70 s, on 0.58 s into the drive; with tag 20 the heading follows the bearing to about −124° by `release`. `Localizer/Pose` is a struct, so read the pose from `robot.localizer`, not NT.
 - **Probe trap:** a sandbox `kTolerance` left at the broken value makes `Superstructure.isSettled()` never true, so every path auto waits forever at `IDLE` and the robot never drives. Reset it before probing autos.
 
 **v3 Lesson 33 (SysId) on alpha-7, measured with the real `Flywheel`, the real `ElevatorIOTalonFX` and the real `Robot` loop (20 ms ticks):**
@@ -1145,7 +1292,7 @@ Making `canGoTo` let IDLE reach SCORING fails `scoringRequiresSomethingToScore`.
 - **Percent of steady state** (steady = 8.4 rot/s per volt, measured 1–5 V): 1 V/s ramp 36.1 / 58.0 / 69.8 / 76.8 / 81.3 % at 1–5 V; 0.5 V/s 57.3–90.7 %; 0.25 V/s 75.7 / 88.3 / 92.2 / 94.1 / 95.3 %. Dynamic 7 V reaches 58.5 rot/s (58.6 predicted).
 - **Open-loop elevator limits** (real `ElevatorIOTalonFX`, physics widened to ±20 m, started at 0): 6 V for 4 s ends at 2.565 m without the forward soft limit and 1.502 m with it, applied 0.000 V. Ramp to 6 V travels 1.880 / 3.768 / 7.537 m at 1.0 / 0.5 / 0.25 V/s. A 1.5 s step travels 1.101 / 0.623 / 0.300 m at 7 / 4 / 2 V.
 - **A reverse soft limit at `kMinHeight` still fights homing**: normal homing from the 0.35 m boot height finishes in 3.68 s, with the limit 17.34 s (2 cm/s against 9). It completes, so it looks like a weak motor.
-- `SysIdRoutineLog` still writes through `DataLogManager.getLog()` (bytecode). A real run's `.wpilog` holds `sysid-test-state-flywheel`, `voltage-flywheel-flywheel` and `velocity-flywheel-flywheel`. Alpha-7 has no `SysIdRoutine` in `commandsv3` or `wpilibj` (only `org.wpilib.sysid.SysIdRoutineLog`), so the hand-built `commands/SysIdRoutine` stays. `Flywheel` is `implements Mechanism` now, and the routine takes the `Mechanism` interface.
+- `SysIdRoutineLog` still writes through `DataLogManager.getLog()` (bytecode). A real run's `.wpilog` holds `sysid-test-state-flywheel`, `voltage-flywheel-flywheel` and `velocity-flywheel-flywheel`. Since Lesson 13's AdvantageKit that's the `WPILIB_*.wpilog`, never the `akit_*.wpilog` beside it (measured 2026-10-29), and the lesson says to open the `WPILIB_` file. Alpha-7 has no `SysIdRoutine` in `commandsv3` or `wpilibj` (only `org.wpilib.sysid.SysIdRoutineLog`), so the hand-built `commands/SysIdRoutine` stays. `Flywheel` is `implements Mechanism` now, and the routine takes the `Mechanism` interface.
 - **Probe trap:** `verify-lessons-v3.sh` `rm -rf`s its sandbox every run, probe files included. Copy probes in after it, then run `./gradlew cleanTest test --tests '*Probe'` in the sandbox. Maven Central returned 429 once while resolving `junit-jupiter-params`; a retry fixed it.
 
 **Use it instead of reasoning about whether a snippet compiles.** Current state: lessons 0–34 all compile, at every intermediate stopping point, with zero warnings. A regression is therefore a real result, not noise. Run the specific lesson you touched plus the highest one.
@@ -1322,7 +1469,7 @@ Prose conventions used consistently across lessons:
 - **Bold** on first introduction of a term.
 - Code style in examples: private fields prefixed `m_` (e.g. `m_driveMotor`), constants under nested `public static class XxxConstants` inside [Constants.java](../src/main/java/frc/robot/Constants.java) (student's file), CAN IDs as placeholder integers with an inline `// change to yours` comment.
 - Commands (WPILib `Command`) are produced by factory methods on the subsystem (e.g. `run(() -> …).finallyDo(…)`), not by subclassing `CommandBase`.
-- PowerShell is the assumed shell (`./gradlew simulateJava`), matching a Windows dev environment.
+- PowerShell is the assumed shell (`./gradlew simulateJava`), matching a Windows dev environment. The OpMode track names no sim command: its lessons say "run the robot in simulation" (VS Code's button or `./gradlew run`, both taught in its Lesson 0).
 - When a walkthrough adds code to an **existing** file, never hand the student a bare snippet. Show it inside its surroundings (the enclosing method or class line, with `// ...` anchor comments standing in for neighboring code) and say in prose where it goes **and why it belongs there** — students don't yet know Java file anatomy, and placement reasoning ("fields hold data the object keeps for life, so they go at the top of the class") is part of the lesson. When a lesson introduces a whole new file with several new concepts, build it in labeled pieces top-to-bottom rather than presenting one large block, then show the assembled file for checking.
 - Every code snippet that instructs a change gets a **bold action lead-in** naming the file and where the code goes, on its own line right before the fenced block — e.g. **Edit `Drivetrain.java`:**, **Add to `SwerveModule`, below the fields:**, **Replace `setDesiredState` with:**, **Delete from `Drivetrain`:**. This is the scannable "what to type" header; the surrounding prose still carries the "why".
 - **Mark illustration blocks so they can't be mistaken for instructions.** A snippet that only demonstrates semantics — an API's shape, code the student already has, or a deliberately-wrong version being set up for rejection — gets an *italic* lead-in on its own line saying there's nothing to add, e.g. *Nothing to add — this is just how the class is used:*, *Nothing to add — this is code you already have:*, *Nothing to add — this is the version we're about to reject:*. Italic is the visual opposite of the bold "type this" lead-in, so a skimmer can tell them apart at a glance. Every fenced block should carry one or the other.

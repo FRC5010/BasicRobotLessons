@@ -47,10 +47,6 @@ public class Arm implements Mechanism {
   private void periodic() {
     m_io.updateInputs(m_inputs);
     Logger.processInputs("Arm", m_inputs); // every reading, under Arm/
-    /**
-     * ====== NEXT LESSON: ADD CODE HERE ======
-     * Log each motor's battery-side current.
-     */
     Logger.recordOutput("Arm/GoalDegrees", m_goal.in(Degrees));
     Logger.recordOutput("Arm/AtGoal", atGoal());
 

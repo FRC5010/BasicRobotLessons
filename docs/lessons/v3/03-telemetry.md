@@ -189,7 +189,7 @@ WPILib installer, so you already have it. It plots live data, overlays
 signals, scrubs back through time, and opens `.wpilog` flight-recorder
 files.
 
-Start sim (`./gradlew simulateJava` → pick **My Teleop** → **Enabled**),
+Run the robot in simulation (pick **My Teleop** → **Enabled**),
 then launch AdvantageScope from the WPILib command palette → **Start
 Tool** → **AdvantageScope**. In AdvantageScope:
 

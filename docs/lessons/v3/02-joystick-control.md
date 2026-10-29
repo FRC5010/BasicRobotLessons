@@ -209,7 +209,7 @@ command.
 
 ## 5. Run it
 
-`./gradlew simulateJava` → pick **My Teleop** → **Enabled**. Push the left
+Run the robot in simulation → pick **My Teleop** → **Enabled**. Push the left
 stick (or SimGUI's joystick slider). The motor output should track the
 stick, snap to zero near center, and reverse when you pull back. If it
 creeps at rest instead, your deadband isn't in the path — check that

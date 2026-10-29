@@ -231,7 +231,7 @@ takes a few minutes — normal, not broken. Later runs are seconds.
 ```powershell
 cd ~/dev/MyOpModeRobot
 ./gradlew build
-./gradlew simulateJava
+./gradlew run
 ```
 
 Same first-build patience as any Gradle project — dependencies download once,
@@ -243,8 +243,9 @@ hasn't verified that extension's buttons (Build, Deploy, Simulate, `F5`
 debugging) against this alpha's project shape, so this page doesn't rely on
 them. Everything above and below works from a plain terminal, in whatever
 editor you like. If the extension's buttons do work for you, great, use
-them; if `F5` doesn't do anything, `./gradlew simulateJava` from a terminal
-is the path every lesson in this track was actually verified against.
+them; if `F5` doesn't do anything, `./gradlew run` from a terminal is
+the path every lesson in this track was actually verified against. When a
+lesson says "run the robot in simulation", either one will do.
 
 Set your team number in `.wpilib/wpilib_preferences.json` — the template
 ships `5010`, same as the classic track's.

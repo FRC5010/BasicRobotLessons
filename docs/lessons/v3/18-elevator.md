@@ -537,7 +537,7 @@ robot.driverController.dpadUp().onTrue(robot.elevator.goToHeight(ElevatorConstan
 That needs `import first.robot.Constants.ElevatorConstants;` up top,
 alongside the `DriveConstants` import already there.
 
-Run `./gradlew simulateJava`, open AdvantageScope (Lesson 3), expand
+Run the robot in simulation, open AdvantageScope (Lesson 3), expand
 **NetworkTables → AdvantageKit → Elevator**, tap the D-pad, and watch
 `HeightMeters` climb toward whichever preset you asked for and stay there.
 

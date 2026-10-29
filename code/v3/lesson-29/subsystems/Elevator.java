@@ -6,7 +6,6 @@ import static org.wpilib.units.Units.Volts;
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
-import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.Distance;
 
 import org.littletonrobotics.junction.Logger;
@@ -50,11 +49,10 @@ public class Elevator implements Mechanism {
     m_io.updateInputs(m_inputs);
     Logger.processInputs("Elevator", m_inputs); // every reading, under Elevator/
     Logger.recordOutput("Elevator/GoalMeters", m_goal.in(Meters));
-    Telemetry.log("Elevator/SupplyCurrentAmps", m_inputs.supplyCurrentAmps);
     Logger.recordOutput("Elevator/Homed", m_homed);
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
-     * Log whether the motor is connected, then set both alerts every tick from what's true right now.
+     * Set both alerts every tick from what's true right now.
      */
 
     // The picture is built once and changed every tick; only the carriage

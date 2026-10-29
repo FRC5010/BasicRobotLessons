@@ -1,8 +1,9 @@
 # Lesson 32 — Reading a match log
 
 **Goal:** Diagnose a failure that already happened, using nothing but the
-log — find the moment it went wrong, and read the traces together
-instead of one at a time.
+log — find the moment it went wrong, read the traces together instead of
+one at a time, and test a fix by replaying the exact match through
+corrected code.
 
 **New Java concepts**
 - None. This lesson is a technique, and it should be honest about that.
@@ -10,11 +11,12 @@ instead of one at a time.
 **New robot concepts**
 - Reading logged traces *together* — the diagnosis usually lives in how
   two of them disagree, not in either one alone.
+- **Replay as a debugging tool**, not a party trick: fix the code, replay
+  the old inputs, and watch a decision the original run got wrong come
+  out right.
 - Logging **decisions**, not just the measurements behind them — the
   same numbers can pass or fail depending on a constant a plot won't
   show you.
-- **What replay would buy you, and why this track can't hand it to you
-  yet** — an honest look at a doorway that's still empty.
 
 ---
 
@@ -30,17 +32,10 @@ time you're back at the pit — except for the log. The log is the only
 witness that was there for the whole thing and didn't blink.
 
 This lesson is about reading that witness. There's no new syntax in it —
-`Telemetry.log` is the only call doing any work, and you've known it
-since Lesson 3. What's
-new is the *method*: how to go from "the robot did something wrong" to
-"here is exactly why," using only what the log already recorded.
-
-One honest note before you start, so it doesn't ambush you later:
-Lesson 13 called `Mode.REPLAY` "open, and empty" — this track doesn't
-have AdvantageKit's real replay engine yet, because AdvantageKit doesn't
-support `OpModeRobot` on this alpha. Everything in sections 1 through 5
-works exactly the same without it. Section 6 is honest about what that
-gap costs you, and what to do about it in the meantime.
+`Logger.recordOutput` and `Logger.processInputs` are the only two calls
+doing any work, and you've known both since Lesson 13. What's new is the
+*method*: how to go from "the robot did something wrong" to "here is
+exactly why," using only what the log already recorded.
 
 ---
 
@@ -51,13 +46,16 @@ first, because the whole technique this lesson teaches depends on it: a
 *decision*, not just the measurements behind it, has to be in the log.
 
 `Elevator.atGoal()` has existed since Lesson 18. Nothing has ever
-published its answer.
+recorded its answer.
 
-**Add to `Elevator.periodic()`, below the `AtBottomLimit` line:**
+**Add to `Elevator.periodic()`, below the `GoalMeters` line:**
 
 ```java
-    Telemetry.log("Elevator/AtGoal", atGoal());
+    Logger.recordOutput("Elevator/AtGoal", atGoal());
 ```
+
+It's a decision your code makes, so it's an output — which, in section 6,
+is exactly what lets a replay make it again.
 
 Hold that thought — you'll want it, and the reason you needed it, in
 about three sections.
@@ -91,7 +89,7 @@ voltage. It does nothing at all to stop you from meaning millimetres and
 writing micrometres.** The type carries the unit; it was never going to
 carry the magnitude, too.
 
-Run `./gradlew simulateJava`, go **Teleoperated**, press Back to home the
+Run the robot in simulation, go **Teleoperated**, press Back to home the
 elevator (Lesson 21), and then press D-pad right (`kScoreMid`). Watch it. The carriage rises, slows, settles at the
 scoring height, and holds there — exactly like it always has. Nothing
 about this looks broken. That's the second thing worth sitting with, and
@@ -110,20 +108,21 @@ teleop, you'd never know.
 > (0.02 mm): the carriage overshoots the goal by about 1.3 mm on the way in,
 > then creeps back down across it. One 20 ms tick landed within 0.001 mm of
 > the goal, so `atGoal()` read `true` for that single tick and the command
-> ended at 1.44 s. A too-tight tolerance can pass by luck of where the ticks
+> ended at 1.46 s. Ten times tighter again, 2 micrometres, the same tick
+> still passed. A too-tight tolerance can pass by luck of where the ticks
 > fall. At 0.2 micrometres the luck runs out: the command was still running
 > after fifteen seconds.
 
 Drive around for ten or fifteen seconds — hit the scoring binding a
-couple of times — then close the sim. You now have a `.wpilog` in your
-project's `logs/` folder that looks, at a glance, like a robot working
-perfectly.
+couple of times — then close the sim. You now have an `akit_….wpilog` in
+your project's `logs/` folder that looks, at a glance, like a robot
+working perfectly.
 
 ---
 
 ## 4. Finding the moment
 
-Open the log in AdvantageScope. Expand `NetworkTables → Telemetry →
+Open that `akit_….wpilog` in AdvantageScope. Expand `RealOutputs →
 Elevator` and drop `GoalMeters` on a **Line Graph**. Scrub across the
 whole session and find the step — the instant `GoalMeters` jumps from
 whatever it was sitting at (probably `kStowed`, 0.02 m) to `0.75`
@@ -142,13 +141,15 @@ this fast.
 ## 5. Reading the traces together
 
 Zoom the graph to a few seconds either side of that jump. Add
-`Elevator/HeightMeters` to the same graph, right beside `GoalMeters`.
+`Elevator/HeightMeters` to the same graph, right beside `GoalMeters` —
+it's a reading, so it's with the inputs at the top level, not under
+`RealOutputs`.
 Watch them converge — the height climbs, slows, and settles in against
 the goal inside about a second and a half, a clean Motion Magic profile
 arriving exactly where you'd expect from Lesson 18.
 
-Now add one more trace to the same graph: `Elevator/AtGoal` — the one
-you added in section 2. This is where reading one trace at a time would
+Now add one more trace to the same graph: `RealOutputs/Elevator/AtGoal` —
+the one you added in section 2. This is where reading one trace at a time would
 have sent you the wrong way. Looked at alone, `HeightMeters` says the
 elevator arrived. Looked at alone, `AtGoal` says it never did. **Neither
 trace is lying — they disagree, and the disagreement is the entire
@@ -166,7 +167,7 @@ together, tell you which layer it happened in.
 
 ---
 
-## 6. Forming a hypothesis, and proving it without real replay
+## 6. Forming a hypothesis, and proving it with replay
 
 `AtGoal` comes from one line in `Elevator.java`:
 
@@ -184,10 +185,10 @@ You don't need to open the source to get most of the way there, either
 the target. Subtract them. On a real run of this bug you'll get
 something on the order of a **tenth of a millimetre** — the elevator is
 not missing by much, it's missing by an amount too small to see on a
-graph zoomed out far enough to show the whole climb. Measured directly
-in this port's own sandbox, holding at `kScoreMid`: the settled error is
-a stable **0.116 mm**, flat for as long as you let it sit — a real
-floor, not something still converging.
+graph zoomed out far enough to show the whole climb. Measured in this
+course's simulator, holding at `kScoreMid`: the carriage settles a stable
+**0.116 mm** short of the goal, flat for as long as you let it sit — a
+real floor, not something still converging.
 
 That number is the hypothesis, stated without even reading `atGoal()`'s
 source: *whatever the elevator is being asked to get within, it's
@@ -208,33 +209,51 @@ what you just measured, with margin: 1 mm is roughly 8.6 times the
 0.116 mm floor, so it trips reliably without also being a number nobody
 checked.
 
-**Here's where the old form of this lesson would have you replay the
-exact recorded match and watch the fixed code get it right — and this
-port genuinely can't do that yet.** `Mode.REPLAY` builds and runs
-without an error, the way Lesson 13 showed you, but every input stays
-frozen at zero: there's no engine reading your `.wpilog` back through
-the code, because that engine is part of AdvantageKit, and AdvantageKit
-doesn't support `OpModeRobot` on this alpha. That's not a workaround
-away — it's tracked as follow-up work for when it ships.
+Now, instead of trusting that this fixes it, *prove* it against the exact
+match you already have. This is what Lesson 13 built replay for.
 
-What you can do today, and what's honest to call it: **re-run the same
-script, not the same match.** Go back to teleop, press D-pad right the
-same way you did in section 3, and watch `Elevator/AtGoal` flip `true`
-around a second and a half in — this time for real. That's weaker proof
-than true replay would give you (different joystick noise, different
-random jitter in exactly when you pressed the button, not the frame-for-
-frame identical session), and it's worth being clear-eyed about that gap
-rather than pretending a fresh run is the same evidence. But it's
-real evidence, gathered against your actual fixed code, not a fresh
-guess dressed up as a test — and it's what "recompute the whole match"
-from Lesson 13 turns into on a platform that hasn't caught up to it yet.
-When AdvantageKit's `OpModeRobot` support lands, this section is where
-this track comes back and does it properly: same log, same fix, same
-comparison the old course made.
+**Replay the recording through the fixed code.** Set `kSimMode` in
+`Constants.java` to `Mode.REPLAY`, then name your recording and run:
 
-Switch `kSimMode` back to `Mode.SIM` if you changed it exploring
-Lesson 13's empty doorway again — replay is for investigating, not for
-driving, even in its current unfinished state.
+```powershell
+$env:AKIT_LOG_PATH = "logs\akit_26-10-29_01-12-37.wpilog"   # your file's name
+./gradlew run
+```
+
+It works through the session in a few seconds and exits, leaving a new
+file next to the recording, ending in `_sim.wpilog`.
+
+**Then put both switches back:**
+
+```powershell
+Remove-Item Env:AKIT_LOG_PATH
+```
+
+and set `kSimMode` back to `Mode.SIM` — replay is for investigating, not
+for driving.
+
+Open the `_sim` file and put `RealOutputs/Elevator/AtGoal` and
+`ReplayOutputs/Elevator/AtGoal` on the same graph as `GoalMeters`.
+
+**This is the payoff.** In `RealOutputs`, `AtGoal` sat false for the
+entire recorded session — that's what actually happened, on the day, with
+the buggy code. In `ReplayOutputs`, computed just now for that exact same
+session through the fixed code, it flips true 1.2 s after `GoalMeters`
+steps to 0.75, as the climbing carriage comes within a millimetre of the
+goal. It drops back for a tick or two while the carriage overshoots by
+about 1.3 mm, and it's true for good from 1.26 s (measured, on a
+recording made the way section 3 describes). Nothing about the match
+changed. The button presses, the timing, the heights the carriage reached:
+all of that is the recording, replayed verbatim. The only difference
+between the two outputs is which line of code decided what to do with the
+same evidence. That's the idea Lesson 13 introduced — "a replay is your
+code, today's version, fed the readings of a run that already happened" —
+and here it's not a demonstration. It's the proof that your fix works,
+checked against a session that already happened instead of a fresh guess.
+
+> **Trying more than one fix?** `./gradlew replayWatch` (Lesson 13)
+> replays the log AdvantageScope has open every time you save a change,
+> so you can try one tolerance after another against the same match.
 
 ---
 
@@ -252,7 +271,7 @@ different bugs wearing the same `false`.
 **Add to `Elevator.periodic()`, below the `GoalMeters` line:**
 
 ```java
-    Telemetry.log("Elevator/HeightErrorMeters", m_inputs.heightMeters - m_goal.in(Meters));
+    Logger.recordOutput("Elevator/HeightErrorMeters", m_inputs.heightMeters - m_goal.in(Meters));
 ```
 
 Signed, not absolute — the sign tells you which direction the miss is
@@ -294,15 +313,22 @@ its `aim` marker. With the typo, that spin rate is always `0.0`. The
 robot drives the path with its nose pointing wherever it was. From the
 driver station, that looks like an ordinary autonomous run.
 
-Open that match's log and find the moment the same way you did in
-section 4 — this time the moment is `FollowPath/rotationOverrideActive`
-going `true`, about 0.6 s into the drive. Put it on the same graph as
-`Localizer/Pose`'s heading. Measured in the simulator, the two runs look
-like this:
+This one needs the other file each run leaves in `logs/`. B-Line's
+`FollowPath/` values aren't in AdvantageKit's log — Lesson 17 left them on
+**Telemetry** — so open the `WPILIB_….wpilog` from the same run instead.
+It saves everything that went out over NetworkTables: B-Line's values
+under `Telemetry/FollowPath`, and AdvantageKit's outputs under
+`AdvantageKit/RealOutputs`, so `Localizer/Pose` and the `Aim/` keys are in
+it too.
+
+Find the moment the same way you did in section 4 — this time the moment
+is `FollowPath/rotationOverrideActive` going `true`, about 0.6 s into the
+drive. Put it on the same graph as `Localizer/Pose`'s heading. Measured in
+the simulator, the two runs look like this:
 
 | | override active | heading while it is |
 |---|---|---|
-| `kAimTagId = 20` | `true`, about 3.7 s | swings to about −100° and tracks the tag |
+| `kAimTagId = 20` | `true`, about 3.7 s | follows the bearing to the tag, round to about −124° by `release` |
 | `kAimTagId = 220` | `true`, about 3.7 s | stays at **0.0°** the whole time |
 
 Read them *together*, as in section 5: the override says the aiming code
@@ -310,9 +336,9 @@ has the wheel, and the heading says nobody is turning it. Neither trace
 is wrong. Now look for the third trace, `Aim/ErrorDegrees`, over that same
 window. It isn't there. Not zero, not flat — **absent**: in the fixed
 run the log has `Aim/ErrorDegrees`, `Aim/FeedforwardRadPerSec` and
-`Aim/IsAimed`, and in the typo run it has none of the three, because
-`Aim.omegaToward` is the only place those keys get published, and with an
-invalid tag ID it's never called at all. That's the whole diagnosis,
+`Aim/IsAimed`, and in the typo run it has none of the three, in either
+file, because `Aim.omegaToward` is the only place those keys get
+recorded, and with an invalid tag ID it's never called at all. That's the whole diagnosis,
 found in a trace that never showed up when you went looking for it: the
 path executed perfectly, and the aim assist riding on top of it never ran
 a single tick. The fix isn't a gain or a gearbox — it's one `int` a Java
@@ -340,13 +366,13 @@ not a lucky guess.
    subsystem you've built and ask: if this misbehaved on the field, what
    number would you end up computing by hand off two traces? Log that
    number now, before you need it.
-3. **Prove the fix the honest way this track currently allows.** Write
-   down the exact sequence you used in section 3 — which button, how
-   long you waited, how many times you pressed it — and re-run it fresh
-   with the fix in place. Then go reread Lesson 13's "empty doorway" Try
-   It and think concretely about what changes here once `Mode.REPLAY`
-   has a real engine behind it: which parts of this lesson would you
-   redo, and which would stay exactly as written?
+3. **Run the replay yourself.** Don't just read section 6 — actually
+   switch modes, replay your own recorded session, and watch
+   `Elevator/AtGoal` disagree between `RealOutputs` and `ReplayOutputs`.
+   Then put the typo back and replay the same recording once more: this
+   time the two agree, false the whole way, because the replay reproduces
+   the bug as faithfully as it proved the fix. Reading about it and doing
+   it are different things.
 4. **Try the toy sequence.** Bind a spare button to
    `Command.sequence(robot.elevator.goToHeight(ElevatorConstants.kScoreMid),
    Command.noRequirements(coroutine -> System.out.println("scored")).named("Print Scored")).named("Score And Print")`.
@@ -361,30 +387,21 @@ not a lucky guess.
 
 ## What you learned
 
-Nothing here was new syntax — `Telemetry.log` again, a call you've had
-since Lesson 3 —
-which is itself the point: by this lesson, the tools were never the hard
-part. The skill is the sequence: find the moment a value changed, put
-the measurement and the decision built from it on the *same* graph, and
-read where they stop agreeing — because a measurement that arrived and a
-decision that says it didn't are never both wrong for the same reason.
+Nothing here was new syntax — `recordOutput` and `processInputs` again,
+the same two calls from Lesson 13 — which is itself the point: by this
+lesson, the tools were never the hard part. The skill is the sequence:
+find the moment a value changed, put the measurement and the decision
+built from it on the *same* graph, and read where they stop agreeing —
+because a measurement that arrived and a decision that says it didn't are
+never both wrong for the same reason. Once you have a hypothesis, **replay
+proves it**: fix the code, re-run the exact recorded session, and compare
+`RealOutputs` against `ReplayOutputs` for the same match — not a fresh
+guess, a checked fix.
 
 And the standing habit to keep is the one from section 7: the moment you
 catch yourself subtracting two traces by hand to understand what
 happened, that subtraction belongs in the log, so next time it's one
 glance instead of a hypothesis.
-
-**One thing here was genuinely different from the course this was ported
-from, and it's worth naming rather than smoothing over.** Real replay —
-fix the code, recompute the exact match, compare the before and after —
-is a better proof than anything section 6 could offer this port today.
-This track's `Mode.REPLAY` doorway is still open and empty, because the
-logging library it needs doesn't support this framework yet. That's not
-a reason to skip the technique; the technique never depended on replay
-in the first place, only its *strongest form* of proof did. Knowing the
-difference between "I re-ran a similar scenario" and "I recomputed the
-exact match" is itself worth carrying forward — it's the same honesty
-this lesson has been asking of every trace you read.
 
 None of this required the bug to be dramatic. A tenth of a millimetre
 and a fat-fingered tag ID both cost a team an entire autonomous run, and

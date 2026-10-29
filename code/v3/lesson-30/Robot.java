@@ -6,20 +6,14 @@ package first.robot;
 
 import static org.wpilib.units.Units.Volts;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.command3.SchedulerEvent;
 import org.wpilib.command3.button.CommandGamepad;
 import org.wpilib.driverstation.RobotState;
 import org.wpilib.hardware.hal.RobotMode;
-import org.wpilib.simulation.AlertSim;
 import org.wpilib.simulation.BatterySim;
 import org.wpilib.simulation.RoboRioSim;
-import org.wpilib.telemetry.Telemetry;
-import org.wpilib.telemetry.TelemetryTable;
 import org.wpilib.system.DataLogManager;
 import org.wpilib.system.RobotController;
 import org.wpilib.util.Alert;
@@ -188,17 +182,21 @@ public class Robot extends LoggedOpModeRobot {
   public void robotPeriodic() {
     Scheduler.getDefault().run();
 
-    double batteryVolts = RobotController.getBatteryVoltage();
-    Telemetry.log("Power/TotalCurrentAmps", getTotalCurrentAmps());
-    Telemetry.log("Power/BatteryVolts", batteryVolts);
+    // The battery's voltage is a reading, like a sensor's, so it's recorded as
+    // one: a replay gets the voltage the robot really had, not a fresh guess.
+    PowerReadingsAutoLogged power = new PowerReadingsAutoLogged();
+    power.batteryVolts = RobotController.getBatteryVoltage();
+    Logger.processInputs("Power", power);
+    Logger.recordOutput("Power/TotalCurrentAmps", getTotalCurrentAmps());
     // Compared against the threshold here rather than read from a flag, so the
     // answer is the same on a robot and in simulation, and you choose the line.
-    Telemetry.log("Power/BrownedOut", batteryVolts < PowerConstants.kBrownoutVoltage.in(Volts));
+    Logger.recordOutput(
+        "Power/BrownedOut", power.batteryVolts < PowerConstants.kBrownoutVoltage.in(Volts));
     // The robot's, not any subsystem's: nothing smaller knows about it. Only
     // judged while disabled, because a battery under load always reads low;
     // what says it's flat is the voltage at rest.
     m_lowBattery.set(
-        RobotState.isDisabled() && batteryVolts < PowerConstants.kLowBatteryVoltage.in(Volts));
+        RobotState.isDisabled() && power.batteryVolts < PowerConstants.kLowBatteryVoltage.in(Volts));
   }
 
   /**
@@ -225,30 +223,6 @@ public class Robot extends LoggedOpModeRobot {
     // mechanism owns it, and every one of them changes it — so it's the
     // first thing since then with a real reason to live here.
     RoboRioSim.setVInVoltage(BatterySim.calculateDefaultBatteryLoadedVoltage(getTotalCurrentAmps()));
-    showAlerts();
-  }
-
-  /**
-   * Sim only. On a real robot the Driver Station shows alerts, but SimGUI
-   * can't read them on this WPILib. It can draw an alerts panel from a table
-   * holding three lists, though, so fill one in from what the simulator knows.
-   */
-  private void showAlerts() {
-    List<String> errors = new ArrayList<>();
-    List<String> warnings = new ArrayList<>();
-    List<String> infos = new ArrayList<>();
-    for (AlertSim.AlertInfo alert : AlertSim.getActive()) {
-      switch (alert.level) {
-        case HIGH -> errors.add(alert.text);
-        case MEDIUM -> warnings.add(alert.text);
-        case LOW -> infos.add(alert.text);
-      }
-    }
-    TelemetryTable panel = Telemetry.getTable("Alerts");
-    panel.setType("Alerts"); // what tells SimGUI to draw this table as a panel
-    panel.log("errors", errors.toArray(new String[0]));
-    panel.log("warnings", warnings.toArray(new String[0]));
-    panel.log("infos", infos.toArray(new String[0]));
   }
 
   /**

@@ -824,7 +824,7 @@ The code ships the simple version because it's the one you can read. Try It
 
 ## 8. Run it
 
-`./gradlew simulateJava`. Drive around and watch `ObjectDetection/Pieces` on
+Run the robot in simulation. Drive around and watch `ObjectDetection/Pieces` on
 the field view — markers should sit on top of the three fixed positions from
 `kSimGamePiecePositions`, flickering in and out as the camera's frame rate
 and the scheduler's tick rate drift in and out of phase.

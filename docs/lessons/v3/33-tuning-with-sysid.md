@@ -488,7 +488,7 @@ clearing two separate hurdles on purpose.
 
 ## 6. Run it, and read what happened
 
-`./gradlew simulateJava`. In SimGUI, pick **RobotUtility** from the opmode
+Run the robot in simulation. In SimGUI, pick **RobotUtility** from the opmode
 selector — same move as picking **My Teleop** back in Lesson 1, just a
 different opmode — then set Robot State to enabled. Hold **Back + the top
 face button** for a few seconds — the wheel should spin up slowly and smoothly.
@@ -502,22 +502,21 @@ Teleop** afterward and drive normally — the flywheel's `idle()` default
 command is still there, untouched, because `RobotUtility` never touched it
 either.
 
-Every run writes to the same `.wpilog` file `DataLogManager.start()` already
-opens in `Robot()`'s constructor — the one every `Telemetry.log`
-value has been landing in since Lesson 3. That's worth stating plainly,
-because it's a genuine difference from the course this lesson was ported
-from: on a track with a separate AdvantageKit `Logger`, `SysIdRoutineLog`
-writes through WPILib's own `DataLogManager` instead, landing in a *second*
-file. This track never installed that separate `Logger` — every value goes
-through `DataLogManager` — so there is only one file, and `SysIdRoutineLog`
-(whose bytecode calls `DataLogManager.getLog()` directly) joins it,
-distinguished by its own keys:
-`sysid-test-state-flywheel` for which test is running, and
-`voltage-flywheel-flywheel` / `velocity-flywheel-flywheel` for the readings
-`log.motor("flywheel")` published (the motor name and the routine's own name
-both happen to be `"flywheel"` here, which is why it repeats; all three
-names were read out of a `.wpilog` recorded by a real run). One log, not
-two.
+Every run lands in a log file, but not AdvantageKit's, and that's easy to
+trip over. `SysIdRoutineLog` writes through WPILib's own `DataLogManager`
+(its bytecode calls `DataLogManager.getLog()` directly), not through
+AdvantageKit's `Logger`. That's the log `DataLogManager.start()` opens in
+`startLogging()`, the line Lesson 13 kept so that everything published
+outside AdvantageKit still gets saved. So every run leaves **two** files in
+`logs/`: AdvantageKit's `akit_….wpilog`, with every input and output, and
+WPILib's `WPILIB_….wpilog`, which is where the characterization data is.
+It has its own keys there: `sysid-test-state-flywheel` for which test is
+running, and `voltage-flywheel-flywheel` / `velocity-flywheel-flywheel` for
+the readings `log.motor("flywheel")` published (the motor name and the
+routine's own name both happen to be `"flywheel"` here, which is why it
+repeats). All three were read out of the `WPILIB_` file of a real run, and
+none of them is in the `akit_` file beside it. **For the analysis, open the
+`WPILIB_` file.**
 
 > **The wheel doesn't start from rest.** The `idle()` default command from
 > Lesson 28 is still what the flywheel is doing when you press the buttons,
@@ -531,8 +530,8 @@ two.
 > Try It #7 asks what it would take to start from rest.
 
 **Analyze it:** open the SysId tool from the WPILib extension's tool
-launcher, point it at the `.wpilog` you just recorded (log-file mode, not
-live), select the `flywheel` mechanism, and let it fit `kS`/`kV`/`kA` to the
+launcher, point it at the `WPILIB_….wpilog` you just recorded (log-file
+mode, not live), select the `flywheel` mechanism, and let it fit `kS`/`kV`/`kA` to the
 four runs. (Menus drift between seasons more than APIs do — if what you see
 doesn't match what's described here, the tool's own help is the current
 source of truth, not this paragraph.)
@@ -837,7 +836,7 @@ just guessing at.
    your specific current limits, or which mechanism your team is most
    nervous about. Write the version that's actually about your robot.
 4. **Read the dynamic test's own log by hand.** Before trusting the analysis
-   tool, open the `.wpilog` from a `sysIdDynamic` run and look at how fast
+   tool, open the `WPILIB_` log from a `sysIdDynamic` run and look at how fast
    velocity climbs right after the voltage step. That climb rate *is* what
    `kA` measures — seeing it once by eye is worth more than reading the
    definition twice.

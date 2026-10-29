@@ -306,7 +306,7 @@ simulation of the *actual* modules pushing the chassis around.
 
 ## 6. Run it
 
-`./gradlew simulateJava` → **My Teleop** → **Enabled**. In AdvantageScope, plot
+Run the robot in simulation → **My Teleop** → **Enabled**. In AdvantageScope, plot
 `Drivetrain/HeadingDegrees`. Press the bottom face button — heading sweeps
 toward `90°`, slows as it approaches, settles inside the ±2° band, and the
 command ends. Press the right face button — it comes back to `0°`. That's P

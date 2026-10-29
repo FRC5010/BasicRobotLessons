@@ -171,7 +171,7 @@ public class Robot extends LoggedOpModeRobot {
 
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
-     * Log the robot's total battery draw, the battery voltage and whether it has dropped below the brownout line, every tick. Also add a private method after this one that sums the three mechanisms' battery currents, since only this class knows all of them.
+     * Record the battery voltage as a reading, then the robot's total battery draw and whether the voltage has dropped below the brownout line, every tick. Also add a private method after this one that sums the three mechanisms' battery currents, since only this class knows all of them.
      */
   }
 

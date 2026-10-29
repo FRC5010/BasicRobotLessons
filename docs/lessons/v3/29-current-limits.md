@@ -245,8 +245,8 @@ default config since Lesson 20.
 
     m_pivot.getConfigurator().apply(config);
 
-    // The roller had been getting a bare default config since it was
-    // built — it draws current too, and now it budgets like everything else.
+    // The roller had been getting a bare default config since it was built —
+    // it draws current too, and now it budgets like everything else.
     TalonFXConfiguration rollerConfig = new TalonFXConfiguration();
     rollerConfig.CurrentLimits.StatorCurrentLimitEnable = true;
     rollerConfig.CurrentLimits.StatorCurrentLimit = PowerConstants.kStatorLimit.in(Amps);
@@ -302,22 +302,11 @@ nothing on this robot knows its own total draw, so start by measuring.
     inputs.rollerSupplyCurrentAmps = m_roller.getSupplyCurrent().getValue().in(Amps);
 ```
 
-Then each subsystem logs its own reading, and answers for itself.
-
-**Add to `Elevator.periodic()`, `Flywheel.periodic()`, and `Arm.periodic()`, below the lines that already log their other inputs:**
-
-```java
-    // Elevator and Flywheel: below the stator line
-    Telemetry.log("Elevator/SupplyCurrentAmps", m_inputs.supplyCurrentAmps);
-    Telemetry.log("Flywheel/SupplyCurrentAmps", m_inputs.supplyCurrentAmps);
-
-    // Arm: below the roller line, one per motor
-    Telemetry.log("Arm/PivotSupplyCurrentAmps", m_inputs.pivotSupplyCurrentAmps);
-    Telemetry.log("Arm/RollerSupplyCurrentAmps", m_inputs.rollerSupplyCurrentAmps);
-```
-
-Each line goes in its own subsystem — the block above just shows all four
-so you can see the pattern.
+There's no log line to add. Each bundle is `@AutoLog`'d, so
+`processInputs` records the new fields along with the old ones the moment
+they exist: `Elevator/SupplyCurrentAmps`, `Flywheel/SupplyCurrentAmps`,
+`Arm/PivotSupplyCurrentAmps` and `Arm/RollerSupplyCurrentAmps`. All that's
+left is for each subsystem to answer for itself.
 
 **Add to `Elevator` and `Flywheel`, near their other getters:**
 
@@ -362,6 +351,32 @@ The logging belongs on a real robot too — a real brownout is exactly the
 thing you'd want in the log — so it goes in `robotPeriodic()`, which runs
 every tick whether the code is real or simulated.
 
+Three numbers go in, and one of them is different. The total current and
+the brownout flag are things your code works out, so they're outputs. The
+battery voltage is a **reading**: on a real robot it's measured, the same
+as an encoder's position. So it's recorded as one, through
+`processInputs`, in a bundle of its own. You've done this once before —
+Lesson 16's `StartingPlacement` was a reading that belonged to no
+subsystem either.
+
+**Create `PowerReadings.java`, next to `Robot.java`:**
+
+```java
+package first.robot;
+
+import org.littletonrobotics.junction.AutoLog;
+
+/**
+ * The battery, the one reading on the robot that belongs to no subsystem.
+ * Recorded like a sensor's, so a replay uses the voltage the robot really
+ * had instead of working one out again.
+ */
+@AutoLog
+public class PowerReadings {
+  public double batteryVolts = 0.0;
+}
+```
+
 **Add to `Robot.robotPeriodic()`, below `Scheduler.getDefault().run()`:**
 
 ```java
@@ -369,12 +384,25 @@ every tick whether the code is real or simulated.
   public void robotPeriodic() {
     Scheduler.getDefault().run();
 
-    double batteryVolts = RobotController.getBatteryVoltage();
-    Telemetry.log("Power/TotalCurrentAmps", getTotalCurrentAmps());
-    Telemetry.log("Power/BatteryVolts", batteryVolts);
-    Telemetry.log("Power/BrownedOut", batteryVolts < PowerConstants.kBrownoutVoltage.in(Volts));
+    // The battery's voltage is a reading, like a sensor's, so it's recorded as
+    // one: a replay gets the voltage the robot really had, not a fresh guess.
+    PowerReadingsAutoLogged power = new PowerReadingsAutoLogged();
+    power.batteryVolts = RobotController.getBatteryVoltage();
+    Logger.processInputs("Power", power);
+    Logger.recordOutput("Power/TotalCurrentAmps", getTotalCurrentAmps());
+    // Compared against the threshold here rather than read from a flag, so the
+    // answer is the same on a robot and in simulation, and you choose the line.
+    Logger.recordOutput(
+        "Power/BrownedOut", power.batteryVolts < PowerConstants.kBrownoutVoltage.in(Volts));
   }
 ```
+
+`processInputs("Power", power)` records the voltage as `Power/BatteryVolts`.
+In a replay it does the opposite, the same as every bundle since Lesson 13:
+it overwrites `power.batteryVolts` with the voltage from the log. That's
+why everything after it reads `power.batteryVolts` and never asks
+`RobotController` again — the brownout flag in a replay is worked out from
+the voltage the robot really had.
 
 > Worth trying, and worth not being surprised by: `RobotController.isBrownedOut()`
 > looks like the obvious call for that boolean, and it exists. It just
@@ -401,6 +429,13 @@ reason to live in that method instead.
     RoboRioSim.setVInVoltage(BatterySim.calculateDefaultBatteryLoadedVoltage(getTotalCurrentAmps()));
   }
 ```
+
+> A replay runs on your laptop, so it's a simulation too, and
+> `simulationPeriodic()` runs in one as well. It works out a battery of its
+> own from the replayed currents — and nothing reads it, because the
+> voltage your code uses came out of the log. Replay a run from a real
+> robot, or one recorded on a different simulated battery, and
+> `Power/BatteryVolts` is still the voltage that run really had.
 
 **Add the imports:**
 
@@ -434,14 +469,9 @@ roboRIO gives up.
 
 ## 7. Watch one happen
 
-**Run it:**
-
-```powershell
-./gradlew simulateJava
-```
-
-Graph `Power/TotalCurrentAmps` and `Power/BatteryVolts` together in
-AdvantageScope — they're under `/Telemetry/Power`. Drive around normally and
+**Run the robot in simulation.** Graph `Power/TotalCurrentAmps` and
+`Power/BatteryVolts` together in AdvantageScope. The voltage is a reading, so it's at `/AdvantageKit/Power`;
+the total is an output, at `/AdvantageKit/RealOutputs/Power`. Drive around normally and
 you'll see the voltage twitch and recover — that's the sag every robot has
 all the time.
 
@@ -451,8 +481,8 @@ and press the **intake button** (the left face button), all together. The
 elevator climbs, the flywheel spins up, and the arm swings down with the
 roller running.
 
-With the budget from section 4, the total draw peaks at **87–94 A** and the
-battery bottoms out around **10.1–10.3 V**. Everything works, and
+With the budget from section 4, the total draw peaks at **58–87 A** and the
+battery bottoms out around **10.3–10.8 V**. Everything works, and
 `Power/BrownedOut` stays false.
 
 Now see what the budget bought. Turn every limit off:
@@ -465,15 +495,21 @@ Now see what the budget bought. Turn every limit off:
 ```
 
 *(In `ArmIOTalonFX`, that's `rollerConfig` too.)* Repeat exactly the same
-thing. The draw peaks near **201 A** and the battery sags to **8.0 V**:
+thing. The draw peaks near **200 A** and the battery sags to **8.0 V**:
 worse, and still not a brownout. Delete those limit lines entirely and you're
-on Phoenix's defaults, which peak around **139 A** and sag to **9.2 V**.
+on Phoenix's defaults, which peak around **97–144 A** and sag to
+**9.1–10.1 V**.
 
 | Configuration | Peak draw | Battery low point | |
 |---|---|---|---|
-| No limits at all | 201 A | 7.97 V | sags, survives |
-| Phoenix defaults | 139 A | 9.23 V | fine |
-| The budget above | 87–94 A | 10.1–10.3 V | comfortable |
+| No limits at all | 200–202 A | 7.95–8.01 V | sags, survives |
+| Phoenix defaults | 97–144 A | 9.13–10.06 V | fine |
+| The budget above | 58–87 A | 10.25–10.83 V | comfortable |
+
+*(Ten runs of each, the same moves every time. The peaks are spikes a few
+ticks long, and a 20 ms sample catches some of them and misses others, so
+the same moves read differently from run to run. That's why most of these
+are ranges.)*
 
 Three mechanism motors, even unlimited, can't pull a fresh battery under
 6.3 V. That's honest, and it's the same thing section 3 said: this robot has
@@ -490,22 +526,35 @@ end of an event is closer to 11 V with twice the internal resistance.
     RoboRioSim.setVInVoltage(BatterySim.calculateLoadedBatteryVoltage(11.0, 0.04, getTotalCurrentAmps()));
 ```
 
-Run the same three configurations again:
+Run the same three configurations again, ten times each:
 
-| Configuration, 11 V battery, 40 mΩ | Peak draw | Battery low point | |
+| Configuration, 11 V battery, 40 mΩ | Peak draw | Battery low point | Browned out |
 |---|---|---|---|
-| No limits at all | 645 A | 0.00 V | **brownout** |
-| Phoenix defaults | 105–110 A | 6.6–6.8 V | survives, barely |
-| The budget above | 68–83 A | 7.7–8.3 V | survives |
+| No limits at all | 204–619 A | 0.00–2.86 V | **10 of 10** |
+| Phoenix defaults | 84–153 A | 4.87–7.65 V | **2 of 10** |
+| The budget above | 67–88 A | 7.50–8.31 V | 0 of 10 |
 
-With no limits the whole thing collapses. The elevator gets only partway
-(about 0.24 m on its way to 1.45 m) and stalls, the flywheel reaches 41 rot/s
-and then falls to nothing, and `Power/BrownedOut` goes true. Phoenix's
-defaults get through with a few tenths of a volt to spare. The budget has
-more than a volt.
+With no limits the robot browns out the moment you enable it, before you've
+pressed a thing: the flywheel's idle spin-up alone drags the rail under
+6.3 V and `Power/BrownedOut` goes true. Then ask for everything at once. In
+seven of the ten runs the battery collapsed all the way to 0 V. The elevator
+got only 0.13–0.52 m on its way to 1.45 m and stalled, and the flywheel
+reached 39–51 rot/s and then fell to nothing. In the other three the rail
+dipped to 1.0–2.9 V and the robot carried on: the elevator reached the top
+every time, and the flywheel made its 60 rot/s in two of them.
 
-*(Those peaks come from runs of a few seconds each, so they move by a few
-amps from run to run. That's why some are ranges.)*
+Phoenix's defaults are a gamble on this battery. Eight runs got through with
+0.3–1.4 V to spare. The other two browned out partway through the moves,
+dipping to 4.87 V for a few ticks, and still finished. Those two were the
+runs whose peak reached 153 A; none of the other eight passed 111 A. Same
+code, same moves, so you can't know beforehand which kind of run you'll get.
+
+Only the budget was safe every time. Its worst run stayed 1.2 V above the
+line.
+
+*(The peaks vary for the same reason as on the fresh battery, and the
+no-limits ones vary the most: the seven runs that collapsed peaked at
+368–619 A, the three that didn't at 204–249 A.)*
 
 > **The one thing to carry away from watching this:** nothing in the log
 > said "brownout" until you added that line. Everything else just looked
@@ -532,13 +581,23 @@ amps from run to run. That's why some are ranges.)*
    intake. Detect it and light the LEDs from Lesson 23.
 4. **Budget for a sag.** Section 7's tired battery was 11 V and 40 mΩ. Try
    11.5 V and 30 mΩ, a realistic third-match battery, and then find the
-   internal resistance at which even the budget browns out. That's the
+   internal resistance at which even the budget browns out. Run each
+   setting a few times, because one run can get lucky. That's the
    battery you should replace before a match.
 5. **Prioritise.** Right now every mechanism gets its budget regardless
    of what else is happening. Make the flywheel's limit drop while the
    elevator is moving. Then decide whether you actually want that,
    because a shooter that quietly gets slower is worse than one that's
    honestly unavailable.
+6. **Replay a tired battery.** Record the everything-at-once run on
+   section 7's tired battery, put the fresh battery's line back, and
+   replay the log the way Lesson 13 did. `Power/BatteryVolts` in the
+   replay is still the tired battery's, even though the code you replayed
+   simulates a fresh one. Then swap `Logger.processInputs("Power", power)`
+   for `Logger.recordOutput("Power/BatteryVolts", power.batteryVolts)`,
+   do the same again, and compare `RealOutputs/Power/BatteryVolts` with
+   `ReplayOutputs/Power/BatteryVolts`. Explain the gap before you put
+   `processInputs` back.
 
 ---
 
@@ -570,7 +629,9 @@ And the practical one: **a brownout doesn't announce itself.** It looks
 like every subsystem breaking at once for unrelated reasons, which is the
 single most misleading symptom a robot can produce. Three keys — total
 current, battery voltage, and the brownout flag — turn an evening of
-suspicion into a ten-second diagnosis. Put them in before you need them.
+suspicion into a ten-second diagnosis. Put them in before you need them,
+and record the voltage as the reading it is, so a replay looks at the
+battery the robot really had.
 
 That's the robot protected from itself. Go and brown it out a few times
 on purpose — it's the cheapest way to learn what the trace looks like,

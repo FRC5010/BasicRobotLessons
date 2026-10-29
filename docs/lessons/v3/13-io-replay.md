@@ -970,13 +970,9 @@ import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 Time to use all of it. A replay is two runs: one that records, and one
 that plays the recording back.
 
-**Record.** With `kSimMode` still set to `Mode.SIM`, start the simulator:
-
-```powershell
-./gradlew run
-```
-
-In SimGUI, pick **RobotTeleop**, enable, and drive for ten seconds or so.
+**Record.** With `kSimMode` still set to `Mode.SIM`, run the robot in
+simulation. In SimGUI, pick **RobotTeleop**, enable, and drive for ten
+seconds or so.
 Tap the bottom face button once to turn to 90° on the way. Disable, then
 close the simulator window. In your project's `logs/` folder there's now a
 file named something like `akit_26-10-28_12-53-05.wpilog`: that's your run.

@@ -12,6 +12,10 @@ import org.junit.jupiter.api.Test;
 
 import first.robot.subsystems.SuperstructureState;
 
+/**
+ * The cheapest useful test on the robot: pure logic, no hardware, no HAL, no
+ * waiting. It runs in a millisecond and it checks a rule you can get wrong.
+ */
 public class SuperstructureStateTest {
 
   @Test

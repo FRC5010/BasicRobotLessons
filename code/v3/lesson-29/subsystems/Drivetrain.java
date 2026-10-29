@@ -385,7 +385,7 @@ public class Drivetrain implements Mechanism, PoseProvider {
     Logger.processInputs("Drivetrain/Gyro", m_gyroInputs);
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
-     * Log whether the gyro is connected, and set the alert every tick.
+     * Set the alert every tick, from whether the gyro is connected.
      */
 
     SwerveModuleVelocity[] states = new SwerveModuleVelocity[4];

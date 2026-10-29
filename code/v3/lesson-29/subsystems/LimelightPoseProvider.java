@@ -36,7 +36,7 @@ public class LimelightPoseProvider implements PoseProvider {
     Logger.processInputs(m_logKey, m_inputs); // in replay, the frames come from the log
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
-     * Log whether the camera is connected, and set the alert every tick.
+     * Set the alert every tick, from whether the camera is connected.
      */
 
     for (VisionIO.PoseObservation observation : m_inputs.poseObservations) {

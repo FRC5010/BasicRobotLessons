@@ -190,7 +190,7 @@ one line per mechanism, all in one obvious place.
 
 ## 5. Run it
 
-`./gradlew simulateJava` → **My Teleop** → **Enabled**. Push the stick and
+Run the robot in simulation → **My Teleop** → **Enabled**. Push the stick and
 watch the plots from Lesson 3 — this is the payoff Lesson 3 promised:
 
 - **Velocity** ramps up to a steady value and back to zero — like a real motor
