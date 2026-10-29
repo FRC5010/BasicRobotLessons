@@ -213,6 +213,17 @@ this test needs, which is worth noticing: **you cannot assert on something
 you cannot observe**, and a getter that turns out to be reusable for
 testing is a small sign the design is honest about its own state.
 
+> One thing a test can't observe: anything the elevator *records*. In a
+> test nobody has called `Logger.start()` — that happens in `Robot`, which
+> a test never builds — and until something does, every
+> `Logger.processInputs` and `Logger.recordOutput` call returns without
+> doing anything. AdvantageKit checks before each one. That's harmless:
+> `updateInputs` still fills the inputs object, and `processInputs` simply
+> leaves it alone. But it means `Elevator/GoalMeters` exists nowhere a test
+> could read it back, not in a log file and not in NetworkTables. Ask the
+> object instead: its getters, and the inputs behind them, work exactly as
+> they do on the robot.
+
 **Create `src/test/java/first/robot/ElevatorHomingTest.java`:**
 
 ```java
@@ -338,8 +349,8 @@ exact test (five runs at 0 ms, two at each of the others):
 | `Thread.sleep(...)` | Final height | |
 |---|---|---|
 | 20 ms (correct) | 0.0090 m | within tolerance of 0.01 m |
-| 4 ms | 0.0094 m | still within tolerance — barely different |
-| 0 ms (no sleep at all) | **−0.31 to −0.34 m** in four runs of five (0.0100 m in the fifth) | up to a third of a metre below the floor |
+| 4 ms | 0.0090–0.0094 m | still within tolerance — barely different |
+| 0 ms (no sleep at all) | **−0.34 m** in four runs of five (0.0094 m in the fifth) | a third of a metre below the floor |
 
 The middle row is the surprising one: a *partial* shortcut barely moves
 the number here, and even the zero-sleep row sometimes passes. The physics

@@ -15,12 +15,20 @@ import org.wpilib.simulation.DriverStationSim;
 import first.robot.Constants.ElevatorConstants;
 import first.robot.subsystems.Elevator;
 
+/**
+ * Lesson 21's claim, checked: a relative encoder reads zero at power-on wherever
+ * the carriage actually is, and homing is what replaces that guess with a fact.
+ *
+ * <p>One test method, on purpose. A DigitalInput holds its DIO channel for the
+ * life of the JVM, so a second Elevator in a second test would fail to allocate.
+ */
 public class ElevatorHomingTest {
 
+  /** One robot tick: run the scheduler, then wait as long as a real tick takes. */
   private static void tick() {
     Scheduler.getDefault().run();
     try {
-      Thread.sleep(20);
+      Thread.sleep(20); // the full 20 ms — see the lesson on why
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
     }
@@ -28,7 +36,7 @@ public class ElevatorHomingTest {
 
   @Test
   void homingReplacesTheEncodersGuessWithTheSwitchesFact() {
-    // --- arrange ---
+    // --- arrange ---------------------------------------------------------
     HAL.initialize();
     DriverStationSim.setDsAttached(true);
     DriverStationSim.setEnabled(true);
@@ -40,24 +48,25 @@ public class ElevatorHomingTest {
       tick();
     }
 
-    // --- assert the lie ---
+    // --- assert the lie --------------------------------------------------
+    // The simulated carriage is sitting at kSimStartHeight, well up the rails.
     assertFalse(elevator.isHomed(), "nothing has homed it yet");
     assertEquals(0.0, elevator.getHeightMeters(), 0.01,
         "a relative encoder reads zero at power-on, wherever the carriage is");
     assertFalse(elevator.atBottomLimit(),
-        "and the switch knows better -- the carriage is not at the bottom");
+        "and the switch knows better — the carriage is not at the bottom");
 
-    // --- act ---
+    // --- act ---------------------------------------------------------------
     Scheduler.getDefault().schedule(elevator.home());
     for (int i = 0; i < 300 && !elevator.isHomed(); i++) {
       tick();
     }
 
-    // --- assert the fix ---
+    // --- assert the fix ----------------------------------------------------
     assertTrue(elevator.isHomed(), "homing should have finished within 6 seconds");
     assertTrue(elevator.atBottomLimit(), "it stopped because the switch tripped");
     for (int i = 0; i < 3; i++) {
-      tick();
+      tick(); // setPositionMeters needs a couple of ticks to read back
     }
     assertEquals(ElevatorConstants.kBottomLimitHeight.in(Meters),
         elevator.getHeightMeters(), 0.02,
