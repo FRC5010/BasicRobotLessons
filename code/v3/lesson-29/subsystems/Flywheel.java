@@ -1,18 +1,18 @@
 package first.robot.subsystems;
 
-import static org.wpilib.units.Units.Degrees;
-import static org.wpilib.units.Units.Meters;
 import static org.wpilib.units.Units.RotationsPerSecond;
 
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
-import org.wpilib.smartdashboard.Mechanism2d;
-import org.wpilib.smartdashboard.MechanismLigament2d;
-import org.wpilib.smartdashboard.MechanismRoot2d;
 import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.Angle;
 import org.wpilib.units.measure.AngularVelocity;
+
+import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.mechanism.LoggedMechanism2d;
+import org.littletonrobotics.junction.mechanism.LoggedMechanismLigament2d;
+import org.littletonrobotics.junction.mechanism.LoggedMechanismRoot2d;
 
 import first.robot.Constants;
 import first.robot.Constants.ElevatorConstants;
@@ -28,7 +28,7 @@ public class Flywheel implements Mechanism {
     case SIM -> new FlywheelIOSim();
     case REPLAY -> new FlywheelIO() {}; // inputs come from the log
   };
-  private final FlywheelIO.FlywheelIOInputs m_inputs = new FlywheelIO.FlywheelIOInputs();
+  private final FlywheelIOInputsAutoLogged m_inputs = new FlywheelIOInputsAutoLogged();
 
   private AngularVelocity m_goal = RotationsPerSecond.of(0);
   /**
@@ -39,18 +39,16 @@ public class Flywheel implements Mechanism {
   // A speedometer: one hub, two needles. There is nothing physical to draw
   // here — a spinning wheel looks the same at every speed — so the picture
   // is of the number instead.
-  private final Mechanism2d m_dial = new Mechanism2d(
-      FlywheelConstants.kDialSize.in(Meters), FlywheelConstants.kDialSize.in(Meters));
-  private final MechanismRoot2d m_hub = m_dial.getRoot(
-      "Hub", FlywheelConstants.kDialSize.in(Meters) / 2, FlywheelConstants.kDialSize.in(Meters) / 2);
+  private final LoggedMechanism2d m_dial = new LoggedMechanism2d(
+      FlywheelConstants.kDialSize, FlywheelConstants.kDialSize);
+  private final LoggedMechanismRoot2d m_hub = m_dial.getRoot(
+      "Hub", FlywheelConstants.kDialSize.div(2), FlywheelConstants.kDialSize.div(2));
   /** Where the wheel is asked to be. The gap to the other needle is the error. */
-  private final MechanismLigament2d m_goalNeedle = m_hub.append(
-      new MechanismLigament2d("Goal", FlywheelConstants.kNeedleLength.in(Meters),
-          FlywheelConstants.kZeroAngle.in(Degrees)));
+  private final LoggedMechanismLigament2d m_goalNeedle = m_hub.append(new LoggedMechanismLigament2d(
+      "Goal", FlywheelConstants.kNeedleLength, FlywheelConstants.kZeroAngle));
   /** Where the wheel actually is. */
-  private final MechanismLigament2d m_needle = m_hub.append(
-      new MechanismLigament2d("Speed", FlywheelConstants.kNeedleLength.in(Meters),
-          FlywheelConstants.kZeroAngle.in(Degrees)));
+  private final LoggedMechanismLigament2d m_needle = m_hub.append(new LoggedMechanismLigament2d(
+      "Speed", FlywheelConstants.kNeedleLength, FlywheelConstants.kZeroAngle));
 
   public Flywheel() {
     Scheduler.getDefault().addPeriodic(this::periodic);
@@ -62,13 +60,10 @@ public class Flywheel implements Mechanism {
 
   private void periodic() {
     m_io.updateInputs(m_inputs);
-    Telemetry.log("Flywheel/VelocityRps", m_inputs.velocityRps);
-    Telemetry.log("Flywheel/AppliedVolts", m_inputs.appliedVolts);
-    Telemetry.log("Flywheel/SetpointRps", m_inputs.setpointRps);
-    Telemetry.log("Flywheel/StatorCurrentAmps", m_inputs.statorCurrentAmps);
+    Logger.processInputs("Flywheel", m_inputs); // every reading, under Flywheel/
     Telemetry.log("Flywheel/SupplyCurrentAmps", m_inputs.supplyCurrentAmps);
-    Telemetry.log("Flywheel/GoalRps", m_goal.in(RotationsPerSecond));
-    Telemetry.log("Flywheel/AtSpeed", atSpeed());
+    Logger.recordOutput("Flywheel/GoalRps", m_goal.in(RotationsPerSecond));
+    Logger.recordOutput("Flywheel/AtSpeed", atSpeed());
     /**
      * ====== NEXT LESSON: ADD CODE HERE ======
      * Log whether the motor is connected, and set the alert every tick.
@@ -78,10 +73,10 @@ public class Flywheel implements Mechanism {
 
   /** Point both needles and log the dial. Runs every tick: a logged drawing is a snapshot. */
   private void updateDial() {
-    m_goalNeedle.setAngle(toDialAngle(m_goal.in(RotationsPerSecond)).in(Degrees));
-    m_needle.setAngle(toDialAngle(m_inputs.velocityRps).in(Degrees));
+    m_goalNeedle.setAngle(toDialAngle(m_goal.in(RotationsPerSecond)));
+    m_needle.setAngle(toDialAngle(m_inputs.velocityRps));
     m_needle.setColor(atSpeed() ? ElevatorConstants.kAtGoalColor : ElevatorConstants.kMovingColor);
-    Telemetry.log("Flywheel/Dial", m_dial);
+    Logger.recordOutput("Flywheel/Dial", m_dial);
   }
 
   /**

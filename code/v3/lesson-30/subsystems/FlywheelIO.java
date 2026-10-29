@@ -1,11 +1,14 @@
 package first.robot.subsystems;
 
+import org.littletonrobotics.junction.AutoLog;
+
 /**
  * The contract between the flywheel's logic and its hardware. Same shape as
  * the elevator's and the arm's — the only difference is that every value
  * here is a speed rather than a place.
  */
 public interface FlywheelIO {
+  @AutoLog
   public static class FlywheelIOInputs {
     public double velocityRps = 0.0;
     public double appliedVolts = 0.0;

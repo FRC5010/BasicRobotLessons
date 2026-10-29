@@ -283,8 +283,7 @@ number as the graph, drawn instead of printed.
 
 You can also find it inside SimGUI without opening a second tool: menu
 **NetworkTables → AdvantageKit → RealOutputs → Elevator → Mechanism**. Same
-drawing,
-same two viewers as the field view in Lesson 11 — the quick glance while
+drawing, same two viewers as the field view in Lesson 11 — the quick glance while
 sim is already open, and the full tool for anything careful.
 
 Now do the thing that makes it worth having. Put the Mechanism tab and the

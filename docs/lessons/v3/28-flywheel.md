@@ -15,7 +15,7 @@ sounds like it should.
 - **`kS`**, finally discussed honestly
 - **Recovery time, not error**, as the number that matters
 - Why a shooter idles between shots
-- **A gauge for a mechanism with nothing to draw** — a `Mechanism2d`
+- **A gauge for a mechanism with nothing to draw** — a `LoggedMechanism2d`
   speedometer
 
 ---
@@ -71,12 +71,15 @@ time.
 ```java
 package first.robot.subsystems;
 
+import org.littletonrobotics.junction.AutoLog;
+
 /**
  * The contract between the flywheel's logic and its hardware. Same shape as
  * the elevator's and the arm's — the only difference is that every value
  * here is a speed rather than a place.
  */
 public interface FlywheelIO {
+  @AutoLog
   public static class FlywheelIOInputs {
     public double velocityRps = 0.0;
     public double appliedVolts = 0.0;
@@ -98,6 +101,8 @@ public interface FlywheelIO {
 Four inputs and no position among them. `setpointRps` is the same idea as
 the elevator's `setpointMeters` — where the firmware currently thinks it
 should be, so you can plot the thing the controller is actually chasing.
+`@AutoLog` is there for the same reason as on the elevator's and the arm's
+bundles: every reading gets recorded, and a replay can feed it back in.
 
 `stop()` earns its place. A goal of zero rot/s means "actively brake to a
 stop", which wastes energy and heat; a neutral output means "stop trying".
@@ -118,6 +123,8 @@ import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 
+import org.wpilib.hardware.bus.CANPort;
+
 import first.robot.Constants.FlywheelConstants;
 
 /** Real hardware behind the FlywheelIO contract: one TalonFX holding a speed. */
@@ -128,7 +135,7 @@ public class FlywheelIOTalonFX implements FlywheelIO {
   private final NeutralOut m_neutral = new NeutralOut();
 
   public FlywheelIOTalonFX() {
-    m_motor = new TalonFX(FlywheelConstants.kMotorPort, CANBus.systemcore(0));
+    m_motor = new TalonFX(FlywheelConstants.kMotorPort, new CANBus(CANPort.CAN_S0));
 
     TalonFXConfiguration config = new TalonFXConfiguration();
     config.Feedback.SensorToMechanismRatio = FlywheelConstants.kGearRatio;
@@ -323,19 +330,18 @@ switch:**
 ```java
 package first.robot.subsystems;
 
-import static org.wpilib.units.Units.Degrees;
-import static org.wpilib.units.Units.Meters;
 import static org.wpilib.units.Units.RotationsPerSecond;
 
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
-import org.wpilib.smartdashboard.Mechanism2d;
-import org.wpilib.smartdashboard.MechanismLigament2d;
-import org.wpilib.smartdashboard.MechanismRoot2d;
-import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.Angle;
 import org.wpilib.units.measure.AngularVelocity;
+
+import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.mechanism.LoggedMechanism2d;
+import org.littletonrobotics.junction.mechanism.LoggedMechanismLigament2d;
+import org.littletonrobotics.junction.mechanism.LoggedMechanismRoot2d;
 
 import first.robot.Constants;
 import first.robot.Constants.ElevatorConstants;
@@ -351,12 +357,12 @@ public class Flywheel implements Mechanism {
     case SIM -> new FlywheelIOSim();
     case REPLAY -> new FlywheelIO() {}; // inputs come from the log
   };
-  private final FlywheelIO.FlywheelIOInputs m_inputs = new FlywheelIO.FlywheelIOInputs();
+  private final FlywheelIOInputsAutoLogged m_inputs = new FlywheelIOInputsAutoLogged();
 
   private AngularVelocity m_goal = RotationsPerSecond.of(0);
 ```
 
-Three of those imports are for the picture in section 5 — the compiler
+Several of those imports are for the picture in section 5 — the compiler
 won't mind them sitting unused until then.
 
 **Then `periodic`, below the fields:**
@@ -368,12 +374,9 @@ won't mind them sitting unused until then.
 
   private void periodic() {
     m_io.updateInputs(m_inputs);
-    Telemetry.log("Flywheel/VelocityRps", m_inputs.velocityRps);
-    Telemetry.log("Flywheel/AppliedVolts", m_inputs.appliedVolts);
-    Telemetry.log("Flywheel/SetpointRps", m_inputs.setpointRps);
-    Telemetry.log("Flywheel/StatorCurrentAmps", m_inputs.statorCurrentAmps);
-    Telemetry.log("Flywheel/GoalRps", m_goal.in(RotationsPerSecond));
-    Telemetry.log("Flywheel/AtSpeed", atSpeed());
+    Logger.processInputs("Flywheel", m_inputs); // every reading, under Flywheel/
+    Logger.recordOutput("Flywheel/GoalRps", m_goal.in(RotationsPerSecond));
+    Logger.recordOutput("Flywheel/AtSpeed", atSpeed());
   }
 ```
 
@@ -382,7 +385,9 @@ won't mind them sitting unused until then.
 when you get there.)
 
 Everything here is the same shape as the elevator's subsystem, with speeds
-where the heights were.
+where the heights were. `processInputs` records the four readings under
+`Flywheel/`; the goal and "am I at speed?" are the flywheel's own
+decisions, so they're outputs.
 
 **Wire it up. Add the field to `Robot.java`, below `leds`:**
 
@@ -445,18 +450,16 @@ through the right.
   // A speedometer: one hub, two needles. There is nothing physical to draw
   // here — a spinning wheel looks the same at every speed — so the picture
   // is of the number instead.
-  private final Mechanism2d m_dial = new Mechanism2d(
-      FlywheelConstants.kDialSize.in(Meters), FlywheelConstants.kDialSize.in(Meters));
-  private final MechanismRoot2d m_hub = m_dial.getRoot(
-      "Hub", FlywheelConstants.kDialSize.in(Meters) / 2, FlywheelConstants.kDialSize.in(Meters) / 2);
+  private final LoggedMechanism2d m_dial = new LoggedMechanism2d(
+      FlywheelConstants.kDialSize, FlywheelConstants.kDialSize);
+  private final LoggedMechanismRoot2d m_hub = m_dial.getRoot(
+      "Hub", FlywheelConstants.kDialSize.div(2), FlywheelConstants.kDialSize.div(2));
   /** Where the wheel is asked to be. The gap to the other needle is the error. */
-  private final MechanismLigament2d m_goalNeedle = m_hub.append(
-      new MechanismLigament2d("Goal", FlywheelConstants.kNeedleLength.in(Meters),
-          FlywheelConstants.kZeroAngle.in(Degrees)));
+  private final LoggedMechanismLigament2d m_goalNeedle = m_hub.append(new LoggedMechanismLigament2d(
+      "Goal", FlywheelConstants.kNeedleLength, FlywheelConstants.kZeroAngle));
   /** Where the wheel actually is. */
-  private final MechanismLigament2d m_needle = m_hub.append(
-      new MechanismLigament2d("Speed", FlywheelConstants.kNeedleLength.in(Meters),
-          FlywheelConstants.kZeroAngle.in(Degrees)));
+  private final LoggedMechanismLigament2d m_needle = m_hub.append(new LoggedMechanismLigament2d(
+      "Speed", FlywheelConstants.kNeedleLength, FlywheelConstants.kZeroAngle));
 ```
 
 Two needles from one hub, and the second one is the useful bit. `m_needle`
@@ -466,25 +469,28 @@ converge during spin-up and you are watching the controller work.
 
 The canvas is square and the hub sits in the middle of it — unlike the
 elevator's canvas, this one isn't a picture of the robot, so its "metres"
-are just units on a dial. `getRoot` takes plain doubles (the same unpack
-Lesson 19 called out), while the ligament constructors take measures.
+are just units on a dial. Every size and angle goes in as a measure, the
+same as in Lesson 19's drawing: `kDialSize.div(2)` is half the dial, still
+in metres.
 
 **Add the method `periodic` should already be calling, below `periodic`:**
 
 ```java
   /** Point both needles and log the dial. Runs every tick: a logged drawing is a snapshot. */
   private void updateDial() {
-    m_goalNeedle.setAngle(toDialAngle(m_goal.in(RotationsPerSecond)).in(Degrees));
-    m_needle.setAngle(toDialAngle(m_inputs.velocityRps).in(Degrees));
+    m_goalNeedle.setAngle(toDialAngle(m_goal.in(RotationsPerSecond)));
+    m_needle.setAngle(toDialAngle(m_inputs.velocityRps));
     m_needle.setColor(atSpeed() ? ElevatorConstants.kAtGoalColor : ElevatorConstants.kMovingColor);
-    Telemetry.log("Flywheel/Dial", m_dial);
+    Logger.recordOutput("Flywheel/Dial", m_dial);
   }
 ```
 
 The last line is the same one the elevator ends its `periodic` with:
-`Telemetry.log` of a drawing writes down what the drawing looks like *right
-now*, so it has to run every tick, right after the needles move. Log it once
-in the constructor and the dial would sit at rest forever.
+recording a drawing writes down what the drawing looks like *right now*, so
+it has to run every tick, right after the needles move. Record it once in
+the constructor and the dial would sit at rest forever. It's an output like
+the elevator's picture, worked out from the goal and the recorded speed, so
+a replay draws it again.
 
 **Add the default command to the constructor, below the `addPeriodic` call:**
 
@@ -550,7 +556,7 @@ constants: orange while it's working, green once `atSpeed()`.
   /**
    * Sit at the idle speed, so the next shot doesn't start from nothing.
    * Overriding this replaces Mechanism's own do-nothing default; the
-   * constructor hands the result to setDefaultCommand.
+   * constructor hands it to setDefaultCommand.
    */
   @Override
   public Command idle() {
@@ -736,7 +742,9 @@ Worth doing deliberately:
 - **Watch `Flywheel/SetpointRps`.** Unlike the elevator's, it snaps
   straight to the goal instead of ramping — there's no profile, because
   there's nothing to profile.
-- **Open `Flywheel/Dial` in SimGUI's Mechanism2d view** and hold the
+- **Open the dial in SimGUI**, from the **NetworkTables** menu:
+  **AdvantageKit → RealOutputs → Flywheel → Dial** (or in AdvantageScope's
+  Mechanism tab, from `/AdvantageKit/RealOutputs/Flywheel/Dial`), and hold the
   trigger. The goal needle jumps to the shooting mark and the speed needle
   chases it round the left of the dial, turning green as it arrives. Do it
   once with the graph and once with the dial, and notice they tell you
