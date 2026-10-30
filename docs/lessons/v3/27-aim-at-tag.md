@@ -352,15 +352,18 @@ while something is asking `Aim` for a spin rate, so the keys appear the
 first time you aim.
 
 The same two orbits, measured again on the real drivetrain, reading
-`Aim/ErrorDegrees` once the robot had settled (the worst of repeated runs):
+`Aim/ErrorDegrees` once the robot had settled (a typical run):
 
 | | 2 m/s | 3 m/s |
 |---|---|---|
 | P control only | 9.7° | 14.6° |
-| **P + feedforward** | **0.3°** | **0.4°** |
+| **P + feedforward** | **0.1°** | **0.1°** |
 
-Better than thirty times over at 3 m/s, from one added term, with the gain
-untouched. The log shows you the estimate's opinion. Against the simulated
+Over a hundred times better at 3 m/s, from one added term, with the gain
+untouched. Now and then a camera correction nudges the pose estimate, and
+the error jumps to as much as a degree for a moment before settling back:
+the aim is chasing a bearing worked out from that estimate, so it moves
+when the estimate does. The log shows you the estimate's opinion. Against the simulated
 chassis's true pose the same runs read 13.5° and 1.2°, because the estimate
 and the truth disagree by about a degree of heading. Either way, the term did
 what the arithmetic said it would.
@@ -556,7 +559,7 @@ scripted orbit converged to 14.32°, matching the prediction to the decimal,
 and the real drivetrain landed within a degree of it — which is what it looks
 like when you understand a system instead of tuning it. Adding the rate
 the target was already moving at cut the steady-state error by more than
-thirty times without touching the gain.
+a hundred times without touching the gain.
 
 **That's the third time this course has told you the same thing.** `kG`
 for gravity, `kV` for speed, and now a bearing rate for a target sliding

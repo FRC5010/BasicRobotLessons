@@ -1122,7 +1122,10 @@ working inventory, not kept in the repo.
     fix at 3 m is about 1°; not measured further). The lesson's table says 0.3° /
     0.4° "(the worst of repeated runs)" and "better than thirty times over".
     Neither the worst (0.8° / 1.2°, about 12 times over) nor the typical
-    (0.1°, over a hundred times over) matches; left as it was.
+    (0.1°, over a hundred times over) matched. User decision 2026-10-30: the
+    table gives the typical run (0.1° / 0.1°, "over a hundred times", also in
+    the closing section), and a sentence says a camera correction can push
+    the error to about a degree for a moment.
   - Standing 34° off with the left trigger held: within 2° after 23–25 ticks
     (0.46–0.50 s), holds 0.084–0.091°; strafing at half stick perpendicular to
     the bearing: worst 2.6° in the first 0.2 s, 0.63–0.66° after the first
@@ -1382,8 +1385,9 @@ through the scheduler (probe recipe above, plus `GamepadSim`):**
   9.7–9.8° at 2 m/s (prediction 9.55°); P + feedforward 0.2–0.4° and
   0.1–0.3°. Against the simulated truth: 13.5°/1.1° at 3 m/s. The old "13.2° →
   1.1° at 50 Hz" did not reproduce. (Alpha-8: 14.6° and 9.7° P only, truth
-  13.5° and 1.2°; the feedforward figures spike with camera corrections and
-  are an open question, see the Lessons 24–27 block.)
+  13.5° and 1.2°; with feedforward typically 0.04–0.13°, spiking to about a
+  degree when a camera correction lands, and the lesson says so; see the
+  Lessons 24–27 block.)
 - Standing 34° off, left trigger held: within 2° in 0.5 s, holds 0.06–0.1°.
   Strafing at half stick: under 1° after the first second. (Alpha-8: back under
   0.1° 0.5 s after the stick centres, not a second.)
