@@ -309,8 +309,10 @@ share.
         Autos.getReadyThen(robot.elevator, robot.superstructure, recipe.apply(path)));
 ```
 
-Run Two Corners on a fresh launch. In this course's sim the strip blinks red for
-about 3.1 s while the carriage drives down to its switch, then turns blue as the
+Run Two Corners on a fresh launch. In this course's sim, enabling a couple of
+seconds after launch, the strip blinks red for about 3.1 s while the carriage
+drives down to its switch (less if you wait longer to enable, because the
+un-homed carriage has been sinking toward the switch the whole time), then turns blue as the
 state becomes `IDLE`. The arm swings up from its stop, which takes about another
 second, and the robot sets off about 4.1 s after you enabled. Disable, select it
 again, and run it a second time: now it sets off at once. The carriage is already
