@@ -919,7 +919,7 @@ the line the robot is — and
 cross-track error jump to about half a meter right at the corner: that's the
 0.5 m handoff radius, since the robot is still on the first leg's line when it
 starts measuring against the second's. Then watch it shrink back toward zero as
-the cross-track loop pulls the robot onto the second leg. Nothing told the
+the robot settles onto the second leg. Nothing told the
 follower it was off the line. Correcting is the only thing it ever does.
 
 To run it again, set state to **Disabled**. The console shows the opmode
@@ -947,16 +947,13 @@ without restarting.
    the robot can't stop in time from 3 m/s; watch it sail roughly 35 cm past the
    end and come back, and about 70 cm past the first corner. Then change the
    acceleration so the arithmetic works again, and check that it does.
-3. **Code — mistune the cross-track gain.** Set `kCrossTrackP` to `0.0` and run the path.
-   The robot still gets to the end, because translation and rotation are handling
-   themselves — but it swings about half a meter wide at the corner, because
-   nothing is pulling it back onto the second leg. Then try `15.0`: it
-   swings back and forth across the line near the end — about a third of a
-   meter each way, a full swing every second or so — and never finishes.
-   It's still swinging 30 seconds later. Plot
-   `FollowPath/crossTrackError` for both. This is the clearest single-loop demo
-   in the whole course, because you can see exactly which job that one
-   controller was doing.
+3. **Code — mistune the cross-track gain.** Set `kCrossTrackP` to `30.0` and run the
+   path, with `FollowPath/crossTrackError` plotted. The first leg and the corner look
+   much like before. Then the robot starts swinging back and forth across the
+   second leg, about 40 cm each way, a full swing a little under every two
+   seconds, and it never finishes: it's still swinging 40 seconds later.
+   Translation and rotation are fine the whole time; one loop with too much gain
+   keeps the whole path from ending. Put it back to `2.0` when you're done.
 4. **Code — compose a path with a script.** Make an auto that follows `TwoCorners` and
    *then* runs Lesson 8's `turnToHeading(0)`. A library-built command and one
    you wrote are both just `Command`s, so Lesson 9's

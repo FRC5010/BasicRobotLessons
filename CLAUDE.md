@@ -926,13 +926,19 @@ listed at the end of the working inventory, not kept in the repo.
   0.9–2.1 cm. The lesson's "5–12 cm" was wrong on alpha-7 too (now 14–16).
   Try It #2: handoff radius 0.05 → 50–52 cm past the corner, 4.56–4.69 s
   (+0.4–0.5 s); 3 m/s → 69–74 cm past the corner, 36–37 cm past the end
-  (lesson now 70 and 35; it said 60 and 30). **Try It #3 doesn't
-  reproduce, on alpha-7 or alpha-8, and is left unchanged:** `kCrossTrackP`
+  (lesson now 70 and 35; it said 60 and 30). **Try It #3 didn't
+  reproduce, on alpha-7 or alpha-8:** `kCrossTrackP`
   0 gives 13 cm past the corner and a 0.47 m cross-track peak, the same as
   the default, so no "half a meter wide"; 15 swings ±0.2–0.26 m about once a
   second on the second leg but **finishes at 4.6–4.8 s**; 30, 60 and 120 do
   swing ±0.42, ±0.45 and ±2 m and never finish (still following at 40 s).
-  Awaiting a user decision (see the report).
+  User decision 2026-10-30: drop the `0.0` half and demonstrate only a
+  gain that's too high, at 30 (one alpha-8 run: cross-track and the
+  simulated x swing ±0.41 m, 6 zero crossings in the last 5 s, so a full
+  swing about every 1.7 s; still following at 40 s). §10's sentence that the
+  cross-track loop pulls the robot back onto the second leg now says only
+  that it settles there, since the error shrinks the same way at 0; why
+  wasn't checked in B-Line's source.
 - **Lesson 18, RIG at Lesson 18:** zeroing `kElevatorKG` sags the hold
   1.5576 mm (same to four digits on alpha-7, where `kG` was 0.18); the settled
   gap with the model is **0.194 mm** short (alpha-7 0.116 mm; the lesson's
