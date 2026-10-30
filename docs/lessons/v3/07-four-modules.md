@@ -285,8 +285,9 @@ m_steerSim.setRotorVelocity(
 Heads up: the steering now turns at a believable speed instead of a bare
 rotor's instant snap, so your Lesson 5 `kP` is now tuned for the wrong plant.
 Measured against this model: the same `kP = 0.0005` that converged cleanly in
-Lesson 5 now crawls — it takes about 9 simulated seconds to close the last
-degree of a 90° turn, decaying smoothly with no overshoot at all. That's not a
+Lesson 5 now crawls — a 90° turn takes about 6 simulated seconds to get
+within a degree, and about 9 to get within a third of one, decaying smoothly
+with no overshoot at all. That's not a
 bug; the thing being controlled changed, and a 25:1 reduction resists motion
 harder than a bare rotor did. You can't retune yet (nothing runs until the
 wiring in section 6), so sit tight — section 7 comes back to this the moment

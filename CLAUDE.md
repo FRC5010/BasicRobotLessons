@@ -894,9 +894,10 @@ listed at the end of the working inventory, not kept in the repo.
 
 - **Lesson 7, one `SwerveModule`, 90° at 20 ms:** `kP = 0.0005` comes
   within 1° at 6.3 s (alpha-7 build: 6.4 s), within 0.3° at 9.0 s, and
-  stops 0.24° short from 10 s on, no overshoot. The lesson's "about 9
-  simulated seconds to close the last degree" matches the 0.3° point, not
-  the 1° one; kept, and flagged to the user. `kP = 0.005`: within 1° at
+  stops 0.24° short from 10 s on, no overshoot. The lesson said "about 9
+  simulated seconds to close the last degree", which matched the 0.3° point,
+  not the 1° one; it now gives both (about 6 s to within a degree, about 9
+  to within a third of one). `kP = 0.005`: within 1° at
   0.5 s, within 0.1° at 0.76 s, overshoot 0.000°.
 - **Lesson 13, record then replay (three drives each):** `* 1.1` in
   `SwerveModule.getPosition` recorded and replayed without it: the pose
