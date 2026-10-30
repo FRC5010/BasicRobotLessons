@@ -222,7 +222,9 @@ vision off:
   opposite of what the lesson says.
 
 Following the wheels gives 1.7 cm, and 27 cm *ahead* on a hard start, held
-there. It also advances the truth under every command, `driveDistance`
+there. (alpha-8, vision off, a different drive: quarter stick for 3 s ends
+0.0 cm off, a full-stick start from a stop 8 cm ahead, held, 34 cm at the
+worst; see the Lessons 7–22 block below.) It also advances the truth under every command, `driveDistance`
 included.
 
 Facts from the alpha-7 jars:
@@ -316,7 +318,9 @@ that tag and measured in sim with the real `Robot`:
   inside `max speed ÷ kTranslationP`. The classic's 3 m/s / 3 m/s² overshot
   the corner by 1.5 m and the end by 0.7 m here; v3 ships 2 m/s / 6 m/s² with
   a 0.5 m handoff, which lands 5–12 cm past the corner and finishes Two
-  Corners in ≈4 s.
+  Corners in ≈4 s. (alpha-8: 14–16 cm past the corner, 4.13–4.23 s, under
+  the batch-1 probe, which gives the same on an alpha-7 build; see the
+  Lessons 7–22 re-measure block below.)
 - **An opmode is constructed when it's selected** (`OpModeRobot`'s source),
   so `Autos.followPath(...)` in an auto opmode's constructor reads the path
   file while disabled — what the classic lesson built a chooser and
@@ -415,11 +419,13 @@ loop:
 - **Lesson demos, measured:** ×1.1 in `SwerveModule.getPosition` during a
   replay of a clean run puts the replayed pose exactly 1.1× as far from the
   start (odometry starts at the origin). Recorded *with* that bug and
-  replayed without it: (5.358, 4.193) → (4.871, 3.812), 0.618 m. The same
+  replayed without it: (5.358, 4.193) → (4.871, 3.812), 0.618 m (alpha-8:
+  0.660 and 0.657 m on the current probe's longer drive). The same
   ×1.1 in `ModuleIOTalonFX.updateInputs` (Try It #1, which Lessons 14 and 16
   refer back to): replay without it moves the pose 0.000 m, because the bug
   is in the recorded readings. `HeadingConstants.kP` ÷ 4 in replay:
-  `DesiredModuleStates` differs on 38 ticks, `Pose` on none.
+  `DesiredModuleStates` differs on 38 ticks, `Pose` on none (alpha-8: 37
+  ticks in all three runs, `Pose` none).
 - **Ripple, all compiled (12–33, zero warnings; 33's tests pass):** the
   lesson-13 changes were carried into every later whole-file copy (`Robot`
   14–30, `Drivetrain` 14–17/25/26/29/30, `GyroIO` 16/29/30, `ModuleIO` and
@@ -873,6 +879,93 @@ measured where it matters:
   `AlertGroups/DataLogManager`. Replays showed the one-tick skew on a few
   more keys than on alpha-7 (Flywheel commands in 4 of 8 recordings).
 
+**v3 Lessons 7–22 re-measured on alpha-8 with the committed Kraken constants
+(2026-10-30, batch 1 of the user's "re-measure them all").** Gains in the
+snapshots: elevator `kV` 1.42 / `kG` 0.17, arm `kV` 5.94 / `kA` 0.054,
+`kMaxSpeed` 101.08 rot/s. Every figure is "(alpha-8)". Method: **RIG** for
+the steering, elevator and arm (the real class and IO built after
+`HAL.initialize()`, `DriverStationSim` enabled, `Scheduler.run()` on a fixed
+20 ms deadline schedule, a 2 s warm-up, each move repeated, a fresh JVM per
+configuration); **LOOP** for Lessons 15–17, 21 and 22 (the real `Robot` on
+its own thread, `GamepadSim`, Blue 1); **record and replay** for Lesson 13.
+Wherever a number surprised, the same probe was run on a build of the commit
+before the alpha-8 switch (`76dd0f9`, via `git worktree`). The probes are
+listed at the end of the working inventory, not kept in the repo.
+
+- **Lesson 7, one `SwerveModule`, 90° at 20 ms:** `kP = 0.0005` comes
+  within 1° at 6.3 s (alpha-7 build: 6.4 s), within 0.3° at 9.0 s, and
+  stops 0.24° short from 10 s on, no overshoot. The lesson's "about 9
+  simulated seconds to close the last degree" matches the 0.3° point, not
+  the 1° one; kept, and flagged to the user. `kP = 0.005`: within 1° at
+  0.5 s, within 0.1° at 0.76 s, overshoot 0.000°.
+- **Lesson 13, record then replay (three drives each):** `* 1.1` in
+  `SwerveModule.getPosition` recorded and replayed without it: the pose
+  moves 0.660 and 0.657 m (the lesson says 0.66 m; the 0.618 m in the
+  alpha-7 note came from a shorter drive). The same replayed over a clean
+  recording ends 1.0999 times as far. In `ModuleIOTalonFX`: 0.000 m.
+  `HeadingConstants.kP` ÷ 4: `DesiredModuleStates` differs on 37 ticks in
+  all three, `Pose` on none (lesson says 37). A clean record and replay:
+  no differing step on `Pose` or `DesiredModuleStates`.
+- **Lesson 15, Try It #3 (a parked robot, the camera scattered by
+  `0.015 × distance ÷ √tags`):** 0.51, 0.26 and 0.38 m of drift in 60 s
+  (the lesson now says 25 to 50 cm; it said "about 60 cm in one run").
+  Random, nothing to do with the motors.
+- **Lesson 16, vision off:** quarter stick for 3 s ends 0.0 cm off (0.7 cm at
+  the worst); a full-stick start from a stop 1.5 s long ends the estimate
+  8 cm ahead of the truth, held (34 cm at the worst); a full forward-then-
+  reverse leaves it 74 cm ahead, held, 98 cm at the worst. With vision on it
+  is pulled back to 0.0 cm at rest (worst 31 cm). The lesson only says
+  "creeps ahead and stays there", unchanged.
+- **Lesson 17, Two Corners (six runs, plus the same probe on alpha-7):**
+  following lasts 4.13–4.23 s (alpha-7 4.16–4.27); the robot reaches 14–16 cm
+  past the corner's x of 6.0 (alpha-7 13.9–15.3), 6 cm past the end's y;
+  the cross-track error peaks at 0.46–0.49 m; `Event: shoot!` fires 82%
+  up the second leg (a handler registered after the `Robot` is built; stdout
+  capture doesn't work under Gradle); the estimate and the truth stay within
+  0.9–2.1 cm. The lesson's "5–12 cm" was wrong on alpha-7 too (now 14–16).
+  Try It #2: handoff radius 0.05 → 50–52 cm past the corner, 4.56–4.69 s
+  (+0.4–0.5 s); 3 m/s → 69–74 cm past the corner, 36–37 cm past the end
+  (lesson now 70 and 35; it said 60 and 30). **Try It #3 doesn't
+  reproduce, on alpha-7 or alpha-8, and is left unchanged:** `kCrossTrackP`
+  0 gives 13 cm past the corner and a 0.47 m cross-track peak, the same as
+  the default, so no "half a meter wide"; 15 swings ±0.2–0.26 m about once a
+  second on the second leg but **finishes at 4.6–4.8 s**; 30, 60 and 120 do
+  swing ±0.42, ±0.45 and ±2 m and never finish (still following at 40 s).
+  Awaiting a user decision (see the report).
+- **Lesson 18, RIG at Lesson 18:** zeroing `kElevatorKG` sags the hold
+  1.5576 mm (same to four digits on alpha-7, where `kG` was 0.18); the settled
+  gap with the model is **0.194 mm** short (alpha-7 0.116 mm; the lesson's
+  "under a quarter of a millimeter" holds); `kElevatorKV` zeroed: peak lag
+  90.96–90.98 mm in five moves (lesson "about 9 cm"). With the model:
+  11.3 mm in 26 of 30 moves, 20.0–20.2 mm in 4 (a late tick; alpha-7 build
+  11.0–11.1 and 19.7), so the lesson says **1–2 cm** (was 1.5–2).
+  **Unexplained:** WPILib's `ElevatorSim` alone holds at 0.174 V (confirmed:
+  0.174 V drifts 0.11 mm in 10 s), but the Phoenix-driven sim needs about
+  0.194 V commanded (`kG + kP × gap`, both ways), on alpha-7 as well. The
+  Kraken job's note that the true hold is 0.174 and the floor would shift
+  0.03 mm doesn't hold for the integrated sim.
+- **Lesson 20, RIG at Lesson 20:** the hold table is unchanged
+  (+0.24 at −20°, +0.25 / +0.18 / 0.00 / −0.18 / −0.25), as is the 0.09° gap
+  at 0°. Peak lag intake to stow is **bimodal with the sampling phase**:
+  2.2° in 4 of 5 runs, 3.9° in 1 (alpha-7 build: 2.2 and 3.65), the lesson
+  now says two to four; `kArmKV` zeroed 19.6–19.9° (alpha-7 build
+  20.4–20.7; lesson "about 20"); negative `kG` 5.1° in 3 of 4 runs, 6.9° in
+  one (lesson "5° to 7° instead of 2° to 4°"), held at 0° it sags 3.08°.
+  Roller 60.94 rot/s at 0.6, under 1 rot/s 0.40–0.42 s after release (the
+  lesson's "around 60" and "about half a second" stand). Try It #3: with
+  the clamp bypassed the setpoint stops at 180 and the voltage at −0.25 V;
+  with `ForwardSoftLimitEnable` off too it runs to 270 at +3.0000 V and
+  119.02 A. The drawing's one-tick lag is 3.69° per tick at cruise (3.87 once),
+  against the lesson's "about 3.5°", kept.
+- **Lesson 21, LOOP at Lessons 21 and 22:** the unpowered sink 1.958 cm/s;
+  `AtBottomLimit` flips true 17.9, 18.1 and 18.4 s after launch with the
+  snap −0.3400 → 0.0100; D-pad up before homing reads 1.1499 m at 3.000 V
+  and 119.0 A; homing descends at 9.719 cm/s and lands 15.35 s after Back;
+  −3 V against the bottom stop draws 118.98 A at 0.00000 m/s. All the lesson's
+  figures stand.
+- **Lesson 22:** the roller at 0.6 holds 60.94 rot/s in open field with
+  `HasGamePiece` false throughout; the 18 s callback is the Lesson 21 figure.
+
 **v3 Lesson 26 (drive to pose) was redesigned on 2026-10-26 at the user's
 request: two motion-profiled stages, handing over while moving.** The old
 design ran the Lesson 11 sketch to 5 cm, then three `PIDController`s; the user
@@ -1131,7 +1224,8 @@ run to run, so the lesson gives ranges, not a single figure:
 - `kV` zeroed: about 9 cm. Two runs of five moves each gave medians of
   88.1 and 91.7 mm; single moves ranged from 82 to 102 mm.
 - Full model: 1.5–2 cm. Medians of 15.7 to 19.8 mm; single moves ranged
-  from 12 to 30 mm.
+  from 12 to 30 mm. (alpha-8: 11.3 mm for 26 of 30 moves, 20.0–20.2 for the
+  other 4, so the lesson says 1–2 cm; see the Lessons 7–22 block below.)
 
 Measure on a fixed-rate schedule (sleep until the next 20 ms deadline, not
 20 ms after the work), after a couple of seconds of warm-up, and repeat each
@@ -1141,7 +1235,8 @@ replace the lesson's old ≈145/≈34 mm. They match the lesson's arithmetic:
 9 V needed from `kP = 20` means ≈0.45 drum rotations ≈ 7 cm at cruise, plus
 the transient. The classic track measured 94.5/~23 mm independently. The
 `kG`-zeroed sag (1.56 mm) and settled gap (0.117 mm) repeat exactly on every
-run.
+run. (alpha-8: the sag is 1.5576 mm again, to four digits, but the settled
+gap with the model is 0.194 mm, because `kElevatorKG` went 0.18 → 0.17.)
 
 **v3 Lesson 20 (intake arm) on alpha-7, measured with the real `Elevator`
 and `Arm` through the scheduler:**
@@ -1149,9 +1244,12 @@ and `Arm` through the scheduler:**
 - The holding table reproduces exactly: +0.25 / +0.18 / 0.00 / −0.18 /
   −0.25 V at 0° / 45° / 90° / 135° / 180°.
 - Peak lag from intake to stow is ≈4.0° with the model and ≈20.7° with
-  `kV` zeroed (the lesson's 18°, plus the ramp).
+  `kV` zeroed (the lesson's 18°, plus the ramp). (alpha-8: 2.2° in 4 of 5
+  runs and 3.9° in the fifth, 19.6–19.9° with `kV` zeroed.)
 - A negative `kG` costs ≈3° of sag held horizontal and ≈6.9° of peak lag.
+  (alpha-8: 3.08° of sag, 5.1° in 3 of 4 runs and 6.9° in one.)
 - The roller reaches 60.3 rot/s at 0.6 and stops ≈0.5 s after release.
+  (alpha-8: 60.94 rot/s; under 1 rot/s 0.40–0.42 s after release.)
   A pivot command interrupting it does run `whenCanceled`.
 - **The soft limit can't be seen in the angle.** `SingleJointedArmSim` has
   its own hard stops at `kMinAngle`/`kMaxAngle`, the same as the soft-limit
@@ -1180,18 +1278,22 @@ SimGUI:**
   drum's circumference: 0.18 ÷ 1.44 × 0.16 m (0.17 ÷ 1.42 × 0.16 m = 1.9
   cm/s with the alpha-8 gains). Nothing in the sim holds it.
 - Launched with the elevator un-homed at `kSimStartHeight` (0.35 m), the
-  carriage lands on the switch 18.0 s after launch, while still disabled.
+  carriage lands on the switch 18.0 s after launch, while still disabled
+  (alpha-8: 17.9, 18.1 and, in the Lesson 22 state, 18.4 s; the sink 1.958
+  cm/s; the top stall 119.0 A at 3.000 V and 1.1499 m).
   The `Trigger` re-zeroes it then (−0.34 → 0.01), or at the moment
   Teleoperated is selected, if that comes later.
 - **User decision: Lesson 21 teaches the sink** rather than hiding it.
   Section 8 watches it happen, then restarts the sim to show `home()`.
 - Homing descends at 9.7 cm/s. That's −0.7 V plus gravity's 0.18 V, over
   1.44 V per rotation/s. From the top stall it takes 15.5 s to trip the
-  switch, and the encoder snaps from −0.34 to 0.01.
+  switch, and the encoder snaps from −0.34 to 0.01. (alpha-8: 9.72 cm/s,
+  15.35 and 15.36 s, −0.3387 → 0.0100 snap.)
 - D-pad up before homing stalls at the 1.5 m frame top: the encoder reads
   1.15, and the motor holds 3.00 V at 119 A. `ElevatorSim`'s own travel
   limit stops it; the old "really 1.80 m" was impossible.
-- Holding at −3 V against the bottom draws 119.0 A at 0.000 m/s.
+- Holding at −3 V against the bottom draws 119.0 A at 0.000 m/s. (alpha-8:
+  118.98 A, 0.00000 m/s.)
 - Stowed (2 cm) sits 1 cm above the switch, so `AtBottomLimit` stays false.
 
 **v3 Lesson 22 (beam breaks) is hand-built, like Lesson 16.** It was

@@ -1417,6 +1417,26 @@ the repo) lists every quoted simulation number it has to cover.
   reports 0 problems for 1–33, the tool tests pass (64), and Lesson 33's
   tests pass (4).
 
+**Alpha-8, the Kraken re-measure, Lessons 7–22, 2026-10-30.** The second half
+of the Kraken decision, batch 1 of two: every simulated figure that Lessons
+7–22 quote (36 rows of the working inventory) was re-measured on alpha-8 with
+the committed gains, and the same probes were run on an alpha-7 build wherever
+a number surprised. Nine rows changed, 25 held, two don't reproduce. Changed:
+Lesson 13's 0.62 m to 0.66 m and 38 ticks to 37; Lesson 15's drift to 25–50 cm;
+Lesson 17's 5–12 cm to 14–16 cm, 30 cm to 35 and 60 to 70 (all identical on
+alpha-7, so those were never Kraken effects); Lesson 18's full-model lag to
+1–2 cm; Lesson 20's lag to two to four degrees, 21° to 20° and "7° instead of 4"
+to "5° to 7° instead of 2° to 4°". The lags are bimodal with the sampling phase
+(11.3 or 20 mm; 2.2° or 3.9°), the same on alpha-7. **Not changed, awaiting a
+user decision:** Lesson 17's Try It #3 (`kCrossTrackP` 0 shows no "half a meter
+wide", and 15 finishes in 4.8 s instead of never finishing; 30 and above do
+swing wide and never finish), and Lesson 7's "about 9 simulated seconds" (the
+1° point is 6.3 s, the 0.3° point 9.0 s). Also recorded: the integrated
+elevator sim needs about 0.194 V commanded to hold, not the 0.174 V that
+WPILib's `ElevatorSim` alone needs, so the settled gap went 0.116 → 0.194 mm
+when `kElevatorKG` went 0.18 → 0.17 (unexplained, same on alpha-7). Lessons
+23–33 are batch 2. Details in CLAUDE.md's "v3 Lessons 7–22 re-measured" block.
+
 **What the AdvantageKit pass leaves: only Lesson 34.** Lessons 13–33 record
 their readings with `processInputs`, their decisions with `recordOutput`,
 and replay. The `Field2d` widget, B-Line's own values and the SysId signals

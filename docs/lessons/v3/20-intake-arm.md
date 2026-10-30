@@ -808,7 +808,7 @@ Two more traces are worth a look before you move on.
 Add `Arm/SetpointDegrees` alongside `Arm/AngleDegrees` and swing between
 the presets. Same story as the elevator: the goal steps, the setpoint
 slides, and the angle trails the setpoint by a few degrees — worst during
-the acceleration ramp, about four at its peak — rather than the eighteen
+the acceleration ramp, two to four at its peak — rather than the eighteen
 it would take to buy that voltage out of error. Lesson 18's
 tuning order — `kG` from the steady hold, `kV` from the flat cruise, `kA`
 from the ramps, `kP` last and small — works here unchanged. The arm just
@@ -853,7 +853,7 @@ motor and a number.
 4. **Code — take the model away.** Set `kArmKV` to `0.0` and swing the arm
    from intake to stow, watching `Arm/AngleDegrees` against
    `Arm/SetpointDegrees`. It gets there, but it now trails its own plan by
-   about 21 degrees — the 18 section 3 predicted, plus a little more while
+   about 20 degrees — the 18 section 3 predicted, plus a little more while
    the profile speeds up — because error is the only thing `kP` has to make
    voltage out of. Put it back.
 5. **Code — break the zero.** Change `kArmKG` to a negative number and run
@@ -861,7 +861,7 @@ motor and a number.
    feedforward pulls the arm down exactly when it should be holding it up.
    Watch how much harder `kP` has to work: held out horizontal, the arm now
    sits about 3° below its goal instead of a tenth of a degree, and
-   mid-swing it trails its setpoint by about 7° instead of 4. That gap
+   mid-swing it trails its setpoint by 5° to 7° instead of 2° to 4°. That gap
    between `Arm/SetpointDegrees` and `Arm/AngleDegrees` is what this
    failure looks like on a plot when you meet it for real. Put it back.
    (On actual hardware this experiment drives the arm into its own hard

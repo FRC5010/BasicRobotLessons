@@ -909,8 +909,8 @@ camera misbehaves, this is the first place to look.
    returns a random number that's usually near zero and occasionally not:
    the bell curve.) Now nudge the robot off (0, 0) and leave it parked
    where the front camera can see those two tags. Watch `Localizer/Pose`
-   for a minute. It drifts — in one of this course's runs, about 60 cm in
-   60 seconds, with nothing moving. Work out why before reading on.
+   for a minute. It drifts — in this course's runs, between 25 and 50 cm
+   in 60 seconds, with nothing moving. Work out why before reading on.
    Here's the answer: the camera looks out from the estimate itself, so each
    frame says "you're where you think you are, give or take a little," the
    estimate shifts by that little, and the next frame starts from the

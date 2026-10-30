@@ -581,7 +581,7 @@ possible trim.
   of about 0.45 rotations of error — some 7 cm. Measured moving the full
   travel range with `kElevatorKV` zeroed: about **9 cm** of peak lag —
   the 7 cm, plus a little extra while the profile is still speeding up.
-  With the model in place, the same move: **1.5–2 cm**. Expect your own
+  With the model in place, the same move: **1–2 cm**. Expect your own
   numbers to wander by several millimeters from run to run. `kP = 20` is
   doing real work either way — the difference is how much work it's
   *forced* to do versus how much the model already handled for it.
