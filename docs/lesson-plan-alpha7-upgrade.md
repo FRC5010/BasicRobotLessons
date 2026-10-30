@@ -1330,6 +1330,21 @@ Replay steps (13, 15, 17, 32) keep `./gradlew run`, since they set
 `./gradlew run`. The classic track is unchanged. VS Code's button stays
 unverified on alpha-7, as the setup aside says.
 
+**Alpha-8, 2026-10-30.** The v3 track builds on WPILib 2027.0.0-alpha-8
+(GradleRIO pin in `code/OpModeV3Robot`; vendordep year unchanged at
+`2027_alpha7`, so every alpha-7 pin loads). Lessons 0–33 compile with zero
+warnings, Lesson 33's tests pass, the sim starts and replay works. The
+setup aside downloads alpha-8; the website says alpha-8; Lesson 12's "no
+shortcut" sentence was wrong (`Units.radiansToRotations` exists) and is
+fixed; Lesson 30 §4 mentions SimGUI's new DS → Alerts window. Four user
+decisions, 2026-10-30, for what alpha-8 changed: rebind Lesson 24's
+state motions so they resume after a disable (alpha-8 cancels mechanism
+commands on disable and `whileTrue` never re-fires); Lesson 33 uses
+WPILib's new Commands V3 `SysIdRoutine`; Lesson 33 drops the opmode-owned
+`EventLoop` (the trigger-cache bug is fixed); and the Kraken X60 model
+change (7.157 N·m, 6065 RPM) means every motor-dependent number is
+re-measured and the spec-sheet arithmetic redone. Details in CLAUDE.md.
+
 **What the AdvantageKit pass leaves: only Lesson 34.** Lessons 13–33 record
 their readings with `processInputs`, their decisions with `recordOutput`,
 and replay. The `Field2d` widget, B-Line's own values and the SysId signals

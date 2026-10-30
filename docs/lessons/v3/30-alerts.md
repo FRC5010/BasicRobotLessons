@@ -119,6 +119,12 @@ Each tick it collects every active alert and records them as outputs under
 SimGUI knows how to draw: an **alerts panel**, the red-and-yellow list a
 dashboard shows.
 
+SimGUI also has an alerts window of its own, under **DS → Alerts**. It
+reads the alerts straight from the robot program instead of from the log,
+and it lists the same ones, sorted by level. Use whichever you like; this
+lesson points at the AdvantageKit copy, because that's the one a replay
+rebuilds.
+
 It's an output like any other, which means a replay rebuilds it. Every
 alert in this lesson is set from readings the log already has, so a replay
 raises the same alerts on the same ticks the robot did.

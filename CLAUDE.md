@@ -730,6 +730,75 @@ method as 14–27:**
   `SysIdRoutineLog` starts `DataLogManager` on first use; its SysId values
   matched the recording's, with different timestamps.
 
+**The v3 track builds on WPILib 2027 alpha-8 (2026-10-30).** `code/OpModeV3Robot`
+pins GradleRIO `2027.0.0-alpha-8`; nothing else in the template changed
+(the OpMode template and `CommandsV3.json` are identical to alpha-8's).
+**Alpha-8 keeps the vendordep year `2027_alpha7`** (GradleRIO's
+`wpilibYear` default, native-utils' exact-match year check), so every
+pinned alpha-7 vendordep loads, and a vendordep declaring `2027_alpha8`
+would be refused. The marketplace has no `2027_alpha8` folder; alpha-8
+builds publish under `2027_alpha7`. Measured on alpha-8: Lessons 0–33
+compile with zero warnings, Lesson 33's tests pass, `./gradlew run` starts
+SimGUI, the Lesson 33 Two Corners auto ends where it did, and record/replay
+works (AdvantageKit has no alpha-8 build; its alpha-7 jar runs). What
+alpha-8 changed that the lessons meet, read from source at the tags and
+measured where it matters:
+
+- **Mechanism commands are cancelled on disable** (#9417):
+  `Mechanism.controllableDuringDisabled()` defaults to false, the scheduler
+  cancels any command requiring such a mechanism when the robot disables,
+  and queues no default commands while disabled. Default commands come back
+  on enable. **`inState(X).whileTrue(...)` did not**: disabled mid-`INTAKING`
+  and re-enabled, the intake motion never restarted (state stuck
+  `INTAKING`, roller 0 rps for 8 s); on alpha-7 it finished. User decision
+  2026-10-30: rebind so the motion resumes.
+- **The Trigger-cache bug Lesson 33's opmode-owned `EventLoop` worked around
+  is fixed** (`unbindStaleTriggers` no longer unbinds cached triggers):
+  plain `driverController.back()` triggers in `RobotUtility` ramped on every
+  selection (alpha-7: the first Utility selection after Teleop did nothing).
+  User decision 2026-10-30: remove the workaround.
+- **Commands V3 has a real `SysIdRoutine`**
+  (`org.wpilib.command3.sysid.SysIdRoutine`, #8304): `new
+  SysIdRoutine(Config, SysIdMechanism)`, `Config.defaults()` (1 V/s, 7 V,
+  10 s), `Direction.FORWARD/REVERSE`, `quasistatic`/`dynamic` built with
+  `whenExited`. User decision 2026-10-30: Lesson 33 uses it.
+- **`DCMotor.getKrakenX60` changed** (#9378): 7.09 → 7.157 N·m stall,
+  366 → 374.4 A, 6000 → 6065 RPM (FOC 9.37/5800 → 9.362/5785). Lesson 28,
+  bare scheduler, five runs each: rest → 60 rot/s 2.30–2.32 s → 2.24–2.26 s;
+  idle → 60 1.24 → 1.20 s; held 60.44 rot/s on 7.21 V → 60.62 on 7.16 V;
+  `kV`/`kA` zeroed 43.27 → 43.40 rot/s. Teleop end Y moved about 4 cm.
+  User decision 2026-10-30: re-measure every motor-dependent number and
+  redo the spec-sheet arithmetic with the new figures.
+- **New Commands V3 API:** `Command.onExit()`/builder `whenExited(Runnable)`
+  runs on finish, cancel and interrupt (the `finallyDo` the lessons work
+  around with `whenCanceled`; not adopted, no decision asked);
+  `Trigger.ifTrue(Command)` (#9403); robot-mode binding scopes (#9271).
+  `Trigger.unbind()` is gone (unused here).
+- **SimGUI has a native Alerts window, DS → Alerts** (#9353, hidden by
+  default), reading `WPI_GetAlerts()`; on a fresh Lesson 30 launch it lists
+  "Elevator has never been homed", and **Unplug Gyro** adds the gyro error.
+  Lesson 30 §4 mentions it. Other Devices is now a nested tree.
+- **`./gradlew simulateJava` now fails** ("The simulateJava task has been
+  removed. Use run instead."); `simulateExternalJava` still writes VS Code's
+  `java.json`. GradleRIO no longer bundles cscore/cameraserver/opencv/
+  apriltag (nothing in 0–33 used them).
+- **Unchanged and still relied on:** no `MathUtil.clamp` (the JDK's
+  `Math.clamp` exists); `Units.radiansToRotations` exists (in alpha-7 too;
+  Lesson 12's "no shortcut" sentence was wrong and is fixed); sim
+  `isBrownedOut()` is always false; `DriverStation` still small;
+  `OpModeRobot` still needs the second `publishOpModes()`;
+  `Scheduler.runCommands` still reverse order; `RobotState.getOpModeId()` is
+  0 until the program starts, so `Robot`-constructor bindings stay Global
+  (now documented); `BindingScope.ForOpmode` still compares only the ID;
+  SimGUI still starts on Red 1; `Telemetry.log` snapshot semantics,
+  `HAL.initialize()`, `Translation2d.getAngle()` optional, `Alert` ids,
+  `SimDevice.create` null on duplicates, `debounce` RISING, `GamepadSim`
+  bitmasks, `Field.loadField`, `SequentialGroup` requirements, and no
+  `onlyIf`, all as before. `DataLogManager` adds its own alert group
+  (`lowSpace` under 400 MB free), so a low-disk machine can show an extra
+  `AlertGroups/DataLogManager`. Replays showed the one-tick skew on a few
+  more keys than on alpha-7 (Flywheel commands in 4 of 8 recordings).
+
 **v3 Lesson 26 (drive to pose) was redesigned on 2026-10-26 at the user's
 request: two motion-profiled stages, handing over while moving.** The old
 design ran the Lesson 11 sketch to 5 cm, then three `PIDController`s; the user
@@ -863,7 +932,7 @@ real SimGUI under `Xvfb`:**
   test the four CANcoder alerts are up on the first tick (boot flicker), so
   a CANcoder test must wait that out. Lesson 31 can use this when migrated.
 - **`./gradlew simulateJava` doesn't start a simulation on alpha-7
-  GradleRIO.** There's no such task; Gradle's abbreviation matching runs
+  GradleRIO** (on alpha-8 it fails outright: "removed, use run"). There's no such task; Gradle's abbreviation matching runs
   `:simulateExternalJava`, which only writes `build/sim/java.json` for VS
   Code. `./gradlew run` launches the robot with SimGUI (re-checked on the
   Lesson 0 state, 2026-10-29: `libhalsim_gui` loads and the robot program
