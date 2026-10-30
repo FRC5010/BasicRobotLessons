@@ -14,7 +14,9 @@
 # snapshots 0..N in order, last writer wins, then replaying the deletions
 # below, gives the state after Lesson N.
 
-# The highest lesson whose code has been migrated to WPILib 2027 alpha-7.
+# The highest lesson whose code has been migrated to the WPILib 2027 alpha
+# (written for alpha-7; builds and runs on alpha-8, which keeps alpha-7's
+# vendordep year, 2027_alpha7).
 # Snapshots above it still target alpha-6 and don't compile on the current
 # base; raise this as Phase 1b migrates them (docs/lesson-plan-alpha7-upgrade.md).
 V3_ALPHA7_THROUGH=33

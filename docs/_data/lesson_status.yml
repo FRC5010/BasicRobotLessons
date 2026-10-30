@@ -1,5 +1,5 @@
 # How the website marks the OpMode track's lessons that aren't up to date for
-# the 2027 alpha-7 yet. _plugins/lesson_status.rb reads the cut-off from
+# the current 2027 alpha yet. _plugins/lesson_status.rb reads the cut-off from
 # tools/lib/v3-lessons.sh (V3_ALPHA7_THROUGH): every lesson above it is under
 # construction, and shows as "unconverted" unless it's listed under `waiting`.
 # A lesson at or below the cut-off is never marked, so converting one needs no
@@ -12,12 +12,12 @@ states:
     pill: not updated yet
     meaning: >-
       This lesson was written for an earlier 2027 alpha. Some of its code and
-      text don't match alpha-7 yet, and it's in the queue to be updated.
+      text don't match the current alpha yet, and it's in the queue to be updated.
   library:
     pill: waiting on a library
     meaning: >-
       This lesson can't be updated until a library it uses releases a build
-      for alpha-7.
+      for the current alpha.
   decision:
     pill: waiting on a decision
     meaning: >-
@@ -28,4 +28,4 @@ waiting:
     state: library
     note: >-
       Its object-detection camera uses PhotonVision, and PhotonLib has no
-      alpha-7 release yet.
+      release for the current alpha yet.

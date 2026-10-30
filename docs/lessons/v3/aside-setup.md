@@ -59,7 +59,7 @@ those separately.
 
 **Download it:** [the allwpilib releases page on
 GitHub](https://github.com/wpilibsuite/allwpilib/releases). Grab
-**v2027.0.0-alpha-6** — the current top alpha for this season — and pick
+**v2027.0.0-alpha-8** — the current top alpha for this season — and pick
 the file for your OS (`.iso` for Windows, `.dmg` for macOS, `.tar.gz` for
 Linux).
 

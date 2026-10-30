@@ -362,10 +362,10 @@ feed:**
 ```
 
 That `/ (2 * Math.PI)` is the same radians-to-rotations conversion the
-rotor feed already uses two lines up — `DCMotorSim` speaks radians, Phoenix
-sim states speak rotations, and this alpha has no shortcut method for that
-one division, so it's spelled out here exactly like everywhere else in
-this file.
+rotor feed already uses two lines up — `DCMotorSim` speaks radians, and Phoenix
+sim states speak rotations. WPILib does have a helper for it,
+`Units.radiansToRotations(...)`, but it's one division, so it's spelled out
+here exactly like everywhere else in this file.
 
 The physics itself doesn't change — the same voltage still turns the same
 motor through the same gearbox. What changed is *which sensor's sim state
