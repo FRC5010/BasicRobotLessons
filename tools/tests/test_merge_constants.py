@@ -285,8 +285,8 @@ class RollingBack(unittest.TestCase):
         self.assertTrue(any('DROPPED' in r and 'kDrivePort = 5' in r for r in report), report)
 
 
-class RoundTrip(unittest.TestCase):
-    """Roll the real v3 snapshots back from Lesson 15's start to Lesson 6's, then forward again."""
+class RealSnapshots:
+    """The real code/v3 Constants.java files, and what update-lesson-v3.sh does with them."""
 
     V3 = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'code', 'v3')
 
@@ -307,6 +307,10 @@ class RoundTrip(unittest.TestCase):
         return mc.merge(student, applied[-1], mc.history_from_texts(everything),
                         applied=mc.history_from_texts(applied),
                         upcoming=mc.history_from_texts(upcoming) if upcoming else None)
+
+
+class RoundTrip(RealSnapshots, unittest.TestCase):
+    """Roll the real v3 snapshots back from Lesson 15's start to Lesson 6's, then forward again."""
 
     def test_your_values_survive_rolling_back_and_forward_again(self):
         start = self.constants(range(15))[-1]
@@ -341,6 +345,74 @@ class RoundTrip(unittest.TestCase):
         for key, d in want.decls.items():
             self.assertEqual(got.decls[key].value, mine[key][1] if key in mine else d.value, key)
         self.assertFalse(any('DROPPED' in r for r in forward_report), forward_report)
+
+
+class RetiredValues(RealSnapshots, unittest.TestCase):
+    """A value a lesson stopped giving a constant is still one the lessons gave.
+
+    The snapshots only hold today's values, so RETIRED_VALUES remembers the old ones.
+    These are the Kraken X60 gains and speeds from before WPILib alpha-8's new motor
+    figures (2026-10-30): a student who updated with the old lessons holds them, never
+    touched them, and has to receive the new ones.
+    """
+
+    BEFORE = [
+        ('kElevatorKG = 0.17;', 'kElevatorKG = 0.18;'),
+        ('kElevatorKV = 1.42;', 'kElevatorKV = 1.44;'),
+        ('kArmKV = 5.94;', 'kArmKV = 6.0;'),
+        ('kArmKA = 0.054;', 'kArmKA = 0.055;'),
+        ('kFlywheelKV = 0.119;', 'kFlywheelKV = 0.12;'),
+        ('kFlywheelKA = 0.105;', 'kFlywheelKA = 0.106;'),
+        ('kFreeSpeed = RotationsPerSecond.of(101.08);', 'kFreeSpeed = RotationsPerSecond.of(100);'),
+        ('MetersPerSecond.of(101.08 / kDriveGearRatio', 'MetersPerSecond.of(100.0 / kDriveGearRatio'),
+    ]
+
+    def old_values(self, text):
+        changed = 0
+        for new, old in self.BEFORE:
+            if new in text:
+                text = text.replace(new, old)
+                changed += 1
+        return text, changed
+
+    def test_a_student_still_on_the_old_values_gets_the_new_ones(self):
+        for lesson, expect in ((11, 1), (21, 5), (29, 8), (33, 8)):
+            with self.subTest(lesson=lesson):
+                reference = self.constants(range(lesson))[-1]
+                student, changed = self.old_values(reference)
+                self.assertEqual(changed, expect)
+                merged, report = self.update(student, lesson)
+                self.assertEqual(merged, reference)
+                self.assertEqual(sum(1 for r in report if r.startswith('updated')), expect, report)
+                self.assertFalse(any('kept' in r for r in report), report)
+
+    def test_a_value_of_your_own_still_wins_over_a_retired_one(self):
+        reference = self.constants(range(29))[-1]
+        student, _ = self.old_values(reference)
+        student = student.replace('kElevatorKV = 1.44;', 'kElevatorKV = 1.30;')
+        merged, report = self.update(student, 29)
+        self.assertIn('kElevatorKV = 1.30;', merged)
+        self.assertIn('kElevatorKG = 0.17;', merged)
+        self.assertTrue(any('kept yours' in r and 'kElevatorKV = 1.30' in r for r in report), report)
+
+    def test_rolling_back_drops_an_old_valued_later_constant_quietly(self):
+        # Lesson 32's file with the old gains, taken back to Lesson 12: none of the
+        # elevator, arm or flywheel is there yet, and none of it is the student's own.
+        student, changed = self.old_values(self.constants(range(33))[-1])
+        self.assertEqual(changed, 8)
+        merged, report = self.update(student, 12)
+        want = mc.parse(self.constants(range(12))[-1])
+        self.assertEqual(set(mc.parse(merged).decls), set(want.decls))
+        self.assertFalse(any('kept' in r or 'DROPPED' in r for r in report), report)
+
+    def test_the_retired_list_names_real_constants_and_no_current_value(self):
+        texts = self.constants(range(100))
+        today = mc.history_from_texts(texts, retired={})
+        for key, values in mc.RETIRED_VALUES.items():
+            with self.subTest(key=key):
+                self.assertIn(key, today.values, 'a retired value for a constant no lesson has does nothing')
+                for v in values:
+                    self.assertNotIn(mc._norm(v), today.values[key], 'that is still a lesson value')
 
 
 class Parsing(unittest.TestCase):

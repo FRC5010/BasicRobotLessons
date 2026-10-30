@@ -17,7 +17,7 @@ D-pad.
   (acceleration), with `kP` as a small trim, not the whole controller
 - **`GravityTypeValue.Elevator_Static`** — telling the closed loop gravity's
   pull doesn't change with position, unlike an arm's
-- Gains **computed from the motor's spec sheet**, not guessed
+- Gains **computed from the motor's published numbers**, not guessed
 - Three numbers worth telling apart on any profiled mechanism: **goal**,
   **setpoint**, and **position**
 
@@ -69,24 +69,28 @@ all of them.**
 
 ---
 
-## 3. The feedforward model, computed from the spec sheet
+## 3. The feedforward model, computed from the motor's numbers
 
-Two facts from the Kraken X60's spec sheet do almost all of the work.
+Two facts about the Kraken X60 do almost all of the work. They're the
+numbers WPILib's own motor model uses for it, `DCMotor.getKrakenX60(1)` —
+the one you've been handing the simulations since Lesson 4 — and WPILib
+takes them from CTRE's published dynamometer test data, the Motor Testing
+Lab on CTRE's website.
 
-- **Free speed:** 6000 RPM at 12 V, which is 100 rotations/sec. That's
-  **0.12 V per rotor rotation/sec** (`12 / 100`).
-- **Stall torque:** 7.09 N·m at 12 V. That's **1.69 V per N·m** at the
-  rotor (`12 / 7.09`).
+- **Free speed:** 6065 RPM at 12 V, which is 101.08 rotations/sec. That's
+  **0.1187 V per rotor rotation/sec** (`12 / 101.08`).
+- **Stall torque:** 7.157 N·m at 12 V. That's **1.677 V per N·m** at the
+  rotor (`12 / 7.157`).
 
 Every gain below comes from one of those two numbers, walked through the
 gearbox. The walk is always the same shape: figure out what the
 *mechanism* (the drum) needs, convert it to what the *rotor* needs, then
-multiply by whichever spec-sheet factor applies.
+multiply by whichever of those two factors applies.
 
 **`kV` — voltage to sustain a speed.** The elevator's gear ratio is
 `12.0` — twelve rotor rotations per drum rotation — so sustaining *one*
 drum rotation/sec means sustaining *twelve* rotor rotations/sec. Multiply
-by the speed factor: `12 × 0.12 = 1.44`. That's `kElevatorKV`. (The
+by the speed factor: `12 × 0.1187 ≈ 1.42`. That's `kElevatorKV`. (The
 closed loop runs in drum rotations, not rotor rotations — Phoenix's
 `SensorToMechanismRatio` handles that conversion, the same way
 `DriveConstants.kDriveKV = 0.8` is volts per *wheel* rotation/sec, not
@@ -100,7 +104,7 @@ needs `49.05 × 0.0254 ≈ 1.246` N·m of torque just to stand still.
 Reflect that back through the gearbox to the rotor — dividing by the
 gear ratio this time, since the gearbox multiplies torque going the other
 way — and the rotor needs `1.246 / 12 ≈ 0.104` N·m. Multiply by the
-torque factor: `0.104 × 1.69 ≈ 0.18` V. That's `kElevatorKG`.
+torque factor: `0.104 × 1.677 ≈ 0.17` V. That's `kElevatorKG`.
 
 **`kA` — voltage to accelerate.** Same walk as `kG`, with one extra step
 at the front. `kA` is volts per drum rotation/sec², so first turn that
@@ -111,7 +115,7 @@ rotation/sec every second speeds the carriage up by 0.160 m/s². Pushing
 `m·g` gave `kG` its force. At the drum's radius that's
 `0.798 × 0.0254 ≈ 0.0203` N·m; through the gearbox,
 `0.0203 / 12 ≈ 0.00169` N·m at the rotor; times the torque factor,
-`0.00169 × 1.69 ≈ 0.003` V. That's `kElevatorKA`, and it's the smallest
+`0.00169 × 1.677 ≈ 0.003` V. That's `kElevatorKA`, and it's the smallest
 of the three by far, because it only pays for how sharply the profile
 speeds up and slows down — not for holding still or for cruising. It
 counts only the carriage's mass. On a real elevator the motor's and the
@@ -133,11 +137,11 @@ public static final class ElevatorConstants {
   public static final LinearVelocity kMaxVelocity = MetersPerSecond.of(1.0);
   public static final LinearAcceleration kMaxAcceleration = MetersPerSecondPerSecond.of(2.0);
 
-  // Feedforward + trim gains, computed from the Kraken X60 spec sheet — see the lesson's §3.
+  // Feedforward + trim gains, computed from the Kraken X60's published numbers — see the lesson's §3.
   // SensorToMechanismRatio makes the closed loop run in drum rotations, so
   // every gain below is drum-side (mechanism-side), not rotor-side.
-  public static final double kElevatorKG = 0.18; // volts to hold position against gravity
-  public static final double kElevatorKV = 1.44; // volts per drum rotation/sec
+  public static final double kElevatorKG = 0.17; // volts to hold position against gravity
+  public static final double kElevatorKV = 1.42; // volts per drum rotation/sec
   public static final double kElevatorKA = 0.003; // volts per drum rotation/sec^2
   public static final double kElevatorKP = 20.0; // volts per drum rotation of error — the trim
 
@@ -568,12 +572,12 @@ possible trim.
   carriage settles a fixed distance from the setpoint and stays there no
   matter how long you wait. Measured on this course's own numbers:
   zeroing `kElevatorKG` sags the hold by about **1.6 mm**. Small, because
-  0.18 V is small, but it never goes away on its own.
+  0.17 V is small, but it never goes away on its own.
 - **`kV` wrong** shows up *only while moving* — position lagging
   setpoint by a gap that opens up during the flat part of the profile and
   closes again as the profile decelerates. You can predict its size: a
   1.0 m/s cruise is about 6.3 drum rotations a second, which costs
-  `1.44 × 6.3 ≈ 9 V`, and with no `kV`, `kP = 20` can only make 9 V out
+  `1.42 × 6.3 ≈ 9 V`, and with no `kV`, `kP = 20` can only make 9 V out
   of about 0.45 rotations of error — some 7 cm. Measured moving the full
   travel range with `kElevatorKV` zeroed: about **9 cm** of peak lag —
   the 7 cm, plus a little extra while the profile is still speeding up.
@@ -615,7 +619,7 @@ possible trim.
 2. **Code — watch the sag.** Temporarily set `kElevatorKG` to `0.0`, command
    `kScoreMid`, and let it settle. Compare the steady-state
    `HeightMeters` against `GoalMeters` on the graph — you should see
-   almost exactly the gap §10 measured. Put `0.18` back when you're done.
+   almost exactly the gap §10 measured. Put `0.17` back when you're done.
 3. **Code — ask for somewhere the elevator can't go.** Bind a spare button to
    `elevator.goToHeight(Meters.of(3.0))` — well past `kMaxHeight`. Watch
    `GoalMeters` on the graph clamp to `1.5` instead of jumping to `3.0`,
@@ -639,8 +643,8 @@ a bigger `kP`. It was **a term for each physical effect**: `kG` for the
 constant pull of gravity, `kV` for the voltage a steady speed costs,
 `kA` for the extra push a changing speed costs, and `kP` shrunk down to
 what's left over once the model has done its job. All three feedforward
-gains came straight off the Kraken X60's spec sheet, walked through the
-gearbox by hand — nothing here was guessed.
+gains came straight off the Kraken X60's published numbers, walked through
+the gearbox by hand — nothing here was guessed.
 
 **Motion Magic** turned "go here" into a real trapezoidal profile
 generated in firmware, and that profile handed you a third number worth

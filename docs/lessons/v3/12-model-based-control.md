@@ -293,14 +293,15 @@ Now the drive gains, because they're where "model-based" earns its name.
 **`kV` is a model of the motor**: it answers "how many volts does one
 wheel rotation per second cost?" Ours is about `0.8` — at 12 volts that
 predicts ~15 wheel rps, which is the free-speed math from Lesson 10 read
-backwards. When you request 10 rps, the firmware *immediately* applies `10
-× 0.8 = 8` volts because the model says that's what 10 rps costs — no
-waiting for error to build up. Then `kP` handles only the leftover:
-friction, battery sag, carpet. The model does most of the work by
-prediction; feedback trims the rest by reaction. That division of labor —
-predict with a model, correct with feedback — is what *model-based
-control* means, and it's how every high-level controller you'll ever meet
-is built.
+backwards (the motor's 101.08 rotations/sec ÷ 6.75 turns per wheel turn =
+14.97 wheel rps, and 12 V ÷ 14.97 = 0.80 V for each). When you request 10
+rps, the firmware *immediately* applies `10 × 0.8 = 8` volts because the
+model says that's what 10 rps costs — no waiting for error to build up.
+Then `kP` handles only the leftover: friction, battery sag, carpet. The
+model does most of the work by prediction; feedback trims the rest by
+reaction. That division of labor — predict with a model, correct with
+feedback — is what *model-based control* means, and it's how every
+high-level controller you'll ever meet is built.
 
 One thing that *doesn't* change: `Drivetrain`. It talks to modules through
 `setDesiredState` and the question-methods, and those signatures held

@@ -265,7 +265,7 @@ control.
 
     // The speedometer. Full scale is the motor's free speed, so the needle can
     // never run off the end of the dial.
-    public static final AngularVelocity kFreeSpeed = RotationsPerSecond.of(100);
+    public static final AngularVelocity kFreeSpeed = RotationsPerSecond.of(101.08);
     public static final Distance kDialSize = Meters.of(2.0);
     public static final Distance kNeedleLength = Meters.of(0.8);
     /** Where the needle sits at rest: straight down. */
@@ -276,8 +276,8 @@ control.
     // The model: what this wheel costs to break free, to spin, and to speed up.
     // No kG — nothing here is being held up against gravity.
     public static final double kFlywheelKS = 0.15; // volts to overcome friction
-    public static final double kFlywheelKV = 0.12; // volts per rotation/sec
-    public static final double kFlywheelKA = 0.106; // volts per rotation/sec^2
+    public static final double kFlywheelKV = 0.119; // volts per rotation/sec
+    public static final double kFlywheelKA = 0.105; // volts per rotation/sec^2
     // The trim: whatever the model got wrong.
     public static final double kFlywheelKP = 0.3; // volts per rotation/sec of error
   }
@@ -292,32 +292,33 @@ Writing `kG = 0.05` here because the other two had one would be inventing
 a force.
 
 The two that remain come out of Lesson 18's arithmetic unchanged. A Kraken
-X60 free-spins at 6000 rpm on 12 V — that's 100 rotations per second, so
-**0.12 V per rotation per second**, and with no gearbox the wheel *is* the
+X60 free-spins at 6065 rpm on 12 V (WPILib's motor model, from CTRE's
+dynamometer data, as in Lesson 18) — that's 101.08 rotations per second, so
+**0.1187 V per rotation per second**, and with no gearbox the wheel *is* the
 rotor.
 
 *Nothing to add — the arithmetic, not code:*
 
 ```
-kV = 0.12 V per rot/s        →  holding 60 rot/s costs 0.12 × 60 = 7.2 V
+kV = 0.1187 ≈ 0.119 V per rot/s  →  holding 60 rot/s costs 0.119 × 60 = 7.1 V
 ```
 
 Seven and a bit volts out of twelve, just to stay spinning. That leaves
-about 4.8 V of headroom for accelerating, which is why the wheel takes a
+about 4.9 V of headroom for accelerating, which is why the wheel takes a
 moment to come up.
 
 `kA` is the torque side of the same recipe. Speeding a wheel up by 1 rot/s²
-needs `J × 2π` newton-metres, and the Kraken stalls at 7.09 N·m on 12 V, so
-**1.69 V per N·m**.
+needs `J × 2π` newton-metres, and the Kraken stalls at 7.157 N·m on 12 V, so
+**1.677 V per N·m**.
 
 *Nothing to add — the arithmetic, not code:*
 
 ```
-kA = 0.01 × 2π × 1.69 = 0.106 V per rot/s²
+kA = 0.01 × 2π × 1.677 = 0.105 V per rot/s²
 ```
 
-Both numbers came from the motor's spec sheet and one number off the CAD.
-Neither was guessed, and section 6 checks them against what the wheel
+Both gains came from the motor's published numbers and one number off the
+CAD. Neither was guessed, and section 6 checks them against what the wheel
 actually does.
 
 ---
@@ -607,7 +608,7 @@ the right-hand side, where it would sit looking like a modest negative
 speed. **A gauge that wraps is worse than no gauge**, because it doesn't
 look broken.
 
-Shooting speed lands at 60% of full scale, so the needle sits in the
+Shooting speed lands at about 60% of full scale, so the needle sits in the
 upper-left when the wheel is ready — a glance-able position you'll come to
 recognise.
 
@@ -632,9 +633,9 @@ so zeroing `Slot0.kV` doesn't make it vanish.
 
 ```
 kP × (goal − ω)  =  kV × ω
-0.3 × (60 − ω)   =  0.12 × ω
-18               =  0.42 × ω
-ω                =  42.86 rot/s
+0.3 × (60 − ω)   =  0.119 × ω
+18               =  0.419 × ω
+ω                =  42.96 rot/s
 ```
 
 Measured here: 43.27. Close enough to confirm the arithmetic, not exact —
@@ -809,7 +810,7 @@ tuning one.
 And the one that has now come up three times: **calculate what you must
 sustain, and feed it forward.** Without `kV` the wheel parks around 43
 rot/s and stays there forever, because a P term can only produce output by
-keeping error alive. The arithmetic predicted 42.86 before the test ran,
+keeping error alive. The arithmetic predicted 42.96 before the test ran,
 and the measurement landed within half a rotation of it — when a model and
 a measurement agree that closely, you understand the mechanism, and
 that's a much better position to be in than having found some gains that

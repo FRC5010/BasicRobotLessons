@@ -1363,6 +1363,60 @@ Lesson 24 state, 60–61 at Lesson 33); the Pick Up auto still catches and
 scores, and replays with every robot output matching. Details in CLAUDE.md's
 Lesson 24 notes.
 
+**Alpha-8, the Kraken X60 arithmetic, 2026-10-30.** The first half of the
+Kraken decision above: the spec-sheet arithmetic is redone with the new
+figures, in the OpMode track only (the classic track keeps 6000 RPM and
+7.09 N·m). Nothing simulated was re-measured in this pass; that is the next
+job, and `kraken-remeasure-inventory.md` (kept with the working files, not in
+the repo) lists every quoted simulation number it has to cover.
+
+- **Where the figures come from.** `DCMotor.getKrakenX60` changed in
+  allwpilib #9378 (commit `39599a7a9`, "Update the Kraken X60 DCMotor
+  factories to use values from the CTRE Motor Testing Lab"; its message says
+  this "commonizes Kraken X60 to use the dyno data in the CTRE Motor Testing
+  Lab, which is the same source used for the Kraken X44 and Minion", and the
+  source comment cites `motors.ctr-electronics.com/dyno/dynometer-testing/`).
+  Read from source at the alpha-8 tag and from the alpha-8 `wpimath` jar with
+  `javap -c`: 12 V, 7.157 N·m, 374.4 A, 2 A free current, 6065 RPM. Only the
+  stall torque, stall current and free speed changed; free current is still
+  2 A. The lessons say that source plainly (Lessons 10, 18, 28, 33) and no
+  longer call the numbers a "spec sheet".
+- **Two factors.** 12 ÷ 101.08 rot/s = **0.1187 V per rotor rot/s**;
+  12 ÷ 7.157 N·m = **1.677 V per N·m**.
+- **Constants** (round the way each lesson already did): `kElevatorKV`
+  1.44 → **1.42** (12 × 0.1187), `kElevatorKG` 0.18 → **0.17**
+  (0.104 × 1.677 = 0.174), `kArmKV` 6.0 → **5.94** (50 × 0.1187),
+  `kArmKA` 0.055 → **0.054** (0.032 × 1.677), `kFlywheelKV` 0.12 → **0.119**
+  (3 digits like `kA`; at two digits it would have stayed 0.12 and kept a 1%
+  error in §3's "7.2 V"), `kFlywheelKA` 0.106 → **0.105** (0.01 × 2π × 1.677),
+  `DriveConstants.kMaxSpeed` 100.0 → **101.08** rot/s (4.73 → 4.78 m/s), and
+  `FlywheelConstants.kFreeSpeed` 100 → **101.08** (the dial's full scale is
+  the motor's free speed). **Unchanged after the arithmetic:**
+  `kElevatorKA` 0.003 (0.00283), `kArmKG` 0.25 (0.2499), `kDriveKV` 0.8
+  (6.75 × 0.1187 = 0.801). Derived text: Lesson 18's "1.42 × 6.3 ≈ 9 V" and
+  7 cm of lag still hold; Lesson 20's cruise needs 2.97 V ("about 3") and the
+  18° still holds; Lesson 21's homing sink is (0.7 + 0.17) ÷ 1.42 and its
+  unpowered sink 0.17 ÷ 1.42 × 0.16 m = 1.9 cm/s; Lesson 28's fixed point
+  moves 42.86 → 42.96 rot/s and its headroom 4.8 → 4.9 V.
+- **Snapshots.** `Constants.java` in `code/v3/lesson-10…32` and `34` (Lesson
+  34 carries the drive, elevator and arm values, and was changed only in those
+  lines and the comments on them). The Lesson 17 marker, the code comment on
+  the gains and Lesson 18's block say "published numbers" instead of "spec
+  sheet".
+- **The update script.** The merge's history is built from the snapshots, so
+  once 1.44 left every copy, a student who updated before this change and
+  never touched it would have looked customized and kept the old gain.
+  `RETIRED_VALUES` in `tools/lib/merge_constants.py` lists the eight
+  retired values and joins the history; the tests are `RetiredValues` in
+  `tools/tests/test_merge_constants.py`. Without the list six of them fail
+  (an updater on the old values, a customized value beside a retired one, a
+  rollback). A retired value only joins a constant the given texts already
+  have, so a rollback still treats later-lesson constants as later. Add a
+  line whenever a snapshot constant changes on purpose.
+- **Checks.** Lessons 9–33 compile with no warnings, the marker checker
+  reports 0 problems for 1–33, the tool tests pass (64), and Lesson 33's
+  tests pass (4).
+
 **What the AdvantageKit pass leaves: only Lesson 34.** Lessons 13–33 record
 their readings with `processInputs`, their decisions with `recordOutput`,
 and replay. The `Field2d` widget, B-Line's own values and the SysId signals

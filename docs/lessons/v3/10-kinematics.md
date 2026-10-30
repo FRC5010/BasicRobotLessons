@@ -104,15 +104,21 @@ import org.wpilib.units.measure.LinearVelocity;
 public static final class DriveConstants {
   // ...existing constants stay as doubles for now...
 
-  // Kraken X60 free speed ≈ 6000 RPM = 100 rotations/sec. Divide by the gear
-  // ratio, multiply by circumference → meters/sec. About 4.7 m/s for our numbers.
+  // Kraken X60 free speed ≈ 6065 RPM = 101.08 rotations/sec. Divide by the gear
+  // ratio, multiply by circumference → meters/sec. About 4.8 m/s for our numbers.
   public static final LinearVelocity kMaxSpeed =
-      MetersPerSecond.of(100.0 / kDriveGearRatio * kWheelCircumferenceMeters);
+      MetersPerSecond.of(101.08 / kDriveGearRatio * kWheelCircumferenceMeters);
 
   // How fast the chassis may spin at full stick — one full rotation per second.
   public static final AngularVelocity kMaxAngularSpeed = RotationsPerSecond.of(1.0);
 }
 ```
+
+That `6065` is the Kraken X60's free speed according to WPILib's own motor
+model: the `DCMotor.getKrakenX60(1)` you've been handing the simulations since
+Lesson 4. WPILib takes its Kraken numbers from CTRE's published dynamometer
+test data (their Motor Testing Lab), so the figure has a source you can go
+look at. Lesson 18 uses the same page for the rest of the motor's numbers.
 
 `MetersPerSecond.of(...)` builds a `LinearVelocity` from a plain number — the
 arithmetic stays in doubles (readable), and the *result* becomes unit-aware.
@@ -290,7 +296,7 @@ library math this lesson exists for: one chassis motion in, one
 `SwerveModuleVelocity[]` out — one entry per corner, in the order you gave
 the constructor. **`desaturateWheelVelocities`** matters at the edge of the
 envelope: if translation-plus-rotation asks one wheel for 6 m/s but the max
-is 4.7, it scales *all four* down so the motion keeps its shape, just
+is 4.8, it scales *all four* down so the motion keeps its shape, just
 slower — without it, the overasked wheel silently caps and the robot curves
 off course.
 

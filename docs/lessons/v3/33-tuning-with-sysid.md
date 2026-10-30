@@ -29,14 +29,16 @@ measure what a spec sheet can't tell you.
 
 ## 1. None of your numbers are about this robot yet
 
-Every gain in this course so far came from a spec sheet. `kV = 0.12` isn't a
-measurement — it's `6000 RPM ÷ 12 V`, a fact about a Kraken X60 in general,
-computed the same way for a flywheel, an elevator, and an arm since Lesson 18.
-It has been right *enough* to build this entire course in simulation, because
-the simulated motors are built from the same spec-sheet numbers. A real
-Kraken doesn't know what its own spec sheet says. It has bearing friction,
-wiring resistance, a wheel that weighs slightly more than CAD said, and none
-of that shows up until voltage actually moves through actual copper.
+Every gain in this course so far came from the motor's published numbers.
+`kV = 0.119` isn't a measurement of your flywheel — it's `12 V ÷ 101.08
+rot/s`, the Kraken X60's 6065 RPM free speed from CTRE's dynamometer data, a
+fact about a Kraken X60 in general, computed the same way for a flywheel, an
+elevator, and an arm since Lesson 18. It has been right *enough* to build this
+entire course in simulation, because the simulated motors are built from the
+same numbers. A real Kraken doesn't know what its own published numbers say.
+It has bearing friction, wiring resistance, a wheel that weighs slightly more
+than CAD said, and none of that shows up until voltage actually moves through
+actual copper.
 
 That's what today closes the gap on. **`SysIdRoutine`** drives a mechanism
 with two carefully-shaped voltage patterns, logs what happened, and fits the
@@ -542,8 +544,8 @@ Compare what it hands back to `FlywheelConstants`.
 
 ```
 kFlywheelKS = 0.15   // volts to overcome friction
-kFlywheelKV = 0.12   // volts per rotation/sec
-kFlywheelKA = 0.106  // volts per rotation/sec²
+kFlywheelKV = 0.119  // volts per rotation/sec
+kFlywheelKA = 0.105  // volts per rotation/sec²
 ```
 
 `kV` should land close — within a few percent, verified in this course's own

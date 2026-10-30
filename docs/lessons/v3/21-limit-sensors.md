@@ -134,8 +134,8 @@ will write down.
 `kHomingVolts` is negative and small. Homing runs **open loop**, driving
 the motor at a fixed voltage rather than toward a position, because the
 position is precisely the thing you don't trust yet. −0.7 V gets a gentle
-descent. Gravity pulls the same way, and its pull is worth `kG`'s 0.18 V,
-so the carriage feels about 0.88 V of downhill drive. `kV` says 1.44 V
+descent. Gravity pulls the same way, and its pull is worth `kG`'s 0.17 V,
+so the carriage feels about 0.87 V of downhill drive. `kV` says 1.42 V
 buys one drum rotation per second, so that's about 0.6 rotations a second
 of a drum 16 cm around: a sink of about 10 cm/s. Slow is correct — you
 are deliberately driving a mechanism into a hard stop.
@@ -458,8 +458,8 @@ never the bottom, and before long it's telling you the carriage is 30 cm
 it's on a graph.
 
 > The speed is section 2's arithmetic with the motor left out. Gravity is
-> worth `kG`'s 0.18 V, and at 1.44 V per drum rotation per second that's
-> 0.125 rotations a second: 2 cm/s on a 16 cm drum. How fast a real
+> worth `kG`'s 0.17 V, and at 1.42 V per drum rotation per second that's
+> 0.12 rotations a second: just under 2 cm/s on a 16 cm drum. How fast a real
 > elevator sinks when nothing drives it depends on its gearbox, its
 > friction and whether the motor is set to brake, so don't count on
 > seeing this on your robot.

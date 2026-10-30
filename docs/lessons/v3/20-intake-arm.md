@@ -132,8 +132,8 @@ where zero is.
 
     // The model: what this arm costs to hold, to move, and to speed up.
     public static final double kArmKG = 0.25; // volts to hold it out horizontal
-    public static final double kArmKV = 6.0; // volts per arm rotation/sec
-    public static final double kArmKA = 0.055; // volts per arm rotation/sec^2
+    public static final double kArmKV = 5.94; // volts per arm rotation/sec
+    public static final double kArmKA = 0.054; // volts per arm rotation/sec^2
     // The trim: whatever the model got wrong.
     public static final double kArmKP = 60.0; // volts per rotation of error
 
@@ -174,16 +174,16 @@ mirror images — they're wherever the hardware stops.
 The four gains are the same four the elevator has, describing the same
 three costs plus the trim. They come out of the same three steps — what
 does the *mechanism* need, divide by the gear ratio for what the *rotor*
-needs, then `× 0.12` for a speed or `× 1.69` for a torque — with this
+needs, then `× 0.1187` for a speed or `× 1.677` for a torque — with this
 arm's numbers substituted in.
 
-**`kArmKV = 6.0`** — one arm rotation per second is 50 rotor rotations per
+**`kArmKV = 5.94`** — one arm rotation per second is 50 rotor rotations per
 second through the gearbox.
 
 *Nothing to add — the arithmetic, not code:*
 
 ```
-50 rot/s × 0.12 V = 6.0 V
+50 rot/s × 0.1187 V = 5.94 V
 ```
 
 **`kArmKG = 0.25`** — the torque to hold the arm out horizontal. A
@@ -196,10 +196,10 @@ length, `0.508 / 2 = 0.254 m`.
 weight       3 kg × 9.81 m/s²        = 29.4 N
 torque       29.4 N × 0.254 m         = 7.47 N·m at the pivot
 at the rotor 7.47 ÷ 50                = 0.149 N·m
-volts        0.149 N·m × 1.69         = 0.25 V
+volts        0.149 N·m × 1.677        = 0.25 V
 ```
 
-**`kArmKA = 0.055`** — the torque to speed the arm up. Rotating things
+**`kArmKA = 0.054`** — the torque to speed the arm up. Rotating things
 resist acceleration by their **moment of inertia**, and for a uniform rod
 pivoting about one end that's `⅓ m L² = ⅓ × 3 × 0.508² = 0.258 kg·m²`. One
 arm rotation per second squared is `2π = 6.28 rad/s²`.
@@ -209,7 +209,7 @@ arm rotation per second squared is `2π = 6.28 rad/s²`.
 ```
 torque       0.258 kg·m² × 6.28 rad/s² = 1.62 N·m at the pivot
 at the rotor 1.62 ÷ 50                  = 0.032 N·m
-volts        0.032 N·m × 1.69           = 0.055 V
+volts        0.032 N·m × 1.677          = 0.054 V
 ```
 
 That's nearly twenty times the elevator's `kA`, and the reason is worth noticing:
@@ -220,8 +220,8 @@ and stop than a carriage of similar mass.
 
 And the argument for having `kV` at all is worth redoing with these
 numbers. Cruising at 180°/s is half an arm rotation per second, so `kV`
-supplies 3 volts. Ask `kP` to produce those 3 volts instead and, at 60
-volts per rotation of error, it needs a twentieth of a rotation —
+supplies about 3 volts. Ask `kP` to produce those 3 volts instead and, at
+60 volts per rotation of error, it needs a twentieth of a rotation —
 **18 degrees** of arm trailing behind its own plan, for the whole swing.
 On an arm that's not just sloppy, it's 18 degrees of somewhere you didn't
 intend to be.

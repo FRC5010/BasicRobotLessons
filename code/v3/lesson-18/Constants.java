@@ -73,10 +73,10 @@ public final class Constants {
     public static final Translation2d kBackLeft   = new Translation2d(-kHalfLength,  kHalfWidth);
     public static final Translation2d kBackRight  = new Translation2d(-kHalfLength, -kHalfWidth);
 
-    // Kraken X60 free speed ≈ 6000 RPM = 100 rotations/sec. Divide by the gear
-    // ratio, multiply by circumference → meters/sec. About 4.7 m/s for our numbers.
+    // Kraken X60 free speed ≈ 6065 RPM = 101.08 rotations/sec. Divide by the gear
+    // ratio, multiply by circumference → meters/sec. About 4.8 m/s for our numbers.
     public static final LinearVelocity kMaxSpeed =
-        MetersPerSecond.of(100.0 / kDriveGearRatio * kWheelCircumferenceMeters);
+        MetersPerSecond.of(101.08 / kDriveGearRatio * kWheelCircumferenceMeters);
 
     // How fast the chassis may spin at full stick — one full rotation per second.
     public static final AngularVelocity kMaxAngularSpeed = RotationsPerSecond.of(1.0);
@@ -156,11 +156,11 @@ public final class Constants {
     public static final LinearVelocity kMaxVelocity = MetersPerSecond.of(1.0);
     public static final LinearAcceleration kMaxAcceleration = MetersPerSecondPerSecond.of(2.0);
 
-    // Feedforward + trim gains, computed from the Kraken X60 spec sheet — see the lesson's §3.
+    // Feedforward + trim gains, computed from the Kraken X60's published numbers — see the lesson's §3.
     // SensorToMechanismRatio makes the closed loop run in drum rotations, so
     // every gain below is drum-side (mechanism-side), not rotor-side.
-    public static final double kElevatorKG = 0.18; // volts to hold position against gravity
-    public static final double kElevatorKV = 1.44; // volts per drum rotation/sec
+    public static final double kElevatorKG = 0.17; // volts to hold position against gravity
+    public static final double kElevatorKV = 1.42; // volts per drum rotation/sec
     public static final double kElevatorKA = 0.003; // volts per drum rotation/sec^2
     public static final double kElevatorKP = 20.0; // volts per drum rotation of error — the trim
 
