@@ -1437,6 +1437,34 @@ WPILib's `ElevatorSim` alone needs, so the settled gap went 0.116 → 0.194 mm
 when `kElevatorKG` went 0.18 → 0.17 (unexplained, same on alpha-7). Lessons
 23–33 are batch 2. Details in CLAUDE.md's "v3 Lessons 7–22 re-measured" block.
 
+**Alpha-8, the Kraken re-measure, Lessons 24–27, 2026-10-30.** Batch 2a: the 30
+inventory rows for Lessons 24–27, re-measured on alpha-8 by scripting the real
+`Robot` loop tick by tick (the script runs from a periodic registered after
+every robot periodic, so sticks and DS changes land between cycles and every
+time is a tick count × 0.02 s), with alpha-7 builds of the same probes wherever
+a number surprised. About thirty figures changed in the text, and **almost none
+because of the Kraken constants**: the alpha-7 build gave the same corrected
+numbers, so most were stale already. Changed: Lesson 24's homing range (150–170
+ticks to 125–155), `HANDOFF` at 34 ticks and `HOLDING` at 56; Lesson 25's
+fresh-launch times (3.3 s and 4.4 s to 3.1 s and 4.1 s), the Pick Up table,
+the roller's position and delay, the bypass override's 11.6 rad/s and Aim While
+Driving's 4.2 s and 5.3 s; Lesson 26's grip limit (11.8 m/s², the figure its
+own Try It #2 already used), the P-then-P request jump, the roll past (37 mm),
+the straight-line wander (11 mm) and Try It #3 (12 mm); Lesson 27's P-only
+orbit errors (14.6° and 9.7°), the truth reading (1.2°), the strafe recovery
+(half a second) and the swing-round time (0.4 s). **The drive-lag figures in
+Lesson 26 were derived, not measured** (0.1 s × 4 m/s² = 0.4 m/s): measured,
+the real speed runs 0.28–0.29 m/s above the plan, so the lesson and the
+`Constants` comment in the Lesson 26–32 snapshots now say 0.07 s and 0.3 m/s.
+**Not changed, awaiting a user decision:** Lesson 27's P + feedforward row
+(0.3° and 0.4°, "better than thirty times over"): typically the estimate reads
+0.04–0.13°, but camera corrections make 4 of 12 runs spike to 0.2–1.2°, so
+neither the old figures nor a single new one fits; and Lesson 25's fresh-launch
+times, which depend on how long you wait between launching and enabling (the
+unhomed carriage keeps sinking: 3.3 s of red if you enable after a second, 3.1
+after two, 2.5 after five). Details in CLAUDE.md's "v3 Lessons 24–27
+re-measured" block.
+
 **What the AdvantageKit pass leaves: only Lesson 34.** Lessons 13–33 record
 their readings with `processInputs`, their decisions with `recordOutput`,
 and replay. The `Field2d` widget, B-Line's own values and the SysId signals

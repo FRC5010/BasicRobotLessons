@@ -66,7 +66,7 @@ finding before someone finds them in a match.
 for 7.5 m/s, which the clamp trims to the robot's top speed. So on tick one,
 standing still, the sketch asks for full speed. The wheels can't deliver
 that instantly. They spin up as hard as the tyres can push, which in this
-simulation measured **11.7 m/s²**, the grip limit itself. On a real robot,
+simulation measured **11.8 m/s²**, the grip limit itself. On a real robot,
 that's tyres on the edge of slipping, a lurch that throws everything on the
 robot forward, and wheel odometry you can't trust while it lasts.
 
@@ -120,7 +120,7 @@ Suppose the first stage hands over a metre out, and the second stage is a
 plain P controller like the sketch, three metres per second for every metre
 of error. At the handover the robot is doing about 1.7 m/s. The second
 stage looks at its one metre of error and asks for **3.0 m/s** on the spot:
-measured, the request jumped from 1.55 to 3.0 m/s in a single tick, and
+measured, the request jumped from 1.5 to 2.9 m/s in a single tick, and
 then the robot braked at about 7 m/s² as the error shrank. Each stage was
 reasonable on its own. Together they handed over with a jolt.
 
@@ -216,7 +216,7 @@ back into field speeds, rotate the other way.
 
     // Where stage one hands over, and how fast the robot may still be going.
     // Stage two could stop from at most √(2 × 1.5 × 1.0) = 1.73 m/s in that
-    // distance; the drive runs about 0.4 m/s behind the plan while slowing at
+    // distance; the drive runs about 0.3 m/s behind the plan while slowing at
     // 4 m/s², so plan 1.2 and leave it room.
     public static final Distance kHandoffDistance = Meters.of(1.0);
     public static final LinearVelocity kHandoffSpeed = MetersPerSecond.of(1.2);
@@ -267,8 +267,8 @@ takes *v*² ÷ 2*a* metres. Stage two has 1.0 m to stop in at 1.5 m/s², so
 the fastest it can take over at is √(2 × 1.5 × 1.0) = **1.73 m/s**.
 
 Then the robot itself gets a say. The drive motors follow a speed request
-a little late: measured, about **0.1 s**, so while stage one slows at
-4 m/s² the real speed runs roughly **0.4 m/s** above the plan. Plan the
+a little late: measured, about **0.07 s**, so while stage one slows at
+4 m/s² the real speed runs roughly **0.3 m/s** above the plan. Plan the
 handoff at 1.73 and the robot arrives at about 2 m/s, too fast to stop in
 time. So the plan says **1.2**, and the robot really arrives at about
 1.45, safely under the limit. Try It #1 shows what happens when you skip
@@ -643,7 +643,7 @@ position, not the estimate:
 |---|---|---|
 | Time to "arrived" | 3.5 s | 3.4 s |
 | Where it ended up | 14 mm out | **7–8 mm out, under 0.01°** |
-| Hardest acceleration at the start | 11.7 m/s² (the tyres' limit) | about 4 m/s² on average, 6–8 at peak |
+| Hardest acceleration at the start | 11.8 m/s² (the tyres' limit) | about 4 m/s² on average, 6–8 at peak |
 | At the handover | nearly stopped (0.08 m/s) | still moving, about 1.45 m/s |
 | Slowing into the target | not measured | about 1.4 m/s² on average |
 
@@ -666,14 +666,14 @@ Two other runs worth doing yourself:
 You'll also see two honest imperfections in the field view:
 
 > **The robot rolls a few centimetres past the target and comes back.**
-> Measured, 36 mm. That's the same 0.1 s drive lag from section 6: the real
+> Measured, 37 mm. That's the same 0.07 s drive lag from section 6: the real
 > speed trails the plan, so it reaches the end of the line still moving a
 > little. The plan and P bring it back, and `arrived()` won't say yes
 > until it's stopped.
 >
 > **The path bows out sideways while the robot turns.** Measured, about
 > 26 cm at the widest, on a trip that turns 90°. The same trip with no turn
-> stays within about 7 mm of the line, so it's the turning that does it:
+> stays within about 11 mm of the line, so it's the turning that does it:
 > a chassis that turns and drives at once doesn't quite go where it was
 > told. The cross-track term pulls it back; it can't prevent it.
 
@@ -702,7 +702,7 @@ Worth plotting while you watch:
    to remove, and it comes from one wrong number.
 3. **Take "stopped" out of arrived.** Set `kSpeedTolerance` to something
    enormous. Stage two now finishes while the robot is still rolling, and
-   the stop after the loop has to catch it: measured, it ended **12–13 mm**
+   the stop after the loop has to catch it: measured, it ended **12 mm**
    out instead of 7. Then put it back and decide which of the three
    questions in `arrived()` you could do without. (None.)
 4. **Move the handover.** Hand over 2 m out instead of 1. Work out the new

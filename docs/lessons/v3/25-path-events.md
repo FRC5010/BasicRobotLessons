@@ -310,9 +310,9 @@ share.
 ```
 
 Run Two Corners on a fresh launch. In this course's sim the strip blinks red for
-about 3.3 s while the carriage drives down to its switch, then turns blue as the
+about 3.1 s while the carriage drives down to its switch, then turns blue as the
 state becomes `IDLE`. The arm swings up from its stop, which takes about another
-second, and the robot sets off about 4.4 s after you enabled. Disable, select it
+second, and the robot sets off about 4.1 s after you enabled. Disable, select it
 again, and run it a second time: now it sets off at once. The carriage is already
 on the switch, so `home()` is done the moment it starts, and everything is
 already where `IDLE` wants it.
@@ -435,11 +435,11 @@ it's about 0.6 m ahead of the robot's center: the bumper is 0.3 m out, and the
 intake reaches another 30 cm past it. So the roller has to be running by the time
 the robot's center reaches y ≈ 4.4. And the arm starts tucked in — the get-ready
 step made sure of that — so the request isn't instant. In this course's sim the arm
-takes about 0.8 s to swing below horizontal, and the roller starts about 1.0 s after
+takes about 0.8 s to swing below horizontal, and the roller starts about 1.1 s after
 the request, because `intakeMotion` swings first and spins second. At 2 m/s, a
 second is two meters of path. Measured, the marker fires 0.6 s into the drive at
-y ≈ 6.7, the roller is running by y ≈ 4.6, and the piece goes in at y ≈ 4.37. Move
-the marker to 0.2 and the roller doesn't start until y ≈ 3.9 — by which point the
+y ≈ 6.7, the roller is running by y ≈ 4.5, and the piece goes in at y ≈ 4.37. Move
+the marker to 0.2 and the roller doesn't start until y ≈ 3.8 — by which point the
 piece is already under the bumper, and the robot drives straight over it.
 
 ---
@@ -695,7 +695,7 @@ start aiming here, stop aiming there, arrive.
 one-argument `overrideRotation(supplier)` exists too, and it hands your number
 straight to the wheels, past the rotation limits in `config.json`. Measured in this
 course's sim with the target placed behind the robot, the one-argument form spun it
-at 11.7 rad/s — nearly twice the 360°/s (6.28 rad/s) every path is supposed to
+at 11.6 rad/s — nearly twice the 360°/s (6.28 rad/s) every path is supposed to
 obey. With `RESPECT_CONSTRAINTS` it topped out at exactly 6.28. Lesson 17 said
 speed limits are physics; that's just as true of spinning.
 
@@ -824,17 +824,17 @@ and `FollowPath/remainingPathDistanceMeters`. (B-Line's `FollowPath/` keys are u
 LED strip, because it tells the whole story.
 
 Here's what happens in this course's sim, timed from when the drive starts, about
-4.4 s after you enable (homing, then the stow):
+4.1 s after you enable (homing, then the stow):
 
 | When | What |
 |---|---|
 | 0.6 s, y ≈ 6.7 | The `intake` marker fires; next loop the state is `INTAKING` and the strip goes yellow |
 | 1.4 s | The arm swings below horizontal |
-| 1.7 s, y ≈ 4.6 | The roller starts |
-| 1.8 s, y ≈ 4.37 | The piece goes in; a tenth of a second later the debounced beam break makes it `HANDOFF` |
-| 3.0 s, 1.0 m left | Arm tucked and elevator at 0.73 m: `HOLDING`, solid green |
+| 1.7 s, y ≈ 4.5 | The roller starts |
+| 1.7 s, y ≈ 4.37 | The piece goes in; a tenth of a second later the debounced beam break makes it `HANDOFF` |
+| 2.9 s, 1.0 m left | Arm tucked and elevator at 0.73 m: `HOLDING`, solid green |
 | 3.2 s, 0.48 m left | The score request: `SCORING`, the piece leaves, and the next loop is `IDLE` |
-| 3.5 s | The path finishes at (6, 1), with the elevator already on its way down |
+| 3.4 s | The path finishes at (6, 1), with the elevator already on its way down |
 
 The robot never slowed down. The intake ran, the arm tucked and the elevator rose
 while it drove, and the score happened on the way in. Nothing waited for anything
@@ -860,7 +860,7 @@ tell the story:
 
 | Log key | What it shows |
 |---|---|
-| `FollowPath/rotationOverrideActive` | goes true at the `aim` marker (about 0.6 s into the drive), false at `release` (about 4.3 s) |
+| `FollowPath/rotationOverrideActive` | goes true at the `aim` marker (about 0.6 s into the drive), false at `release` (about 4.2 s) |
 | `FollowPath/targetRotationDeg` | what the path *wanted* — still computed, and ignored |
 | `FollowPath/outputOmegaRadPerSec` | what actually got sent |
 
@@ -868,7 +868,7 @@ That middle row is worth a moment. The path never stops having an opinion about
 rotation; the override just wins. Once `release` fires, the path's opinion takes
 effect again and the robot swings back to the heading its final waypoint asked for
 — which is exactly why it can finish, at (8, 7) facing within a couple of degrees
-of 0°, about 5.4 s into the drive.
+of 0°, about 5.3 s into the drive.
 
 Look closely and the nose isn't *exactly* on the target: it trails by about 6°,
 and a little more at worst. A P loop can only make a turning rate out of an error,
@@ -881,7 +881,7 @@ about that lag.
 
 1. **Break it on purpose.** Delete the `release` marker from `AimWhileDriving.json`
    and run the auto. It drives the whole path and then sits there — in this
-   course's sim it was still running twelve seconds later, against a normal 5.4.
+   course's sim it was still running twelve seconds later, against a normal 5.3.
    Before you put the marker back, find the log keys that would have told you
    why; `FollowPath/rotationOverrideActive` and
    `FollowPath/finishedRotationAtSetpoint` say it plainly. Then disable, pick Two

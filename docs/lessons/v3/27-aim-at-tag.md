@@ -248,9 +248,9 @@ running `Aim`'s own `error` method as the only controller converges to
 millisecond or every 20 ms. The real drivetrain does a little worse. Driving it
 around tag 20 through the scheduler, three metres out at three metres a second,
 with only the P term aiming, the worst `Aim/ErrorDegrees` once it settled was
-**14.8°**: the wheels take a moment to follow what's commanded, and that lag
-adds half a degree. At two metres a second the arithmetic says
-`0.667 ÷ 4 = 0.167 rad = 9.55°`, and the robot sat at **9.8°**. Same physics
+**14.6°**: the wheels take a moment to follow what's commanded, and that lag
+adds about a third of a degree. At two metres a second the arithmetic says
+`0.667 ÷ 4 = 0.167 rad = 9.55°`, and the robot sat at **9.7°**. Same physics
 either way.
 
 **If this feels familiar, it should.** Lesson 18 said it about the
@@ -356,12 +356,12 @@ The same two orbits, measured again on the real drivetrain, reading
 
 | | 2 m/s | 3 m/s |
 |---|---|---|
-| P control only | 9.8° | 14.8° |
+| P control only | 9.7° | 14.6° |
 | **P + feedforward** | **0.3°** | **0.4°** |
 
 Better than thirty times over at 3 m/s, from one added term, with the gain
 untouched. The log shows you the estimate's opinion. Against the simulated
-chassis's true pose the same runs read 13.5° and 1.1°, because the estimate
+chassis's true pose the same runs read 13.5° and 1.2°, because the estimate
 and the truth disagree by about a degree of heading. Either way, the term did
 what the arithmetic said it would.
 
@@ -492,7 +492,7 @@ speed. Put the feedforward back.
 With the feedforward in, the numbers from a scripted run look like this. Placed
 34° off the tag with the trigger held, the robot was within 2° in 0.5 s and held
 0.1°. Strafing at half stick, the error stayed under 1° after the first second,
-and it was back under 0.1° a second after the stick came back to centre.
+and it was back under 0.1° half a second after the stick came back to centre.
 
 Three signals tell the whole story:
 
@@ -504,7 +504,7 @@ Three signals tell the whole story:
 
 Then run the **Aim While Driving** auto from Lesson 25. It homes the elevator
 first, like every path auto, and then drives. It now points at tag 20 instead of
-a made-up coordinate. From the `aim` marker, the nose swings round in about 0.8 s
+a made-up coordinate. From the `aim` marker, the nose swings round in about 0.4 s
 and then stays within 2° of the tag (0.8° on average) until the `release` marker,
 about 4.3 s in, when the path takes the rotation back and the robot finishes at
 (8.01, 7.02), facing 0°. Watch `FollowPath/rotationOverrideActive` go true and

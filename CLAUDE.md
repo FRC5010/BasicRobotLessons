@@ -973,6 +973,171 @@ listed at the end of the working inventory, not kept in the repo.
 - **Lesson 22:** the roller at 0.6 holds 60.94 rot/s in open field with
   `HasGamePiece` false throughout; the 18 s callback is the Lesson 21 figure.
 
+**v3 Lessons 24–27 re-measured on alpha-8 with the committed Kraken constants
+(2026-10-30, batch 2a of the user's "re-measure them all").** Every figure is
+"(alpha-8)" unless it says alpha-7 (a `git worktree` of `76dd0f9`, same probe).
+Method: **LOOP, scripted by tick.** The real `Robot` on its own thread after
+`HAL.initialize()`, Blue 1, `DriverStationSim`, and a script that runs from an
+`addPeriodic` registered after every robot periodic, so it sees the state after
+that tick's subsystem periodics and every stick, button and DS change it makes
+lands between cycles. Times are tick counts × 0.02 s (the loop ran at
+20.0–20.2 ms per tick over each run); speeds and accelerations come from
+`Drivetrain.getSimulatedPose()` differences at dt = 0.02. The boot sequence is
+the same in every probe: Teleop (or the auto) selected at tick 75, enabled at
+tick 105–110, so **"enable" is 2.2 s after the first robot cycle** and the
+carriage has been sinking for 2.2 s. The probes are listed at the end of the
+working inventory, not kept in the repo.
+
+- **Lesson 24 (Lesson 24 state, 12 fresh launches, 3 more on alpha-7):**
+  - Homing, Back to `IDLE`: pressed 5 ticks after enable (2.2 s after launch)
+    154 ticks (3.08 s) in 3 of 3; 30 ticks after, 149 in 3 of 3; 60, 143 in
+    2 of 2; 100, 135 in 2 of 2; 150, 125; 300 (8.1 s after launch), 95. Alpha-7:
+    156 (5 ticks, 2 of 2) and 145 (60 ticks). So the lesson's "150 to 170 ticks
+    (3 to 3.4 s)" was never reachable by a press after enabling, on either
+    alpha; it now says **125 to 155 ticks (2.5 to 3.1 s)**, and "the later you
+    press it, the quicker" holds (the carriage sinks 1.96 cm/s).
+  - `HANDOFF` 33 ticks after the quarter-stick drive starts in 5 of 12 runs, 34
+    in 7 (alpha-7: 34 in 3 of 3); the lesson now says 34 (was 35). `HOLDING` 56
+    ticks (1.12 s) after `HANDOFF` in 12 of 12 (alpha-7 3 of 3), elevator
+    0.7317–0.7344 m, arm 90.2°, both `atGoal`; the lesson now says 56 (was 55).
+    `SCORING` one tick after the trigger, `IDLE` one tick later.
+- **Lesson 25 (Lesson 25 state; 7 Pick Up, 3 Two Corners, 5 Aim While Driving
+  launches; alpha-7: 2 Pick Up, 2 Aim While Driving):**
+  - Fresh launch, from the first enabled tick: `IDLE` 3.06 s (153 ticks;
+    alpha-7 3.10 s), the superstructure settled 4.10 s (4.14), the follow
+    command starts 4.12 s (4.16), identical for all three autos. **These depend
+    on how long you wait before enabling**: the carriage keeps sinking, so the
+    red time is (0.34 − 0.0196 × d) ÷ 0.0972 s for d seconds between launch and
+    enable. d = 1 gives 3.3 s, the old figure; d = 2.2 (this probe) gives 3.06;
+    d = 5 gives 2.5. The lesson now says 3.1 s and 4.1 s, "another second" for
+    the stow held (1.04 s). A student who waits ten seconds in SimGUI sees
+    about 1.5 s of red.
+  - Pick Up, from the drive start: marker one loop before `INTAKING`, which
+    comes 0.60 s in at y 6.69–6.70; the arm below horizontal 1.40–1.42 s (y
+    5.0–5.05), 0.80–0.82 s after the request; the roller's first non-zero
+    reading 1.66–1.68 s (1.06–1.08 s after the request; alpha-7 the same) at
+    y 4.48–4.53 (alpha-7 4.52–4.56); the raw beam break 1.72–1.74 s at y
+    4.37–4.40; `HANDOFF` 4–5 ticks later (1.80–1.84 s); `HOLDING` 2.92–2.96 s
+    with 0.96–1.04 m of path left and the elevator at 0.732–0.734 m (alpha-7
+    2.94 s, 1.057 m); `SCORING` 3.20 s with 0.477–0.483 m left at y 1.435–1.442
+    (alpha-7 3.24 s, 0.462 m), `IDLE` the next tick; the path ends 3.44 s in
+    (alpha-7 3.48 s) at (6.00, 1.02). The lesson's table was off by 0.1–0.2 s
+    from this on both alphas (the enable-delay basis again, and 3.5 s vs 3.44);
+    it now reads 0.6 / 1.4 / 1.7 (y ≈ 4.5) / 1.7 (y ≈ 4.37) / 2.9 / 3.2 / 3.4.
+  - Marker 0.2 (2 runs): `INTAKING` 0.92 s at y 6.05, arm below horizontal 1.74
+    s, roller 2.00 s at **y 3.84** (50 rps at y 3.44), the piece never caught,
+    the path ends 3.44 s; the lesson now says y ≈ 3.8 (was 3.9). Marker 0.15
+    (1 run): roller 1.82 s at y 4.21, caught at y 4.25 (0.45 m ahead of
+    center), `HOLDING` 3.02 s. `default_max_velocity_meters_per_sec` 1.0 (2
+    runs): `INTAKING` 0.84 s, piece in 3.14 s, `HOLDING` 4.34 s, `SCORING`
+    6.06–6.08 s at y 1.479 / 1.461, path ends 6.54 s (lesson: 1.48, 6.1 s, held).
+  - Aim While Driving (aim at (8, 4)): the override goes on 0.58 s into the
+    drive and off at **4.22 s** in all 5 runs (alpha-7 4.26 s), the path ends
+    **5.32 s** in (alpha-7 5.38 s) at (8.006–8.012, 7.021–7.024, −1.6°); the
+    lesson now says 4.2 and 5.3. Aim lag, estimate heading against the bearing
+    to (8, 4): after the first second of override mean 6.55°, worst 8.45°
+    (alpha-7 6.51° / 8.40°); over the whole window mean 6.2° with a 14° first
+    swing. The old note's "5.7° mean, 7.7° worst" was some other window; the
+    lesson's "about 6°, and a little more at worst" stands. Without `release`
+    (1 run, 17.9 s watched): never finishes, ends at (8.031, 6.982, −90.8°).
+  - Override with the target at (0, 2), directly behind the robot's start at
+    (2, 2): the one-argument (`BYPASS_CONSTRAINTS`) form peaks at **11.638
+    rad/s** (4 × 2.91 rad, a 166° worst error), `RESPECT_CONSTRAINTS` at 6.283
+    exactly. The lesson's 11.7 was the old note's 11.65 rounded up; it now says
+    11.6. Placement-dependent, no motor in it.
+- **Lesson 26 (sketch rows on the Lesson 25 state, the rest on the Lesson 26
+  state; 9 two-stage runs, alpha-7 6):**
+  - The Lesson 11 sketch, (1, 1, 0°) → (5, 4, 90°): declares success at
+    3.18–3.20 s with 45.6–46.8 mm left (3 runs); acceleration on the first
+    ticks 11.76–11.85 m/s², which is `kWheelCoF` × 9.81 = 11.77 exactly. The
+    lesson said 11.7 in §1 and its table and 11.8 in Try It #2; both now say
+    **11.8**. On the target facing backwards it finishes on the second tick
+    (0.04 s), 179.4–180° out.
+  - The replaced design, rebuilt from the code at `a2b3576` (sketch to 5 cm,
+    then three `PIDController`s, kP 3.0, θ 4.0, 2 cm / 1°): 3.46–3.48 s
+    (alpha-7 3.52–3.54), 15.7–16.5 mm when it declares arrival and 12.3–12.8
+    mm half a second later (alpha-7 12.3–13.2), handing over at 0.08 m/s. The
+    lesson's "14 mm" sits between the two readings; left.
+  - P then P, handoff within 1 m (stage one the sketch's P at 1.5, stage two
+    plain P at 3.0): the request goes 1.51–1.52 → 2.92–2.94 m/s on consecutive
+    ticks while the robot moves 1.66–1.67 m/s; deceleration afterwards peaks
+    at 6.5–8.6 m/s² over the next 1.2 s (9 m/s² by another window). The lesson
+    now says "from 1.5 to 2.9 m/s" (was 1.55 → 3.0); "about 7" held.
+  - Two stages, (1, 1, 0°) → (5, 4, 90°): 3.36–3.38 s (alpha-7 the same), 7.9–9.2
+    mm when it declares arrival and 6.6–8.2 mm half a second later (alpha-7
+    6.7–7.6), ≤ 0.01°; top speed 3.24–3.26 m/s; launch mean 4.06–4.07 m/s²
+    (standing to 90% of top speed) with a per-tick peak of 6.2–8.3; handoff at
+    1.78 s doing 1.43–1.47 m/s (alpha-7 1.47–1.48); rolls **37–38 mm** past
+    (alpha-7 35–37, so +1 mm is the faster motor; lesson now 37). The bow
+    off the line while turning: 262–269 mm in 7 of 9 runs, 284 and 292 in the
+    other two (alpha-7 263–265); the lesson's "about 26 cm" held. The same
+    trip with no turn: 3.36–3.38 s, off the line **10–12 mm** (alpha-7 10–11;
+    the old CSV from the design iteration shows 5.1 mm, so "about 7 mm" was
+    stale on alpha-7 too); lesson now 11 mm. 0.6 m out: 1.66 s, 11.2–11.8 mm /
+    9.7–10.2 mm half a second later. On the target facing backwards: 2.16 s,
+    0.0–0.1 mm, 0.43–0.45° when it declares arrival and 0.23–0.26° half a
+    second later.
+  - "Slowing into the target, about 1.4 m/s² on average": no definition tried
+    gives 1.4 (v at handoff ÷ time to arrival 0.9; ÷ time until the speed first
+    falls under 0.05 m/s 1.25–1.28; mean per-tick deceleration 1.17–1.32). The
+    identical analysis of the old `l26final.csv` (alpha-7 era) and of the new
+    runs gives the same numbers (1.26–1.29 old, 1.25–1.28 new; bow 263–276 old,
+    262–269 new), so the figure is unchanged by alpha-8; left as it was, but
+    its definition is lost.
+  - **The drive lag figures were derived, not measured.** Plan speed
+    (`m_alongController.getSetpoint().velocity`, read by reflection) against
+    the real along-line speed: real minus plan peaks at **+0.28–0.29 m/s**
+    while the plan slows (alpha-7 0.29–0.30), at 1.48–1.50 s; at launch the
+    real speed is 0.05–0.09 below it. The best-fit shift between the two is 1–2
+    ticks. A field-relative +2 m/s step on a bare `driveFieldRelative`: first
+    motion 3 ticks (0.06 s) after the request, 63% at 0.16 s, 90% at 0.20 s (the
+    11.77 m/s² grip ramp); a step to 0 stops in 0.30 s. 0.28 m/s ÷ 4 m/s² =
+    0.07 s, so the lesson (and the `kHandoffDistance` comment in the Lesson
+    26–32 snapshots' `Constants.java`) now says **0.07 s** and **0.3 m/s**; they
+    said 0.1 s and 0.4 m/s, which is 0.1 × 4. Same on both alphas.
+  - Try Its: handoff planned at 1.73 → arrives at 1.94 m/s, overshoots
+    456–464 mm, 4.52–4.54 s (lesson 1.95 / 46 cm / 4.5 s, held); both `reset`s
+    from 0 → braking peak 11.77 m/s², 3.80 s (11.8 / 3.8, held);
+    `kSpeedTolerance` 1000 → 14.1–14.5 mm when it declares arrival, **11.8–12.0
+    mm** half a second later, 3.24 s; lesson now "12 mm" (was 12–13).
+- **Lesson 27 (Lesson 27 state; orbit 6 runs per configuration, 2 on
+  alpha-7):**
+  - Tag 20 is at (5.229, 4.035). Orbit 3 m out: `driveFieldRelative` with a
+    tangent speed plus a radial P (2.0) on the estimate, spin from `Aim`
+    (`error × kAimP` for P only, `omegaTowardTag` for P + feedforward), error
+    read as `Aim.error` on the estimate and on the truth, worst over the last
+    6 s of a 9 s run; the radius held 2.96–2.99 m. **P only:** 3 m/s
+    14.61–14.62° (alpha-7 14.61, once 14.83), truth 13.47–13.49°; 2 m/s
+    9.66–9.85° (alpha-7 9.83°), truth 8.91–8.94°. The lesson now says 14.6° and
+    9.7° (were 14.8 and 9.8) and "adds about a third of a degree" (the lag over
+    the 14.32° arithmetic is 0.29°). Truth with feedforward 1.16–1.20° at 3 m/s
+    (alpha-7 1.03), 0.80–0.84° at 2 m/s (alpha-7 0.73): lesson now 1.2°.
+  - **Not changed, awaiting a decision (the P + feedforward row):** the
+    estimate's own error is typically 0.04–0.13° with feedforward, but 4 of the
+    12 alpha-8 runs spiked to 0.19–1.19° (1.19°, 0.79°, 0.31°, 0.19°) at some
+    tick; alpha-7 showed 0.07–0.18° in its 4 runs. With the cameras removed
+    from `Robot` (`localizer.addProvider` lines commented out), all 12
+    feedforward runs read 0.04–0.13° with no spikes, so the spikes are most
+    likely camera corrections moving the position, hence the bearing (a 5 cm
+    fix at 3 m is about 1°; not measured further). The lesson's table says 0.3° /
+    0.4° "(the worst of repeated runs)" and "better than thirty times over".
+    Neither the worst (0.8° / 1.2°, about 12 times over) nor the typical
+    (0.1°, over a hundred times over) matches; left as it was.
+  - Standing 34° off with the left trigger held: within 2° after 23–25 ticks
+    (0.46–0.50 s), holds 0.084–0.091°; strafing at half stick perpendicular to
+    the bearing: worst 2.6° in the first 0.2 s, 0.63–0.66° after the first
+    second, back under 0.1° 0.48–0.50 s after the stick returns to center and
+    stays there (alpha-7 0.50 s). The lesson said "a second after"; it now says
+    "half a second after".
+  - Aim While Driving at tag 20 (5 runs): override on 0.58 s, off 4.24–4.28 s,
+    within 2° of the bearing 0.44 s after it goes on and never out again (alpha-7
+    0.44 s), within 1° from 0.48 s but back out until 2.38 s, within 0.5° from
+    2.98 s; mean error after the first second 0.76–0.90°; finishes 5.52–5.58 s
+    in at (8.006–8.007, 7.021–7.022, −1.6°). The lesson's "swings round in
+    about 0.8 s" is now "about 0.4 s" (0.8 s is about the time to get within
+    1° at kP 4, ln 26.6 ÷ 4, which may be where it came from); the 0.8° average,
+    4.3 s and (8.01, 7.02) held.
+
 **v3 Lesson 26 (drive to pose) was redesigned on 2026-10-26 at the user's
 request: two motion-profiled stages, handing over while moving.** The old
 design ran the Lesson 11 sketch to 5 cm, then three `PIDController`s; the user
@@ -1001,25 +1166,30 @@ taught and planned around, with drive-motor `kA` left as Try It #5.
   has `kV` and `kP`, no `kA`; that the missing `kA` is the cause is a guess,
   not measured). Slowing at 4 m/s² the real speed runs ≈0.4 m/s above the
   plan, so the handoff is planned at 1.2 m/s, not the √(2 × 1.5 × 1.0) =
-  1.73 m/s limit; the robot really hands over at 1.44–1.47 m/s.
+  1.73 m/s limit; the robot really hands over at 1.44–1.47 m/s. (Alpha-8
+  re-measure: the 0.1 s and 0.4 m/s were derived, 0.1 × 4; measured, the real
+  speed peaks 0.28–0.29 m/s above the plan, so the lesson says 0.07 s and
+  0.3 m/s; see the Lessons 24–27 block.)
 - **Measured** (real `Robot` loop, 20 ms fixed rate, three runs each, error
   against the simulated truth), (1, 1, 0°) → (5, 4, 90°): 3.38–3.40 s,
   7.2–7.6 mm, ≤ 0.01°; top speed 3.23–3.25 m/s; launch mean 4.1 m/s², peak
   6.3–7.6; handoff at 1.80 s; approach deceleration mean 1.4 m/s², peak 2.4;
-  rolls 36 mm past the target and comes back. From 0.6 m out at (4.52, 3.64,
+  rolls 36 mm past the target and comes back (alpha-8: 37–38 mm). From 0.6 m out at (4.52, 3.64,
   45°) stage one finishes at once: 1.62–1.68 s, 10–11 mm. On the target facing
   −90°: 2.14–2.22 s, 0.0–0.1 mm, 0.22–0.29°.
 - **The old design, re-measured the same way:** 3.5 s, 14 mm, launch at the
-  grip limit (11.6–11.7 m/s²), handing over nearly stopped (0.08 m/s). P
-  stages handing over at 1 m: the request jumped 1.55 → 3.0 m/s in one tick
-  while moving 1.7, then ≈7 m/s² braking. The sketch alone (2026-10-20): 3.2 s,
+  grip limit (11.6–11.7 m/s²; it is 11.77 exactly), handing over nearly stopped
+  (0.08 m/s). P stages handing over at 1 m: the request jumped 1.55 → 3.0 m/s
+  in one tick while moving 1.7, then ≈7 m/s² braking (alpha-8 rebuild: 1.51 →
+  2.92 m/s, 6.5–8.6 m/s²). The sketch alone (2026-10-20): 3.2 s,
   45–47 mm; facing backwards on the target it finishes on tick 1, 180° out.
 - **Try It numbers:** handoff planned at 1.73 → arrives moving 1.95 m/s,
   overshoots 460–466 mm, 4.54–4.56 s. Both `reset`s from speed 0 → brakes at
-  the grip limit (11.77 m/s²), 3.84 s. `kSpeedTolerance` 1000 → 3.26–3.32 s,
-  11.9–13.3 mm.
+  the grip limit (11.77 m/s²), 3.84 s (alpha-8: 3.80 s). `kSpeedTolerance` 1000 → 3.26–3.32 s,
+  11.9–13.3 mm (alpha-8: 3.24 s, 11.8–12.0 mm).
 - **The path bows 263–276 mm off the line while turning 90°.** The same trip
-  with no turn stays within 5–7 mm, so it's turning while translating;
+  with no turn stays within 5–7 mm (alpha-8 and alpha-7, same probe: 10–12 mm;
+  the bow itself 262–292 mm), so it's turning while translating;
   `ChassisVelocities.discretize` didn't fix it, and the old design bowed too
   (38–49 cm). The exact cause isn't established; the lesson says only that
   turning does it.
@@ -1211,12 +1381,16 @@ through the scheduler (probe recipe above, plus `GamepadSim`):**
   14.32°; ideal wheels in a script give 14.32° at both 1 ms and 20 ms) and
   9.7–9.8° at 2 m/s (prediction 9.55°); P + feedforward 0.2–0.4° and
   0.1–0.3°. Against the simulated truth: 13.5°/1.1° at 3 m/s. The old "13.2° →
-  1.1° at 50 Hz" did not reproduce.
+  1.1° at 50 Hz" did not reproduce. (Alpha-8: 14.6° and 9.7° P only, truth
+  13.5° and 1.2°; the feedforward figures spike with camera corrections and
+  are an open question, see the Lessons 24–27 block.)
 - Standing 34° off, left trigger held: within 2° in 0.5 s, holds 0.06–0.1°.
-  Strafing at half stick: under 1° after the first second.
+  Strafing at half stick: under 1° after the first second. (Alpha-8: back under
+  0.1° 0.5 s after the stick centres, not a second.)
 - **Aim While Driving:** the override swings the nose from 32° off to within 2°
   in 0.8 s, then holds 0.8° mean until `release` at about (7.6, 7.0), 4.3 s in;
-  the robot ends at (8.01, 7.02, −1.1°).
+  the robot ends at (8.01, 7.02, −1.1°). (Alpha-8: within 2° after 0.44 s;
+  release at (7.16, 6.96), 4.24–4.28 s; ends −1.6°.)
 - **Probe trap:** a run that follows the stick-driven phase starts with the
   estimate's heading ~9° off the truth (−170° vs −179.6°) even with the
   `placeSimulatedRobot`/`resetPose` gap; throw the first run away.
@@ -1381,7 +1555,7 @@ rate, `GamepadSim`, `DriverStationSim` enabled, the strip read from
   0.02 m and not `atGoal`, because the registration-order periodics refresh
   inputs before `Superstructure` reads them. Measured: `HOLDING` arrives 55–56
   ticks (1.1 s) after `HANDOFF`, elevator 0.7318–0.7345 m (inside 2 cm of
-  0.75).
+  0.75). (Alpha-8: 56 ticks in 12 of 12 runs; see the Lessons 24–27 block.)
 - **`SCORING` lasts one or two ticks.** The sim drops the piece the instant
   the roller reverses, so the log shows a flicker and `IDLE`'s stow follows.
   The lesson says so rather than promising a blinking strip.
@@ -1488,7 +1662,8 @@ rate, `GamepadSim`, `DriverStationSim` enabled, the strip read from
   quicker the later it's pressed, since the carriage sinks meanwhile (151
   when re-measured 2026-10-19); with the arm down and a quarter-stick
   drive from (3.5, 3.2), the beam break trips `HANDOFF` 35 ticks after the
-  drive starts. Strip bytes (RGB): `UNHOMED` 255,0,0 on the blink's on-phase,
+  drive starts. (Alpha-8: homing 125–155 ticks depending on when Back is
+  pressed, `HANDOFF` 33–34 ticks; see the Lessons 24–27 block.) Strip bytes (RGB): `UNHOMED` 255,0,0 on the blink's on-phase,
   `IDLE` 0,0,63, `INTAKING` 255,255,0, `HOLDING` 50,205,50, disabled `IDLE`
   breathing (54 sampled).
 - **Refusals** log to `Superstructure/Rejected`, and `Superstructure/State`
@@ -1543,6 +1718,8 @@ source at the pinned commit.
   boots at its −20° stop, the `IDLE` stow is still rising when the intake
   request comes, and reversing costs 1.3 s. Fresh launch: homing 3.3 s, stow
   ≈1.0 s, drive starts ≈4.4 s after enable; a second run starts at once.
+  (Alpha-8: 3.06 s, 1.04 s, 4.12 s with enable 2.2 s after launch; the numbers
+  depend on that delay, see the Lessons 24–27 block.)
 - **Event markers.** A `Command` event goes to `Scheduler.getDefault().schedule(...)`
   on the next default-event-loop poll, so it starts one loop after the marker,
   outside the path. `FollowPath.onCancel` drops the run's unreached events. A
@@ -1561,7 +1738,9 @@ source at the pinned commit.
   y ≈ 4.37, 0.57 m ahead of center; `HANDOFF` +0.1 s; `HOLDING` 3.0 s with
   1.0 m left (elevator 0.73 m); `SCORING` at 0.48 m left, `IDLE` next tick;
   done 3.5 s. Marker 0.15 still catches (0.50 m); 0.2 misses. From stowed the
-  arm needs 0.80 s to clear horizontal and 1.04 s until the roller runs. A
+  arm needs 0.80 s to clear horizontal and 1.04 s until the roller runs.
+  (Alpha-8: 0.80–0.82 s and 1.06–1.08 s; the whole timeline is re-measured in
+  the Lessons 24–27 block.) A
   second run in one session has no piece: score refused `INTAKING -> SCORING`,
   then the running intake catches the piece the first run dropped 0.8 m ahead.
 - **`getRemainingPathDistanceMeters()` is 0.0 before the path's first run, even
@@ -1575,12 +1754,13 @@ source at the pinned commit.
   With 0, the path stops 0.04 m short (5 cm tolerance), so the group never ends.
 - **Rotation override.** It's an angular velocity (rad/s). The one-argument
   `overrideRotation` is `BYPASS_CONSTRAINTS`. With the target behind the robot
-  it sent 11.65 rad/s; `RESPECT_CONSTRAINTS` held 6.28 (`config.json`'s
+  it sent 11.65 rad/s (alpha-8: 11.638 with the target at (0, 2)); `RESPECT_CONSTRAINTS` held 6.28 (`config.json`'s
   360°/s), which is what the lesson uses. On Aim While Driving the two modes
-  are indistinguishable: about 5.7° mean lag and 7.7° worst, P only, which is
-  Lesson 27's subject. The override goes on and off one loop after
+  are indistinguishable: about 5.7° mean lag and 7.7° worst, P only (alpha-8 and
+  alpha-7, same probe: 6.5° and 8.4° after the first second of override), which
+  is Lesson 27's subject. The override goes on and off one loop after
   `aim`/`release` (0.6 s, 4.3 s into the drive), and the path finishes at
-  5.4 s at (8.01, 7.02, −1.6°). Without `release` it never finishes, and sits
+  5.4 s at (8.01, 7.02, −1.6°). (Alpha-8: 0.58 s, 4.22 s, 5.32 s.) Without `release` it never finishes, and sits
   at (8.03, 6.98) pointing at (8, 4).
 - **There's no `finallyDo`.** Tested on an independent scheduler: a finishing
   coroutine runs its trailing code and `finally`, but not `whenCanceled`. A

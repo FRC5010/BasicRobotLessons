@@ -828,11 +828,11 @@ what almost happened and didn't.
 
 Measured in the simulator, with the real `Robot` and the real bindings,
 driven through `GamepadSim` on a fixed 20 ms loop: homing reaches `IDLE`
-150 to 170 ticks (3 to 3.4 s) after you press Back. The later you press
+125 to 155 ticks (2.5 to 3.1 s) after you press Back. The later you press
 it, the quicker it is, because the unpowered carriage has been sinking
 toward the switch the whole time. With the arm down and the robot driving
-at a piece at a quarter stick, the beam break trips the handoff about 35
-ticks after the drive starts, and the machine reaches `HOLDING` about 55
+at a piece at a quarter stick, the beam break trips the handoff about 34
+ticks after the drive starts, and the machine reaches `HOLDING` about 56
 ticks (1.1 s) after that, with the elevator inside its 2 cm tolerance of
 0.75 m and the arm at its goal. The strip reads solid yellow in `INTAKING`, solid green
 in `HOLDING`, and dim blue in `IDLE` (breathing while disabled).

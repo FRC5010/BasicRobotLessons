@@ -236,7 +236,7 @@ public final class Constants {
 
     // Where stage one hands over, and how fast the robot may still be going.
     // Stage two could stop from at most √(2 × 1.5 × 1.0) = 1.73 m/s in that
-    // distance; the drive runs about 0.4 m/s behind the plan while slowing at
+    // distance; the drive runs about 0.3 m/s behind the plan while slowing at
     // 4 m/s², so plan 1.2 and leave it room.
     public static final Distance kHandoffDistance = Meters.of(1.0);
     public static final LinearVelocity kHandoffSpeed = MetersPerSecond.of(1.2);
