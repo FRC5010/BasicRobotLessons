@@ -106,10 +106,23 @@ public class Robot extends LoggedOpModeRobot {
     // moment the state changes, whileTrue cancels the old motion. HOLDING has
     // none — the elevator and arm are already where they need to be. These are
     // made here, not in an opmode, so they hold in every opmode there is.
-    superstructure.inState(SuperstructureState.INTAKING).whileTrue(superstructure.intakeMotion());
-    superstructure.inState(SuperstructureState.HANDOFF).whileTrue(superstructure.handoffMotion());
-    superstructure.inState(SuperstructureState.SCORING).whileTrue(superstructure.scoreMotion());
-    superstructure.inState(SuperstructureState.IDLE).whileTrue(superstructure.idleMotion());
+    //
+    // "And enabled" keeps the motion alive across a disable. Disabling cancels
+    // every command that moves a mechanism, and a state that didn't change
+    // gives whileTrue no new edge to start from. This way, enabling the robot
+    // is that edge.
+    superstructure.inState(SuperstructureState.INTAKING)
+        .and(RobotState::isEnabled)
+        .whileTrue(superstructure.intakeMotion());
+    superstructure.inState(SuperstructureState.HANDOFF)
+        .and(RobotState::isEnabled)
+        .whileTrue(superstructure.handoffMotion());
+    superstructure.inState(SuperstructureState.SCORING)
+        .and(RobotState::isEnabled)
+        .whileTrue(superstructure.scoreMotion());
+    superstructure.inState(SuperstructureState.IDLE)
+        .and(RobotState::isEnabled)
+        .whileTrue(superstructure.idleMotion());
 
     // Vision now checks its simulated eyesight against ground truth, not
     // against its own guess — the fix Lesson 15 admitted it was missing.

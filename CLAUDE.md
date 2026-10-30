@@ -751,7 +751,10 @@ measured where it matters:
   on enable. **`inState(X).whileTrue(...)` did not**: disabled mid-`INTAKING`
   and re-enabled, the intake motion never restarted (state stuck
   `INTAKING`, roller 0 rps for 8 s); on alpha-7 it finished. User decision
-  2026-10-30: rebind so the motion resumes.
+  2026-10-30: rebind so the motion resumes. **Done the same day:** Lesson
+  24's four bindings are `inState(X).and(RobotState::isEnabled).whileTrue(
+  motion)`, in `Robot` 24–30; `retryWhileTrue` and `ifTrue` were measured
+  and rejected (see the Lesson 24 notes).
 - **The Trigger-cache bug Lesson 33's opmode-owned `EventLoop` worked around
   is fixed** (`unbindStaleTriggers` no longer unbinds cached triggers):
   plain `driverController.back()` triggers in `RobotUtility` ramped on every
@@ -772,7 +775,9 @@ measured where it matters:
 - **New Commands V3 API:** `Command.onExit()`/builder `whenExited(Runnable)`
   runs on finish, cancel and interrupt (the `finallyDo` the lessons work
   around with `whenCanceled`; not adopted, no decision asked);
-  `Trigger.ifTrue(Command)` (#9403); robot-mode binding scopes (#9271).
+  `Trigger.ifTrue(Command)` (#9403) and `retryWhileTrue`/`retryWhileFalse`
+  (all in alpha-8's `Trigger.java`; not used, see the Lesson 24 notes);
+  robot-mode binding scopes (#9271).
   `Trigger.unbind()` is gone (unused here).
 - **SimGUI has a native Alerts window, DS → Alerts** (#9353, hidden by
   default), reading `WPI_GetAlerts()`; on a fresh Lesson 30 launch it lists
@@ -1191,7 +1196,8 @@ rate, `GamepadSim`, `DriverStationSim` enabled, the strip read from
   `HANDOFF`/`HOLDING`/`SCORING`→`IDLE` when the piece is gone. It never
   consults `canGoTo`. Requests are a hand-built `Command.noRequirements`
   guard (there is no `onlyIf`); each state's motion is bound with
-  `inState(...).whileTrue(...)`, and `HOLDING` has none.
+  `inState(...).and(RobotState::isEnabled).whileTrue(...)` (since alpha-8,
+  see below), and `HOLDING` has none.
 - **No premature `HOLDING`.** At the moment of `HANDOFF` the elevator is at
   0.02 m and not `atGoal`, because the registration-order periodics refresh
   inputs before `Superstructure` reads them. Measured: `HOLDING` arrives 55–56
@@ -1209,6 +1215,93 @@ rate, `GamepadSim`, `DriverStationSim` enabled, the strip read from
   another opmode is selected, where an opmode-scoped binding would be torn
   down. Button requests stay in `RobotTeleop`. The lesson states the rule:
   bind a driver's control in its opmode, what the robot means in `Robot`.
+- **Alpha-8: the bindings are `inState(X).and(RobotState::isEnabled)
+  .whileTrue(motion)`** (2026-10-30, user decision: rebind so the motion
+  resumes after a disable). Why plain `whileTrue` fails, read from
+  `Scheduler.run()`/`Trigger.poll()` at the alpha-8 tag: `run()` cancels
+  every command that requires a mechanism that isn't
+  `controllableDuringDisabled()` *before* it polls triggers, `whileTrue`
+  (`RUN_WHILE_HIGH`) schedules only on a rising edge, and a state that
+  didn't change gives it none. A schedule attempted while disabled is also
+  refused (`RequiresUnsafeMechanisms`), so a state *entered* while disabled
+  never got its motion either (read from source, not run).
+  `Trigger.and(RobotState::isEnabled)` makes the enable itself the edge. The
+  trigger and `Scheduler.isSchedulable` both read `DriverStationBackend`'s `m_controlWord`, swapped once per
+  `refreshData()`, so the schedule at the enable edge isn't refused. Two
+  built-in calls, no helper; `.and(...)` is Lesson 22's. `RobotState` is
+  imported in `Robot` from Lesson 24 on (Lesson 30's text no longer adds
+  it). Lesson 23's marker says the motion must start again on enable.
+  - **The candidates, from alpha-8's `Trigger.java`:** `onTrue` (rising
+    edge, never cancels), `ifTrue` (`SCHEDULE_WHILE_HIGH`: every true poll,
+    never cancels), `whileTrue` (rising edge, cancels on false),
+    `retryWhileTrue` (`CONTINUOUSLY_SCHEDULE_WHILE_HIGH`: every true poll,
+    cancels on false). Scheduling a running command is a no-op, and a new
+    command preempts a conflicting running one of equal priority.
+    `retryWhileTrue` meets "restart after re-enable, don't restart a
+    running motion, cancel on a state change" and **fails in IDLE**:
+    `idleMotion` and `handoffMotion` end on `atGoal` (their children are
+    `.until(atGoal)`), so a finished one is rescheduled on the next poll.
+    Measured, Lesson 24 state, 250 steady ticks in `IDLE`: 251 `Idle Motion`
+    and 2761 total `Scheduled` events (1506 `Go To` children), against 0
+    with `whileTrue` or the shipped binding; and a D-pad up press in `IDLE`
+    was cancelled every tick, so the elevator sat at 0.020 m for 4 s (828
+    cancelled `Go To` commands), against 1.450 m with the shipped binding.
+    That breaks Lesson 24 Try It #4's premise (a manual override survives)
+    and would hold off anything else that wants the arm or elevator while
+    the state is `IDLE` (the latter inferred from the priority rule, not
+    run). `ifTrue` measured the same in IDLE (2761 / 251, D-pad dead). Both
+    do restart the intake after a disable. Making the motions never finish
+    was not tried: it changes Lesson 24's `Superstructure`, and it would
+    still hold off the manual override (inferred from the priority rule).
+  - **Disable/re-enable, Lesson 24 state, shipped binding** (probe
+    `Check24Probe`, real `Robot` loop, 20 ms; ticks are `Superstructure`
+    periodic runs): disabled 15 ticks after the left face button (arm at
+    81° and going down; it sagged to 63° while disabled), enabled a second
+    later: `Intake Motion` back 1 tick after, the arm at −19.95° and the
+    roller past 55 rps 61 ticks (1.2 s) after enable (71 on the Lesson 33
+    state), then the quarter-stick drive from (3.5, 3.2) trips `HANDOFF` 35
+    ticks later and `HOLDING` 56 after that. The
+    unfixed binding on the same run: state `INTAKING`, arm commands `[]`
+    and roller 0 rps for 8 s, and driving on to x = 9.7 m, 5 m past the
+    piece, never caught it.
+  - **Disabled mid-`HANDOFF`**, 1 s: `HOLDING` 112 ticks after `HANDOFF`
+    (50 of them disabled), the same with and without the fix. Nothing was
+    broken there: **in the Phoenix sim a TalonFX resumes its last control
+    request on enable**, so goals already sent (arm stowed, elevator 0.75 m)
+    come back by themselves. What dies is a motion that hadn't reached its next step,
+    like the intake's roller after its arm swing, and `runRoller`'s
+    `whenCanceled` zeroes the duty cycle. **Disabled in `HOLDING`**, 1 s:
+    elevator 0.733 m limp, 0.750 m 3 s after enable, arm at 90°, no motion
+    scheduled, so `HOLDING`'s "no motion" stands.
+  - **`IDLE` with the fix:** 0 `Scheduled` events in 250 steady ticks; after
+    a 1 s disable and enable, `Idle Motion` is scheduled once (12 `Scheduled`
+    events in the next 150 ticks counting its children and the drive and
+    flywheel default commands; 1–2 without the fix, defaults only) and the
+    elevator is back at 0.020 m within 15 ticks; D-pad up in `IDLE` reaches
+    1.450 m and stays, same as before.
+  - **The notes' timings hold on alpha-8** (Lesson 24 state, 3 cycles with
+    the old binding and 3 with the new one, plus one each in the disable
+    runs): Back to `IDLE` 153–157 ticks; `HANDOFF` 33–35 ticks after the
+    drive starts; `HOLDING` **56 ticks** after `HANDOFF` in every run, the
+    elevator 0.732–0.735 m at that tick; `SCORING` 1 tick, then `IDLE`. At
+    the Lesson 33 state `HOLDING` comes **60–61 ticks** after `HANDOFF`, with
+    the old binding and the new, on alpha-8 and (61, two runs) on
+    alpha-7: Lesson 29's current limits slow the climb, so the 55–56 above
+    is the Lesson 24 state's number.
+  - **The Lesson 25 Pick Up auto, fresh launch on Blue 1, with the fix**
+    (Lesson 25 state and Lesson 33 state agree within 4 ticks): `IDLE`
+    157–158 ticks after enable, the drive starts 4.2 s after enable,
+    `INTAKING` 30 ticks into the drive, `HANDOFF` +91 (1.8 s), `HOLDING`
+    +147 to +151 (2.9–3.0 s), `SCORING` +160, `IDLE` the next tick, the path
+    done at +172 (3.44 s), ending (6.00, 0.95, −90°). **Replays** (the
+    alpha-7 AdvantageKit jar on alpha-8): both runs replayed with every
+    robot output matching on every step, `Superstructure/State` included,
+    and no one-tick skew; only AdvantageKit's own `Logger/…`,
+    `LoggedOpModeRobot/…` timing keys and `Console` differ. A teleop run
+    (intake, disable, enable, capture, score) replayed the same way, once the
+    probe's out-of-band `placeSimulatedRobot` and `localizer.resetPose`
+    were left out; with them `Localizer/Pose` differs by up to 0.18 m,
+    because a replay doesn't re-run the probe's calls.
 - **`GamepadSim`'s `set*Available` take bitmasks, not counts**
   (`setButtonsAvailable(-1L)`, `setAxesAvailable(0x3F)`). A count of 64
   marks only button 6 available, and every press reads false.

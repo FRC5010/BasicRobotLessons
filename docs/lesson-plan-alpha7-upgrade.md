@@ -1345,6 +1345,24 @@ WPILib's new Commands V3 `SysIdRoutine`; Lesson 33 drops the opmode-owned
 change (7.157 N·m, 6065 RPM) means every motor-dependent number is
 re-measured and the spec-sheet arithmetic redone. Details in CLAUDE.md.
 
+**Alpha-8, Lesson 24's state motions, 2026-10-30.** Lesson 24's four
+bindings in `Robot` (snapshots 24–30) are now
+`inState(X).and(RobotState::isEnabled).whileTrue(motion)`, so enabling is
+the rising edge that starts the motion again after a disable.
+Alpha-8's `Trigger` has `ifTrue` and `retryWhileTrue`, the candidates the
+decision named; both were measured and rejected: they reschedule a motion
+that has finished, and `idleMotion` ends on `atGoal`, so in `IDLE` they
+restart it every tick (2761 `Scheduled` events in 250 ticks, against 0) and
+cancel a D-pad override as fast as it's pressed. The lesson explains the
+disable and the edge in a short beat, adds a Run it step (disable mid-intake,
+enable, the motion starts over), and Lesson 30 no longer adds the
+`RobotState` import. Measured: disabled mid-`INTAKING` and re-enabled, the
+intake is back 1 tick later and the piece is caught; the full cycle's
+timings are unchanged on alpha-8 (`HOLDING` 56 ticks after `HANDOFF` at the
+Lesson 24 state, 60–61 at Lesson 33); the Pick Up auto still catches and
+scores, and replays with every robot output matching. Details in CLAUDE.md's
+Lesson 24 notes.
+
 **What the AdvantageKit pass leaves: only Lesson 34.** Lessons 13–33 record
 their readings with `processInputs`, their decisions with `recordOutput`,
 and replay. The `Field2d` widget, B-Line's own values and the SysId signals

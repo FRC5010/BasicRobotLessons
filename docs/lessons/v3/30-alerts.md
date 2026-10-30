@@ -626,10 +626,10 @@ Lesson 29 made about the current total, so it goes where the robot lives.
 It reads `power.batteryVolts`, Lesson 29's recorded reading, not
 `RobotController`, so a replay judges the battery the robot really had.
 
-**Add the imports:**
+**Add the imports** (`Robot` already imports `RobotState`, from Lesson 24's
+state bindings):
 
 ```java
-import org.wpilib.driverstation.RobotState;
 import org.wpilib.util.Alert;
 import org.wpilib.util.Alert.Level;
 ```
