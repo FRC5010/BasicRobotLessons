@@ -1409,8 +1409,9 @@ elevator one scenario per JVM because its `DigitalInput` holds DIO 0).
   no SysId code), and no entry was added: no lesson creates the file any more,
   and a project that updated to Lesson 34 under the old snapshot keeps an
   unused copy that compiles and clashes with nothing (`Flywheel` imports the
-  WPILib class by name). `Flywheel`'s field is `Config.useDataLog(Volts.of(
-  0.25).per(Second), Volts.of(7), Seconds.of(30))` around a
+  WPILib class by name). `Flywheel`'s field was `Config.useDataLog(Volts.of(
+  0.25).per(Second), Volts.of(7), Seconds.of(30))` (**reverted to
+  `Config.defaults()` on 2026-10-31, see the next block**) around a
   `SysIdMechanism(volts -> m_io.setVoltage(volts.in(Volts)), log ->
   log.motor("flywheel")..., this, "flywheel")`; `RobotUtility` has plain
   `driverController.back().and(faceUp())` triggers and an empty `periodic()`
@@ -1463,13 +1464,11 @@ elevator one scenario per JVM because its `DigitalInput` holds DIO 0).
   0.90 at 1 V/s, 0.22 at 0.25; the extra 0.01 is the trimmed window), and they
   reproduce the classic Lesson 34's "0.89 V, then 0.23 V" almost to the digit,
   so that number was a two-term ramp-only fit. kV 0.118 against the shipped
-  0.119 and kA 0.106 against 0.105. **Open, not decided:** whether the real
-  SysId tool puts an acceleration term on the quasistatic data (its source
-  isn't in the sparse allwpilib clone and `gh`/the API are blocked here). If it
-  does, the tool would give kS ≈ 0.00 at either ramp rate and the lesson's
-  slow-ramp fix would not change what it prints. The lesson says both fits'
-  numbers and says it can't tell which one the tool makes; the yardstick (the
-  percent of steady state) is fit-independent.
+  0.119 and kA 0.106 against 0.105. **Resolved the same day** (the next
+  block): the tool's source is in the allwpilib clone at the alpha-8 tag, and it
+  fits all four tests together with an acceleration term, so it very likely
+  reports kS ≈ 0 at either ramp rate; the 0.90 V is a two-term ramp-only fit
+  that the tool doesn't make. The lesson's slow-ramp fix was reverted.
 - **Elevator rows** (RIG through the real routine, `ElevatorIOSim` widened to
   ±20 m, started at 0 by `kSimStartHeight`, held at 0.194 V during warm-up so
   the carriage doesn't sink 3.9 cm first; two reps each, they agree to the
@@ -1485,8 +1484,9 @@ elevator one scenario per JVM because its `DigitalInput` holds DIO 0).
 - **0.05 V open loop from a standstill** (RIG): 0.176 / 0.277 / 0.336 / 0.371
   / 0.400 / 0.414 rot/s at 0.5 / 1 / 1.5 / 2 / 3 / 5 s, then flat at 0.414
   (0.05 × 8.46 = 0.42). The old "0.37 rot/s" is the 2 s reading. It came from
-  the classic Lesson 29; v3 Lesson 28 never quoted it, so Lesson 33 §9 now
-  does the check itself through `setVoltage` instead of crediting Lesson 28.
+  the classic Lesson 29; v3 Lesson 28 never quoted it, so Lesson 33 does the
+  check itself through `setVoltage` instead of crediting Lesson 28 (it is §7's
+  `kS` check since 2026-10-31, run through `Flywheel.holdVoltage`).
 - **Replay:** a recorded Utility session (all four tests, 0.25 V/s config) was
   replayed with `AKIT_LOG_PATH`: every `RealOutputs` key with a `ReplayOutputs`
   twin matched except AdvantageKit's own `Logger/…` and `LoggedOpModeRobot/…`
@@ -1505,6 +1505,98 @@ elevator one scenario per JVM because its `DigitalInput` holds DIO 0).
   files until its `rp2.sh` finishes, so wait for it before restarting. A bare
   `ElevatorIOSim` sinks at 1.96 cm/s from the first tick, so a RIG that
   warms up for 2 s starts 3.9 cm low unless it holds 0.194 V.
+
+**v3 Lesson 33 §6–§7 rewritten as checking a characterization result, and the
+flywheel back on `Config.defaults()` (2026-10-31, after reading the SysId
+tool's source; two user decisions).** Commit `95d7023`; probes under
+`scratchpad/c33/`, built on the batch 3 ones.
+
+- **What the tool fits, from allwpilib's `tools/sysid/src/main/native/cpp/
+  analysis/FeedforwardAnalysis.cpp` at `v2027.0.0-alpha-8`** (history since
+  November 2025 is moves, formatting, `std::format` and a constant rename).
+  `CalculateFeedforwardGains` concatenates `slowForward`, `slowBackward`,
+  `fastForward` and `fastBackward` into one OLS: acceleration `(xₖ₊₁ − xₖ)/τ` on
+  `[velocity, voltage, sgn(velocity)]` (plus a gravity or cos/sin column for
+  elevators and arms), then `Ks = −γ/β`, `Kv = −α/β`, `Ka = 1/β`
+  (`tools/sysid/docs/ols-derivations.md`). That is `V = kS·sgn(v) + kV·v +
+  kA·a` rearranged, so it has an acceleration term and the 0.90 V (a two-term
+  fit of the ramps alone) is **not** what it computes. `CheckOLSDataQuality`
+  throws "Insufficient samples" unless the data has "at least 2 steady-state
+  velocity events to separate Ks from Kv" and "at least 1 acceleration event to
+  find Ka". Its data prep (`FilteringUtils.cpp`) also trims quasistatic points
+  with zero voltage or speed under a noise-floor threshold, applies a median
+  filter, trims the dynamic test to a step window, and drops points with zero
+  acceleration, which this repo's hand fits don't replicate, so digits can
+  differ. **The tool itself has still never been run here.** Every sentence
+  about its output says "the same model, fit by hand".
+- **Hand fits in the tool's own regression form** (acceleration on `[v, V,
+  sgn v]`, central difference at 0.02 s, `scratchpad/c33/toolform.py`, six logs
+  from the batch 3 runs): kS +0.004 to +0.009 V, kV 0.1179–0.1180, kA
+  0.1063–0.1073 at both 1 V/s and 0.25 V/s, raw or with the tool-like
+  quasistatic trim. The batch 3 forms (`V` on `[sgn v, v, a]`) gave kS
+  0.003–0.006, kV 0.1180, kA 0.1060–0.1063. The lesson says "kS under 0.01 V,
+  kV 0.118, kA 0.106".
+- **User decision 1: §6–§7 are a lesson in checking a result for common
+  sense,** one quick check per gain. kV: 12 V ÷ kV = 101.7 against the free
+  speed 101.08, and 1 ÷ kV = 8.47 against the dynamic plateau ÷ 7 V. kA:
+  `J × 2π × 1.677` = 0.105 (Lesson 28), the fit 0.106. kS: hold 0.05 V and the
+  wheel turns, and ≈ 0 is right for a sim with no friction (on hardware: creep
+  the voltage up until it just turns, which Try It #7's ramp from rest is). The
+  test: the percent-of-steady-state yardstick (38–82% at 1 V/s, table kept),
+  which the default ramp fails, and the fit's acceleration term absorbs it. The
+  0.90 V is the worked example of a plausible number that fails the kS check.
+  The message: a characterization result is a claim, so check each number
+  against something you know before it goes into `Constants`.
+- **User decision 2: the flywheel is back on `Config.defaults()`.** The
+  `Second`/`Seconds` imports and the 0.25 V/s field and its comment are gone from
+  `code/v3/lesson-33/subsystems/Flywheel.java`; the lesson's "replace the
+  `m_sysId` field" step is gone. The 0.25 V/s ramp is Try It #2 ("predict whether
+  slowing the ramp changes what the tool reports, then check": 77–95%, hand fit
+  still ≈ 0, ramp-only hand fit 0.23 V). Lesson 32's two `Flywheel` markers lost
+  "its ramp rate has to suit how fast this wheel responds".
+- **New code, for the kS check:** `Flywheel.holdVoltage(Voltage)`
+  (`runRepeatedly(() -> m_io.setVoltage(raw)).named("Hold Voltage")`) and a
+  single-button `driverController.rightBumper()` binding for `Volts.of(0.05)` in
+  `RobotUtility`. Lesson 32's second `Flywheel` marker mentions it. §5's
+  whole-file `RobotUtility` block still matches the snapshot minus the §7
+  additions (checked by diff).
+- **Measured (real `Robot` loop, `Run33Probe`/`Hold33Probe`, three runs each,
+  identical to the digit):**
+  - **Dynamic plateau** at 7 V from the idle start, 500 ticks: forward
+    **59.271–59.277 rot/s** (8.468 rot/s per volt; 1 ÷ 0.118 = 8.47), reverse
+    −59.12 to −59.26 (8.459). Within 5% of the plateau at 2.20 s forward and
+    5.42 s reverse, within 1% at **3.64 s and 6.76–6.78 s** (the reverse run has
+    to turn around). Alpha-7's 58.5 was the old motor.
+  - **The 63% idea was dropped.** From the idle start the time to 63% of the way
+    to the plateau is 1.00–1.02 s forward (kA ÷ kV = 0.90) and 3.02–3.04 s in
+    reverse, so it doesn't hold up cleanly. In the first 60 ticks the applied
+    voltage is 5.7–7.0 V forward and −0.76 to 1.8 V in reverse, not the commanded
+    ±7: the Lesson 29 stator limit (80 A) bites while the wheel is turning, since
+    7 V against the back-EMF at 30 rot/s would want about 107 A (inferred from
+    the arithmetic, not isolated). It also explains why a standstill-start 63%
+    time grows with voltage (0.92 s at 1 V to 1.40 s at 5 V in the batch 3 STEADY
+    run).
+  - **0.05 V held from the idle start** (right bumper): applied voltage reads 1.55
+    V on the first tick, 0.75 V at 0.5 s and 0.05 V from 1 s (the same limit,
+    braking); speed 13.45 rot/s at 1 s, 4.66 at 2 s, 1.80 at 3 s, 0.561 at 5 s,
+    0.420 at 8 s, **0.414 from 9 s on**. Released, the idle spin-up is back at once.
+  - **Elevator ramp at 1 V/s** (the batch 3 rig, two reps): the carriage has
+    covered **0.437–0.438 m** when the commanded voltage reaches 3 V and
+    **1.036 m** at 4.5 V (1.888 m at 6 V). The lesson's older table says 1.885 /
+    3.794 / 7.605 m; the raw probe lines read 1.888 / 3.795–3.797 / 7.608, 3 mm
+    higher (probably the 3.3 mm start height taken off twice; not traced). Left
+    as it was, since it rounds the same at two digits; the new text rounds its
+    own figures.
+- **Other lesson edits:** §8's "awkward part" now says even the default ramp
+  needs more than the elevator's 1.5 m and a slower one more still, so the fix is
+  a smaller voltage range and a smaller step (let go of the buttons early); it
+  also says a short step may never reach the plateau §7 reads. §9 uses the
+  `kS` check instead of its own 0.05 V paragraph. §2's pointer to the
+  finite-travel section said "Section 7" and now says 8 (an old numbering slip).
+- **Checks:** Lessons 32 and 33 compile with zero warnings, `verify-lessons-v3.sh
+  33 test` passes, the marker checker is clean for 1–33, `tools/tests` pass, and
+  every "type this" block matches the snapshot (the §5 `RobotUtility` file and
+  its import line aside, as before).
 
 **v3 Lesson 26 (drive to pose) was redesigned on 2026-10-26 at the user's
 request: two motion-profiled stages, handing over while moving.** The old

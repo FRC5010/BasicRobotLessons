@@ -1521,9 +1521,33 @@ default ramp and 0.23 V at 0.25 V/s when the fit has no acceleration term, which
 is `kA × ramp rate ÷ kV` and matches the classic Lesson 34's 0.89 and 0.23, but
 under 0.01 V at either ramp rate when it does) and says it cannot tell which one
 the SysId tool makes. Whether the tool fits acceleration on the quasistatic data
-was not checked (its source was not reachable). Replay of a recorded session
+was not checked (its source was not reachable; answered in the rewrite note below). Replay of a recorded session
 of all four tests matched on every robot output. Details in CLAUDE.md's "v3 Lesson
 33 rebuilt on WPILib's `SysIdRoutine`" block.
+
+**Alpha-8, Lesson 33 §6–§7 rewritten after reading the SysId tool's source,
+2026-10-31.** The open question above is answered by allwpilib's
+`tools/sysid/.../FeedforwardAnalysis.cpp` at the alpha-8 tag: the tool
+concatenates all four tests into one least-squares fit of acceleration on speed,
+voltage and the sign of speed, then sets `Ks = −γ/β`, `Kv = −α/β`, `Ka = 1/β`,
+which is `V = kS·sgn(v) + kV·v + kA·a`. It has an acceleration term, so it very
+likely reports kS ≈ 0 for the frictionless sim at either ramp rate, and the 0.90
+V (a ramp-only two-term fit) is not what it prints. The tool itself has still not
+been run here, so the lesson words every number as a hand fit of the same model.
+Two user decisions followed. **§6–§7 are now a lesson in checking a result:** kV
+against the free speed (12 ÷ 0.118 = 101.7 vs 101.08) and the dynamic plateau
+(59.3 rot/s ÷ 7 V = 8.47 = 1 ÷ kV), kA against Lesson 28's inertia arithmetic,
+kS by holding 0.05 V (the wheel settles at 0.41 rot/s), and the runs by the
+percent-of-steady-state yardstick, which the default ramp fails and the fit's
+acceleration term absorbs; the 0.90 V is the worked example of a number that
+fails the kS check. **The flywheel is back on `Config.defaults()`:** the 0.25 V/s
+`Config.useDataLog` field and its imports are gone, the slower ramp is Try It #2,
+and the new `Flywheel.holdVoltage` with a right-bumper binding runs the kS check.
+§8 now says even the default ramp needs more room than the elevator has (0.44 m
+to 3 V, 1.04 m to 4.5 V at 1 V/s). The "kA ÷ kV ≈ 0.9 s is the time to 63%" idea
+was measured and dropped (1.00–1.02 s forward, 3.0 s in reverse, with the Lesson
+29 stator limit biting at the start). Details in CLAUDE.md's "v3 Lesson 33
+§6–§7 rewritten as checking a characterization result" block.
 
 **Alpha-8, Lesson 29's two open decisions applied, 2026-10-31.** Both were the
 user's. **The tired-battery table now reports the thirty-run figures:** no
