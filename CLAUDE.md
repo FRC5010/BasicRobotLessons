@@ -748,9 +748,11 @@ method as 14–27:**
   carries AdvantageKit's outputs via NetworkTables.
 - **Lesson 33:** the SysId signals are in `WPILIB_*.wpilog`, not
   `akit_*.wpilog`; the lesson now says to open the `WPILIB_` file. Under
-  replay, `RobotUtility`'s own `EventLoop` fires on the replayed buttons and
+  replay, `RobotUtility`'s own `EventLoop` fired on the replayed buttons and
   every output matched (`Flywheel/CurrentCommand`'s SysId commands
-  included). The replay also writes a second `WPILIB_` file, because
+  included). (Alpha-8, 2026-10-31: the `EventLoop` and the hand-built routine
+  are gone; a replay of all four tests through the real `SysIdRoutine`
+  matched too, see the batch 3 block below.) The replay also writes a second `WPILIB_` file, because
   `SysIdRoutineLog` starts `DataLogManager` on first use; its SysId values
   matched the recording's, with different timestamps.
 
@@ -783,12 +785,16 @@ measured where it matters:
   is fixed** (`unbindStaleTriggers` no longer unbinds cached triggers):
   plain `driverController.back()` triggers in `RobotUtility` ramped on every
   selection (alpha-7: the first Utility selection after Teleop did nothing).
-  User decision 2026-10-30: remove the workaround.
+  User decision 2026-10-30: remove the workaround. **Done 2026-10-31:**
+  `RobotUtility` uses plain triggers and an empty `periodic()`; the lesson
+  text about the bug is gone (batch 3 block below).
 - **Commands V3 has a real `SysIdRoutine`**
   (`org.wpilib.command3.sysid.SysIdRoutine`, #8304): `new
   SysIdRoutine(Config, SysIdMechanism)`, `Config.defaults()` (1 V/s, 7 V,
   10 s), `Direction.FORWARD/REVERSE`, `quasistatic`/`dynamic` built with
-  `whenExited`. User decision 2026-10-30: Lesson 33 uses it.
+  `whenExited`. User decision 2026-10-30: Lesson 33 uses it. **Done
+  2026-10-31:** the hand-built `commands/SysIdRoutine` is deleted and the
+  lesson wires up WPILib's (batch 3 block below).
 - **`DCMotor.getKrakenX60` changed** (#9378): 7.09 → 7.157 N·m stall,
   366 → 374.4 A, 6000 → 6065 RPM (FOC 9.37/5800 → 9.362/5785). Lesson 28,
   bare scheduler, five runs each: rest → 60 rot/s 2.30–2.32 s → 2.24–2.26 s;
@@ -799,7 +805,7 @@ measured where it matters:
   done (2026-10-30, OpMode track only; the classic track keeps 6000 RPM and
   7.09 N·m, the rule in the Lesson 18 notes below). The re-measure is done
   for Lessons 7–32** (the three "re-measured on alpha-8" blocks below: 7–22,
-  24–27 and 28–32) **and Lesson 33's figures still quote the old simulation**;
+  24–27 and 28–32) **and Lesson 33 (2026-10-31, the batch 3 block below)**;
   `kraken-remeasure-inventory.md` in the working files lists them.
   - **Where 7.157 N·m and 6065 RPM come from:** allwpilib #9378, commit
     `39599a7a9`, "Update the Kraken X60 DCMotor factories to use values from
@@ -849,8 +855,8 @@ measured where it matters:
     dependent lessons, for instance Lesson 28's "43.27", "60.44 rot/s",
     "7.22 V" (the last sits next to `kV × 60 = 7.2 V`, which is now 7.1 V),
     and Lesson 18's sag and lag figures. They were not wrong by much, since
-    the true physics moved about 1%. Lessons 7–32 are re-run now (the blocks
-    below); only Lesson 33's are still the old ones.
+    the true physics moved about 1%. Lessons 7–33 are re-run now (the blocks
+    below).
   - **`merge_constants.py` and retired values:** see `RETIRED_VALUES` in
     the merge notes at the top.
 - **New Commands V3 API:** `Command.onExit()`/builder `whenExited(Runnable)`
@@ -1302,6 +1308,140 @@ working inventory, not kept in the repo.
     `outputOmega` exactly 0.000, heading **0.0°** at release, ends (7.98–7.99,
     7.00, 0.0°) after 4.64–4.66 s. "About 3.7 s" for both is within 0.06 s
     and stays; the 0.6 s and −124° stand.
+
+**v3 Lesson 33 rebuilt on WPILib's `SysIdRoutine` and re-measured on alpha-8
+(2026-10-31, batch 3 of the user's "re-measure them all", with the two Lesson
+33 decisions of 2026-10-30).** Every figure is "(alpha-8)" unless it says
+alpha-7 (a `git worktree` of `76dd0f9`, same probe, removed afterwards).
+Methods: **LOOP** (the real `Robot` on its own thread, `GamepadSim`, Blue 1,
+tick-scripted from a periodic registered after every robot periodic, read from
+`m_inputs` and the `WPILIB_*.wpilog`); **RIG** (the real `FlywheelIOSim` or
+`ElevatorIOSim` driven through the real `SysIdRoutine`, no default command, a
+fixed 20 ms schedule, `updateInputs` from an `addPeriodic` registered before
+the command, the wheel braked to under 0.02 rot/s between scenarios, the
+elevator one scenario per JVM because its `DigitalInput` holds DIO 0).
+
+- **The real API, read from the alpha-8 source and `javap` of the jar.**
+  `org.wpilib.command3.sysid.SysIdRoutine extends SysIdRoutineLog`; `new
+  SysIdRoutine(Config, SysIdMechanism)`. `Config` is a class, not a record,
+  with no no-argument constructor: `Config.defaults()` (1 V/s, 7 V, 10 s),
+  `Config.useDataLog(rampRate, stepVoltage, timeout)`, and a four-argument
+  constructor whose last argument is a `Consumer<State> recordState` (null
+  means WPILib's log). `SysIdRoutine.SysIdMechanism(Consumer<Voltage> drive,
+  Consumer<SysIdRoutineLog> log, Mechanism, String name)`, the name optional
+  (defaults to the mechanism's `getName()`); `drive` receives a `Voltage`, not
+  a double. `Direction.FORWARD`/`REVERSE` (the hand-built one had
+  `kForward`/`kReverse`). `quasistatic`/`dynamic` are `mechanism.run(co ->
+  ...)` loops on `Timer.createStarted()`, ended by `.whenExited(stopRoutine)`
+  (0 V, state `none`), and named `sysid-quasistatic-forward-flywheel` and so
+  on (the hand-built ones were `SysId Quasistatic kForward`). The log keys are
+  the same as before and only in the `WPILIB_` file: six runs, state entries =
+  iterations + one `none` per test (3502 = 3498 + 4), voltage and velocity
+  3498 each. A test runs to its timeout even with the buttons held (1500 ticks
+  of a 30 s timeout, 500 of 10 s); letting go cancels it, and both endings log
+  `none`. The SysId tool itself was never run here, so "readable by the tool"
+  is the format's purpose, not something checked.
+- **What changed in the snapshot:** `commands/SysIdRoutine.java` deleted; no
+  other snapshot, `V3_DELETIONS` entry or tool refers to it (snapshot 34 has
+  no SysId code), and no entry was added: no lesson creates the file any more,
+  and a project that updated to Lesson 34 under the old snapshot keeps an
+  unused copy that compiles and clashes with nothing (`Flywheel` imports the
+  WPILib class by name). `Flywheel`'s field is `Config.useDataLog(Volts.of(
+  0.25).per(Second), Volts.of(7), Seconds.of(30))` around a
+  `SysIdMechanism(volts -> m_io.setVoltage(volts.in(Volts)), log ->
+  log.motor("flywheel")..., this, "flywheel")`; `RobotUtility` has plain
+  `driverController.back().and(faceUp())` triggers and an empty `periodic()`
+  (abstract, so it can't be dropped). The Lesson 32 `Flywheel` marker now says
+  "WPILib's own". The lesson's "New Java concepts" shrank to `Trigger.and(...)`
+  (`EventLoop` went; the hand-built class had added nothing listed there).
+- **Plain triggers on the final code, LOOP, three runs at each config
+  (0.25 V/s and `Config.defaults()`), six selections each (T,U,T,U,U,T):** every
+  Utility selection ramped (`sysid-quasistatic-forward-flywheel`; 0.74 V at 3.00
+  s at 0.25 V/s, 2.97–2.98 V at 1 V/s), including the second Utility in a row.
+  With Back + faceUp held and the opmode switched to Teleop, the wheel was at
+  3.59 V / 30.40 rot/s with only `Spin Up` running, 6 of 6 runs (alpha-7: 3.63
+  V). The speed at 3 s depends on how far the idle spin-up has got when the
+  button goes down (4.8–5.1 rot/s at 0.25 V/s, 18.3–18.5 at 1 V/s, with the
+  press 0.5 s after enable), so the lesson doesn't quote it.
+- **The "wheel doesn't start from rest" callout was quoting the wrong config.**
+  Its "5.6 rot/s over 2.5 s, ramp at 0.6 V" is the 0.25 V/s run, but the callout
+  sits in §6, where the student still has `Config.defaults()`. Press after the
+  wheel has settled at idle (3.5 s after enable): at 1 V/s it dips to 13.1 rot/s
+  at 1.56 s (1.53 V) and is back at 30.4 at 4.50 s; at 0.25 V/s it dips to 5.63
+  at 2.68 s (0.66 V) and is back at 30.4 at 15.3 s. A reverse run starts at +30
+  and crosses zero at 1.72 s (1 V/s) or 2.32 s (0.25 V/s). The lesson's callout
+  now gives the 1 V/s figures.
+- **Percent of steady state** (RIG, true standstill, real routine; three reps
+  per ramp, they agree within a point and mostly to a tenth; the exceptions are
+  a 77.0 against 77.5 at 4 V and 1 V/s, a 37.6 against 38.5 at 1 V, and a 78.6
+  against 84.7 at 3 V and 0.5 V/s, all one-tick sampling jumps): steady is
+  **8.457 / 8.462 / 8.464 / 8.465 / 8.465 rot/s per volt** at 1–5 V (mean 8.46;
+  alpha-7 8.373, the 1% motor change); 63% of final in 0.92–1.40 s. Speed when
+  the *commanded* ramp passes 1–5 V as a percent of steady: **1 V/s 38.5 / 59.2
+  / 70.6 / 77.5 / 81.8, 0.5 V/s 58.8 / 77.2 / 84.7 / 88.5 / 90.8, 0.25 V/s
+  77.0 / 88.4 / 92.2 / 94.2 / 95.4**; keyed to the *logged applied* voltage
+  instead they read 1–1.5 points higher at 1 V/s (38.9–39.8 at 1 V). The old
+  36.1 / 58.0 / 69.8 / 76.8 / 81.3 and 75.7–95.3 are not an alpha-8 effect: the
+  same new probe on an alpha-7 build (the hand-built class) gives 38.6 / 59.3
+  / 70.7 / 77.5 / 81.9 and 77.0 / 88.4 / 92.3 / 94.2 / 95.4, so the old probe
+  sampled about two ticks early. The lesson quotes whole percents (38–82,
+  77–95) because the convention moves a point.
+- **My own least-squares fits** (not SysId-tool output; `numpy`, `V = kS·sign(v)
+  + kV·v + kA·a`, acceleration a central difference at 0.02 s, |v| above 0.2
+  rot/s; the forward tests from the speed minimum onward and the reverse tests
+  once moving the test's way, the coast-down trimmed; three runs per config,
+  each from the `WPILIB_` log of all four tests). **Joint three-term fit over
+  all four tests: kS 0.0034–0.0051, kV 0.1180, kA 0.1060–0.1063 at either ramp
+  rate.** **Quasistatic-only two-term fit (no acceleration term): kS 0.898 /
+  0.901 / 0.905 at 1 V/s, 0.234 / 0.235 / 0.234 at 0.25 V/s, kV 0.1179–0.1180.**
+  Untrimmed, the same two-term fit gives kS −0.06 to −0.19 and kV 0.124–0.136,
+  which is the coast-down, hence the callout. Dynamic-only three-term: kA 0.1065,
+  kV 0.1179. The two-term numbers are `kA × ramp rate ÷ kV` (0.106 ÷ 0.118 =
+  0.90 at 1 V/s, 0.22 at 0.25; the extra 0.01 is the trimmed window), and they
+  reproduce the classic Lesson 34's "0.89 V, then 0.23 V" almost to the digit,
+  so that number was a two-term ramp-only fit. kV 0.118 against the shipped
+  0.119 and kA 0.106 against 0.105. **Open, not decided:** whether the real
+  SysId tool puts an acceleration term on the quasistatic data (its source
+  isn't in the sparse allwpilib clone and `gh`/the API are blocked here). If it
+  does, the tool would give kS ≈ 0.00 at either ramp rate and the lesson's
+  slow-ramp fix would not change what it prints. The lesson says both fits'
+  numbers and says it can't tell which one the tool makes; the yardstick (the
+  percent of steady state) is fit-independent.
+- **Elevator rows** (RIG through the real routine, `ElevatorIOSim` widened to
+  ±20 m, started at 0 by `kSimStartHeight`, held at 0.194 V during warm-up so
+  the carriage doesn't sink 3.9 cm first; two reps each, they agree to the
+  digit): 6 V for 4 s ends at **2.599 m** without the forward soft limit
+  (alpha-7 2.569) and **1.503 m** with it (peaks 1.511, applied 0.000 V). Ramp
+  to 6 V travels **1.885 / 3.794 / 7.605 m** at 1.0 / 0.5 / 0.25 V/s
+  (alpha-7 1.864 at 1 V/s). A 1.5 s step travels **1.076–1.100 / 0.623–0.632 /
+  0.304 m** at 7 / 4 / 2 V (the routine's timeout is wall-clock, so the last
+  tick moves the 7 V figure by 2 cm; alpha-7 1.102). Homing from the 0.35 m
+  boot height: **3.52 s at 9.72 cm/s** without a reverse soft limit (alpha-7
+  3.54 s; the old 3.68 s did not reproduce on either), **17.32 s at 1.96 cm/s**
+  with one at `kMinHeight` (the unpowered sink rate).
+- **0.05 V open loop from a standstill** (RIG): 0.176 / 0.277 / 0.336 / 0.371
+  / 0.400 / 0.414 rot/s at 0.5 / 1 / 1.5 / 2 / 3 / 5 s, then flat at 0.414
+  (0.05 × 8.46 = 0.42). The old "0.37 rot/s" is the 2 s reading. It came from
+  the classic Lesson 29; v3 Lesson 28 never quoted it, so Lesson 33 §9 now
+  does the check itself through `setVoltage` instead of crediting Lesson 28.
+- **Replay:** a recorded Utility session (all four tests, 0.25 V/s config) was
+  replayed with `AKIT_LOG_PATH`: every `RealOutputs` key with a `ReplayOutputs`
+  twin matched except AdvantageKit's own `Logger/…` and `LoggedOpModeRobot/…`
+  timing keys, `Console`, and `AlertGroups/DataLogManager/*` (the same ones
+  as in earlier replay notes); `Flywheel/CurrentCommand` replayed `Spin Up`,
+  `sysid-quasistatic-forward-flywheel`, `…-reverse-…`, `sysid-dynamic-…` in the
+  same order. `Drivetrain/SimulatedPose`, `Sim/GamePieces` and the NT4 timing
+  key are real-only, as before.
+- **Checks:** Lessons 32 and 33 compile with zero warnings, Lesson 33's tests
+  pass, the marker checker is clean for 1–33, `tools/tests` pass. The lesson's
+  "type this" blocks match the snapshot, except §5's first field (the
+  `Config.defaults()` stage, compiled separately in the sandbox) and its import
+  block (two groups in one block).
+- **Probe traps:** `pkill -f gradlew` also kills the shell that typed it (the
+  pattern is in the command line); a killed batch leaves the sandbox's edited
+  files until its `rp2.sh` finishes, so wait for it before restarting. A bare
+  `ElevatorIOSim` sinks at 1.96 cm/s from the first tick, so a RIG that
+  warms up for 2 s starts 3.9 cm low unless it holds 0.194 V.
 
 **v3 Lesson 26 (drive to pose) was redesigned on 2026-10-26 at the user's
 request: two motion-profiled stages, handing over while moving.** The old
@@ -1984,12 +2124,12 @@ Making `canGoTo` let IDLE reach SCORING fails `scoringRequiresSomethingToScore`.
 
 **v3 Lesson 33 (SysId) on alpha-7, measured with the real `Flywheel`, the real `ElevatorIOTalonFX` and the real `Robot` loop (20 ms ticks):**
 
-- **A button `Trigger` belongs to the first opmode that asks for it.** `CommandGenericHID` caches one `Trigger` per (button, `EventLoop`), and a cached trigger keeps the creation scope it got. `RobotTeleop` binds Back, faceUp, faceDown and so on, so a `@Utility` opmode asking `back()` gets Teleop's trigger, and its bindings never fire. Measured: Teleop selected first, then `RobotUtility`, Back + faceUp held 3 s: wheel stayed at the 30 rot/s idle speed, command `Spin Up`. Even buttons Teleop never touched (Start, right bumper, stick clicks) died on a second selection of the same opmode (Utility → Teleop → Utility). **The fix is an opmode-owned `EventLoop`**: every button is `driverController.back(m_loop)` etc., and `periodic()` calls `m_loop.poll()`. Each instance gets fresh triggers and a loop nothing else polls. Measured through every order: T,U,T,U,U,T all ramp (0.73 V, 5.6 rot/s after 3 s), and holding the buttons while switching to Teleop leaves 3.63 V / idle. Any opmode that rebinds a button another opmode uses needs this, not just `RobotUtility`.
-- **A SysId run starts with the wheel at idle speed**, because `idle()` is the default command: the quasistatic ramp opens with the wheel coasting down 30 → 5.6 rot/s over 2.5 s (ramp at 0.6 V) before it climbs. The lesson says so and offers starting from rest as Try It #7. The percent-of-steady-state figures were measured from a true standstill with a probe driving a second `TalonFX` handle on the same CAN ID.
-- **Percent of steady state** (steady = 8.4 rot/s per volt, measured 1–5 V): 1 V/s ramp 36.1 / 58.0 / 69.8 / 76.8 / 81.3 % at 1–5 V; 0.5 V/s 57.3–90.7 %; 0.25 V/s 75.7 / 88.3 / 92.2 / 94.1 / 95.3 %. Dynamic 7 V reaches 58.5 rot/s (58.6 predicted).
-- **Open-loop elevator limits** (real `ElevatorIOTalonFX`, physics widened to ±20 m, started at 0): 6 V for 4 s ends at 2.565 m without the forward soft limit and 1.502 m with it, applied 0.000 V. Ramp to 6 V travels 1.880 / 3.768 / 7.537 m at 1.0 / 0.5 / 0.25 V/s. A 1.5 s step travels 1.101 / 0.623 / 0.300 m at 7 / 4 / 2 V.
-- **A reverse soft limit at `kMinHeight` still fights homing**: normal homing from the 0.35 m boot height finishes in 3.68 s, with the limit 17.34 s (2 cm/s against 9). It completes, so it looks like a weak motor.
-- `SysIdRoutineLog` still writes through `DataLogManager.getLog()` (bytecode). A real run's `.wpilog` holds `sysid-test-state-flywheel`, `voltage-flywheel-flywheel` and `velocity-flywheel-flywheel`. Since Lesson 13's AdvantageKit that's the `WPILIB_*.wpilog`, never the `akit_*.wpilog` beside it (measured 2026-10-29), and the lesson says to open the `WPILIB_` file. Alpha-7 has no `SysIdRoutine` in `commandsv3` or `wpilibj` (only `org.wpilib.sysid.SysIdRoutineLog`), so the hand-built `commands/SysIdRoutine` stays. `Flywheel` is `implements Mechanism` now, and the routine takes the `Mechanism` interface.
+- **(Alpha-7 history. Fixed in alpha-8, and Lesson 33 no longer has the workaround; see the batch 3 block.) A button `Trigger` belongs to the first opmode that asks for it.** `CommandGenericHID` caches one `Trigger` per (button, `EventLoop`), and a cached trigger keeps the creation scope it got. `RobotTeleop` binds Back, faceUp, faceDown and so on, so a `@Utility` opmode asking `back()` gets Teleop's trigger, and its bindings never fire. Measured: Teleop selected first, then `RobotUtility`, Back + faceUp held 3 s: wheel stayed at the 30 rot/s idle speed, command `Spin Up`. Even buttons Teleop never touched (Start, right bumper, stick clicks) died on a second selection of the same opmode (Utility → Teleop → Utility). **The fix is an opmode-owned `EventLoop`**: every button is `driverController.back(m_loop)` etc., and `periodic()` calls `m_loop.poll()`. Each instance gets fresh triggers and a loop nothing else polls. Measured through every order: T,U,T,U,U,T all ramp (0.73 V, 5.6 rot/s after 3 s), and holding the buttons while switching to Teleop leaves 3.63 V / idle. Any opmode that rebinds a button another opmode uses needs this, not just `RobotUtility`.
+- **A SysId run starts with the wheel at idle speed**, because `idle()` is the default command: the quasistatic ramp opens with the wheel coasting down 30 → 5.6 rot/s over 2.5 s (ramp at 0.6 V) before it climbs. The lesson says so and offers starting from rest as Try It #7. (Alpha-8: that was the 0.25 V/s config; at the default 1 V/s, which is what the student has when they first read it, the dip is to 13 rot/s at 1.6 s, see the batch 3 block.) The percent-of-steady-state figures were measured from a true standstill with a probe driving a second `TalonFX` handle on the same CAN ID.
+- **Percent of steady state** (steady = 8.4 rot/s per volt, measured 1–5 V): 1 V/s ramp 36.1 / 58.0 / 69.8 / 76.8 / 81.3 % at 1–5 V; 0.5 V/s 57.3–90.7 %; 0.25 V/s 75.7 / 88.3 / 92.2 / 94.1 / 95.3 %. Dynamic 7 V reaches 58.5 rot/s (58.6 predicted). (Alpha-8, through the real routine: steady 8.46 rot/s per volt, 1 V/s 38.5 / 59.2 / 70.6 / 77.5 / 81.8 %, 0.25 V/s 77.0 / 88.4 / 92.2 / 94.2 / 95.4 %; the old probe sampled about two ticks early, see the batch 3 block.)
+- **Open-loop elevator limits** (real `ElevatorIOTalonFX`, physics widened to ±20 m, started at 0): 6 V for 4 s ends at 2.565 m without the forward soft limit and 1.502 m with it, applied 0.000 V. Ramp to 6 V travels 1.880 / 3.768 / 7.537 m at 1.0 / 0.5 / 0.25 V/s. A 1.5 s step travels 1.101 / 0.623 / 0.300 m at 7 / 4 / 2 V. (Alpha-8: 2.599 m and 1.503 m; 1.885 / 3.794 / 7.605 m; 1.08–1.10 / 0.62–0.63 / 0.30 m.)
+- **A reverse soft limit at `kMinHeight` still fights homing**: normal homing from the 0.35 m boot height finishes in 3.68 s, with the limit 17.34 s (2 cm/s against 9). It completes, so it looks like a weak motor. (Alpha-8: 3.52 s against 17.32 s, 9.72 against 1.96 cm/s.)
+- `SysIdRoutineLog` still writes through `DataLogManager.getLog()` (bytecode). A real run's `.wpilog` holds `sysid-test-state-flywheel`, `voltage-flywheel-flywheel` and `velocity-flywheel-flywheel`. Since Lesson 13's AdvantageKit that's the `WPILIB_*.wpilog`, never the `akit_*.wpilog` beside it (measured 2026-10-29), and the lesson says to open the `WPILIB_` file. Alpha-7 had no `SysIdRoutine` in `commandsv3` or `wpilibj` (only `org.wpilib.sysid.SysIdRoutineLog`), so the lesson built `commands/SysIdRoutine` itself; alpha-8 has one and that class was deleted 2026-10-31. `Flywheel` is `implements Mechanism` now, and the routine takes the `Mechanism` interface.
 - **Probe trap:** `verify-lessons-v3.sh` `rm -rf`s its sandbox every run, probe files included. Copy probes in after it, then run `./gradlew cleanTest test --tests '*Probe'` in the sandbox. Maven Central returned 429 once while resolving `junit-jupiter-params`; a retry fixed it.
 
 **Use it instead of reasoning about whether a snippet compiles.** Current state: lessons 0–34 all compile, at every intermediate stopping point, with zero warnings. A regression is therefore a real result, not noise. Run the specific lesson you touched plus the highest one.

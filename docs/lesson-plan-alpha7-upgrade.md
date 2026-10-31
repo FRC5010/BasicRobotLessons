@@ -1493,6 +1493,36 @@ rows (3 and 6 reproduce exactly on both alphas; the old 346 A and 336 A do not
 reproduce on either). Details in CLAUDE.md's "v3 Lessons 28–32 re-measured"
 block. Only Lesson 33's figures are still the old ones.
 
+**Alpha-8, Lesson 33 rebuilt on WPILib's `SysIdRoutine` and re-measured,
+2026-10-31.** Both Lesson 33 decisions of 2026-10-30 are done. The lesson now
+wires up `org.wpilib.command3.sysid.SysIdRoutine` (a `Config` from
+`Config.defaults()` or `Config.useDataLog(...)`, a `SysIdMechanism` of a drive
+lambda, a log lambda, the `Mechanism` and a name, `Direction.FORWARD`/`REVERSE`)
+instead of the hand-built class, which is deleted along with the text that
+explained it and the "no `finallyDo`" discussion; no other snapshot, tool or
+`V3_DELETIONS` entry referred to it. `RobotUtility` uses plain `back()`/`faceUp()`
+triggers: re-measured on the final code through T,U,T,U,U,T, three runs at each
+of the two ramp configs, every Utility selection ramped, and holding the buttons
+while switching to Teleop left the wheel at idle (3.59 V) in all six runs. The
+inventory rows 96–107 are filled in. What changed in the text: the percent of
+steady state (38–82% at 1 V/s, 77–95% at 0.25 V/s, from 36.1–81.3 and
+75.7–95.3, which an alpha-7 build of the new probe shows is a sampling
+difference of about two ticks in the old probe, not alpha-8), the steady 8.5
+rot/s per volt, the coast-down callout (it quoted the 0.25 V/s run in a section
+where the student has the 1 V/s defaults; now 13 rot/s at 1.6 s), the elevator
+figures (2.599 and 1.503 m; 1.885 / 3.794 / 7.605 m; 1.08–1.10 / 0.62–0.63 /
+0.30 m; homing 3.5 s against 17.3 s) and the 0.05 V figure (0.41 rot/s, 0.37
+after two seconds; it came from the classic Lesson 29, not v3 Lesson 28). **New
+and worth a decision:** the lesson now says what a by-hand least-squares fit of
+the logged voltage and velocity gives (kV 0.118, kA 0.106, and kS 0.90 V at the
+default ramp and 0.23 V at 0.25 V/s when the fit has no acceleration term, which
+is `kA × ramp rate ÷ kV` and matches the classic Lesson 34's 0.89 and 0.23, but
+under 0.01 V at either ramp rate when it does) and says it cannot tell which one
+the SysId tool makes. Whether the tool fits acceleration on the quasistatic data
+was not checked (its source was not reachable). Replay of a recorded session
+of all four tests matched on every robot output. Details in CLAUDE.md's "v3 Lesson
+33 rebuilt on WPILib's `SysIdRoutine`" block.
+
 **What the AdvantageKit pass leaves: only Lesson 34.** Lessons 13–33 record
 their readings with `processInputs`, their decisions with `recordOutput`,
 and replay. The `Field2d` widget, B-Line's own values and the SysId signals

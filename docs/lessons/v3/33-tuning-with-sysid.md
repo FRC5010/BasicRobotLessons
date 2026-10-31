@@ -7,13 +7,11 @@ measure what a spec sheet can't tell you.
 **New Java concepts**
 - `Trigger.and(...)`, from Lesson 22, on two buttons this time — so a
   characterization run needs both held at once.
-- **`EventLoop`** — a list of button checks that runs only when you say so,
-  here once per tick of one opmode.
 
 **New robot concepts**
-- **`SysIdRoutine`** — a tool that drives a mechanism open loop in two
-  deliberate patterns and logs exactly what it needs to fit `kS`/`kV`/`kA`
-  from the result, instead of you computing them.
+- **`SysIdRoutine`** — WPILib's own tool for Commands V3. It drives a
+  mechanism open loop in two deliberate patterns and logs exactly what it
+  needs to fit `kS`/`kV`/`kA` from the result, instead of you computing them.
 - **`@Utility`** — a third opmode category, alongside `@Teleop` and
   `@Autonomous`, for things a robot does that aren't driving or an
   autonomous plan. Characterization lives here, in its own opmode, not
@@ -48,20 +46,14 @@ agree, the spec-sheet math was a good stand-in. Where they don't, the
 difference has a name: friction, efficiency, or a mass that isn't what you
 thought.
 
-Here's something worth knowing before you write a line of code: **the real
-`SysIdRoutine` doesn't exist yet on this framework.** It was built for
-Commands V2's `Subsystem`/`Command` types, and this alpha hasn't ported it to
-`Mechanism`/coroutines. That's the same kind of gap Lesson 16 ran into with
-maple-sim — a real tool this course wants that the framework hasn't caught up
-to — and the answer is the same one Lesson 16 gave: build it yourself,
-against the one piece that *did* get ported. `SysIdRoutineLog` — the class
-that actually writes the measurements to disk — exists and works exactly like
-it always has. This lesson builds a small class around it that reproduces the
-real routine's two test shapes, and the `.wpilog` it records is genuinely
-readable by the same analysis tool a WPILib `SysIdRoutine` would have
-produced. You're not missing out on the real thing here — you're building the
-part of it the framework hasn't shipped yet, on top of the part that already
-works.
+Here's the good news: **you don't have to build the tool.** Commands V3 ships
+its own `SysIdRoutine`, in `org.wpilib.command3.sysid`, written for
+`Mechanism`s and coroutines. It does the part that's easy to get subtly
+wrong (the ramp, the step, the cleanup when a run ends) and writes its
+measurements to the log the SysId analysis tool reads. What it can't know is
+how *your* motor takes a voltage and how *your* sensors report back, so the
+work in this lesson is wiring those two things up, and then deciding whether
+to believe what comes out.
 
 This course can't put a real Kraken in front of you — it's a docs-only repo
 running in simulation. What it *can* do is teach you the tool for real, verify
@@ -161,134 +153,36 @@ inheritance shape has been paying for itself since Lesson 18.
 
 ---
 
-## 4. Build a `SysIdRoutine`
+## 4. Meet `SysIdRoutine`
 
-The real WPILib class has two collaborating pieces: a `Config` (how fast to
-ramp, how big a step, how long to run) and a `Mechanism` (how to drive it and
-how to log it). That second name is a problem here — `org.wpilib.command3.
-Mechanism` is already this course's base class for every subsystem, and a
-nested type with the same name would shadow it. So this version folds that
-piece's two callbacks straight into the constructor instead of wrapping them
-in their own type. Same information, one name conflict avoided.
+Nothing to type in this section: it's the tour of a class WPILib already wrote,
+so the next section's code makes sense. `SysIdRoutine` lives in
+`org.wpilib.command3.sysid`, and you build one out of two things.
 
-**Create `src/main/java/first/robot/commands/SysIdRoutine.java`, in three pieces.**
+**A `Config`** says how fast to ramp, how big a step to take, and how long to
+run before the routine stops itself. `SysIdRoutine.Config.defaults()` is 1 volt
+per second, 7 volts and 10 seconds. `SysIdRoutine.Config.useDataLog(rampRate,
+stepVoltage, timeout)` is the same thing with your own three numbers, and
+you'll want it in section 7. (There's also a four-argument constructor whose
+last argument sends the test state somewhere other than WPILib's own log. This
+course keeps the log.)
 
-**Piece 1 — the two records that hold configuration, and the fields:**
+**A `SysIdRoutine.SysIdMechanism`** says how to reach one particular
+mechanism. The name is the awkward bit: `org.wpilib.command3.Mechanism` is
+already the base class of every subsystem in this course, so WPILib called
+this one `SysIdMechanism`. It takes four things, in this order:
 
-```java
-package first.robot.commands;
+- `drive` — a lambda that receives a `Voltage` and sends it to the motor.
+- `log` — a lambda that receives a `SysIdRoutineLog` and reports what the
+  mechanism is doing right now, voltage and velocity.
+- the `Mechanism` being characterized. The routine's commands require it, so
+  the scheduler still allows one command at a time on it, same as every
+  command you've built since Lesson 1.
+- a name, which ends up in the log keys.
 
-import static org.wpilib.units.Units.Second;
-import static org.wpilib.units.Units.Seconds;
-import static org.wpilib.units.Units.Volts;
-
-import java.util.function.Consumer;
-import java.util.function.DoubleConsumer;
-
-import org.wpilib.command3.Command;
-import org.wpilib.command3.Mechanism;
-import org.wpilib.sysid.SysIdRoutineLog;
-import org.wpilib.system.Timer;
-import org.wpilib.units.VoltageUnit;
-import org.wpilib.units.measure.Time;
-import org.wpilib.units.measure.Velocity;
-import org.wpilib.units.measure.Voltage;
-
-/** A SysId characterization routine for a single mechanism. */
-public final class SysIdRoutine {
-  /** Hardware-independent configuration for a SysId test routine. */
-  public record Config(Velocity<VoltageUnit> rampRate, Voltage stepVoltage, Time timeout) {
-    /** 1 V/s ramp, 7 V step, 10 s timeout — the same defaults the real tool ships. */
-    public Config() {
-      this(Volts.of(1).per(Second), Volts.of(7), Seconds.of(10));
-    }
-  }
-
-  /** Motor direction for a SysId test. */
-  public enum Direction { kForward, kReverse }
-
-  private final Config m_config;
-  private final DoubleConsumer m_drive;
-  private final Consumer<SysIdRoutineLog> m_log;
-  private final Mechanism m_mechanism;
-  private final SysIdRoutineLog m_routineLog;
-
-  /**
-   * @param config Hardware-independent parameters for the routine.
-   * @param mechanism The mechanism being characterized — this routine's requirement.
-   * @param name The mechanism's name, as it will appear in the analysis tool.
-   * @param drive Sends a raw voltage to the mechanism's motor.
-   * @param log Reports the mechanism's current measurements onto the supplied log.
-   */
-  public SysIdRoutine(
-      Config config, Mechanism mechanism, String name, DoubleConsumer drive,
-      Consumer<SysIdRoutineLog> log) {
-    m_config = config;
-    m_mechanism = mechanism;
-    m_drive = drive;
-    m_log = log;
-    m_routineLog = new SysIdRoutineLog(name);
-  }
-```
-
-`Config` is a `record` holding the three numbers a run needs, defaulted the
-same way the real tool defaults them. `Direction` picks which way to drive.
-The constructor's last two parameters — `drive` and `log` — are exactly the
-real class's `Mechanism` piece, just passed straight through instead of
-boxed up: `drive` is "send this voltage," `log` is "report what happened,"
-and `mechanism` is the actual `Mechanism` this routine requires, so the
-scheduler still enforces one command at a time on it, same as every command
-you've built since Lesson 1.
-
-**Piece 2 — the two test shapes:**
-
-```java
-  /** A slow voltage ramp, so the mechanism is never far from equilibrium: reads kS and kV. */
-  public Command quasistatic(Direction direction) {
-    double sign = direction == Direction.kForward ? 1.0 : -1.0;
-    SysIdRoutineLog.State state = direction == Direction.kForward
-        ? SysIdRoutineLog.State.QUASISTATIC_FORWARD
-        : SysIdRoutineLog.State.QUASISTATIC_REVERSE;
-    double rampVoltsPerSec = m_config.rampRate().in(Volts.per(Second));
-
-    return m_mechanism.run(coroutine -> {
-          Timer timer = new Timer();
-          timer.start();
-          while (!timer.hasElapsed(m_config.timeout().in(Seconds))) {
-            m_drive.accept(sign * timer.get() * rampVoltsPerSec);
-            m_log.accept(m_routineLog);
-            m_routineLog.recordState(state);
-            coroutine.yield();
-          }
-          stop();
-        })
-        .whenCanceled(this::stop)
-        .named("SysId Quasistatic " + direction);
-  }
-
-  /** A fixed voltage step, so the mechanism accelerates hard: reads kA. */
-  public Command dynamic(Direction direction) {
-    double sign = direction == Direction.kForward ? 1.0 : -1.0;
-    SysIdRoutineLog.State state = direction == Direction.kForward
-        ? SysIdRoutineLog.State.DYNAMIC_FORWARD
-        : SysIdRoutineLog.State.DYNAMIC_REVERSE;
-    double stepVolts = m_config.stepVoltage().in(Volts) * sign;
-
-    return m_mechanism.run(coroutine -> {
-          Timer timer = new Timer();
-          timer.start();
-          while (!timer.hasElapsed(m_config.timeout().in(Seconds))) {
-            m_drive.accept(stepVolts);
-            m_log.accept(m_routineLog);
-            m_routineLog.recordState(state);
-            coroutine.yield();
-          }
-          stop();
-        })
-        .whenCanceled(this::stop)
-        .named("SysId Dynamic " + direction);
-  }
-```
+From a routine you get commands, two tests in each of two directions:
+`quasistatic(direction)` and `dynamic(direction)`, where `direction` is
+`SysIdRoutine.Direction.FORWARD` or `SysIdRoutine.Direction.REVERSE`.
 
 **`quasistatic`** ramps voltage up slowly — 1 V per second by default — so
 the mechanism is never far from equilibrium; the relationship between volts
@@ -298,36 +192,12 @@ fixed voltage — 7 V by default — and watches the mechanism accelerate hard.
 One test holds still long enough to read `kS` and `kV` off it; the other
 moves fast enough to read `kA` off it. Neither alone gives you all three.
 
-Both are a `while` loop wrapped in `m_mechanism.run(coroutine -> ...)` — the
-same shape every timed command in this course has used since Lesson 6's
-`driveDistance`. Every tick it drives a voltage, tells the log what happened,
-and calls `coroutine.yield()` to hand control back until the timeout runs
-out. Then it stops.
-
-**Piece 3 — cleanup, on every exit path:**
-
-```java
-  /**
-   * Zero volts and NONE, whether the run finished on its own or got interrupted — a coroutine
-   * abandons everything after its last yield when canceled, so both endings have to say this.
-   */
-  private void stop() {
-    m_drive.accept(0.0);
-    m_routineLog.recordState(SysIdRoutineLog.State.NONE);
-  }
-}
-```
-
-That comment is doing real work, and it's worth spelling out. `.whenCanceled(
-this::stop)` looks like it should be the only place `stop()` needs calling —
-but Lesson 6 already taught you that a coroutine's own `.whenCanceled(...)`
-only fires when something **cancels** the command from outside. Letting the
-`while` loop simply run out — the timeout elapsing on its own — is a
-*different* ending, and `.whenCanceled(...)` never sees it. That's why `stop()`
-is called explicitly at the bottom of both loops in piece 2, *and* wired to
-`.whenCanceled(...)` here. Two call sites, because there is still no single
-"this runs no matter how the command ends" hook in this framework — you write
-the cleanup once and wire it to both endings, the same way `driveDistance` did.
+Both commands call your `drive` and `log` lambdas once per tick for as long as
+they run. A test ends when its timeout runs out, or when something cancels
+it (letting go of a button will, in the next section). **Either way the
+routine drives zero volts and records that the test has ended**, so there's
+no cleanup for you to remember. Measured: with two tests run to their timeout and two cancelled by letting
+go, each of the four left a `none` in the log to mark its end.
 
 ---
 
@@ -336,31 +206,33 @@ the cleanup once and wire it to both endings, the same way `driveDistance` did.
 **Add to `Flywheel.java`'s imports:**
 
 ```java
-import static org.wpilib.units.Units.Second;
-import static org.wpilib.units.Units.Seconds;
 import static org.wpilib.units.Units.Volts;
 
-import first.robot.commands.SysIdRoutine;
+import org.wpilib.command3.sysid.SysIdRoutine;
 ```
 
 **Add to `Flywheel`, next to `m_disconnected`:**
 
 ```java
 private final SysIdRoutine m_sysId = new SysIdRoutine(
-    new SysIdRoutine.Config(), this, "flywheel",
-    volts -> m_io.setVoltage(volts),
-    log -> log.motor("flywheel")
-        .voltage(Volts.of(m_inputs.appliedVolts))
-        .angularVelocity(RotationsPerSecond.of(m_inputs.velocityRps)));
+    SysIdRoutine.Config.defaults(),
+    new SysIdRoutine.SysIdMechanism(
+        volts -> m_io.setVoltage(volts.in(Volts)),
+        log -> log.motor("flywheel")
+            .voltage(Volts.of(m_inputs.appliedVolts))
+            .angularVelocity(RotationsPerSecond.of(m_inputs.velocityRps)),
+        this, "flywheel"));
 ```
 
-Read the four arguments as the four things the real routine needs: `Config`
-left at its defaults for now (you'll have a reason to change it in a
-minute), `this` as the mechanism being characterized, `"flywheel"` as its
-name in the log, `volts -> m_io.setVoltage(volts)` as the drive callback —
-straight through the door section 3 opened — and the log callback:
-`log.motor("flywheel")` names the motor, and `.voltage(...)`/
-`.angularVelocity(...)` chain onto it, one call per value the fit needs.
+Read it as the two things from section 4. `Config.defaults()` for now (you'll
+have a reason to change it in a minute). Then the `SysIdMechanism`'s four
+arguments: the drive lambda sends the `Voltage` it's given straight through
+the door section 3 opened, unpacking it with `.in(Volts)` because
+`setVoltage` takes a plain number; the log lambda names a motor with
+`log.motor("flywheel")` and chains `.voltage(...)` and `.angularVelocity(...)`
+onto it, one call per value the fit needs, from the readings `Flywheel`
+already keeps; `this` is the mechanism being characterized; and `"flywheel"`
+is its name in the log.
 
 **Add two command factories to `Flywheel`, below `getSpeed()`:**
 
@@ -376,8 +248,8 @@ public Command sysIdDynamic(SysIdRoutine.Direction direction) {
 }
 ```
 
-Two commands, but four ways to run them: `SysIdRoutine.Direction.kForward`
-and `kReverse`, on each.
+Two commands, but four ways to run them: `SysIdRoutine.Direction.FORWARD`
+and `REVERSE`, on each.
 
 Now the button bindings — and here's a real choice worth making deliberately.
 Every opmode you've built so far has been Teleop or Autonomous, and it would
@@ -395,8 +267,7 @@ driving and isn't an autonomous plan. A `@Utility` opmode is selected
 separately on the driver station, the same way switching between `RobotAuto`
 and `RobotAutoBox` back in Lesson 9 was — and Lesson 9's finding carries
 over: bindings belong to the opmode that made them, and selecting a
-different opmode switches them off. There's one catch in how buttons are
-shared, handled in the code below. Put characterization in its own opmode
+different opmode switches them off. Put characterization in its own opmode
 and there is no button combination on `RobotTeleop`, however unlikely, that
 can reach it. You'd have to select "characterize" on purpose first.
 
@@ -405,12 +276,11 @@ can reach it. You'd have to select "characterize" on purpose first.
 ```java
 package first.robot.opmode;
 
-import org.wpilib.event.EventLoop;
+import org.wpilib.command3.sysid.SysIdRoutine;
 import org.wpilib.opmode.PeriodicOpMode;
 import org.wpilib.opmode.Utility;
 
 import first.robot.Robot;
-import first.robot.commands.SysIdRoutine;
 
 /**
  * A separate opmode for characterization, deliberately reachable only from
@@ -418,67 +288,42 @@ import first.robot.commands.SysIdRoutine;
  */
 @Utility
 public class RobotUtility extends PeriodicOpMode {
-  /**
-   * This opmode's own button loop. It is only polled in periodic(), so these
-   * bindings can only fire while this opmode is the one running.
-   */
-  private final EventLoop m_loop = new EventLoop();
-
   /** The Robot instance is passed into the opmode via the constructor. */
   public RobotUtility(Robot robot) {
     // Four two-button combinations, so nobody trips a characterization run
     // reaching for a single button by accident — the same "hard to do by
     // accident" reasoning that put homing on its own button back in
     // Lesson 21, one guard further out than that.
-    robot.driverController.back(m_loop).and(robot.driverController.faceUp(m_loop))
-        .whileTrue(robot.flywheel.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
-    robot.driverController.back(m_loop).and(robot.driverController.faceDown(m_loop))
-        .whileTrue(robot.flywheel.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
-    robot.driverController.start(m_loop).and(robot.driverController.faceUp(m_loop))
-        .whileTrue(robot.flywheel.sysIdDynamic(SysIdRoutine.Direction.kForward));
-    robot.driverController.start(m_loop).and(robot.driverController.faceDown(m_loop))
-        .whileTrue(robot.flywheel.sysIdDynamic(SysIdRoutine.Direction.kReverse));
+    robot.driverController.back().and(robot.driverController.faceUp())
+        .whileTrue(robot.flywheel.sysIdQuasistatic(SysIdRoutine.Direction.FORWARD));
+    robot.driverController.back().and(robot.driverController.faceDown())
+        .whileTrue(robot.flywheel.sysIdQuasistatic(SysIdRoutine.Direction.REVERSE));
+    robot.driverController.start().and(robot.driverController.faceUp())
+        .whileTrue(robot.flywheel.sysIdDynamic(SysIdRoutine.Direction.FORWARD));
+    robot.driverController.start().and(robot.driverController.faceDown())
+        .whileTrue(robot.flywheel.sysIdDynamic(SysIdRoutine.Direction.REVERSE));
   }
 
   @Override
   public void periodic() {
-    m_loop.poll();
+    /* Nothing to do each tick: the bindings above do all the work. */
   }
 }
 ```
 
 It's built the same way `RobotTeleop` and `RobotAuto` are — extend
 `PeriodicOpMode`, take the shared `Robot` in your constructor, wire bindings
-there — with one addition, the `EventLoop`. `@Utility` is annotated bare, no
-`name`/`group`, because there's only one of them, same as `@Teleop` — you'd
-only need to name it if this project grew a second characterization opmode
-the way Lesson 9 grew a second autonomous.
+there — and, like them, it has to override `periodic()` even when it has
+nothing to say. `@Utility` is annotated bare, no `name`/`group`, because
+there's only one of them, same as `@Teleop` — you'd only need to name it if
+this project grew a second characterization opmode the way Lesson 9 grew a
+second autonomous.
 
-**Every button needs `m_loop` handed to it, and `periodic()` must call
-`m_loop.poll()`.** Leave the loop off a button (`robot.driverController.back()`
-on its own) and you're back to the shared one. Forget `poll()` and nothing
-ever fires.
-
-Why not just write `back()` like `RobotTeleop` does? Because the controller
-hands out **one `Trigger` per button and remembers it** — and that
-`Trigger` stays tied to whichever opmode asked for it first. `RobotTeleop`
-already asks for `back()`, `faceUp()` and `faceDown()`, so if
-`RobotUtility` asked for them the ordinary way, the first time you selected
-it after Teleop its combos did nothing at all. Measured with the real
-`Robot` loop and `GamepadSim`: Teleop first, then `RobotUtility`, holding
-Back + the top face button for three seconds left the wheel at its 30 rot/s
-idle speed and the command at `Spin Up`. With the opmode's own `EventLoop`,
-the same sequence ramps (0.73 V and 5.6 rot/s after three seconds), and so
-do Teleop → Utility → Teleop → Utility and Utility → Utility. Buttons that
-`RobotTeleop` never touches (Start, the right bumper) dodge the problem too,
-but only until somebody binds them there; a loop of the opmode's own doesn't
-depend on what any other opmode does.
-
-It's also what makes the guard real. The loop is
-only polled while this opmode is running, so there is nothing for Teleop to
-trip, however the buttons are held. Measured: with Back + the top face button
-still held down, switching from `RobotUtility` to `RobotTeleop` leaves the
-flywheel at its idle speed (3.63 V) and `sysIdQuasistatic` stops.
+The opmode is also what makes the guard real. Its bindings exist only while
+it's the selected opmode, so there is nothing for Teleop to trip, however the
+buttons are held. Measured: with Back + the top face button still held down,
+switching from `RobotUtility` to `RobotTeleop` leaves the flywheel at its
+idle speed (3.59 V) and the `sysid-quasistatic-forward-flywheel` command gone.
 
 **`Trigger.and(...)`** is doing real work here too, not just saving buttons.
 In Lesson 22 it stacked a sensor reading onto a button; here it combines two
@@ -493,10 +338,12 @@ clearing two separate hurdles on purpose.
 Run the robot in simulation. In SimGUI, pick **RobotUtility** from the opmode
 selector — same move as picking **My Teleop** back in Lesson 1, just a
 different opmode — then set Robot State to enabled. Hold **Back + the top
-face button** for a few seconds — the wheel should spin up slowly and smoothly.
+face button** for a few seconds — the applied voltage climbs steadily, and the
+wheel, after a dip (see the note below), spins up slowly and smoothly.
 Let go, let it coast, then hold **Start + the top face button** — this time it should
 snap forward hard. Both directions work the same in reverse with the
-bottom face button instead.
+bottom face button instead. A test ends by itself when its timeout runs out
+(10 seconds at the defaults) even if you're still holding the buttons.
 
 Notice what *isn't* happening: nothing about `RobotTeleop` changed, and
 nothing in it needed to know characterization exists. Reselect **My
@@ -505,8 +352,8 @@ command is still there, untouched, because `RobotUtility` never touched it
 either.
 
 Every run lands in a log file, but not AdvantageKit's, and that's easy to
-trip over. `SysIdRoutineLog` writes through WPILib's own `DataLogManager`
-(its bytecode calls `DataLogManager.getLog()` directly), not through
+trip over. `SysIdRoutine` writes through `SysIdRoutineLog`, which uses WPILib's own
+`DataLogManager` (it calls `DataLogManager.getLog()` directly), not
 AdvantageKit's `Logger`. That's the log `DataLogManager.start()` opens in
 `startLogging()`, the line Lesson 13 kept so that everything published
 outside AdvantageKit still gets saved. So every run leaves **two** files in
@@ -515,7 +362,7 @@ WPILib's `WPILIB_….wpilog`, which is where the characterization data is.
 It has its own keys there: `sysid-test-state-flywheel` for which test is
 running, and `voltage-flywheel-flywheel` / `velocity-flywheel-flywheel` for
 the readings `log.motor("flywheel")` published (the motor name and the
-routine's own name both happen to be `"flywheel"` here, which is why it
+mechanism's name both happen to be `"flywheel"` here, which is why it
 repeats). All three were read out of the `WPILIB_` file of a real run, and
 none of them is in the `akit_` file beside it. **For the analysis, open the
 `WPILIB_` file.**
@@ -523,10 +370,10 @@ none of them is in the `akit_` file beside it. **For the analysis, open the
 > **The wheel doesn't start from rest.** The `idle()` default command from
 > Lesson 28 is still what the flywheel is doing when you press the buttons,
 > so every run begins with the wheel at the 30 rot/s idle speed, and the
-> routine's first act is to cut its voltage to zero. Measured on a
-> quasistatic run: the wheel coasts down from 30 rot/s to 5.6 rot/s over the
-> first 2.5 seconds — by which point the ramp is only at 0.6 V — and only
-> then starts to climb. Everything in that stretch describes a wheel
+> routine's first act is to cut its voltage to zero. Measured on a forward
+> quasistatic run at the defaults: the wheel coasts down from 30 rot/s to
+> 13 rot/s over the first 1.6 seconds — by which point the ramp is at 1.5 V —
+> and only then starts to climb. Everything in that stretch describes a wheel
 > spinning down, not a wheel being ramped up. Look at the velocity plot
 > before you trust a fit, and ignore the part before speed turns upward.
 > Try It #7 asks what it would take to start from rest.
@@ -548,10 +395,14 @@ kFlywheelKV = 0.119  // volts per rotation/sec
 kFlywheelKA = 0.105  // volts per rotation/sec²
 ```
 
-`kV` should land close — within a few percent, verified in this course's own
-simulated run. `kA` should be in the right neighborhood. And `kS` — the
-number this course has never once been able to compute, only assert — will
-probably come back *nowhere near* 0.15. Possibly several times too big.
+`kV` should land close. A least-squares fit of this course's own simulated run
+(the four tests at the defaults, the coast-down at the start trimmed away),
+done by hand on the logged voltage and velocity rather than by the SysId
+tool, gives 0.118 against 0.119. `kA` should be in the right neighborhood
+too: that fit gives 0.106 against 0.105. And `kS` — the number this course has
+never once been able to compute, only assert — can come back *nowhere near*
+0.15. Fit just the two ramps, voltage against velocity with nothing else, and
+the default ramp gives 0.90 V: six times too big.
 
 Before you conclude the model was wrong: it might be. It also might be that
 the test was wrong for this mechanism, and section 7 is how you tell the
@@ -561,17 +412,16 @@ difference.
 
 ## 7. Is it real, or is it the test?
 
-Here's the number, measured in this course's own simulation so you have
-something concrete to check your own run against. The yardstick is the
-percent of steady-state speed the wheel has reached when the ramp passes a
-given voltage, where steady state is what the wheel settles at when that
-voltage is simply held (about 8.4 rot/s per volt, measured at 1–5 V). The
-tool's own curve fit isn't available inside this port's sandbox, but the
-shape of the effect is the same thing it would show. Starting from a
-standstill, the default 1 V/s ramp reaches only **36.1%–81.3%** of
-steady-state speed across 1–5 V — consistently short of where a truly
-quasistatic run should sit. `kV` comes
-back fine either way. Something is wrong, and it isn't the wheel.
+Here are the numbers, measured in this course's own simulation so you have
+something concrete to check your own run against. The first is a yardstick
+that needs no fitting at all: the percent of steady-state speed the wheel has
+reached when the ramp passes a given voltage, where steady state is what the
+wheel settles at when that voltage is simply held (about 8.5 rot/s per volt,
+measured at 1–5 V). A truly quasistatic ramp would read close to 100% at
+every voltage. Starting from a standstill, the default 1 V/s ramp reaches
+only **38%–82%** of steady-state speed across 1–5 V (38, 59, 71, 77 and 82%
+at 1, 2, 3, 4 and 5 V) — consistently short of where a truly quasistatic run
+should sit. Something is wrong, and it isn't the wheel.
 
 **Quasistatic only means something if the mechanism is actually close to
 equilibrium the whole time it runs.** The default ramp — 1 V per second —
@@ -581,9 +431,26 @@ neither: it's direct drive, it's light, and it responds fast. Ramped at
 test is quietly measuring some of its own ramp rate and reporting it back
 to you labeled `kS`.
 
+You can see how much with numbers you already own. A 1 V/s ramp makes the
+wheel gain 1 ÷ 0.119 = 8.4 rot/s every second just to keep pace, and `kA`
+charges 0.105 V for each rot/s² of that: 0.105 × 8.4 ≈ 0.88 V. A fit that
+explains the ramp with only a constant and a speed term has nowhere to put
+that voltage except the constant, so it reports it as `kS`. In general that
+leftover is `kA × ramp rate ÷ kV`, which is why it shrinks in proportion to
+the ramp rate. The fit of the two ramps in section 6 found 0.90 V, and
+`kV` came back 0.118 whichever ramp rate it was given: the back-EMF term was
+never the problem.
+
 The fix is one number.
 
-**Replace the `SysIdRoutine.Config()` in `Flywheel`:**
+**Add to `Flywheel`'s imports:**
+
+```java
+import static org.wpilib.units.Units.Second;
+import static org.wpilib.units.Units.Seconds;
+```
+
+**Replace the `m_sysId` field in `Flywheel`, comment included:**
 
 ```java
 // A quarter of the default ramp rate: this wheel is light and direct-drive,
@@ -591,18 +458,34 @@ The fix is one number.
 // Lesson 33 section 7. The longer timeout gives the slower climb room to
 // reach a useful voltage before the routine gives up on its own.
 private final SysIdRoutine m_sysId = new SysIdRoutine(
-    new SysIdRoutine.Config(Volts.of(0.25).per(Second), Volts.of(7), Seconds.of(30)),
-    this, "flywheel",
+    SysIdRoutine.Config.useDataLog(Volts.of(0.25).per(Second), Volts.of(7), Seconds.of(30)),
+    new SysIdRoutine.SysIdMechanism(
+        volts -> m_io.setVoltage(volts.in(Volts)),
+        log -> log.motor("flywheel")
+            .voltage(Volts.of(m_inputs.appliedVolts))
+            .angularVelocity(RotationsPerSecond.of(m_inputs.velocityRps)),
+        this, "flywheel"));
 ```
 
-A quarter of the ramp rate, and the timeout stretched to 30 seconds so the
-slower climb still has room to reach a useful voltage before the routine
-gives up and stops on its own. Re-run and re-analyze: at that slower ramp,
-this course's own measured run reaches **75.7%–95.3%** of steady-state speed
-across the same voltage range — closer to equilibrium at every point, which
-is exactly the direction a smaller apparent `kS` would move in. `kV` barely
-moves — the back-EMF term was never the problem. `kA`, which had been
-quietly corrupted right along with `kS`, improves the same way.
+The only change is the first argument: `Config.defaults()` became
+`Config.useDataLog(...)`, with a quarter of the ramp rate and the timeout
+stretched to 30 seconds so the slower climb still has room to reach a useful
+voltage before the routine gives up and stops on its own. Re-run and
+re-analyze: at that slower ramp, this course's own measured run reaches
+**77%–95%** of steady-state speed across the same voltage range — closer to
+equilibrium at every point, which is exactly the direction a smaller apparent
+`kS` would move in. The fit of the two ramps now gives 0.23 V (the arithmetic
+says 0.105 × 0.25 ÷ 0.119 ≈ 0.22), and `kV` is still 0.118. `kA` never needed
+the ramp: it comes from the dynamic test, which a slower ramp doesn't touch.
+
+One honest edge: the 0.90 V came from a fit with no term for acceleration.
+Give the fit one, all four tests together as `V = kS·sign(v) + kV·v + kA·a`,
+and the same logs give `kS` under 0.01 V, `kV` 0.118 and `kA` 0.106 at
+*either* ramp rate, which is the right answer for a wheel with no friction in
+it. This repo's checks can't run the SysId tool, so this lesson can't tell
+you which of those two fits it makes with your ramps. What it can tell you is
+that the yardstick above doesn't depend on any fit, and that a slow ramp
+gives the right answer under either.
 
 **The lesson isn't "trust the slower number more."** It's that a
 characterization result is only as good as the test that produced it, and a
@@ -642,8 +525,8 @@ with the forward soft limit off and then on:
 *Nothing to add — measured, not asserted:*
 
 ```
-no soft limit   : ended at 2.565 m  (well past the top)
-with soft limit : ended at 1.502 m, applied volts 0.000
+no soft limit   : ended at 2.599 m  (well past the top)
+with soft limit : ended at 1.503 m, applied volts 0.000
 ```
 
 That is exactly the distinction Lesson 20 drew when it added soft limits to
@@ -688,8 +571,8 @@ isn't an oversight — it's a measured trap this lesson walked into and is
 handing you the way out of. A first pass at this section added a matching
 *reverse* soft limit, at `kMinHeight`, the mirror image of the forward one
 above. It broke Lesson 31's already-passing `ElevatorHomingTest` — homing,
-which finishes in about 3.7 seconds, took 17.3, the carriage creeping
-down at about 2 cm/s instead of its usual 9. Not
+which finishes in about 3.5 seconds, took 17.3, the carriage creeping
+down at about 2 cm/s instead of its usual 9.7. Not
 refused outright — just slower, in a way that looked exactly like a weak
 motor rather than a limit doing its job. **That's the actual danger of a
 misconfigured limit: it doesn't fail loud, it fails by making the mechanism
@@ -725,9 +608,9 @@ travels before the ramp reaches 6 V:
 *Nothing to add — measured, not asserted:*
 
 ```
-ramp 1.00 V/s  ->  6 V after 6.0 s,   travelled 1.880 m
-ramp 0.50 V/s  ->  6 V after 12.0 s,  travelled 3.768 m
-ramp 0.25 V/s  ->  6 V after 24.0 s,  travelled 7.537 m
+ramp 1.00 V/s  ->  6 V after 6.0 s,   travelled 1.885 m
+ramp 0.50 V/s  ->  6 V after 12.0 s,  travelled 3.794 m
+ramp 0.25 V/s  ->  6 V after 24.0 s,  travelled 7.605 m
 ```
 
 **Halve the ramp rate and you double the distance.** The mechanism spends
@@ -751,9 +634,9 @@ jumps straight to full step voltage and stays there. Same widened rig, 1.5 secon
 *Nothing to add — measured, not asserted:*
 
 ```
-step 7.0 V  ->  travelled 1.101 m
-step 4.0 V  ->  travelled 0.623 m
-step 2.0 V  ->  travelled 0.300 m
+step 7.0 V  ->  travelled 1.08 to 1.10 m
+step 4.0 V  ->  travelled 0.62 to 0.63 m
+step 2.0 V  ->  travelled 0.30 m
 ```
 
 The default 7 V step eats **nearly three-quarters of the elevator's entire
@@ -790,22 +673,24 @@ forward and reverse genuinely different tests rather than mirror images.
 Here's the honest part, and it's worth sitting with rather than skating past.
 
 `FlywheelSim`, underneath everything in this course, has never modeled
-friction — Lesson 28 already proved this by hand, watching a wheel with
-`kS = 0.05` reach 0.37 rot/s from a standing start instead of staying put.
-So when you characterize the flywheel *in this simulation*, section 7's
-slower-ramp result isn't measuring hardware friction. It's measuring what's
-left of a ramp-rate artifact once you've mostly, but not perfectly, slowed
-it down enough to stop mattering. Slow the ramp further and it keeps
-shrinking toward zero, because zero is the actual answer this simulated
-wheel has always had — there was never any friction in it to find.
+friction, and Lesson 28 told you so. You can check it with the door you
+opened in section 3: send the wheel 0.05 V, far below what would break any real
+wheel free, and the simulated wheel spins up to 0.41 rot/s (0.37 after the
+first two seconds) where a real one wouldn't have twitched. So when you
+characterize the flywheel *in this simulation*, section 7's slower-ramp result
+isn't measuring hardware friction. It's measuring what's left of a ramp-rate
+artifact once you've mostly, but not perfectly, slowed it down enough to stop
+mattering. Slow the ramp further and it keeps shrinking toward zero, because
+zero is the actual answer this simulated wheel has always had — there was never
+any friction in it to find.
 
 That's not a failure of the exercise. It's the same thing Lesson 28 told you
 about `kS`, confirmed a second way: **a simulation can only teach you what it
-models.** `kV` and `kA` came back honest because `FlywheelSim`'s physics
-genuinely has a back-EMF term and genuinely has inertia — those measurements
-mean something. `kS` came back as "however close to zero I managed to get
-the test," because there was never a real friction number underneath it to
-converge on.
+models.** `kV` and `kA` came back honest (0.118 and 0.106 against the 0.119 and 0.105
+the course computed) because `FlywheelSim`'s physics genuinely has a back-EMF
+term and genuinely has inertia — those measurements mean something. `kS`
+came back as "however close to zero I managed to get the test," because there
+was never a real friction number underneath it to converge on.
 
 On your actual robot, this section reads differently, and better. The
 friction in a real Kraken's bearings is real. The efficiency loss in a real
@@ -868,20 +753,16 @@ just guessing at.
 The gains this course taught you to compute were never a finish line — they
 were a stand-in good enough to build thirty-two lessons of simulation on
 top of, and today you met the tool that replaces "stand-in" with "measured."
-Since the framework hadn't shipped that tool yet, you built it — a small
-`SysIdRoutine` around the one piece that *had* been ported,
-`SysIdRoutineLog`, reproducing the real routine's two shapes: a slow ramp for
-`kS`/`kV`, a fast step for `kA`, both landing in the same log this whole
-track has been writing to since Lesson 3.
+Commands V3 ships it ready-made: a `SysIdRoutine` that needs only two things
+from you, how to drive your motor and how to read it back, and gives you
+the two test shapes — a slow ramp for `kS`/`kV`, a fast step for `kA` — in
+a log the SysId analysis tool can read.
 
 Section 5 added a structural habit worth keeping past this lesson:
 **`@Utility`** gave characterization its own opmode instead of a corner of
 `RobotTeleop`, which turns "don't press these buttons during a match" from
 something you have to remember into something that's true by construction —
-you'd have to select the wrong opmode on purpose. The opmode's own
-`EventLoop` is what makes that true — a button check that only runs while its
-opmode does — and it was worth finding out the hard way that the shared
-button `Trigger`s don't give you that.
+you'd have to select the wrong opmode on purpose.
 
 The harder lesson sat in section 7: **a characterization is only as
 trustworthy as the test that produced it**, and a mechanism that never gets

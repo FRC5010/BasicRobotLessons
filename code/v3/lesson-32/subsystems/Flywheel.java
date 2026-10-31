@@ -38,9 +38,9 @@ public class Flywheel implements Mechanism {
 
   /**
    * ====== NEXT LESSON: ADD CODE HERE ======
-   * A characterization routine for this wheel: it needs a way to drive the motor with
-   * a raw voltage and a way to report voltage and speed, and its ramp rate has to
-   * suit how fast this wheel responds.
+   * A characterization routine for this wheel, WPILib's own: it needs a way to drive the
+   * motor with a raw voltage and a way to report voltage and speed, and its ramp rate
+   * has to suit how fast this wheel responds.
    */
 
   // A speedometer: one hub, two needles. There is nothing physical to draw
