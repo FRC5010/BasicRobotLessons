@@ -704,9 +704,9 @@ is back.
 8. **Remember a brownout.** `Power/BrownedOut` is a statement about now, and
    that's not always what you want. Turn every current limit off, put
    Lesson 29's tired battery in, and do the everything-at-once run again:
-   measured, `BrownedOut` switched between true and false over a hundred
-   times in a few seconds, and read false at the end with the battery back
-   at 11 V. Build an alert that says the battery has browned out *since
+   measured, `BrownedOut` switched between true and false dozens of times
+   in a few seconds (more than a hundred in most runs), and read false at
+   the end with the battery back at 11 V. Build an alert that says the battery has browned out *since
    boot*. It's the one alert on this robot that should be raised once and
    never cleared, so write it the way section 7 told you not to, and say in
    a comment why this one is different. Then put the limits and the battery

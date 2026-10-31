@@ -1288,9 +1288,8 @@ working inventory, not kept in the repo.
   - **Lesson 30 Try It #8** says `BrownedOut` "switched between true and
     false over a hundred times"; in these ten no-limits runs it changed about
     110–140 times in the eight that collapsed and about 25 in the two that
-    dipped and finished. Left as it was (it is a different claim from the one
-    this decision replaced, and Lesson 30 wasn't in scope); say so if it
-    should be reworded.
+    dipped and finished. Reworded 2026-10-31 to "dozens of times in a few
+    seconds (more than a hundred in most runs)".
   - **What the lesson says now:** the table above; "No limits browned out in
     every one of its ten runs. The other two got thirty each, because in them
     a brownout comes and goes from run to run, and a handful of runs can
