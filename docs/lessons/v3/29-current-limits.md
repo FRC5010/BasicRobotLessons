@@ -115,24 +115,33 @@ entitled to 70 A is 840 A of entitlement, and a battery cannot do that.
 
 Watch it break as the robot gets bigger. Same defaults, every motor
 stalled against a jammed mechanism and commanded at full output, just more
-motors sharing the one battery. The draw and the voltage settle after the
-first second, so these are the averages over the second after that:
+motors sharing the one battery. The draw and the voltage mostly settle
+after the first second, so these are the averages over the second after
+that:
 
 | Motors, all on defaults | Total draw | Battery sagged to | |
 |---|---|---|---|
 | 3 | 109 A | 9.82 V | fine |
 | 6 | 326 A | 5.48 V | **brownout** |
-| 9 | 346 A | 5.08 V | **brownout** |
-| 12 | 336 A | 5.32 V | **brownout** |
+| 9 | 384 A | 4.3 V | **brownout** |
+| 12 | 412–426 A | 3.6–4.3 V | **brownout** |
+
+*(Three runs of each. Three motors and six came out the same every time.
+Past six the rail stops being steady: some runs have ticks where it
+collapses to 0 V, or close to it, and the averages differ from run to run,
+which is why the 12-motor row is a range. Every average was well under
+6.3 V either way.)*
 
 Six motors is not an exotic scenario. Six motors is a swerve drivetrain
 plus two mechanisms — an ordinary second of an ordinary match.
 
-Notice the total stops growing past six — it isn't that the extra motors
-want less, it's that there's less battery left to give them. That's the
-death spiral in miniature: once the rail sags, every motor's own duty
-cycle throttles back with it, so the number stops climbing at exactly the
-point where the robot is already in trouble.
+Notice how much more slowly the total grows past six. Going from three
+motors to six adds over 200 A; six to nine adds about 60, and nine to
+twelve about 35. It isn't that the extra motors want less, it's that
+there's less battery left to give them. That's the death spiral in
+miniature: once the rail sags, every motor's own duty cycle throttles back
+with it, so the total creeps up ever more slowly at exactly the point where
+the robot is already in trouble.
 
 **The defaults are a floor, not a plan.** They keep any one motor from
 cooking itself, which is worth having, and they will not save a robot
@@ -527,35 +536,52 @@ end of an event is closer to 11 V with twice the internal resistance.
     RoboRioSim.setVInVoltage(BatterySim.calculateLoadedBatteryVoltage(11.0, 0.04, getTotalCurrentAmps()));
 ```
 
-Run the same three configurations again, ten times each:
+Run the same three configurations again. No limits browned out in every one
+of its ten runs. The other two got thirty each, because in them a brownout
+comes and goes from run to run, and a handful of runs can miss it:
 
 | Configuration, 11 V battery, 40 mΩ | Peak draw | Battery low point | Browned out |
 |---|---|---|---|
-| No limits at all | 204–619 A | 0.00–2.86 V | **10 of 10** |
-| Phoenix defaults | 84–153 A | 4.87–7.65 V | **2 of 10** |
-| The budget above | 67–88 A | 7.50–8.31 V | 0 of 10 |
+| No limits at all | 226–642 A | 0.00–1.94 V | **10 of 10** |
+| Phoenix defaults | 85–129 A | 5.82–7.62 V | **4 of 30** |
+| The budget above | 65–121 A | 6.17–8.42 V | **1 of 30** |
 
-With no limits the robot browns out the moment you enable it, before you've
-pressed a thing: the flywheel's idle spin-up alone drags the rail under
-6.3 V and `Power/BrownedOut` goes true. Then ask for everything at once. In
-seven of the ten runs the battery collapsed all the way to 0 V. The elevator
-got only 0.13–0.52 m on its way to 1.45 m and stalled, and the flywheel
-reached 39–51 rot/s and then fell to nothing. In the other three the rail
-dipped to 1.0–2.9 V and the robot carried on: the elevator reached the top
-every time, and the flywheel made its 60 rot/s in two of them.
+With no limits the robot browns out about a third of a second after you
+enable it, before you've pressed a thing: the flywheel's idle spin-up alone
+pulls 119–130 A, which drags the rail under 6.3 V, and `Power/BrownedOut`
+goes true. Then ask for everything at once. In eight of the ten runs the
+battery collapsed all the way to 0 V. The elevator got only 0.12–0.53 m on
+its way to 1.45 m and stalled, and the flywheel reached 39–48 rot/s and
+then fell to nothing. In the other two the rail dipped to 1.9 V and the
+robot carried on: the elevator reached the top and the flywheel made its
+60 rot/s in both.
 
-Phoenix's defaults are a gamble on this battery. Eight runs got through with
-0.3–1.4 V to spare. The other two browned out partway through the moves,
-dipping to 4.87 V for a few ticks, and still finished. Those two were the
-runs whose peak reached 153 A; none of the other eight passed 111 A. Same
-code, same moves, so you can't know beforehand which kind of run you'll get.
+The other two rows need one piece of arithmetic. On this battery the rail is
+11 V minus 40 mΩ times the current, so **6.3 V is 117.5 A**. A brownout here
+means the total draw reached 117.5 A on a single tick, and nothing more.
 
-Only the budget was safe every time. Its worst run stayed 1.2 V above the
-line.
+Phoenix's defaults are a gamble on this battery. Twenty-six of the thirty
+runs got through, but the typical one bottomed out at 6.6 V, only 0.3 V
+above the line. The other four browned out partway through the moves, each
+for one or two ticks, with low points of 5.82–6.29 V, and still finished.
+Those four were the runs whose peak passed 117.5 A (118, 119, 125 and
+129 A); none of the other twenty-six passed 115.4 A.
+
+The budget is much safer, and it still isn't safe. Its typical run bottomed
+out at 7.9 V, 1.6 V above the line, and only two of its thirty went under
+7 V, against twenty-one of the defaults' thirty. But one run browned out: a
+single tick at 120.7 A, when the elevator's supply current read 83 A
+against its 40 A limit, beside the flywheel's 38 A, and the rail dipped to
+6.17 V for that one tick. Everything still finished. The next-worst budget
+run peaked at 114 A and cleared the line by 0.13 V. A budget lowers the
+odds; it doesn't make them zero.
+
+Same code, same moves, so you can't know beforehand which kind of run
+you'll get.
 
 *(The peaks vary for the same reason as on the fresh battery, and the
-no-limits ones vary the most: the seven runs that collapsed peaked at
-368–619 A, the three that didn't at 204–249 A.)*
+no-limits ones vary the most: the eight runs that collapsed peaked at
+510–642 A, the two that didn't at 226–228 A.)*
 
 > **The one thing to carry away from watching this:** nothing in the log
 > said "brownout" until you added that line. Everything else just looked
@@ -582,9 +608,10 @@ no-limits ones vary the most: the seven runs that collapsed peaked at
    intake. Detect it and light the LEDs from Lesson 23.
 4. **Budget for a sag.** Section 7's tired battery was 11 V and 40 mΩ. Try
    11.5 V and 30 mΩ, a realistic third-match battery, and then find the
-   internal resistance at which even the budget browns out. Run each
-   setting a few times, because one run can get lucky. That's the
-   battery you should replace before a match.
+   internal resistance at which even the budget browns out most of the
+   time. Run each setting many times, because one run can get lucky: the
+   budget above lost one run in thirty. That's the battery you should
+   replace before a match.
 5. **Prioritise.** Right now every mechanism gets its budget regardless
    of what else is happening. Make the flywheel's limit drop while the
    elevator is moving. Then decide whether you actually want that,

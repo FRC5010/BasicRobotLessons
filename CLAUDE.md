@@ -685,9 +685,10 @@ method as 14–27:**
     peaked at 153 A; the other eight stayed at or under 111 A. At the first
     no-limits brownout (0.22–0.24 s after enable) the flywheel is the only
     motor drawing (126–132 A). Try It #4 now says to run each setting a few
-    times. (Alpha-8: the budget browned out in 1 of 30 runs and the defaults
-    in 4 of 30, on alpha-7 too; this story is under review, see the Lessons
-    28–32 block.)
+    times. (**Superseded 2026-10-31:** over thirty alpha-8 runs the budget
+    browned out in 1 and the defaults in 4, and on alpha-7 too, so the text
+    no longer says the budget is safe every time and the table is the
+    thirty-run one; see the Lessons 28–32 block.)
   - Why peaks vary: they're spikes a few ticks long that 20 ms samples
     catch or miss (the elevator's own supply peak was 6.8 A in one run and
     32.4 A in another, on the same climb). The fresh table says so.
@@ -1211,7 +1212,21 @@ working inventory, not kept in the repo.
   346 A / 5.08 V and 12 → 336 A / 5.32 V were not reproduced on either alpha**
   with a rig rebuilt from the notes (the original probe wasn't kept), and "the
   total stops growing past six" is weaker than this rig shows (326 → ~384 →
-  ~420 A). **Left as it was; reported to the user for a decision.**
+  ~420 A). **User decision 2026-10-31, done:** the 9 and 12 rows say
+  **384 A / 4.3 V** (383.4, 384.3 and 384.3 A, mean 384.0; 4.31–4.33 V) and
+  **412–426 A / 3.6–4.3 V** (411.9 / 4.30, 422.1 / 3.56, 425.7 / 3.57), the
+  3 and 6 rows are kept, an italic note under the table says three runs each,
+  that 3 and 6 came out the same every time and that past six some runs have
+  ticks where the rail collapses to 0 V or close to it (the probe's minimum
+  after 0.2 s was 1.70 V for 9 motors in one run and 0.00 V for 12 motors in
+  two; it covers the whole 3 s, so the lesson doesn't say *when*), and the
+  lead-in says the draw "mostly" settles after the first second. The
+  "stops growing" sentence became "grows far more slowly past six": +217 A
+  from 3 to 6 motors, +58 A from 6 to 9, +36 A from 9 to 12 (means), written
+  as "over 200 A", "about 60" and "about 35". The death-spiral explanation is
+  kept, with "the total creeps up ever more slowly" where it said "stops
+  climbing". The rig is the rebuilt one (`Bare29Probe`, `MODE=stall`), not the
+  original, so the old 346 A / 336 A are unexplained rather than disproved.
 - **Lesson 29, the fresh battery (LOOP, ten runs per configuration, the
   Back / D-pad up / left trigger + left face button recipe; thirty for no
   limits).** Alpha-7 with the same probe reproduces the 2026-10-29 ranges (no
@@ -1223,25 +1238,74 @@ working inventory, not kept in the repo.
   (two runs above 90 A, at 92.1 and 109.9). Elevator 1.450 m and flywheel
   60.5 rot/s every run. The lesson's prose and table say these now. The
   cause of the alpha-8 shift isn't established.
-- **Lesson 29, the tired battery — NOT CHANGED, the measured story differs
-  from the text; waiting for a decision.** Same recipe with
-  `calculateLoadedBatteryVoltage(11.0, 0.04, total)`. Alpha-8, first ten runs:
+- **Lesson 29, the tired battery (user decision 2026-10-31, done: the table
+  reports thirty runs, and the text no longer says the budget is safe).**
+  Same recipe with `calculateLoadedBatteryVoltage(11.0, 0.04, total)`.
+  Alpha-8, no limits ten runs and the defaults and the budget thirty each:
   no limits **226–642 A / 0.00–1.94 V, 10 of 10 browned out** (8 collapsed to
-  0.00 V, the elevator reaching 0.12–0.53 m and the flywheel peaking
-  38.5–48.3 rot/s then falling to 0; 2 dipped to 1.87 and 1.94 V and
-  finished); defaults 85–114 A / 6.43–7.60 V, **0 of 10**; budget 65–121 A /
-  6.17–8.42 V, **1 of 10** (a one-tick elevator supply spike of 83 A against
-  its 40 A limit, beside the flywheel's 38 A). The lesson says 2 of 10 and 0
-  of 10 and "Only the budget was safe every time. Its worst run stayed 1.2 V
-  above the line." More runs show this is sampling, not alpha-8. Alpha-8,
-  thirty runs each: defaults **4 of 30** (lows 5.82–7.62 V, peaks 85–129 A),
-  budget **1 of 30** (6.17 V; near misses at 6.43 V and 7.16 V). Alpha-7, same
-  probe: defaults 2 of 20 (the first ten 2 of 10, the next ten 0 of 10), budget
-  **1 of 20** (6.14 V at 121.5 A, in the first ten) and no limits 10 of 10 (9
-  collapsed, 1 dipped to 1.06 V). So the 2026-10-29 "0 of 10" for the budget
-  was luck on alpha-7 too: over both alphas defaults browned out in 6 of 50
-  runs (12%) and the budget in 2 of 50 (4%). **"The budget is the only
-  configuration safe every time" is not what the data says.**
+  0.00 V, peaks 510–642 A, the elevator reaching 0.12–0.53 m and the flywheel
+  peaking 38.5–48.3 rot/s then falling to 0; 2 dipped to 1.87 and 1.94 V,
+  peaks 226 and 228 A, and finished with the elevator at 1.450 m and the
+  flywheel at 60.5 rot/s); defaults **85–129 A / 5.82–7.62 V, 4 of 30**;
+  budget **65–121 A / 6.17–8.42 V, 1 of 30**. The first ten runs had shown
+  defaults 0 of 10 and budget 1 of 10, so ten was too few for the rare rows.
+  Alpha-7, same probe: defaults 2 of 20 (the first ten 2 of 10, the next ten
+  0 of 10), budget **1 of 20** (6.14 V at 121.5 A, in the first ten) and no
+  limits 10 of 10 (9 collapsed, 1 dipped to 1.06 V). Over both alphas the
+  defaults browned out in 6 of 50 runs (12%) and the budget in 2 of 50 (4%),
+  so the 2026-10-29 "0 of 10" for the budget was luck on alpha-7 too.
+  - **The arithmetic that makes the rows readable:** the rail is 11 V − 40 mΩ
+    × the current, so the 6.3 V line is **117.5 A** (checked: 117.8 A → 6.29 V,
+    120.7 A → 6.17 V, 129.4 A → 5.82 V). The voltage a tick reads comes from
+    the previous tick's current, so a brownout is a tick whose total reached
+    117.5 A. The text says so.
+  - **Defaults, thirty runs** (read from the `akit_` logs, `Power/*`,
+    `Elevator/SupplyCurrentAmps` and the other supply-current keys; the
+    recordings and analysis scripts are in the working files, not the repo):
+    the four brownouts peaked at 117.8, 119.3, 124.6 and 129.4 A (lows 6.29,
+    6.23, 6.02, 5.82 V) and lasted one tick each (run 19 had two single ticks
+    60 ms apart); the other 26 peaked at or under 115.4 A (lowest low
+    6.38 V). Median low
+    **6.61 V**, 21 of 30 lows under 7 V. All 30 finished: elevator 1.450 m,
+    flywheel 60.5 rot/s. So "the brownouts were the high-peak runs" is
+    supported, and is just the 117.5 A line seen from the other side.
+  - **Budget, thirty runs:** median low **7.87 V**, median peak 78.1 A, only 2
+    of 30 lows under 7 V (6.17 and 6.43 V), all 30 finished. The one
+    brownout is run 8, a single tick at **120.7 A** about 6.1 s after enable:
+    elevator supply 83.4 A (limit 40 A), flywheel 37.8 A, arm pivot −0.5 A,
+    roller 0, then 6.17 V on the next tick and back above the line 20 ms
+    later. The elevator's supply reading swings between about −60 and +83 A
+    over those ticks, so the single high reading is part of an oscillation,
+    **not** explained here; the lesson reports only the reading. The
+    next-worst budget run was 114.2 A / 6.43 V (0.13 V clear).
+  - **No limits, ten runs:** the first brownout comes **0.31–0.39 s** after
+    enable (alpha-7 0.22–0.24 s), before the probe's Back press at 0.5 s, with
+    the flywheel the only motor drawing, 119.0–129.5 A in the tick that
+    caused it; the text says "about a third of a second" and "119–130 A".
+    Elevator at the top and flywheel at 60.5 rot/s in the two runs that didn't
+    collapse; the collapsed runs end with the flywheel at 0 and a garbage
+    elevator height (−1742 m, not quoted).
+  - **Lesson 30 Try It #8** says `BrownedOut` "switched between true and
+    false over a hundred times"; in these ten no-limits runs it changed about
+    110–140 times in the eight that collapsed and about 25 in the two that
+    dipped and finished. Left as it was (it is a different claim from the one
+    this decision replaced, and Lesson 30 wasn't in scope); say so if it
+    should be reworded.
+  - **What the lesson says now:** the table above; "No limits browned out in
+    every one of its ten runs. The other two got thirty each, because in them
+    a brownout comes and goes from run to run, and a handful of runs can
+    miss it"; the 117.5 A line; the defaults a gamble (26 of 30 got through,
+    typical low 6.6 V, 0.3 V clear; the four were the runs that passed
+    117.5 A, 118–129 A, one or two ticks each, and finished); "The budget is
+    much safer, and it still isn't safe" (typical low 7.9 V, 1.6 V clear, 2
+    of 30 under 7 V against 21 of 30; the one-tick 120.7 A run; "A budget
+    lowers the odds; it doesn't make them zero"); the "can't know beforehand
+    which kind of run you'll get" sentence and the "one thing to carry away"
+    callout stay. Try It #4 now asks for the resistance at which even the
+    budget browns out *most of the time*, over *many* runs. The recap had
+    no echo of the old claim, and Lesson 30 quotes none of the table. 1 of 30
+    against 4 of 30 is a small difference on its own (not tested for
+    significance); "much safer" rests on the margins as well as the counts.
 - **Lesson 30 (Lesson 30 state; LOOP):**
   - Boot flicker, ten fresh launches twice: on the first tick the elevator,
     arm and flywheel motors read disconnected in 20 of 20 and both cameras
@@ -1620,8 +1684,9 @@ rate, `DriverStationSim` enabled):**
   second after the first): 3 → 109 A / 9.82 V, 6 → 326 A / 5.48 V,
   9 → 346 A / 5.08 V, 12 → 336 A / 5.32 V. Peaks in the first second are
   higher and collapse the rail to 0 V at 9 and 12. (Alpha-8: 3 and 6 reproduce
-  to the digit on both alphas; 9 and 12 reproduce on neither; see the Lessons
-  28–32 block.)
+  to the digit on both alphas; 9 and 12 reproduce on neither, and the lesson
+  now says 384 A / 4.3 V and 412–426 A / 3.6–4.3 V, 2026-10-31; see the
+  Lessons 28–32 block.)
 - **The lesson's old in-robot brownout did not reproduce.** The three
   mechanisms, even unlimited, peak at 201 A and sag a fresh battery only to
   7.97 V; defaults 139 A / 9.23 V; the budget 87–94 A / 10.1–10.3 V (re-
@@ -1641,8 +1706,8 @@ rate, `DriverStationSim` enabled):**
   2026-10-29 over ten runs each: defaults browned out twice in ten, so the
   lesson now reports how often (user decision, option A); see the Lessons
   28–30 notes. (Alpha-8, thirty runs each: defaults 4 of 30, the budget 1 of
-  30, so the "only the budget is safe every time" story is under review; see
-  the Lessons 28–32 block.)
+  30, so the lesson stopped saying the budget is safe every time and reports
+  the thirty-run table, 2026-10-31; see the Lessons 28–32 block.)
 - **Probe traps:** Maven 429s ("Too Many Requests") on a cold Gradle cache —
   retry after 30 s. `GamepadSim` here has `setDpadUpButton`,
   `setFaceLeftButton`, `setBackButton` and `setLeftTriggerAxis`.

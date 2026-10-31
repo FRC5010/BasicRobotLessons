@@ -1485,13 +1485,15 @@ sleep table (4 ms reads 0.0075–0.0094 m, 0 ms fails in 7 of 8 runs); Lesson
 overshoot (1.3 to 1.2 mm) and the lucky-tick callout (1.46 to 1.42 s, about one
 run in ten). Unchanged: Lesson 28's 1.20 s to `AtSpeed`, Lesson 30's battery,
 camera and tired-battery figures, Lesson 32's replay timings (1.20 s, 1.26 s)
-and aim figures. **Not changed, awaiting a user decision:** Lesson 29's
-tired-battery section (over thirty runs per configuration the budget browned
-out once and the defaults 4 times in 30, on alpha-7 too, so "only the budget was
-safe every time" isn't what the data says), and Lesson 29's 9- and 12-motor
-rows (3 and 6 reproduce exactly on both alphas; the old 346 A and 336 A do not
-reproduce on either). Details in CLAUDE.md's "v3 Lessons 28–32 re-measured"
-block. Only Lesson 33's figures are still the old ones.
+and aim figures. **Not changed at the time, decided and applied on
+2026-10-31 (see "Lesson 29's two open
+decisions applied" below):** Lesson 29's tired-battery section (over
+thirty runs per configuration the budget browned out once and the defaults 4
+times in 30, on alpha-7 too, so "only the budget was safe every time" isn't what
+the data says), and Lesson 29's 9- and 12-motor rows (3 and 6 reproduce exactly
+on both alphas; the old 346 A and 336 A do not reproduce on either). Details in
+CLAUDE.md's "v3 Lessons 28–32 re-measured" block. Only Lesson 33's figures are
+still the old ones.
 
 **Alpha-8, Lesson 33 rebuilt on WPILib's `SysIdRoutine` and re-measured,
 2026-10-31.** Both Lesson 33 decisions of 2026-10-30 are done. The lesson now
@@ -1522,6 +1524,32 @@ the SysId tool makes. Whether the tool fits acceleration on the quasistatic data
 was not checked (its source was not reachable). Replay of a recorded session
 of all four tests matched on every robot output. Details in CLAUDE.md's "v3 Lesson
 33 rebuilt on WPILib's `SysIdRoutine`" block.
+
+**Alpha-8, Lesson 29's two open decisions applied, 2026-10-31.** Both were the
+user's. **The tired-battery table now reports the thirty-run figures:** no
+limits 226–642 A / 0.00–1.94 V and 10 of 10 browned out (ten runs), defaults
+85–129 A / 5.82–7.62 V and 4 of 30, budget 65–121 A / 6.17–8.42 V and 1 of 30.
+"Only the budget was safe every time" and "its worst run stayed 1.2 V above the
+line" are gone. The text now says the budget is much safer and still isn't safe:
+typical low 7.9 V against 6.6 V for the defaults, 2 of 30 lows under 7 V against
+21 of 30, and its one brownout was a single tick at 120.7 A (the elevator's
+supply reading 83 A against its 40 A limit, beside the flywheel's 38 A). It also
+gives the arithmetic that makes the rows readable, taken from the battery model:
+11 V minus 40 mΩ times the current puts the 6.3 V line at 117.5 A, and the four
+default brownouts were the four runs whose peak passed it (118–129 A). The
+no-limits paragraph was re-read against the thirty-run recordings (8 of 10
+collapsed to 0 V, the elevator reaching 0.12–0.53 m, the flywheel peaking
+39–48 rot/s; the other 2 dipped to 1.9 V and finished; the first brownout comes
+0.31–0.39 s after enable with the flywheel alone drawing 119–130 A), and Try It
+#4 now says to run each setting many times. **The motor-count table's 9 and 12
+rows are the rebuilt rig's:** 384 A / 4.3 V and 412–426 A / 3.6–4.3 V, with an
+italic note that past six the rail collapses to 0 V on some runs, and "the total
+stops growing past six" became "grows far more slowly" (+217, +58 and +36 A per
+three motors). The old 346 A and 336 A were not reproduced on either alpha, so
+they are unexplained rather than disproved. Not changed: Lesson 30 (it quotes no
+number from the table; its Try It #8 "over a hundred times" holds in 8 of the 10
+no-limits runs and not in the 2 that dipped and finished), Lesson 33 and every
+other lesson. Details in CLAUDE.md's "v3 Lessons 28–32 re-measured" block.
 
 **What the AdvantageKit pass leaves: only Lesson 34.** Lessons 13–33 record
 their readings with `processInputs`, their decisions with `recordOutput`,
