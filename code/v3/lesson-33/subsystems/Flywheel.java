@@ -1,8 +1,6 @@
 package first.robot.subsystems;
 
 import static org.wpilib.units.Units.RotationsPerSecond;
-import static org.wpilib.units.Units.Second;
-import static org.wpilib.units.Units.Seconds;
 import static org.wpilib.units.Units.Volts;
 
 import org.wpilib.command3.Command;
@@ -11,6 +9,7 @@ import org.wpilib.command3.Scheduler;
 import org.wpilib.command3.sysid.SysIdRoutine;
 import org.wpilib.units.measure.Angle;
 import org.wpilib.units.measure.AngularVelocity;
+import org.wpilib.units.measure.Voltage;
 import org.wpilib.util.Alert;
 import org.wpilib.util.Alert.Level;
 
@@ -40,12 +39,8 @@ public class Flywheel implements Mechanism {
   private final Alert m_disconnected =
       new Alert("Flywheel/Disconnected", "Flywheel motor is not on the CAN bus", Level.HIGH);
 
-  // A quarter of the default ramp rate: this wheel is light and direct-drive,
-  // so 1 V/s never lets it sit still long enough to be "quasi" anything — see
-  // Lesson 33 section 7. The longer timeout gives the slower climb room to
-  // reach a useful voltage before the routine gives up on its own.
   private final SysIdRoutine m_sysId = new SysIdRoutine(
-      SysIdRoutine.Config.useDataLog(Volts.of(0.25).per(Second), Volts.of(7), Seconds.of(30)),
+      SysIdRoutine.Config.defaults(),
       new SysIdRoutine.SysIdMechanism(
           volts -> m_io.setVoltage(volts.in(Volts)),
           log -> log.motor("flywheel")
@@ -169,6 +164,12 @@ public class Flywheel implements Mechanism {
   /** A voltage step: find how volts trade for acceleration. */
   public Command sysIdDynamic(SysIdRoutine.Direction direction) {
     return m_sysId.dynamic(direction);
+  }
+
+  /** Hold one small, fixed voltage, to see what the wheel does on a voltage you pick. */
+  public Command holdVoltage(Voltage volts) {
+    double raw = volts.in(Volts);
+    return runRepeatedly(() -> m_io.setVoltage(raw)).named("Hold Voltage");
   }
 
   /** No subsystem knows the robot's total draw — this is this motor's slice of it. */

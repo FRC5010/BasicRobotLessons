@@ -2,7 +2,8 @@
 
 **Goal:** Meet the real machine your computed gains have been standing in
 for, put a number on how close they were, and pick up the tool teams use to
-measure what a spec sheet can't tell you.
+measure what a spec sheet can't tell you, along with the habit of checking
+every number it hands back.
 
 **New Java concepts**
 - `Trigger.and(...)`, from Lesson 22, on two buttons this time — so a
@@ -17,11 +18,12 @@ measure what a spec sheet can't tell you.
   autonomous plan. Characterization lives here, in its own opmode, not
   bolted onto teleop.
 - **A safe first power-on**, as a procedure, not a piece of code.
-- **A test can lie about the mechanism if the test is wrong for it** — the
-  same ramp rate that's fine for one mechanism can quietly corrupt another.
-- **Characterizing something with finite travel**, where the settings that
-  make the measurement good and the settings that keep the mechanism intact
-  pull against each other.
+- **A characterization result is a claim, not a fact** — each gain gets one
+  quick check against something you already know (the motor's free speed,
+  the wheel's inertia, a voltage too small to matter) before it goes into
+  `Constants`.
+- **Characterizing something with finite travel**, where the run you'd like
+  to make and the room the mechanism has pull against each other.
 
 ---
 
@@ -75,7 +77,7 @@ arm needs its soft limits (Lesson 20) or it can drive into its own hard stop.
 A flywheel spinning open loop has neither problem — it has no position to get
 wrong, no floor to fall through, nothing to crash into except itself. That
 makes it the safer mechanism to hand raw, uncontrolled voltage to, and it's
-part of why this lesson picked it. **Section 7 is what changes when you point
+part of why this lesson picked it. **Section 8 is what changes when you point
 this same tool at a mechanism that can run out of room** — read it before you
 characterize the elevator, not after.
 
@@ -163,7 +165,7 @@ so the next section's code makes sense. `SysIdRoutine` lives in
 run before the routine stops itself. `SysIdRoutine.Config.defaults()` is 1 volt
 per second, 7 volts and 10 seconds. `SysIdRoutine.Config.useDataLog(rampRate,
 stepVoltage, timeout)` is the same thing with your own three numbers, and
-you'll want it in section 7. (There's also a four-argument constructor whose
+Try It #2 uses it. (There's also a four-argument constructor whose
 last argument sends the test state somewhere other than WPILib's own log. This
 course keeps the log.)
 
@@ -189,8 +191,9 @@ the mechanism is never far from equilibrium; the relationship between volts
 and speed at any instant is close to what it would be if you'd just set that
 voltage and waited. **`dynamic`** does the opposite on purpose: it snaps to a
 fixed voltage — 7 V by default — and watches the mechanism accelerate hard.
-One test holds still long enough to read `kS` and `kV` off it; the other
-moves fast enough to read `kA` off it. Neither alone gives you all three.
+The ramp is where `kS` and `kV` are easiest to see; the step is where `kA`
+shows. The analysis tool fits all four runs together, and section 7 comes
+back to why it wants both shapes.
 
 Both commands call your `drive` and `log` lambdas once per tick for as long as
 they run. A test ends when its timeout runs out, or when something cancels
@@ -224,9 +227,9 @@ private final SysIdRoutine m_sysId = new SysIdRoutine(
         this, "flywheel"));
 ```
 
-Read it as the two things from section 4. `Config.defaults()` for now (you'll
-have a reason to change it in a minute). Then the `SysIdMechanism`'s four
-arguments: the drive lambda sends the `Voltage` it's given straight through
+Read it as the two things from section 4. `Config.defaults()` is the 1 V/s,
+7 V, 10 s routine, and it's what you'll run first (Try It #2 changes it).
+Then the `SysIdMechanism`'s four arguments: the drive lambda sends the `Voltage` it's given straight through
 the door section 3 opened, unpacking it with `.in(Volts)` because
 `setVoltage` takes a plain number; the log lambda names a motor with
 `log.motor("flywheel")` and chains `.voltage(...)` and `.angularVelocity(...)`
@@ -340,10 +343,12 @@ selector — same move as picking **My Teleop** back in Lesson 1, just a
 different opmode — then set Robot State to enabled. Hold **Back + the top
 face button** for a few seconds — the applied voltage climbs steadily, and the
 wheel, after a dip (see the note below), spins up slowly and smoothly.
-Let go, let it coast, then hold **Start + the top face button** — this time it should
-snap forward hard. Both directions work the same in reverse with the
-bottom face button instead. A test ends by itself when its timeout runs out
-(10 seconds at the defaults) even if you're still holding the buttons.
+Let go, let it coast, then hold **Start + the top face button** for the whole
+ten seconds — this time it should snap forward hard and then level off. Both
+directions work the same in reverse with the bottom face button instead. A
+test ends by itself when its timeout runs out (10 seconds at the defaults)
+even if you're still holding the buttons. Section 7 reads the level-off, so
+let each dynamic test have its full ten seconds.
 
 Notice what *isn't* happening: nothing about `RobotTeleop` changed, and
 nothing in it needed to know characterization exists. Reselect **My
@@ -395,103 +400,188 @@ kFlywheelKV = 0.119  // volts per rotation/sec
 kFlywheelKA = 0.105  // volts per rotation/sec²
 ```
 
-`kV` should land close. A least-squares fit of this course's own simulated run
-(the four tests at the defaults, the coast-down at the start trimmed away),
-done by hand on the logged voltage and velocity rather than by the SysId
-tool, gives 0.118 against 0.119. `kA` should be in the right neighborhood
-too: that fit gives 0.106 against 0.105. And `kS` — the number this course has
-never once been able to compute, only assert — can come back *nowhere near*
-0.15. Fit just the two ramps, voltage against velocity with nothing else, and
-the default ramp gives 0.90 V: six times too big.
+For a rough idea of what to expect, this course's own simulated run (the
+four tests at the defaults) can be fit by hand with the model the tool's
+source uses: one fit over all four tests together, with a term for
+acceleration, `V = kS·sign(v) + kV·v + kA·a`. That gives `kV` 0.118, `kA`
+0.106 and `kS` under 0.01 V. Those numbers come from a hand fit, not from the
+tool: this repo's checks can't run the SysId tool, and the tool filters and
+trims the data its own way, so expect its numbers to land near these, not on
+them. If your `kS` comes back nowhere near the 0.15 the course has carried
+since Lesson 28, that's the number to look at hardest.
 
-Before you conclude the model was wrong: it might be. It also might be that
-the test was wrong for this mechanism, and section 7 is how you tell the
-difference.
+**Don't paste any of them into `Constants` yet.** The tool will hand you a
+`kS`, a `kV` and a `kA` whether or not the runs behind them were any good, and
+a number you paste in unchecked is a guess with a decimal point on it.
+Section 7 is how you check each one.
 
 ---
 
-## 7. Is it real, or is it the test?
+## 7. Is it real? One quick check per number
 
-Here are the numbers, measured in this course's own simulation so you have
-something concrete to check your own run against. The first is a yardstick
-that needs no fitting at all: the percent of steady-state speed the wheel has
-reached when the ramp passes a given voltage, where steady state is what the
-wheel settles at when that voltage is simply held (about 8.5 rot/s per volt,
-measured at 1–5 V). A truly quasistatic ramp would read close to 100% at
-every voltage. Starting from a standstill, the default 1 V/s ramp reaches
-only **38%–82%** of steady-state speed across 1–5 V (38, 59, 71, 77 and 82%
-at 1, 2, 3, 4 and 5 V) — consistently short of where a truly quasistatic run
-should sit. Something is wrong, and it isn't the wheel.
+A characterization result is a claim. The tool is a least-squares fit, and a
+fit always has an answer: a bad ramp, a wheel that slipped, a log from the
+wrong motor, and it still hands back three tidy numbers. What catches that
+isn't a better tool. It's you holding each number up against something you
+already know. Every gain gets one check (`kV` gets two), and none takes more
+than a few minutes. Every figure below is from this course's own simulation,
+so you have something concrete to compare your run against. The gains in them
+are the hand fit from section 6, not the tool's.
 
-**Quasistatic only means something if the mechanism is actually close to
-equilibrium the whole time it runs.** The default ramp — 1 V per second —
-is a reasonable choice for a typical drivetrain or arm. This flywheel is
-neither: it's direct drive, it's light, and it responds fast. Ramped at
-1 V/s, it never stops accelerating long enough to be "quasi" anything — the
-test is quietly measuring some of its own ramp rate and reporting it back
-to you labeled `kS`.
+### `kV`: two checks
 
-You can see how much with numbers you already own. A 1 V/s ramp makes the
-wheel gain 1 ÷ 0.119 = 8.4 rot/s every second just to keep pace, and `kA`
-charges 0.105 V for each rot/s² of that: 0.105 × 8.4 ≈ 0.88 V. A fit that
-explains the ramp with only a constant and a speed term has nowhere to put
-that voltage except the constant, so it reports it as `kS`. In general that
-leftover is `kA × ramp rate ÷ kV`, which is why it shrinks in proportion to
-the ramp rate. The fit of the two ramps in section 6 found 0.90 V, and
-`kV` came back 0.118 whichever ramp rate it was given: the back-EMF term was
-never the problem.
+**Free speed.** `kV` is volts per rotation per second, so 12 V ÷ `kV` is the
+speed at which the wheel runs out of voltage. That should land near the
+motor's free speed, the 101.08 rot/s (6065 RPM) that `kFreeSpeed` and Lesson
+28's arithmetic already use: 12 ÷ 0.118 = 101.7. A real wheel comes in a
+little under its datasheet, from friction and belts, but a factor of two
+means the fit or the log is wrong, not the motor. (If a gearbox sits between
+the motor and whatever the log measures, divide the free speed by the gear
+ratio first.)
 
-The fix is one number.
+**The plateau.** In the dynamic test the voltage steps to 7 V and stays
+there, and the wheel levels off. At the plateau nothing is accelerating, so
+all 7 V is going into speed, and speed ÷ 7 V is 1 ÷ `kV`. (A wheel with
+friction levels off a little lower, by a fraction `kS` ÷ 7.) Open the
+`WPILIB_` log, find the end of a forward dynamic run — the last
+`velocity-flywheel-flywheel` values before `sysid-test-state-flywheel` goes
+back to `none` — and divide. This course's wheel levels off at 59.3 rot/s;
+59.3 ÷ 7 = 8.47 rot/s per volt, and 1 ÷ 0.118 = 8.47. The reverse run levels
+off at −59.2. Forward, the wheel is within 1% of that after about 3.6 seconds;
+in reverse it takes about 6.8, because it has to turn around first. Hold the
+buttons for the whole ten seconds.
 
-**Add to `Flywheel`'s imports:**
+### `kA`: it has to match the wheel's inertia
+
+`kA` is the voltage it takes to speed the wheel up: volts per rotation per
+second squared. You computed it in Lesson 28 from the wheel's inertia, so that
+arithmetic is your check. `J × 2π × 1.677` with `J` = 0.01 kg·m² is 0.105, and
+the hand fit says 0.106. On a real robot `J` comes from CAD, which is a guess of
+its own, so expect rough agreement rather than three digits. A factor of two
+between the tool's `kA` and the CAD number means one of them is wrong, and
+that's worth finding out before you size a shooter around it.
+
+### `kS`: a voltage that small has to leave the wheel still
+
+`kS` is the voltage it takes to get the wheel moving at all. Of the three it's
+the one you can't compute (Lesson 28 said so), and the easiest to check with
+your own hands: apply a voltage far below the `kS` you were handed and see
+whether the wheel turns. If the tool says 0.9 V, then 0.05 V has to leave a
+resting wheel resting.
+
+Section 3 opened the door for this, `setVoltage`. What's missing is a command
+that holds one.
+
+**Add to `Flywheel`'s imports, with the other `units.measure` ones:**
 
 ```java
-import static org.wpilib.units.Units.Second;
-import static org.wpilib.units.Units.Seconds;
+import org.wpilib.units.measure.Voltage;
 ```
 
-**Replace the `m_sysId` field in `Flywheel`, comment included:**
+**Add to `Flywheel`, below `sysIdDynamic`:**
 
 ```java
-// A quarter of the default ramp rate: this wheel is light and direct-drive,
-// so 1 V/s never lets it sit still long enough to be "quasi" anything — see
-// Lesson 33 section 7. The longer timeout gives the slower climb room to
-// reach a useful voltage before the routine gives up on its own.
-private final SysIdRoutine m_sysId = new SysIdRoutine(
-    SysIdRoutine.Config.useDataLog(Volts.of(0.25).per(Second), Volts.of(7), Seconds.of(30)),
-    new SysIdRoutine.SysIdMechanism(
-        volts -> m_io.setVoltage(volts.in(Volts)),
-        log -> log.motor("flywheel")
-            .voltage(Volts.of(m_inputs.appliedVolts))
-            .angularVelocity(RotationsPerSecond.of(m_inputs.velocityRps)),
-        this, "flywheel"));
+/** Hold one small, fixed voltage, to see what the wheel does on a voltage you pick. */
+public Command holdVoltage(Voltage volts) {
+  double raw = volts.in(Volts);
+  return runRepeatedly(() -> m_io.setVoltage(raw)).named("Hold Voltage");
+}
 ```
 
-The only change is the first argument: `Config.defaults()` became
-`Config.useDataLog(...)`, with a quarter of the ramp rate and the timeout
-stretched to 30 seconds so the slower climb still has room to reach a useful
-voltage before the routine gives up and stops on its own. Re-run and
-re-analyze: at that slower ramp, this course's own measured run reaches
-**77%–95%** of steady-state speed across the same voltage range — closer to
-equilibrium at every point, which is exactly the direction a smaller apparent
-`kS` would move in. The fit of the two ramps now gives 0.23 V (the arithmetic
-says 0.105 × 0.25 ÷ 0.119 ≈ 0.22), and `kV` is still 0.118. `kA` never needed
-the ramp: it comes from the dynamic test, which a slower ramp doesn't touch.
+**Add to `RobotUtility`'s imports, above the others (static imports go first):**
 
-One honest edge: the 0.90 V came from a fit with no term for acceleration.
-Give the fit one, all four tests together as `V = kS·sign(v) + kV·v + kA·a`,
-and the same logs give `kS` under 0.01 V, `kV` 0.118 and `kA` 0.106 at
-*either* ramp rate, which is the right answer for a wheel with no friction in
-it. This repo's checks can't run the SysId tool, so this lesson can't tell
-you which of those two fits it makes with your ramps. What it can tell you is
-that the yardstick above doesn't depend on any fit, and that a slow ramp
-gives the right answer under either.
+```java
+import static org.wpilib.units.Units.Volts;
+```
 
-**The lesson isn't "trust the slower number more."** It's that a
-characterization result is only as good as the test that produced it, and a
-mechanism that never gets close to steady state is the tell — check the ramp
-rate against how fast the mechanism actually responds before you believe the
-number it hands back.
+**Add to `RobotUtility`'s constructor, below the four bindings:**
+
+```java
+// 0.05 V can't hurt anything, so this one is a single button: hold it to
+// see whether the wheel turns on a voltage far below any friction.
+robot.driverController.rightBumper()
+    .whileTrue(robot.flywheel.holdVoltage(Volts.of(0.05)));
+```
+
+The four tests have two buttons each because they drive the wheel up to 7 V or
+more. 0.05 V can't spin anything up, so one button is enough.
+
+Run the robot in simulation, select **RobotUtility**, enable it, and hold the
+**right bumper** for ten seconds while you watch `Flywheel/VelocityRps`. The
+wheel starts at its idle speed, so it coasts down first: about 13 rot/s after
+one second, under 2 after three, 0.56 at five. Then it settles at
+**0.41 rot/s** by about nine seconds, and stays there. It's still turning.
+0.05 V × 8.47 rot/s per volt = 0.42.
+
+A wheel that turns on 0.05 V doesn't have 0.9 V of friction in it. For this
+simulation that's also the right answer, not a warning: `FlywheelSim` has no
+friction (Lesson 28 said so), so a fit that finds `kS` near zero is agreeing
+with the wheel, and the 0.15 in `FlywheelConstants` is a hardware value the
+simulation never uses. On a real wheel the same check runs the other way:
+creep the voltage up from zero until the wheel *just* starts to turn, and that
+voltage should be close to the `kS` the tool gave you. (A quasistatic ramp
+from a standstill, Try It #7, is that creep.)
+
+### The runs themselves: did the ramp stay near steady state?
+
+The last check is on the test, not the numbers. A quasistatic ramp is meant to
+keep the mechanism near equilibrium all the way up, so at every instant its
+speed is close to what that voltage would hold if you simply set it and
+waited. There's a yardstick for that, and it needs no fitting: the percent of
+steady-state speed the wheel has reached when the ramp passes a given voltage.
+Steady state is the plateau from the `kV` check, about 8.5 rot/s per volt
+(measured at 1–5 V). A truly quasistatic ramp would read close to 100% at
+every voltage.
+
+Starting from a standstill, the default 1 V/s ramp reaches only **38%–82%** of
+steady-state speed across 1–5 V (38, 59, 71, 77 and 82% at 1, 2, 3, 4 and 5 V).
+By the yardstick, that ramp was never quasistatic for this wheel. It's light
+and direct-drive, it responds in about a second (`kA` ÷ `kV` = 0.106 ÷ 0.118 =
+0.9 s), and a ramp that climbs a volt every second is always running ahead of
+it.
+
+That's a failed check, and it's fine, because the tool doesn't treat the ramp
+as though it were steady. It fits all four tests together in one model that
+has a term for acceleration, `V = kS·sign(v) + kV·v + kA·a`. (The tool's source
+writes it the other way round, as acceleration against speed, voltage and the
+sign of speed, then divides the coefficients to get the gains. It's the same
+model rearranged.) The ramp's own acceleration goes into the `kA` term, and the
+dynamic test, which accelerates as hard as the routine can make it, is what pins
+`kA` down. Nothing is left over to land in `kS`.
+
+**The 0.90 V is what you get without that term.** Fit just the two ramps,
+voltage against speed with nothing else (with the coast-down at the start
+trimmed away), and this course's run gives `kS` = 0.90 V with `kV` still 0.118.
+That's a hand fit again, not the tool's. It looks like friction. It isn't, and
+the arithmetic shows where it comes from: a 1 V/s ramp makes the wheel gain
+1 ÷ 0.118 = 8.5 rot/s every second just to keep pace, and `kA` charges 0.106 V
+for each rot/s² of that. 0.106 × 8.5 ≈ 0.90 V. A fit with no acceleration term
+has nowhere to put that voltage except the constant, so it reports it as `kS`. In general the leftover is `kA × ramp rate ÷ kV`, which
+shrinks in proportion to the ramp rate: about 0.23 V at 0.25 V/s.
+
+That 0.90 is exactly the kind of number the checks are for. It looks like a
+reasonable friction value, and it fails the one-button test: 0.9 V of friction
+would mean 0.05 V can't turn the wheel, and it does. It's also why the tool
+asks for both test shapes and fits them together. Its own data check, in its
+source, lists "at least 1 acceleration event to find Ka" among what the data
+has to hold.
+
+Here are the checks in one place, with this course's run beside each:
+
+| Gain | Check | This course's run |
+|---|---|---|
+| `kV` | 12 V ÷ `kV` near the free speed | 12 ÷ 0.118 = 101.7, against 101.08 rot/s |
+| `kV` | 1 ÷ `kV` against the dynamic plateau ÷ 7 V | 8.47 and 8.47 rot/s per volt |
+| `kA` | `J × 2π × 1.677`, from Lesson 28 | 0.106 against 0.105 |
+| `kS` | does a voltage far below it turn the wheel? | 0.05 V turns it at 0.41 rot/s |
+| the ramp | percent of steady state at 1–5 V | 38–82% at 1 V/s, which the fit's acceleration term absorbs |
+
+When a check fails, don't paste the number. Look at the velocity plot of the
+run behind it, and check the units your `log` lambda reports and the CAN ID
+before you doubt the model. **A characterization result is a claim.** Check
+every number against something you already know before it goes into
+`Constants`. Try It #2 slows the ramp and asks whether that changes what the
+tool reports.
 
 ---
 
@@ -597,13 +687,11 @@ bottom — the bottom limit switch is still there to catch you if you don't,
 but a soft limit that fights your own homing routine is worse than no soft
 limit at all, because it looks like protection.
 
-### Now the awkward part: section 7 and your travel budget disagree
+### Now the awkward part: a ramp costs room
 
-Section 7 told you to slow the ramp down, and it was right — that's what
-made the quasistatic run land closer to equilibrium. It's also the single
-most expensive thing you can do to a mechanism that can run out of room, and
-it's worth seeing the size of it. Same widened rig, measuring how far the carriage
-travels before the ramp reaches 6 V:
+A quasistatic ramp is an expensive test for a mechanism that can run out of
+room, and it's worth seeing the size of it. Same widened rig, measuring how far
+the carriage travels before the ramp reaches 6 V:
 
 *Nothing to add — measured, not asserted:*
 
@@ -613,17 +701,20 @@ ramp 0.50 V/s  ->  6 V after 12.0 s,  travelled 3.794 m
 ramp 0.25 V/s  ->  6 V after 24.0 s,  travelled 7.605 m
 ```
 
-**Halve the ramp rate and you double the distance.** The mechanism spends
-twice as long at every voltage on the way up, so it covers twice the ground
-getting there. Section 7's recommended 0.25 V/s would need over **7 metres**
-of elevator to reach 6 V. You have 1.5 m.
+The default ramp, 1 V/s, already needs more than the elevator's whole 1.5 m to
+reach 6 V. **Halve the ramp rate and you double the distance.** The mechanism
+spends twice as long at every voltage on the way up, so it covers twice the
+ground getting there. A slower ramp is what you'd reach for to make a run
+more quasistatic (Try It #2), and on this elevator a 0.25 V/s ramp would need
+over **7 metres** to reach 6 V. You have 1.5 m.
 
-So the thing that made the flywheel's quasistatic run trustworthy is the
-thing you cannot afford here, and there's no clever way out of it — the two
-goals genuinely pull opposite directions. What you do instead is give up
-voltage range rather than give up ramp rate: keep the ramp slow, accept that
-the run ends early against the soft limit, and fit the gains over the
-smaller span of voltage you actually got. A short honest run beats a long one
+So a slower ramp is the wrong direction here, and even the default one has to
+be cut short. What you give up is voltage range. A ramp's voltage is its rate
+times how long it has run, so you stop it at a lower voltage. Same rig at the
+default 1 V/s: the carriage has covered 0.44 m by the time the ramp reaches
+3 V, and 1.04 m by 4.5 V. Let go of the buttons at the voltage that fits
+(letting go ends the test cleanly, as section 4 said), and fit the gains over
+the span of voltage you actually covered. A short honest run beats a long one
 that spent its last second driving into a hard stop.
 
 ### And lower the step voltage
@@ -646,7 +737,8 @@ elevator, and you can raise it once you've watched one run finish safely.
 
 You lose nothing important by doing this. `kA` is a slope — volts per unit of
 acceleration — and a smaller step measures the same slope over a smaller
-range. What you must not do is keep 7 V and shorten the timeout instead,
+range. (A short step on a short mechanism may never level off, so section 7's
+plateau check may not be available here. The free-speed check still is.) What you must not do is keep 7 V and shorten the timeout instead,
 hoping it stops in time. The timeout is a backstop, not a plan.
 
 ### Two more things gravity changes
@@ -673,32 +765,31 @@ forward and reverse genuinely different tests rather than mirror images.
 Here's the honest part, and it's worth sitting with rather than skating past.
 
 `FlywheelSim`, underneath everything in this course, has never modeled
-friction, and Lesson 28 told you so. You can check it with the door you
-opened in section 3: send the wheel 0.05 V, far below what would break any real
-wheel free, and the simulated wheel spins up to 0.41 rot/s (0.37 after the
-first two seconds) where a real one wouldn't have twitched. So when you
-characterize the flywheel *in this simulation*, section 7's slower-ramp result
-isn't measuring hardware friction. It's measuring what's left of a ramp-rate
-artifact once you've mostly, but not perfectly, slowed it down enough to stop
-mattering. Slow the ramp further and it keeps shrinking toward zero, because
-zero is the actual answer this simulated wheel has always had — there was never
-any friction in it to find.
+friction, and Lesson 28 told you so. Section 7's `kS` check already showed it:
+0.05 V, far below what would break any real wheel free, leaves the simulated
+wheel turning at 0.41 rot/s, where a real one wouldn't have twitched. So the
+right `kS` for this simulation is zero, and a fit that finds it (under 0.01 V
+here) isn't measuring hardware friction. It's agreeing with a wheel that never
+had any.
 
 That's not a failure of the exercise. It's the same thing Lesson 28 told you
 about `kS`, confirmed a second way: **a simulation can only teach you what it
 models.** `kV` and `kA` came back honest (0.118 and 0.106 against the 0.119 and 0.105
 the course computed) because `FlywheelSim`'s physics genuinely has a back-EMF
 term and genuinely has inertia — those measurements mean something. `kS`
-came back as "however close to zero I managed to get the test," because there
-was never a real friction number underneath it to converge on.
+came back near zero because there was never a real friction number underneath
+it to find. The checks are what let you tell those two kinds of answer apart:
+`kV` and `kA` agreed with arithmetic you trust, and `kS` agreed with a wheel
+you could watch turn on 0.05 V.
 
 On your actual robot, this section reads differently, and better. The
 friction in a real Kraken's bearings is real. The efficiency loss in a real
 gearbox is real. A real wheel's moment of inertia is whatever the CAD model
 didn't quite capture. When you run this same characterization on real
-hardware, `kS` will land on a real number — not zero, not an artifact — and
-it will very likely disagree with 0.15 by more than measurement noise
-explains. That disagreement isn't a bug in the lesson. It's the entire
+hardware, `kS` will land on a real number — not zero — and the `kS` check
+becomes the creep-up version from section 7, where the wheel *does* stay put
+until the voltage gets high enough. That number will very likely disagree
+with 0.15 by more than measurement noise explains. That disagreement isn't a bug in the lesson. It's the entire
 reason `SysIdRoutine` exists: to measure the thing a spec sheet was always
 just guessing at.
 
@@ -708,16 +799,31 @@ just guessing at.
 
 1. **Characterize the elevator, and budget the run before you build it.**
    Section 8 gives you the two numbers that matter: how far the carriage
-   travels per volt of ramp, and how far a step voltage carries it in a
-   second and a half. Work out a `Config` that fits inside 1.5 m *before*
+   travels before a ramp reaches a given voltage, and how far a step voltage
+   carries it in a second and a half. Work out a `Config` that fits inside 1.5 m *before*
    writing any code, then add the soft limit, home it, and find out whether
    your budget was right. Predict `kS`/`kV`/`kA` first, too — you already
    know what `ElevatorIOSim` does and doesn't model.
-2. **Find the ramp rate that's "slow enough."** Section 7 used 0.25 V/s.
-   Try 0.5 V/s and 0.1 V/s on the flywheel and watch how close to
-   steady-state each one gets. Is the relationship linear? At what point
-   does going slower stop changing the answer? (Do this on the flywheel, not
-   the elevator — section 8 explains why that's not an accident.)
+2. **Slow the ramp, and predict first.** Section 7 showed that the default
+   ramp isn't near steady state, and that the fit with an acceleration term
+   doesn't mind. Before you run anything, write down whether you expect a
+   slower ramp to change the `kS` the tool reports, and what the yardstick
+   should read. Then change `m_sysId`'s config to
+   `SysIdRoutine.Config.useDataLog(...)` with a ramp rate of
+   `Volts.of(0.25).per(Second)`, the same 7 V step, and a timeout of
+   `Seconds.of(30)` (a 10 s timeout would end a 0.25 V/s ramp at 2.5 V, and
+   the yardstick goes up to 5 V). It needs the `Second` and `Seconds` static
+   imports from `org.wpilib.units.Units`. Re-run all four tests, check the
+   percent of steady state, and compare the tool's three numbers with the
+   ones from the default ramp. This course's own run reads **77%–95%** at
+   0.25 V/s, up from 38%–82%, and the hand fit of all four tests still gives
+   `kS` near zero. (A hand fit of the ramps alone gives about 0.23 V instead
+   of 0.90 V, which is `kA × ramp rate ÷ kV` again.) This course's checks
+   can't run the SysId tool, so what it prints is better evidence than the
+   hand fit. Then try 0.5 V/s and 0.1 V/s: is the gap between the yardstick
+   and 100% proportional to the ramp rate? At what point does going slower
+   stop changing anything? (Do this on the flywheel, not the elevator — section 8
+   explains why that's not an accident.)
 3. **Write your team's power-on checklist.** Section 2 is a starting point,
    not a finished one — it doesn't know your robot's specific pinch points,
    your specific current limits, or which mechanism your team is most
@@ -744,7 +850,9 @@ just guessing at.
 7. **Start from rest.** The callout in section 6 says every run begins with
    the wheel at its idle speed. Work out how you'd make a run start from a
    standstill, and what it would cost: where is the idle default installed,
-   and does that place know which opmode is selected?
+   and does that place know which opmode is selected? A ramp that starts at a
+   standstill is also the creep-up `kS` check from section 7: the voltage at
+   which the speed first leaves zero.
 
 ---
 
@@ -755,8 +863,8 @@ were a stand-in good enough to build thirty-two lessons of simulation on
 top of, and today you met the tool that replaces "stand-in" with "measured."
 Commands V3 ships it ready-made: a `SysIdRoutine` that needs only two things
 from you, how to drive your motor and how to read it back, and gives you
-the two test shapes — a slow ramp for `kS`/`kV`, a fast step for `kA` — in
-a log the SysId analysis tool can read.
+the two test shapes — a slow ramp and a fast step — in a log the SysId
+analysis tool can read and fits together.
 
 Section 5 added a structural habit worth keeping past this lesson:
 **`@Utility`** gave characterization its own opmode instead of a corner of
@@ -764,27 +872,32 @@ Section 5 added a structural habit worth keeping past this lesson:
 something you have to remember into something that's true by construction —
 you'd have to select the wrong opmode on purpose.
 
-The harder lesson sat in section 7: **a characterization is only as
-trustworthy as the test that produced it**, and a mechanism that never gets
-close to steady state is more often a ramp rate that's wrong for the
-mechanism than a spec sheet that's wrong for the robot — check the test
-before you doubt the model.
+The harder lesson sat in section 7: **a characterization result is a
+claim**, and a claim has to pass a check before it earns a place in
+`Constants`. `kV` had two (the motor's free speed, and the dynamic test's
+plateau), `kA` had the inertia arithmetic from Lesson 28, `kS` had a voltage
+too small to matter, and the test itself had the percent-of-steady-state
+yardstick. The default ramp failed that last one, and it didn't matter,
+because the tool fits the ramp and the step together with a term for
+acceleration. The 0.90 V you get from fitting the ramps alone is the
+cautionary tale: a number that looks like friction and fails the one-button
+test. Check the number against something you already know before you doubt
+the model, and before you trust it.
 
 Section 8 then took that away again, at least partly, and added a second
 lesson you didn't expect: a soft limit protects you only once the encoder
 it's measured against actually means something, and on a mechanism that
 needs homing, that isn't true until homing has run. Get the reference frame
 wrong and a guard doesn't fail loud — it fails by making the mechanism look
-weak, the same shape of trap this course keeps returning to. Past that, the
-slow ramp that fixes a quasistatic run on open ground is the same slow ramp
-that runs a bounded mechanism out of room — **halve the rate, double the
-distance** — so you trade voltage range for safety and fit the gains over
-whatever span you actually survived. **The guard that survives your logic
+weak, the same shape of trap this course keeps returning to. Past that, even
+the default ramp needs more room than the elevator has, and a slower one needs
+more still — **halve the rate, double the distance** — so you trade voltage
+range for safety and fit the gains over whatever span you actually survived. **The guard that survives your logic
 being absent is the only one that was ever really a guard**, worth
 remembering as a general shape, not just a SysId detail. And the most honest
 lesson sat in section 9: simulation measured `kV` and `kA` faithfully because
-it actually models the physics behind them, and it could only approximate
-`kS` toward zero, because there was never real friction in it to measure.
+it actually models the physics behind them, and `kS` came back near zero,
+because there was never real friction in it to measure.
 Your real robot doesn't have that excuse, which is exactly why this tool is
 worth having learned before build team hands you one.
 

@@ -4,6 +4,8 @@
 
 package first.robot.opmode;
 
+import static org.wpilib.units.Units.Volts;
+
 import org.wpilib.command3.sysid.SysIdRoutine;
 import org.wpilib.opmode.PeriodicOpMode;
 import org.wpilib.opmode.Utility;
@@ -30,6 +32,11 @@ public class RobotUtility extends PeriodicOpMode {
         .whileTrue(robot.flywheel.sysIdDynamic(SysIdRoutine.Direction.FORWARD));
     robot.driverController.start().and(robot.driverController.faceDown())
         .whileTrue(robot.flywheel.sysIdDynamic(SysIdRoutine.Direction.REVERSE));
+
+    // 0.05 V can't hurt anything, so this one is a single button: hold it to
+    // see whether the wheel turns on a voltage far below any friction.
+    robot.driverController.rightBumper()
+        .whileTrue(robot.flywheel.holdVoltage(Volts.of(0.05)));
   }
 
   @Override
