@@ -63,10 +63,10 @@ flywheel:
 
 | Time | Speed | Stator | Supply | Applied |
 |---|---|---|---|---|
-| 0.00 s | 0.0 rot/s | 116.3 A | 29.1 A | 3.00 V |
-| 0.60 s | 17.0 rot/s | 119.0 A | 50.7 A | 5.12 V |
-| 0.90 s | 25.7 rot/s | 119.0 A | 61.5 A | 6.20 V |
-| 1.20 s | 34.5 rot/s | 115.3 A | 69.2 A | 7.20 V |
+| 0.00 s | 0.0 rot/s | 119.0 A | 29.8 A | 3.00 V |
+| 0.60 s | 17.2 rot/s | 119.4 A | 51.3 A | 5.15 V |
+| 0.90 s | 26.1 rot/s | 119.6 A | 62.4 A | 6.26 V |
+| 1.20 s | 35.0 rot/s | 114.7 A | 69.3 A | 7.25 V |
 
 Stator current sits pinned near 120 A the whole time. Supply current
 starts at a quarter of that and climbs steadily as the motor speeds up.
@@ -80,8 +80,8 @@ only draws off the battery a quarter of the time.
 ```
 supply current  ≈  stator current × (applied volts / battery volts)
 
-at 3.00 V:  116.3 × 3.00/12 = 29.1 A     ✓ (measured 29.1)
-at 7.20 V:  115.3 × 7.20/12 = 69.2 A     ✓ (measured 69.2)
+at 3.00 V:  119.0 × 3.00/12 = 29.8 A     ✓ (measured 29.8)
+at 7.25 V:  114.7 × 7.25/12 = 69.3 A     ✓ (measured 69.3)
 ```
 
 **So a stalled motor is terrifying for the windings and cheap for the
@@ -481,8 +481,8 @@ and press the **intake button** (the left face button), all together. The
 elevator climbs, the flywheel spins up, and the arm swings down with the
 roller running.
 
-With the budget from section 4, the total draw peaks at **58–87 A** and the
-battery bottoms out around **10.3–10.8 V**. Everything works, and
+With the budget from section 4, the total draw peaks at **61–110 A** and the
+battery bottoms out around **9.8–10.8 V**. Everything works, and
 `Power/BrownedOut` stays false.
 
 Now see what the budget bought. Turn every limit off:
@@ -495,16 +495,17 @@ Now see what the budget bought. Turn every limit off:
 ```
 
 *(In `ArmIOTalonFX`, that's `rollerConfig` too.)* Repeat exactly the same
-thing. The draw peaks near **200 A** and the battery sags to **8.0 V**:
+thing. The draw peaks near **200 A**, with spikes up to 275 A in the worst
+runs, and the battery sags to **8.0 V**, or 6.5 V in the worst of them:
 worse, and still not a brownout. Delete those limit lines entirely and you're
-on Phoenix's defaults, which peak around **97–144 A** and sag to
-**9.1–10.1 V**.
+on Phoenix's defaults, which peak around **84–126 A** and sag to
+**9.5–10.3 V**.
 
 | Configuration | Peak draw | Battery low point | |
 |---|---|---|---|
-| No limits at all | 200–202 A | 7.95–8.01 V | sags, survives |
-| Phoenix defaults | 97–144 A | 9.13–10.06 V | fine |
-| The budget above | 58–87 A | 10.25–10.83 V | comfortable |
+| No limits at all | 197–275 A | 6.50–8.05 V | sags, survives |
+| Phoenix defaults | 84–126 A | 9.48–10.33 V | fine |
+| The budget above | 61–110 A | 9.80–10.77 V | comfortable |
 
 *(Ten runs of each, the same moves every time. The peaks are spikes a few
 ticks long, and a 20 ms sample catches some of them and misses others, so

@@ -638,7 +638,7 @@ kP × (goal − ω)  =  kV × ω
 ω                =  42.96 rot/s
 ```
 
-Measured here: 43.27. Close enough to confirm the arithmetic, not exact —
+Measured here: 43.40. Close enough to confirm the arithmetic, not exact —
 the small remaining gap is this simulator's own motor model, not a flaw in
 the reasoning. (Zero both gains, hold the request for five seconds on a
 20 ms schedule, and that is what the wheel reads.)
@@ -648,9 +648,9 @@ produced a gap that trailed the setpoint while moving and closed when it
 stopped. Here there is no stopping: the error is where the wheel lives,
 permanently, and no amount of patience recovers it.
 
-With the model in place, the same request settles at **60.44 rot/s** —
-comfortably inside the 1.5 rot/s tolerance — holding **7.22 V**, matching
-`kV × 60 = 7.2 V` almost exactly.
+With the model in place, the same request settles at **60.47 rot/s** —
+comfortably inside the 1.5 rot/s tolerance — holding **7.14 V**, matching
+`kV × 60 = 7.1 V` almost exactly.
 
 > **The third time this course has said it, and the clearest.** A P term
 > corrects; it does not sustain. If holding station requires continuous
@@ -663,7 +663,7 @@ comfortably inside the 1.5 rot/s tolerance — holding **7.22 V**, matching
 
 Now the thing that separates a shooter that works from one that scores.
 
-Nobody cares whether the wheel is at 60.4 rot/s or 59.8. Balls tolerate
+Nobody cares whether the wheel is at 60.5 rot/s or 59.8. Balls tolerate
 that. What ruins a cycle is the *time between shots* — every shot drags
 the wheel down, and until it's back you can't fire again. **The figure of
 merit is recovery time, not error.**
@@ -674,8 +674,8 @@ sits while it's waiting.
 | Idle speed | Time to reach shooting speed |
 |---|---|
 | 0 rot/s (stopped) | 2.3 s |
-| 15 rot/s | 1.76 s |
-| 30 rot/s | 1.24 s |
+| 15 rot/s | 1.72 s |
+| 30 rot/s | 1.22 s |
 | 45 rot/s | 0.70 s |
 
 Idling at half the shooting speed cuts the wait roughly in half, and
@@ -731,7 +731,7 @@ Hold the left trigger. The goal jumps to 60, the wheel climbs, and
 `Flywheel/AtSpeed` goes true a bit over a second later. Let go and it
 drops back to idle. Add `Flywheel/AppliedVolts` to the graph and you'll
 see it jump to about 7 V, climb towards 9 V as the wheel speeds up, and
-settle around 7.2 — which is `kV × 60`, exactly as computed in section 3.
+settle around 7.1 — which is `kV × 60`, exactly as computed in section 3.
 
 Worth doing deliberately:
 
@@ -801,7 +801,7 @@ a real event. Nothing analogous happens to a flywheel: reaching speed is
 not an achievement it can keep without continuing to work for it. That one
 difference changed the shape of every command in the subsystem.
 
-**Recovery time, not error.** Being 0.4 rot/s off doesn't cost a match;
+**Recovery time, not error.** Being 0.5 rot/s off doesn't cost a match;
 taking two and a half seconds to be ready for the next shot does. And the
 lever on it turned out not to be a gain at all — it was deciding what the
 wheel does while it's waiting, which is a design decision rather than a

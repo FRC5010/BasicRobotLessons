@@ -666,7 +666,8 @@ method as 14–27:**
   - **Fresh battery** (text rewritten): no limits 199.5–202.4 A /
     7.95–8.01 V; defaults 96.8–143.7 A / 9.13–10.06 V; budget 58.4–87.4 A /
     10.25–10.83 V. No brownout in 30 runs; elevator at 1.450 m and flywheel
-    at 60.4 rot/s every time.
+    at 60.4 rot/s every time. (Alpha-8: 197–275 A / 6.50–8.05 V, 84–126 A /
+    9.48–10.33 V and 61–110 A / 9.80–10.77 V; the text says those now.)
   - **Tired battery** (11 V, 40 mΩ; **text rewritten to report how often,
     user decision 2026-10-29, option A**): budget 67.4–87.5 A / 7.50–8.31 V, no brownout, everything
     finishes. **Defaults browned out in 2 of 10 runs** (153 A / 4.87 V, four
@@ -684,7 +685,9 @@ method as 14–27:**
     peaked at 153 A; the other eight stayed at or under 111 A. At the first
     no-limits brownout (0.22–0.24 s after enable) the flywheel is the only
     motor drawing (126–132 A). Try It #4 now says to run each setting a few
-    times.
+    times. (Alpha-8: the budget browned out in 1 of 30 runs and the defaults
+    in 4 of 30, on alpha-7 too; this story is under review, see the Lessons
+    28–32 block.)
   - Why peaks vary: they're spikes a few ticks long that 20 ms samples
     catch or miss (the elevator's own supply peak was 6.8 A in one run and
     32.4 A in another, on the same climb). The fresh table says so.
@@ -707,7 +710,8 @@ method as 14–27:**
 - **Lesson 30 measurements, real `Robot` loop:** boot flicker on 10 of 10
   fresh launches (elevator, arm and flywheel motors, both cameras and the
   CANcoders on modules 1–3, all clear the next tick, 0.15–0.27 s later;
-  the flywheel one tick more in 2 of 10). Each unplug switch (gyro,
+  the flywheel one tick more in 2 of 10; alpha-8: the motors' alerts last 2–7 ticks,
+  see the Lessons 28–32 block). Each unplug switch (gyro,
   CANcoder 9, limelight-front) raised and cleared its alert on the first
   tick that read it. Fresh battery: no low-battery warning while enabled;
   the recorded rail was below 11.5 V for 0.72 s (to 11.26 V) on enable and
@@ -793,9 +797,10 @@ measured where it matters:
   User decision 2026-10-30: re-measure every motor-dependent number and
   redo the spec-sheet arithmetic with the new figures. **The arithmetic is
   done (2026-10-30, OpMode track only; the classic track keeps 6000 RPM and
-  7.09 N·m, the rule in the Lesson 18 notes below). The re-measure is not
-  done yet**, so numbers quoted from simulation in Lessons 10–33 are still the
-  old ones; `kraken-remeasure-inventory.md` in the working files lists them.
+  7.09 N·m, the rule in the Lesson 18 notes below). The re-measure is done
+  for Lessons 7–32** (the three "re-measured on alpha-8" blocks below: 7–22,
+  24–27 and 28–32) **and Lesson 33's figures still quote the old simulation**;
+  `kraken-remeasure-inventory.md` in the working files lists them.
   - **Where 7.157 N·m and 6065 RPM come from:** allwpilib #9378, commit
     `39599a7a9`, "Update the Kraken X60 DCMotor factories to use values from
     the CTRE Motor Testing Lab". Its message says it "commonizes Kraken X60 to
@@ -839,12 +844,13 @@ measured where it matters:
     carries the drive, elevator and arm values; only those lines and their
     comments changed). The `kMaxSpeed` comment now says 6065 RPM / 101.08
     rotations/sec / about 4.8 m/s.
-  - **Kept as they were, to be re-measured** (the lesson text still quotes
+  - **Kept as they were until the re-measure jobs** (the lesson text quoted
     the old simulation): every `Measured`/`about` value in the Kraken-
     dependent lessons, for instance Lesson 28's "43.27", "60.44 rot/s",
     "7.22 V" (the last sits next to `kV × 60 = 7.2 V`, which is now 7.1 V),
-    and Lesson 18's sag and lag figures. They are not wrong by much, since
-    the true physics moved about 1%, but none has been re-run.
+    and Lesson 18's sag and lag figures. They were not wrong by much, since
+    the true physics moved about 1%. Lessons 7–32 are re-run now (the blocks
+    below); only Lesson 33's are still the old ones.
   - **`merge_constants.py` and retired values:** see `RETIRED_VALUES` in
     the merge notes at the top.
 - **New Commands V3 API:** `Command.onExit()`/builder `whenExited(Runnable)`
@@ -1141,6 +1147,162 @@ working inventory, not kept in the repo.
     1° at kP 4, ln 26.6 ÷ 4, which may be where it came from); the 0.8° average,
     4.3 s and (8.01, 7.02) held.
 
+**v3 Lessons 28–32 re-measured on alpha-8 with the committed Kraken constants
+(2026-10-31, batch 2b of the user's "re-measure them all").** Every figure is
+"(alpha-8)" unless it says alpha-7 (a `git worktree` of `76dd0f9`, same
+probe). Methods: **RIG** (the real `Flywheel` or `Elevator` through the
+scheduler on a fixed 20 ms schedule) for Lessons 28 and 32; **LOOP** (the
+real `Robot` on its own thread, `GamepadSim`, `DriverStationSim`, Blue 1) for
+the rest of 28 and for 29, 30 and the Lesson 32 aim, read from the `akit_`
+log; **BARE** (`TalonFX` + `FlywheelSim`, no `Robot`) for Lesson 29's two
+tables; a fresh JVM per Lesson 31 run. The probes are listed at the end of the
+working inventory, not kept in the repo.
+
+- **Lesson 28 (Lesson 28 state; RIG five runs, LOOP five runs):**
+  - Both gains zeroed: **43.400 rot/s** in all seven runs (alpha-7 43.269),
+    0.44 from the 42.96 prediction, so "within half a rotation" holds. The
+    lesson says 43.40 now.
+  - With the model: **60.468 rot/s on 7.141 V** (alpha-7 60.437 on 7.213 V).
+    The lesson says 60.47, 7.14 V, `kV × 60 = 7.1 V`, and "60.5 rot/s" and
+    "0.5 rot/s off" where it said 60.4 and 0.4.
+  - Time to `AtSpeed` (within 1.5 rot/s) from idle 0 / 15 / 30 / 45 rot/s:
+    **2.26 / 1.72 / 1.22 / 0.70 s** in five of five (to 60.0 itself 2.60–2.62
+    / 2.08 / 1.56 / 1.04 s; alpha-7 2.32 / 1.76 / 1.24 / 0.70). The table says
+    1.72 and 1.22; its "2.3 s" and 0.70 stand. "Roughly half the wait" holds
+    (1.22 ÷ 2.26 = 54%), and a dozen shots × 1.04 s is 12.5 s ("more than ten
+    seconds").
+  - LOOP, left trigger from idle: `AtSpeed` **1.20 s** after the press (60
+    ticks, five of five). On the first tick the applied volts jump from
+    3.59 V to 6.79–6.81 V, peak **9.05 V at tick 45** and settle at 7.141 V
+    ("about 7 V, towards 9 V, around 7.1"). After the release the wheel is at
+    31.2 rot/s 75 ticks later and at idle (30.4) by 150.
+- **Lesson 29, the supply/stator table (BARE):** one default-config Kraken on
+  a `FlywheelSim` (J = 0.01), 12 V requested, the battery fixed at 12 V, 20
+  ms, **reading before stepping the model** after five pre-roll ticks at
+  rotor velocity 0, so the 0.00 s row is a true standstill; three runs per
+  alpha. Alpha-7 reproduces the old table to the digit (0.60 s 17.0 rot/s,
+  119.0 A, 50.7 A, 5.11 V; 25.7 / 61.4 / 6.20; 34.5 / 115.3 / 69.2 / 7.20).
+  Alpha-8: **0.00 s 0.0 rot/s 119.0 A 29.8 A 3.00 V; 0.60 s 17.2 / 119.4 /
+  51.3 / 5.15; 0.90 s 26.1 / 119.6 / 62.4 / 6.26; 1.20 s 35.0 / 114.7 / 69.3
+  / 7.25** (runs agree within 0.2 A). The wheel climbs about 1% faster
+  because the WPILib motor model got stronger. The old 0.00 s row (116.3 A /
+  29.1 A) was a single early sample; it shows up as a one-tick transient at
+  0.02 s in one of three alpha-8 runs, and a standstill reads 119.0 A / 29.8 A
+  on both alphas. The lesson's table and its two arithmetic checks
+  (119.0 × 3.00/12 = 29.8, 114.7 × 7.25/12 = 69.3) say these now. **Probe
+  trap:** stepping the model before reading shifts the whole table by one
+  tick (17.7 rot/s at 0.60 s, 0.6 rot/s in the first row), and one alpha-7
+  launch in four started 0.3 s late (5.2 rot/s at 0.60 s).
+- **Lesson 29, the motor-count table (BARE):** N default-config Krakens held
+  at rotor velocity 0 on 12 V, battery through
+  `BatterySim.calculateDefaultBatteryLoadedVoltage` one tick behind, mean over
+  1.0–2.0 s, three runs per N and alpha. **3 → 109.0 A / 9.82 V and 6 →
+  325.8 A / 5.48 V on both alphas, every run, as the lesson says** (they use
+  only Phoenix's firmware sim, not WPILib's motor model). **9 and 12 are
+  chaotic** (the rail collapses to 0–2 V on some first-second ticks): alpha-8
+  9 → 383–384 A / 4.31–4.33 V, 12 → 412–426 A / 3.56–4.30 V; alpha-7 9 →
+  367–384 A / 4.31–4.65 V, 12 → 411–422 A / 3.55–4.30 V. **The lesson's 9 →
+  346 A / 5.08 V and 12 → 336 A / 5.32 V were not reproduced on either alpha**
+  with a rig rebuilt from the notes (the original probe wasn't kept), and "the
+  total stops growing past six" is weaker than this rig shows (326 → ~384 →
+  ~420 A). **Left as it was; reported to the user for a decision.**
+- **Lesson 29, the fresh battery (LOOP, ten runs per configuration, the
+  Back / D-pad up / left trigger + left face button recipe; thirty for no
+  limits).** Alpha-7 with the same probe reproduces the 2026-10-29 ranges (no
+  limits 199.4–200.8 A / 7.98–8.01 V; defaults 98.6–153.0 A / 8.94–10.03 V;
+  budget 57.8–90.3 A / 10.19–10.84 V), so the alpha-8 shifts are real: no
+  limits **197.4–275.0 A / 6.50–8.05 V** (6 of 30 runs spike above 205 A in
+  the elevator or the roller; none browned out, lowest 6.50 V), defaults
+  **83.7–126.1 A / 9.48–10.33 V**, budget **61.4–109.9 A / 9.80–10.77 V**
+  (two runs above 90 A, at 92.1 and 109.9). Elevator 1.450 m and flywheel
+  60.5 rot/s every run. The lesson's prose and table say these now. The
+  cause of the alpha-8 shift isn't established.
+- **Lesson 29, the tired battery — NOT CHANGED, the measured story differs
+  from the text; waiting for a decision.** Same recipe with
+  `calculateLoadedBatteryVoltage(11.0, 0.04, total)`. Alpha-8, first ten runs:
+  no limits **226–642 A / 0.00–1.94 V, 10 of 10 browned out** (8 collapsed to
+  0.00 V, the elevator reaching 0.12–0.53 m and the flywheel peaking
+  38.5–48.3 rot/s then falling to 0; 2 dipped to 1.87 and 1.94 V and
+  finished); defaults 85–114 A / 6.43–7.60 V, **0 of 10**; budget 65–121 A /
+  6.17–8.42 V, **1 of 10** (a one-tick elevator supply spike of 83 A against
+  its 40 A limit, beside the flywheel's 38 A). The lesson says 2 of 10 and 0
+  of 10 and "Only the budget was safe every time. Its worst run stayed 1.2 V
+  above the line." More runs show this is sampling, not alpha-8. Alpha-8,
+  thirty runs each: defaults **4 of 30** (lows 5.82–7.62 V, peaks 85–129 A),
+  budget **1 of 30** (6.17 V; near misses at 6.43 V and 7.16 V). Alpha-7, same
+  probe: defaults 2 of 20 (the first ten 2 of 10, the next ten 0 of 10), budget
+  **1 of 20** (6.14 V at 121.5 A, in the first ten) and no limits 10 of 10 (9
+  collapsed, 1 dipped to 1.06 V). So the 2026-10-29 "0 of 10" for the budget
+  was luck on alpha-7 too: over both alphas defaults browned out in 6 of 50
+  runs (12%) and the budget in 2 of 50 (4%). **"The budget is the only
+  configuration safe every time" is not what the data says.**
+- **Lesson 30 (Lesson 30 state; LOOP):**
+  - Boot flicker, ten fresh launches twice: on the first tick the elevator,
+    arm and flywheel motors read disconnected in 20 of 20 and both cameras
+    in 20 of 20 (CANcoders on modules 1–3 in most). **The cameras clear on
+    the second tick and the CANcoders by it; the motors' alerts last 2–7
+    ticks in all, the last one showing 0.08–0.16 s after the first tick.** The lesson
+    said "by the next tick, about a fifth of a second later": that was
+    alpha-7, where the first loop lasts 0.19–0.37 s (ten launches, same
+    probe), so everything cleared on tick 2. Alpha-8's first loop lasts
+    0.065–0.09 s. The lesson now says "a few ticks later, within about a
+    sixth of a second", and "flickered on for a few ticks" in the recap.
+  - Fresh battery, five runs: below 11.5 V for 34 ticks (**0.68 s**) to
+    11.26–11.27 V on enable, and for 77–78 ticks (**1.54–1.56 s**) to
+    11.18–11.19 V on a shot; the rail rests at 12.0 V. Unchanged ("about 0.7
+    s, 11.3 V; 1.6 s, 11.2 V").
+  - Camera "unplugged" 3 m in front of tag 20 (three runs): observations on
+    **50 of 50 ticks**, `connected=false`, the alert up two ticks after the
+    switch. Unchanged.
+  - Tired battery (three runs): the rail reads 11.0 V from tick 2, the alert
+    is up on tick 3 ("the second tick after boot"), clear one tick after
+    enable and back one tick after disable. Unchanged.
+- **Lesson 31 (Lesson 31 state, the lesson's own `ElevatorHomingTest` with
+  the sleep varied, a fresh JVM per run, eight runs per setting):** 20 ms
+  **0.0090 m** in 8 of 8; 4 ms **0.0075–0.0094 m** (0.0090 five times,
+  0.0075 twice, 0.0094 once; alpha-7 0.0075–0.0100); 0 ms **−0.34 m in 7 of
+  8** (−0.3396 to −0.3415) and 0.0094 m in the eighth (alpha-7, same probe: 5
+  of 8 failed, 0.0081–0.0100 m in the others). The trap is intermittent on
+  both alphas. Arrange assertions hold in every run (encoder −0.0004 to
+  −0.0012 m, switch false). The lesson's table says these ("eight runs at
+  each setting").
+- **Lesson 32 (Lesson 32 state):**
+  - The settled error at `kScoreMid` is **0.1549 or 0.1939 mm** short, not
+    the 0.1159 mm of alpha-7 (the same steps: the three readings are 0.0390
+    mm apart, 1/4096 of a drum rotation × 160 mm, so the height reading
+    looks quantized; inferred, not checked in Phoenix). A run sits on one
+    reading and can step to the other after seconds (−0.1939 for 150–600
+    ticks, then −0.1549). The 0.116 → 0.194 shift is the `kG` change:
+    0.01 V ÷ (20 V per drum rotation ÷ 0.16 m) = 0.08 mm. Overshoot **1.21–1.25
+    mm** (once 1.29, once 0.90), where alpha-7 had 1.36; the lesson says 1.2
+    mm and "0.15–0.19 mm", and "a fifth of a millimetre" where it said a
+    tenth.
+  - `Centimeters.of(0.1)` (the fix): `atGoal()` first true at **1.26 s** (1.24
+    once) in 10 of 10, false again for a tick or two, true for good from 1.32
+    s in this RIG run (one run had a one-tick dropout at 10.36 s);
+    `goToHeight` ends at 1.26 s. The 1 mm margin is **5.2
+    times the larger floor and 6.5 times the smaller**; the lesson says "roughly
+    five times the 0.19 mm floor".
+  - **The tighter tolerances pass by luck in about one run in ten:** a
+    run either crosses the goal within **0.00094 mm** on tick 71 (1.42 s) or
+    never nearer than 0.038 mm (tick 72); 8 of 50 runs did the first (a
+    ninth came that close once, at 10.48 s). At
+    `Centimeters.of(0.002)` 1 of 12 runs ended (at **1.42 s**; alpha-7 1.44–1.46
+    s), at `0.0002` 1 of 16 (also 1.42 s), at the typo `0.00002` **0 of 16**
+    (the nearest tick is 0.94 µm away, not 0.2). The callout says so.
+  - Replay (RealOutputs typo, ReplayOutputs through `0.1`, two recordings, two
+    goal steps each): `RealOutputs/Elevator/AtGoal` false all session;
+    `ReplayOutputs` flips true **1.20 s** after each step, false for one tick
+    (1.22 or 1.24 s), true for good from **1.26 s**; peak height over the goal
+    1.13–1.17 mm; error over the last second −0.173 to −0.176 mm. The lesson's
+    timings stand; "about 1.3 mm" became "about 1.2 mm".
+  - Aim While Driving on the Lesson 32 state: tag 20 override on **0.58 s**,
+    off 4.24 s (**3.66 s**), truth heading at release **−124.3 / −124.4°**,
+    ends (8.006, 7.020, −1.6°); tag 220 on 0.58 s, off 4.22 s (**3.64 s**),
+    `outputOmega` exactly 0.000, heading **0.0°** at release, ends (7.98–7.99,
+    7.00, 0.0°) after 4.64–4.66 s. "About 3.7 s" for both is within 0.06 s
+    and stays; the 0.6 s and −124° stand.
+
 **v3 Lesson 26 (drive to pose) was redesigned on 2026-10-26 at the user's
 request: two motion-profiled stages, handing over while moving.** The old
 design ran the Lesson 11 sketch to 5 cm, then three `PIDController`s; the user
@@ -1263,7 +1425,8 @@ real SimGUI under `Xvfb`:**
   disconnected, sometimes some CANcoders too, and all clear by the second
   tick (cameras: no frame yet, since the sim publishes one loop late). The
   camera "unplugged" at 3 m in front of tag 20 still delivered a pose on
-  50 of 50 ticks.
+  50 of 50 ticks. (Alpha-8: the first loop lasts 0.07 s instead of
+  0.2–0.4 s, so the motors' alerts last 2–7 ticks; still 50 of 50.)
 - **The battery alert is gated on `RobotState.isDisabled()`.** Ungated on
   the fresh sim battery (rests at 12.0 V): enabling sagged the rail to
   11.49 V for 0.72 s (the flywheel's idle spin-up), and a shot spin-up to
@@ -1316,12 +1479,15 @@ rate, `DriverStationSim` enabled):**
   through `BatterySim.calculateDefaultBatteryLoadedVoltage`, mean of the
   second after the first): 3 → 109 A / 9.82 V, 6 → 326 A / 5.48 V,
   9 → 346 A / 5.08 V, 12 → 336 A / 5.32 V. Peaks in the first second are
-  higher and collapse the rail to 0 V at 9 and 12.
+  higher and collapse the rail to 0 V at 9 and 12. (Alpha-8: 3 and 6 reproduce
+  to the digit on both alphas; 9 and 12 reproduce on neither; see the Lessons
+  28–32 block.)
 - **The lesson's old in-robot brownout did not reproduce.** The three
   mechanisms, even unlimited, peak at 201 A and sag a fresh battery only to
   7.97 V; defaults 139 A / 9.23 V; the budget 87–94 A / 10.1–10.3 V (re-
   measured 2026-10-29 over ten runs each: 200–202 A, 97–144 A and 58–87 A;
-  see the Lessons 28–30 notes). Nothing stalls and `Power/BrownedOut` stays
+  see the Lessons 28–30 notes; alpha-8: 197–275 A, 84–126 A and 61–110 A, see
+  the Lessons 28–32 block). Nothing stalls and `Power/BrownedOut` stays
   false. The old 366 A / 4.7 V is gone.
   Not homing first makes no difference (the elevator stalls on the frame at
   1.15 m, peak 199 A unlimited).
@@ -1334,7 +1500,9 @@ rate, `DriverStationSim` enabled):**
   elevator's logged height is garbage (−1742 m); don't quote it. Re-measured
   2026-10-29 over ten runs each: defaults browned out twice in ten, so the
   lesson now reports how often (user decision, option A); see the Lessons
-  28–30 notes.
+  28–30 notes. (Alpha-8, thirty runs each: defaults 4 of 30, the budget 1 of
+  30, so the "only the budget is safe every time" story is under review; see
+  the Lessons 28–32 block.)
 - **Probe traps:** Maven 429s ("Too Many Requests") on a cold Gradle cache —
   retry after 30 s. `GamepadSim` here has `setDpadUpButton`,
   `setFaceLeftButton`, `setBackButton` and `setLeftTriggerAxis`.
@@ -1351,7 +1519,9 @@ through the scheduler and with the real `Robot` loop and `GamepadSim`
   real loop: 30.4 rot/s within 1.5 s of enabling.
 - **Reproduced:** rest to 60 rot/s 2.30–2.40 s (old 2.32); idle 15/30/45 to
   60 rot/s 1.76/1.24/0.70 s; holds 60.44 rot/s on 7.21–7.22 V; with `kV` and
-  `kA` zeroed it sits at 43.27 rot/s after 5 s (predicted 42.86).
+  `kA` zeroed it sits at 43.27 rot/s after 5 s (predicted 42.86). (Alpha-8:
+  2.26 s, 1.72 / 1.22 / 0.70 s, 60.468 rot/s on 7.141 V and 43.40 rot/s; see
+  the Lessons 28–32 block.)
 - **Did not reproduce:** "pins near 12 V during the climb". From idle (30 to
   60) the applied volts jump to ≈7 V and rise to ≈9 V as the wheel speeds up.
   The lesson says that now.
@@ -1798,15 +1968,17 @@ arguments). Measured with the real `Elevator` homing test: Thread.sleep 20 ms
 0.0100 m in the fifth, so the real-time trap is intermittent, not just a
 cliff. Re-measured 2026-10-29 (each run its own JVM): 20 ms 0.0090 m twice,
 4 ms 0.0090 and 0.0094 m, 0 ms −0.340 m in 4 of 5 and 0.0094 m in the
-fifth; the lesson's table says that now. With `setEnabled(true)` removed the
+fifth; the lesson's table says that now. (Alpha-8, eight runs each: 0.0090 m,
+0.0075–0.0094 m and −0.34 m in 7 of 8; the table says that now.) With
+`setEnabled(true)` removed the
 test dies at its own `isDisabled()` assertion; with that removed too, at
 `assertTrue(isHomed())` (re-measured, same).
 Making `canGoTo` let IDLE reach SCORING fails `scoringRequiresSomethingToScore`.
 
 **v3 Lesson 32 (reading a log) on alpha-7, measured with the real `Elevator` homed and ticked at 20 ms, and the real `Robot` loop on Blue 1:**
 
-- The settled error at `kScoreMid` is a flat 0.1159 mm (after a 1.3 mm overshoot); `atGoal()` goes true at 1.24 s with `Centimeters.of(0.1)`. Re-measured 2026-10-29 on the AdvantageKit code, fixed 20 ms rate: −0.1159 mm (short of the goal), overshoot 1.36 mm, `goToHeight` ends at 1.26 s.
-- **A slightly-too-tight tolerance can pass by luck.** At `Centimeters.of(0.002)` and even `0.0002`, one tick (1.44 s; 1.46 s re-measured, within 0.00094 mm) lands within 0.001 mm of the goal as the carriage comes back through it, so `goToHeight` ends. At `0.00002` it never ends (15 s). The lesson's typo is the latter.
+- The settled error at `kScoreMid` is a flat 0.1159 mm (after a 1.3 mm overshoot); `atGoal()` goes true at 1.24 s with `Centimeters.of(0.1)`. Re-measured 2026-10-29 on the AdvantageKit code, fixed 20 ms rate: −0.1159 mm (short of the goal), overshoot 1.36 mm, `goToHeight` ends at 1.26 s. (Alpha-8: 0.1549 or 0.1939 mm, overshoot 1.2 mm; see the Lessons 28–32 block.)
+- **A slightly-too-tight tolerance can pass by luck.** At `Centimeters.of(0.002)` and even `0.0002`, one tick (1.44 s; 1.46 s re-measured, within 0.00094 mm) lands within 0.001 mm of the goal as the carriage comes back through it, so `goToHeight` ends. At `0.00002` it never ends (15 s). The lesson's typo is the latter. (Alpha-8: the lucky tick is at 1.42 s and only about one run in ten has it; the typo never ended in 16 of 16.)
 - **Aim While Driving with `kAimTagId = 220`:** override active ≈3.7 s as normal, heading stays 0.0° (fixed: ≈ −100°), finish (8.04, 7.00) vs (8.01, 7.02); `Aim/ErrorDegrees`, `FeedforwardRadPerSec` and `IsAimed` are never published (150 `/Telemetry/` topics vs 153). Re-measured on AdvantageKit (2026-10-29): with tag 20 the three keys are in the `akit_` log and (via NetworkTables) the `WPILIB_` log, with 220 in neither; override 3.72 / 3.70 s, on 0.58 s into the drive; with tag 20 the heading follows the bearing to about −124° by `release`. `Localizer/Pose` is a struct, so read the pose from `robot.localizer`, not NT.
 - **Probe trap:** a sandbox `kTolerance` left at the broken value makes `Superstructure.isSettled()` never true, so every path auto waits forever at `IDLE` and the robot never drives. Reset it before probing autos.
 

@@ -1465,6 +1465,34 @@ unhomed carriage keeps sinking: 3.3 s of red if you enable after a second, 3.1
 after two, 2.5 after five). Details in CLAUDE.md's "v3 Lessons 24–27
 re-measured" block.
 
+**Alpha-8, the Kraken re-measure, Lessons 28–32, 2026-10-31.** Batch 2b: the 29
+inventory rows for Lessons 28–32, re-measured on alpha-8 (the real `Flywheel`
+and `Elevator` on a 20 ms schedule, the real `Robot` loop with `GamepadSim`,
+bare `TalonFX` rigs, a fresh JVM per Lesson 31 run), with alpha-7 builds of the
+same probes wherever a number surprised. Changed: Lesson 28's zeroed-gain
+plateau (43.27 to 43.40 rot/s), held speed and volts (60.44 rot/s on 7.22 V to
+60.47 on 7.14 V, so `kV × 60 = 7.1 V`) and idle-table times (1.76 and 1.24 s to
+1.72 and 1.22 s); Lesson 29's supply/stator table (the old first row, 116.3 A,
+was a single early sample; alpha-7 with a read-then-step rig reproduces the old
+table to the digit, alpha-8 gives 17.2 rot/s and 51.3 A at 0.6 s) and its
+fresh-battery ranges (alpha-7 reproduces the old ranges, alpha-8 is lower for
+the defaults and has occasional 220–275 A spikes with no limits); Lesson 30's
+boot flicker (alpha-7's first loop took 0.2–0.4 s, so everything cleared on tick
+2; alpha-8's takes 0.07 s and the motors' alerts last 2–7 ticks); Lesson 31's
+sleep table (4 ms reads 0.0075–0.0094 m, 0 ms fails in 7 of 8 runs); Lesson
+32's settled floor (0.116 to 0.15–0.19 mm, which is the `kG` change plus a
+0.039 mm reading step), the 1 mm margin (8.6 to about five times), the
+overshoot (1.3 to 1.2 mm) and the lucky-tick callout (1.46 to 1.42 s, about one
+run in ten). Unchanged: Lesson 28's 1.20 s to `AtSpeed`, Lesson 30's battery,
+camera and tired-battery figures, Lesson 32's replay timings (1.20 s, 1.26 s)
+and aim figures. **Not changed, awaiting a user decision:** Lesson 29's
+tired-battery section (over thirty runs per configuration the budget browned
+out once and the defaults 4 times in 30, on alpha-7 too, so "only the budget was
+safe every time" isn't what the data says), and Lesson 29's 9- and 12-motor
+rows (3 and 6 reproduce exactly on both alphas; the old 346 A and 336 A do not
+reproduce on either). Details in CLAUDE.md's "v3 Lessons 28–32 re-measured"
+block. Only Lesson 33's figures are still the old ones.
+
 **What the AdvantageKit pass leaves: only Lesson 34.** Lessons 13–33 record
 their readings with `processInputs`, their decisions with `recordOutput`,
 and replay. The `Field2d` widget, B-Line's own values and the SysId signals

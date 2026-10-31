@@ -270,8 +270,8 @@ watch the line disappear on its own. Nothing clears it explicitly:
 
 You may also catch a burst of red the moment the robot starts. It happens on
 every launch: measured over ten fresh launches, on the very first tick the
-elevator, arm and flywheel motors read disconnected every time, and by the
-next tick, about a fifth of a second later, they were fine. Those motors
+elevator, arm and flywheel motors read disconnected every time, and a few
+ticks later, within about a sixth of a second, they were fine. Those motors
 were built only a moment before that first tick, and a device needs a
 moment to come up on a CAN bus, real or simulated. It's the clearest proof
 there is of why alerts are set every tick. An alert raised once on that
@@ -733,7 +733,7 @@ when it knows the device was missing.
 
 **An alert is a statement, not an event.** Setting it every tick with the
 current answer is what lets it clear itself, and you saw both sides of that:
-your motor alerts flickered on for a single tick at startup and went away,
+your motor alerts flickered on for a few ticks at startup and went away,
 while the gyro alert you wrote the wrong way went up once and never came
 down.
 

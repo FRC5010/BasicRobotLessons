@@ -105,13 +105,13 @@ teleop, you'd never know.
 
 > **Why four zeros and not two.** A tolerance that's *slightly* too tight
 > doesn't fail every time, and that's worse. Measured with `Centimeters.of(0.002)`
-> (0.02 mm): the carriage overshoots the goal by about 1.3 mm on the way in,
-> then creeps back down across it. One 20 ms tick landed within 0.001 mm of
-> the goal, so `atGoal()` read `true` for that single tick and the command
-> ended at 1.46 s. Ten times tighter again, 2 micrometres, the same tick
-> still passed. A too-tight tolerance can pass by luck of where the ticks
-> fall. At 0.2 micrometres the luck runs out: the command was still running
-> after fifteen seconds.
+> (0.02 mm): the carriage overshoots the goal by about 1.2 mm on the way in,
+> then creeps back down across it. In roughly one run in ten, one 20 ms tick
+> landed within 0.001 mm of the goal, so `atGoal()` read `true` for that
+> single tick and the command ended at 1.42 s. Ten times tighter again, 2
+> micrometres, the same tick still passed. A too-tight tolerance can pass by
+> luck of where the ticks fall. At 0.2 micrometres the luck runs out: the
+> command was still running after fifteen seconds, every time.
 
 Drive around for ten or fifteen seconds — hit the scoring binding a
 couple of times — then close the sim. You now have an `akit_….wpilog` in
@@ -183,17 +183,17 @@ You don't need to open the source to get most of the way there, either
 — you can do the arithmetic straight off the graph. Hover the plateaued
 `HeightMeters` trace and read its settled value; hover `GoalMeters` for
 the target. Subtract them. On a real run of this bug you'll get
-something on the order of a **tenth of a millimetre** — the elevator is
+something on the order of a **fifth of a millimetre** — the elevator is
 not missing by much, it's missing by an amount too small to see on a
 graph zoomed out far enough to show the whole climb. Measured in this
 course's simulator, holding at `kScoreMid`: the carriage settles a stable
-**0.116 mm** short of the goal, flat for as long as you let it sit — a
+**0.15–0.19 mm** short of the goal, flat for as long as you let it sit — a
 real floor, not something still converging.
 
 That number is the hypothesis, stated without even reading `atGoal()`'s
 source: *whatever the elevator is being asked to get within, it's
 smaller than the elevator can actually achieve.* Reading the actual line
-confirms it — `kTolerance` compared against a gap of a tenth of a
+confirms it — `kTolerance` compared against a gap of a fifth of a
 millimetre is comparing a real mechanism's precision against a number
 nobody's mechanism hits. The fix isn't a gain, a motor, or a sensor.
 It's the one constant this whole investigation has been circling.
@@ -205,8 +205,8 @@ public static final Distance kTolerance = Centimeters.of(0.1); // 1 mm — comfo
 ```
 
 Not the `0.2` the story's mentor meant to type — a value re-derived from
-what you just measured, with margin: 1 mm is roughly 8.6 times the
-0.116 mm floor, so it trips reliably without also being a number nobody
+what you just measured, with margin: 1 mm is roughly five times the
+0.19 mm floor, so it trips reliably without also being a number nobody
 checked.
 
 Now, instead of trusting that this fixes it, *prove* it against the exact
@@ -241,7 +241,7 @@ the buggy code. In `ReplayOutputs`, computed just now for that exact same
 session through the fixed code, it flips true 1.2 s after `GoalMeters`
 steps to 0.75, as the climbing carriage comes within a millimetre of the
 goal. It drops back for a tick or two while the carriage overshoots by
-about 1.3 mm, and it's true for good from 1.26 s (measured, on a
+about 1.2 mm, and it's true for good from 1.26 s (measured, on a
 recording made the way section 3 describes). Nothing about the match
 changed. The button presses, the timing, the heights the carriage reached:
 all of that is the recording, replayed verbatim. The only difference
@@ -403,7 +403,7 @@ catch yourself subtracting two traces by hand to understand what
 happened, that subtraction belongs in the log, so next time it's one
 glance instead of a hypothesis.
 
-None of this required the bug to be dramatic. A tenth of a millimetre
+None of this required the bug to be dramatic. A fifth of a millimetre
 and a fat-fingered tag ID both cost a team an entire autonomous run, and
 both were sitting in a log the whole time, waiting to be read.
 
