@@ -23,10 +23,10 @@ and say out loud why you'd reach for `rebase` instead of `merge`.
 - Nothing here depends on a particular lesson's *code*. The examples use
   `Constants.java` from Lessons 17–21 because that's the file most likely to be
   touched by two lessons at once, but the mechanics are the same on any file.
-- **Works unchanged on [the OpMode track](v3/README.md), too.** Nothing on
+- **Works unchanged on [the OpMode track](https://github.com/FRC5010/BasicRobotLessons/blob/main/docs/lessons/v3/README.md), too.** Nothing on
   this page is WPILib-version-specific — Git doesn't know or care what
   framework your code targets. If you're on that track, use
-  [its own setup aside](v3/aside-setup.md) to get `git`/`gh` in place instead
+  [its own setup aside](https://github.com/FRC5010/BasicRobotLessons/blob/main/docs/lessons/v3/aside-setup.md) to get `git`/`gh` in place instead
   of the link above, then come back here.
 
 The setup aside taught you a straight line: pull, edit, add, commit, push, over
@@ -201,8 +201,8 @@ Here's where branches earn their keep, and it's a situation this course produces
 naturally: [Lesson 18](18-elevator.md) adds an elevator, [Lesson 20](20-intake-arm.md)
 adds an arm, and if two people on your team split them up, both add a constants
 block to `Constants.java`. (Same pairing, same file, same two constants on
-[the OpMode track](v3/README.md): [Lesson 18](v3/18-elevator.md) and
-[Lesson 20](v3/20-intake-arm.md) add `ElevatorConstants.kElevatorKG = 0.18`
+[the OpMode track](https://github.com/FRC5010/BasicRobotLessons/blob/main/docs/lessons/v3/README.md): [Lesson 18](https://github.com/FRC5010/BasicRobotLessons/blob/main/docs/lessons/v3/18-elevator.md) and
+[Lesson 20](https://github.com/FRC5010/BasicRobotLessons/blob/main/docs/lessons/v3/20-intake-arm.md) add `ElevatorConstants.kElevatorKG = 0.18`
 and `ArmConstants.kArmKG = 0.25` there too — the walkthrough below reads
 exactly the same either way.)
 

@@ -1,20 +1,19 @@
 #!/usr/bin/env bash
 #
 # verify-lessons-v3.sh — compile-check the v3 (OpMode + coroutine commands)
-# track's lesson code, the sibling of tools/verify-lessons.sh for the
-# 2027-alpha OpMode track. It exists separately rather than folding into the
-# original script because almost everything differs: the base project
-# (code/OpModeV3Robot, not code/ActualLessons), the package root
-# (first.robot, not frc.robot), the deploy target (SystemCore, not roboRIO),
-# and the vendordep source (WPILib's 2027-alpha marketplace buckets, not the
-# current season — Phoenix 6 pins to the 2027_alpha7 bucket; LimelightLib,
-# which isn't in the marketplace, pins to one commit of Limelight's own repo;
-# see docs/lesson-plan-alpha7-upgrade.md). From Lesson 13 on it makes the
+# track's lesson code for the 2027-alpha OpMode course. (The parked WPILib 2026
+# track has its own script, 2026/tools/verify-lessons.sh. They differ in almost
+# everything: the base project, 2026/code/ActualLessons there and
+# code/OpModeV3Robot here; the package root, frc.robot there and first.robot
+# here; the deploy target, roboRIO vs SystemCore; and the vendordep source.)
+# Vendordeps come from WPILib's 2027-alpha marketplace buckets (Phoenix 6 pins
+# to the 2027_alpha7 bucket); LimelightLib, which isn't in the marketplace,
+# pins to one commit of Limelight's own repo (see
+# docs/lesson-plan-alpha7-upgrade.md). From Lesson 13 on it makes the
 # build.gradle edits that lesson has the student make (AdvantageKit; see
-# tools/lib/patch_build_gradle.py), and lesson-deletion replay applies
-# here too, the same way it does in the main script (see
-# V3_DELETIONS in tools/lib/v3-lessons.sh) — the first one lands at Lesson
-# 7, same rename as the main course.
+# tools/lib/patch_build_gradle.py), and lesson-deletion replay applies here
+# too (see V3_DELETIONS in tools/lib/v3-lessons.sh) — the first one lands at
+# Lesson 7.
 #
 # It works by rolling code/OpModeV3Robot (the pristine 2027 alpha OpMode
 # template, already carrying the CommandsV3 vendordep) forward through

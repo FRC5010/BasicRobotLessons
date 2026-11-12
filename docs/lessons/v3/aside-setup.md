@@ -3,7 +3,7 @@
 **Goal:** Go from a bare Windows machine to a working OpMode-track robot
 project you can build, run in simulation, and back up to GitHub. Do this
 **before [Lesson 0](00-orientation.md)**. If you already did
-[the classic track's setup aside](../aside-setup.md), you already have Git,
+[the archived 2026 track's setup aside](https://github.com/FRC5010/BasicRobotLessons/blob/main/2026/lessons/aside-setup.md), you already have Git,
 a GitHub account, and `gh` — you can skip sections 2 and 6, but still work
 through section 1 (this alpha's tools install side-by-side with any earlier
 season, not on top of it) and section 3 (the classic track's JDK is a
@@ -390,7 +390,7 @@ the same lines in two places. Don't panic — Git marks the conflicting lines
 with `<<<<<<<`, `=======`, and `>>>>>>>` inside the file. Open it, decide
 which version wins, delete the markers, then `git add` and `git commit` to
 finish the merge. Everyone hits their first merge conflict eventually; it's
-a rite of passage, not a disaster. ([The branching aside](../aside-git-branching.md)
+a rite of passage, not a disaster. ([The branching aside](aside-git-branching.md)
 covers this in real depth once you're ready for it — it's written for
 either track.)
 

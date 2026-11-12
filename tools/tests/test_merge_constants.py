@@ -482,9 +482,11 @@ class Parsing(unittest.TestCase):
     def test_every_constants_file_in_the_repo_parses_and_merges_into_itself(self):
         repo = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         found = []
-        for dirpath, _, names in os.walk(os.path.join(repo, 'code')):
-            if 'Constants.java' in names and '/build/' not in dirpath:
-                found.append(os.path.join(dirpath, 'Constants.java'))
+        # Both tracks: the OpMode course under code/, the parked classic one under 2026/code/.
+        for root in ('code', os.path.join('2026', 'code')):
+            for dirpath, _, names in os.walk(os.path.join(repo, root)):
+                if 'Constants.java' in names and '/build/' not in dirpath:
+                    found.append(os.path.join(dirpath, 'Constants.java'))
         self.assertGreater(len(found), 20)
         texts = []
         for f in found:

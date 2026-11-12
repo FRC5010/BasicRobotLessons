@@ -1,15 +1,14 @@
 # OpMode track — SystemCore, WPILib 2027 alpha, Commands V3
 
-A newer, still-settling alternative to [the classic track](../README.md):
-SystemCore and the 2027 alpha's OpMode framework, with coroutine-style
-Commands V3. Reference code lives under [`code/v3/lesson-N/`](https://github.com/FRC5010/BasicRobotLessons/tree/main/code/v3),
+This is the course: SystemCore and the 2027 alpha's OpMode framework, with
+coroutine-style Commands V3. (The earlier roboRIO / WPILib 2026 course is
+[archived in the repository](https://github.com/FRC5010/BasicRobotLessons/blob/main/2026/lessons/README.md).) Reference code lives under [`code/v3/lesson-N/`](https://github.com/FRC5010/BasicRobotLessons/tree/main/code/v3),
 and the whole track rolls forward with `./tools/verify-lessons-v3.sh`. To
 catch up, or to start partway through, see
 [Starting a lesson from the reference code](#starting-a-lesson-from-the-reference-code)
 below.
 
-**Start on [the classic track](../README.md) unless you specifically want
-this one.** Two lessons (16 and 22) are genuinely different, hand-built lessons
+Two lessons (16 and 22) are genuinely different, hand-built lessons
 rather than straight ports, because maple-sim isn't available for this
 alpha: 16 builds its own simulated chassis, and 22 its own simulated
 intake. See
@@ -131,17 +130,17 @@ leave it. The next run of the script replaces the file anyway.
   and pulling your starting project out of this course's repo (the wizard's
   OpMode template doesn't come with Commands V3, so this course hands you one
   that already does), then the same GitHub/`gh` setup and daily
-  `add`/`commit`/`push` loop as the classic track. **Start here before
+  `add`/`commit`/`push` loop. **Start here before
   Lesson 0.**
-- [Branches: one per lesson, merged into a `main` that always works](../aside-git-branching.md) —
-  shared with the classic track as-is; nothing in it is WPILib-version-specific.
-- [Debugging in VSCode and reading stack traces](../aside-debugger.md) —
-  shared with the classic track, with its own section on how this track's
+- [Branches: one per lesson, merged into a `main` that always works](aside-git-branching.md) —
+  nothing in it is WPILib-version-specific.
+- [Debugging in VSCode and reading stack traces](aside-debugger.md) —
+  with its own section on how this track's
   stack traces differ: the framework strips internal coroutine frames and
   splices in a second trace showing which button scheduled the failing
-  command, which the classic track's traces can't show you at all.
+  command, which an ordinary Java trace can't show you at all.
 
-**Not yet ported:** [the odometry-thread aside](../aside-odometry-thread.md)
-is written for the classic track's drivetrain. This track has AdvantageKit
+**Not yet ported:** [the archived 2026 track's odometry-thread aside](https://github.com/FRC5010/BasicRobotLessons/blob/main/2026/lessons/aside-odometry-thread.md)
+is written for that track's drivetrain. This track has AdvantageKit
 from Lesson 13 on, but porting the aside still means rewriting its
 drivetrain and logging sections, not renaming them, and it's still open.

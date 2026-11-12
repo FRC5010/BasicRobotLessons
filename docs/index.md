@@ -1,22 +1,24 @@
 # Learn Java + Robot Programming
 
 A hands-on course that teaches Java while building working swerve-drive robot
-code. You start from the WPILib Command Robot template and grow it, lesson by
-lesson, into a robot you can drive, simulate, and run autonomously. Every
+code. You start from a WPILib OpMode Command Robot project and grow it, lesson
+by lesson, into a robot you can drive, simulate, and run autonomously. It runs
+on SystemCore with the WPILib 2027 alpha and coroutine-style Commands V3. Every
 lesson builds on the one before it, so start at Lesson 0 and work forward.
 
-## Pick a track
+## Start here
 
-- **[Classic track](lessons/README.md)** — the roboRIO, WPILib 2026 and
-  Commands V2. Start here unless you have a reason not to.
-- **[OpMode track](lessons/v3/README.md)** — SystemCore, the WPILib 2027
-  alpha and coroutine-style Commands V3. A newer, still-settling alternative.
-
-New to the tools? Each track begins with a setup guide:
-[classic](lessons/aside-setup.md) or [OpMode](lessons/v3/aside-setup.md).
+- **[The lessons](lessons/v3/README.md)**: the full list, with what each one
+  builds.
+- **[Setting up your computer and GitHub](lessons/v3/aside-setup.md)**: do this
+  before Lesson 0.
 
 ## Everything else
 
 The reference code for every lesson, the scripts that build it, and the slide
 decks live in
 [the GitHub repository](https://github.com/FRC5010/BasicRobotLessons).
+
+The earlier roboRIO / WPILib 2026 course is archived in the repository, no
+longer maintained:
+[2026/lessons/README.md](https://github.com/FRC5010/BasicRobotLessons/blob/main/2026/lessons/README.md).

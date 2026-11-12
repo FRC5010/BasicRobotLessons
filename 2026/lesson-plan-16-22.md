@@ -1,7 +1,7 @@
 # Lesson plan: 16–22
 
 A working plan for the next stretch of the course. **This is a contributor
-document, not lesson content** — it lives beside `docs/lessons/`, never inside
+document, not lesson content** — it lives beside `lessons/`, never inside
 it, and nothing here should be pasted into a lesson as-is.
 
 Written one lesson at a time, reviewed between each, same as the voice-rewrite
@@ -16,13 +16,13 @@ pass. Lessons 16–22 are all done — this plan is complete.
 
 | # | Working title | Builds on | 3rd-party library | Status |
 |---|---|---|---|---|
-| 16 | maple-sim — a world to drive in | L13 (IO layers), L11 (field views) | `maple-sim` | **Done** — [lesson](lessons/16-maple-sim-field.md), [code](../code/lesson-16/) |
-| 17 | B-Line autos: waypoints and trajectories | L9 (autos), L10 (kinematics), L14 (Localizer) | `BLine-Lib` | **Done** — [lesson](lessons/17-bline-autos.md), [code](../code/lesson-17/) |
-| 18 | Scoring elevator | L13 (IO spine), L12 (configs/control requests) | none | **Done** — [lesson](lessons/18-elevator.md), [code](../code/lesson-18/) |
-| 19 | A picture of the elevator | L18, L11 (field-view precedent) | none | **Done** — [lesson](lessons/19-mechanism2d.md), [code](../code/lesson-19/) |
-| 20 | Intake arm (−20°…180°) + roller | L18/L19, L12 | none | **Done** — [lesson](lessons/20-intake-arm.md), [code](../code/lesson-20/) |
-| 21 | Homing & limit sensors | L18, L20 | none | **Done** — [lesson](lessons/21-limit-sensors.md), [code](../code/lesson-21/) |
-| 22 | Beam breaks & the handoff | L20, L21, L16 (arena) | `maple-sim` | **Done** — [lesson](lessons/22-light-sensors.md), [code](../code/lesson-22/) |
+| 16 | maple-sim — a world to drive in | L13 (IO layers), L11 (field views) | `maple-sim` | **Done** — [lesson](lessons/16-maple-sim-field.md), [code](code/lesson-16/) |
+| 17 | B-Line autos: waypoints and trajectories | L9 (autos), L10 (kinematics), L14 (Localizer) | `BLine-Lib` | **Done** — [lesson](lessons/17-bline-autos.md), [code](code/lesson-17/) |
+| 18 | Scoring elevator | L13 (IO spine), L12 (configs/control requests) | none | **Done** — [lesson](lessons/18-elevator.md), [code](code/lesson-18/) |
+| 19 | A picture of the elevator | L18, L11 (field-view precedent) | none | **Done** — [lesson](lessons/19-mechanism2d.md), [code](code/lesson-19/) |
+| 20 | Intake arm (−20°…180°) + roller | L18/L19, L12 | none | **Done** — [lesson](lessons/20-intake-arm.md), [code](code/lesson-20/) |
+| 21 | Homing & limit sensors | L18, L20 | none | **Done** — [lesson](lessons/21-limit-sensors.md), [code](code/lesson-21/) |
+| 22 | Beam breaks & the handoff | L20, L21, L16 (arena) | `maple-sim` | **Done** — [lesson](lessons/22-light-sensors.md), [code](code/lesson-22/) |
 
 16–17 finish the drivetrain half of the course (simulation realism, then real
 path following). 18–22 open the mechanisms half — the "second mechanism" Lesson
@@ -594,7 +594,7 @@ onboard Motion Magic and gravity feedforward.
 # Lesson 19 — A picture of the elevator — DONE
 
 Shipped as [lessons/19-mechanism2d.md](lessons/19-mechanism2d.md), code in
-[code/lesson-19/](../code/lesson-19/) (`Constants.java`, `subsystems/Elevator.java`
+[code/lesson-19/](code/lesson-19/) (`Constants.java`, `subsystems/Elevator.java`
 — nothing else changes).
 
 **Goal as built:** Draw the elevator as a live stick figure, and hang a second,
@@ -658,7 +658,7 @@ freeze; replay the picture.
 # Lesson 20 — Intake arm: a mechanism that swings — DONE
 
 Shipped as [lessons/20-intake-arm.md](lessons/20-intake-arm.md), code in
-[code/lesson-20/](../code/lesson-20/) (`Constants.java`, `RobotContainer.java`,
+[code/lesson-20/](code/lesson-20/) (`Constants.java`, `RobotContainer.java`,
 `subsystems/Arm*.java`, and a small edit to `subsystems/Elevator.java`).
 
 **Goal as built:** a third mechanism on Lesson 13's spine, mounted into Lesson
@@ -759,7 +759,7 @@ test's control request into the next one, which produced a genuinely baffling
 # Lesson 21 — Homing: finding out where you actually are — DONE
 
 Shipped as [lessons/21-limit-sensors.md](lessons/21-limit-sensors.md), code in
-[code/lesson-21/](../code/lesson-21/) (`Constants.java`, `RobotContainer.java`,
+[code/lesson-21/](code/lesson-21/) (`Constants.java`, `RobotContainer.java`,
 `subsystems/Elevator*.java` — the arm is untouched).
 
 **Goal as built:** a limit switch that establishes the elevator's zero at
@@ -844,7 +844,7 @@ belief, switch = fact, homing = the moment one replaces the other.
 # Lesson 22 — Beam breaks: knowing you actually have it — DONE
 
 Shipped as [lessons/22-light-sensors.md](lessons/22-light-sensors.md), code in
-[code/lesson-22/](../code/lesson-22/) (`Constants.java`, `RobotContainer.java`,
+[code/lesson-22/](code/lesson-22/) (`Constants.java`, `RobotContainer.java`,
 `subsystems/Arm*.java`, plus a one-method addition to `Drivetrain`).
 
 **Goal as built:** a beam break that distinguishes "the roller is spinning" from

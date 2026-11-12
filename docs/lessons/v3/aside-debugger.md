@@ -28,7 +28,7 @@ they look.
   that P-control code has moved into the motor firmware — set your breakpoints
   in `setDesiredState`, where the target-setting and cosine math now live,
   instead.)
-- **On [the OpMode track](v3/README.md), everything here still applies** —
+- **On [the OpMode track](README.md), everything here still applies** —
   breakpoints and stepping are a VSCode feature, not a WPILib one. Three
   things differ, called out inline below: the code lives under
   `first.robot`, not `frc.robot`; SimGUI has an extra opmode-selector step;
@@ -125,8 +125,8 @@ double error = targetDegrees - measurement;
    - `measurement` = something near `0.0` (the module hasn't moved yet)
    - `error` doesn't have a value yet — this is the line that will *compute* it.
 5. Press **Step Over** (`F10`). Now `error ≈ 90`. On the next line, watch
-   `output` be computed as `SteerConstants.kP * error` — with `kP = 0.01`, that's
-   `0.9`. That's the number about to go to the motor.
+   `output` be computed as `SteerConstants.kP * error` — with `kP = 0.0005`, that's
+   `0.045`. That's the number about to go to the motor.
 6. Add a **Watch**: `SteerConstants.kP * error`. Now every time you continue,
    you'll see the number the motor is about to receive without having to
    compute it yourself.

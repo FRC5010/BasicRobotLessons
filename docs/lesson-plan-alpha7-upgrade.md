@@ -17,10 +17,17 @@ possible; it doesn't pre-guess the fixes.
 
 ## Scope: the v3 (OpMode) track only
 
-The classic numbered track (`docs/lessons/00-*.md` … `34-*.md`) targets
+The classic numbered track (`2026/lessons/00-*.md` … `34-*.md`) targets
 **WPILib 2026**, the stable release. Alpha-7 is a 2027 alpha and has zero
 effect on it. Everything below is about `docs/lessons/v3/` and
 `code/OpModeV3Robot` / `code/v3/lesson-N/` only.
+
+**Update, 2026-11-12: the classic track is parked.** The WPILib 2026 track
+moved to a top-level `2026/` folder (`2026/lessons/`, `2026/code/`,
+`2026/tools/verify-lessons.sh`, its two plan docs) and left the website, so the
+OpMode track is now the course. `docs/lessons/v3/`, `code/v3/` and every v3 tool
+path are unchanged. The debugger and git-branching asides moved into
+`docs/lessons/v3/` (the classic track keeps copies).
 
 **Update, 2026-09-18: Phase 1a has landed.** Phoenix 6 published an
 alpha-7-compatible, marketplace-pinned release (`26.70.0-alpha-2`, in the

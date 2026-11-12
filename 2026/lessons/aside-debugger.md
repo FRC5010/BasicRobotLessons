@@ -28,7 +28,7 @@ they look.
   that P-control code has moved into the motor firmware — set your breakpoints
   in `setDesiredState`, where the target-setting and cosine math now live,
   instead.)
-- **On [the OpMode track](v3/README.md), everything here still applies** —
+- **On [the OpMode track](https://github.com/FRC5010/BasicRobotLessons/blob/main/docs/lessons/v3/README.md), everything here still applies** —
   breakpoints and stepping are a VSCode feature, not a WPILib one. Three
   things differ, called out inline below: the code lives under
   `first.robot`, not `frc.robot`; SimGUI has an extra opmode-selector step;

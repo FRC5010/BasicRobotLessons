@@ -25,7 +25,7 @@ already does the job. See
 for the full design this lesson's rewrite is built on.
 
 Each lesson section below was checked against the actual old-course lesson
-file it replaces (`docs/lessons/0N-*.md`), not written from a summary of it —
+file it replaces (`2026/lessons/0N-*.md`), not written from a summary of it —
 same rule as everywhere else in this repo: verify before drafting. As of
 2026-08-11, the written lessons (`docs/lessons/v3/00-orientation.md` through
 `03-telemetry.md`) and their `code/v3/lesson-0` … `lesson-3` snapshots are
@@ -61,7 +61,7 @@ what's explicitly deferred.
 
 ## Lesson 0: Orientation
 
-**Old lesson:** [`docs/lessons/00-orientation.md`](lessons/00-orientation.md) —
+**Old lesson:** [`2026/lessons/00-orientation.md`](../2026/lessons/00-orientation.md) —
 classes/packages/methods/statements/semicolons, the `robotPeriodic()` →
 `CommandScheduler.getInstance().run()` heartbeat, running sim, printing from
 `teleopInit()`.
@@ -145,7 +145,7 @@ the only unverified piece; everything else is read directly from
 
 ## Lesson 1: Your first motor
 
-**Old lesson:** [`docs/lessons/01-first-motor.md`](lessons/01-first-motor.md) —
+**Old lesson:** [`2026/lessons/01-first-motor.md`](../2026/lessons/01-first-motor.md) —
 installs Phoenix 6, teaches objects/`new`, builds `DriveModule extends SubsystemBase`
 (field, constructor, `driveAtSpeed(double)` via `startEnd(...)`, empty
 `periodic()`), wires it into `RobotContainer` (field, import,
@@ -273,7 +273,7 @@ command factory methods (now coroutine-bodied), binding a gamepad button.
 now exists (sibling of the main script — different base project, package
 root, and vendordep source, so not folded into the original) and rolls
 `code/v3/lesson-0` … `lesson-N` onto `code/OpModeV3Robot`, exactly like the
-main course's script does for `code/ActualLessons`. Lessons 0–3 all compile
+classic course's script (now `2026/tools/verify-lessons.sh`) does for `2026/code/ActualLessons`. Lessons 0–3 all compile
 against the real `v2027.0.0-alpha-6` / `Phoenix6-26.50.0-alpha-1` jars.
 Two guesses from the first draft of this lesson turned out wrong, found by
 `javap`-inspecting the actual downloaded jar rather than reading docs —
@@ -407,7 +407,7 @@ Appendix.
 
 ## Lesson 2: Joystick control
 
-**Old lesson:** [`docs/lessons/02-joystick-control.md`](lessons/02-joystick-control.md) —
+**Old lesson:** [`2026/lessons/02-joystick-control.md`](../2026/lessons/02-joystick-control.md) —
 method parameters/return values, `double`, lambdas/`DoubleSupplier`,
 `Math.abs`, deadband, default commands. Replaces the fixed `0.3` with a live
 stick reading via `run(() -> {...})`, adds `applyDeadband`, sets a default
@@ -480,7 +480,7 @@ batch by a wide margin.
 
 ## Lesson 3: Telemetry & plots
 
-**Old lesson:** [`docs/lessons/03-telemetry.md`](lessons/03-telemetry.md) —
+**Old lesson:** [`2026/lessons/03-telemetry.md`](../2026/lessons/03-telemetry.md) —
 reads the TalonFX's integrated encoder, installs AdvantageKit, changes
 `Robot extends TimedRobot` to `Robot extends LoggedRobot`, starts the logger
 in `Robot`'s constructor, fills in `DriveModule.periodic()` with
@@ -667,7 +667,7 @@ jars rather than guessed:
       workable, dropped same day as unnecessary machinery), defer real replay
       to a later pass once AdvantageKit ships `OpModeRobot` support.
 - [x] `tools/verify-lessons-v3.sh` built and used — the v3-track sibling of
-      `tools/verify-lessons.sh` (R6 in the master plan). Rolls `code/v3/lesson-N`
+      `2026/tools/verify-lessons.sh` (R6 in the master plan). Rolls `code/v3/lesson-N`
       onto `code/OpModeV3Robot`, mirroring the main script's mechanics with
       the base project, package root (`first.robot`), and vendordep source
       (`vendor-json-repo/2027_alpha5`) swapped in.

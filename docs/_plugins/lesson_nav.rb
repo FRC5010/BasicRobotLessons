@@ -8,8 +8,10 @@
 # sets them from what the files already have:
 #
 #   index.md             -> "Home", first
-#   lessons/README.md    -> "Classic track", second, with its folder's pages under it
-#   lessons/v3/README.md -> "OpMode track", third, with its folder's pages under it
+#   lessons/v3/README.md -> "OpMode track", second, with its folder's pages under it
+#
+# (The earlier WPILib 2026 "classic" track is parked in the repo's 2026/ folder,
+# outside docs/, so it isn't part of the site.)
 #
 # A lesson's label is its number plus its heading up to the colon, so
 # "# Lesson 18 — Scoring elevator: a second mechanism" shows as
@@ -22,8 +24,7 @@
 # A value a page sets in its own front matter wins over all of this.
 module LessonNav
   TRACKS = {
-    "lessons/README.md" => { "title" => "Classic track", "nav_order" => 2 },
-    "lessons/v3/README.md" => { "title" => "OpMode track", "nav_order" => 3 },
+    "lessons/v3/README.md" => { "title" => "OpMode track", "nav_order" => 2 },
   }.freeze
 
   HOME = { "title" => "Home", "nav_order" => 1 }.freeze
