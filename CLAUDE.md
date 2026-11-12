@@ -2692,6 +2692,11 @@ Checked when it landed, on a local build:
 - All 1,001 fenced code blocks come out as highlighted code.
 - Nothing scrolls sideways on a 390 px-wide phone.
 
+Re-checked 2026-11-12, after the classic track left the site: 40 pages (Home,
+the OpMode track's README, its 35 lessons and three asides), none of them
+classic, and all 2,385 internal links and anchors in `_site` resolve (a script
+over the built HTML, not kept in the repo).
+
 ## When adding or editing a lesson
 
 - Update the lessons table in [docs/lessons/v3/README.md](docs/lessons/v3/README.md)
