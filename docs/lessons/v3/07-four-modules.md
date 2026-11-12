@@ -521,7 +521,7 @@ Sketch the four wheels pointing those ways and imagine them rolling — the whol
 robot spins CCW. Neat, isn't it?
 
 Notice neither `translate` nor `rotate` bothers with a `.whenCanceled(...)`
-cleanup, unlike every command since Lesson 1. That's not an oversight — it's
+(or `.whenExited(...)`) cleanup, unlike every command since Lesson 1. That's not an oversight — it's
 because `Drivetrain` is never actually idle. `translate` is about to become
 the *default* command in section 6, so the instant `rotate` is canceled (a
 bumper released), the scheduler hands the mechanism straight back to

@@ -1686,6 +1686,21 @@ renamed (the gamepad face-button rename is the known one; there may be
 others). Re-run `audit-overflow.js` and `validate.py` per the deck
 template's own house rules if any deck text changes length.
 
+**`whenExited` adopted for the double cleanups, 2026-11-12 (user decision:
+only the workarounds).** Alpha-8's builder `whenExited(Runnable)` runs however
+a command ends, and on a cancel runs before `whenCanceled` (probe on the real
+scheduler: natural finish `EXIT`; `.until`, button cancel, interruption and
+disable each `EXIT` then `CANCEL`). Every place that wrote a stop twice, once
+after the loop or `await` and once in `whenCanceled`, now has one
+`.whenExited(...)`: Lesson 6 `driveDistance` (the lesson now teaches
+`whenExited` against `whenCanceled` there, and Lessons 8, 9, 11, 25, 26 and
+a Lesson 7 aside refer back), Lessons 8/9 `turnToHeading` and `driveDistance`,
+Lesson 25 `handingRotationBack`, Lesson 26 `approach`, and the snapshot copies
+through 33. Kept on purpose: `whenCanceled` on commands that never finish by
+themselves or that end with `.until(...)` (which cancels), and on Lesson 26
+`travelToward`, which must not stop when it hands over. Details and
+measurements are in CLAUDE.md's alpha-8 notes.
+
 ## Open decisions for the team
 
 Two items above aren't mechanical renames and need an actual decision once

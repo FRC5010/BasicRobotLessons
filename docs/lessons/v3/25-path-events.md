@@ -760,12 +760,13 @@ interrupted **Aim While Driving** left the override on, and the next **Two
 Corners** parked at the end of its path with its nose still pointed at (8, 4),
 unable to finish.
 
-Lesson 20's `runRoller` already showed you the shape of "however it ends":
-`whenCanceled`. Here it needs a partner, because this command can also end by
-finishing. A canceled coroutine is simply never resumed — none of the code after
-the line it was waiting on ever runs, not even a `finally` block — and
-`whenCanceled` runs *only* on a cancel. So "however it ends" takes both: one line
-after the `await`, for finishing, and `whenCanceled`, for everything else.
+Lesson 6 gave you the tool for "however it ends": `.whenExited(...)`. This
+command can end by finishing (the path ran out) or by being canceled (disabled,
+or cut off at the end of autonomous). A canceled coroutine is simply never
+resumed — none of the code after the line it was waiting on ever runs, not even
+a `finally` block — so a line after the `await` would only cover the finish, and
+`.whenCanceled(...)` would only cover the cancel. `.whenExited(...)` runs for
+both, so the hand-back is written once.
 
 **Add to `Autos.java`, below `getReadyThen`:**
 
@@ -778,9 +779,8 @@ after the `await`, for finishing, and `whenCanceled`, for everything else.
   private static Command handingRotationBack(Command auto) {
     return Command.noRequirements(coroutine -> {
           coroutine.await(auto);
-          FollowPath.clearRotationOverride(); // it finished
         })
-        .whenCanceled(FollowPath::clearRotationOverride) // it was canceled, or autonomous ended
+        .whenExited(FollowPath::clearRotationOverride) // however it ended
         .named(auto.name());
   }
 ```
@@ -808,8 +808,8 @@ The `release` marker is the plan; `handingRotationBack` is the guarantee.
 
 > **When something is switched on globally, switch it off somewhere that always
 > runs.** This is the same instinct as Lesson 20's `runRoller` using
-> `whenCanceled` to stop the motor: if turning it on is a side effect, turning it
-> off can't be left to luck.
+> `whenCanceled` to stop the motor, and Lesson 6's `.whenExited(...)`: if turning
+> it on is a side effect, turning it off can't be left to luck.
 
 ---
 
@@ -955,8 +955,8 @@ And the one to carry furthest: **a global switch needs an unconditional off.** T
 rotation override is static, so it survives the command that set it and the auto
 that contained it. The `release` marker is the plan and `handingRotationBack` is
 the guarantee, and you want both — plans only cover the runs that go the way you
-expected. "However it ends" is two exits in this framework, not one: the line after
-`await` for finishing, and `whenCanceled` for everything else.
+expected. "However it ends" is two exits in this framework, not one, and
+`.whenExited(...)` is the hook that covers both.
 
 Go time a few autos against their Lesson 17 versions. Seconds you get back here
 are seconds the robot spends scoring, and this is the cheapest place on the whole

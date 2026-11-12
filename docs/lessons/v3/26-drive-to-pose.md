@@ -470,9 +470,8 @@ means nothing is coming next.
             coroutine.yield();
             current = pose.get();
           } while (!arrived(start, direction, current));
-          applyChassisSpeeds(new ChassisVelocities()); // arrived — stop
         })
-        .whenCanceled(() -> applyChassisSpeeds(new ChassisVelocities())) // interrupted — stop
+        .whenExited(() -> applyChassisSpeeds(new ChassisVelocities())) // however it ends — stop
         .named("Approach");
   }
 
@@ -488,6 +487,10 @@ means nothing is coming next.
 It's stage one's shape with three differences: the gentle limits, a goal
 of the target itself with a speed of zero, and a finish that asks
 `arrived()`.
+
+The stop is different too. Nothing comes after stage two, so it stops the
+robot whether it arrived or was interrupted, and `.whenExited(...)` from
+Lesson 6 does both with one line.
 
 That loop is a **`do` … `while`**, which is new. It's a `while` with the
 test moved to the bottom, so the body always runs at least once. That's

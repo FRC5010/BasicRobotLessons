@@ -861,8 +861,35 @@ measured where it matters:
   - **`merge_constants.py` and retired values:** see `RETIRED_VALUES` in
     the merge notes at the top.
 - **New Commands V3 API:** `Command.onExit()`/builder `whenExited(Runnable)`
-  runs on finish, cancel and interrupt (the `finallyDo` the lessons work
-  around with `whenCanceled`; not adopted, no decision asked);
+  runs on finish, cancel and interrupt (the `finallyDo` the lessons used to
+  work around with `whenCanceled`). **Adopted 2026-11-12 (user decision:
+  only the workarounds)** wherever cleanup was written twice, once after the
+  loop/`await` and once in `whenCanceled`: Lesson 6 `DriveModule.driveDistance`
+  (where `whenExited` is taught, with the choice between it and
+  `whenCanceled`), Lessons 8/9 `turnToHeading`/`driveDistance` and their
+  copies in the `Drivetrain` of 10–17, 25, 26, 29, 30, Lesson 25
+  `handingRotationBack` (Autos 25–27), Lesson 26 `approach` (and its
+  copies). **Probe of the hooks, real scheduler, alpha-8 (builder-made
+  commands with both hooks printing):** natural finish runs `EXIT` only;
+  `.until(...)` ends the inner command by cancelling it, `EXIT` then
+  `CANCEL`; a button-release cancel, a conflicting-command interruption and
+  a disable-cancel are each `EXIT` then `CANCEL`; a cancelled parent runs its
+  own `EXIT`, `CANCEL`, then the awaited child's `EXIT`, `CANCEL`. So
+  **`whenCanceled` is *not* a workaround on `.until(...)` chains, or on
+  commands that never finish by themselves** (Lessons 1, 2, 5, 11, 14, 20, 21,
+  23, ...); those stay. **Lesson 26 `travelToward` keeps `whenCanceled` on
+  purpose**: it finishes while still moving, so stopping on exit would break
+  the handoff to `approach`. Runtime checks after the switch: Lesson 6 and
+  8/9 commands leave the drive duty at 0.0 both finished and cancelled;
+  `handingRotationBack` clears BLine's static `Follower.rotationOverrideSupplier`
+  on a finish and a cancel (wrapper called by reflection on a dummy command),
+  and a real Aim While Driving disabled mid-override ends with it cleared;
+  Pick Up still ends (6.00, 0.95, -90.0), Two Corners (5.98, 6.02, 178.8);
+  Drive To Pose ends (5.01, 4.00, 89.96) and disabling in `Travel Toward` or
+  `Approach` leaves the chassis at 0 (weak evidence for `Approach`: the
+  chassis reading is taken 0.8 s after the disable, when the wheels may have
+  stopped anyway; the hook table is the stronger proof). Probes are
+  not in the repo. Lesson 20's `runRoller` is unchanged.
   `Trigger.ifTrue(Command)` (#9403) and `retryWhileTrue`/`retryWhileFalse`
   (all in alpha-8's `Trigger.java`; not used, see the Lesson 24 notes);
   robot-mode binding scopes (#9271).
@@ -2232,12 +2259,15 @@ source at the pinned commit.
   `aim`/`release` (0.6 s, 4.3 s into the drive), and the path finishes at
   5.4 s at (8.01, 7.02, −1.6°). (Alpha-8: 0.58 s, 4.22 s, 5.32 s.) Without `release` it never finishes, and sits
   at (8.03, 6.98) pointing at (8, 4).
-- **There's no `finallyDo`.** Tested on an independent scheduler: a finishing
+- **There was no `finallyDo` on alpha-7; alpha-8's `whenExited` is it
+  (adopted 2026-11-12).** On alpha-7, on an independent scheduler: a finishing
   coroutine runs its trailing code and `finally`, but not `whenCanceled`. A
   canceled one runs `whenCanceled` only, never its `finally`, because it simply
   isn't resumed. Canceling a parent cancels the child it awaits. Canceling the
   child from outside resumes the parent after `await`. So `handingRotationBack`
-  clears the override in both places. Without it, an interrupted no-release
+  cleared the override in both places; it now has one
+  `.whenExited(FollowPath::clearRotationOverride)` and no line after the
+  `await` (probe in the alpha-8 notes). Without it, an interrupted no-release
   auto leaked the static override, and the next Two Corners parked at
   (6.01, 6.05) pointing at (8, 4), never finishing.
 - **`Translation2d.getAngle()` returns `Optional<Rotation2d>`** in alpha-7,

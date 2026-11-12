@@ -167,15 +167,11 @@ public class DriveModule implements Mechanism {
   /** Drives forward 'meters' at 'speed', then stops. Finishes on its own. */
   public Command driveDistance(double meters, double speed) {
     return run(coroutine -> {
-          m_driveMotor.setPosition(0);                            // 1. zero the encoder
-          m_driveMotor.setThrottle(speed);                        // 2. drive...
+          m_driveMotor.setPosition(0);                              // 1. zero the encoder
+          m_driveMotor.setThrottle(speed);                          // 2. drive...
           coroutine.waitUntil(() -> getDistanceMeters() >= meters); // 3. ...until far enough
-          m_driveMotor.setThrottle(0);                            // 4. reached it — stop
         })
-        // The coroutine body only covers the "finished on its own" ending.
-        // If something else takes the module away first, the body's next line
-        // never runs — so the "interrupted" ending needs its own cleanup here.
-        .whenCanceled(() -> m_driveMotor.setThrottle(0))
+        .whenExited(() -> m_driveMotor.setThrottle(0))              // 4. however it ends — stop
         .named("Drive Distance");
   }
 

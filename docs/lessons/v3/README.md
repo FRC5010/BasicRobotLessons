@@ -24,7 +24,7 @@ status of every lesson, including what changed and why.
 | 3 | [Telemetry](03-telemetry.md) | Plot position & velocity live | Return values, `instanceof` pattern matching, `Telemetry`/`DataLogManager` logging |
 | 4 | [Simulation](04-simulation.md) | Make it move on your laptop | `simulationPeriodic()`, physics models, composition |
 | 5 | [Steering with P control](05-steering-p-control.md) | Point the module to an angle, primed from a CANcoder at boot | `if`/`else`, arithmetic, error, setpoints |
-| 6 | [Distance & commands](06-distance-and-commands.md) | Drive an exact distance | Unit conversion, coroutine bodies that run out, finished vs. canceled |
+| 6 | [Distance & commands](06-distance-and-commands.md) | Drive an exact distance | Unit conversion, coroutine bodies that run out, `whenExited` vs. `whenCanceled` |
 | 7 | [Four modules](07-four-modules.md) | Assemble a 4-module chassis you can translate and rotate | Arrays, `for` loops, per-module constructor args |
 | 8 | [Gyro & heading](08-gyro-heading.md) | Turn the chassis to a compass heading | Reusing patterns, extracting helpers |
 | 9 | [Autonomous](09-autonomous.md) | Compose a drive-turn-drive auto | `coroutine.await(...)`, sequential vs. parallel |

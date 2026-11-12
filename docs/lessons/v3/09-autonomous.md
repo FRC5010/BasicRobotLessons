@@ -66,13 +66,10 @@ public Command driveDistance(double meters) {
           m_lastCommandedOmega = 0.0;
           coroutine.yield();
         }
-        for (SwerveModule module : m_modules) {
-          module.setDesiredState(0.0, 0.0); // reached it — stop
-        }
       })
-      .whenCanceled(() -> {
+      .whenExited(() -> {
         for (SwerveModule module : m_modules) {
-          module.setDesiredState(0.0, 0.0); // interrupted — stop
+          module.setDesiredState(0.0, 0.0); // however it ends — stop
         }
       })
       .named("Drive Distance");
@@ -100,9 +97,9 @@ forward and roll, and we watch *one wheel* to know when we've gone far
 enough. Watching one wheel works for straight-ahead driving because, with all
 four wheels aimed the same direction at the same speed, they all cover the
 same distance. Two endings, same as every finishing command since Lesson
-6 — the loop's own stop-order for finishing on its own, `.whenCanceled(...)`
-for being interrupted. If that split is starting to feel routine, good —
-routine is the point.
+6 — and the same answer: `.whenExited(...)` stops the wheels whether the
+loop finished or something interrupted it. If that is starting to feel
+routine, good — routine is the point.
 
 ---
 
