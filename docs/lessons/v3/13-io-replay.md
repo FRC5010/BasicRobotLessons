@@ -1080,7 +1080,7 @@ code, replay the match, and see what the change would have done.
    and replay the same recording again. Measured, the pose didn't move by
    a millimetre. Now put the same `* 1.1` in `SwerveModule.getPosition()`
    instead, record, remove it, and replay: this time the replay lands
-   where the robot really was (measured, 0.62 m away from the recorded
+   where the robot really was (measured, 0.66 m away from the recorded
    pose). Work out why before reading on. The IO layer runs *before*
    `processInputs`, so its mistake is written into the recording, and a
    replay can't unread a reading. `getPosition()` runs after it, so it's a
@@ -1096,7 +1096,7 @@ code, replay the match, and see what the change would have done.
    replay a recording where you used the turn button. Compare
    `RealOutputs` with `ReplayOutputs` for `Drivetrain/DesiredModuleStates`,
    then for `Drivetrain/Pose`. Measured: the commanded module states
-   differed on 38 ticks; the pose didn't differ on any. The robot in the
+   differed on 37 ticks; the pose didn't differ on any. The robot in the
    recording never received the new commands, so its readings, and the pose
    built from them, can't change. A replay answers "what would my code
    have *decided*?", not "where would the robot have *gone*?" That second

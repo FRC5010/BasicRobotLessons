@@ -118,9 +118,8 @@ public final class Autos {
   private static Command handingRotationBack(Command auto) {
     return Command.noRequirements(coroutine -> {
           coroutine.await(auto);
-          FollowPath.clearRotationOverride(); // it finished
         })
-        .whenCanceled(FollowPath::clearRotationOverride) // it was canceled, or autonomous ended
+        .whenExited(FollowPath::clearRotationOverride) // however it ended
         .named(auto.name());
   }
 

@@ -38,9 +38,8 @@ public class Flywheel implements Mechanism {
 
   /**
    * ====== NEXT LESSON: ADD CODE HERE ======
-   * A characterization routine for this wheel: it needs a way to drive the motor with
-   * a raw voltage and a way to report voltage and speed, and its ramp rate has to
-   * suit how fast this wheel responds.
+   * A characterization routine for this wheel, WPILib's own: it needs a way to drive the
+   * motor with a raw voltage and a way to report voltage and speed.
    */
 
   // A speedometer: one hub, two needles. There is nothing physical to draw
@@ -154,7 +153,8 @@ public class Flywheel implements Mechanism {
   /**
    * ====== NEXT LESSON: ADD CODE HERE ======
    * Command factories that run the routine's two tests, each in either direction:
-   * a slow voltage ramp and a fixed voltage step.
+   * a slow voltage ramp and a fixed voltage step. Also one that just holds a small
+   * fixed voltage, for asking what the wheel does on it.
    */
 
   /** No subsystem knows the robot's total draw — this is this motor's slice of it. */

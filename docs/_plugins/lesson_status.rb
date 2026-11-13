@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Marks the OpMode track's lessons that aren't up to date for the 2027 alpha-7
+# Marks the OpMode track's lessons that aren't up to date for the current 2027 alpha
 # yet as "under construction". This happens on the website only: the lesson
 # files don't change, so they read the same on GitHub.
 #
@@ -125,7 +125,7 @@ module LessonStatus
                  end
       <<~HTML
         <div class="lesson-status lesson-status--summary" id="lesson-status" markdown="1">
-        **Under construction.** #{up_to_date} of this track's #{numbers.size} lessons are up to date for the 2027 alpha-7. The other #{marked.size} carry one of these marks, under their names in the sidebar and at the top of the lesson:
+        **Under construction.** #{up_to_date} of this track's #{numbers.size} lessons are up to date for the 2027 alpha-8. The other #{marked.size} carry one of these marks, under their names in the sidebar and at the top of the lesson:
 
         #{lines.join("\n")}
 

@@ -6,8 +6,8 @@ set distance and **stops on its own** — your first command that *finishes*.
 **New Java concepts**
 - **Unit conversion** with named constants
 - Commands whose coroutine body **runs out** instead of running forever
-- Two different endings — **finished** and **canceled** — and why each needs
-  its own cleanup
+- Two different endings — **finished** and **canceled** — and
+  `.whenExited(...)`, the cleanup that covers both
 
 **New robot concepts**
 - **Gear ratio** and **wheel circumference** — from rotor turns to travel
@@ -171,9 +171,8 @@ public Command driveDistance(double meters, double speed) {
         m_driveMotor.setPosition(0);                              // 1. zero the encoder
         m_driveMotor.setThrottle(speed);                          // 2. drive...
         coroutine.waitUntil(() -> getDistanceMeters() >= meters); // 3. ...until far enough
-        m_driveMotor.setThrottle(0);                              // 4. reached it — stop
       })
-      .whenCanceled(() -> m_driveMotor.setThrottle(0))
+      .whenExited(() -> m_driveMotor.setThrottle(0))              // 4. however it ends — stop
       .named("Drive Distance");
 }
 ```
@@ -188,43 +187,53 @@ public Command driveDistance(double meters, double speed) {
    only lets execution continue once it's true. The condition is a lambda
    that answers true or false — the same trick as Lesson 2's `DoubleSupplier`,
    but yes/no instead of a number.
-4. Once `waitUntil` returns, `getDistanceMeters() >= meters` is true, so the
-   next line runs: stop the motor. Then the lambda has nothing left to do —
-   it falls off the end, the coroutine is done, and so is the command.
+4. **`.whenExited(() -> m_driveMotor.setThrottle(0))`** is the cleanup. The
+   body has nothing left to do after `waitUntil` returns, so it falls off the
+   end, the coroutine is done, and so is the command, and that's when this
+   lambda runs and stops the wheel.
 
-One method, four lines, and look at what you built: a command that sets up,
-works, waits for done, and cleans up — no separate decorators needed, because
-it's just code running in order. That's the payoff of a coroutine body: "do
-this, then wait, then do that" *is* Java's normal control flow. You'll write
-this shape constantly from here on.
+One method, a handful of lines, and look at what you built: a command that
+sets up, works, waits for done, and cleans up. "Do this, then wait, then do
+that" *is* Java's normal control flow. You'll write this shape constantly
+from here on.
 
-Now look at `.whenCanceled(() -> m_driveMotor.setThrottle(0))` again, because
-there's something worth being precise about. **It does *not* fire when the
-coroutine body finishes on its own** — only when something *else* interrupts
-this command before it gets there, the same button-swap situation Lesson 5
-already used it for. Those are genuinely two different endings:
+Now look at `.whenExited(...)` closely, because it's new, and it's not
+`.whenCanceled(...)` with a different name. This command can end two
+different ways:
 
-- **Finished** — the body ran to the end by itself. Line 4, `setThrottle(0)`,
-  already handled it.
+- **Finished** — the body ran to the end by itself, because the robot got
+  to the distance.
 - **Canceled** — something else took the module away first (another command
   scheduled on it, or the driver mashing a different button mid-drive), and
-  the body's own line 4 never gets a chance to run.
+  the body never reached the end.
 
-Every earlier command in this course only had one of those endings —
-`driveAtSpeed` and `steerToAngle` never finish on their own, so
-`.whenCanceled(...)` was the *only* ending that ever happened, and it was
-enough by itself. `driveDistance` is the first command that can end either
-way, which is why it's also the first one that needs cleanup written twice:
-once for "got there," inline in the body, and once for "got interrupted," in
-`.whenCanceled(...)`. Miss either one and the motor keeps spinning in exactly
-that scenario — Lesson 1's rule, still true, just now with two doors it can
-sneak out of.
+**`.whenCanceled(...)` runs only on the second one.** Every earlier command in
+this course had a single ending: `driveAtSpeed` and `steerToAngle` never
+finish on their own, so a cancel was the *only* way they could stop, and
+`.whenCanceled(...)` was enough by itself. `driveDistance` is the first
+command that can also end by finishing. If it used `.whenCanceled(...)`,
+the wheel would keep spinning every time the drive succeeded, because
+nothing in the body stops it. You could put a `setThrottle(0)` after the
+`waitUntil` too, but then the same cleanup lives in two places, and you'd have
+to remember both every time you change it.
 
-Last piece: notice there's no new decorator here at all — `run(...)`,
-`.whenCanceled(...)`, `.named(...)` are all things you already had from
-Lesson 1. What's new is entirely inside the lambda: a `while`-shaped wait
-(`waitUntil`) sitting between two motor commands, in a body that's allowed to
-just... end.
+**`.whenExited(...)` runs however the command ends**: finished, canceled by
+a button, or interrupted by a rival. One lambda, one place to look. When a
+command is canceled, `.whenExited(...)` runs first and `.whenCanceled(...)`
+after it, so you can have both on one command if a cancel needs something
+extra.
+
+**The rule to carry forward:** if the cleanup should happen no matter how
+the command ends, use `.whenExited(...)`. If it only makes sense when
+something interrupted the command, use `.whenCanceled(...)`. A command that
+can't finish on its own, like Lesson 1's, can use either, which is why
+`.whenCanceled(...)` has been enough so far. Lesson 1's rule that motors
+hold their last value is still true; it just has two doors to guard now, and
+`.whenExited(...)` guards both.
+
+Last piece: the only new decorator here is `.whenExited(...)`. `run(...)` and
+`.named(...)` are things you already had from Lesson 1. What's new inside the
+lambda is `waitUntil`, a wait sitting in a body that's allowed to just... end.
 
 ---
 
@@ -276,13 +285,14 @@ routines are made of.
    Lesson 5's idea — drive at `kP × (meters − getDistanceMeters())` so it
    slows as it arrives. Notice you're applying the *same control pattern* to
    a new quantity.
-3. **Code — watch the two endings for real.** Add a print right after
-   `waitUntil` returns (before the line that stops the motor) and a
-   different print inside `.whenCanceled(...)`. Tap D-pad up and let it
-   finish — which one printed? Now tap it again and immediately press a
-   different drive button to interrupt it — which one printed *that* time?
-   You should see exactly one, never both, on either run. That's section
-   3's split, confirmed by watching it happen.
+3. **Code — watch the three hooks for real.** Add a print right after
+   `waitUntil` returns, one inside `.whenExited(...)` (make the lambda a block, with
+   the print before the `setThrottle(0)`), and a different one inside a new
+   `.whenCanceled(...)` on the same command. Tap D-pad up and let it
+   finish — which prints appeared? Now tap it again and immediately press a
+   different drive button to interrupt it — which appeared *that* time?
+   You should see the exit print on both runs, and the cancel print only on
+   the second. That's section 3's split, confirmed by watching it happen.
 
 ---
 
@@ -298,10 +308,10 @@ code, done. `coroutine.waitUntil(condition)` is the shape for "wait right
 here until something becomes true," reading top to bottom like ordinary
 code instead of chained decorators. The sharper edge underneath that: a
 command can end **finished** or **canceled**, they're genuinely different
-events, and only `driveDistance` has needed to handle both — one cleanup
-written inline for the first, one in `.whenCanceled(...)` for the second.
-That distinction is easy to miss and expensive to get wrong, so it's worth
-carrying forward deliberately. Lesson 7 turns your one module into four, and
+events, and `.whenCanceled(...)` only hears the second. `.whenExited(...)`
+hears both, so it's the one for cleanup that must always happen, like
+stopping a motor. That distinction is easy to miss and expensive to get
+wrong, so it's worth carrying forward deliberately. Lesson 7 turns your one module into four, and
 Lesson 9 strings finishing commands into a full autonomous routine. If the
 gearbox math felt dense, let the plot reassure you — when the trace stops at
 exactly 1.0 meters, every conversion in the chain earned its keep.

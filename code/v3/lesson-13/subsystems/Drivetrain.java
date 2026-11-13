@@ -135,9 +135,8 @@ public class Drivetrain implements Mechanism {
             commandRotation(omega);
             coroutine.yield();
           }
-          commandRotation(0.0); // reached it — stop
         })
-        .whenCanceled(() -> commandRotation(0.0)) // interrupted — stop
+        .whenExited(() -> commandRotation(0.0)) // however it ends — stop
         .named("Turn To Heading");
   }
 
@@ -153,13 +152,10 @@ public class Drivetrain implements Mechanism {
             m_gyroIO.setSimRotationRate(0.0);
             coroutine.yield();
           }
-          for (SwerveModule module : m_modules) {
-            module.setDesiredState(new SwerveModuleVelocity()); // reached it — stop
-          }
         })
-        .whenCanceled(() -> {
+        .whenExited(() -> {
           for (SwerveModule module : m_modules) {
-            module.setDesiredState(new SwerveModuleVelocity()); // interrupted — stop
+            module.setDesiredState(new SwerveModuleVelocity()); // however it ends — stop
           }
         })
         .named("Drive Distance");

@@ -17,10 +17,17 @@ possible; it doesn't pre-guess the fixes.
 
 ## Scope: the v3 (OpMode) track only
 
-The classic numbered track (`docs/lessons/00-*.md` … `34-*.md`) targets
+The classic numbered track (`2026/lessons/00-*.md` … `34-*.md`) targets
 **WPILib 2026**, the stable release. Alpha-7 is a 2027 alpha and has zero
 effect on it. Everything below is about `docs/lessons/v3/` and
 `code/OpModeV3Robot` / `code/v3/lesson-N/` only.
+
+**Update, 2026-11-12: the classic track is parked.** The WPILib 2026 track
+moved to a top-level `2026/` folder (`2026/lessons/`, `2026/code/`,
+`2026/tools/verify-lessons.sh`, its two plan docs) and left the website, so the
+OpMode track is now the course. `docs/lessons/v3/`, `code/v3/` and every v3 tool
+path are unchanged. The debugger and git-branching asides moved into
+`docs/lessons/v3/` (the classic track keeps copies).
 
 **Update, 2026-09-18: Phase 1a has landed.** Phoenix 6 published an
 alpha-7-compatible, marketplace-pinned release (`26.70.0-alpha-2`, in the
@@ -1330,6 +1337,251 @@ Replay steps (13, 15, 17, 32) keep `./gradlew run`, since they set
 `./gradlew run`. The classic track is unchanged. VS Code's button stays
 unverified on alpha-7, as the setup aside says.
 
+**Alpha-8, 2026-10-30.** The v3 track builds on WPILib 2027.0.0-alpha-8
+(GradleRIO pin in `code/OpModeV3Robot`; vendordep year unchanged at
+`2027_alpha7`, so every alpha-7 pin loads). Lessons 0–33 compile with zero
+warnings, Lesson 33's tests pass, the sim starts and replay works. The
+setup aside downloads alpha-8; the website says alpha-8; Lesson 12's "no
+shortcut" sentence was wrong (`Units.radiansToRotations` exists) and is
+fixed; Lesson 30 §4 mentions SimGUI's new DS → Alerts window. Four user
+decisions, 2026-10-30, for what alpha-8 changed: rebind Lesson 24's
+state motions so they resume after a disable (alpha-8 cancels mechanism
+commands on disable and `whileTrue` never re-fires); Lesson 33 uses
+WPILib's new Commands V3 `SysIdRoutine`; Lesson 33 drops the opmode-owned
+`EventLoop` (the trigger-cache bug is fixed); and the Kraken X60 model
+change (7.157 N·m, 6065 RPM) means every motor-dependent number is
+re-measured and the spec-sheet arithmetic redone. Details in CLAUDE.md.
+
+**Alpha-8, Lesson 24's state motions, 2026-10-30.** Lesson 24's four
+bindings in `Robot` (snapshots 24–30) are now
+`inState(X).and(RobotState::isEnabled).whileTrue(motion)`, so enabling is
+the rising edge that starts the motion again after a disable.
+Alpha-8's `Trigger` has `ifTrue` and `retryWhileTrue`, the candidates the
+decision named; both were measured and rejected: they reschedule a motion
+that has finished, and `idleMotion` ends on `atGoal`, so in `IDLE` they
+restart it every tick (2761 `Scheduled` events in 250 ticks, against 0) and
+cancel a D-pad override as fast as it's pressed. The lesson explains the
+disable and the edge in a short beat, adds a Run it step (disable mid-intake,
+enable, the motion starts over), and Lesson 30 no longer adds the
+`RobotState` import. Measured: disabled mid-`INTAKING` and re-enabled, the
+intake is back 1 tick later and the piece is caught; the full cycle's
+timings are unchanged on alpha-8 (`HOLDING` 56 ticks after `HANDOFF` at the
+Lesson 24 state, 60–61 at Lesson 33); the Pick Up auto still catches and
+scores, and replays with every robot output matching. Details in CLAUDE.md's
+Lesson 24 notes.
+
+**Alpha-8, the Kraken X60 arithmetic, 2026-10-30.** The first half of the
+Kraken decision above: the spec-sheet arithmetic is redone with the new
+figures, in the OpMode track only (the classic track keeps 6000 RPM and
+7.09 N·m). Nothing simulated was re-measured in this pass; that is the next
+job, and `kraken-remeasure-inventory.md` (kept with the working files, not in
+the repo) lists every quoted simulation number it has to cover.
+
+- **Where the figures come from.** `DCMotor.getKrakenX60` changed in
+  allwpilib #9378 (commit `39599a7a9`, "Update the Kraken X60 DCMotor
+  factories to use values from the CTRE Motor Testing Lab"; its message says
+  this "commonizes Kraken X60 to use the dyno data in the CTRE Motor Testing
+  Lab, which is the same source used for the Kraken X44 and Minion", and the
+  source comment cites `motors.ctr-electronics.com/dyno/dynometer-testing/`).
+  Read from source at the alpha-8 tag and from the alpha-8 `wpimath` jar with
+  `javap -c`: 12 V, 7.157 N·m, 374.4 A, 2 A free current, 6065 RPM. Only the
+  stall torque, stall current and free speed changed; free current is still
+  2 A. The lessons say that source plainly (Lessons 10, 18, 28, 33) and no
+  longer call the numbers a "spec sheet".
+- **Two factors.** 12 ÷ 101.08 rot/s = **0.1187 V per rotor rot/s**;
+  12 ÷ 7.157 N·m = **1.677 V per N·m**.
+- **Constants** (round the way each lesson already did): `kElevatorKV`
+  1.44 → **1.42** (12 × 0.1187), `kElevatorKG` 0.18 → **0.17**
+  (0.104 × 1.677 = 0.174), `kArmKV` 6.0 → **5.94** (50 × 0.1187),
+  `kArmKA` 0.055 → **0.054** (0.032 × 1.677), `kFlywheelKV` 0.12 → **0.119**
+  (3 digits like `kA`; at two digits it would have stayed 0.12 and kept a 1%
+  error in §3's "7.2 V"), `kFlywheelKA` 0.106 → **0.105** (0.01 × 2π × 1.677),
+  `DriveConstants.kMaxSpeed` 100.0 → **101.08** rot/s (4.73 → 4.78 m/s), and
+  `FlywheelConstants.kFreeSpeed` 100 → **101.08** (the dial's full scale is
+  the motor's free speed). **Unchanged after the arithmetic:**
+  `kElevatorKA` 0.003 (0.00283), `kArmKG` 0.25 (0.2499), `kDriveKV` 0.8
+  (6.75 × 0.1187 = 0.801). Derived text: Lesson 18's "1.42 × 6.3 ≈ 9 V" and
+  7 cm of lag still hold; Lesson 20's cruise needs 2.97 V ("about 3") and the
+  18° still holds; Lesson 21's homing sink is (0.7 + 0.17) ÷ 1.42 and its
+  unpowered sink 0.17 ÷ 1.42 × 0.16 m = 1.9 cm/s; Lesson 28's fixed point
+  moves 42.86 → 42.96 rot/s and its headroom 4.8 → 4.9 V.
+- **Snapshots.** `Constants.java` in `code/v3/lesson-10…32` and `34` (Lesson
+  34 carries the drive, elevator and arm values, and was changed only in those
+  lines and the comments on them). The Lesson 17 marker, the code comment on
+  the gains and Lesson 18's block say "published numbers" instead of "spec
+  sheet".
+- **The update script.** The merge's history is built from the snapshots, so
+  once 1.44 left every copy, a student who updated before this change and
+  never touched it would have looked customized and kept the old gain.
+  `RETIRED_VALUES` in `tools/lib/merge_constants.py` lists the eight
+  retired values and joins the history; the tests are `RetiredValues` in
+  `tools/tests/test_merge_constants.py`. Without the list six of them fail
+  (an updater on the old values, a customized value beside a retired one, a
+  rollback). A retired value only joins a constant the given texts already
+  have, so a rollback still treats later-lesson constants as later. Add a
+  line whenever a snapshot constant changes on purpose.
+- **Checks.** Lessons 9–33 compile with no warnings, the marker checker
+  reports 0 problems for 1–33, the tool tests pass (64), and Lesson 33's
+  tests pass (4).
+
+**Alpha-8, the Kraken re-measure, Lessons 7–22, 2026-10-30.** The second half
+of the Kraken decision, batch 1 of two: every simulated figure that Lessons
+7–22 quote (36 rows of the working inventory) was re-measured on alpha-8 with
+the committed gains, and the same probes were run on an alpha-7 build wherever
+a number surprised. Nine rows changed, 25 held, two don't reproduce. Changed:
+Lesson 13's 0.62 m to 0.66 m and 38 ticks to 37; Lesson 15's drift to 25–50 cm;
+Lesson 17's 5–12 cm to 14–16 cm, 30 cm to 35 and 60 to 70 (all identical on
+alpha-7, so those were never Kraken effects); Lesson 18's full-model lag to
+1–2 cm; Lesson 20's lag to two to four degrees, 21° to 20° and "7° instead of 4"
+to "5° to 7° instead of 2° to 4°". The lags are bimodal with the sampling phase
+(11.3 or 20 mm; 2.2° or 3.9°), the same on alpha-7. **Not changed, awaiting a
+user decision:** Lesson 17's Try It #3 (`kCrossTrackP` 0 shows no "half a meter
+wide", and 15 finishes in 4.8 s instead of never finishing; 30 and above do
+swing wide and never finish), and Lesson 7's "about 9 simulated seconds" (the
+1° point is 6.3 s, the 0.3° point 9.0 s). Also recorded: the integrated
+elevator sim needs about 0.194 V commanded to hold, not the 0.174 V that
+WPILib's `ElevatorSim` alone needs, so the settled gap went 0.116 → 0.194 mm
+when `kElevatorKG` went 0.18 → 0.17 (unexplained, same on alpha-7). Lessons
+23–33 are batch 2. Details in CLAUDE.md's "v3 Lessons 7–22 re-measured" block.
+
+**Alpha-8, the Kraken re-measure, Lessons 24–27, 2026-10-30.** Batch 2a: the 30
+inventory rows for Lessons 24–27, re-measured on alpha-8 by scripting the real
+`Robot` loop tick by tick (the script runs from a periodic registered after
+every robot periodic, so sticks and DS changes land between cycles and every
+time is a tick count × 0.02 s), with alpha-7 builds of the same probes wherever
+a number surprised. About thirty figures changed in the text, and **almost none
+because of the Kraken constants**: the alpha-7 build gave the same corrected
+numbers, so most were stale already. Changed: Lesson 24's homing range (150–170
+ticks to 125–155), `HANDOFF` at 34 ticks and `HOLDING` at 56; Lesson 25's
+fresh-launch times (3.3 s and 4.4 s to 3.1 s and 4.1 s), the Pick Up table,
+the roller's position and delay, the bypass override's 11.6 rad/s and Aim While
+Driving's 4.2 s and 5.3 s; Lesson 26's grip limit (11.8 m/s², the figure its
+own Try It #2 already used), the P-then-P request jump, the roll past (37 mm),
+the straight-line wander (11 mm) and Try It #3 (12 mm); Lesson 27's P-only
+orbit errors (14.6° and 9.7°), the truth reading (1.2°), the strafe recovery
+(half a second) and the swing-round time (0.4 s). **The drive-lag figures in
+Lesson 26 were derived, not measured** (0.1 s × 4 m/s² = 0.4 m/s): measured,
+the real speed runs 0.28–0.29 m/s above the plan, so the lesson and the
+`Constants` comment in the Lesson 26–32 snapshots now say 0.07 s and 0.3 m/s.
+**Not changed, awaiting a user decision:** Lesson 27's P + feedforward row
+(0.3° and 0.4°, "better than thirty times over"): typically the estimate reads
+0.04–0.13°, but camera corrections make 4 of 12 runs spike to 0.2–1.2°, so
+neither the old figures nor a single new one fits; and Lesson 25's fresh-launch
+times, which depend on how long you wait between launching and enabling (the
+unhomed carriage keeps sinking: 3.3 s of red if you enable after a second, 3.1
+after two, 2.5 after five). Details in CLAUDE.md's "v3 Lessons 24–27
+re-measured" block.
+
+**Alpha-8, the Kraken re-measure, Lessons 28–32, 2026-10-31.** Batch 2b: the 29
+inventory rows for Lessons 28–32, re-measured on alpha-8 (the real `Flywheel`
+and `Elevator` on a 20 ms schedule, the real `Robot` loop with `GamepadSim`,
+bare `TalonFX` rigs, a fresh JVM per Lesson 31 run), with alpha-7 builds of the
+same probes wherever a number surprised. Changed: Lesson 28's zeroed-gain
+plateau (43.27 to 43.40 rot/s), held speed and volts (60.44 rot/s on 7.22 V to
+60.47 on 7.14 V, so `kV × 60 = 7.1 V`) and idle-table times (1.76 and 1.24 s to
+1.72 and 1.22 s); Lesson 29's supply/stator table (the old first row, 116.3 A,
+was a single early sample; alpha-7 with a read-then-step rig reproduces the old
+table to the digit, alpha-8 gives 17.2 rot/s and 51.3 A at 0.6 s) and its
+fresh-battery ranges (alpha-7 reproduces the old ranges, alpha-8 is lower for
+the defaults and has occasional 220–275 A spikes with no limits); Lesson 30's
+boot flicker (alpha-7's first loop took 0.2–0.4 s, so everything cleared on tick
+2; alpha-8's takes 0.07 s and the motors' alerts last 2–7 ticks); Lesson 31's
+sleep table (4 ms reads 0.0075–0.0094 m, 0 ms fails in 7 of 8 runs); Lesson
+32's settled floor (0.116 to 0.15–0.19 mm, which is the `kG` change plus a
+0.039 mm reading step), the 1 mm margin (8.6 to about five times), the
+overshoot (1.3 to 1.2 mm) and the lucky-tick callout (1.46 to 1.42 s, about one
+run in ten). Unchanged: Lesson 28's 1.20 s to `AtSpeed`, Lesson 30's battery,
+camera and tired-battery figures, Lesson 32's replay timings (1.20 s, 1.26 s)
+and aim figures. **Not changed at the time, decided and applied on
+2026-10-31 (see "Lesson 29's two open
+decisions applied" below):** Lesson 29's tired-battery section (over
+thirty runs per configuration the budget browned out once and the defaults 4
+times in 30, on alpha-7 too, so "only the budget was safe every time" isn't what
+the data says), and Lesson 29's 9- and 12-motor rows (3 and 6 reproduce exactly
+on both alphas; the old 346 A and 336 A do not reproduce on either). Details in
+CLAUDE.md's "v3 Lessons 28–32 re-measured" block. Only Lesson 33's figures are
+still the old ones.
+
+**Alpha-8, Lesson 33 rebuilt on WPILib's `SysIdRoutine` and re-measured,
+2026-10-31.** Both Lesson 33 decisions of 2026-10-30 are done. The lesson now
+wires up `org.wpilib.command3.sysid.SysIdRoutine` (a `Config` from
+`Config.defaults()` or `Config.useDataLog(...)`, a `SysIdMechanism` of a drive
+lambda, a log lambda, the `Mechanism` and a name, `Direction.FORWARD`/`REVERSE`)
+instead of the hand-built class, which is deleted along with the text that
+explained it and the "no `finallyDo`" discussion; no other snapshot, tool or
+`V3_DELETIONS` entry referred to it. `RobotUtility` uses plain `back()`/`faceUp()`
+triggers: re-measured on the final code through T,U,T,U,U,T, three runs at each
+of the two ramp configs, every Utility selection ramped, and holding the buttons
+while switching to Teleop left the wheel at idle (3.59 V) in all six runs. The
+inventory rows 96–107 are filled in. What changed in the text: the percent of
+steady state (38–82% at 1 V/s, 77–95% at 0.25 V/s, from 36.1–81.3 and
+75.7–95.3, which an alpha-7 build of the new probe shows is a sampling
+difference of about two ticks in the old probe, not alpha-8), the steady 8.5
+rot/s per volt, the coast-down callout (it quoted the 0.25 V/s run in a section
+where the student has the 1 V/s defaults; now 13 rot/s at 1.6 s), the elevator
+figures (2.599 and 1.503 m; 1.885 / 3.794 / 7.605 m; 1.08–1.10 / 0.62–0.63 /
+0.30 m; homing 3.5 s against 17.3 s) and the 0.05 V figure (0.41 rot/s, 0.37
+after two seconds; it came from the classic Lesson 29, not v3 Lesson 28). **New
+and worth a decision:** the lesson now says what a by-hand least-squares fit of
+the logged voltage and velocity gives (kV 0.118, kA 0.106, and kS 0.90 V at the
+default ramp and 0.23 V at 0.25 V/s when the fit has no acceleration term, which
+is `kA × ramp rate ÷ kV` and matches the classic Lesson 34's 0.89 and 0.23, but
+under 0.01 V at either ramp rate when it does) and says it cannot tell which one
+the SysId tool makes. Whether the tool fits acceleration on the quasistatic data
+was not checked (its source was not reachable; answered in the rewrite note below). Replay of a recorded session
+of all four tests matched on every robot output. Details in CLAUDE.md's "v3 Lesson
+33 rebuilt on WPILib's `SysIdRoutine`" block.
+
+**Alpha-8, Lesson 33 §6–§7 rewritten after reading the SysId tool's source,
+2026-10-31.** The open question above is answered by allwpilib's
+`tools/sysid/.../FeedforwardAnalysis.cpp` at the alpha-8 tag: the tool
+concatenates all four tests into one least-squares fit of acceleration on speed,
+voltage and the sign of speed, then sets `Ks = −γ/β`, `Kv = −α/β`, `Ka = 1/β`,
+which is `V = kS·sgn(v) + kV·v + kA·a`. It has an acceleration term, so it very
+likely reports kS ≈ 0 for the frictionless sim at either ramp rate, and the 0.90
+V (a ramp-only two-term fit) is not what it prints. The tool itself has still not
+been run here, so the lesson words every number as a hand fit of the same model.
+Two user decisions followed. **§6–§7 are now a lesson in checking a result:** kV
+against the free speed (12 ÷ 0.118 = 101.7 vs 101.08) and the dynamic plateau
+(59.3 rot/s ÷ 7 V = 8.47 = 1 ÷ kV), kA against Lesson 28's inertia arithmetic,
+kS by holding 0.05 V (the wheel settles at 0.41 rot/s), and the runs by the
+percent-of-steady-state yardstick, which the default ramp fails and the fit's
+acceleration term absorbs; the 0.90 V is the worked example of a number that
+fails the kS check. **The flywheel is back on `Config.defaults()`:** the 0.25 V/s
+`Config.useDataLog` field and its imports are gone, the slower ramp is Try It #2,
+and the new `Flywheel.holdVoltage` with a right-bumper binding runs the kS check.
+§8 now says even the default ramp needs more room than the elevator has (0.44 m
+to 3 V, 1.04 m to 4.5 V at 1 V/s). The "kA ÷ kV ≈ 0.9 s is the time to 63%" idea
+was measured and dropped (1.00–1.02 s forward, 3.0 s in reverse, with the Lesson
+29 stator limit biting at the start). Details in CLAUDE.md's "v3 Lesson 33
+§6–§7 rewritten as checking a characterization result" block.
+
+**Alpha-8, Lesson 29's two open decisions applied, 2026-10-31.** Both were the
+user's. **The tired-battery table now reports the thirty-run figures:** no
+limits 226–642 A / 0.00–1.94 V and 10 of 10 browned out (ten runs), defaults
+85–129 A / 5.82–7.62 V and 4 of 30, budget 65–121 A / 6.17–8.42 V and 1 of 30.
+"Only the budget was safe every time" and "its worst run stayed 1.2 V above the
+line" are gone. The text now says the budget is much safer and still isn't safe:
+typical low 7.9 V against 6.6 V for the defaults, 2 of 30 lows under 7 V against
+21 of 30, and its one brownout was a single tick at 120.7 A (the elevator's
+supply reading 83 A against its 40 A limit, beside the flywheel's 38 A). It also
+gives the arithmetic that makes the rows readable, taken from the battery model:
+11 V minus 40 mΩ times the current puts the 6.3 V line at 117.5 A, and the four
+default brownouts were the four runs whose peak passed it (118–129 A). The
+no-limits paragraph was re-read against the thirty-run recordings (8 of 10
+collapsed to 0 V, the elevator reaching 0.12–0.53 m, the flywheel peaking
+39–48 rot/s; the other 2 dipped to 1.9 V and finished; the first brownout comes
+0.31–0.39 s after enable with the flywheel alone drawing 119–130 A), and Try It
+#4 now says to run each setting many times. **The motor-count table's 9 and 12
+rows are the rebuilt rig's:** 384 A / 4.3 V and 412–426 A / 3.6–4.3 V, with an
+italic note that past six the rail collapses to 0 V on some runs, and "the total
+stops growing past six" became "grows far more slowly" (+217, +58 and +36 A per
+three motors). The old 346 A and 336 A were not reproduced on either alpha, so
+they are unexplained rather than disproved. Not changed: Lesson 30 (it quotes no
+number from the table; its Try It #8 "over a hundred times" holds in 8 of the 10
+no-limits runs and not in the 2 that dipped and finished), Lesson 33 and every
+other lesson. Details in CLAUDE.md's "v3 Lessons 28–32 re-measured" block.
+
 **What the AdvantageKit pass leaves: only Lesson 34.** Lessons 13–33 record
 their readings with `processInputs`, their decisions with `recordOutput`,
 and replay. The `Field2d` widget, B-Line's own values and the SysId signals
@@ -1440,6 +1692,21 @@ Update `docs/presentations/v3/template/build/*.js` code cards for anything
 renamed (the gamepad face-button rename is the known one; there may be
 others). Re-run `audit-overflow.js` and `validate.py` per the deck
 template's own house rules if any deck text changes length.
+
+**`whenExited` adopted for the double cleanups, 2026-11-12 (user decision:
+only the workarounds).** Alpha-8's builder `whenExited(Runnable)` runs however
+a command ends, and on a cancel runs before `whenCanceled` (probe on the real
+scheduler: natural finish `EXIT`; `.until`, button cancel, interruption and
+disable each `EXIT` then `CANCEL`). Every place that wrote a stop twice, once
+after the loop or `await` and once in `whenCanceled`, now has one
+`.whenExited(...)`: Lesson 6 `driveDistance` (the lesson now teaches
+`whenExited` against `whenCanceled` there, and Lessons 8, 9, 11, 25, 26 and
+a Lesson 7 aside refer back), Lessons 8/9 `turnToHeading` and `driveDistance`,
+Lesson 25 `handingRotationBack`, Lesson 26 `approach`, and the snapshot copies
+through 33. Kept on purpose: `whenCanceled` on commands that never finish by
+themselves or that end with `.until(...)` (which cancels), and on Lesson 26
+`travelToward`, which must not stop when it hands over. Details and
+measurements are in CLAUDE.md's alpha-8 notes.
 
 ## Open decisions for the team
 

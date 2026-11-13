@@ -642,7 +642,7 @@ speculation, the same as every other lesson in this course.
 ## Open decisions
 
 Genuinely the user's call, listed with a recommendation where this plan has
-one, per the convention of `docs/lesson-plan-16-22.md` and `-23-34.md`.
+one, per the convention of `2026/lesson-plan-16-22.md` and `-23-34.md`.
 Resolved items are kept, not deleted, as the record of what was decided —
 same convention those two docs use.
 
@@ -1096,7 +1096,7 @@ out badly.
   `kP = 0.0005`, with the walkthrough's worked numeric example and tuning
   guidance rewritten to match (start at `0.0005`, doubling toward `0.001`
   visibly oscillates, `0.002` is clearly too far). **Not verified against the
-  existing 2026-track course** — that course's `code/lesson-5/subsystems/DriveModule.java`
+  existing 2026-track course** — that course's `2026/code/lesson-5/subsystems/DriveModule.java`
   uses the identical `kP`, inertia, and 1:1-gearing numbers against
   WPILib's older `DCMotorSim`/`LinearSystemId`, which use the same
   state-space math, so the same instability plausibly exists there too, but
@@ -1166,7 +1166,7 @@ out badly.
   - **Tooling note, not an API finding:** `tools/verify-lessons-v3.sh`
     needed its first deletion-replay entry to handle `DriveModule.java`
     being renamed to `SwerveModule.java` — the same file, at the same
-    lesson number, the main course's `verify-lessons.sh` already deletes
+    lesson number, the classic course's `2026/tools/verify-lessons.sh` already deletes
     (`del 7 subsystems/DriveModule.java # became SwerveModule`). Added a
     matching `del()` mechanism to the v3 script rather than inventing a
     different shape, and updated the script's header comment, which had
@@ -3298,7 +3298,7 @@ appendices: verify before drafting, record what you verified.
       not guessed: `org.wpilib.system.DataLogManager`. The earlier guess
       (`org.wpilib.datalog`) was wrong.
 - [x] `tools/verify-lessons-v3.sh` built (R6) — the v3-track sibling of
-      `tools/verify-lessons.sh`, using `code/v3/lesson-N` as the snapshot
+      `2026/tools/verify-lessons.sh` (then `tools/verify-lessons.sh`), using `code/v3/lesson-N` as the snapshot
       naming (resolving that open item too). Lessons 0–3 compile through it
       against the real pinned jars.
 - [x] Resolve OD4 (StateMachine adoption) — resolved 2026-08-14, see OD4

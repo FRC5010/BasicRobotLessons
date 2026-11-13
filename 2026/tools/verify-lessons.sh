@@ -1,32 +1,34 @@
 #!/usr/bin/env bash
 #
-# verify-lessons.sh — compile-check the lesson code in this repo.
+# verify-lessons.sh — compile-check the parked 2026 (classic) track's lesson code.
+# Run it from the repo root as ./2026/tools/verify-lessons.sh. This track is
+# archived: the OpMode course's script is tools/verify-lessons-v3.sh.
 #
 # The lessons' Java lives in two places that can drift apart: the snippets in
-# docs/lessons/*.md and the snapshots in code/lesson-N/. Nothing compiles either
+# 2026/lessons/*.md and the snapshots in 2026/code/lesson-N/. Nothing compiles either
 # one by default, which is how a regression can sit in main unnoticed. This
 # script builds the snapshots for real.
 #
-# It works by rolling code/ActualLessons (the student's pristine WPILib template)
-# forward through code/lesson-0 … code/lesson-N, applying each snapshot in order
+# It works by rolling 2026/code/ActualLessons (the student's pristine WPILib template)
+# forward through 2026/code/lesson-0 … 2026/code/lesson-N, applying each snapshot in order
 # the way a student would, then running Gradle over the result.
 #
-#   ./tools/verify-lessons.sh          # roll through the highest lesson present
-#   ./tools/verify-lessons.sh 13       # stop after Lesson 13
-#   ./tools/verify-lessons.sh 17 test  # also run any src/test/java you dropped in
+#   ./2026/tools/verify-lessons.sh          # roll through the highest lesson present
+#   ./2026/tools/verify-lessons.sh 13       # stop after Lesson 13
+#   ./2026/tools/verify-lessons.sh 17 test  # also run any src/test/java you dropped in
 #
 # Pass --sandbox to keep the result as a real project instead of a throwaway
 # scratch build — this is how you'd hand yourself a keepable project in the
 # state a lesson expects, to start mid-course:
 #
-#   ./tools/verify-lessons.sh 17 --sandbox ~/dev/MyRobot
+#   ./2026/tools/verify-lessons.sh 17 --sandbox ~/dev/MyRobot
 #
-# The project the snapshots are rolled onto is code/ActualLessons by default.
+# The project the snapshots are rolled onto is 2026/code/ActualLessons by default.
 # Pass --base to point at any other GradleRIO project instead — a student's
 # own repo, say, to check their work against a lesson's snapshot:
 #
-#   ./tools/verify-lessons.sh 7 --base ~/dev/MyRobot
-#   ./tools/verify-lessons.sh -1 --base ~/dev/MyRobot   # no lessons, just build it
+#   ./2026/tools/verify-lessons.sh 7 --base ~/dev/MyRobot
+#   ./2026/tools/verify-lessons.sh -1 --base ~/dev/MyRobot   # no lessons, just build it
 #
 # -1 rolls no snapshots at all and fetches no vendordeps, so the project is
 # built exactly as it stands, with whatever vendordeps it already carries.
@@ -34,7 +36,7 @@
 # Asides are optional side-quests, not part of the linear build, so they are
 # applied ON TOP of a named lesson rather than rolled through in order:
 #
-#   ./tools/verify-lessons.sh 16 aside-odometry-thread
+#   ./2026/tools/verify-lessons.sh 16 aside-odometry-thread
 #
 # An aside's snapshot is written against the lesson it names. Applying it on
 # top of a LATER lesson would revert everything that lesson changed in the same
@@ -47,12 +49,12 @@
 # already set them — a flag wins if both are given for the same one.
 #
 # The sandbox is a scratch copy and is DELETED at the start of every run, so the
-# base project is never modified — neither code/ActualLessons nor whatever
+# base project is never modified — neither 2026/code/ActualLessons nor whatever
 # --base names. Never point --sandbox at anything you want to keep that isn't
 # already this kind of throwaway folder; the script refuses the obvious
 # mistakes but cannot catch every one.
 #
-# code/ActualLessons in particular is expected to stay at pristine template
+# 2026/code/ActualLessons in particular is expected to stay at pristine template
 # state: it is the students' starting point.
 #
 # First run takes a few minutes to populate the Gradle cache and needs network
@@ -81,8 +83,11 @@ while [ $# -gt 0 ]; do
 done
 set -- "${POSITIONAL[@]}"
 
-REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-BASE="${VERIFY_BASE:-$REPO/code/ActualLessons}"
+# TRACK is the 2026/ folder this script lives in; REPO is the whole repository
+# around it (the sandbox must stay out of both).
+TRACK="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPO="$(cd "$TRACK/.." && pwd)"
+BASE="${VERIFY_BASE:-$TRACK/code/ActualLessons}"
 SANDBOX="${VERIFY_SANDBOX:-${TMPDIR:-/tmp}/verify-lessons}"
 GRADLE_TASK="compileJava"
 
@@ -106,7 +111,7 @@ esac
 # (or -1) — that way "test"/"aside-*" on their own (no number given,
 # --sandbox/--base already pulled out above) still mean "the latest lesson,
 # plus this" instead of being mistaken for the lesson number itself.
-LATEST="$(ls -d "$REPO"/code/lesson-* 2>/dev/null | sed 's/.*lesson-//' | sort -n | tail -1)"
+LATEST="$(ls -d "$TRACK"/code/lesson-* 2>/dev/null | sed 's/.*lesson-//' | sort -n | tail -1)"
 if [ $# -gt 0 ] && [[ "$1" =~ ^-?[0-9]+$ ]]; then
   THROUGH="$1"; shift
 else
@@ -120,8 +125,8 @@ for arg in "$@"; do
     *) echo "unknown argument: $arg" >&2; exit 1 ;;
   esac
 done
-[ -n "$ASIDE" ] && [ ! -d "$REPO/code/$ASIDE" ] && {
-  echo "no such aside: code/$ASIDE" >&2; exit 1; }
+[ -n "$ASIDE" ] && [ ! -d "$TRACK/code/$ASIDE" ] && {
+  echo "no such aside: 2026/code/$ASIDE" >&2; exit 1; }
 
 # --- vendordeps -------------------------------------------------------------
 # Pinned to WPILib's vendordep marketplace, one immutable file per version.
@@ -197,7 +202,7 @@ if [ "$THROUGH" -lt 0 ]; then
 else
 say "Applying lesson snapshots 0..$THROUGH"
 for n in $(seq 0 "$THROUGH" 2>/dev/null || true); do
-  d="$REPO/code/lesson-$n"
+  d="$TRACK/code/lesson-$n"
   [ -d "$d" ] || continue
   # Java: code/lesson-N/**.java mirrors the frc/robot package tree
   # (root classes at the top, then subsystems/, commands/). Last writer wins,
@@ -224,7 +229,7 @@ fi
 
 if [ -n "$ASIDE" ]; then
   say "Applying $ASIDE on top of lesson-$THROUGH"
-  d="$REPO/code/$ASIDE"
+  d="$TRACK/code/$ASIDE"
   (cd "$d" && find . -name '*.java' -not -path './tests/*' -print0 | while IFS= read -r -d '' f; do
       mkdir -p "$JAVA_DIR/$(dirname "$f")"
       cp "$f" "$JAVA_DIR/$f"

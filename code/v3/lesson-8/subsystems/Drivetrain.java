@@ -74,9 +74,8 @@ public class Drivetrain implements Mechanism {
             commandRotation(omega);
             coroutine.yield();
           }
-          commandRotation(0.0); // reached it — stop
         })
-        .whenCanceled(() -> commandRotation(0.0)) // interrupted — stop
+        .whenExited(() -> commandRotation(0.0)) // however it ends — stop
         .named("Turn To Heading");
   }
 

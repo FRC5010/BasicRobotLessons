@@ -63,10 +63,10 @@ public final class Constants {
     public static final Translation2d kBackLeft   = new Translation2d(-kHalfLength,  kHalfWidth);
     public static final Translation2d kBackRight  = new Translation2d(-kHalfLength, -kHalfWidth);
 
-    // Kraken X60 free speed ≈ 6000 RPM = 100 rotations/sec. Divide by the gear
-    // ratio, multiply by circumference → meters/sec. About 4.7 m/s for our numbers.
+    // Kraken X60 free speed ≈ 6065 RPM = 101.08 rotations/sec. Divide by the gear
+    // ratio, multiply by circumference → meters/sec. About 4.8 m/s for our numbers.
     public static final LinearVelocity kMaxSpeed =
-        MetersPerSecond.of(100.0 / kDriveGearRatio * kWheelCircumferenceMeters);
+        MetersPerSecond.of(101.08 / kDriveGearRatio * kWheelCircumferenceMeters);
 
     // How fast the chassis may spin at full stick — one full rotation per second.
     public static final AngularVelocity kMaxAngularSpeed = RotationsPerSecond.of(1.0);

@@ -42,7 +42,7 @@
 #
 # Lesson 0 starts from the untouched OpMode template, so there is nothing to
 # apply for it; the highest lesson supported is the last one migrated to
-# WPILib 2027 alpha-7 (V3_ALPHA7_THROUGH in tools/lib/v3-lessons.sh).
+# current WPILib 2027 alpha (V3_ALPHA7_THROUGH in tools/lib/v3-lessons.sh).
 
 set -euo pipefail
 
@@ -76,7 +76,7 @@ if [ "$LESSON" -eq 0 ]; then
   die "Lesson 0 starts from the untouched OpMode template — there's nothing to apply. Make a new project from the template instead."
 fi
 if [ "$LESSON" -gt "$V3_ALPHA7_THROUGH" ]; then
-  die "lessons above $V3_ALPHA7_THROUGH haven't been migrated to WPILib 2027 alpha-7 yet, so their starting code wouldn't build"
+  die "lessons above $V3_ALPHA7_THROUGH haven't been migrated to the current WPILib 2027 alpha yet, so their starting code wouldn't build"
 fi
 THROUGH=$((LESSON - 1))
 # A lesson with no snapshot is a gap in this track (not written yet). Starting

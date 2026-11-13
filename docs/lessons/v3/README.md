@@ -1,15 +1,14 @@
 # OpMode track — SystemCore, WPILib 2027 alpha, Commands V3
 
-A newer, still-settling alternative to [the classic track](../README.md):
-SystemCore and the 2027 alpha's OpMode framework, with coroutine-style
-Commands V3. Reference code lives under [`code/v3/lesson-N/`](https://github.com/FRC5010/BasicRobotLessons/tree/main/code/v3),
+This is the course: SystemCore and the 2027 alpha's OpMode framework, with
+coroutine-style Commands V3. (The earlier roboRIO / WPILib 2026 course is
+[archived in the repository](https://github.com/FRC5010/BasicRobotLessons/blob/main/2026/lessons/README.md).) Reference code lives under [`code/v3/lesson-N/`](https://github.com/FRC5010/BasicRobotLessons/tree/main/code/v3),
 and the whole track rolls forward with `./tools/verify-lessons-v3.sh`. To
 catch up, or to start partway through, see
 [Starting a lesson from the reference code](#starting-a-lesson-from-the-reference-code)
 below.
 
-**Start on [the classic track](../README.md) unless you specifically want
-this one.** Two lessons (16 and 22) are genuinely different, hand-built lessons
+Two lessons (16 and 22) are genuinely different, hand-built lessons
 rather than straight ports, because maple-sim isn't available for this
 alpha: 16 builds its own simulated chassis, and 22 its own simulated
 intake. See
@@ -24,7 +23,7 @@ status of every lesson, including what changed and why.
 | 3 | [Telemetry](03-telemetry.md) | Plot position & velocity live | Return values, `instanceof` pattern matching, `Telemetry`/`DataLogManager` logging |
 | 4 | [Simulation](04-simulation.md) | Make it move on your laptop | `simulationPeriodic()`, physics models, composition |
 | 5 | [Steering with P control](05-steering-p-control.md) | Point the module to an angle, primed from a CANcoder at boot | `if`/`else`, arithmetic, error, setpoints |
-| 6 | [Distance & commands](06-distance-and-commands.md) | Drive an exact distance | Unit conversion, coroutine bodies that run out, finished vs. canceled |
+| 6 | [Distance & commands](06-distance-and-commands.md) | Drive an exact distance | Unit conversion, coroutine bodies that run out, `whenExited` vs. `whenCanceled` |
 | 7 | [Four modules](07-four-modules.md) | Assemble a 4-module chassis you can translate and rotate | Arrays, `for` loops, per-module constructor args |
 | 8 | [Gyro & heading](08-gyro-heading.md) | Turn the chassis to a compass heading | Reusing patterns, extracting helpers |
 | 9 | [Autonomous](09-autonomous.md) | Compose a drive-turn-drive auto | `coroutine.await(...)`, sequential vs. parallel |
@@ -51,7 +50,7 @@ status of every lesson, including what changed and why.
 | 30 | [The robot tells you what's wrong](30-alerts.md) | A pre-match checklist the robot runs on itself, surfaced where a human looks, and plugs to pull in sim to prove it | None |
 | 31 | [Tests that catch what a plot won't](31-testing.md) | JUnit tests against your own subsystems, with the simulation running inside them | JUnit, arrange/act/assert |
 | 32 | [Reading a match log](32-reading-a-log.md) | Diagnose a failure that already happened from the log alone, then prove the fix by replaying that same match through the corrected code | None |
-| 33 | [Tuning your robot when build team hands it over](33-tuning-with-sysid.md) | Measure a real machine's gains with a hand-built `SysIdRoutine`, since WPILib's own isn't ported to this framework yet | `Trigger.and(...)`, `EventLoop` |
+| 33 | [Tuning your robot when build team hands it over](33-tuning-with-sysid.md) | Measure a real machine's gains with WPILib's own `SysIdRoutine`, and learn to check each number it hands back before you trust it | `Trigger.and(...)` |
 | 34 | [Going to get something you just saw](34-object-detection.md) | A camera that finds a game piece, and an approach built while the robot runs | `Command.requiring(...).executing(...)` |
 
 ## Starting a lesson from the reference code
@@ -131,17 +130,17 @@ leave it. The next run of the script replaces the file anyway.
   and pulling your starting project out of this course's repo (the wizard's
   OpMode template doesn't come with Commands V3, so this course hands you one
   that already does), then the same GitHub/`gh` setup and daily
-  `add`/`commit`/`push` loop as the classic track. **Start here before
+  `add`/`commit`/`push` loop. **Start here before
   Lesson 0.**
-- [Branches: one per lesson, merged into a `main` that always works](../aside-git-branching.md) —
-  shared with the classic track as-is; nothing in it is WPILib-version-specific.
-- [Debugging in VSCode and reading stack traces](../aside-debugger.md) —
-  shared with the classic track, with its own section on how this track's
+- [Branches: one per lesson, merged into a `main` that always works](aside-git-branching.md) —
+  nothing in it is WPILib-version-specific.
+- [Debugging in VSCode and reading stack traces](aside-debugger.md) —
+  with its own section on how this track's
   stack traces differ: the framework strips internal coroutine frames and
   splices in a second trace showing which button scheduled the failing
-  command, which the classic track's traces can't show you at all.
+  command, which an ordinary Java trace can't show you at all.
 
-**Not yet ported:** [the odometry-thread aside](../aside-odometry-thread.md)
-is written for the classic track's drivetrain. This track has AdvantageKit
+**Not yet ported:** [the archived 2026 track's odometry-thread aside](https://github.com/FRC5010/BasicRobotLessons/blob/main/2026/lessons/aside-odometry-thread.md)
+is written for that track's drivetrain. This track has AdvantageKit
 from Lesson 13 on, but porting the aside still means rewriting its
 drivetrain and logging sections, not renaming them, and it's still open.

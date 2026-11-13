@@ -726,18 +726,33 @@ bind the motion to the state itself, unguarded:**
     // moment the state changes, whileTrue cancels the old motion. HOLDING has
     // none — the elevator and arm are already where they need to be. These are
     // made here, not in an opmode, so they hold in every opmode there is.
-    superstructure.inState(SuperstructureState.INTAKING).whileTrue(superstructure.intakeMotion());
-    superstructure.inState(SuperstructureState.HANDOFF).whileTrue(superstructure.handoffMotion());
-    superstructure.inState(SuperstructureState.SCORING).whileTrue(superstructure.scoreMotion());
-    superstructure.inState(SuperstructureState.IDLE).whileTrue(superstructure.idleMotion());
+    //
+    // "And enabled" keeps the motion alive across a disable. Disabling cancels
+    // every command that moves a mechanism, and a state that didn't change
+    // gives whileTrue no new edge to start from. This way, enabling the robot
+    // is that edge.
+    superstructure.inState(SuperstructureState.INTAKING)
+        .and(RobotState::isEnabled)
+        .whileTrue(superstructure.intakeMotion());
+    superstructure.inState(SuperstructureState.HANDOFF)
+        .and(RobotState::isEnabled)
+        .whileTrue(superstructure.handoffMotion());
+    superstructure.inState(SuperstructureState.SCORING)
+        .and(RobotState::isEnabled)
+        .whileTrue(superstructure.scoreMotion());
+    superstructure.inState(SuperstructureState.IDLE)
+        .and(RobotState::isEnabled)
+        .whileTrue(superstructure.idleMotion());
 
     // ...
   }
 ```
 
-**Add the imports:**
+**Add to `Robot.java`'s imports:**
 
 ```java
+import org.wpilib.driverstation.RobotState;
+
 import first.robot.subsystems.Superstructure;
 import first.robot.subsystems.SuperstructureState;
 ```
@@ -754,11 +769,22 @@ the same tick. You never touch a motor directly. You say what state you
 want, or the robot notices what state it's in, and the wiring turns that
 into motion.
 
+One more thing on those lines: the `.and(RobotState::isEnabled)`. It's
+Lesson 22's `.and(...)` with a method reference, and it's there because of
+what happens when the robot is disabled. **Disabling cancels every command
+that moves a mechanism.** `whileTrue` only starts its command when its
+`Trigger` *turns* true, so disable in the middle of `INTAKING` and
+`intakeMotion()` is canceled while the state is still `INTAKING`.
+`inState(INTAKING)` never went false, which means it has no new edge to
+start from, and when you enable again the robot sits in the right state
+doing nothing. Put the enabled half in the `Trigger` and disabling turns
+it false; enabling is the edge that starts the motion over.
+
 Read the new bindings, in both files, and notice what's missing: no
-`hasGamePiece`, no `atGoal`, no debounce, no `and(...)` chain. **Not one
-binding mentions a sensor.** The three buttons name states, and the four
-state bindings name motion. Everything about *when* now lives in
-`Superstructure`, in one method you can read top to bottom.
+`hasGamePiece`, no `atGoal`, no debounce. **Not one binding mentions a
+sensor.** The three buttons name states, and the four state bindings name
+motion. Everything about *when* now lives in `Superstructure`, in one
+method you can read top to bottom.
 
 ---
 
@@ -790,6 +816,11 @@ before — `UNHOMED` still carries a blinking red.
    drops to `IDLE` on its own and everything stows — `SCORING` is a
    one-or-two-tick flicker in the log, which is fine. It's the *piece
    leaving*, not a timer, that ends it.
+7. **Disable in the middle of a motion.** From `IDLE`, press the left
+   face button, **disable the robot while the arm is still swinging**,
+   wait a second, and enable. The state never left `INTAKING`, and the
+   intake motion starts over on the first tick: the arm finishes the
+   swing and the roller spins up.
 
 Every one of those transitions is visible in exactly two outputs:
 `Superstructure/State` for what's happening, `Superstructure/Rejected` for
@@ -797,11 +828,11 @@ what almost happened and didn't.
 
 Measured in the simulator, with the real `Robot` and the real bindings,
 driven through `GamepadSim` on a fixed 20 ms loop: homing reaches `IDLE`
-150 to 170 ticks (3 to 3.4 s) after you press Back. The later you press
+125 to 155 ticks (2.5 to 3.1 s) after you press Back. The later you press
 it, the quicker it is, because the unpowered carriage has been sinking
 toward the switch the whole time. With the arm down and the robot driving
-at a piece at a quarter stick, the beam break trips the handoff about 35
-ticks after the drive starts, and the machine reaches `HOLDING` about 55
+at a piece at a quarter stick, the beam break trips the handoff about 34
+ticks after the drive starts, and the machine reaches `HOLDING` about 56
 ticks (1.1 s) after that, with the elevator inside its 2 cm tolerance of
 0.75 m and the arm at its goal. The strip reads solid yellow in `INTAKING`, solid green
 in `HOLDING`, and dim blue in `IDLE` (breathing while disabled).

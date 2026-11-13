@@ -265,7 +265,7 @@ control.
 
     // The speedometer. Full scale is the motor's free speed, so the needle can
     // never run off the end of the dial.
-    public static final AngularVelocity kFreeSpeed = RotationsPerSecond.of(100);
+    public static final AngularVelocity kFreeSpeed = RotationsPerSecond.of(101.08);
     public static final Distance kDialSize = Meters.of(2.0);
     public static final Distance kNeedleLength = Meters.of(0.8);
     /** Where the needle sits at rest: straight down. */
@@ -276,8 +276,8 @@ control.
     // The model: what this wheel costs to break free, to spin, and to speed up.
     // No kG — nothing here is being held up against gravity.
     public static final double kFlywheelKS = 0.15; // volts to overcome friction
-    public static final double kFlywheelKV = 0.12; // volts per rotation/sec
-    public static final double kFlywheelKA = 0.106; // volts per rotation/sec^2
+    public static final double kFlywheelKV = 0.119; // volts per rotation/sec
+    public static final double kFlywheelKA = 0.105; // volts per rotation/sec^2
     // The trim: whatever the model got wrong.
     public static final double kFlywheelKP = 0.3; // volts per rotation/sec of error
   }
@@ -292,32 +292,33 @@ Writing `kG = 0.05` here because the other two had one would be inventing
 a force.
 
 The two that remain come out of Lesson 18's arithmetic unchanged. A Kraken
-X60 free-spins at 6000 rpm on 12 V — that's 100 rotations per second, so
-**0.12 V per rotation per second**, and with no gearbox the wheel *is* the
+X60 free-spins at 6065 rpm on 12 V (WPILib's motor model, from CTRE's
+dynamometer data, as in Lesson 18) — that's 101.08 rotations per second, so
+**0.1187 V per rotation per second**, and with no gearbox the wheel *is* the
 rotor.
 
 *Nothing to add — the arithmetic, not code:*
 
 ```
-kV = 0.12 V per rot/s        →  holding 60 rot/s costs 0.12 × 60 = 7.2 V
+kV = 0.1187 ≈ 0.119 V per rot/s  →  holding 60 rot/s costs 0.119 × 60 = 7.1 V
 ```
 
 Seven and a bit volts out of twelve, just to stay spinning. That leaves
-about 4.8 V of headroom for accelerating, which is why the wheel takes a
+about 4.9 V of headroom for accelerating, which is why the wheel takes a
 moment to come up.
 
 `kA` is the torque side of the same recipe. Speeding a wheel up by 1 rot/s²
-needs `J × 2π` newton-metres, and the Kraken stalls at 7.09 N·m on 12 V, so
-**1.69 V per N·m**.
+needs `J × 2π` newton-metres, and the Kraken stalls at 7.157 N·m on 12 V, so
+**1.677 V per N·m**.
 
 *Nothing to add — the arithmetic, not code:*
 
 ```
-kA = 0.01 × 2π × 1.69 = 0.106 V per rot/s²
+kA = 0.01 × 2π × 1.677 = 0.105 V per rot/s²
 ```
 
-Both numbers came from the motor's spec sheet and one number off the CAD.
-Neither was guessed, and section 6 checks them against what the wheel
+Both gains came from the motor's published numbers and one number off the
+CAD. Neither was guessed, and section 6 checks them against what the wheel
 actually does.
 
 ---
@@ -607,7 +608,7 @@ the right-hand side, where it would sit looking like a modest negative
 speed. **A gauge that wraps is worse than no gauge**, because it doesn't
 look broken.
 
-Shooting speed lands at 60% of full scale, so the needle sits in the
+Shooting speed lands at about 60% of full scale, so the needle sits in the
 upper-left when the wheel is ready — a glance-able position you'll come to
 recognise.
 
@@ -632,12 +633,12 @@ so zeroing `Slot0.kV` doesn't make it vanish.
 
 ```
 kP × (goal − ω)  =  kV × ω
-0.3 × (60 − ω)   =  0.12 × ω
-18               =  0.42 × ω
-ω                =  42.86 rot/s
+0.3 × (60 − ω)   =  0.119 × ω
+18               =  0.419 × ω
+ω                =  42.96 rot/s
 ```
 
-Measured here: 43.27. Close enough to confirm the arithmetic, not exact —
+Measured here: 43.40. Close enough to confirm the arithmetic, not exact —
 the small remaining gap is this simulator's own motor model, not a flaw in
 the reasoning. (Zero both gains, hold the request for five seconds on a
 20 ms schedule, and that is what the wheel reads.)
@@ -647,9 +648,9 @@ produced a gap that trailed the setpoint while moving and closed when it
 stopped. Here there is no stopping: the error is where the wheel lives,
 permanently, and no amount of patience recovers it.
 
-With the model in place, the same request settles at **60.44 rot/s** —
-comfortably inside the 1.5 rot/s tolerance — holding **7.22 V**, matching
-`kV × 60 = 7.2 V` almost exactly.
+With the model in place, the same request settles at **60.47 rot/s** —
+comfortably inside the 1.5 rot/s tolerance — holding **7.14 V**, matching
+`kV × 60 = 7.1 V` almost exactly.
 
 > **The third time this course has said it, and the clearest.** A P term
 > corrects; it does not sustain. If holding station requires continuous
@@ -662,7 +663,7 @@ comfortably inside the 1.5 rot/s tolerance — holding **7.22 V**, matching
 
 Now the thing that separates a shooter that works from one that scores.
 
-Nobody cares whether the wheel is at 60.4 rot/s or 59.8. Balls tolerate
+Nobody cares whether the wheel is at 60.5 rot/s or 59.8. Balls tolerate
 that. What ruins a cycle is the *time between shots* — every shot drags
 the wheel down, and until it's back you can't fire again. **The figure of
 merit is recovery time, not error.**
@@ -673,8 +674,8 @@ sits while it's waiting.
 | Idle speed | Time to reach shooting speed |
 |---|---|
 | 0 rot/s (stopped) | 2.3 s |
-| 15 rot/s | 1.76 s |
-| 30 rot/s | 1.24 s |
+| 15 rot/s | 1.72 s |
+| 30 rot/s | 1.22 s |
 | 45 rot/s | 0.70 s |
 
 Idling at half the shooting speed cuts the wait roughly in half, and
@@ -730,7 +731,7 @@ Hold the left trigger. The goal jumps to 60, the wheel climbs, and
 `Flywheel/AtSpeed` goes true a bit over a second later. Let go and it
 drops back to idle. Add `Flywheel/AppliedVolts` to the graph and you'll
 see it jump to about 7 V, climb towards 9 V as the wheel speeds up, and
-settle around 7.2 — which is `kV × 60`, exactly as computed in section 3.
+settle around 7.1 — which is `kV × 60`, exactly as computed in section 3.
 
 Worth doing deliberately:
 
@@ -800,7 +801,7 @@ a real event. Nothing analogous happens to a flywheel: reaching speed is
 not an achievement it can keep without continuing to work for it. That one
 difference changed the shape of every command in the subsystem.
 
-**Recovery time, not error.** Being 0.4 rot/s off doesn't cost a match;
+**Recovery time, not error.** Being 0.5 rot/s off doesn't cost a match;
 taking two and a half seconds to be ready for the next shot does. And the
 lever on it turned out not to be a gain at all — it was deciding what the
 wheel does while it's waiting, which is a design decision rather than a
@@ -809,7 +810,7 @@ tuning one.
 And the one that has now come up three times: **calculate what you must
 sustain, and feed it forward.** Without `kV` the wheel parks around 43
 rot/s and stays there forever, because a P term can only produce output by
-keeping error alive. The arithmetic predicted 42.86 before the test ran,
+keeping error alive. The arithmetic predicted 42.96 before the test ran,
 and the measurement landed within half a rotation of it — when a model and
 a measurement agree that closely, you understand the mechanism, and
 that's a much better position to be in than having found some gains that

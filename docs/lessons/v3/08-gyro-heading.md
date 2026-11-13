@@ -188,9 +188,8 @@ public Command turnToHeading(double targetDegrees) {
           commandRotation(omega);
           coroutine.yield();
         }
-        commandRotation(0.0); // reached it — stop
       })
-      .whenCanceled(() -> commandRotation(0.0)) // interrupted — stop
+      .whenExited(() -> commandRotation(0.0)) // however it ends — stop
       .named("Turn To Heading");
 }
 ```
@@ -201,14 +200,14 @@ fresh `omega` from the current error, hands it to `commandRotation`, then
 `coroutine.yield()` suspends until the next tick — this is precisely what
 `Coroutine.waitUntil(...)` did under the hood back in Lesson 6, just written
 out by hand because this loop has real work to do on every pass, not just a
-condition to poll. The moment the error drops under 2°, the loop exits, the
-line right after it commands a full stop, and the coroutine body is out of
-code — finished, the same way `driveDistance` finished in Lesson 6.
+condition to poll. The moment the error drops under 2°, the loop exits and the
+coroutine body is out of code — finished, the same way `driveDistance`
+finished in Lesson 6.
 
 And because Lesson 6's rule about endings hasn't gone anywhere:
-`.whenCanceled(() -> commandRotation(0.0))` covers the *other* ending —
-something interrupting this command before the loop ever gets to its own
-stop line. Two endings, two stop orders, same as `driveDistance`. The clamp
+`.whenExited(() -> commandRotation(0.0))` stops the turn whether the loop
+finished or something interrupted this command first. Two endings, one stop,
+same as `driveDistance`. The clamp
 is tighter than Lesson 5's `±1.0` on purpose: full-power spins are violent,
 and a heading turn never needs more than half throttle. And because the
 finish condition calls the *same* `headingError` the loop body used, "done"

@@ -310,11 +310,12 @@ command the moment it's true. It's not the same as a command finishing its
 own coroutine body naturally (the way `driveDistance`'s `while` loop does
 in Lesson 6) — under the hood, `.until(...)` ends the command by
 interrupting it, which means **`.whenCanceled(...)` fires every time
-`.until(...)` stops it**, reached-target or not. That's simpler than
-`driveDistance`'s two separate cleanup paths back in Lesson 6: one
-`.whenCanceled(...)` here covers both "got there" and "got interrupted,"
-because as far as the scheduler's concerned, both endings are the same
-kind of ending.
+`.until(...)` stops it**, reached-target or not. Lesson 6's `driveDistance`
+needed `.whenExited(...)` because its body could finish by itself; this
+body is a loop that never finishes, so the only way it ends is a cancel,
+and `.whenCanceled(...)` here covers both "got there" and "got
+interrupted," because as far as the scheduler's concerned, both endings are
+the same kind of ending.
 
 > **When you outgrow odometry:** wheels slip, wheels drift, and after a
 > minute of driving the pose can be meters off from reality.
@@ -360,9 +361,9 @@ and once in `resetPose()`. The deeper pattern is the one you spotted in
 `driveToPose`: everything in
 this course has been measure-subtract-multiply-clamp-command wearing
 different sensors. You also picked up **`.until(...)`**, and with it a
-genuinely simpler cleanup story than Lesson 6's `driveDistance` needed —
-one `.whenCanceled(...)` covers every way `.until(...)` can end a command,
-because that's the only way it *does* end one.
+a cleanup story that stays short — `.whenCanceled(...)` covers every way
+`.until(...)` can end a command, because that's the only way it *does* end
+one.
 
 The *robot* is now complete — but the *programming* has one more act. Your
 control loops are still 50 Hz software P, your log files can only be

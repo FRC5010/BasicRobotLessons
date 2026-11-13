@@ -85,7 +85,8 @@ public class Robot extends LoggedOpModeRobot {
      * ====== NEXT LESSON: ADD CODE HERE ======
      * The motion that belongs to each superstructure state, bound to being in
      * it. It goes here rather than in an opmode so it holds in every opmode,
-     * autonomous included.
+     * autonomous included. Disabling cancels it, so it has to start again
+     * when the robot is enabled.
      */
 
     // Vision now checks its simulated eyesight against ground truth, not

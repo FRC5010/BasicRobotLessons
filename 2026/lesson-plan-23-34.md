@@ -2,7 +2,7 @@
 
 A working plan for the stretch after [lesson-plan-16-22.md](lesson-plan-16-22.md).
 **This is a contributor document, not lesson content** — it lives beside
-`docs/lessons/`, never inside it, and nothing here should be pasted into a lesson
+`lessons/`, never inside it, and nothing here should be pasted into a lesson
 as-is.
 
 Same working method as 16–22: one lesson at a time, reviewed between each,
@@ -21,18 +21,18 @@ must be able to disagree with the code**, and its Try-It safety convention.
 
 | # | Working title | Builds on | 3rd-party library | Status |
 |---|---|---|---|---|
-| 23 | LEDs: showing what the robot is thinking | L22 (state to show) | none | **Done** — [lesson](lessons/23-leds.md), [code](../code/lesson-23/) |
-| 24 | A superstructure: state you can name | L23, L22, L9 | none | **Done** — [lesson](lessons/24-superstructure.md), [code](../code/lesson-24/) |
-| 25 | Doing two things at once (path events) | L17, L24 | `BLine-Lib` | **Done** — [lesson](lessons/25-path-events.md), [code](../code/lesson-25/) |
-| 26 | Getting there exactly (two-step drive to pose) | L17, L14 | `BLine-Lib` | **Done** — [lesson](lessons/26-drive-to-pose.md), [code](../code/lesson-26/) |
-| 27 | Going to get something you just saw | L15, L26, L20/22 | `photonlib`, `maple-sim` | **Done** — [lesson](lessons/27-object-detection.md), [code](../code/lesson-27/) |
-| 28 | Keeping the nose on the target | L15, L25 | `photonlib` | **Done** — [lesson](lessons/28-aim-at-tag.md), [code](../code/lesson-28/) |
-| 29 | A wheel that holds a speed | L13 spine, L18 model | none | **Done** — [lesson](lessons/29-flywheel.md), [code](../code/lesson-29/) |
-| 30 | One battery, everything on it | L21 (current sensing) | none | **Done** — [lesson](lessons/30-current-limits.md), [code](../code/lesson-30/) |
-| 31 | The robot tells you what's wrong | L13, L15 | none | **Done** — [lesson](lessons/31-alerts.md), [code](../code/lesson-31/) |
-| 32 | Tests that catch what a plot won't | all mechanisms | none | **Done** — [lesson](lessons/32-testing.md), [code](../code/lesson-32/) |
-| 33 | Reading a match log | L3, L13 | none | **Done** — [lesson](lessons/33-reading-a-log.md), [code](../code/lesson-33/) |
-| 34 | Tuning your robot when build team hands it over | L18, L20, L29 | none | **Done** — [lesson](lessons/34-tuning-with-sysid.md), [code](../code/lesson-34/) |
+| 23 | LEDs: showing what the robot is thinking | L22 (state to show) | none | **Done** — [lesson](lessons/23-leds.md), [code](code/lesson-23/) |
+| 24 | A superstructure: state you can name | L23, L22, L9 | none | **Done** — [lesson](lessons/24-superstructure.md), [code](code/lesson-24/) |
+| 25 | Doing two things at once (path events) | L17, L24 | `BLine-Lib` | **Done** — [lesson](lessons/25-path-events.md), [code](code/lesson-25/) |
+| 26 | Getting there exactly (two-step drive to pose) | L17, L14 | `BLine-Lib` | **Done** — [lesson](lessons/26-drive-to-pose.md), [code](code/lesson-26/) |
+| 27 | Going to get something you just saw | L15, L26, L20/22 | `photonlib`, `maple-sim` | **Done** — [lesson](lessons/27-object-detection.md), [code](code/lesson-27/) |
+| 28 | Keeping the nose on the target | L15, L25 | `photonlib` | **Done** — [lesson](lessons/28-aim-at-tag.md), [code](code/lesson-28/) |
+| 29 | A wheel that holds a speed | L13 spine, L18 model | none | **Done** — [lesson](lessons/29-flywheel.md), [code](code/lesson-29/) |
+| 30 | One battery, everything on it | L21 (current sensing) | none | **Done** — [lesson](lessons/30-current-limits.md), [code](code/lesson-30/) |
+| 31 | The robot tells you what's wrong | L13, L15 | none | **Done** — [lesson](lessons/31-alerts.md), [code](code/lesson-31/) |
+| 32 | Tests that catch what a plot won't | all mechanisms | none | **Done** — [lesson](lessons/32-testing.md), [code](code/lesson-32/) |
+| 33 | Reading a match log | L3, L13 | none | **Done** — [lesson](lessons/33-reading-a-log.md), [code](code/lesson-33/) |
+| 34 | Tuning your robot when build team hands it over | L18, L20, L29 | none | **Done** — [lesson](lessons/34-tuning-with-sysid.md), [code](code/lesson-34/) |
 | — | `aside-commands-v3.md` | not in the linear build | none | **Done** — [aside](lessons/aside-commands-v3.md), no code snapshot (nothing compiles) |
 
 The arc runs in four groups: **23–24** make the robot's state visible and then

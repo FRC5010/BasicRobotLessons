@@ -344,13 +344,13 @@ waste — the test would finish five times faster without it.
 
 Shorten it and the test starts lying to you — though *how much* you have
 to shorten it turns out to matter, so measure rather than assume. On this
-exact test (five runs at 0 ms, two at each of the others):
+exact test (eight runs at each setting):
 
 | `Thread.sleep(...)` | Final height | |
 |---|---|---|
 | 20 ms (correct) | 0.0090 m | within tolerance of 0.01 m |
-| 4 ms | 0.0090–0.0094 m | still within tolerance — barely different |
-| 0 ms (no sleep at all) | **−0.34 m** in four runs of five (0.0094 m in the fifth) | a third of a metre below the floor |
+| 4 ms | 0.0075–0.0094 m | still within tolerance — barely different |
+| 0 ms (no sleep at all) | **−0.34 m** in seven runs of eight (0.0094 m in the eighth) | a third of a metre below the floor |
 
 The middle row is the surprising one: a *partial* shortcut barely moves
 the number here, and even the zero-sleep row sometimes passes. The physics

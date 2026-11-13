@@ -1,14 +1,15 @@
 # Classic track — roboRIO, WPILib 2026, Commands V2
 
-The version this course has always taught: the roboRIO, WPILib 2026, and
-Commands V2. Reference code lives under [`code/lesson-N/`](https://github.com/FRC5010/BasicRobotLessons/tree/main/code), and
-the whole track rolls forward with `./tools/verify-lessons.sh` — see the
-main [README](https://github.com/FRC5010/BasicRobotLessons/blob/main/README.md) for how to use that to jump into a lesson in
-the middle.
+> **This is the 2026 classic track, parked and no longer maintained.** The
+> course is now [the OpMode track](https://github.com/FRC5010/BasicRobotLessons/blob/main/docs/lessons/v3/README.md)
+> (SystemCore, WPILib 2027 alpha, Commands V3). This copy is kept so the earlier
+> course stays readable; expect no fixes.
 
-This is also the track to be on unless you specifically want
-[the OpMode track](v3/README.md) — a newer, still-settling alternative built
-on SystemCore and coroutine-style Commands V3.
+The version this course used to teach: the roboRIO, WPILib 2026, and
+Commands V2. Reference code lives under [`code/lesson-N/`](../code), and
+the whole track rolls forward with `./2026/tools/verify-lessons.sh` (run from
+the repository root) — see [`2026/README.md`](../README.md) for how to use that
+to jump into a lesson in the middle.
 
 | # | Lesson | You'll build | Key Java ideas |
 |---|--------|--------------|----------------|
@@ -53,8 +54,8 @@ on SystemCore and coroutine-style Commands V3.
 - [Setting up the project and connecting it to GitHub](aside-setup.md) —
   installing WPILib, Git, and the GitHub CLI; creating the project from the
   template; the daily `add`/`commit`/`push` loop. **Start here before Lesson 0
-  if you're new to any of it.** (On [the OpMode track](v3/README.md)? Use
-  [its own setup aside](v3/aside-setup.md) instead — the WPILib-install and
+  if you're new to any of it.** (On [the OpMode track](https://github.com/FRC5010/BasicRobotLessons/blob/main/docs/lessons/v3/README.md)? Use
+  [its own setup aside](https://github.com/FRC5010/BasicRobotLessons/blob/main/docs/lessons/v3/aside-setup.md) instead — the WPILib-install and
   project-creation steps are genuinely different there.)
 - [Branches: one per lesson, merged into a `main` that always works](aside-git-branching.md) —
   branching, merging, and the day two lessons touch the same file. Reads on from

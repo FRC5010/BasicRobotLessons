@@ -119,6 +119,12 @@ Each tick it collects every active alert and records them as outputs under
 SimGUI knows how to draw: an **alerts panel**, the red-and-yellow list a
 dashboard shows.
 
+SimGUI also has an alerts window of its own, under **DS → Alerts**. It
+reads the alerts straight from the robot program instead of from the log,
+and it lists the same ones, sorted by level. Use whichever you like; this
+lesson points at the AdvantageKit copy, because that's the one a replay
+rebuilds.
+
 It's an output like any other, which means a replay rebuilds it. Every
 alert in this lesson is set from readings the log already has, so a replay
 raises the same alerts on the same ticks the robot did.
@@ -264,8 +270,8 @@ watch the line disappear on its own. Nothing clears it explicitly:
 
 You may also catch a burst of red the moment the robot starts. It happens on
 every launch: measured over ten fresh launches, on the very first tick the
-elevator, arm and flywheel motors read disconnected every time, and by the
-next tick, about a fifth of a second later, they were fine. Those motors
+elevator, arm and flywheel motors read disconnected every time, and a few
+ticks later, within about a sixth of a second, they were fine. Those motors
 were built only a moment before that first tick, and a device needs a
 moment to come up on a CAN bus, real or simulated. It's the clearest proof
 there is of why alerts are set every tick. An alert raised once on that
@@ -620,10 +626,10 @@ Lesson 29 made about the current total, so it goes where the robot lives.
 It reads `power.batteryVolts`, Lesson 29's recorded reading, not
 `RobotController`, so a replay judges the battery the robot really had.
 
-**Add the imports:**
+**Add the imports** (`Robot` already imports `RobotState`, from Lesson 24's
+state bindings):
 
 ```java
-import org.wpilib.driverstation.RobotState;
 import org.wpilib.util.Alert;
 import org.wpilib.util.Alert.Level;
 ```
@@ -698,9 +704,9 @@ is back.
 8. **Remember a brownout.** `Power/BrownedOut` is a statement about now, and
    that's not always what you want. Turn every current limit off, put
    Lesson 29's tired battery in, and do the everything-at-once run again:
-   measured, `BrownedOut` switched between true and false over a hundred
-   times in a few seconds, and read false at the end with the battery back
-   at 11 V. Build an alert that says the battery has browned out *since
+   measured, `BrownedOut` switched between true and false dozens of times
+   in a few seconds (more than a hundred in most runs), and read false at
+   the end with the battery back at 11 V. Build an alert that says the battery has browned out *since
    boot*. It's the one alert on this robot that should be raised once and
    never cleared, so write it the way section 7 told you not to, and say in
    a comment why this one is different. Then put the limits and the battery
@@ -727,7 +733,7 @@ when it knows the device was missing.
 
 **An alert is a statement, not an event.** Setting it every tick with the
 current answer is what lets it clear itself, and you saw both sides of that:
-your motor alerts flickered on for a single tick at startup and went away,
+your motor alerts flickered on for a few ticks at startup and went away,
 while the gyro alert you wrote the wrong way went up once and never came
 down.
 

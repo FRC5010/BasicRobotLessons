@@ -11,7 +11,8 @@ reference file is the starting point, and a student's value replaces the
 reference value only when the student changed it: when it isn't a value the
 lessons have ever given that constant. Comparing against that history, instead of
 against the reference alone, means a value a lesson changes on purpose still gets
-through to a student who never touched it.
+through to a student who never touched it. The history is the snapshots as they are
+now plus RETIRED_VALUES, the values the snapshots used to have (see below).
 
   in both files, student changed it      -> keep the student's value
   in both files, student didn't          -> take the reference value
@@ -278,13 +279,43 @@ class History:
         self.classes = set()
 
 
-def history_from_texts(texts):
+# Values a lesson used to give a constant and doesn't any more. The history is
+# built from the snapshots as they are now, so a value a lesson changes on
+# purpose drops out of it, and a student still on the old one would look as if
+# they'd customized the constant and keep it for good. Add each retired value
+# here, under the constant's key, when you change a constant in a snapshot.
+# Written the way the file has it; spacing and comments don't matter.
+#
+# 2026-10-30, WPILib alpha-8's new Kraken X60 figures (6065 RPM, 7.157 N·m)
+# redid the spec-sheet arithmetic in Lessons 10, 18, 20 and 28.
+RETIRED_VALUES = {
+    'Constants.DriveConstants.kMaxSpeed': [
+        'MetersPerSecond.of(100.0 / kDriveGearRatio * kWheelCircumferenceMeters)'],
+    'Constants.ElevatorConstants.kElevatorKG': ['0.18'],
+    'Constants.ElevatorConstants.kElevatorKV': ['1.44'],
+    'Constants.ArmConstants.kArmKV': ['6.0'],
+    'Constants.ArmConstants.kArmKA': ['0.055'],
+    'Constants.FlywheelConstants.kFlywheelKV': ['0.12'],
+    'Constants.FlywheelConstants.kFlywheelKA': ['0.106'],
+    'Constants.FlywheelConstants.kFreeSpeed': ['RotationsPerSecond.of(100)'],
+}
+
+
+def history_from_texts(texts, retired=None):
+    """The History of these Constants.java texts, plus the retired values of their constants.
+
+    A retired value only joins a constant the texts already have: a constant from a
+    lesson that isn't among them stays "from a later lesson", which a rollback relies on.
+    """
     h = History()
     for t in texts:
         p = parse(t)
         for key, d in p.decls.items():
             h.values.setdefault(key, set()).add(_norm(d.value))
         h.classes |= set(p.classes)
+    for key, values in (RETIRED_VALUES if retired is None else retired).items():
+        if key in h.values:
+            h.values[key] |= {_norm(v) for v in values}
     return h
 
 
