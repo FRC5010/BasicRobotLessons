@@ -2545,6 +2545,87 @@ plan is [docs/lesson-plan-v3-figures.md](docs/lesson-plan-v3-figures.md).
   mirror (`maven-central.storage-download.googleapis.com/maven2/`) for the
   run, and was deleted afterwards. It isn't in the repo.
 
+**Batch 1 found (2026-11-18/19; 39 figures, alpha-8; the status and the
+ID-to-number map are in the plan's section 9).** Probes are in
+`tools/figures/probes/`, data in `tools/figures/data/`. Each item was run
+at least twice.
+- **Open, for the user:**
+  - **Lessons 1 and 2 crash at boot on alpha-8.**
+    `Robot.logRunningCommand()` calls `running.get(0)` on an empty list,
+    because alpha-8 queues no default commands while disabled. SimGUI shows
+    "Program Crash" on a fresh launch of `code/v3/lesson-1` (the Lesson 2
+    snapshot has the same line). `verify-lessons-v3.sh` only compiles, so it
+    never caught this. Not fixed.
+  - **Lesson 5's `kP = 0.0005` rings on the lesson's own 1:1 steering
+    plant.** A 90° tap measured:
+
+    | `kP` | Result |
+    |---|---|
+    | 1e-5 | stalls at 78.6° (applied volts quantize to 0) |
+    | 3e-5 | within 1° at 2.72 s, no overshoot |
+    | 5e-5 | overshoots 8.6° |
+    | 1e-4 | overshoots 23.7° |
+    | 5e-4 | peaks at 158°, within 1° only from 6.9 s |
+    | 2e-3 | unstable |
+
+    The text now describes the ringing (Figures 5.1, 5.2), and §5's tuning
+    recipe has a parenthetical that says to tune down from 0.0005. Whether
+    to change the gain is the user's call; it ripples into the snapshots
+    and Lessons 6 and 7.
+  - **The SimGUI wording in Lessons 2, 3, 4, 7, 8 and the debugger aside is
+    wrong.** SimGUI's **Robot State** panel is a mode list, an OpMode
+    drop-down (listing only that mode's opmodes, by class name: `MyTeleop`,
+    not "My Teleop") and Disable/Enable; there's no "Disabled to Enabled"
+    toggle. Lessons 0, 1 and 33 are fixed; the rest aren't. Lesson 33
+    (about line 895) says "My Teleop" where it means `RobotTeleop`.
+  - **Lesson 12 §5 says "immediately applies 8 volts".** The first one to
+    three ticks of a step read 3.0 V, from the default 120 A stator limit
+    (about 4.6 V with it disabled, measured). A note beside Figure 12.2 says
+    so; §5 and Try It #1 are unchanged.
+- **Measured** (each figure's generator has the method):
+  - **Lesson 1:** a 0.3 request with the wheel held reads `dutyCycle`
+    0.250 (3.0 V, 119 A). It looks like the stator limit; inferred.
+    Keyboard 0's bottom face button is the Z key, and the Joysticks
+    panel's button squares are indicators only.
+  - **Lesson 8:** `turnToHeading(90)` exits at 0.70 s at 88.2°, and the
+    ±0.5 clamp lets go at about 0.38 s. The gyro reads 0 for the first
+    0.12 s, then jumps 25°; not investigated.
+  - **Lesson 12, a 2 m/s step on one module:** the full model gives 5.01 V
+    and 2.006 m/s; `kV` 0.4 gives 1.113 m/s; `kP` alone gives 0.219 m/s on
+    0.55 V.
+  - **Lesson 16, Figure 16.1:** plots distance travelled by the estimate
+    minus by the truth (both unsigned). A full-stick start holds 7.9 cm
+    ahead (31.7 cm worst); forward then reverse holds 78 cm (102 cm worst).
+    A plain x difference reads 65 cm *behind* for forward then reverse.
+  - **Lesson 17, Two Corners:** following ends 3.74–3.80 s after enable;
+    `shoot` fires at 82% of the second leg (the handler a tick later, at
+    83%). The cross-track error jumps to 0.47 m on the tick the robot
+    enters the 0.5 m radius, crosses zero 0.28 s later, reaches −0.16 m and
+    settles near +0.03 m.
+  - **Lesson 21:** the re-zero `Trigger` lives in `RobotTeleop`, so the
+    snap needs Teleoperated picked. The lesson says so now. After the snap
+    the carriage sinks about 1 cm more to its hard stop, which isn't in the
+    text.
+  - **Lesson 26 old design rebuilt:** 11.8 m/s² launch, top speed
+    4.07 m/s, hands over at 0.077 m/s at 3.15 s.
+  - **Lesson 29, tired battery, the `Fig29` probe:** the first tick under
+    6.3 V comes 0.18 s after enable in 6 of 6 runs (the batch 2b probe gave
+    0.31–0.39 s; cause unknown). The lesson now says "within half a second".
+  - **Lesson 33:** a two-term fit of the standstill ramp over 4–6 V gives
+    0.88 V (1 V/s) and 0.23 V (0.25 V/s); over 1–6 V it gives 0.74. The
+    lesson says the digit depends on the stretch fitted.
+- **Probe traps:**
+  - Playwright hangs screenshotting a bare `file://….svg`; wrap it in an
+    HTML `<img>` page.
+  - `measure.sh` rebuilds on every call, so for repeat runs reuse the
+    sandbox with `./gradlew cleanTest test --tests …`.
+  - `--replace` paths are relative to `src/main/java/first/robot/`
+    (`subsystems/SwerveModule.java`).
+  - Run probes and SimGUI sessions under one `flock`: parallel robot
+    programs fight over network ports.
+  - Five parallel Sonnet agents used up a 5-hour usage window in about an
+    hour (300–430k tokens each); run two or three at a time.
+
 ## Rewriting lessons in a teacher's voice
 
 The lessons started in a slightly "AI voice" — clinical, evenly-weighted, with

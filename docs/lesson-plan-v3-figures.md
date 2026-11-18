@@ -33,97 +33,97 @@ For each figure in the batch:
 
 ## 2. Summary table
 
-Type: a = sim plot, b = SimGUI screenshot, c = SVG diagram, d = needs the user. All status: planned, except 18.1 and 18.2, built 2026-11-18 as the pilot. Batches changed after the pilot review (section 8): 7.3, 8.1, 12.3 and 18.1 to batch 1, 15.4 and 17.2 to batch 2.
+Type: a = sim plot, b = SimGUI screenshot, c = SVG diagram, d = needs the user. All status: planned, except batch 1, built 2026-11-18/19 (section 9 maps working IDs to the numbers in the lessons). Batches changed after the pilot review (section 8): 7.3, 8.1, 12.3 and 18.1 to batch 1, 15.4 and 17.2 to batch 2.
 
 | Figure | Title | Lesson | Type | Priority | Batch |
 |---|---|---|---|---|---|
 | S.1 | Two folders and a GitHub repo | Setup aside | c | medium | 2 |
 | 0.1 | An opmode's life | 0 | c | medium | 2 |
-| 0.2 | SimGUI: opmode selector and Robot State | 0 | b | high | 1 |
-| 1.1 | SimGUI: dragging a controller into slot 0 | 1 | b | high | 1 |
+| 0.2 | SimGUI: opmode selector and Robot State | 0 | b | high | 1 (built) |
+| 1.1 | SimGUI: dragging a controller into slot 0 | 1 | b | high | 1 (built) |
 | 1.2 | SimGUI: NetworkTables, Telemetry, DriveModule | 1 | b | medium | 2 |
 | 3.1 | AdvantageScope: tree and a two-signal graph | 3 | d | medium | needs user |
-| 4.1 | The simulation loop | 4 | c | high | 1 |
+| 4.1 | The simulation loop | 4 | c | high | 1 (built) |
 | 4.2 | Velocity response, two inertias | 4 | a | medium | 2 |
-| 5.1 | Setpoint, measurement and error in one move | 5 | a | high | 1 |
-| 5.2 | `kP` too small, just right, too big | 5 | a | high | 1 |
+| 5.1 | Setpoint, measurement and error in one move | 5 | a | high | 1 (built) |
+| 5.2 | `kP` too small, just right, too big | 5 | a | high | 1 (built) |
 | 5.3 | The long way round (error wrap) | 5 | c | medium | 2 |
 | 6.1 | Two ways a command ends | 6 | c | medium | 2 |
 | 6.2 | `driveDistance(1.0, 0.4)` trace | 6 | a | medium | 2 |
-| 7.1 | Chassis frame, corners and the two moves | 7 | c | high | 1 |
+| 7.1 | Chassis frame, corners and the two moves | 7 | c | high | 1 (built) |
 | 7.2 | AdvantageScope: Swerve tab, States slot | 7 | d | medium | needs user |
-| 7.3 | Steering 90 degrees through 25:1, two gains | 7 | a | high | 1 |
-| 8.1 | `turnToHeading(90)`: heading, command, band | 8 | a | high | 1 |
+| 7.3 | Steering 90 degrees through 25:1, two gains | 7 | a | high | 1 (built) |
+| 8.1 | `turnToHeading(90)`: heading, command, band | 8 | a | high | 1 (built) |
 | 8.2 | AdvantageScope: Swerve tab, Rotation slot | 8 | d | low | needs user |
 | 9.1 | Why scale drive by cosine | 9 | a | medium | 2 |
 | 9.2 | Sequence, parallel, race, optional | 9 | c | medium | 2 |
-| 10.1 | Translation plus rotation at each corner | 10 | c | high | 1 |
+| 10.1 | Translation plus rotation at each corner | 10 | c | high | 1 (built) |
 | 10.2 | `optimize`: take the short way | 10 | c | low | 3 |
-| 10.3 | Robot-relative versus field-relative | 10 | c | high | 1 |
+| 10.3 | Robot-relative versus field-relative | 10 | c | high | 1 (built) |
 | 11.1 | SimGUI: the Field widget | 11 | b | medium | 2 |
 | 12.1 | Coach and player (50 Hz over 1 kHz) | 12 | c | low | 3 |
-| 12.2 | The sensor and gear chain | 12 | c | high | 1 |
-| 12.3 | A feedforward step | 12 | a | high | 1 |
-| 13.1 | The IO door | 13 | c | high | 1 |
-| 13.2 | Record, then replay | 13 | c | high | 1 |
+| 12.2 | The sensor and gear chain | 12 | c | high | 1 (built) |
+| 12.3 | A feedforward step | 12 | a | high | 1 (built) |
+| 13.1 | The IO door | 13 | c | high | 1 (built) |
+| 13.2 | Record, then replay | 13 | c | high | 1 (built) |
 | 13.3 | The x1.1 experiment | 13 | a | medium | 2 |
-| 14.1 | Localizer and its providers | 14 | c | high | 1 |
+| 14.1 | Localizer and its providers | 14 | c | high | 1 (built) |
 | 14.2 | Each sighting is a nudge | 14 | a | medium | 2 |
-| 15.1 | Where the cameras are | 15 | c | high | 1 |
-| 15.2 | Real camera and simulated camera, same wire | 15 | c | high | 1 |
+| 15.1 | Where the cameras are | 15 | c | high | 1 (built) |
+| 15.2 | Real camera and simulated camera, same wire | 15 | c | high | 1 (built) |
 | 15.3 | SimGUI: AdvantageKit menu for a camera | 15 | b | medium | 2 |
 | 15.4 | A parked robot still drifts | 15 | a | medium | 2 |
-| 16.1 | The estimate creeps ahead and stays there | 16 | a | high | 1 |
+| 16.1 | The estimate creeps ahead and stays there | 16 | a | high | 1 (built) |
 | 16.2 | Truth and estimate are different loops | 16 | c | medium | 2 |
 | 16.3 | The grip limit | 16 | a | medium | 2 |
 | 17.1 | Three loops at once | 17 | c | low | 3 |
 | 17.2 | Can it stop in time? | 17 | a | medium | 2 |
-| 17.3 | SimGUI: DS window for an auto | 17 | b | high | 1 |
-| 17.4 | Two Corners, drawn and driven | 17 | a | high | 1 |
-| 17.5 | Cross-track error at the corner | 17 | a | high | 1 |
+| 17.3 | SimGUI: DS window for an auto | 17 | b | high | 1 (built) |
+| 17.4 | Two Corners, drawn and driven | 17 | a | high | 1 (built) |
+| 17.5 | Cross-track error at the corner | 17 | a | high | 1 (built) |
 | 18.1 | What `kP` alone does, moving and holding | 18 | a | high | 1 (built) |
 | 18.2 | Goal, setpoint and height in one move | 18 | a | high | 1 (built) |
 | 19.1 | Canvas, anchor and a chain of segments | 19 | c | medium | 2 |
 | 19.2 | SimGUI: the Mechanism drawing | 19 | b | medium | 2 |
-| 20.1 | Arm angle convention and the drawing angle | 20 | c | high | 1 |
+| 20.1 | Arm angle convention and the drawing angle | 20 | c | high | 1 (built) |
 | 20.2 | Holding voltage is a cosine | 20 | a | medium | 3 |
-| 21.1 | Encoder belief against carriage truth | 21 | a | high | 1 |
+| 21.1 | Encoder belief against carriage truth | 21 | a | high | 1 (built) |
 | 22.1 | The intake box in the robot's frame | 22 | c | medium | 2 |
 | 23.1 | SimGUI: the LED strip | 23 | b | medium | 2 |
-| 24.1 | Six states and their transitions | 24 | c | high | 1 |
+| 24.1 | Six states and their transitions | 24 | c | high | 1 (built) |
 | 24.2 | One capture cycle on a timeline | 24 | a | medium | 2 |
 | 25.1 | Sequence holds the elevator, coroutine doesn't | 25 | c | low | 3 |
 | 25.2 | Marker position against roller start | 25 | a | medium | 2 |
-| 25.3 | Pick Up timeline | 25 | a | high | 1 |
+| 25.3 | Pick Up timeline | 25 | a | high | 1 (built) |
 | 26.1 | The line's frame and the two stages | 26 | c | medium | 2 |
-| 26.2 | Speed during the two-stage drive | 26 | a | high | 1 |
+| 26.2 | Speed during the two-stage drive | 26 | a | high | 1 (built) |
 | 26.3 | The path bows out while turning | 26 | a | low | 3 |
 | 27.1 | Why a strafing robot has to spin | 27 | c | medium | 2 |
-| 27.2 | Aim error on a 3 m orbit | 27 | a | high | 1 |
+| 27.2 | Aim error on a 3 m orbit | 27 | a | high | 1 (built) |
 | 28.1 | The speedometer: needle against speed | 28 | c | medium | 2 |
-| 28.2 | Holding 60 rot/s with and without the model | 28 | a | high | 1 |
-| 28.3 | Spin-up from four idle speeds | 28 | a | high | 1 |
+| 28.2 | Holding 60 rot/s with and without the model | 28 | a | high | 1 (built) |
+| 28.3 | Spin-up from four idle speeds | 28 | a | high | 1 (built) |
 | 29.1 | Fresh battery, one run per configuration | 29 | a | medium | 2 |
-| 29.2 | Tired battery: budget and no limits | 29 | a | high | 1 |
-| 30.1 | SimGUI: the Alerts panel | 30 | b | high | 1 |
+| 29.2 | Tired battery: budget and no limits | 29 | a | high | 1 (built) |
+| 30.1 | SimGUI: the Alerts panel | 30 | b | high | 1 (built) |
 | 30.2 | SimGUI: Unplug Gyro | 30 | b | medium | 2 |
 | 30.3 | Why the low-battery alert only looks while disabled | 30 | a | medium | 2 |
 | 31.1 | Two clocks | 31 | c | medium | 2 |
 | 31.2 | Homing test height with and without the sleep | 31 | a | medium | 3 |
-| 32.1 | The height arrives; `AtGoal` never says so | 32 | a | high | 1 |
-| 32.2 | The same match through the fixed code | 32 | a | high | 1 |
+| 32.1 | The height arrives; `AtGoal` never says so | 32 | a | high | 1 (built) |
+| 32.2 | The same match through the fixed code | 32 | a | high | 1 (built) |
 | 32.3 | Aim While Driving, right tag and typo | 32 | a | medium | 2 |
-| 33.1 | What the four tests look like | 33 | a | high | 1 |
+| 33.1 | What the four tests look like | 33 | a | high | 1 (built) |
 | 33.2 | `kS` check: 0.05 V and the wheel still turns | 33 | a | low | 3 |
-| 33.3 | Why a 1 V/s ramp isn't quasistatic | 33 | a | high | 1 |
+| 33.3 | Why a 1 V/s ramp isn't quasistatic | 33 | a | high | 1 (built) |
 | 33.4 | A ramp costs room: elevator travel | 33 | a | medium | 2 |
 | 34.1 | Two angles and a floor | 34 | c | high | after L34 migration |
 | 34.2 | Why `HasTarget` flickers | 34 | c | medium | after L34 migration |
 | D.1 | The debugger window | Debugger aside | d | high | needs user |
 | D.2 | A stack trace, two passes | Debugger aside | c | medium | 2 |
-| G.1 | A branch is a label on a commit | Git aside | c | high | 1 |
+| G.1 | A branch is a label on a commit | Git aside | c | high | 1 (built) |
 | G.2 | Fast-forward, and the diamond | Git aside | c | medium | 2 |
-| G.3 | Rebase: replaying commits onto a new base | Git aside | c | high | 1 |
+| G.3 | Rebase: replaying commits onto a new base | Git aside | c | high | 1 (built) |
 
 Batch 3 reasons, beyond "low priority": 20.2 and 31.2 are medium but restate a table the lesson keeps (the proposers said so), so they wait to see whether the plot should replace the table.
 
@@ -1068,3 +1068,15 @@ Decided by the user (2026-11-18):
 2. **Figure 8.2** stays on the "needs the user" list.
 3. **A pilot first:** Lesson 18's goal / setpoint / height figure (working ID 18.2; built as Figure 18.1 while it's the lesson's only figure), for the user to judge the look, caption and text changes before the rest.
 4. **Pilot review** ("overall good"): keep side explanations like the 7 cm one succinct; the graph prose should be fuller, so it's easier to see the point; understanding P and model-based control through graphs is important; **no cap of three figures per lesson** where more fill in detail; show the `kV = 0` difference in a height plot, and the `kP`-only graph (built as 18.1). Applied: 18.1 built, 18.2 redrawn, control figures 7.3, 8.1 and 12.3 raised to high and batch 1, 15.4 and 17.2 back to batch 2.
+
+## 9. Batch 1 status (built 2026-11-18/19)
+
+All 39 batch 1 figures are built, in their lessons, and committed; the site builds with every image, anchor and link resolving. Five Sonnet agents built them in lesson groups, with probe runs serialized on a shared `flock` (the robot program opens fixed network ports and the probes are timing-sensitive). Their reports' measurements are in CLAUDE.md ("Batch 1 found").
+
+**Working ID → number in the lesson** (numbers go by position among the figures that exist, so building a batch 2 or 3 figure renumbers the ones after it): 0.2 → 0.1; 7.3 → 7.2; 10.3 → 10.2; 12.2 → 12.1; 12.3 → 12.2; 17.3 → 17.1; 17.4 → 17.2; 17.5 → 17.3; 25.3 → 25.1; 26.2 → 26.1; 27.2 → 27.1; 28.2 → 28.1; 28.3 → 28.2; 29.2 → 29.1; 33.3 → 33.2; G.3 → G.2. Every other batch 1 figure kept its working number.
+
+**Not done yet:**
+- **Cross-lesson links.** The agents only linked within their own lessons (plus 20 → 18.2). Every "Linked from" entry above is still to add, with the built numbers from the map.
+- **Small text in two screenshots.** Figures 1.1 and 30.1 are composites of SimGUI at its normal zoom; on a phone the text is hard to read. SimGUI's View → Zoom at 150% gives crisp captures but the window then needs a bigger Xvfb screen.
+- **Open questions for the user** (CLAUDE.md, "Batch 1 found"): Lesson 5's `kP`, the Lesson 1/2 boot crash, the opmode-name wording in other lessons, Lesson 12's "jumps instantly" wording.
+
