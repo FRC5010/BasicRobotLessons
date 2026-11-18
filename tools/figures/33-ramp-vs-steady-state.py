@@ -16,7 +16,7 @@ applied_v, speed_rps. Re-measure with (each run is a fresh JVM; about two minute
     # then join them, adding a leading rate column:  rate_v_per_s,rep,t_s,applied_v,speed_rps
 
 Everything drawn is a hand fit, not the SysId tool's: the two-term fit is voltage against speed
-over the part of each ramp where the logged voltage is between 2 V and 6 V.
+over the part of each ramp where the logged voltage is between 4 V and 6 V (a window that starts later gives a larger intercept, tending to kA x ramp rate / kV = 0.9 V; the lesson's 0.90 fits the whole 10 s ramp).
 
 Output: docs/lessons/v3/images/33-ramp-vs-steady-state.png
 """
@@ -28,7 +28,7 @@ import matplotlib.pyplot as plt
 import figstyle
 
 STEADY = 1 / 0.118  # rot/s per volt, the kV check in the lesson (8.47)
-FIT_RANGE = (2.0, 6.0)
+FIT_RANGE = (4.0, 6.0)
 
 
 def load():
@@ -81,7 +81,7 @@ def main():
         ax.plot(line, [ks + kv * x for x in line], color=color, linestyle=":", linewidth=1.6)
         ax.plot([0], [ks], marker="o", color=color)
         ax.annotate(f"two-term fit of this ramp: {ks:.2f} V at zero speed",
-                    xy=(0, ks), xytext=(2.0, ks + (0.45 if rate == 1.0 else 0.3)), color=color,
+                    xy=(0, ks), xytext=(24.0, 1.75 if rate == 1.0 else 0.3), color=color, ha="left",
                     arrowprops={"arrowstyle": "->", "color": color})
         print(f"rate {rate}: fit intercept " + ", ".join(
             f"{fit(data[(rate, rep)])[0]:.3f}" for rep in range(3)) + " V; percents at 1-5 V: " + ", ".join(
@@ -92,7 +92,7 @@ def main():
         speed, pct = gap(data[(1.0, 0)], volts)
         ax.annotate("", xy=(volts * STEADY, volts), xytext=(speed, volts),
                     arrowprops={"arrowstyle": "<->", "color": figstyle.NEUTRAL, "lw": 1.3})
-    ax.text(1 * STEADY + 0.8, 1.0, "at 1 V the wheel has reached\nunder 40% of its steady speed",
+    ax.text(1 * STEADY + 4.5, 0.62, "at 1 V the wheel has reached\nunder 40% of its steady speed",
             color=figstyle.NEUTRAL, ha="left", va="center")
     ax.text(5 * STEADY + 0.8, 5.0, "at 5 V, still short\nby about a fifth", color=figstyle.NEUTRAL,
             ha="left", va="center")

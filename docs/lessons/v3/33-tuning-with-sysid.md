@@ -339,7 +339,7 @@ clearing two separate hurdles on purpose.
 ## 6. Run it, and read what happened
 
 Run the robot in simulation. In SimGUI, pick **RobotUtility** from the opmode
-selector — same move as picking **My Teleop** back in Lesson 1, just a
+selector — same move as picking **MyTeleop** back in Lesson 1, just a
 different opmode — then set Robot State to enabled. Hold **Back + the top
 face button** for a few seconds — the applied voltage climbs steadily, and the
 wheel, after a dip (see the note below), spins up slowly and smoothly.
@@ -382,6 +382,35 @@ none of them is in the `akit_` file beside it. **For the analysis, open the
 > spinning down, not a wheel being ramped up. Look at the velocity plot
 > before you trust a fit, and ignore the part before speed turns upward.
 > Try It #7 asks what it would take to start from rest.
+
+Figure 33.1 shows the two tests you just ran, plus their reverse twins, from
+one session at these defaults. Voltage is on the top row and speed on the
+bottom, quasistatic on the left and dynamic on the right. The heavy line is
+forward and the light one is reverse. Start with the bottom-left panel,
+because it's the one with the trap in it. The wheel begins at idle speed, falls
+to 13 rot/s at 1.56 s (that's the shaded stretch: ignore it), and only then
+climbs, in an almost straight line, to about 77 rot/s as the ramp reaches 10 V.
+That straight climb is what "quasistatic" is aiming for: slow enough that the
+speed keeps up with the voltage. The top-left panel is the ramp itself. The
+logged voltage in the shaded first half-second is higher than the ramp would
+give (the wheel is still being slowed from idle), and after that it climbs
+by a volt a second.
+
+The right column is the dynamic test. The top panel is the step to 7 V, and
+the bottom panel is the wheel answering it: a smooth curve that bends over and
+flattens out at 59.3 rot/s. The dashed verticals mark when it is within 5% and
+within 1% of that plateau, 2.2 s and 3.6 s, which is why the lesson has you
+hold the buttons the full ten seconds. The light reverse curve starts from the
+same +30 rot/s idle, so it has to turn around first and levels off later. The
+light line in the top-right panel also takes about four seconds to reach -7 V
+instead of jumping there. The log records the voltage the motor applied, and
+the likely reason is Lesson 29's current limit holding it back while the wheel
+turns around (an inference from the arithmetic, not something isolated).
+
+<a id="figure-33-1"></a>
+![Four panels. Left column, the quasistatic test: voltage ramps up at 1 volt per second to 10 V, and speed first falls from the 30 rot/s idle to 13 rot/s at 1.56 s in a shaded stretch to ignore, then climbs almost straight to 77 rot/s. Right column, the dynamic test: voltage steps to 7 V, and speed curves up to a plateau of 59.3 rot/s, within 5% at 2.2 s and within 1% at 3.6 s. Reverse tests are drawn lighter, mirrored below zero](images/33-sysid-four-tests.png)
+
+*Figure 33.1 — The four tests at `Config.defaults()`: voltage (top) and flywheel speed (bottom), forward heavy and reverse light.*
 
 **Analyze it:** open the SysId tool from the WPILib extension's tool
 launcher, point it at the `WPILIB_….wpilog` you just recorded (log-file
@@ -548,6 +577,29 @@ sign of speed, then divides the coefficients to get the gains. It's the same
 model rearranged.) The ramp's own acceleration goes into the `kA` term, and the
 dynamic test, which accelerates as hard as the routine can make it, is what pins
 `kA` down. Nothing is left over to land in `kS`.
+
+Figure 33.2 plots exactly this. Read it as speed along the bottom and the
+logged voltage up the side. The dashed black line is steady state: the voltage
+that would hold each speed if you set it and waited, `speed ÷ 8.47`, and it
+passes through zero because a frictionless wheel needs no voltage to start.
+The orange curve is the 1 V/s ramp, from a standstill. It runs well above the
+dashed line the whole way: the voltage is always ahead of the speed, and the
+horizontal gap at 1 V (a wheel at under 40% of its steady speed) is the
+percentage the yardstick reports. By 5 V the gap has shrunk to about a fifth.
+The green curve is the 0.25 V/s ramp, which hugs the dashed line much more
+closely. Now do what a fit with no acceleration term does: draw the straight
+line through the orange curve's upper part and read where it hits zero
+speed. The dotted orange line does, and it lands near 0.9 V up the side. The
+green fit lands near 0.2 V. Neither is friction. Both are the gap between the
+curve and the dashed line, and it's the ramp's lag, not the wheel, that put it
+there. (The figure fits a ramp started from a true standstill, over 4 to 6 V,
+which gives 0.88 V and 0.23 V; the 0.90 below fits both slow tests of a real
+run, which start from idle. The exact digit depends on which stretch you fit.)
+
+<a id="figure-33-2"></a>
+![Speed on the horizontal axis and logged voltage on the vertical. A dashed black steady-state line through zero; the 1 V per second ramp curve well above it with a dotted straight fit meeting the voltage axis near 0.88 V; the 0.25 V per second ramp close to the dashed line with a fit meeting the axis near 0.23 V; horizontal arrows at 1 V and 5 V show the 1 V per second ramp's lag](images/33-ramp-vs-steady-state.png)
+
+*Figure 33.2 — A ramp's speed against its voltage, from a standstill. The distance above the steady-state line is lag, and a fit without an acceleration term reads it as `kS`. Hand fit, not the tool's.*
 
 **The 0.90 V is what you get without that term.** Fit just the two ramps,
 voltage against speed with nothing else (with the coast-down at the start
