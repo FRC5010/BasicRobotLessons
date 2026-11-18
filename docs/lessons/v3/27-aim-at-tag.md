@@ -368,6 +368,33 @@ chassis's true pose the same runs read 13.5° and 1.2°, because the estimate
 and the truth disagree by about a degree of heading. Either way, the term did
 what the arithmetic said it would.
 
+<a id="figure-27-1"></a>
+![Aim error in degrees over a 9-second orbit of tag 20, at 3 m/s above and 2 m/s below: with P only the error climbs in the first 0.7 seconds to a flat shelf just above the predicted line, 14.6 degrees and 9.7 degrees, and stays there; with feedforward it bumps to about 4 and 3 degrees in the first half second and then sits on zero](images/27-orbit-aim-error.png)
+
+*Figure 27.1 — `Aim/ErrorDegrees` for one orbit of tag 20 at 3 m, P only against P plus feedforward, at 3 m/s (top) and 2 m/s (bottom). One run of each, read from the pose estimate. Feedforward runs sometimes catch a camera correction and show a bump later in the run (one of the three 3 m/s runs recorded for this figure had a 0.3° one); these are clean runs.*
+
+Figure 27.1 shows the table as curves. Read the top panel first: the robot circles the tag at 3 m/s,
+three metres out, and the line is the aim error against time. The dashed grey line is the 14.32° from
+section 4's arithmetic, `1.0 ÷ kAimP`.
+
+Start with the orange line, P only. The robot has just started moving, the bearing starts swinging,
+and the error opens up from zero. Watch what it does next: it doesn't keep growing and it doesn't come
+back. In under a second it climbs to a shelf just above the dashed line, 14.6°, and sits there for the
+other eight seconds, about a lap and a half of the tag. That flat shelf is the picture of
+"chases from a fixed distance behind". The controller isn't failing to converge. It has converged,
+on exactly the error it needs in order to make 1.0 rad/s. The gap above the dashed line is the third of
+a degree of wheel lag from section 4.
+
+Now the green line, P plus feedforward. It has a bump of its own in the first half second, up to about
+4°: the orbit begins at full speed from a standstill, and the wheels take a moment to start the
+robot turning. Then it's back on zero by about a second and stays there. The feedforward is
+supplying the 1.0 rad/s, so the P term has almost nothing left to do, and the error it sits on
+is almost none.
+
+The bottom panel is the same pair at 2 m/s, where the dashed line is 9.55° and the shelf 9.7°. Same
+shapes, smaller numbers, because the bearing is swinging two thirds as fast. Notice that the
+orange shelf is set by the speed and the gain, and nothing else: wait longer and you'd see the same flat line, not a better one.
+
 > **The general rule, stated for the third time in this course.** If a
 > controller has to keep producing output just to stay where it is, work
 > out what that output is and supply it directly. `kG` held the elevator

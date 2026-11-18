@@ -440,7 +440,7 @@ step made sure of that — so the request isn't instant. In this course's sim th
 takes about 0.8 s to swing below horizontal, and the roller starts about 1.1 s after
 the request, because `intakeMotion` swings first and spins second. At 2 m/s, a
 second is two meters of path. Measured, the marker fires 0.6 s into the drive at
-y ≈ 6.7, the roller is running by y ≈ 4.5, and the piece goes in at y ≈ 4.37. Move
+y ≈ 6.7, the roller is running by y ≈ 4.5, and the piece goes in at y ≈ 4.4. Move
 the marker to 0.2 and the roller doesn't start until y ≈ 3.8 — by which point the
 piece is already under the bumper, and the robot drives straight over it.
 
@@ -826,17 +826,39 @@ and `FollowPath/remainingPathDistanceMeters`. (B-Line's `FollowPath/` keys are u
 LED strip, because it tells the whole story.
 
 Here's what happens in this course's sim, timed from when the drive starts, about
-4.1 s after you enable (homing, then the stow):
+4.1 s after you enable (homing, then the stow). Figure 25.1, just below the table,
+plots the same run:
 
 | When | What |
 |---|---|
 | 0.6 s, y ≈ 6.7 | The `intake` marker fires; next loop the state is `INTAKING` and the strip goes yellow |
 | 1.4 s | The arm swings below horizontal |
 | 1.7 s, y ≈ 4.5 | The roller starts |
-| 1.7 s, y ≈ 4.37 | The piece goes in; a tenth of a second later the debounced beam break makes it `HANDOFF` |
+| 1.7 s, y ≈ 4.4 | The piece goes in; a tenth of a second later the debounced beam break makes it `HANDOFF` |
 | 2.9 s, 1.0 m left | Arm tucked and elevator at 0.73 m: `HOLDING`, solid green |
 | 3.2 s, 0.48 m left | The score request: `SCORING`, the piece leaves, and the next loop is `IDLE` |
 | 3.4 s | The path finishes at (6, 1), with the elevator already on its way down |
+
+<a id="figure-25-1"></a>
+![A four-panel timeline of one Pick Up run, from the start of the drive: the robot's y falls steadily from 7.4 to about 1; below it the superstructure state runs IDLE, INTAKING, HANDOFF, HOLDING, a brief SCORING and IDLE; the arm swings from 90 degrees down to -20 and back up; the elevator rises from 0 to 0.75 m and starts back down. Dashed lines mark the intake event, the roller start, HOLDING, the score request and the end of the path](images/25-pick-up-timeline.png)
+
+*Figure 25.1 — One Pick Up run on a fresh launch, from the moment the drive starts. All four panels share the time axis. One run (three recorded for this figure agreed to within a tick).*
+
+Figure 25.1 puts the same events on a time axis, and what to look for is overlap. Read it from the top.
+The first panel is the robot's `y`, and it is the one thing the whole run hangs on. It's a straight, steady
+slope from 7.4 down to about 1, flattening only in the last 0.2 s as the path ends. The dotted
+horizontal line is where the piece goes into the intake, 0.6 m ahead of the robot's center. Nothing
+below this panel ever bends it.
+
+The strip under it is `Superstructure/State`, and the dashed vertical lines tie it to everything else. At 0.6 s the
+`intake` marker fires and the state goes to `INTAKING`. In the third panel the arm, which had been
+tucked at 90°, swings down, passes horizontal at 1.4 s and settles at −20° just
+as the roller starts at 1.7 s. The piece goes in right then, the beam break trips, and the state moves to
+`HANDOFF`, so the arm comes back up to 90° and the elevator, in the bottom panel, starts to rise. All of that
+is happening in the first panel's straight slope: the robot is still driving at full speed while the arm swings
+and the elevator climbs. `HOLDING` arrives at 2.9 s, with both mechanisms in place. The score request at 3.2 s sends
+the state to `SCORING` for a tick or two, visible as the blue sliver, then back to `IDLE`, and the elevator
+starts down while the path is still finishing at 3.4 s.
 
 The robot never slowed down. The intake ran, the arm tucked and the elevator rose
 while it drove, and the score happened on the way in. Nothing waited for anything
