@@ -660,7 +660,7 @@ job.** 11.5 V is deliberately generous. The useful threshold is the one that
 gives you time to fetch a charged battery, not the one that's technically
 correct.
 
-To watch it fire, bring back Lesson 29's tired battery: 11 V, with twice
+To watch it fire, bring back Lesson 29's tired battery ([Figure 29.1](29-current-limits.md#figure-29-1)): 11 V, with twice
 the internal resistance.
 
 *Nothing to add — an experiment to run and undo, in `Robot.simulationPeriodic()`:*

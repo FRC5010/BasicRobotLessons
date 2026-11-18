@@ -195,7 +195,7 @@ PIDController controller = new PIDController(5.0, 0.0, 0.0);
 double output = controller.calculate(measured, target);
 ```
 
-`calculate(measured, target)` is your two lines, and the constructor's three
+`calculate(measured, target)` is your two lines ([Figure 5.1](05-steering-p-control.md#figure-5-1) draws them), and the constructor's three
 numbers are the **P**, **I**, and **D** gains — proportional, integral, and
 derivative. You've only ever used the first. Leave the other two at zero; a plain
 P loop is genuinely the right answer for path following, and I and D are a
@@ -884,7 +884,7 @@ public final class Autos {
 
 ## 10. Run it
 
-Run the robot in simulation. Before you click anything in **Robot State**,
+Run the robot in simulation. Before you click anything in **Robot State** (Lesson 0's [Figure 0.1](00-orientation.md#figure-0-1)),
 find SimGUI's **DS** window and set **Alliance Station** to **Blue 1**. You
 can only change it while Robot State says *Disconnected*, which it does when
 SimGUI first opens, and it starts on Red 1 every time. (Red works too now —
@@ -933,7 +933,7 @@ keeps turning, to about 180° at the end, because the last waypoint asks for it.
 Add `Drivetrain/SimulatedPose` — Lesson 16's ground truth — to the same field.
 Now you can see the whole story at once: the line you drew, where the robot
 thinks it is, and where it actually is. They should sit within a couple of
-centimeters of each other the whole way.
+centimeters of each other the whole way (with the cameras on; [Figure 16.1](16-ground-truth.md#figure-16-1) shows how far the wheels alone creep).
 
 Then plot B-Line's own view of the job, under **Telemetry**.
 `FollowPath/crossTrackError` is the cross-track loop's error — how far off
@@ -1034,7 +1034,7 @@ without restarting.
    agree about which side of the field you're on. Predict before you run it:
    what would happen on red if `startPose` didn't flip?
 7. **Replay an auto.** Record a run of Two Corners, then replay it the way
-   Lesson 13 did (`REPLAY`, `$env:AKIT_LOG_PATH`, `./gradlew run`). The
+   Lesson 13 did ([Figure 13.2](13-io-replay.md#figure-13-2); `REPLAY`, `$env:AKIT_LOG_PATH`, `./gradlew run`). The
    replay builds the opmode, reads the path, and follows it again, so
    `Event: shoot!` prints in the replay's console too. B-Line times every step with the
    robot's clock, and AdvantageKit replays the clock along with everything

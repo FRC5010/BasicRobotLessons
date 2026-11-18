@@ -68,7 +68,7 @@ standing still, the sketch asks for full speed. The wheels can't deliver
 that instantly. They spin up as hard as the tyres can push, which in this
 simulation measured **11.8 m/s²**, the grip limit itself. On a real robot,
 that's tyres on the edge of slipping, a lurch that throws everything on the
-robot forward, and wheel odometry you can't trust while it lasts.
+robot forward, and wheel odometry you can't trust while it lasts ([Figure 16.1](16-ground-truth.md#figure-16-1) shows how far it drifts).
 
 **Now read the finish condition. It only looks at translation.**
 `pose.get().minus(target).getTranslation().getNorm()` measures how far the
@@ -184,7 +184,7 @@ target. The profile only cares about one number: **how far along that line
 the robot is.** Something else has to keep it *on* the line.
 
 That's a question you've answered before. In Lesson 17, BLine followed
-paths with three loops, and one of them was **cross-track**: you're headed
+paths with three loops, and one of them was **cross-track** ([Figure 17.3](17-bline-autos.md#figure-17-3) plots it): you're headed
 the right way at the right speed, but half a metre to the left of the
 line, and this loop pushes you back. You'll use the same idea, and even
 the same gain, `PathConstants.kCrossTrackP`.

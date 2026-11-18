@@ -616,7 +616,7 @@ recognise.
 
 ## 6. What `kV` is actually worth
 
-Here's the experiment Lesson 18 ran on the elevator, on a mechanism where
+Here's the experiment Lesson 18 ran on the elevator ([Figure 18.2](18-elevator.md#figure-18-2)), on a mechanism where
 the answer is much starker.
 
 Set `kFlywheelKV` and `kFlywheelKA` to zero, leaving only `kP`, and ask for
@@ -690,7 +690,7 @@ isn't catching up. It's finished.
 > **The third time this course has said it, and the clearest.** A P term
 > corrects; it does not sustain. If holding station requires continuous
 > output, calculate that output and hand it over. `kG` for gravity in
-> Lesson 18, a bearing rate in Lesson 27, `kV` for speed here.
+> Lesson 18, a bearing rate in Lesson 27 ([Figure 27.1](27-aim-at-tag.md#figure-27-1)), `kV` for speed here.
 
 ---
 

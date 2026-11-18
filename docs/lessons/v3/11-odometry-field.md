@@ -176,7 +176,7 @@ the robot in simulation, then in AdvantageScope:
 
 If everything is wired right, driving forward moves the robot along +X,
 strafing slides it along +Y, and spinning rotates it — the coordinate
-convention you memorized in Lesson 7, now visible as motion on a map.
+convention you memorized in Lesson 7 ([Figure 7.1](07-four-modules.md#figure-7-1)), now visible as motion on a map.
 Driving in the sim officially looks like a game. Take a lap.
 
 ### The same view inside SimGUI: `Field2d`
@@ -300,7 +300,7 @@ private `clamp` from Lesson 5, same as everywhere else in this file.
 
 `vx`/`vy` are computed straight from field-frame position error, so
 they're field-relative speeds — the same shape `driveFieldRelative` builds
-from joystick input in Lesson 10. `fieldSpeeds.toRobotRelative(...)` is
+from joystick input in Lesson 10 ([Figure 10.2](10-kinematics.md#figure-10-2) shows the difference). `fieldSpeeds.toRobotRelative(...)` is
 the identical conversion, just fed by a P controller instead of a stick.
 
 **`.until(...)` is new**, and it's worth being precise about what it does.

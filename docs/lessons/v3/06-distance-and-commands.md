@@ -282,7 +282,7 @@ routines are made of.
    condition to `Math.abs(getDistanceMeters()) >= Math.abs(meters)`. This is
    why you test edge cases.
 2. **Code — ease in with P control.** Instead of a constant `speed`, reuse
-   Lesson 5's idea — drive at `kP × (meters − getDistanceMeters())` so it
+   Lesson 5's idea ([Figure 5.1](05-steering-p-control.md#figure-5-1) shows the output following the gap) — drive at `kP × (meters − getDistanceMeters())` so it
    slows as it arrives. Notice you're applying the *same control pattern* to
    a new quantity.
 3. **Code — watch the three hooks for real.** Add a print right after

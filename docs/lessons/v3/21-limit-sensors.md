@@ -569,7 +569,7 @@ means an arm can carry a CANcoder and read its true angle the moment it
 powers on, precisely the way the swerve modules have since Lesson 5.
 
 That's the better answer where it fits, and Lesson 20 left a debt it pays
-off. The arm's `kG` is scaled by `cos θ`, and Lesson 20 warned that a
+off. The arm's `kG` is scaled by `cos θ` ([Figure 20.1](20-intake-arm.md#figure-20-1) draws the angle), and Lesson 20 warned that a
 wrong zero makes the feedforward fight the mechanism instead of helping
 it. An absolute encoder means there is no wrong zero to have.
 

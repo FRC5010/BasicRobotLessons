@@ -69,7 +69,7 @@ public class DriveModule implements Mechanism {
 ```
 
 Then step the steer physics in `simulatePeriodic()`, right after the drive
-motor's four steps — same loop, second motor.
+motor's four steps — same loop ([Figure 4.1](04-simulation.md#figure-4-1)), second motor.
 
 **Edit `DriveModule`'s `simulatePeriodic()`:**
 

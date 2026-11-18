@@ -30,7 +30,7 @@ it. Along the way, every path auto becomes one line instead of one class.
 
 ## 1. The dead time, and the guess
 
-Pull up Lesson 17's **Two Corners** auto and run it again, with Lesson 22's game
+Pull up Lesson 17's **Two Corners** auto ([Figure 17.2](17-bline-autos.md#figure-17-2) draws its track) and run it again, with Lesson 22's game
 pieces on the field and the LED strip open in SimGUI.
 
 Two things are wrong, and neither one looks like a bug.
@@ -358,7 +358,7 @@ single motor. It just asks.
 ```
 
 Lesson 17 mentioned that `registerEventTrigger` also takes a `Command`, and
-`requestIntake()` is one. Everything after the request is Lesson 24's machinery,
+`requestIntake()` is one. Everything after the request is Lesson 24's machinery ([Figure 24.1](24-superstructure.md#figure-24-1) draws it),
 running unchanged: `INTAKING` drops the arm and starts the roller; the beam break
 moves the state to `HANDOFF`, which tucks the arm and raises the elevator; and once
 both arrive, it's `HOLDING`. The auto never mentions the arm, the roller or the
@@ -816,7 +816,7 @@ The `release` marker is the plan; `handingRotationBack` is the guarantee.
 ## 8. Run it
 
 **Run the robot in simulation.** Set the DS window's **Alliance Station**
-to **Blue 1** first, the way you did in Lesson 17 — the numbers below are for blue.
+to **Blue 1** first, the way you did in Lesson 17 ([Figure 17.1](17-bline-autos.md#figure-17-1)) — the numbers below are for blue.
 
 **Run Pick Up first, on a fresh launch,** while the piece at (6.0, 3.8) is still
 on the field. Put `Sim/GamePieces` and `Drivetrain/SimulatedPose` on

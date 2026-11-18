@@ -407,8 +407,8 @@ public class PowerReadings {
 ```
 
 `processInputs("Power", power)` records the voltage as `Power/BatteryVolts`.
-In a replay it does the opposite, the same as every bundle since Lesson 13:
-it overwrites `power.batteryVolts` with the voltage from the log. That's
+In a replay it does the opposite, the same as every bundle since Lesson 13
+([Figure 13.2](13-io-replay.md#figure-13-2)): it overwrites `power.batteryVolts` with the voltage from the log. That's
 why everything after it reads `power.batteryVolts` and never asks
 `RobotController` again — the brownout flag in a replay is worked out from
 the voltage the robot really had.

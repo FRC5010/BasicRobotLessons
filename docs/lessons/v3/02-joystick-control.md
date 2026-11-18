@@ -211,7 +211,7 @@ command.
 
 Run the robot in simulation, pick **Teleoperated** and **MyTeleop**, then
 **Enable**. Push the left
-stick (or SimGUI's joystick slider). The motor output should track the
+stick (or SimGUI's joystick slider, in the slot you filled in [Figure 1.1](01-first-motor.md#figure-1-1)). The motor output should track the
 stick, snap to zero near center, and reverse when you pull back. If it
 creeps at rest instead, your deadband isn't in the path — check that
 `driveWithJoystick` really calls `applyDeadband`.

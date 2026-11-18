@@ -22,7 +22,7 @@ control from Lesson 5 to make the chassis **turn to a target heading and stop**
 An encoder tells you how far a *motor* turned. A **gyro** tells you how far the
 *whole robot* has rotated. The Pigeon 2 reports **yaw** — rotation about the
 vertical axis, i.e. heading — in degrees. `0°` is wherever the robot was pointing
-when the gyro zeroed, and positive is CCW (the convention from Lesson 7, holding
+when the gyro zeroed, and positive is CCW (the convention from Lesson 7, drawn in [Figure 7.1](07-four-modules.md#figure-7-1), holding
 as promised).
 
 Where should it live? Heading is a *chassis* fact — no single module knows it,
@@ -296,7 +296,7 @@ That `+=` line is doing something with a fancy name — **integrating** — and 
 plain meaning: every tick, add "rate × time" to a running total. Rotating at
 180°/s for one 20 ms tick adds 3.6°; do that fifty times a second and the
 total *is* the heading. This is the same **command → model → fake sensor →
-your reads** loop as Lesson 4, with a one-line model. It's an honest stand-in
+your reads** loop as Lesson 4 ([Figure 4.1](04-simulation.md#figure-4-1)), with a one-line model. It's an honest stand-in
 that lets you develop `turnToHeading` on your laptop today; when Lesson 10
 adds `SwerveDriveKinematics`, we can replace it with a physics-driven
 simulation of the *actual* modules pushing the chassis around.

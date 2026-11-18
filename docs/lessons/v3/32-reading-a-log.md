@@ -146,7 +146,7 @@ it's a reading, so it's with the inputs at the top level, not under
 `RealOutputs`.
 Watch them converge — the height climbs, slows, and settles in against
 the goal inside about a second and a half, a clean Motion Magic profile
-arriving exactly where you'd expect from Lesson 18.
+arriving exactly where you'd expect from Lesson 18 ([Figure 18.2](18-elevator.md#figure-18-2)).
 
 Now add one more trace to the same graph: `RealOutputs/Elevator/AtGoal` —
 the one you added in section 2. This is where reading one trace at a time would
@@ -270,7 +270,7 @@ recording made the way section 3 describes). Nothing about the match
 changed. The button presses, the timing, the heights the carriage reached:
 all of that is the recording, replayed verbatim. The only difference
 between the two outputs is which line of code decided what to do with the
-same evidence. That's the idea Lesson 13 introduced — "a replay is your
+same evidence. That's the idea Lesson 13 introduced ([Figure 13.2](13-io-replay.md#figure-13-2)) — "a replay is your
 code, today's version, fed the readings of a run that already happened" —
 and here it's not a demonstration. It's the proof that your fix works,
 checked against a session that already happened instead of a fresh guess.

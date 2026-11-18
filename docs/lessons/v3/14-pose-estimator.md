@@ -53,7 +53,7 @@ engine to the estimator, and gives it a home of its own.
 Meet the **`Localizer`**: a class whose entire job is to hold the pose
 estimator and keep it fed. First it needs a way to *be* fed by different
 kinds of sources, and that's a job for an **interface** — the same tool that
-gave you swappable IO in Lesson 13, pointed at a new problem.
+gave you swappable IO in Lesson 13 ([Figure 13.1](13-io-replay.md#figure-13-1)), pointed at a new problem.
 
 A **`PoseProvider`** is anything that can fold its own evidence into the
 shared estimate.

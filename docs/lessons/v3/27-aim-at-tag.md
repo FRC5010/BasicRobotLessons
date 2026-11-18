@@ -256,7 +256,7 @@ either way.
 **If this feels familiar, it should.** Lesson 18 said it about the
 elevator: *a pure feedback loop can only make output by first allowing
 error.* The elevator needed 9 V to hold its cruise speed, and `kP = 20`
-could only produce that from 7 centimetres of deliberate lag. Same
+could only produce that from 7 centimetres of deliberate lag ([Figure 18.2](18-elevator.md#figure-18-2) plots it). Same
 sentence, different mechanism. A P controller does not track a moving
 target; it *chases* one, and it chases from a fixed distance behind.
 

@@ -50,7 +50,7 @@ The best part is what *doesn't* change. `SwerveModule`, `ModuleIOTalonFX`,
 `ModuleIOSim`, `Localizer`, every command, every log key from Lessons 13–15:
 untouched. Everything today happens in exactly two places — a new class,
 and the two spots in `Drivetrain` and `GyroIOSim` that plug into it — and
-that's not a happy accident. It's the IO layer from Lesson 13 doing exactly
+that's not a happy accident. It's the IO layer from Lesson 13 ([Figure 13.1](13-io-replay.md#figure-13-1)) doing exactly
 the job it was built for.
 
 ---
@@ -456,7 +456,7 @@ One does now, and the fix is a one-line swap.
 ```
 
 That's the whole fix — `drivetrain::getSimulatedPose` in place of
-`localizer::getPose`. The simulated camera now renders from where the
+`localizer::getPose`. The simulated camera ([Figure 15.2](15-limelight.md#figure-15-2)) now renders from where the
 chassis *actually* is, so a correction it computes pulls the estimate
 toward something real, not toward itself.
 
@@ -518,7 +518,7 @@ Read it the way you'd read any IO: fill the bundle, hand it to
 "known, at (3, 3)". On a real robot nothing fills it, so it says "not
 known", and the estimate stays at (0, 0, 0°) until the cameras or an
 autonomous routine place it. In a replay, nothing fills it either, but
-`processInputs` loads whatever the recorded run wrote: a simulated run's
+`processInputs` loads whatever the recorded run wrote (the blue arrow in [Figure 13.2](13-io-replay.md#figure-13-2)): a simulated run's
 log says (3, 3), so the replay starts there; a real robot's says "not
 known", so the replay doesn't move the estimate. Every replay starts where
 its run did, and nothing has to be switched by hand. Measured: a simulated

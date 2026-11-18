@@ -659,7 +659,7 @@ project should compile clean again.
 Run the robot in simulation, pick **Teleoperated** and **MyTeleop**, then
 **Enable**. In AdvantageScope, connect to
 the sim and plot all four `Drivetrain/Module0..3/SteerAngleDegrees` values on
-one graph. Push the stick — all four traces should snap to the same value.
+one graph. Push the stick (the controller in slot 0, as in [Figure 1.1](01-first-motor.md#figure-1-1)) — all four traces should snap to the same value.
 Hold the left bumper — they should split into the four rotate-in-place angles
 from the table above.
 

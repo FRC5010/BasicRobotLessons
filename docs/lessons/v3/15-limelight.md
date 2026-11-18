@@ -257,7 +257,7 @@ Lesson 14's estimator knows how to rewind to.
 
 Every sensor this course has touched since Lesson 13 tells the same story:
 hardware lives behind an interface, so nothing outside it needs to know or
-care where a reading actually came from. Vision gets the same treatment.
+care where a reading actually came from ([Figure 13.1](13-io-replay.md#figure-13-1) draws that boundary). Vision gets the same treatment.
 
 **Create `src/main/java/first/robot/subsystems/VisionIO.java`:**
 
@@ -809,7 +809,7 @@ where it is by looking; only the fake one needs to be told.
 **Delete `VisionPoseProvider.java`** — `LimelightPoseProvider` replaces it,
 and nothing else references the old one once `Robot` is updated below.
 
-`Localizer` needs no changes at all. Its constructor, `periodic()`, and
+`Localizer` needs no changes at all ([Figure 14.1](14-pose-estimator.md#figure-14-1) is still the right picture). Its constructor, `periodic()`, and
 every method stay exactly as Lesson 14 left them. That's worth sitting with:
 an entire IO layer, a vendor library, and a simulated camera just went into
 the project, and the class that fuses poses together never had to hear
@@ -973,7 +973,7 @@ camera misbehaves, this is the first place to look.
    sent, read back from the recording. No camera ran in the replay:
    `makeCamera`'s `REPLAY` arm built `new VisionIO() {}`. And
    `RealOutputs/Localizer/Pose` matches `ReplayOutputs/Localizer/Pose` on
-   every tick. Now change the frames on each side of the door, replaying the
+   every tick. Now change the frames on each side of the door ([Figure 13.2](13-io-replay.md#figure-13-2) shows which side is which), replaying the
    same recording after each change. First, in `VisionIOLimelight.updateInputs`,
    build each observation's pose half a meter further along X:
    `new Pose2d(estimate.pose.getX() + 0.5, estimate.pose.getY(), estimate.pose.getRotation())`

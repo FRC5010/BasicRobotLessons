@@ -47,7 +47,7 @@ Open `RobotTeleop.java` and look at the D-pad bindings from Lesson 18:
 Power the robot on right now, before touching Back, before homing
 anything, and press D-pad up. The carriage drives itself toward full
 height on an encoder that — per Lesson 21 — hasn't been zeroed against
-anything real yet. Nothing in `goToHeight` checks whether homing ever
+anything real yet ([Figure 21.1](21-limit-sensors.md#figure-21-1) shows the gap). Nothing in `goToHeight` checks whether homing ever
 happened. It can't; that isn't `Elevator`'s job, and bolting a homed-check
 onto every mechanism's every command is exactly the kind of thing that
 gets forgotten on the one button that matters.

@@ -115,7 +115,7 @@ multiply by whichever of those two factors applies.
 drum rotation/sec means sustaining *twelve* rotor rotations/sec. Multiply
 by the speed factor: `12 × 0.1187 ≈ 1.42`. That's `kElevatorKV`. (The
 closed loop runs in drum rotations, not rotor rotations — Phoenix's
-`SensorToMechanismRatio` handles that conversion, the same way
+`SensorToMechanismRatio` handles that conversion ([Figure 12.1](12-model-based-control.md#figure-12-1) draws the chain), the same way
 `DriveConstants.kDriveKV = 0.8` is volts per *wheel* rotation/sec, not
 per rotor rotation/sec. `kV`, `kA`, and `kP` all live on the mechanism
 side of that ratio.)
@@ -215,7 +215,7 @@ is exactly the meters-to-rotations conversion you'll write in §6.
 
 ## 5. The contract: `ElevatorIO`
 
-Same shape as `ModuleIO` and `GyroIO` from Lesson 13 — a bundle of sensor
+Same shape as `ModuleIO` and `GyroIO` from Lesson 13 (see [Figure 13.1](13-io-replay.md#figure-13-1)) — a bundle of sensor
 readings, marked `@AutoLog` so AdvantageKit writes its logging code, and
 `default` do-nothing methods so a `REPLAY` implementation needs zero code
 of its own.

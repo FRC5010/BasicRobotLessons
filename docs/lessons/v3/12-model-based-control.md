@@ -401,7 +401,7 @@ wheel speeds land on their targets instead of drifting near them.
 
 Tuning still works the way Lesson 5 taught you, just with new knobs:
 `kSteerKP` too low and steering lags; too high and it buzzes around the
-target. `kDriveKV` is the interesting one — get it right and `kDriveKP`
+target ([Figure 5.2](05-steering-p-control.md#figure-5-2) drew both). `kDriveKV` is the interesting one — get it right and `kDriveKP`
 barely has anything to do. Which suggests a way to tune: set `kDriveKP =
 0`, adjust `kV` until measured speed roughly matches requested speed,
 *then* bring in a little `kP` for the residue. Model first, feedback

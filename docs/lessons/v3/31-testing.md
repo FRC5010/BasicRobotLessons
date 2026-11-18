@@ -201,7 +201,7 @@ fifty times a second, and in a test *you* are `Robot`.
 ## 5. The test that checks Lesson 21
 
 Now a real one. Lesson 21 made a specific claim: a relative encoder reads
-zero at power-on wherever the carriage actually is, and homing is what
+zero at power-on wherever the carriage actually is ([Figure 21.1](21-limit-sensors.md#figure-21-1)), and homing is what
 replaces that guess with a fact. That's exactly the kind of thing worth
 pinning down — it's a behaviour, not a value, and it stops being true the
 moment somebody edits the homing routine.
