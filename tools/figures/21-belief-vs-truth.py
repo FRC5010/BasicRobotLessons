@@ -74,7 +74,7 @@ def main():
                              "shrinkA": 0, "shrinkB": 0})
     top.text(t[k] + 0.3, (belief[k] + truth[k]) / 2, f"{(truth[k] - belief[k]) * 100:.0f} cm apart\nthe whole way",
              color=figstyle.NEUTRAL, ha="left", va="center")
-    top.text(2.0, -0.28, "the encoder counts every centimeter\nfrom a zero that was never the bottom",
+    top.text(2.0, -0.30, "the encoder counts every centimeter\nfrom a zero that was never the bottom",
              color=figstyle.NEUTRAL, ha="left", va="center")
 
     # The snap.
@@ -94,7 +94,7 @@ def main():
     strip.set_xlim(0, X_MAX_S)
     for ax in (top, strip):
         ax.axvline(SELECT_AT_S, color=figstyle.NEUTRAL, linestyle=":", linewidth=1.2)
-    top.text(SELECT_AT_S + 0.15, 0.37, "Teleoperated picked", color=figstyle.NEUTRAL, ha="left", va="center")
+    top.text(SELECT_AT_S + 0.15, -0.385, "Teleoperated picked", color=figstyle.NEUTRAL, ha="left", va="center")
 
     print(figstyle.save(fig, "21-belief-vs-truth"))
     for n in (1, 2):
