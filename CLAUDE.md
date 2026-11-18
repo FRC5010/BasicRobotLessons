@@ -2411,7 +2411,7 @@ Prose conventions used consistently across lessons:
 ## Figures in lessons
 
 Conventions for pictures in the lessons, agreed 2026-11-18. The figure-by-figure
-plan goes in `docs/lesson-plan-v3-figures.md` (being drafted).
+plan is [docs/lesson-plan-v3-figures.md](docs/lesson-plan-v3-figures.md).
 
 **Files:**
 - **Where they live:** in `docs/lessons/v3/images/`. Only `docs/` is published, so an
