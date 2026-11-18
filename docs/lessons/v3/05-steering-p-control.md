@@ -289,12 +289,36 @@ private double clamp(double value, double min, double max) {
    toward the target — a Kraken X60 spinning something this light doesn't
    need much to get moving.
 3. As the motor turns and `measurement` rises, `error` shrinks, so `output` shrinks.
-4. Near 90°, error ≈ 0, output ≈ 0 — it eases in and holds. That gentle slow-down is
-   what "proportional" buys you: no slamming into the target.
+4. Near 90°, error ≈ 0, so output ≈ 0 — the push fades as the gap closes. That
+   fading push is what "proportional" buys you: the closer you get, the
+   gentler the shove.
+
+<a id="figure-5-1"></a>
+![Two stacked graphs of one move to 90 degrees with kP 0.0005. Top: the setpoint as a dashed line at 90 degrees and the measured angle in orange, rising fast, overshooting to 158 degrees, then ringing back and forth around 90 with shrinking swings; an arrow marks the 70 degree error when the angle passes 20 degrees. Bottom: the output, kP times the error, starting at 0.045, passing 0.035 at 20 degrees, then swinging negative and positive in step with the error](images/05-setpoint-measurement-error.png)
+
+*Figure 5.1 — One move to 90° with `kP = 0.0005`: the measurement against the setpoint, and the output that follows the gap.*
+
+Figure 5.1 plots exactly that move, tap to settle. Read the top panel first:
+the dashed line is the setpoint, the orange curve is the measurement, and
+the **error is the vertical gap between them**. The grey arrow marks it at
+the instant the angle passes 20° — 70° wide, the same tick we just walked
+through. The bottom panel is what the controller does about that gap: it's
+the same shape, just scaled down by `kP`. The output starts at 0.045 (90° of
+error), is the 0.035 from step 2 at 20°, and shrinks as the curve climbs —
+step 3, happening on screen.
+
+Now look at 0.26 seconds. The error reaches zero, so the output reaches
+zero — and the wheel is still moving. Zero push isn't the same as stopped:
+the motor has inertia, and it carries the angle right past 90°, to 158° in
+this run. That makes the error negative, so the output goes negative and the
+motor pushes back. Each swing comes out smaller than the one before, and the
+wheel only settles inside a degree of 90° after about seven seconds. Hold on
+to that ringing; the next section is about it.
 
 And notice the math handles direction for free: overshoot past 90° and
-`error` goes negative, so `output` goes negative and the motor pushes back.
-The *sign* of the error carries which way to go; the *size* carries how hard.
+`error` goes negative, so `output` goes negative and the motor pushes back —
+the bottom panel crossing zero is exactly that. The *sign* of the error
+carries which way to go; the *size* carries how hard.
 
 Three smaller things in that code deserve a look.
 
@@ -392,9 +416,31 @@ the left button:
 - **`kP` too big:** it overshoots and oscillates back and forth around 90°.
 - **`kP` just right:** quick, smooth, settles near 90° and stays.
 
+<a id="figure-5-2"></a>
+![One graph of the steering angle against time for three gains, with the 90 degree setpoint dashed. kP 0.0005 rises fastest, overshoots to 158 degrees and rings for about seven seconds. kP 0.00003 climbs smoothly with no overshoot and is within one degree of 90 at 2.7 seconds. kP 0.00001 climbs slowly and flattens out at 79 degrees, short of the setpoint](images/05-kp-three-gains.png)
+
+*Figure 5.2 — The same tap with three gains: too big, about right, too small.*
+
+Figure 5.2 shows all three on one plot, the same tap from 0° each time.
+The **pink** line, `kP = 0.00001`, is too small: the push is so gentle that
+it crawls, and the closer it gets the gentler the push becomes, until the
+voltage it asks for rounds down to zero in the simulated motor and it stops
+short at 79°. The **orange** line is the `0.0005` from Figure 5.1: the first to
+reach 90°, but it can't stop there, and it rings. The **green** line,
+`kP = 0.00003`, is the one in between: no overshoot, and inside a degree of
+90° after about 2.7 seconds.
+
+Notice what a *good* gain costs you. The orange line is faster than green at
+the start; it just can't hold what it gains. Too big and the controller
+overshoots by more than it fixes; too small and it never arrives; the right
+gain is the biggest one that doesn't ring.
+
 Tuning `kP` by watching the plot *is* the job. Start at `0.0005`, double it
 until it oscillates, then back off. This intuition transfers to every
-controller you'll ever write.
+controller you'll ever write. (Figure 5.2 says that for this steering motor,
+with nothing but a bare 1:1 rotor to turn, `0.0005` is already past the point
+where it rings, so your first moves will be *down* from it, not up. Same
+recipe, different starting side.)
 
 ---
 

@@ -284,10 +284,10 @@ m_steerSim.setRotorVelocity(
 
 Heads up: the steering now turns at a believable speed instead of a bare
 rotor's instant snap, so your Lesson 5 `kP` is now tuned for the wrong plant.
-Measured against this model: the same `kP = 0.0005` that converged cleanly in
-Lesson 5 now crawls — a 90° turn takes about 6 simulated seconds to get
+Measured against this model: the same `kP = 0.0005` that rang in Lesson 5's
+[Figure 5.2](05-steering-p-control.md#figure-5-2) now crawls — a 90° turn takes about 6 simulated seconds to get
 within a degree, and about 9 to get within a third of one, decaying smoothly
-with no overshoot at all. That's not a
+with no overshoot at all (Figure 7.2 plots it). That's not a
 bug; the thing being controlled changed, and a 25:1 reduction resists motion
 harder than a bare rotor did. You can't retune yet (nothing runs until the
 wiring in section 6), so sit tight — section 7 comes back to this the moment
@@ -337,6 +337,19 @@ Those signs follow WPILib's convention, and it's one to memorize now because
 every WPILib class assumes it: **+X is forward, +Y is left, yaw is
 CCW-positive.** Front-left is "forward and left," so both coordinates are
 positive; back-right flips both signs.
+
+<a id="figure-7-1"></a>
+![Three top-down drawings of the chassis. Left: the axes, with +X pointing up the page as forward and +Y pointing left, a counterclockwise arrow for positive yaw, and the four corners labelled FL 0, FR 1, BL 2, BR 3 with coordinates plus or minus 0.3. Middle: translate, all four wheels pointing the same way, forward and left at 45 degrees. Right: rotate, the four wheels in a pinwheel at 135, 45, minus 135 and minus 45 degrees](images/07-chassis-frame-corners.svg)
+
+*Figure 7.1 — The chassis frame, the four corners, and the two moves.*
+
+Figure 7.1 draws all of that. The left panel is the frame: the robot seen
+from above with its front at the top, +X up the page, +Y to the left, and
+positive yaw swinging counterclockwise. Each corner sits at ±0.3 m, in the
+order the array will use: front-left is slot 0, then front-right, back-left,
+back-right. The other two panels are the two moves you're about to build.
+Keep an eye on the middle one in section 4 and the right-hand one in
+section 5.
 
 **One field on `DriveConstants` no longer makes sense and has to go:**
 `kDriveMotorPort`, `kSteerMotorPort`, and `kCancoderPort` described *one*
@@ -517,7 +530,7 @@ For a square chassis (`kHalfLength == kHalfWidth`):
 | Back-left   | `-135°` (= `225°`) | back-right |
 | Back-right  | `-45°`  (= `315°`) | front-right |
 
-Sketch the four wheels pointing those ways and imagine them rolling — the whole
+The right-hand panel of Figure 7.1 draws those four wheels. Imagine them rolling — the whole
 robot spins CCW. Neat, isn't it?
 
 Notice neither `translate` nor `rotate` bothers with a `.whenCanceled(...)`
@@ -673,10 +686,26 @@ Swerve tab — with `kP` still at Lesson 5's `0.0005`, expect a slow, smooth
 crawl into position, no overshoot, just patient. **Retune it the Lesson 5
 way** now that you can see it move: nudge `kP` up and watch the arrow snap
 into place faster. Verified against this model, `kP = 0.005` — ten times
-Lesson 5's value — settles within about a second with barely any overshoot.
-The gearbox adds real damping, so a bigger gain is both safe and needed here,
+Lesson 5's value — gets within a degree in half a second and never overshoots
+(Figure 7.2 plots both gains). The gearbox adds real damping, so a bigger gain is both safe and needed here,
 the opposite of Lesson 5's ungeared case. This is the first moment you could
 actually see it and tune it.
+
+<a id="figure-7-2"></a>
+![Two graphs of one steering module turning from 0 to 90 degrees through the 25 to 1 gearbox. Top, ten seconds: with kP 0.0005 the angle creeps up and is within one degree of 90 at 6.3 seconds and within 0.3 degrees at 9.0 seconds; with kP 0.005 it is there in half a second. Bottom, the first 1.5 seconds enlarged: the 0.005 curve climbs steeply and levels off at 90 with no overshoot, while 0.0005 is still at 60 degrees](images/07-steering-geared-two-gains.png)
+
+*Figure 7.2 — One steering module turning 90° through the real 25:1 gearbox, with Lesson 5's gain and with ten times it.*
+
+Figure 7.2 is the same tap as Lesson 5's [Figure 5.2](05-steering-p-control.md#figure-5-2), on the geared module.
+The top panel gives the whole ten seconds. The orange line, Lesson 5's
+`0.0005`, climbs slowly and smoothly: within a degree at 6.3 seconds, within
+a third of a degree at 9.0. The green line, ten times the gain, is within a degree
+after half a second, when the orange line is barely a quarter of the way there. The bottom panel zooms in on the first
+second and a half so you can see green's shape: steep at the start, rounding off
+into 90° with nothing above the setpoint at all. Compare it with Lesson 5's
+orange ring. Same controller, same
+idea; the plant changed, so the same gain changed from too big to too small.
+
 
 The **gyro** still reports zero — the chassis isn't yet closing the loop from
 "commanded rotation" to "reported heading." That's exactly what Lesson 8 wires

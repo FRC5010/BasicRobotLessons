@@ -311,9 +311,32 @@ toward `90°`, slows as it approaches, settles inside the ±2° band, and the
 command ends. Press the right face button — it comes back to `0°`. That's P
 control on a whole-robot quantity, closing the loop through a real chassis
 rotation command. Verified against this model: from a standing start,
-`turnToHeading(90)` settles inside the band in well under a second — no
+`turnToHeading(90)` gets inside the band in about 0.7 seconds — no
 overshoot, no oscillation, because integrating a commanded rate has no
-momentum to fight, unlike the geared motors from Lesson 7.
+momentum to fight, unlike the bare motor that rang in Lesson 5's
+[Figure 5.2](05-steering-p-control.md#figure-5-2).
+
+<a id="figure-8-1"></a>
+![Two stacked graphs of turnToHeading(90). Top: the heading rises in a straight line, then curves in and levels off at 88.2 degrees, inside the grey 2 degree band around the 90 degree target; the loop exits at 0.70 seconds. Bottom: the commanded omega is flat at the 0.5 limit until about 0.38 seconds, then falls in steps towards zero and drops to zero when the loop exits](images/08-turn-to-heading.png)
+
+*Figure 8.1 — `turnToHeading(90)`: the heading, the `omega` the command sends, and where the loop stops.*
+
+Figure 8.1 shows the saturated start and the P tail. Read the bottom panel
+first, because it explains the top one. For the first 0.38 seconds `omega`
+is flat at 0.5: the error is more than 25°, so `kP × error` would ask for
+more than the `±0.5` clamp allows, and the clamp wins. The heading in the
+top panel is a straight line for the same stretch, because turning at a
+constant rate is a straight line. Once the error falls under 25° (`0.5 ÷
+0.02`) the clamp lets go and `omega` becomes `kP × error`, shrinking with
+the gap — it's Lesson 5's fading push again — and the heading curves in
+like the tail of Figure 5.1's first swing, with no ringing. At 0.70 seconds the error is under 2°, the loop
+exits, and `.whenExited` commands zero. The heading sits at 88.2°: inside the grey band, not on
+the target, and that is exactly what "within 2°" means.
+
+One small oddity: the heading reads 0° for the first 0.12 seconds even
+though `omega` is already 0.5, then jumps to 25°. That looks like the
+simulated gyro's reading catching up (we didn't dig into it); it doesn't change the
+shape of anything after it.
 
 Then watch the same thing as a picture: open the **Swerve** tab from Lesson 7
 (with `NetworkTables/Telemetry/Drivetrain/ModuleStates` in its **States** slot) and drop

@@ -139,13 +139,18 @@ public void simulatePeriodic() {
 Those four steps form a loop, and the loop is the whole idea of simulation —
 if you take one picture from this lesson, take this one.
 
-*Nothing to add — a picture of the loop, not code:*
+<a id="figure-4-1"></a>
+![The simulation loop as a ring: your setThrottle command, the TalonFX turning it into volts, then three steps inside simulatePeriodic (read the volts, step the DCMotorSim, push the motion into the fake encoder), then your getPosition and getVelocity reads, which lead back to your next command](images/04-simulation-loop.svg)
 
-```
-your setThrottle(0.3)  →  TalonFX applies volts  →  getMotorVoltage()
-      ↑                                                    ↓
-setRawRotorPosition  ←  DCMotorSim computes motion (update)
-```
+*Figure 4.1 — The simulation loop. Blue boxes are your code; the orange box is `simulatePeriodic()`.*
+
+Figure 4.1 draws it. Start at the top left and follow the arrows: your
+command goes out, the TalonFX turns it into volts, and the three orange
+steps are the ones you just wrote — read the volts, let the model work out
+what a real motor would do with them, hand the answer back to the TalonFX as
+a fake encoder reading. The last blue box is your own code again, and its
+arrow runs back up to the first one: what you read decides what you command
+next tick.
 
 Your command flows *out* as voltage; the model turns voltage into motion; the
 motion flows *back in* as fake sensor readings. Once this runs, `getPosition()`
@@ -207,7 +212,8 @@ You now have a robot you can develop against with no hardware on the bench.
    speed faster or slower? Explain why in one sentence.
 2. Command a step input (hold the bottom face button, which is already bound
    to `driveAtSpeed(0.3)` from Lesson 1 — try changing it to `1.0` and
-   rebuilding) and watch the velocity curve. That S-shaped ramp is the
+   rebuilding) and watch the velocity curve. That rise — steep at first, then
+   rounding off as the wheel reaches its top speed — is the
    motor's natural response — you'll meet it again when you tune control.
 3. **Code — log applied volts.** Add
    `Telemetry.log("DriveModule/AppliedVolts", appliedVolts);`
