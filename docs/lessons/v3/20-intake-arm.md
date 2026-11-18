@@ -806,7 +806,8 @@ feedforward looks like.
 Two more traces are worth a look before you move on.
 
 Add `Arm/SetpointDegrees` alongside `Arm/AngleDegrees` and swing between
-the presets. Same story as the elevator: the goal steps, the setpoint
+the presets. Same story as the elevator, and the same three curves as
+[Figure 18.1](18-elevator.md#figure-18-1): the goal steps, the setpoint
 slides, and the angle trails the setpoint by a few degrees — worst during
 the acceleration ramp, two to four at its peak — rather than the eighteen
 it would take to buy that voltage out of error. Lesson 18's

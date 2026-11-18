@@ -564,6 +564,19 @@ first one — a gap between setpoint and height is the controller failing
 to keep up; a gap between goal and setpoint is just the profile still
 ramping, which is supposed to happen.
 
+Figure 18.1 shows all three during one move from stowed to the top of
+the travel, recorded in the simulator with this lesson's code.
+
+<a id="figure-18-1"></a>
+![Above: goal, setpoint and height during one move from stowed to the top of the travel. The goal is a step to 1.5 m, the setpoint ramps up to it over about two seconds, and the height follows so closely that the two lines overlap. Below: setpoint minus height in millimeters, which holds at about 91 mm through the cruise with kElevatorKV zeroed and about a centimeter with the model](images/18-height-setpoint-goal.png)
+
+*Figure 18.1 — One move from stowed to the top. Above: goal, setpoint and height. Below: setpoint minus height, with the model and with `kElevatorKV` zeroed.*
+
+In the top panel the height sits so close to the setpoint that the two
+lines merge, which is what a good model looks like. The gap you tune is
+too small to see at that scale, so the lower panel plots it on its own,
+in millimeters. That's the panel the rest of this section reads from.
+
 The order that makes sense to tune in is the order the model was built:
 `kG` first, then `kV`, then `kA`, then `kP` last, as the smallest
 possible trim.
@@ -574,17 +587,28 @@ possible trim.
   zeroing `kElevatorKG` sags the hold by about **1.6 mm**. Small, because
   0.17 V is small, but it never goes away on its own.
 - **`kV` wrong** shows up *only while moving* — position lagging
-  setpoint by a gap that opens up during the flat part of the profile and
-  closes again as the profile decelerates. You can predict its size: a
+  setpoint by a gap that opens while the profile speeds up, holds
+  through the constant-speed part, and closes again as the profile
+  decelerates. You can predict its size: a
   1.0 m/s cruise is about 6.3 drum rotations a second, which costs
   `1.42 × 6.3 ≈ 9 V`, and with no `kV`, `kP = 20` can only make 9 V out
   of about 0.45 rotations of error — some 7 cm. Measured moving the full
-  travel range with `kElevatorKV` zeroed: about **9 cm** of peak lag —
-  the 7 cm, plus a little extra while the profile is still speeding up.
-  With the model in place, the same move: **1–2 cm**. Expect your own
-  numbers to wander by several millimeters from run to run. `kP = 20` is
-  doing real work either way — the difference is how much work it's
-  *forced* to do versus how much the model already handled for it.
+  travel range with `kElevatorKV` zeroed, the logged gap holds at about
+  **9 cm** through the cruise: the green line in Figure 18.1's lower
+  panel. With the model in place, the same move logs **1–2 cm** (the
+  orange line). Expect your own numbers to wander by a centimeter from
+  run to run.
+
+  Why 9 cm and not 7? The motor also reports the error it's actually
+  working from (Phoenix's `ClosedLoopError` signal, which this course
+  doesn't log), and with `kV` zeroed it reads about 7 cm through the
+  cruise, right on the prediction. In the simulator, the logged gap
+  comes out a centimeter or two bigger than that. The run with the model
+  has the same extra: its `ClosedLoopError` is about a twentieth of a
+  millimeter on most ticks of the cruise, so nearly all of its 1–2 cm is
+  that extra too. Without `kV`, `kP = 20` is doing all the work of
+  keeping the carriage moving; with the model, it has almost nothing
+  left to do, which is exactly what computing the model first was for.
 - **`kA` wrong** is the subtlest: a brief spike in the setpoint-vs-height
   gap right at the start and end of the move, where the profile is
   accelerating or decelerating hardest, vanishing once it reaches

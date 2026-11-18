@@ -978,6 +978,22 @@ listed at the end of the working inventory, not kept in the repo.
   0.194 V commanded (`kG + kP × gap`, both ways), on alpha-7 as well. The
   Kraken job's note that the true hold is 0.174 and the floor would shift
   0.03 mm doesn't hold for the integrated sim.
+  **The logged gap is bigger than the controller's error while moving
+  (2026-11-18, Figure 18.1's probe plus a second `TalonFX` handle on ID 20
+  reading `getClosedLoopError()`):** through the cruise the firmware's own
+  error is −0.05 mm with the model (median of two runs; one run showed
+  −4 to +10 mm on 8 of 36 ticks) and 70.7 mm with `kV` zeroed, while
+  `SetpointMeters − HeightMeters` reads 10 or 20 mm and 81 or 91 mm. The
+  extra is 10 or 20 mm in every run, which is 1 m/s × half a tick or a
+  whole one; that is the 11/21 mm bimodality. The applied voltage agrees
+  with the firmware (9.05 V = 20 × 0.444 drum rotations + 0.17), so the
+  "about 7 cm" prediction was right and the old "plus the transient" was
+  wrong: the 91 mm is flat through the cruise. All three signals carry
+  the same timestamp, so the cause isn't established (the 20 ms physics
+  step against the firmware's own clock is a guess). Lesson 18 §10 now
+  says this, and that `kP` has almost nothing to do at cruise with the
+  model. Lesson 20's bimodal arm lag (2.2° / 3.9°) probably has the same
+  extra; not checked.
 - **Lesson 20, RIG at Lesson 20:** the hold table is unchanged
   (+0.24 at −20°, +0.25 / +0.18 / 0.00 / −0.18 / −0.25), as is the 0.09° gap
   at 0°. Peak lag intake to stow is **bimodal with the sampling phase**:
@@ -1898,7 +1914,9 @@ move. A probe that sleeps 20 ms after its work and measures the first move
 after startup read 21–31 and 87–112 mm across three runs. These numbers
 replace the lesson's old ≈145/≈34 mm. They match the lesson's arithmetic:
 9 V needed from `kP = 20` means ≈0.45 drum rotations ≈ 7 cm at cruise, plus
-the transient. The classic track measured 94.5/~23 mm independently. The
+the transient. (2026-11-18: there's no transient; the extra 2 cm is in the
+logged gap, not the controller's error. See the Lesson 18 bullet in the
+Lessons 7–22 block.) The classic track measured 94.5/~23 mm independently. The
 `kG`-zeroed sag (1.56 mm) and settled gap (0.117 mm) repeat exactly on every
 run. (alpha-8: the sag is 1.5576 mm again, to four digits, but the settled
 gap with the model is 0.194 mm, because `kElevatorKG` went 0.18 → 0.17.)
@@ -2491,6 +2509,28 @@ plan is [docs/lesson-plan-v3-figures.md](docs/lesson-plan-v3-figures.md).
     30 notes.
   - AdvantageScope and real-hardware pictures can't be made in this
     container. The plan lists them for the user to supply.
+
+**The tooling** (first used for Figure 18.1, 2026-11-18; details in
+[tools/figures/README.md](tools/figures/README.md)):
+- `tools/figures/measure.sh LESSON PROBE.java OUT.csv [--replace FILE OLD
+  NEW]...` builds the lesson through `verify-lessons-v3.sh`, makes the
+  one-off constant changes a figure compares (`kElevatorKV = 0.0`, say),
+  and runs one JUnit probe from `tools/figures/probes/`.
+- `figstyle.py` holds the shared look: white background, 1200 px wide, no
+  title, Okabe-Ito colours by role (goal black and dashed, setpoint blue,
+  measured orange, a changed setting green, guides grey).
+- The generators need `matplotlib` and `numpy` at the versions in
+  `tools/figures/requirements.txt`, in a venv.
+- **Look at the figure before writing it into a lesson.** Plotting a
+  series the text only summarised can show the text is wrong. Figure
+  18.1's flat 91 mm plateau contradicted Lesson 18's "plus a little extra
+  while the profile is still speeding up".
+- On 2026-11-18, Maven Central through this container's proxy returned
+  intermittent 404s, about one request in six, a different artifact each
+  time. Gradle caches the misses. With the user's approval, a
+  container-only `~/.gradle/init.d` script pointed Central at Google's
+  mirror (`maven-central.storage-download.googleapis.com/maven2/`) for the
+  run, and was deleted afterwards. It isn't in the repo.
 
 ## Rewriting lessons in a teacher's voice
 

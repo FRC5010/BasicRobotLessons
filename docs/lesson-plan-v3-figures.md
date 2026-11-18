@@ -32,7 +32,7 @@ For each figure in the batch:
 
 ## 2. Summary table
 
-Type: a = sim plot, b = SimGUI screenshot, c = SVG diagram, d = needs the user. All status: planned.
+Type: a = sim plot, b = SimGUI screenshot, c = SVG diagram, d = needs the user. All status: planned, except 18.2, built 2026-11-18 as the pilot (Figure 18.1 in the lesson until 18.1 here is built).
 
 | Figure | Title | Lesson | Type | Priority | Batch |
 |---|---|---|---|---|---|
@@ -541,6 +541,10 @@ No figure proposed: lambdas, suppliers and a deadband; a transfer-curve plot wou
 - Made from: **measured** (Lesson 18, Lessons 7-22 block: RIG, stowed to `kMaxHeight`, 20 ms schedule after a 2 s warm-up; 11.3 mm in 26 of 30 moves, 20.0-20.2 mm in 4; `kElevatorKV` zeroed 90.96-90.98 mm). Use one of the 26 "11.3 mm" moves; the lag panel adds a `kElevatorKV = 0` run.
 - Text changes: after the three-curve sentence "Figure 18.2 shows all three on one move." Put it before the "`kG` wrong / `kV` wrong" bullets. Text says "1-2 cm" and the plot reads 1.1 cm: say "about a centimetre" in the alt text.
 - Linked from: Lesson 20 §9 ("the same three curves as Figure 18.2", replacing a separate arm plot); Lesson 27 §4 ("P corrects, doesn't sustain"); Lesson 32 §4-5 ("finding the tick where a goal changed"); Lesson 33 §8.
+- **Status: built 2026-11-18 (the pilot), as Figure 18.1** while it's the lesson's only figure; building Figure 18.1 here (the `kP` sag, §3) makes it 18.2, so fix Lesson 18's two references and Lesson 20's link then. Lesson 20 §9's link is in; the other three "Linked from" lessons are not yet.
+  - Data: `probes/Fig18HeightSetpointGoal.java` (2 s hold, two practice round trips, then one recorded move; six columns), model run peak 11.3 mm, `kElevatorKV = 0` run 91.0 mm.
+  - **What building it found:** the 91 mm is a flat plateau through the cruise, not a transient, and the firmware's own `ClosedLoopError` reads about 71 mm there (−0.05 mm with the model), so the logged gap carries an extra 1-2 cm in the simulator. The old "the 7 cm, plus a little extra while the profile is still speeding up" and "`kP = 20` is doing real work either way" were rewritten (CLAUDE.md, the batch 1 Lesson 18 bullet). The plot's "controller lag (tune this)" label became a description of the shape for the same reason.
+  - Look: two panels (curves above, the gap in mm below); setpoint drawn wide under the height so it shows where they overlap. At a 390 px phone width the annotation text is small (about 7 px).
 
 ### Lesson 19 — A picture of the elevator
 
