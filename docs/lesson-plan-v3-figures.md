@@ -1055,7 +1055,8 @@ Settled in the main session (2026-11-18), as defaults the user can overrule:
 - **A figure near a Try It (4.2, 15.4):** never put a figure before a Try It that shows its answer. Place it where the walkthrough itself states the behaviour, or after the exercise.
 - **Placement in general (27.1 and others):** at the first point where the student needs it, decided when the figure is built; the plan's "Where" is a starting point.
 
-For the user:
+Decided by the user (2026-11-18):
 
-1. **Lesson 32's plots.** Plots of the recorded log's data drawn here (makeable now), or real AdvantageScope screenshots you supply (type d, one per figure)?
-2. **Figure 8.2.** Worth a second AdvantageScope shot from you, or drop it (the Rotation slot is one sentence in §6)?
+1. **Lesson 32's plots** are drawn here from the recorded logs, not AdvantageScope screenshots.
+2. **Figure 8.2** stays on the "needs the user" list.
+3. **A pilot first:** Lesson 18's goal / setpoint / height figure (working ID 18.2; built as Figure 18.1 while it's the lesson's only figure), for the user to judge the look, caption and text changes before the rest.
