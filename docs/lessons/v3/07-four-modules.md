@@ -605,8 +605,7 @@ private void logCommandStart(SchedulerEvent event) {
 just one. Every command in this course needs exactly one mechanism, so the
 loop runs once — but the method doesn't need to *know* that, which is the
 point. `mechanism.getName()` reads back the same name every `Mechanism`
-already carries — it's where the `"Drivetrain"` in `"Drivetrain[IDLE]"`
-comes from — so the dashboard key builds itself: `Drivetrain/CurrentCommand`
+already carries (here, `"Drivetrain"`), so the dashboard key builds itself: `Drivetrain/CurrentCommand`
 for a command on `drivetrain`, whatever a future mechanism happens to be
 called for one of its own. Add a second mechanism to `Robot` someday, and
 this method won't need to hear about it.
@@ -657,7 +656,8 @@ project should compile clean again.
 
 ## 7. Run it
 
-Run the robot in simulation → **My Teleop** → **Enabled**. In AdvantageScope, connect to
+Run the robot in simulation, pick **Teleoperated** and **MyTeleop**, then
+**Enable**. In AdvantageScope, connect to
 the sim and plot all four `Drivetrain/Module0..3/SteerAngleDegrees` values on
 one graph. Push the stick — all four traces should snap to the same value.
 Hold the left bumper — they should split into the four rotate-in-place angles

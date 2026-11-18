@@ -9,7 +9,8 @@ spin at a fixed speed while you hold a button.
 - **Constructors** (the setup method that runs when an object is created)
 - **`import`** (borrowing classes from other packages)
 - **`private` / `public`** (encapsulation — who's allowed to touch what)
-- A **`List`**, and asking it for an item by number
+- A **`List`**: asking whether it's empty, and asking it for an item by number
+- **`if` / `else`** (do one thing or the other)
 
 **New robot concepts**
 - Adding a vendor library (Phoenix 6)
@@ -507,8 +508,12 @@ rule from section 3, and it means the scheduler can just be *asked*.
 ```java
 private void logRunningCommand() {
   List<Command> running = Scheduler.getDefault().getRunningCommandsFor(module);
-  Command current = running.get(0);
-  Telemetry.log("DriveModule/CurrentCommand", current.name());
+  if (running.isEmpty()) {
+    Telemetry.log("DriveModule/CurrentCommand", "none");
+  } else {
+    Command current = running.get(0);
+    Telemetry.log("DriveModule/CurrentCommand", current.name());
+  }
 }
 ```
 
@@ -533,32 +538,37 @@ import org.wpilib.telemetry.Telemetry;
 
 `getRunningCommandsFor(module)` hands back a **`List<Command>`** — a
 numbered collection, holding every command currently running on that
-mechanism. `.get(0)` asks for entry number zero. That only works because a
-mechanism can only ever have *one* command running on it at a time — the
-same rule you already learned in section 3. One owner, so entry zero is
-always the whole list.
+mechanism. A mechanism can only ever have *one* command running on it at a
+time — the same rule you already learned in section 3 — so the list holds
+one command or none. `.get(0)` asks for entry number zero: the one owner.
+
+"None" is the case that matters. While the robot is disabled, nothing runs
+on the module at all, and asking an empty list for entry zero doesn't hand
+back "nothing" — it crashes the whole program. So the method checks first.
+`running.isEmpty()` is `true` when the list has nothing in it, and
+**`if (condition) { ... } else { ... }`** runs the first block when the
+condition is true and the second when it isn't: empty list, log `"none"`;
+otherwise, log the owner's name. You'll put `if` to work again in Lesson 2.
 
 Order matters here, and it's worth being deliberate about: `logRunningCommand()`
 has to run *after* `Scheduler.getDefault().run()`, not before. The scheduler
-doesn't know anything is running until it's actually ticked once — ask
-beforehand, on the very first frame of the whole program, and the list would
-be empty. `robotPeriodic()` already ticks first and reads second here, so
-this just slots in.
+only updates its list when it ticks — ask before the tick and you'd be
+reading what was running on the *previous* one. `robotPeriodic()` already
+ticks first and reads second here, so this just slots in.
 
 Run it again, hold the bottom face button, and open **NetworkTables →
 Telemetry → DriveModule** in SimGUI or AdvantageScope. `CurrentCommand`
-reads `"DriveModule[IDLE]"` at rest — `Mechanism`'s own name for the fallback
-command every mechanism starts with, built from the mechanism's own class
-name — and flips to `"Drive At Speed"` the instant you hold the button, back
-to `"DriveModule[IDLE]"` the instant you let go. That's the payoff of
+reads `"none"` while nothing owns the module (before you enable, and at
+rest) and flips to `"Drive At Speed"` the instant you hold the button, back
+to `"none"` the instant you let go. That's the payoff of
 `.named(...)`: not decoration, an actual answer to
 "what is this thing doing right now," readable from a laptop instead of a
 debugger.
 
 > This is a small, direct version of something this course will keep
-> building on. It also has a quiet limitation: it only works because
-> everything you've built so far either parks or loops forever, so there's
-> always something running whenever you ask. Lesson 3 replaces the asking
+> building on. It also has a quiet limitation: it only sees what's
+> running at the moment it asks, once a tick, so a command that starts and
+> finishes between two asks never shows up. Lesson 3 replaces the asking
 > with listening — the scheduler announces what it's doing as it happens,
 > instead of waiting to be polled.
 

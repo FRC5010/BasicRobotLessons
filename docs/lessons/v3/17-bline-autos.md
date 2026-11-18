@@ -902,7 +902,7 @@ Before you enable anything, look at the console: the line
 `********** Creating OpMode Two Corners **********` just printed, and that's the
 moment your path file was read and the robot was set down at (3, 3). Pick
 **Far Side** and it prints again for that one. Pick **Two Corners** back, then
-set state to **Enabled** (4).
+click **Enable** (4).
 
 Then watch it the way you've watched every closed-loop lesson since Lesson 5 —
 asked-for against measured. Open AdvantageScope's **Odometry** tab, put
@@ -984,7 +984,7 @@ that comes from changing which line you're measuring against, then an ordinary
 P loop doing what P loops do. These two signals are saved in the `WPILIB_` log
 file, not the `akit_` one (Try It #7 comes back to this).
 
-To run it again, set state to **Disabled**. The console shows the opmode
+To run it again, click **Disable**. The console shows the opmode
 closing and being created again — which reads the path and sets the robot back
 down at (3, 3) — so just **Enable** again. If you want to watch section 8's
 problem happen, comment out the `placeSimulatedRobot` line and run twice

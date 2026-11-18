@@ -150,9 +150,9 @@ private double applyDeadband(double value, double band) {
 }
 ```
 
-Three small pieces of Java arrived in those six lines. **`if (condition) {
-... }`** runs its block only when the condition is true — your first
-conditional, and Lesson 5 leans on these hard. **`Math.abs(value)`**
+Three small pieces of Java are in those six lines. **`if (condition) {
+... }`** is Lesson 1's `if`, this time with no `else`: its block runs only
+when the condition is true, and Lesson 5 leans on these hard. **`Math.abs(value)`**
 returns the absolute value (drops the sign), so one comparison covers both
 forward and reverse. And **`return`** hands a value back to whoever called
 the method and stops the method on the spot — which is why the second
@@ -209,7 +209,8 @@ command.
 
 ## 5. Run it
 
-Run the robot in simulation → pick **My Teleop** → **Enabled**. Push the left
+Run the robot in simulation, pick **Teleoperated** and **MyTeleop**, then
+**Enable**. Push the left
 stick (or SimGUI's joystick slider). The motor output should track the
 stick, snap to zero near center, and reverse when you pull back. If it
 creeps at rest instead, your deadband isn't in the path — check that

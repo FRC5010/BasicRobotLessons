@@ -64,8 +64,12 @@ public class Robot extends OpModeRobot {
 
   private void logRunningCommand() {
     List<Command> running = Scheduler.getDefault().getRunningCommandsFor(module);
-    Command current = running.get(0);
-    Telemetry.log("DriveModule/CurrentCommand", current.name());
+    if (running.isEmpty()) {
+      Telemetry.log("DriveModule/CurrentCommand", "none");
+    } else {
+      Command current = running.get(0);
+      Telemetry.log("DriveModule/CurrentCommand", current.name());
+    }
   }
 
   /**

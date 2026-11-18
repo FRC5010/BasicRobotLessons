@@ -338,9 +338,10 @@ clearing two separate hurdles on purpose.
 
 ## 6. Run it, and read what happened
 
-Run the robot in simulation. In SimGUI, pick **RobotUtility** from the opmode
-selector — same move as picking **MyTeleop** back in Lesson 1, just a
-different opmode — then set Robot State to enabled. Hold **Back + the top
+Run the robot in simulation. In SimGUI's Robot State panel, pick **Utility**,
+then **RobotUtility** from the OpMode drop-down — the same moves as
+**Teleoperated** and **MyTeleop** back in Lesson 0, just a different mode and
+opmode — then click **Enable**. Hold **Back + the top
 face button** for a few seconds — the applied voltage climbs steadily, and the
 wheel, after a dip (see the note below), spins up slowly and smoothly.
 Let go, let it coast, then hold **Start + the top face button** for the whole
@@ -893,7 +894,7 @@ just guessing at.
    apply(...)` can be called more than once — it isn't limited to
    construction time.)
 6. **Watch the opmode guard actually work.** Start a `sysIdQuasistatic` run
-   in `RobotUtility`, then switch back to **My Teleop** (disabling first, if
+   in `RobotUtility`, then switch back to **Teleoperated** and **RobotTeleop** (disabling first, if
    your driver station's UI insists on that before it lets you switch).
    Confirm the wheel drops back to its idle speed once you re-enable in
    Teleop — there's no `sysIdQuasistatic` command left running to fight your

@@ -1078,5 +1078,5 @@ All 39 batch 1 figures are built, in their lessons, and committed; the site buil
 **Not done yet:**
 - **Cross-lesson links.** The agents only linked within their own lessons (plus 20 → 18.2). Every "Linked from" entry above is still to add, with the built numbers from the map.
 - **Small text in two screenshots.** Figures 1.1 and 30.1 are composites of SimGUI at its normal zoom; on a phone the text is hard to read. SimGUI's View → Zoom at 150% gives crisp captures but the window then needs a bigger Xvfb screen.
-- **Open questions for the user** (CLAUDE.md, "Batch 1 found"): Lesson 5's `kP`, the Lesson 1/2 boot crash, the opmode-name wording in other lessons, Lesson 12's "jumps instantly" wording.
+- **Open question for the user** (CLAUDE.md, "Batch 1 found"): Lesson 12's "jumps instantly" wording. Settled 2026-11-19: the Lesson 1/2 boot crash and the SimGUI wording are fixed, and Lesson 5 keeps `kP = 0.0005` and teaches the ringing.
 

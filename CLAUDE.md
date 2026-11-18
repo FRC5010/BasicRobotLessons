@@ -2550,14 +2550,24 @@ ID-to-number map are in the plan's section 9).** Probes are in
 `tools/figures/probes/`, data in `tools/figures/data/`. Each item was run
 at least twice.
 - **Open, for the user:**
-  - **Lessons 1 and 2 crash at boot on alpha-8.**
-    `Robot.logRunningCommand()` calls `running.get(0)` on an empty list,
-    because alpha-8 queues no default commands while disabled. SimGUI shows
-    "Program Crash" on a fresh launch of `code/v3/lesson-1` (the Lesson 2
-    snapshot has the same line). `verify-lessons-v3.sh` only compiles, so it
-    never caught this. Not fixed.
-  - **Lesson 5's `kP = 0.0005` rings on the lesson's own 1:1 steering
-    plant.** A 90° tap measured:
+  - **Fixed 2026-11-19: Lessons 1 and 2 crashed at boot on alpha-8.**
+    `Robot.logRunningCommand()` called `running.get(0)` on an empty list,
+    because alpha-8 queues no default commands while disabled. A boot test
+    (the real `Robot` loop on its own thread: disabled, then `MyTeleop`
+    enabled, then the bottom face button held and released) died with
+    `ArrayIndexOutOfBoundsException` on both snapshots. Both now wrap it in
+    `if (running.isEmpty()) { log "none" } else { … }`, and the test reads
+    Lesson 1 `[none, none, Drive At Speed, none]` and Lesson 2 `[none, Drive
+    With Joystick, Drive At Speed, Drive With Joystick]`. So **no idle
+    command ever runs** in Lesson 1: the old "`DriveModule[IDLE]` at rest" was
+    wrong; Lesson 1 §8 now says `"none"`, introduces `if`/`else` and
+    `isEmpty()` (with no `return`, which Lesson 2 still introduces; Lesson 2's
+    `if` sentence now calls it Lesson 1's). Lesson 3's "flips between
+    `DriveModule[IDLE]`…" now says `Drive With Joystick`, and Lesson 7's
+    `Drivetrain[IDLE]` aside is gone. `verify-lessons-v3.sh` only compiles, so
+    it can't catch a boot crash; the test isn't kept in the repo.
+  - **User decision 2026-11-19: Lesson 5 keeps `kP = 0.0005` and teaches
+    the ringing.** On the lesson's own 1:1 steering plant, a 90° tap:
 
     | `kP` | Result |
     |---|---|
@@ -2568,16 +2578,16 @@ at least twice.
     | 5e-4 | peaks at 158°, within 1° only from 6.9 s |
     | 2e-3 | unstable |
 
-    The text now describes the ringing (Figures 5.1, 5.2), and §5's tuning
-    recipe has a parenthetical that says to tune down from 0.0005. Whether
-    to change the gain is the user's call; it ripples into the snapshots
-    and Lessons 6 and 7.
-  - **The SimGUI wording in Lessons 2, 3, 4, 7, 8 and the debugger aside is
-    wrong.** SimGUI's **Robot State** panel is a mode list, an OpMode
-    drop-down (listing only that mode's opmodes, by class name: `MyTeleop`,
-    not "My Teleop") and Disable/Enable; there's no "Disabled to Enabled"
-    toggle. Lessons 0, 1 and 33 are fixed; the rest aren't. Lesson 33
-    (about line 895) says "My Teleop" where it means `RobotTeleop`.
+    Figures 5.1 and 5.2 show it; §5's recipe now works from either side
+    (double while it crawls, halve while it rings), says the shipped value is
+    on the ringing side, and asks the student to put `0.0005` back for
+    Lesson 7.
+  - **Fixed 2026-11-19: the SimGUI wording.** SimGUI's **Robot State** panel
+    is a mode list, an OpMode drop-down (listing only that mode's opmodes,
+    by class name: `MyTeleop`) and Disable/Enable; there's no "Disabled to
+    Enabled" toggle. Lessons 2, 3, 4, 7, 8, 9, 17, 33 and the debugger aside
+    now say "pick **Teleoperated** and **MyTeleop**, then **Enable**" (or the
+    Autonomous/Utility equivalent).
   - **Lesson 12 §5 says "immediately applies 8 volts".** The first one to
     three ticks of a step read 3.0 V, from the default 120 A stator limit
     (about 4.6 V with it disabled, measured). A note beside Figure 12.2 says

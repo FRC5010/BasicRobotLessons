@@ -435,12 +435,15 @@ the start; it just can't hold what it gains. Too big and the controller
 overshoots by more than it fixes; too small and it never arrives; the right
 gain is the biggest one that doesn't ring.
 
-Tuning `kP` by watching the plot *is* the job. Start at `0.0005`, double it
-until it oscillates, then back off. This intuition transfers to every
-controller you'll ever write. (Figure 5.2 says that for this steering motor,
-with nothing but a bare 1:1 rotor to turn, `0.0005` is already past the point
-where it rings, so your first moves will be *down* from it, not up. Same
-recipe, different starting side.)
+Tuning `kP` by watching the plot *is* the job, and the recipe works from
+either side: if it crawls, double it; if it rings, halve it; stop at the
+biggest gain that settles without ringing. The `0.0005` you typed in sits on
+the ringing side here, because this steering motor turns nothing but a bare
+1:1 rotor, so for this motor the first moves are halvings. Try it: halve it
+a few times and watch the swings shrink until they're gone, then put
+`0.0005` back, because Lesson 7 puts a gearbox between the motor and the
+wheel and picks the story up from there. This intuition transfers to every
+controller you'll ever write.
 
 ---
 
@@ -477,9 +480,9 @@ short path. Try writing that in the challenge; it's a great `if` exercise.
 P control earns its billing as the most important idea in robotics, so here
 it is one more time: motors take **effort**, not destinations, so you close
 the gap yourself — **setpoint − measurement = error**, output = `kP × error`,
-and the shrinking error eases you into the target while its sign steers the
-direction. Tuning `kP` against a live plot — double it until it oscillates,
-back off — is a ritual you'll repeat for years. Around that core you picked
+and the push shrinks as the error does, while its sign steers the
+direction. Tuning `kP` against a live plot — double it while it crawls,
+halve it while it rings — is a ritual you'll repeat for years. Around that core you picked
 up `if / else if / else` for multi-way decisions, `runRepeatedly(...)`
 paired with `.whenCanceled(...)` for a controller that recomputes every tick
 and still cleans up after itself, a lambda quietly remembering its target,

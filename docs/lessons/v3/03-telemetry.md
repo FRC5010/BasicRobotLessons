@@ -189,7 +189,7 @@ WPILib installer, so you already have it. It plots live data, overlays
 signals, scrubs back through time, and opens `.wpilog` flight-recorder
 files.
 
-Run the robot in simulation (pick **My Teleop** → **Enabled**),
+Run the robot in simulation (pick **Teleoperated** and **MyTeleop**, then **Enable**),
 then launch AdvantageScope from the WPILib command palette → **Start
 Tool** → **AdvantageScope**. In AdvantageScope:
 
@@ -323,7 +323,7 @@ import org.wpilib.command3.SchedulerEvent;
 ```
 
 Run it again and press the button — `DriveModule/CurrentCommand` on the
-dashboard still flips between `"DriveModule[IDLE]"` and `"Drive At Speed"`,
+dashboard still flips between `"Drive With Joystick"` and `"Drive At Speed"`,
 exactly like before. What changed is *how* it knows. The old version
 asked, every tick, and got lucky every time, because nothing could finish
 between one ask and the next. The new version can't get unlucky, because

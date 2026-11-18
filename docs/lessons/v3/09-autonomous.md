@@ -241,8 +241,8 @@ every button binding you've written. Put this logic in `start()` instead and
 you'd re-register a fresh trigger on every re-enable, stacking duplicates —
 Lesson 1's exact warning, still true here.
 
-Run the robot in simulation, pick **Drive Turn Drive** on the opmode
-selector, set state to **Enabled**, and watch your plots and the Swerve tab.
+Run the robot in simulation, pick **Autonomous** and then **Drive Turn
+Drive** from the OpMode drop-down, click **Enable**, and watch your plots and the Swerve tab.
 `Drivetrain/Module0/SteerAngleDegrees` holds 0 while distance climbs to 1.0,
 the heading sweeps to 90° and settles, distance climbs again from a new zero.
 The robot ran your plan untouched — nobody's hands on the controller. That

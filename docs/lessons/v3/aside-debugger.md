@@ -111,10 +111,10 @@ double error = targetDegrees - measurement;
 ```
 
 1. Click the gutter next to that line. Red dot.
-2. Press `F5` to launch the debugger. In SimGUI, drag **Robot State** to
-   **Teleoperated**. Pick the opmode from the selector first (**My Teleop**),
-   *then* set Robot State — there's no code to run until an opmode is
-   actually selected.
+2. Press `F5` to launch the debugger. In SimGUI's **Robot State** panel,
+   pick **Teleoperated**, then **MyTeleop** from the OpMode drop-down, then
+   click **Enable** — there's no code to run until an opmode is actually
+   selected.
 3. Press **X** on the controller (from Lesson 5, that's `steerToAngle(90)`,
    bound to `westFace()`).
    Execution hits the breakpoint and VSCode steals focus.
