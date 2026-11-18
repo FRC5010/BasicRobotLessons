@@ -54,10 +54,33 @@ you asked it to be and where it actually settles, just large enough that
 
 That gap is easy to miss on a graph, because nothing looks *broken* — the
 carriage gets close, stops moving, and sits there. It's just sitting a
-little lower than you asked. Measured on this course's own gains: zeroing
-`kElevatorKG` and asking the elevator to hold `kScoreMid` settles it about
-**1.6 mm low**, permanently, for as long as the request stands. A small
-number, but it's not noise — it's `kG`'s whole job, missing.
+little lower than you asked. Figure 18.1 shows it on this course's own
+elevator, in the simulator, with every gain but `kP` set to zero.
+
+<a id="figure-18-1"></a>
+![Above: one move from stowed to the mid-score height. With the full model the carriage's height sits on the planned path the whole way; with kP alone it trails the plan by up to 8 cm while moving, then catches up. Below: the hold after the move, zoomed in to millimeters. With kP alone the carriage settles about 1.5 mm below the height asked for and stays there; with the model it sits 0.19 mm low](images/18-kp-alone.png)
+
+*Figure 18.1 — What `kP` alone does, moving and holding, next to the full model this lesson builds. The lower panel zooms in on the hold.*
+
+Start with the top panel, one move from stowed to `kScoreMid`. The
+dashed line is the height you asked for. The thick blue line is the path
+the motor controller plans to get there (§4 is about that plan; for now,
+it's simply where the carriage should be at each moment). The orange
+line is the carriage with the full model you're about to build, and it
+sits right on the blue. The green line is the same move with `kP` alone,
+and it trails the plan the whole way up, about 8 cm behind at the
+widest, catching up only once the plan stops moving. That's the same
+rule as the sag at a bigger scale: a moving carriage needs several volts,
+and `kP` can only make them out of error.
+
+Now the lower panel, which zooms in on the hold that follows, measured
+in millimeters below the height you asked for. With `kP` alone the
+carriage settles about **1.5 mm low** and stays there for as long as the
+request stands. It isn't drifting, and it isn't noise: 1.5 mm of error is
+just enough for `kP` to make the voltage that holds the carriage up,
+so the controller has nothing left to correct. A small number, but it's
+`kG`'s whole job, missing. (The model's orange line sits a fifth of a
+millimeter low; §10 comes back to it.)
 
 Deliberate, not accidental voltage is the fix: instead of asking `kP` to
 back into the right voltage through tolerated error, you compute the
@@ -564,18 +587,36 @@ first one — a gap between setpoint and height is the controller failing
 to keep up; a gap between goal and setpoint is just the profile still
 ramping, which is supposed to happen.
 
-Figure 18.1 shows all three during one move from stowed to the top of
-the travel, recorded in the simulator with this lesson's code.
+Figure 18.2 shows all three during one move from stowed to the top of
+the travel, recorded in the simulator with this lesson's code: once
+with the model, and once more with `kElevatorKV` zeroed so you can see
+what a missing gain looks like.
 
-<a id="figure-18-1"></a>
-![Above: goal, setpoint and height during one move from stowed to the top of the travel. The goal is a step to 1.5 m, the setpoint ramps up to it over about two seconds, and the height follows so closely that the two lines overlap. Below: setpoint minus height in millimeters, which holds at about 91 mm through the cruise with kElevatorKV zeroed and about a centimeter with the model](images/18-height-setpoint-goal.png)
+<a id="figure-18-2"></a>
+![Above: goal, setpoint and height during one move from stowed to the top of the travel. The goal is a step to 1.5 m and the setpoint ramps up to it over about two seconds. The height with the model follows so closely that it overlaps the setpoint; with kElevatorKV zeroed it runs parallel but about 9 cm behind through the middle of the move. Below: setpoint minus height in millimeters, which opens, holds at about 91 mm through the cruise and closes with kElevatorKV zeroed, and stays near a centimeter with the model](images/18-height-setpoint-goal.png)
 
-*Figure 18.1 — One move from stowed to the top. Above: goal, setpoint and height. Below: setpoint minus height, with the model and with `kElevatorKV` zeroed.*
+*Figure 18.2 — One move from stowed to the top. Above: goal, setpoint and height, with the model and with `kElevatorKV` zeroed. Below: setpoint minus height for both.*
 
-In the top panel the height sits so close to the setpoint that the two
-lines merge, which is what a good model looks like. The gap you tune is
-too small to see at that scale, so the lower panel plots it on its own,
-in millimeters. That's the panel the rest of this section reads from.
+Read the top panel first. The dashed goal jumps to 1.5 m the moment you
+press the button and stays there. The thick blue setpoint is Motion
+Magic's plan: it speeds up, cruises at 1 m/s through the middle, and
+slows into the goal about two seconds later. The long gray arrow on the
+left is the gap between those two, and it's the profile doing its job,
+not a problem. The orange height, with the model, sits on the setpoint
+so closely that the two lines merge at this scale. The green height is
+the same move with `kElevatorKV` zeroed: it runs parallel to the
+setpoint but about 9 cm behind it, and only catches up as the profile
+slows near the top.
+
+The lower panel zooms in on the gap you tune, setpoint minus height, in
+millimeters. Look at the *shape* of the green line before its size: it
+opens while the profile speeds up, holds flat for the whole cruise, and
+closes as the profile slows down. A gap that only exists while the
+carriage moves, and is biggest when it moves fastest, points straight at
+the gain that pays for speed. The orange line, with the model, never
+gets past about a centimeter, which is what a good model looks like on
+this graph: small, and flat once the carriage is up to speed. The rest
+of this section reads the gains off graphs like this one.
 
 The order that makes sense to tune in is the order the model was built:
 `kG` first, then `kV`, then `kA`, then `kP` last, as the smallest
@@ -583,32 +624,24 @@ possible trim.
 
 - **`kG` wrong** shows up as a *steady offset even at rest* — the
   carriage settles a fixed distance from the setpoint and stays there no
-  matter how long you wait. Measured on this course's own numbers:
-  zeroing `kElevatorKG` sags the hold by about **1.6 mm**. Small, because
-  0.17 V is small, but it never goes away on its own.
-- **`kV` wrong** shows up *only while moving* — position lagging
-  setpoint by a gap that opens while the profile speeds up, holds
-  through the constant-speed part, and closes again as the profile
-  decelerates. You can predict its size: a
+  matter how long you wait. That's the green line in
+  [Figure 18.1](#figure-18-1)'s lower panel (holding still, `kP` alone
+  is the same as `kG` missing): the hold sags about **1.5 mm**. Small,
+  because 0.17 V is small, but it never goes away on its own.
+- **`kV` wrong** shows up *only while moving*: the green lines in
+  Figure 18.2. You can predict its size: a
   1.0 m/s cruise is about 6.3 drum rotations a second, which costs
   `1.42 × 6.3 ≈ 9 V`, and with no `kV`, `kP = 20` can only make 9 V out
-  of about 0.45 rotations of error — some 7 cm. Measured moving the full
-  travel range with `kElevatorKV` zeroed, the logged gap holds at about
-  **9 cm** through the cruise: the green line in Figure 18.1's lower
-  panel. With the model in place, the same move logs **1–2 cm** (the
-  orange line). Expect your own numbers to wander by a centimeter from
-  run to run.
+  of about 0.45 rotations of error — some 7 cm. Measured with
+  `kElevatorKV` zeroed: about **9 cm**. With the model in place:
+  **1–2 cm**. Expect your own numbers to wander by a centimeter from run
+  to run.
 
-  Why 9 cm and not 7? The motor also reports the error it's actually
-  working from (Phoenix's `ClosedLoopError` signal, which this course
-  doesn't log), and with `kV` zeroed it reads about 7 cm through the
-  cruise, right on the prediction. In the simulator, the logged gap
-  comes out a centimeter or two bigger than that. The run with the model
-  has the same extra: its `ClosedLoopError` is about a twentieth of a
-  millimeter on most ticks of the cruise, so nearly all of its 1–2 cm is
-  that extra too. Without `kV`, `kP = 20` is doing all the work of
-  keeping the carriage moving; with the model, it has almost nothing
-  left to do, which is exactly what computing the model first was for.
+  Why 9 and not 7? The motor's own error report (Phoenix's
+  `ClosedLoopError`, which this course doesn't log) does read 7 cm; in
+  the simulator the logged gap runs a centimeter or two bigger, and that
+  extra is most of the model's 1–2 cm too. So with the model in place,
+  `kP` has almost nothing left to do while the carriage moves.
 - **`kA` wrong** is the subtlest: a brief spike in the setpoint-vs-height
   gap right at the start and end of the move, where the profile is
   accelerating or decelerating hardest, vanishing once it reaches
@@ -616,7 +649,8 @@ possible trim.
   easy to miss unless you're specifically looking at the ramp edges.
 - **`kP`** should be the last thing you touch, and only a little. With
   the model correct, the fully-settled gap between setpoint and height
-  on this course's own gains lands under a quarter of a millimeter — if
+  on this course's own gains lands under a quarter of a millimeter (the
+  orange line in Figure 18.1's lower panel) — if
   you find yourself raising `kP` to chase a bigger gap than that, the
   actual bug is almost always upstream, in `kG`, `kV`, or `kA`.
 
@@ -635,7 +669,7 @@ possible trim.
 > already are). Number 2 takes `kG` away on purpose, and on a real elevator
 > `kG` is part of what holds the carriage up: without it, the carriage drops
 > until `kP` has built up enough error to catch it. With this course's
-> numbers that's 1.6 mm; a heavier carriage drops further. In sim, being
+> numbers that's about 1.5 mm; a heavier carriage drops further. In sim, being
 > wrong is free — that's the point of having it.
 
 1. **Code — add a fourth preset.** Give `ElevatorConstants` a `kScoreLow`
@@ -643,7 +677,8 @@ possible trim.
 2. **Code — watch the sag.** Temporarily set `kElevatorKG` to `0.0`, command
    `kScoreMid`, and let it settle. Compare the steady-state
    `HeightMeters` against `GoalMeters` on the graph — you should see
-   almost exactly the gap §10 measured. Put `0.17` back when you're done.
+   almost exactly the gap in Figure 18.1's lower panel. Put `0.17` back
+   when you're done.
 3. **Code — ask for somewhere the elevator can't go.** Bind a spare button to
    `elevator.goToHeight(Meters.of(3.0))` — well past `kMaxHeight`. Watch
    `GoalMeters` on the graph clamp to `1.5` instead of jumping to `3.0`,

@@ -4,7 +4,7 @@ The figure-by-figure plan for pictures in `docs/lessons/v3/`. The conventions (f
 
 This is a contributor document, kept off the website by the `lesson-plan-*.md` exclude. Nothing here is pasted into a lesson. It merges four proposal files (Lessons 0-8 and the setup aside, 9-17, 18-26, 27-34 and the debugger and git asides).
 
-**Counts:** 87 figures. Batch 1: 35. Batch 2: 35. Batch 3: 11. Needs the user: 4. After Lesson 34's migration: 2. Dropped or merged: see section 5.
+**Counts:** 87 figures. Batch 1: 39. Batch 2: 34. Batch 3: 8. Needs the user: 4. After Lesson 34's migration: 2. Dropped or merged: see section 5.
 
 ## 1. How a batch is built
 
@@ -22,6 +22,7 @@ For each figure in the batch:
   ```
   Blank line before the caption. Asides: `figure-d-1`, `figure-g-2`, `figure-s-1`, caption `Figure D.1`.
 - [ ] **Prose reference:** "Figure N.k shows..." at the point the student needs it (the "Text changes" field). Every figure is referred to at least once.
+- [ ] **Walk the reader through a graph** (user, 2026-11-18): what each line is, which panel to read first, what shape to notice, and what it means. A paragraph or two per graph is right; graphs of control behaviour (P, feedforward, profiles) carry the course's control teaching and get the most room. Side explanations (a simulator quirk, a measurement caveat) stay to a sentence or three.
 - [ ] **Cross-lesson links:** add each "Linked from" back-reference as `[Figure N.k](NN-slug.md#figure-N-k)`, only from lessons *after* the figure's home, and only once the figure exists.
 - [ ] **Numbers match the text.** If the plot and the prose disagree, fix the prose (or re-measure), per "a graph is a measurement". Re-measuring a lesson's numbers means regenerating its figures.
 - [ ] **Flow re-read** of the section around each figure, including the "needs detail" and "text issue" notes below.
@@ -32,7 +33,7 @@ For each figure in the batch:
 
 ## 2. Summary table
 
-Type: a = sim plot, b = SimGUI screenshot, c = SVG diagram, d = needs the user. All status: planned, except 18.2, built 2026-11-18 as the pilot (Figure 18.1 in the lesson until 18.1 here is built).
+Type: a = sim plot, b = SimGUI screenshot, c = SVG diagram, d = needs the user. All status: planned, except 18.1 and 18.2, built 2026-11-18 as the pilot. Batches changed after the pilot review (section 8): 7.3, 8.1, 12.3 and 18.1 to batch 1, 15.4 and 17.2 to batch 2.
 
 | Figure | Title | Lesson | Type | Priority | Batch |
 |---|---|---|---|---|---|
@@ -51,8 +52,8 @@ Type: a = sim plot, b = SimGUI screenshot, c = SVG diagram, d = needs the user. 
 | 6.2 | `driveDistance(1.0, 0.4)` trace | 6 | a | medium | 2 |
 | 7.1 | Chassis frame, corners and the two moves | 7 | c | high | 1 |
 | 7.2 | AdvantageScope: Swerve tab, States slot | 7 | d | medium | needs user |
-| 7.3 | Steering 90 degrees through 25:1, two gains | 7 | a | medium | 2 |
-| 8.1 | `turnToHeading(90)`: heading, command, band | 8 | a | medium | 2 |
+| 7.3 | Steering 90 degrees through 25:1, two gains | 7 | a | high | 1 |
+| 8.1 | `turnToHeading(90)`: heading, command, band | 8 | a | high | 1 |
 | 8.2 | AdvantageScope: Swerve tab, Rotation slot | 8 | d | low | needs user |
 | 9.1 | Why scale drive by cosine | 9 | a | medium | 2 |
 | 9.2 | Sequence, parallel, race, optional | 9 | c | medium | 2 |
@@ -62,7 +63,7 @@ Type: a = sim plot, b = SimGUI screenshot, c = SVG diagram, d = needs the user. 
 | 11.1 | SimGUI: the Field widget | 11 | b | medium | 2 |
 | 12.1 | Coach and player (50 Hz over 1 kHz) | 12 | c | low | 3 |
 | 12.2 | The sensor and gear chain | 12 | c | high | 1 |
-| 12.3 | A feedforward step | 12 | a | medium | 2 |
+| 12.3 | A feedforward step | 12 | a | high | 1 |
 | 13.1 | The IO door | 13 | c | high | 1 |
 | 13.2 | Record, then replay | 13 | c | high | 1 |
 | 13.3 | The x1.1 experiment | 13 | a | medium | 2 |
@@ -71,17 +72,17 @@ Type: a = sim plot, b = SimGUI screenshot, c = SVG diagram, d = needs the user. 
 | 15.1 | Where the cameras are | 15 | c | high | 1 |
 | 15.2 | Real camera and simulated camera, same wire | 15 | c | high | 1 |
 | 15.3 | SimGUI: AdvantageKit menu for a camera | 15 | b | medium | 2 |
-| 15.4 | A parked robot still drifts | 15 | a | medium | 3 |
+| 15.4 | A parked robot still drifts | 15 | a | medium | 2 |
 | 16.1 | The estimate creeps ahead and stays there | 16 | a | high | 1 |
 | 16.2 | Truth and estimate are different loops | 16 | c | medium | 2 |
 | 16.3 | The grip limit | 16 | a | medium | 2 |
 | 17.1 | Three loops at once | 17 | c | low | 3 |
-| 17.2 | Can it stop in time? | 17 | a | medium | 3 |
+| 17.2 | Can it stop in time? | 17 | a | medium | 2 |
 | 17.3 | SimGUI: DS window for an auto | 17 | b | high | 1 |
 | 17.4 | Two Corners, drawn and driven | 17 | a | high | 1 |
 | 17.5 | Cross-track error at the corner | 17 | a | high | 1 |
-| 18.1 | Why `kP` alone sags | 18 | a | low | 3 |
-| 18.2 | Goal, setpoint and height in one move | 18 | a | high | 1 |
+| 18.1 | What `kP` alone does, moving and holding | 18 | a | high | 1 (built) |
+| 18.2 | Goal, setpoint and height in one move | 18 | a | high | 1 (built) |
 | 19.1 | Canvas, anchor and a chain of segments | 19 | c | medium | 2 |
 | 19.2 | SimGUI: the Mechanism drawing | 19 | b | medium | 2 |
 | 20.1 | Arm angle convention and the drawing angle | 20 | c | high | 1 |
@@ -124,7 +125,7 @@ Type: a = sim plot, b = SimGUI screenshot, c = SVG diagram, d = needs the user. 
 | G.2 | Fast-forward, and the diamond | Git aside | c | medium | 2 |
 | G.3 | Rebase: replaying commits onto a new base | Git aside | c | high | 1 |
 
-Batch 3 reasons, beyond "low priority": 15.4 and 17.2 are medium but moved to keep Lessons 15 and 17 at three figures in batches 1-2; 20.2 and 31.2 are medium but restate a table the lesson keeps (the proposers said so), so they wait to see whether the plot should replace the table.
+Batch 3 reasons, beyond "low priority": 20.2 and 31.2 are medium but restate a table the lesson keeps (the proposers said so), so they wait to see whether the plot should replace the table.
 
 ## 3. Per-lesson details
 
@@ -270,7 +271,7 @@ No figure proposed: lambdas, suppliers and a deadband; a transfer-curve plot wou
 - Text changes: §7 "Now the payoff for publishing `ModuleStates`:" + "(Figure 7.2)".
 - Linked from: Lesson 8 §6, Lessons 10, 11, 12, 16.
 
-**Figure 7.3 — Steering a 90° turn through the real 25:1 gearbox** · medium · (a) · batch 2 · `07-steering-geared-two-gains.png`
+**Figure 7.3 — Steering a 90° turn through the real 25:1 gearbox** · high · (a) · batch 1 · `07-steering-geared-two-gains.png`
 - Where: §7, after "Watch a wheel chase its target on the Swerve tab" and before/at "**Retune it the Lesson 5 way**".
 - Shows: x time, y steering angle. One `SwerveModule` 0 → 90°: `kP = 0.0005` (crawls) and `kP = 0.005` (settles), dashed 1° band, marks at 6.3 s and 9.0 s for the first trace. Show the first second clearly (log axis or inset).
 - Why: the text gives timings in prose and says the taught gain now needs ten times more; two curves make "wrong plant, not a bug" concrete, against Figure 5.2.
@@ -280,7 +281,7 @@ No figure proposed: lambdas, suppliers and a deadband; a transfer-curve plot wou
 
 ### Lesson 8 — Gyro & heading
 
-**Figure 8.1 — `turnToHeading(90)`: heading, command and finish band** · medium · (a) · batch 2 · `08-turn-to-heading.png`
+**Figure 8.1 — `turnToHeading(90)`: heading, command and finish band** · high · (a) · batch 1 · `08-turn-to-heading.png`
 - Where: §6, after "heading sweeps toward `90°`, slows as it approaches, settles inside the ±2° band, and the command ends."
 - Shows: x time. Top: `Drivetrain/HeadingDegrees` 0 → 90° with a shaded ±2° band and a mark where the loop exits. Bottom: commanded `omega` (fraction): flat at the ±0.5 clamp, then the P ramp down; mark where the clamp releases at error 0.5/0.02 = 25° (heading 65°).
 - Why: saturated-then-proportional is invisible in a heading-only plot; §3 says the clamp is tighter "on purpose" and "no momentum to fight" needs the picture.
@@ -370,7 +371,7 @@ No figure proposed: lambdas, suppliers and a deadband; a transfer-curve plot wou
 - Text changes: after the paragraph "Figure 12.2 shows the two chains." Caption states the rule: the ratio before the sensor is `RotorToSensor`, after it `SensorToMechanism`.
 - Linked from: Lesson 13 §4 (`ModuleIOTalonFX` holds this config).
 
-**Figure 12.3 — A feedforward step** · medium · (a) · batch 2 · `12-feedforward-step.png`
+**Figure 12.3 — A feedforward step** · high · (a) · batch 1 · `12-feedforward-step.png`
 - Where: §7 "Run it and feel the difference", after "*then* bring in a little `kP` for the residue."
 - Shows: x 0-1.5 s. Top: requested and measured wheel speed for a step to 2 m/s, `kDriveKV` 0.8 and 0.4 (Try It #2). Bottom: applied drive voltage, the instant jump to `kV × requested`.
 - Why: "the voltage jumps instantly before any error exists" and "speed settles low" are things the reader is asked to see (Try It #1, #2).
@@ -448,13 +449,13 @@ No figure proposed: lambdas, suppliers and a deadband; a transfer-curve plot wou
 - Text changes: after "`[...]` once frames arrive." "Figure 15.3 shows where it is."
 - Linked from: Lesson 16 (`Drivetrain/SimulatedPose` under RealOutputs); Lesson 18 (`Elevator/...`); Figures 19.2 and 30.1 (same menu tree); anywhere "NetworkTables → AdvantageKit" is quoted (Lessons 18-30).
 
-**Figure 15.4 — A parked robot still drifts** · medium · (a) · batch 3 · `15-parked-drift.png`
+**Figure 15.4 — A parked robot still drifts** · medium · (a) · batch 2 · `15-parked-drift.png`
 - Where: Try It #3, after the "Here's the answer" paragraph (not after "It drifts — between 25 and 50 cm in 60 seconds", which would give the answer away before the "Work out why" request).
 - Shows: distance-from-start against time for three 60 s runs with endpoints labelled, or three top-down tracks.
 - Why: "drift from vision noise alone, nothing moving" is the point; the reader is asked to explain it.
 - Made from: **measured** (Lesson 15 Try It #3: 0.51, 0.26, 0.38 m in 60 s; LOOP, `Random` camera) but a per-tick pose log is needed: re-run.
 - Text changes: "Figure 15.4 shows three runs."
-- Linked from: Lesson 16 §6 and §7. Batch 3 because Lesson 15 already has three figures in batches 1-2.
+- Linked from: Lesson 16 §6 and §7. (Was batch 3 to keep Lesson 15 at three figures; the user lifted that cap.)
 
 ### Lesson 16 — Ground truth
 
@@ -492,13 +493,13 @@ No figure proposed: lambdas, suppliers and a deadband; a transfer-curve plot wou
 - Text changes: "(Figure 17.1)".
 - Linked from: Lesson 26 §5 (cross-track P on a fixed line; Figure 26.1 reuses the frame idea).
 
-**Figure 17.2 — Can it stop in time?** · medium · (a) · batch 3 · `17-can-it-stop.png`
+**Figure 17.2 — Can it stop in time?** · medium · (a) · batch 2 · `17-can-it-stop.png`
 - Where: §5, after "0.33 m of stopping fits inside 0.4 m of warning, so the robot arrives."
 - Shows: speed (y) against distance remaining (x, 0 at the end). The loop's request `min(vmax, 5 × distance)` and the best-stopping curve `v = √(2 a d)` at 6 m/s², for v_max 2 m/s (arrives) and 3 m/s (braking curve above the request: overshoots), with the measured speed of the 2 and 3 m/s runs on top.
 - Why: the arithmetic with 0.4, 0.33, 0.6, 0.75 m is what a plot of two curves does at a glance; Try It #2 returns to it.
 - Made from: constants (`kTranslationP = 5`, `default_max_acceleration` = 6) for the curves; **measured** speeds from LOOP Two Corners at 2 and 3 m/s (Lesson 17 Try It #2: 69-74 cm past the corner, 36-37 cm past the end at 3 m/s). Re-run for the series.
 - Text changes: after the arithmetic bullets "Figure 17.2 plots both curves"; Try It #2 refers back.
-- Linked from: Lesson 26 (the handoff speed). Batch 3 because Lesson 17 already has three figures in batches 1-2.
+- Linked from: Lesson 26 (the handoff speed). (Was batch 3 to keep Lesson 17 at three figures; the user lifted that cap.)
 
 **Figure 17.3 — SimGUI: the DS window for an auto** · high · (b) · batch 1 · `17-simgui-ds-window.png`
 - Where: §10 "Run it", after "set **Alliance Station** to **Blue 1**."
@@ -526,13 +527,14 @@ No figure proposed: lambdas, suppliers and a deadband; a transfer-curve plot wou
 
 ### Lesson 18 — Scoring elevator
 
-**Figure 18.1 — Why `kP` alone sags (the permanent gap)** · low · (a) · batch 3 · `18-kp-sag.png`
-- Where: §2 "Why `kP` alone sags", after "just large enough that `kP × gap` happens to equal the holding voltage".
-- Shows: height error (mm) against time while holding `kScoreMid`, with `kElevatorKG = 0` (settles 1.56 mm low and stays) and with the model (0.19 mm low).
-- Why: 1.6 mm is too small to picture "quiet compromise"; a line that goes flat below zero is the claim. Weak: 1.6 mm on a 0.75 m scale looks like nothing, which is also the lesson's point.
-- Made from: **measured** (Lesson 18, Lessons 7-22 alpha-8 block: RIG, `kG` zeroed sag 1.5576 mm; with model 0.194 mm short). Re-run for the series.
-- Text changes: "Figure 18.1 shows the hold." §10 repeats the numbers.
-- Linked from: none.
+**Figure 18.1 — What `kP` alone does, moving and holding** · high · (a) · batch 1 · `18-kp-alone.png`
+- Where: §2 "Why `kP` alone sags", after "It's just sitting a little lower than you asked."
+- Shows: top, one move stowed → `kScoreMid` in meters: goal, setpoint, height with the model, height with `kP` alone (`kElevatorKG`, `kElevatorKV`, `kElevatorKA` zeroed), the widest lag marked (8 cm). Bottom, the hold zoomed to mm below the goal: `kP` alone about 1.5 mm low for good, the model 0.19 mm.
+- Why: "P needs error for every volt" seen twice, as lag while moving and as sag while holding. Broadened from the planned hold-only plot after the pilot review (the user asked for the `kV = 0` difference to show in a height plot and suggested the `kP`-only graph).
+- Made from: **measured** 2026-11-18, `probes/Fig18KpAlone.java` (same method as 18.2, 300 ticks), data `18-kp-alone.csv` and `18-kp-alone-model.csv`. Peak lag 82.1 mm at 0.74 s; the hold reads 1.52 or 1.56 mm below the goal (it toggles by 0.039 mm, the height reading's step), mean 1.54; the model 0.194 mm. The lesson now says "about 1.5 mm" in §2, §10 and the Try It callout (it said 1.6, from the kG-only 1.5576).
+- Text changes (done): §2 has a two-paragraph walkthrough (top panel, then the hold); §10's `kG` and `kP` bullets point at its lower panel; Try It #2 compares against it.
+- Linked from: none yet.
+- **Status: built 2026-11-18** (pilot, second round).
 
 **Figure 18.2 — Goal, setpoint and height during one move** · high · (a) · batch 1 · `18-height-setpoint-goal.png`
 - Where: §10 "Reading the gains off a graph", after "Three curves, and each one answers a different question".
@@ -541,7 +543,8 @@ No figure proposed: lambdas, suppliers and a deadband; a transfer-curve plot wou
 - Made from: **measured** (Lesson 18, Lessons 7-22 block: RIG, stowed to `kMaxHeight`, 20 ms schedule after a 2 s warm-up; 11.3 mm in 26 of 30 moves, 20.0-20.2 mm in 4; `kElevatorKV` zeroed 90.96-90.98 mm). Use one of the 26 "11.3 mm" moves; the lag panel adds a `kElevatorKV = 0` run.
 - Text changes: after the three-curve sentence "Figure 18.2 shows all three on one move." Put it before the "`kG` wrong / `kV` wrong" bullets. Text says "1-2 cm" and the plot reads 1.1 cm: say "about a centimetre" in the alt text.
 - Linked from: Lesson 20 §9 ("the same three curves as Figure 18.2", replacing a separate arm plot); Lesson 27 §4 ("P corrects, doesn't sustain"); Lesson 32 §4-5 ("finding the tick where a goal changed"); Lesson 33 §8.
-- **Status: built 2026-11-18 (the pilot), as Figure 18.1** while it's the lesson's only figure; building Figure 18.1 here (the `kP` sag, §3) makes it 18.2, so fix Lesson 18's two references and Lesson 20's link then. Lesson 20 §9's link is in; the other three "Linked from" lessons are not yet.
+- **Status: built 2026-11-18 (the pilot); Figure 18.2 since the second round**, when 18.1 was built. Lesson 20 §9's link is in; the other three "Linked from" lessons are not yet. Second round: the top panel also draws the `kElevatorKV = 0` height (9 cm behind, marked), and §10 walks through both panels; the 7 cm note is three sentences.
+  - **Open, not measured:** §10's `kA` bullet says a wrong `kA` shows as a brief spike at the ramp edges. At `kElevatorKA = 0.003` and 2 m/s² that's about 0.04 V, 0.3 mm of error, well under the 1-2 cm logging extra, so it likely can't be seen in the logged gap. Check before writing a `kA` figure.
   - Data: `probes/Fig18HeightSetpointGoal.java` (2 s hold, two practice round trips, then one recorded move; six columns), model run peak 11.3 mm, `kElevatorKV = 0` run 91.0 mm.
   - **What building it found:** the 91 mm is a flat plateau through the cruise, not a transient, and the firmware's own `ClosedLoopError` reads about 71 mm there (−0.05 mm with the model), so the logged gap carries an extra 1-2 cm in the simulator. The old "the 7 cm, plus a little extra while the profile is still speeding up" and "`kP = 20` is doing real work either way" were rewritten (CLAUDE.md, the batch 1 Lesson 18 bullet). The plot's "controller lag (tune this)" label became a description of the shape for the same reason.
   - Look: two panels (curves above, the gap in mm below); setpoint drawn wide under the height so it shows where they overlap. At a 390 px phone width the annotation text is small (about 7 px).
@@ -956,12 +959,12 @@ Back-references to add, a figure then the lessons that link to it. Always from a
 | 15.1 | L27, L30, Figure 34.1 |
 | 15.2 | L16 §7, L30 |
 | 15.3 | L16, L18-L30 wherever "NetworkTables → AdvantageKit" appears; Figures 19.2 and 30.1 |
-| 15.4 | L16 §6 and §7 (batch 3) |
+| 15.4 | L16 §6 and §7 (batch 2) |
 | 16.1 | L17 §10, L21 (Figure 21.1), L26, L27 |
 | 16.2 | L25, L26 |
 | 16.3 | L26 §1, L10 (max speed) if relevant |
 | 17.1 | L26 §5 (batch 3; only if built) |
-| 17.2 | L26 (batch 3) |
+| 17.2 | L26 (batch 2) |
 | 17.3 | L24 §10, L25, L26, L27, L33 |
 | 17.4 | L25 §5, L26 §1, L27 |
 | 17.5 | L25 §9, Try It #3 in L17 |
@@ -1064,3 +1067,4 @@ Decided by the user (2026-11-18):
 1. **Lesson 32's plots** are drawn here from the recorded logs, not AdvantageScope screenshots.
 2. **Figure 8.2** stays on the "needs the user" list.
 3. **A pilot first:** Lesson 18's goal / setpoint / height figure (working ID 18.2; built as Figure 18.1 while it's the lesson's only figure), for the user to judge the look, caption and text changes before the rest.
+4. **Pilot review** ("overall good"): keep side explanations like the 7 cm one succinct; the graph prose should be fuller, so it's easier to see the point; understanding P and model-based control through graphs is important; **no cap of three figures per lesson** where more fill in detail; show the `kV = 0` difference in a height plot, and the `kP`-only graph (built as 18.1). Applied: 18.1 built, 18.2 redrawn, control figures 7.3, 8.1 and 12.3 raised to high and batch 1, 15.4 and 17.2 back to batch 2.

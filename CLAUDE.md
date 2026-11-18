@@ -979,7 +979,7 @@ listed at the end of the working inventory, not kept in the repo.
   Kraken job's note that the true hold is 0.174 and the floor would shift
   0.03 mm doesn't hold for the integrated sim.
   **The logged gap is bigger than the controller's error while moving
-  (2026-11-18, Figure 18.1's probe plus a second `TalonFX` handle on ID 20
+  (2026-11-18, Figure 18.2's probe plus a second `TalonFX` handle on ID 20
   reading `getClosedLoopError()`):** through the cruise the firmware's own
   error is −0.05 mm with the model (median of two runs; one run showed
   −4 to +10 mm on 8 of 36 ticks) and 70.7 mm with `kV` zeroed, while
@@ -993,7 +993,12 @@ listed at the end of the working inventory, not kept in the repo.
   step against the firmware's own clock is a guess). Lesson 18 §10 now
   says this, and that `kP` has almost nothing to do at cruise with the
   model. Lesson 20's bimodal arm lag (2.2° / 3.9°) probably has the same
-  extra; not checked.
+  extra; not checked. **`kP` alone** (`kG`, `kV`, `kA` zeroed, stowed →
+  `kScoreMid`, Figure 18.1): 82 mm behind at the widest while moving; the
+  hold reads 1.52 or 1.56 mm below the goal (it toggles by the height
+  reading's 0.039 mm step), mean 1.54, so the lesson says **about 1.5 mm**
+  where it said 1.6 (the `kG`-only 1.5576 rounded). The model holds 0.194
+  mm low, as above.
 - **Lesson 20, RIG at Lesson 20:** the hold table is unchanged
   (+0.24 at −20°, +0.25 / +0.18 / 0.00 / −0.18 / −0.25), as is the 0.09° gap
   at 0°. Peak lag intake to stow is **bimodal with the sampling phase**:
@@ -2479,6 +2484,14 @@ plan is [docs/lesson-plan-v3-figures.md](docs/lesson-plan-v3-figures.md).
 - **The prose refers to a figure by its number** ("Figure 18.2 shows…"), never
   "the image below". Every figure is referred to at least once, at the point
   where the student needs it.
+- **Walk the reader through a graph** (user, 2026-11-18): what each line
+  is, which panel to read first, what shape to notice, and what it means.
+  A paragraph or two per graph is right. Graphs of control behaviour (P,
+  feedforward, profiles) carry the course's control teaching and get the
+  most room. A side explanation, such as a simulator quirk, stays to a
+  sentence or three.
+- **There's no cap on figures per lesson.** Add one wherever it fills in
+  detail the prose can't (user, 2026-11-18, lifting the plan's three).
 - **Link a figure from another lesson** like this:
   `[Figure 18.2](18-elevator.md#figure-18-2)`. The anchor works on the site
   (checked). On GitHub's own view it relies on GitHub's `user-content-`
@@ -2510,7 +2523,7 @@ plan is [docs/lesson-plan-v3-figures.md](docs/lesson-plan-v3-figures.md).
   - AdvantageScope and real-hardware pictures can't be made in this
     container. The plan lists them for the user to supply.
 
-**The tooling** (first used for Figure 18.1, 2026-11-18; details in
+**The tooling** (first used for Figures 18.1 and 18.2, 2026-11-18; details in
 [tools/figures/README.md](tools/figures/README.md)):
 - `tools/figures/measure.sh LESSON PROBE.java OUT.csv [--replace FILE OLD
   NEW]...` builds the lesson through `verify-lessons-v3.sh`, makes the
@@ -2523,7 +2536,7 @@ plan is [docs/lesson-plan-v3-figures.md](docs/lesson-plan-v3-figures.md).
   `tools/figures/requirements.txt`, in a venv.
 - **Look at the figure before writing it into a lesson.** Plotting a
   series the text only summarised can show the text is wrong. Figure
-  18.1's flat 91 mm plateau contradicted Lesson 18's "plus a little extra
+  18.2's flat 91 mm plateau contradicted Lesson 18's "plus a little extra
   while the profile is still speeding up".
 - On 2026-11-18, Maven Central through this container's proxy returned
   intermittent 404s, about one request in six, a different artifact each

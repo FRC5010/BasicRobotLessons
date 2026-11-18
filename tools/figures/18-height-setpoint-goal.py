@@ -1,4 +1,4 @@
-"""Lesson 18: goal, setpoint and height during one move, and the lag with and without kV.
+"""Lesson 18: goal, setpoint and height during one move, with and without kV, and the lag.
 
 Data: tools/figures/data/18-height-setpoint-goal.csv (the shipped gains) and
 18-height-setpoint-goal-kv0.csv (kElevatorKV zeroed), both from
@@ -36,7 +36,9 @@ def main():
     top.plot(t, model["setpoint_m"], color=figstyle.SETPOINT, linewidth=5,
              label="setpoint (SetpointMeters)")
     top.plot(t, model["height_m"], color=figstyle.MEASURED, linewidth=1.6,
-             label="height (HeightMeters)")
+             label="height (HeightMeters), with the model")
+    top.plot(no_kv["t_s"], no_kv["height_m"], color=figstyle.ALTERNATE,
+             label="height, kElevatorKV = 0")
     top.set_ylabel("carriage height (m)")
     top.legend(loc="lower right", frameon=False)
 
@@ -47,8 +49,16 @@ def main():
     # Right of the arrow and high up, clear of the axis labels and of the rising curve.
     top.text(t[i] + 0.08, 1.2, "goal \u2212 setpoint:\nthe profile still\nramping (fine)",
              color=figstyle.NEUTRAL, ha="left", va="center")
-    top.text(0.98, 0.55, "setpoint \u2212 height is too small to see\nat this scale: it's the lower panel",
+    top.text(0.98, 0.55, "with the model, setpoint \u2212 height\nis too small to see here:\nthe lower panel zooms in",
              transform=top.transAxes, ha="right", va="center", color=figstyle.NEUTRAL)
+
+    # The kV-less carriage's gap, in the middle of the cruise.
+    j = min(range(len(no_kv["t_s"])), key=lambda k: abs(no_kv["t_s"][k] - 1.1))
+    sp_j, h_j = no_kv["setpoint_m"][j], no_kv["height_m"][j]
+    top.annotate("", xy=(no_kv["t_s"][j], h_j), xytext=(no_kv["t_s"][j], sp_j),
+                 arrowprops={"arrowstyle": "<->", "color": figstyle.NEUTRAL, "lw": 1.2})
+    top.text(no_kv["t_s"][j] + 0.08, h_j - 0.05, f"kElevatorKV = 0:\n{(sp_j - h_j) * 100:.0f} cm behind",
+             color=figstyle.NEUTRAL, ha="left", va="top")
 
     lag_model = [(s - h) * 1000 for s, h in zip(model["setpoint_m"], model["height_m"])]
     lag_no_kv = [(s - h) * 1000 for s, h in zip(no_kv["setpoint_m"], no_kv["height_m"])]

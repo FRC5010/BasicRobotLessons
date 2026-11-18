@@ -33,5 +33,17 @@ tools/figures/measure.sh 18 tools/figures/probes/Fig18HeightSetpointGoal.java \
     --replace Constants.java "kElevatorKV = 1.42;" "kElevatorKV = 0.0;"
 ```
 
+Lesson 18's `kP`-alone figure, with every gain but `kP` zeroed:
+
+```bash
+tools/figures/measure.sh 18 tools/figures/probes/Fig18KpAlone.java \
+    tools/figures/data/18-kp-alone-model.csv
+tools/figures/measure.sh 18 tools/figures/probes/Fig18KpAlone.java \
+    tools/figures/data/18-kp-alone.csv \
+    --replace Constants.java "kElevatorKG = 0.17;" "kElevatorKG = 0.0;" \
+    --replace Constants.java "kElevatorKV = 1.42;" "kElevatorKV = 0.0;" \
+    --replace Constants.java "kElevatorKA = 0.003;" "kElevatorKA = 0.0;"
+```
+
 Then run the generator again, and check that the numbers the figure shows still
 match the lesson text.
