@@ -266,7 +266,7 @@ AdvantageKit → RealOutputs → Alerts**. Figure 30.1 shows the menu, which
 opens three levels deep, and the panel that appears when you click **Alerts**.
 
 <a id="figure-30-1"></a>
-![SimGUI's NetworkTables menu opened to AdvantageKit, then RealOutputs, then Alerts, and beside it the panel that opens, titled /AdvantageKit/RealOutputs/Alerts, with a Medium group holding one amber warning, Elevator has never been homed](images/30-simgui-alerts-panel.png)
+![SimGUI's NetworkTables menu opened to AdvantageKit, then RealOutputs, then Alerts, and below it the panel that opens, titled /AdvantageKit/RealOutputs/Alerts, with a Medium group holding one amber warning, Elevator has never been homed](images/30-simgui-alerts-panel.png)
 
 *Figure 30.1 — The path to the alerts panel (1), and the panel (2) on a fresh launch.*
 
