@@ -22,6 +22,10 @@ python3 tools/figures/18-height-setpoint-goal.py
 
 ## Re-measuring its data
 
+Every generator's docstring gives the exact `measure.sh` commands for its own data
+(which probe, which lesson state, which constants it changes). The Lesson 18 ones,
+as an example:
+
 The v3 builds need JDK 25.
 
 ```bash
