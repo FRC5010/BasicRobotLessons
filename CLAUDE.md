@@ -2408,6 +2408,86 @@ Prose conventions used consistently across lessons:
 - **WPILib Units** (`edu.wpi.first.units`) get peppered in from [Lesson 10](docs/lessons/v3/10-kinematics.md) on — *after* the by-hand math has been taught, never before (Lessons 1–9 keep bare `double`s with unit-suffixed names like `kMaxSpeedMps`, which is the teaching version). Scope is **constants + signatures**: named physical constants (`Distance kWheelDiameter = Inches.of(4)`, `LinearVelocity kMaxSpeed = MetersPerSecond.of(...)`, chassis `Distance`s) and human-authored command parameters (`driveDistance(Distance distance)`, `turnToHeading(Angle target)`). **WPILib's own APIs speak Units — prefer passing measures directly over unpacking.** `ChassisSpeeds(LinearVelocity, LinearVelocity, AngularVelocity)`, `SwerveModuleState(LinearVelocity, Rotation2d)`, `SwerveDriveKinematics.desaturateWheelSpeeds(states, LinearVelocity)`, the geometry/kinematics/estimator classes, and `Rotation2d`/`Angle` interop all take measures, so let a `LinearVelocity`/`Angle` flow straight through them; scale with measure arithmetic (`kMaxSpeed.times(fraction)`, `.plus`, `.div`) rather than converting to a double and back. Only unpack with `.in(Meters)` / `.in(Degrees)` / `.in(MetersPerSecond)` at a *genuine* double-only boundary — chiefly Phoenix `motor.set`/`setControl` (which want a −1..1 fraction or a plain number) and any hand-rolled arithmetic that must stay double for readability. Dimensionless values (gear ratios, `kP`/`kV` gains) stay `double`. **Unpack only when necessary, and convert once:** if you *do* need a bare `double` more than once in a scope (or inside a per-tick lambda), pull it into a local once and reuse it rather than calling `.in(...)` repeatedly in a hot path. But first prefer not unpacking at all — scaling the measure with `.times(fraction)` (as the joystick suppliers do) keeps the unit and sidesteps the conversion entirely. Migrate the unitless constants gradually: a `double` from an earlier lesson becomes typed only when a lesson has reason to touch it, not in a sweep. Imports: `import static edu.wpi.first.units.Units.*;` for the unit singletons, plus the measure types from `edu.wpi.first.units.measure` (`Distance`, `Angle`, `LinearVelocity`, …). Introduce the library with a teaching beat that builds on the unit-in-the-name habit ("you've been writing `Mps` in the name; the type can carry the unit for you").
 - From [Lesson 10](docs/lessons/v3/10-kinematics.md) on, the hand-written angle-wrap `while` loops (`while (error > 180) { error -= 360; } …`) become one call: `MathUtil.inputModulus(error, -180, 180)`. Lessons 5–9 keep the explicit loop as the teaching version, then Lesson 10 swaps to the library call the same way `clamp` became `MathUtil.clamp` in Lesson 7 ("now that you know what it does by hand, here's the one-liner"). By [Lesson 12](docs/lessons/v3/12-model-based-control.md) the steering wrap moves into firmware (`ContinuousWrap`) and the software wrap retires entirely.
 
+## Figures in lessons
+
+Conventions for pictures in the lessons, agreed 2026-11-18. The figure-by-figure
+plan goes in `docs/lesson-plan-v3-figures.md` (being drafted).
+
+**Files:**
+- **Where they live:** in `docs/lessons/v3/images/`. Only `docs/` is published, so an
+  image anywhere else shows on GitHub but breaks on the website.
+- **Names:** `NN-short-name.png` or `.svg`, where `NN` is the two-digit lesson
+  number, e.g. `18-height-setpoint-goal.png`.
+- **One home per figure:** a figure belongs to the lesson that first shows it.
+  Later lessons link to it rather than copying the file.
+
+**Numbering:**
+- Figures are **Figure N.k**: N is the lesson number (no leading zero) and k
+  counts from 1 in order of first appearance in that lesson.
+- Inserting a figure renumbers the later ones in that lesson. When you do it,
+  fix every reference to them, including other lessons' links: grep the whole
+  tree for `Figure N\.` and `#figure-N-`.
+
+**Markup** (each form checked in a local site build on 2026-11-18):
+
+*Nothing to add — this is the pattern for a figure in a lesson file:*
+
+```markdown
+<a id="figure-18-2"></a>
+![Height, setpoint and goal during one move from stowed to the top: the setpoint ramps up, the height trails it by about a centimetre, the goal is a step](images/18-height-setpoint-goal.png)
+
+*Figure 18.2 — Height, setpoint and goal during one move.*
+```
+
+- The anchor is always `figure-N-k`.
+- Leave a blank line before the caption. Without it, the caption joins the
+  image's paragraph and sits beside the image.
+- The image path is relative to the lesson file. The site build rewrites it
+  to the right address, and GitHub renders it as is.
+- To set a size, use `<img src="images/…" alt="…" width="600">`, which works
+  on both. Don't use kramdown's `{: width=…}`: GitHub shows the braces as text
+  (not checked here).
+- The theme sets `max-width: 100%` on images, so a large image shrinks to fit
+  a phone.
+
+**Writing about a figure:**
+- **The alt text says what the reader would see and learn**, not "graph of"
+  or "image". The caption names the figure, and the prose says what to notice
+  in it.
+- **The prose refers to a figure by its number** ("Figure 18.2 shows…"), never
+  "the image below". Every figure is referred to at least once, at the point
+  where the student needs it.
+- **Link a figure from another lesson** like this:
+  `[Figure 18.2](18-elevator.md#figure-18-2)`. The anchor works on the site
+  (checked). On GitHub's own view it relies on GitHub's `user-content-`
+  anchor handling, which hasn't been checked.
+- **Never name a figure that doesn't exist yet.** The image, its caption and
+  the text that refers to it go in the same commit; otherwise the website
+  shows a broken image.
+
+**Making a figure:**
+- **Dark mode:** give every image an opaque background, plots on white and
+  SVG diagrams with a filled background rectangle, and look at it in both of
+  the site's themes.
+- **Size:** keep PNGs at 1600 px wide or less and compress them (aim for
+  under about 200 KB). Use SVG for line diagrams.
+- **A graph is a measurement.** It follows the same rule as every number in
+  the course:
+  - Plot it from data measured in the course's simulation, at that lesson's
+    state.
+  - Use a generator kept in `tools/figures/`: one script per figure, named
+    `NN-name.py`, with its data in `tools/figures/data/`. Then the figure can
+    be rebuilt when a re-measure changes the numbers.
+  - The numbers a figure shows must match the lesson text.
+  - **Re-measuring a lesson's numbers means regenerating its figures.**
+- **Diagrams** are drawn from the lesson's own constants (geometry, angles,
+  IDs).
+- **Screenshots:**
+  - SimGUI screenshots can be made here with the `Xvfb` recipe in the Lesson
+    30 notes.
+  - AdvantageScope and real-hardware pictures can't be made in this
+    container. The plan lists them for the user to supply.
+
 ## Rewriting lessons in a teacher's voice
 
 The lessons started in a slightly "AI voice" — clinical, evenly-weighted, with
