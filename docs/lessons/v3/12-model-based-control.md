@@ -306,8 +306,10 @@ wheel rotation per second cost?" Ours is about `0.8` — at 12 volts that
 predicts ~15 wheel rps, which is the free-speed math from Lesson 10 read
 backwards (the motor's 101.08 rotations/sec ÷ 6.75 turns per wheel turn =
 14.97 wheel rps, and 12 V ÷ 14.97 = 0.80 V for each). When you request 10
-rps, the firmware *immediately* applies `10 × 0.8 = 8` volts because the
-model says that's what 10 rps costs — no waiting for error to build up.
+rps, the firmware asks for `10 × 0.8 = 8` volts on the very first tick,
+because the model says that's what 10 rps costs — no waiting for error to
+build up. (From a standstill the motor's current limit holds the actual
+voltage a little lower for the first tick or two; Figure 12.2 shows it.)
 Then `kP` handles only the leftover: friction, battery sag, carpet. The
 model does most of the work by prediction; feedback trims the rest by
 reaction. That division of labor — predict with a model, correct with
@@ -455,12 +457,14 @@ identical to the figure.
 
 1. **Code — watch the model work.** Log the drive motor's applied voltage
    (`m_driveMotor.getMotorVoltage().getValue().in(Volts)`) next to
-   requested and measured wheel speed. Command a step — the voltage jumps
-   *instantly* to `kV × requested` before any error exists. That instant
-   jump is feedforward; the small corrections after it are feedback.
+   requested and measured wheel speed. Command a step from a standstill:
+   within about a tenth of a second the voltage is at `kV × requested`,
+   long before error could have built it up. (The first tick or two read
+   lower; that's the current limit from Figure 12.2's note.) That jump is
+   feedforward; the small corrections after it are feedback.
 2. **Break the model on purpose.** Set `kDriveKV = 0.4` (half right) and
-   watch `kP` struggle to make up the difference — speed settles low or
-   oscillates. Restore `0.8`. A good model makes feedback's job easy; a
+   watch `kP` struggle to make up the difference — speed settles well
+   short of the request. Restore `0.8`. A good model makes feedback's job easy; a
    bad one makes it impossible.
 3. **Turn off `ContinuousWrap`** (set it `false`), ask for a steer target
    across the ±180° boundary, and watch the wheel take the long way
