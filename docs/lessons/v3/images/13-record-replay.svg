@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 650" width="800" height="650" font-family="sans-serif">
+<defs><marker id="a000000" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="17" markerHeight="17" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#000000"/></marker><marker id="a0072B2" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="17" markerHeight="17" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0072B2"/></marker><marker id="a777777" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="17" markerHeight="17" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#777777"/></marker><marker id="aD55E00" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="17" markerHeight="17" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#D55E00"/></marker></defs>
+<rect x="0" y="0" width="800" height="650" fill="#ffffff"/>
+<text x="200.0" y="28.0" font-size="18" fill="#000000" text-anchor="middle" font-weight="bold">Record (a live or simulated run)</text>
+<text x="600.0" y="28.0" font-size="18" fill="#000000" text-anchor="middle" font-weight="bold">Replay (no robot, no simulator)</text>
+<rect x="40" y="52" width="320" height="64" rx="8" fill="#EEEEEE" stroke="#777777" stroke-width="2"/>
+<text x="200.0" y="79.5" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">real motors and sensors,</text>
+<text x="200.0" y="98.2" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">or the simulator</text>
+<rect x="40" y="146" width="320" height="64" rx="8" fill="#E3F0FA" stroke="#0072B2" stroke-width="2"/>
+<text x="200.0" y="173.5" font-size="15" fill="#000000" text-anchor="middle" font-weight="bold">inputs</text>
+<text x="200.0" y="192.2" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">updateInputs fills the bundle; logged</text>
+<rect x="40" y="240" width="320" height="64" rx="8" fill="#F6E6EF" stroke="#CC79A7" stroke-width="2"/>
+<text x="200.0" y="258.1" font-size="15" fill="#000000" text-anchor="middle" font-weight="bold">your logic</text>
+<text x="200.0" y="276.9" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">SwerveModule, Drivetrain, Localizer,</text>
+<text x="200.0" y="295.6" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">your commands</text>
+<rect x="40" y="334" width="320" height="64" rx="8" fill="#FBE9DF" stroke="#D55E00" stroke-width="2"/>
+<text x="200.0" y="361.8" font-size="14" fill="#000000" text-anchor="middle" font-weight="bold">outputs</text>
+<text x="200.0" y="379.3" font-size="14" fill="#000000" text-anchor="middle" font-weight="normal">recordOutput: RealOutputs/Drivetrain/Pose, ...</text>
+<rect x="40" y="428" width="320" height="64" rx="8" fill="#EEEEEE" stroke="#777777" stroke-width="2"/>
+<text x="200.0" y="455.5" font-size="15" fill="#000000" text-anchor="middle" font-weight="bold">commands to the IO</text>
+<text x="200.0" y="474.2" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">setDriveVelocityMetersPerSec, ...</text>
+<line x1="200.0" y1="116.0" x2="200.0" y2="146.0" stroke="#000000" stroke-width="2" marker-end="url(#a000000)"/>
+<line x1="200.0" y1="210.0" x2="200.0" y2="240.0" stroke="#000000" stroke-width="2" marker-end="url(#a000000)"/>
+<line x1="200.0" y1="304.0" x2="200.0" y2="334.0" stroke="#000000" stroke-width="2" marker-end="url(#a000000)"/>
+<line x1="200.0" y1="398.0" x2="200.0" y2="428.0" stroke="#000000" stroke-width="2" marker-end="url(#a000000)"/>
+<rect x="440" y="52" width="320" height="64" rx="8" fill="#EEEEEE" stroke="#777777" stroke-width="2" stroke-dasharray="7 5"/>
+<text x="600.0" y="79.5" font-size="15" fill="#777777" text-anchor="middle" font-weight="bold">motors, sensors, simulator</text>
+<text x="600.0" y="98.2" font-size="15" fill="#777777" text-anchor="middle" font-weight="normal">not running: nothing reads hardware</text>
+<rect x="440" y="146" width="320" height="64" rx="8" fill="#E3F0FA" stroke="#0072B2" stroke-width="2"/>
+<text x="600.0" y="164.1" font-size="15" fill="#000000" text-anchor="middle" font-weight="bold">inputs</text>
+<text x="600.0" y="182.9" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">Logger.processInputs fills the bundle</text>
+<text x="600.0" y="201.6" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">from the file</text>
+<rect x="440" y="240" width="320" height="64" rx="8" fill="#F6E6EF" stroke="#CC79A7" stroke-width="2"/>
+<text x="600.0" y="258.1" font-size="15" fill="#000000" text-anchor="middle" font-weight="bold">your logic, run again</text>
+<text x="600.0" y="276.9" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">whatever the code is today,</text>
+<text x="600.0" y="295.6" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">edited or not</text>
+<rect x="440" y="334" width="320" height="64" rx="8" fill="#FBE9DF" stroke="#D55E00" stroke-width="2"/>
+<text x="600.0" y="361.5" font-size="15" fill="#000000" text-anchor="middle" font-weight="bold">outputs, worked out again</text>
+<text x="600.0" y="380.2" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">ReplayOutputs/Drivetrain/Pose, ...</text>
+<rect x="440" y="428" width="320" height="64" rx="8" fill="#EEEEEE" stroke="#777777" stroke-width="2" stroke-dasharray="7 5"/>
+<text x="600.0" y="455.5" font-size="15" fill="#777777" text-anchor="middle" font-weight="bold">commands</text>
+<text x="600.0" y="474.2" font-size="15" fill="#777777" text-anchor="middle" font-weight="normal">go nowhere: the IO does nothing</text>
+<line x1="600.0" y1="210.0" x2="600.0" y2="240.0" stroke="#000000" stroke-width="2" marker-end="url(#a000000)"/>
+<line x1="600.0" y1="304.0" x2="600.0" y2="334.0" stroke="#000000" stroke-width="2" marker-end="url(#a000000)"/>
+<line x1="600.0" y1="398.0" x2="600.0" y2="428.0" stroke="#000000" stroke-width="2" marker-end="url(#a000000)"/>
+<line x1="600.0" y1="116.0" x2="600.0" y2="146.0" stroke="#777777" stroke-width="2" marker-end="url(#a777777)" stroke-dasharray="7 5"/>
+<line x1="600.0" y1="398.0" x2="600.0" y2="428.0" stroke="#777777" stroke-width="2" marker-end="url(#a777777)" stroke-dasharray="7 5"/>
+<rect x="340" y="401" width="120" height="0" rx="8" fill="#EEEEEE" stroke="#777777" stroke-width="2"/>
+<path d="M360,178.0 L440,178.0" fill="none" stroke="#0072B2" stroke-width="4" marker-end="url(#a0072B2)"/>
+<text x="400.0" y="168.0" font-size="14" fill="#0072B2" text-anchor="middle" font-weight="bold">the .wpilog</text>
+<path d="M360,366.0 L440,366.0" fill="none" stroke="#D55E00" stroke-width="3" marker-end="url(#aD55E00)" stroke-dasharray="7 5"/>
+<text x="400.0" y="356.0" font-size="14" fill="#D55E00" text-anchor="middle" font-weight="bold">compare</text>
+<rect x="20" y="512" width="760" height="120" rx="8" fill="#FAFAFA" stroke="#777777" stroke-width="2"/>
+<text x="40.0" y="540.0" font-size="16" fill="#000000" text-anchor="start" font-weight="bold">Inputs come out of the file, unchanged. Outputs are worked out again.</text>
+<text x="40.0" y="566.0" font-size="15" fill="#000000" text-anchor="start" font-weight="normal">A bug inside ModuleIOTalonFX is in the recorded readings: replaying does not move the pose.</text>
+<text x="40.0" y="590.0" font-size="15" fill="#000000" text-anchor="start" font-weight="normal">A bug in SwerveModule.getPosition is in your logic: replaying moves the pose.</text>
+<text x="40.0" y="614.0" font-size="15" fill="#777777" text-anchor="start" font-weight="normal">That is why you can change the code and replay an old run.</text>
+</svg>

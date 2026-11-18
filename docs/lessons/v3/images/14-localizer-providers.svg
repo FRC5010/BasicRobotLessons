@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500" font-family="sans-serif">
+<defs><marker id="a000000" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="17" markerHeight="17" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#000000"/></marker><marker id="a009E73" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="17" markerHeight="17" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#009E73"/></marker><marker id="a777777" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="17" markerHeight="17" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#777777"/></marker><marker id="aD55E00" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="17" markerHeight="17" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#D55E00"/></marker></defs>
+<rect x="0" y="0" width="800" height="500" fill="#ffffff"/>
+<rect x="260" y="70" width="280" height="290" rx="8" fill="#E3F0FA" stroke="#0072B2" stroke-width="2"/>
+<text x="400.0" y="98.0" font-size="15" fill="#000000" text-anchor="middle" font-weight="bold">Localizer</text>
+<text x="400.0" y="124.0" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">periodic() loops over its</text>
+<text x="400.0" y="142.8" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">providers and calls</text>
+<text x="400.0" y="161.5" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">updatePoseEstimate(estimator)</text>
+<text x="400.0" y="214.0" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">getPose()   resetPose(pose)</text>
+<rect x="290" y="260" width="220" height="56" rx="8" fill="#FFFFFF" stroke="#777777" stroke-width="2"/>
+<text x="400.0" y="292.6" font-size="14" fill="#000000" text-anchor="middle" font-weight="normal">SwerveDrivePoseEstimator</text>
+<text x="100.0" y="34.0" font-size="16" fill="#000000" text-anchor="middle" font-weight="bold">PoseProvider</text>
+<text x="100.0" y="54.0" font-size="14" fill="#777777" text-anchor="middle" font-weight="normal">registered with addProvider</text>
+<rect x="10" y="80" width="180" height="110" rx="8" fill="#DDF3EB" stroke="#009E73" stroke-width="2"/>
+<text x="100.0" y="113.3" font-size="14" fill="#000000" text-anchor="middle" font-weight="bold">Drivetrain</text>
+<text x="100.0" y="130.8" font-size="14" fill="#000000" text-anchor="middle" font-weight="normal">wheel odometry + gyro</text>
+<text x="100.0" y="148.3" font-size="14" fill="#000000" text-anchor="middle" font-weight="normal">estimator.update(...)</text>
+<text x="100.0" y="165.8" font-size="14" fill="#000000" text-anchor="middle" font-weight="normal">every tick: smooth</text>
+<rect x="10" y="208" width="180" height="124" rx="8" fill="#DDF3EB" stroke="#009E73" stroke-width="2"/>
+<text x="100.0" y="239.6" font-size="14" fill="#000000" text-anchor="middle" font-weight="bold">VisionPoseProvider</text>
+<text x="100.0" y="257.1" font-size="14" fill="#000000" text-anchor="middle" font-weight="normal">a camera sighting</text>
+<text x="100.0" y="274.6" font-size="14" fill="#000000" text-anchor="middle" font-weight="normal">addVisionMeasurement(</text>
+<text x="100.0" y="292.1" font-size="14" fill="#000000" text-anchor="middle" font-weight="normal">pose, timestamp)</text>
+<text x="100.0" y="309.6" font-size="14" fill="#000000" text-anchor="middle" font-weight="normal">now and then: absolute</text>
+<rect x="10" y="350" width="180" height="60" rx="8" fill="#EEEEEE" stroke="#777777" stroke-width="2" stroke-dasharray="7 5"/>
+<text x="100.0" y="384.6" font-size="14" fill="#777777" text-anchor="middle" font-weight="normal">next season's provider</text>
+<line x1="190.0" y1="135.0" x2="260.0" y2="170.0" stroke="#009E73" stroke-width="3" marker-end="url(#a009E73)"/>
+<line x1="190.0" y1="270.0" x2="260.0" y2="270.0" stroke="#D55E00" stroke-width="3" marker-end="url(#aD55E00)"/>
+<line x1="190.0" y1="380.0" x2="260.0" y2="320.0" stroke="#777777" stroke-width="2" marker-end="url(#a777777)" stroke-dasharray="7 5"/>
+<text x="670.0" y="34.0" font-size="16" fill="#000000" text-anchor="middle" font-weight="bold">whatever asks getPose()</text>
+<rect x="610" y="80" width="180" height="70" rx="8" fill="#FBE9DF" stroke="#D55E00" stroke-width="2"/>
+<text x="700.0" y="110.8" font-size="14" fill="#000000" text-anchor="middle" font-weight="bold">output</text>
+<text x="700.0" y="128.3" font-size="14" fill="#000000" text-anchor="middle" font-weight="normal">Localizer/Pose (the log)</text>
+<rect x="610" y="170" width="180" height="70" rx="8" fill="#FBE9DF" stroke="#D55E00" stroke-width="2"/>
+<text x="700.0" y="200.8" font-size="14" fill="#000000" text-anchor="middle" font-weight="bold">field view</text>
+<text x="700.0" y="218.3" font-size="14" fill="#000000" text-anchor="middle" font-weight="normal">Field2d in SimGUI</text>
+<rect x="610" y="260" width="180" height="70" rx="8" fill="#EEEEEE" stroke="#777777" stroke-width="2" stroke-dasharray="7 5"/>
+<text x="700.0" y="299.6" font-size="14" fill="#777777" text-anchor="middle" font-weight="normal">autos and aiming, later</text>
+<line x1="540.0" y1="215.0" x2="610.0" y2="115.0" stroke="#000000" stroke-width="2" marker-end="url(#a000000)"/>
+<line x1="540.0" y1="215.0" x2="610.0" y2="205.0" stroke="#000000" stroke-width="2" marker-end="url(#a000000)"/>
+<line x1="540.0" y1="215.0" x2="610.0" y2="295.0" stroke="#000000" stroke-width="2" marker-end="url(#a000000)"/>
+<text x="400.0" y="446.0" font-size="16" fill="#000000" text-anchor="middle" font-weight="bold">Add another provider and Localizer does not change by a line.</text>
+<text x="400.0" y="474.0" font-size="15" fill="#777777" text-anchor="middle" font-weight="normal">Odometry for smoothness, vision for truth.</text>
+</svg>
