@@ -217,6 +217,17 @@ or give up and go back to neutral. Everything not listed is refused —
 including scoring from `INTAKING` or `IDLE`, because nothing is on board
 to score.
 
+<a id="figure-24-1"></a>
+![A column of six boxes, top to bottom: UNHOMED (red), IDLE (dark blue), INTAKING (yellow), HANDOFF (yellow), HOLDING (green), SCORING (green). Solid black arrows go down the column from IDLE to INTAKING, INTAKING to HANDOFF, HANDOFF to HOLDING and HOLDING to SCORING, and a solid rail on the right brings INTAKING, HANDOFF, HOLDING and SCORING back to IDLE. Dashed blue arrows go from UNHOMED to IDLE, INTAKING to HANDOFF and HANDOFF to HOLDING, and a dashed rail brings HANDOFF, HOLDING and SCORING back to IDLE.](images/24-state-machine.svg)
+
+*Figure 24.1 — The robot's six states. Solid arrows are the moves `canGoTo` allows a request to make; dashed arrows are the moves `periodic()` makes by itself. Each box is the color its state shows on the LED strip.*
+
+Figure 24.1 draws the rulebook; the dashed arrows are section 4's. Read the
+solid arrows only, for now: they are the code above, one arrow per `||` and
+one rail for the four states that can all be told to go back to `IDLE`.
+`UNHOMED` has no solid arrow at all, which is `UNHOMED -> false` as a picture.
+Its only way out is dashed.
+
 Read `UNHOMED -> false` first, because it's the one rule the rest of this
 lesson depends on. **No matter what `next` is, `UNHOMED.canGoTo(next)` is
 false.** Not "false unless you're careful" — false, unconditionally,
@@ -351,9 +362,12 @@ Walk the cycle once and it reads like a description of a match. Boot into
 now it's the only exit in code too. From `INTAKING`, a debounced beam
 break means a piece arrived, so start the handoff. From `HANDOFF`, wait
 until *both* mechanisms report `atGoal` before calling the piece secured.
-And losing the piece drops you back to `IDLE` from anywhere it can happen,
-which is also how `SCORING` ends — the piece leaving is what finishes
-scoring, not a timer.
+And losing the piece drops you back to `IDLE` from `HANDOFF`, `HOLDING` or
+`SCORING` — which is also how `SCORING` ends: the piece leaving is what
+finishes scoring, not a timer. (`INTAKING` isn't on that list, because
+nothing is on board yet; the only way out of it besides a piece arriving is a
+request for `IDLE`.) Those are the dashed arrows in Figure 24.1: three that go
+forward, and one rail back to `IDLE`.
 
 That's why `periodic()` never calls `canGoTo`. `canGoTo` is a rulebook for
 *requests* — things a button asks for. These transitions aren't requests;

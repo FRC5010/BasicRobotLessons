@@ -105,6 +105,21 @@ at horizontal, positive counter-clockwise, the same convention as
 `Rotation2d` and Lesson 19's ligaments. Everything in this lesson agrees on
 where zero is.
 
+<a id="figure-20-1"></a>
+![Two drawings. Top: a side view from the arm's pivot. Zero degrees points horizontally out the front, 90 degrees straight up, 180 degrees straight back. The sweep from minus 20 degrees to 180 degrees is shaded as travel and the rest as no travel. The arm is drawn at 0, 45 and 90 degrees with its center of mass as a dot, and a dashed horizontal line from the pivot's vertical to each dot reads 0.254, 0.180 and 0 meters. Bottom: two carriage-and-arm drawings. With the arm horizontal in the world (0 degrees) the drawing angle is minus 90 degrees; with the arm stowed (90 degrees) it is 0 degrees.](images/20-arm-angle-convention.svg)
+
+*Figure 20.1 — The arm's angle convention: zero is horizontal, the stops are at −20° and 180°, gravity's lever arm is 0.254 m × cos θ, and a drawing angle is the world angle minus the carriage's 90°.*
+
+Figure 20.1 draws all of that at once. In the top drawing, find the 0° line: that
+is the one the firmware assumes the sensor reads zero on. The shaded wedge is
+the arm's travel, from `kMinAngle` at −20° up and over the top to `kMaxAngle` at
+180°, so it can reach a little below horizontal to pick things up, but can't go
+past straight back. The dashed lines are the `cos θ` from above, as distances:
+the arm's center of mass is half its 0.508 m away from the pivot, so out
+horizontal gravity pulls from 0.254 m out, at 45° from 0.180 m, and straight
+up from 0. The bottom drawing is a different question, how the picture
+draws the arm, and it comes back in section 7.
+
 ---
 
 ## 3. Describe the arm
@@ -680,7 +695,8 @@ answer are the arm's own decisions, so they're outputs.
 child's angle is measured from its parent, the carriage points straight up
 at 90°, so an arm that is horizontal in the world is at −90° in the
 drawing. Get that subtraction backwards and the picture will tell you
-immediately.
+immediately. The bottom half of [Figure 20.1](#figure-20-1) is this rule: horizontal
+in the world is −90° in the drawing, and stowed (90°) is 0°.
 
 Notice how little `Arm` says about the elevator otherwise. It asks for the
 mount point once, in the constructor, and then never mentions the

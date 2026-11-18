@@ -369,7 +369,7 @@ That's what Try It #2 has you watch. The same limit governs corners — turning
 2 m/s of "east" into 2 m/s of "north" is a change in velocity like any other,
 and it can't happen faster than 6 m/s² allows. With these numbers the robot
 swings roughly 14–16 cm past this path's first corner before it's heading up the
-second leg. (Measured in this course's sim over several runs; it varies a
+second leg ([Figure 17.2](#figure-17-2) draws it). (Measured in this course's sim over several runs; it varies a
 little, because vision nudges the estimate a little differently each time.)
 
 And now the `deploy` folder, which you've had since Lesson 0 and never used.
@@ -890,12 +890,19 @@ can only change it while Robot State says *Disconnected*, which it does when
 SimGUI first opens, and it starts on Red 1 every time. (Red works too now —
 that's Try It #6 — but the numbers below are for blue.)
 
-Then click **Autonomous** and pick **Two Corners** on the opmode selector.
+<a id="figure-17-1"></a>
+![SimGUI's Robot State and DS windows at two moments. Left: Disconnected, with the DS window's Alliance Station drop-down set to Blue 1, badge 1. Right: Autonomous picked, badge 2, Two Corners chosen on the opmode selector, badge 3, and the Enable button below it, badge 4; the DS window now shows the alliance station as plain text.](images/17-simgui-ds-window.png)
+
+*Figure 17.1 — The four things you'll click. The DS window's Alliance Station is a drop-down only while Robot State says Disconnected; once you pick a mode it turns into plain text.*
+
+Figure 17.1 labels the four things you'll click, in order. Set the Alliance
+Station (1) while everything still says Disconnected. Then click
+**Autonomous** (2) and pick **Two Corners** on the opmode selector (3).
 Before you enable anything, look at the console: the line
 `********** Creating OpMode Two Corners **********` just printed, and that's the
 moment your path file was read and the robot was set down at (3, 3). Pick
 **Far Side** and it prints again for that one. Pick **Two Corners** back, then
-set state to **Enabled**.
+set state to **Enabled** (4).
 
 Then watch it the way you've watched every closed-loop lesson since Lesson 5 —
 asked-for against measured. Open AdvantageScope's **Odometry** tab, put
@@ -903,9 +910,25 @@ asked-for against measured. Open AdvantageScope's **Odometry** tab, put
 for the robot tracing an actual shape:
 out along X, turning up the second leg just before the corner, coming around to
 90° partway up, settling at (6, 6) facing 180°. In this course's sim that takes
-about 4 seconds, and `Event: shoot!` shows up in the console about 80% of the way
-up the second leg. The robot finishes within the tolerances in `config.json`
-— within 5 cm and 2°, so don't be surprised to read 178.3° rather than 180°.
+about 4 seconds, and `Event: shoot!` shows up in the console about 82% of the way
+up the second leg — a touch past the 80% you wrote in the file, because the
+event runs on the loop after the follower passes the marker. The robot finishes
+within the tolerances in `config.json` — within 5 cm and 2°, so don't be
+surprised to read 178.8° rather than 180°.
+
+<a id="figure-17-2"></a>
+![Top-down view of the field from x 2.4 to 7.6 and y 2.3 to 6.9 meters. A dashed black line is the drawn path from (3, 3) east to the corner at (6, 3), then north to (6, 6). An orange line is the track the robot drove: it follows the first leg, swings about 16 centimeters past x = 6 inside a dotted half-meter circle round the corner, and comes back to the line on the second leg, ending at (6, 6). Blue arrows show the robot's heading turning from 0 degrees to about 180 degrees along the way. A diamond marks the rotation target and a star marks where the shoot event fired.](images/17-two-corners-track.png)
+
+*Figure 17.2 — Two Corners, drawn and driven: the path in the file, and where the simulated robot really went (Drivetrain/SimulatedPose, one run; three runs gave 15–16 cm past the corner).*
+
+Figure 17.2 is that run drawn from above. The dashed line is your path file; the
+orange line is where the robot went. Look at the corner first: the robot enters the dotted circle, which is the 0.5 m
+handoff radius, and then swings about 16 cm wide before it's heading up the
+second leg. That's section 5's arithmetic made visible. Then follow the blue
+arrows: the robot faces east on the first leg, is at about 66° partway up the
+second, and has passed 90° (97° in the figure) a little further on, so the turn
+to 90° "by halfway up the leg" finishes a bit after the halfway mark. It
+keeps turning, to about 180° at the end, because the last waypoint asks for it.
 
 Add `Drivetrain/SimulatedPose` — Lesson 16's ground truth — to the same field.
 Now you can see the whole story at once: the line you drew, where the robot
@@ -921,6 +944,45 @@ cross-track error jump to about half a meter right at the corner: that's the
 starts measuring against the second's. Then watch it shrink back toward zero as
 the robot settles onto the second leg. Nothing told the
 follower it was off the line. Correcting is the only thing it ever does.
+
+<a id="figure-17-3"></a>
+![Two stacked graphs of one run, time from 0 to 4.5 seconds. Top: crossTrackError sits at a few centimeters, jumps to 0.47 meters at 1.44 seconds, falls back through zero at about 1.7 seconds, reaches minus 0.16 meters at about 2 seconds, then settles near plus 0.03 meters. Bottom: remainingPathDistanceMeters falls steadily from 6 meters, drops from 3.5 to 3.0 meters at the same 1.44 seconds, and reaches zero at about 3.3 seconds. A vertical dotted line marks the jump and a dashed one marks when the shoot event fires.](images/17-cross-track-error.png)
+
+*Figure 17.3 — B-Line's two signals through Two Corners. Both jump at the same tick, when the robot enters the 0.5 m handoff radius and the follower starts measuring against the second leg.*
+
+Figure 17.3 shows both signals from one run, and it's worth reading slowly,
+because the jump in it looks like a mistake and isn't. Start with the top
+panel, `crossTrackError`: how far the robot is from the line the follower is
+chasing right now, positive here when the robot is to the left of that line.
+Along the first leg it sits at a few centimeters, the robot hardly off the line.
+Then, at 1.44 s, it leaps to 0.47 m in a single tick. The robot didn't move
+that much in 20 milliseconds: it entered the handoff radius, and the follower
+swapped its line from the first leg to the second. The robot is at about
+x = 5.58 and the second leg is the line x = 6, so it really is about half a
+meter from the line it's now chasing.
+
+The bottom panel says the same thing a second way.
+`remainingPathDistanceMeters` falls steadily, then drops from 3.5 to 3.0 m in
+that same tick: the follower stopped measuring to the end through the corner
+and started measuring along the second leg. A dotted line marks the tick in
+both panels, so you can see the two signals change together.
+
+Now follow the top curve down from the jump. The cross-track loop is a P loop
+like the ones you've been tuning since Lesson 5: it asks for sideways speed in
+proportion to the error, so a big error is cut quickly, and the curve drops
+through zero about 0.28 s after the jump. But the robot was heading east at
+2 m/s and can only change its velocity so fast (the acceleration limit in
+`config.json`), so it doesn't stop at the line: it sails through, and the curve
+bottoms out at −0.16 m, the robot 16 cm past the line on the far side. That's
+the same 16 cm you can see at the corner in Figure 17.2. Then the loop pulls it
+back, and it's within a few centimeters for the rest of the run, settling at
+about 0.03 m, inside the 5 cm tolerance. The dashed line is the `shoot` event,
+well after all that has settled.
+
+So the picture to keep is jump, cut, overshoot, settle: a step in the error
+that comes from changing which line you're measuring against, then an ordinary
+P loop doing what P loops do. These two signals are saved in the `WPILIB_` log
+file, not the `akit_` one (Try It #7 comes back to this).
 
 To run it again, set state to **Disabled**. The console shows the opmode
 closing and being created again — which reads the path and sets the robot back

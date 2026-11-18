@@ -457,6 +457,23 @@ never the bottom, and before long it's telling you the carriage is 30 cm
 *below the floor*. That's the bug this whole lesson is about, and now
 it's on a graph.
 
+<a id="figure-21-1"></a>
+![Graph over 20 seconds. A black dashed line, the carriage's true height, slides from 0.35 meters down to 0. An orange line, the encoder's Elevator/HeightMeters, slides from 0 down to minus 0.34 meters, always 35 centimeters below the dashed line. At about 17.4 seconds the orange line jumps up to 0.01 and the two lines meet and stay together. A strip underneath shows AtBottomLimit false until that same moment, then true.](images/21-belief-vs-truth.png)
+
+*Figure 21.1 — What the encoder believes (orange) against where the carriage really is (black, dashed). The true height exists only inside the simulator, so on your robot, and in your logs, you can't graph the dashed line; this is the one place you get to see it. (Time is counted from the robot program's first loop, a moment after launch; Teleoperated was picked 3 s in.)*
+
+Figure 21.1 plots both the encoder's belief and where the carriage really is.
+Start with the orange line, the one you'd see in AdvantageScope: a smooth, steady
+slide from 0 down to −0.34 m. Nothing about it looks wrong, and that is the
+point. Now find the dashed line, the true height: it starts at 0.35 m and
+slides at exactly the same rate, so the two lines run parallel, 35 cm apart,
+the whole way. The encoder isn't noisy or drifting; it's precisely right about
+how far the carriage has *moved*, and entirely wrong about *where it is*,
+because the zero it counts from was never the bottom. The strip underneath is
+the switch, `AtBottomLimit`, false the whole way down. The moment the carriage
+touches it, the strip goes true and the orange line leaps up 35 cm to meet the
+dashed one. After that the two lines are the same line: the elevator is honest.
+
 > The speed is section 2's arithmetic with the motor left out. Gravity is
 > worth `kG`'s 0.17 V, and at 1.42 V per drum rotation per second that's
 > 0.12 rotations a second: just under 2 cm/s on a 16 cm drum. How fast a real
@@ -465,12 +482,13 @@ it's on a graph.
 > seeing this on your robot.
 
 Leave it alone, and about **18 seconds** after launch the carriage
-reaches the bottom. `AtBottomLimit` flips true, and `HeightMeters` snaps
-from about −0.34 to **0.01** — with nobody touching anything, and the
-robot still disabled. That's section 7's `Trigger` doing exactly its job:
-whenever the switch trips, take its word. (If you hadn't picked
-Teleoperated yet, the snap happens the moment you do. That's when the
-binding is made, and the switch is already pressed.)
+reaches the bottom and `AtBottomLimit` flips true. If you've picked
+Teleoperated by then, `HeightMeters` snaps from about −0.34 to **0.01** —
+with nobody touching anything, and the robot still disabled. That's section
+7's `Trigger` doing exactly its job: whenever the switch trips, take its
+word. (If you hadn't picked Teleoperated yet, `HeightMeters` keeps falling
+to −0.35 and sits there, and the snap happens the moment you do. That's when
+the binding is made, and the switch is already pressed.)
 
 Now make homing do the same thing on purpose. **Restart the simulation,
 and this time be quick:** pick **Teleoperated** and enable within ten
