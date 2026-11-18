@@ -1075,8 +1075,8 @@ All 39 batch 1 figures are built, in their lessons, and committed; the site buil
 
 **Working ID → number in the lesson** (numbers go by position among the figures that exist, so building a batch 2 or 3 figure renumbers the ones after it): 0.2 → 0.1; 7.3 → 7.2; 10.3 → 10.2; 12.2 → 12.1; 12.3 → 12.2; 17.3 → 17.1; 17.4 → 17.2; 17.5 → 17.3; 25.3 → 25.1; 26.2 → 26.1; 27.2 → 27.1; 28.2 → 28.1; 28.3 → 28.2; 29.2 → 29.1; 33.3 → 33.2; G.3 → G.2. Every other batch 1 figure kept its working number.
 
-**Not done yet:**
-- **Cross-lesson links.** The agents only linked within their own lessons (plus 20 → 18.2). Every "Linked from" entry above is still to add, with the built numbers from the map.
-- **Small text in two screenshots.** Figures 1.1 and 30.1 are composites of SimGUI at its normal zoom; on a phone the text is hard to read. SimGUI's View → Zoom at 150% gives crisp captures but the window then needs a bigger Xvfb screen.
-- **Open question for the user** (CLAUDE.md, "Batch 1 found"): Lesson 12's "jumps instantly" wording. Settled 2026-11-19: the Lesson 1/2 boot crash and the SimGUI wording are fixed, and Lesson 5 keeps `kP = 0.0005` and teaches the ringing.
+**Done since (2026-11-19):**
+- **Cross-lesson links:** 39 links from later lessons back to batch 1 figures, each woven into a sentence that already talks about the figure's subject; candidates with no such sentence were skipped. All `#figure-` links on the site resolve. Batch 2 figures get theirs when they're built.
+- **Screenshots 1.1 and 30.1** retaken at SimGUI's 200% zoom as vertical stacks (900 and 870 px wide), legible at 390 px.
+- **Open questions settled:** the Lesson 1/2 boot crash and the SimGUI wording are fixed; Lesson 5 keeps `kP = 0.0005` and teaches the ringing; Lesson 12 now says feedforward asks for `kV × request` at once, with the current limit holding the first tick or two lower.
 
