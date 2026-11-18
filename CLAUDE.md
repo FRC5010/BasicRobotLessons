@@ -2424,6 +2424,10 @@ plan goes in `docs/lesson-plan-v3-figures.md` (being drafted).
 **Numbering:**
 - Figures are **Figure N.k**: N is the lesson number (no leading zero) and k
   counts from 1 in order of first appearance in that lesson.
+- An aside uses a letter for N: `S` for the setup aside, `D` for the
+  debugger aside, `G` for git-branching. So the first debugger figure is
+  Figure D.1, its anchor `figure-d-1`, and its file
+  `aside-debugger-<name>.png`.
 - Inserting a figure renumbers the later ones in that lesson. When you do it,
   fix every reference to them, including other lessons' links: grep the whole
   tree for `Figure N\.` and `#figure-N-`.
