@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 970" font-family="sans-serif">
+<rect x="0" y="0" width="800" height="970" fill="#ffffff"/>
+<defs>
+<marker id="head-req" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#000000"/></marker>
+<marker id="head-self" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#0072B2"/></marker>
+</defs>
+<path d="M 200 116 L 200 214" fill="none" stroke="#0072B2" stroke-width="3" stroke-dasharray="9 6" marker-end="url(#head-self)"/>
+<path d="M 140 286 L 140 384" fill="none" stroke="#000000" stroke-width="3" marker-end="url(#head-req)"/>
+<path d="M 140 456 L 140 554" fill="none" stroke="#000000" stroke-width="3" marker-end="url(#head-req)"/>
+<path d="M 200 456 L 200 554" fill="none" stroke="#0072B2" stroke-width="3" stroke-dasharray="9 6" marker-end="url(#head-self)"/>
+<path d="M 140 626 L 140 724" fill="none" stroke="#000000" stroke-width="3" marker-end="url(#head-req)"/>
+<path d="M 200 626 L 200 724" fill="none" stroke="#0072B2" stroke-width="3" stroke-dasharray="9 6" marker-end="url(#head-self)"/>
+<path d="M 140 796 L 140 874" fill="none" stroke="#000000" stroke-width="3" marker-end="url(#head-req)"/>
+<text x="297" y="170" font-size="16" fill="#0072B2" text-anchor="start" font-weight="normal">elevator.isHomed()</text>
+<text x="297" y="340" font-size="16" fill="#000000" text-anchor="start" font-weight="normal">requestIntake</text>
+<text x="297" y="500" font-size="16" fill="#0072B2" text-anchor="start" font-weight="normal">debounced beam break</text>
+<text x="297" y="670" font-size="16" fill="#0072B2" text-anchor="start" font-weight="normal">elevator and arm</text>
+<text x="297" y="690" font-size="16" fill="#0072B2" text-anchor="start" font-weight="normal">both atGoal</text>
+<text x="297" y="840" font-size="16" fill="#000000" text-anchor="start" font-weight="normal">requestScore</text>
+<path d="M 540 902 L 540 240 L 279 240" fill="none" stroke="#000000" stroke-width="3" marker-end="url(#head-req)"/>
+<path d="M 640 920 L 640 260 L 279 260" fill="none" stroke="#0072B2" stroke-width="3" stroke-dasharray="9 6" marker-end="url(#head-self)"/>
+<path d="M 275 412 L 540 412" fill="none" stroke="#000000" stroke-width="3"/>
+<path d="M 275 582 L 540 582" fill="none" stroke="#000000" stroke-width="3"/>
+<path d="M 275 752 L 540 752" fill="none" stroke="#000000" stroke-width="3"/>
+<path d="M 275 902 L 540 902" fill="none" stroke="#000000" stroke-width="3"/>
+<path d="M 275 600 L 640 600" fill="none" stroke="#0072B2" stroke-width="3" stroke-dasharray="9 6"/>
+<path d="M 275 770 L 640 770" fill="none" stroke="#0072B2" stroke-width="3" stroke-dasharray="9 6"/>
+<path d="M 275 920 L 640 920" fill="none" stroke="#0072B2" stroke-width="3" stroke-dasharray="9 6"/>
+<text x="540" y="188" font-size="16" fill="#000000" text-anchor="middle" font-weight="bold">requestIdle</text>
+<text x="540" y="210" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">from these four</text>
+<text x="660" y="188" font-size="16" fill="#0072B2" text-anchor="middle" font-weight="bold">piece gone</text>
+<text x="660" y="210" font-size="15" fill="#0072B2" text-anchor="middle" font-weight="normal">from these three</text>
+<rect x="65" y="48" width="210" height="64" rx="14" fill="#FF0000" stroke="#000000" stroke-width="2.5"/>
+<text x="170" y="77" font-size="22" fill="#ffffff" text-anchor="middle" font-weight="bold">UNHOMED</text>
+<text x="170" y="100" font-size="14" fill="#ffffff" text-anchor="middle" font-weight="normal">red, blinking</text>
+<rect x="65" y="218" width="210" height="64" rx="14" fill="#00003F" stroke="#000000" stroke-width="2.5"/>
+<text x="170" y="247" font-size="22" fill="#ffffff" text-anchor="middle" font-weight="bold">IDLE</text>
+<text x="170" y="270" font-size="14" fill="#ffffff" text-anchor="middle" font-weight="normal">blue, 25%</text>
+<rect x="65" y="388" width="210" height="64" rx="14" fill="#FFFF00" stroke="#000000" stroke-width="2.5"/>
+<text x="170" y="417" font-size="22" fill="#000000" text-anchor="middle" font-weight="bold">INTAKING</text>
+<text x="170" y="440" font-size="14" fill="#000000" text-anchor="middle" font-weight="normal">yellow</text>
+<rect x="65" y="558" width="210" height="64" rx="14" fill="#FFFF00" stroke="#000000" stroke-width="2.5"/>
+<text x="170" y="587" font-size="22" fill="#000000" text-anchor="middle" font-weight="bold">HANDOFF</text>
+<text x="170" y="610" font-size="14" fill="#000000" text-anchor="middle" font-weight="normal">yellow, blinking</text>
+<rect x="65" y="728" width="210" height="64" rx="14" fill="#32CD32" stroke="#000000" stroke-width="2.5"/>
+<text x="170" y="757" font-size="22" fill="#000000" text-anchor="middle" font-weight="bold">HOLDING</text>
+<text x="170" y="780" font-size="14" fill="#000000" text-anchor="middle" font-weight="normal">green</text>
+<rect x="65" y="878" width="210" height="64" rx="14" fill="#32CD32" stroke="#000000" stroke-width="2.5"/>
+<text x="170" y="907" font-size="22" fill="#000000" text-anchor="middle" font-weight="bold">SCORING</text>
+<text x="170" y="930" font-size="14" fill="#000000" text-anchor="middle" font-weight="normal">green, blinking</text>
+<path d="M 330 46 L 386 46" fill="none" stroke="#000000" stroke-width="3" marker-end="url(#head-req)"/>
+<text x="400" y="52" font-size="16" fill="#000000" text-anchor="start" font-weight="normal">a request canGoTo allows</text>
+<path d="M 330 82 L 386 82" fill="none" stroke="#0072B2" stroke-width="3" stroke-dasharray="9 6" marker-end="url(#head-self)"/>
+<text x="400" y="88" font-size="16" fill="#000000" text-anchor="start" font-weight="normal">periodic() decides, nobody asked</text>
+<text x="330" y="122" font-size="16" fill="#777777" text-anchor="start" font-weight="normal">UNHOMED.canGoTo(anything) is false</text>
+</svg>

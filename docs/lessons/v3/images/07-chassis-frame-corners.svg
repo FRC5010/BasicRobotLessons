@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 540" font-family="sans-serif">
+<defs><marker id="head" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="context-stroke"/></marker></defs>
+<rect x="0" y="0" width="800" height="540" fill="#ffffff"/>
+<text x="140.0" y="30.0" text-anchor="middle" font-size="17" font-weight="bold" fill="#222222">The frame</text>
+<text x="405.0" y="30.0" text-anchor="middle" font-size="17" font-weight="bold" fill="#222222">translate: one angle</text>
+<text x="660.0" y="30.0" text-anchor="middle" font-size="17" font-weight="bold" fill="#222222">rotate: one angle per corner</text>
+<line x1="275" y1="50" x2="275" y2="500" stroke="#dddddd" stroke-width="2"/>
+<line x1="535" y1="50" x2="535" y2="500" stroke="#dddddd" stroke-width="2"/>
+<rect x="89.0" y="219.0" width="102.0" height="102.0" rx="6" fill="#f1f1f1" stroke="#777777" stroke-width="2.5"/><line x1="89.0" y1="219.0" x2="191.0" y2="219.0" stroke="#222222" stroke-width="6"/>
+<line x1="140.0" y1="270.0" x2="140.0" y2="135.0" stroke="#0072B2" stroke-width="4" marker-end="url(#head)"/>
+<text x="148.0" y="130.0" text-anchor="start" font-size="16" font-weight="bold" fill="#0072B2">+X</text>
+<text x="148.0" y="110.0" text-anchor="start" font-size="14" font-weight="normal" fill="#0072B2">forward</text>
+<line x1="140.0" y1="270.0" x2="35.0" y2="270.0" stroke="#009E73" stroke-width="4" marker-end="url(#head)"/>
+<text x="35.0" y="258.0" text-anchor="middle" font-size="16" font-weight="bold" fill="#009E73">+Y</text>
+<text x="35.0" y="292.0" text-anchor="middle" font-size="14" font-weight="normal" fill="#009E73">left</text>
+<path d="M 170.0 270.0 A 30 30 0 1 0 140.0 300.0" fill="none" stroke="#D55E00" stroke-width="4" marker-end="url(#head)" transform="rotate(-0 140 270)"/>
+<text x="140.0" y="440.0" text-anchor="middle" font-size="15" font-weight="bold" fill="#D55E00">yaw + is counterclockwise</text>
+<circle cx="89.0" cy="219.0" r="7" fill="#222222"/>
+<text x="77.0" y="207.0" text-anchor="end" font-size="15" font-weight="bold" fill="#222222">FL (0)</text>
+<text x="77.0" y="224.0" text-anchor="end" font-size="14" font-weight="normal" fill="#777777">+0.3, +0.3</text>
+<circle cx="191.0" cy="219.0" r="7" fill="#222222"/>
+<text x="203.0" y="207.0" text-anchor="start" font-size="15" font-weight="bold" fill="#222222">FR (1)</text>
+<text x="203.0" y="224.0" text-anchor="start" font-size="14" font-weight="normal" fill="#777777">+0.3, -0.3</text>
+<circle cx="89.0" cy="321.0" r="7" fill="#222222"/>
+<text x="77.0" y="347.0" text-anchor="end" font-size="15" font-weight="bold" fill="#222222">BL (2)</text>
+<text x="77.0" y="364.0" text-anchor="end" font-size="14" font-weight="normal" fill="#777777">-0.3, +0.3</text>
+<circle cx="191.0" cy="321.0" r="7" fill="#222222"/>
+<text x="203.0" y="347.0" text-anchor="start" font-size="15" font-weight="bold" fill="#222222">BR (3)</text>
+<text x="203.0" y="364.0" text-anchor="start" font-size="14" font-weight="normal" fill="#777777">-0.3, -0.3</text>
+<text x="140.0" y="460.0" text-anchor="middle" font-size="14" font-weight="normal" fill="#777777">(seen from above)</text>
+<text x="140.0" y="478.0" text-anchor="middle" font-size="14" font-weight="normal" fill="#777777">the front is at the top</text>
+<rect x="354.0" y="219.0" width="102.0" height="102.0" rx="6" fill="#f1f1f1" stroke="#777777" stroke-width="2.5"/><line x1="354.0" y1="219.0" x2="456.0" y2="219.0" stroke="#222222" stroke-width="6"/>
+<line x1="366.0" y1="231.0" x2="342.0" y2="207.0" stroke="#222222" stroke-width="18" stroke-linecap="round"/>
+<line x1="354.0" y1="219.0" x2="310.9" y2="175.9" stroke="#0072B2" stroke-width="4" marker-end="url(#head)"/>
+<line x1="468.0" y1="231.0" x2="444.0" y2="207.0" stroke="#222222" stroke-width="18" stroke-linecap="round"/>
+<line x1="456.0" y1="219.0" x2="412.9" y2="175.9" stroke="#0072B2" stroke-width="4" marker-end="url(#head)"/>
+<line x1="366.0" y1="333.0" x2="342.0" y2="309.0" stroke="#222222" stroke-width="18" stroke-linecap="round"/>
+<line x1="354.0" y1="321.0" x2="310.9" y2="277.9" stroke="#0072B2" stroke-width="4" marker-end="url(#head)"/>
+<line x1="468.0" y1="333.0" x2="444.0" y2="309.0" stroke="#222222" stroke-width="18" stroke-linecap="round"/>
+<line x1="456.0" y1="321.0" x2="412.9" y2="277.9" stroke="#0072B2" stroke-width="4" marker-end="url(#head)"/>
+<text x="405.0" y="440.0" text-anchor="middle" font-size="14" font-weight="normal" fill="#222222">every wheel steers to atan2(vy, vx)</text>
+<text x="405.0" y="460.0" text-anchor="middle" font-size="14" font-weight="normal" fill="#777777">here 45°: forward and left</text>
+<text x="405.0" y="478.0" text-anchor="middle" font-size="14" font-weight="normal" fill="#777777">(0° is forward, counting CCW)</text>
+<rect x="609.0" y="219.0" width="102.0" height="102.0" rx="6" fill="#f1f1f1" stroke="#777777" stroke-width="2.5"/><line x1="609.0" y1="219.0" x2="711.0" y2="219.0" stroke="#222222" stroke-width="6"/>
+<line x1="621.0" y1="207.0" x2="597.0" y2="231.0" stroke="#222222" stroke-width="18" stroke-linecap="round"/>
+<line x1="609.0" y1="219.0" x2="565.9" y2="262.1" stroke="#D55E00" stroke-width="4" marker-end="url(#head)"/>
+<text x="573.0" y="193.0" text-anchor="end" font-size="15" font-weight="bold" fill="#D55E00">135°</text>
+<line x1="723.0" y1="231.0" x2="699.0" y2="207.0" stroke="#222222" stroke-width="18" stroke-linecap="round"/>
+<line x1="711.0" y1="219.0" x2="667.9" y2="175.9" stroke="#D55E00" stroke-width="4" marker-end="url(#head)"/>
+<text x="747.0" y="193.0" text-anchor="start" font-size="15" font-weight="bold" fill="#D55E00">45°</text>
+<line x1="597.0" y1="309.0" x2="621.0" y2="333.0" stroke="#222222" stroke-width="18" stroke-linecap="round"/>
+<line x1="609.0" y1="321.0" x2="652.1" y2="364.1" stroke="#D55E00" stroke-width="4" marker-end="url(#head)"/>
+<text x="573.0" y="357.0" text-anchor="end" font-size="15" font-weight="bold" fill="#D55E00">-135°</text>
+<line x1="699.0" y1="333.0" x2="723.0" y2="309.0" stroke="#222222" stroke-width="18" stroke-linecap="round"/>
+<line x1="711.0" y1="321.0" x2="754.1" y2="277.9" stroke="#D55E00" stroke-width="4" marker-end="url(#head)"/>
+<text x="747.0" y="357.0" text-anchor="start" font-size="15" font-weight="bold" fill="#D55E00">-45°</text>
+<text x="660.0" y="440.0" text-anchor="middle" font-size="14" font-weight="normal" fill="#222222">each wheel steers to atan2(x, -y)</text>
+<text x="660.0" y="460.0" text-anchor="middle" font-size="14" font-weight="normal" fill="#222222">of its own corner: a pinwheel</text>
+<text x="660.0" y="478.0" text-anchor="middle" font-size="14" font-weight="normal" fill="#777777">(the robot spins CCW)</text>
+</svg>

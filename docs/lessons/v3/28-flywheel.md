@@ -638,7 +638,8 @@ kP × (goal − ω)  =  kV × ω
 ω                =  42.96 rot/s
 ```
 
-Measured here: 43.40. Close enough to confirm the arithmetic, not exact —
+Measured here: 43.40 (Figure 28.1, just below, shows that run beside the full
+model's). Close enough to confirm the arithmetic, not exact —
 the small remaining gap is this simulator's own motor model, not a flaw in
 the reasoning. (Zero both gains, hold the request for five seconds on a
 20 ms schedule, and that is what the wheel reads.)
@@ -651,6 +652,40 @@ permanently, and no amount of patience recovers it.
 With the model in place, the same request settles at **60.47 rot/s** —
 comfortably inside the 1.5 rot/s tolerance — holding **7.14 V**, matching
 `kV × 60 = 7.1 V` almost exactly.
+
+<a id="figure-28-1"></a>
+![Flywheel speed and applied volts after a request for 60 rot/s from a stopped wheel: with the full model the speed climbs on a straight line, eases in and settles at 60.47; with kV and kA zeroed it follows the same line for 1.3 seconds, then bends over and flattens at 43.40, and the applied volts settle at 7.14 against 5.12](images/28-hold-with-without-model.png)
+
+*Figure 28.1 — The same request for 60 rot/s from a stopped wheel, with the full model (orange) and with `kFlywheelKV` and `kFlywheelKA` zeroed (green). One run each: this simulation gives the same settled numbers every time.*
+
+Figure 28.1 puts the two runs on one set of axes, and it's worth a slow read.
+Start with the top panel. The dashed black line is the goal, 60 rot/s. The orange
+line is the flywheel as you've built it, and the green line is the same flywheel
+with `kFlywheelKV` and `kFlywheelKA` set to zero, so `kP` is doing everything.
+The dotted grey line is the 42.96 from the arithmetic above.
+
+The first thing to notice is how long the two runs are the same line. For the
+first 1.3 seconds you can't see the orange one at all: both wheels climb on one
+straight line, about 29 rot/s every second. The bottom panel shows the volts they
+were given, and they match too, starting near 3 V and rising as the wheel speeds
+up. That's the motor controller's own current limit at work (Lesson 29 is about
+it): with the wheel barely turning, it won't push more than that into the motor,
+so the request for 18 V of `kP` gets 3. While the error is that big, the model
+has nothing to add.
+
+Then they part. By 1.3 s the green wheel is at about 37 rot/s, and `kP × error`
+(0.3 × 23 rot/s, about 7 V) has dropped below what the current limit lets through, so
+the volts start following it down. The line bends over and flattens at **43.40**. That's the fixed point: the wheel is turning fast enough that its own
+back-EMF cancels what `kP` is asking for, so there's nothing left to accelerate
+it. The bottom panel shows the same thing from the other side. The green run's
+5.1 V is `kP × 16.6 rot/s` of error plus the 0.15 V of `kS`, and it stays there,
+flat, for as long as you let the run go. The orange wheel keeps climbing for another
+0.6 seconds, because the model is adding `kV × speed` on top, then eases into
+**60.47** at 7.14 V. The 2 V between the two voltage lines is what the model was
+worth, and 17 rot/s is what going without it costs.
+
+The shape to remember is the green line's, not the number. It isn't late, and it
+isn't catching up. It's finished.
 
 > **The third time this course has said it, and the clearest.** A P term
 > corrects; it does not sustain. If holding station requires continuous
@@ -677,6 +712,32 @@ sits while it's waiting.
 | 15 rot/s | 1.72 s |
 | 30 rot/s | 1.22 s |
 | 45 rot/s | 0.70 s |
+
+<a id="figure-28-2"></a>
+![Flywheel speed against time for four requests for 60 rot/s, from idle speeds of 0, 15, 30 and 45 rot/s: four parallel climbs, each entering the AtSpeed band at 2.26, 1.72, 1.22 and 0.70 seconds; below, the applied volts for the 30 rot/s start jump to about 6.7, peak at 9.05 and settle at 7.14](images/28-spin-up-from-idle.png)
+
+*Figure 28.2 — Spin-up to 60 rot/s from four idle speeds. The shaded band is `AtSpeed` (within 1.5 rot/s of 60); each dot is where a curve enters it. Below: the applied volts for the 30 rot/s start. One run per idle speed.*
+
+Figure 28.2 shows why. Read the top panel first: four requests for 60 rot/s, each
+from a wheel that had been idling at a different speed (the darker the line, the
+faster the idle). The shaded band is what `atSpeed()` accepts, and each dot marks
+where a curve gets into it, at the four times in the table.
+
+Look at how alike the curves are. They're the same straight climb, about 29 rot/s
+every second, with the same ease-in at the top, just shifted. The idle wheel doesn't
+accelerate any harder. **It starts partway up the same climb**, so a wheel idling at
+45 rot/s has 15 rot/s to go and one starting from a stop has 60, and the time
+difference is just the distance divided by the same speed of climb. That's the
+whole trade: you pay for it in electricity while you wait, and you get it back as a
+climb you don't have to make.
+
+The bottom panel is the 30 rot/s run's applied volts, the "about 7 V, towards
+9 V" you'll see in section 9. For the first two ticks the wheel is idling, with
+3.6 V holding it there. The request lands and the voltage jumps to about 6.7 V,
+then climbs as the wheel speeds up (the same limit as above: the same current
+allows more volts as the wheel's own back-EMF grows) until 9.05 V at 0.92 s, about
+where the straight climb ends. After that `kP` is looking at an error that's almost gone, and the
+voltage falls away to the 7.14 V that `kV × 60` says holds the wheel there.
 
 Idling at half the shooting speed cuts the wait roughly in half, and
 that's why `idle()` returning `spinUp(kIdleSpeed)` is the flywheel's
@@ -732,6 +793,8 @@ Hold the left trigger. The goal jumps to 60, the wheel climbs, and
 drops back to idle. Add `Flywheel/AppliedVolts` to the graph and you'll
 see it jump to about 7 V, climb towards 9 V as the wheel speeds up, and
 settle around 7.1 — which is `kV × 60`, exactly as computed in section 3.
+Your `Flywheel/AppliedVolts` should have the shape of the lower panel of
+[Figure 28.2](#figure-28-2).
 
 Worth doing deliberately:
 

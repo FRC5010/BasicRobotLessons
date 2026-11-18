@@ -546,8 +546,8 @@ comes and goes from run to run, and a handful of runs can miss it:
 | Phoenix defaults | 85–129 A | 5.82–7.62 V | **4 of 30** |
 | The budget above | 65–121 A | 6.17–8.42 V | **1 of 30** |
 
-With no limits the robot browns out about a third of a second after you
-enable it, before you've pressed a thing: the flywheel's idle spin-up alone
+With no limits the robot browns out within half a second of enabling,
+before you've pressed a thing: the flywheel's idle spin-up alone
 pulls 119–130 A, which drags the rail under 6.3 V, and `Power/BrownedOut`
 goes true. Then ask for everything at once. In eight of the ten runs the
 battery collapsed all the way to 0 V. The elevator got only 0.12–0.53 m on
@@ -559,6 +559,37 @@ robot carried on: the elevator reached the top and the flywheel made its
 The other two rows need one piece of arithmetic. On this battery the rail is
 11 V minus 40 mΩ times the current, so **6.3 V is 117.5 A**. A brownout here
 means the total draw reached 117.5 A on a single tick, and nothing more.
+
+<a id="figure-29-1"></a>
+![Total current and battery voltage over a 10-second run on the tired battery, for no limits and for the budget: with no limits the current passes the 117.5 A line within the first 0.2 seconds and the rail drops under 6.3 V, recovers, then swings violently between about 0 and 11 V once the moves start at 6 seconds; with the budget the current stays well under the line and the rail never gets near 6.3 V](images/29-tired-battery-brownout.png)
+
+*Figure 29.1 — The same moves on the tired battery, no limits (green) against the budget (orange). One run of each: the no-limits run is a typical collapse (eight of its ten runs looked like this), and the budget run is a typical one of its thirty, so it doesn't show the rare brownout described below.*
+
+Figure 29.1 shows the line. The top panel is `Power/TotalCurrentAmps` and the bottom is
+`Power/BatteryVolts`, over the same ten seconds. The two dashed lines are one line
+seen from two sides: on this battery the rail is 11 V minus 40 mΩ times the current,
+so 117.5 A on the top panel is 6.3 V on the bottom one. When the current is above
+its dashed line, the voltage is under its own.
+
+Read the left edge first, because nothing has been pressed yet. The robot is enabled at
+time zero and the flywheel starts its idle spin-up. The green line, with no limits,
+jumps to about 90 A at once and is through the 117.5 A line by 0.2 s. The
+voltage panel mirrors it: the rail falls under 6.3 V, bottoms out near 4.7 V, and
+only climbs back over 6.3 V at about 0.7 s, as the wheel gets up to speed. The orange line, the budget, gives the same flywheel a 40 A cap, so the same
+spin-up never gets near the line and the rail stays above 9 V.
+
+Now the right half. At 6 s, the moves: the D-pad, the left trigger and the intake
+button, all together. The orange current rises to the 45 to 77 A range, ragged
+where the three mechanisms trade the load, and the rail dips to about 9 V and
+climbs back as they finish. Everything gets where it was going. The green line is
+a different kind of picture. Once the moves start, it isn't a trend any more: the
+current and the voltage swing between about 0 and 500 A, and 0 and 11 V, from one
+tick to the next. That is the feedback loop from section 6 with nothing to stop it:
+the rail sags, the motors weaken and draw less, the rail jumps back, the motors
+pull hard again. A brownout is an instant, and this is what a run of them looks
+like. (After the release, both traces in the orange run go below zero and above
+12 V. That's the motors slowing down and putting current back, and the battery
+model lets the rail rise for it. It's the simulation's accounting, so ignore it.)
 
 Phoenix's defaults are a gamble on this battery. Twenty-six of the thirty
 runs got through, but the typical one bottomed out at 6.6 V, only 0.3 V

@@ -111,7 +111,7 @@ The `@Teleop` sitting *above* the whole class is a different kind of thing:
 an **annotation** — a tag that tells the framework something about the class
 underneath it, without being a method or a field itself. `@Teleop` says
 "this is a piece of robot behavior a human can pick on the Driver Station,
-and call it 'My Teleop' unless told otherwise." `MyAuto.java` has the same
+and list it by its class name, `MyTeleop`, unless told otherwise." `MyAuto.java` has the same
 idea with `@Autonomous` instead. Neither annotation runs any code by
 itself — it's a label the framework reads before your code ever executes.
 
@@ -159,10 +159,25 @@ If you started it from VS Code, it asks when the build finishes whether you
 want Sim GUI and/or Real Driverstation. **Sim GUI** is correct for now.
 From the terminal, the SimGUI window just opens. When it does:
 
-- Find the **opmode selector** and pick **My Teleop**.
-- Find the **Robot State** panel and change it from *Disabled* to *Enabled*.
-- Congratulations — you're "driving" a simulated robot. Nothing moves,
-  because there's no motor yet. That's Lesson 1.
+The panel you want is **Robot State**, in the top left, and it holds
+everything you need. It's three steps, top to bottom, and Figure 0.1 numbers
+them:
+
+1. Click **Teleoperated** in the list of modes. The panel starts on
+   *Disconnected*: the simulated Driver Station isn't attached yet, and
+   picking a mode attaches it.
+2. Open the **OpMode** drop-down underneath and pick **MyTeleop**. That's the
+   **opmode selector**. It only lists opmodes of the mode you picked, which is
+   why step 1 comes first. (`MyAuto` shows up under **Autonomous**.)
+3. Click **Enable**. The robot is now running `MyTeleop`.
+
+<a id="figure-0-1"></a>
+![The Robot State panel in SimGUI with three numbered marks: 1 on the Teleoperated row of the mode list, 2 on the OpMode drop-down showing MyTeleop, 3 on the Enable row at the bottom](images/00-simgui-opmode-state.png)
+
+*Figure 0.1 — SimGUI's Robot State panel: (1) pick the mode, (2) pick the opmode, (3) enable.*
+
+Congratulations — you're "driving" a simulated robot. Nothing moves,
+because there's no motor yet. That's Lesson 1.
 
 Close the window (or hit `Ctrl+C` in the terminal) when you're done.
 
@@ -198,9 +213,9 @@ Every statement in Java does. Forgetting the semicolon is the number-one
 beginner compile error — better to meet the error message now than be
 surprised by it later.
 
-Run the robot in simulation again, pick **My Teleop**, flip to
-**Enabled**, and glance at the terminal. Your message should be sitting
-right there. You just changed what the robot does.
+Run the robot in simulation again, pick **Teleoperated** and **MyTeleop**
+the way Figure 0.1 shows, click **Enable**, and glance at the terminal. Your
+message should be sitting right there. You just changed what the robot does.
 
 ---
 
@@ -213,7 +228,8 @@ the walkthrough.
 1. **Code — give `MyAuto` a `start()`.** Open `MyAuto.java`. It doesn't have
    a `start()` method yet — add one, matching the shape `MyTeleop`'s already
    has, and print a *different* message from it. Verify it only shows up
-   when you've picked **My Auto** on the opmode selector, not **My Teleop**.
+   when you've picked **Autonomous** and **MyAuto**, not **Teleoperated** and
+   **MyTeleop**.
 2. Break it on purpose. Delete a semicolon and run `./gradlew build`. Read
    the error carefully — note the file it points at and the line number it
    gives you. Reading compiler errors is a real skill, and the sooner you're

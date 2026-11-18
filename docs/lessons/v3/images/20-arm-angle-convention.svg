@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1040" font-family="sans-serif">
+<rect x="0" y="0" width="800" height="1040" fill="#ffffff"/>
+<text x="24.0" y="40.0" font-size="18" fill="#000000" text-anchor="start" font-weight="bold">Side view, from the pivot: the angle is measured up from horizontal</text>
+<path d="M 330 300 L 536.7 375.2 A 220 220 0 1 0 110.0 300.0 Z" fill="#e3eef8" stroke="none"/>
+<path d="M 330 300 L 110.0 300.0 A 220 220 0 0 0 536.7 375.2 Z" fill="#ececec" stroke="none"/>
+<text x="330.0" y="440.0" font-size="16" fill="#777777" text-anchor="middle" font-weight="normal">no travel here</text>
+<text x="330.0" y="462.0" font-size="16" fill="#777777" text-anchor="middle" font-weight="normal">(the stops are at −20° and 180°)</text>
+<line x1="110.0" y1="300.0" x2="570.0" y2="300.0" stroke="#777777" stroke-width="1.5" stroke-dasharray="6 5" stroke-linecap="round"/>
+<line x1="330.0" y1="80.0" x2="330.0" y2="310.0" stroke="#777777" stroke-width="1.5" stroke-dasharray="6 5" stroke-linecap="round"/>
+<line x1="330.0" y1="300.0" x2="536.7" y2="375.2" stroke="#000000" stroke-width="4" stroke-linecap="round"/>
+<text x="548.7" y="403.2" font-size="16" fill="#000000" text-anchor="start" font-weight="bold">kMinAngle = −20°</text>
+<line x1="330.0" y1="300.0" x2="110.0" y2="300.0" stroke="#000000" stroke-width="4" stroke-linecap="round"/>
+<text x="110.0" y="286.0" font-size="16" fill="#000000" text-anchor="start" font-weight="bold">kMaxAngle = 180°</text>
+<line x1="330.0" y1="300.0" x2="530.0" y2="300.0" stroke="#D55E00" stroke-width="6" stroke-linecap="round"/>
+<circle cx="430.0" cy="300.0" r="7" fill="#000000"/>
+<line x1="330.0" y1="334.0" x2="430.0" y2="334.0" stroke="#000000" stroke-width="2" stroke-dasharray="7 5" stroke-linecap="round"/>
+<line x1="330.0" y1="327.0" x2="330.0" y2="341.0" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+<line x1="430.0" y1="327.0" x2="430.0" y2="341.0" stroke="#000000" stroke-width="2" stroke-linecap="round"/>
+<text x="444.0" y="340.0" font-size="16" fill="#000000" text-anchor="start" font-weight="normal">0.254 m</text>
+<line x1="330.0" y1="300.0" x2="471.4" y2="158.6" stroke="#D55E00" stroke-width="6" stroke-linecap="round"/>
+<circle cx="400.7" cy="229.3" r="7" fill="#000000"/>
+<line x1="330.0" y1="229.3" x2="400.7" y2="229.3" stroke="#000000" stroke-width="2" stroke-dasharray="7 5" stroke-linecap="round"/>
+<text x="336.0" y="221.3" font-size="16" fill="#000000" text-anchor="start" font-weight="normal">0.180 m</text>
+<line x1="330.0" y1="300.0" x2="330.0" y2="100.0" stroke="#D55E00" stroke-width="6" stroke-linecap="round"/>
+<circle cx="330.0" cy="200.0" r="7" fill="#000000"/>
+<text x="342.0" y="205.0" font-size="16" fill="#000000" text-anchor="start" font-weight="normal">0 m</text>
+<text x="556.0" y="292.0" font-size="16" fill="#000000" text-anchor="start" font-weight="bold">0°</text>
+<text x="479.4" y="154.6" font-size="16" fill="#000000" text-anchor="start" font-weight="bold">45°</text>
+<text x="340.0" y="76.0" font-size="16" fill="#000000" text-anchor="start" font-weight="bold">90° (kStowed)</text>
+<circle cx="330.0" cy="300.0" r="9" fill="#000000"/>
+<text x="316.0" y="328.0" font-size="16" fill="#000000" text-anchor="end" font-weight="normal">pivot</text>
+<text x="592.0" y="90.0" font-size="16" fill="#000000" text-anchor="start" font-weight="normal">Dots: the centre of mass,</text>
+<text x="592.0" y="112.0" font-size="16" fill="#000000" text-anchor="start" font-weight="normal">at half the 0.508 m arm</text>
+<text x="592.0" y="150.0" font-size="16" fill="#777777" text-anchor="start" font-weight="normal">Dashed lines: the horizontal</text>
+<text x="592.0" y="172.0" font-size="16" fill="#777777" text-anchor="start" font-weight="normal">distance gravity pulls over,</text>
+<text x="592.0" y="194.0" font-size="16" fill="#777777" text-anchor="start" font-weight="normal">0.254 m × cos θ</text>
+<text x="592.0" y="250.0" font-size="16" fill="#000000" text-anchor="start" font-weight="bold">The firmware assumes</text>
+<text x="592.0" y="272.0" font-size="16" fill="#000000" text-anchor="start" font-weight="bold">the sensor reads 0 when</text>
+<text x="592.0" y="294.0" font-size="16" fill="#000000" text-anchor="start" font-weight="bold">the arm is on the 0° line.</text>
+<text x="24.0" y="590.0" font-size="18" fill="#000000" text-anchor="start" font-weight="bold">In the drawing, an angle is measured from the part it is attached to</text>
+<line x1="152.0" y1="890.0" x2="208.0" y2="890.0" stroke="#777777" stroke-width="3" stroke-linecap="round"/>
+<line x1="180.0" y1="890.0" x2="180.0" y2="740.0" stroke="#555555" stroke-width="8" stroke-linecap="round"/>
+<text x="166.0" y="810.0" font-size="16" fill="#555555" text-anchor="end" font-weight="normal">carriage</text>
+<text x="166.0" y="830.0" font-size="16" fill="#555555" text-anchor="end" font-weight="normal">90°</text>
+<line x1="180.0" y1="740.0" x2="180.0" y2="630.0" stroke="#777777" stroke-width="1.5" stroke-dasharray="6 5" stroke-linecap="round"/>
+<line x1="180.0" y1="740.0" x2="310.0" y2="740.0" stroke="#D55E00" stroke-width="8" stroke-linecap="round"/>
+<path d="M 232.0 740.0 A 52 52 0 0 0 180.0 688.0" fill="none" stroke="#000000" stroke-width="2.5"/>
+<text x="180.0" y="926.0" font-size="16" fill="#000000" text-anchor="middle" font-weight="bold">arm horizontal</text>
+<text x="180.0" y="950.0" font-size="16" fill="#000000" text-anchor="middle" font-weight="normal">world angle 0°</text>
+<text x="180.0" y="974.0" font-size="16" fill="#D55E00" text-anchor="middle" font-weight="bold">drawing angle −90°</text>
+<text x="246.0" y="712.0" font-size="18" fill="#000000" text-anchor="start" font-weight="bold">−90°</text>
+<text x="322.0" y="746.0" font-size="16" fill="#D55E00" text-anchor="start" font-weight="normal">arm</text>
+<line x1="532.0" y1="890.0" x2="588.0" y2="890.0" stroke="#777777" stroke-width="3" stroke-linecap="round"/>
+<line x1="560.0" y1="890.0" x2="560.0" y2="740.0" stroke="#555555" stroke-width="8" stroke-linecap="round"/>
+<text x="546.0" y="810.0" font-size="16" fill="#555555" text-anchor="end" font-weight="normal">carriage</text>
+<text x="546.0" y="830.0" font-size="16" fill="#555555" text-anchor="end" font-weight="normal">90°</text>
+<line x1="560.0" y1="740.0" x2="560.0" y2="630.0" stroke="#777777" stroke-width="1.5" stroke-dasharray="6 5" stroke-linecap="round"/>
+<line x1="560.0" y1="740.0" x2="560.0" y2="610.0" stroke="#D55E00" stroke-width="8" stroke-linecap="round"/>
+<text x="560.0" y="926.0" font-size="16" fill="#000000" text-anchor="middle" font-weight="bold">arm stowed</text>
+<text x="560.0" y="950.0" font-size="16" fill="#000000" text-anchor="middle" font-weight="normal">world angle 90°</text>
+<text x="560.0" y="974.0" font-size="16" fill="#D55E00" text-anchor="middle" font-weight="bold">drawing angle 0°</text>
+<text x="574.0" y="680.0" font-size="16" fill="#D55E00" text-anchor="start" font-weight="normal">arm</text>
+<text x="24.0" y="1010.0" font-size="16" fill="#000000" text-anchor="start" font-weight="bold">toDrawingAngle(armAngle) = armAngle − kCarriageAngle</text>
+</svg>

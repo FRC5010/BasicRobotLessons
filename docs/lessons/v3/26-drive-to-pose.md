@@ -656,6 +656,39 @@ peaks above 4 m/s² at the start are what you'd expect from the P term: the
 wheels take a moment to spin up, the robot falls behind the plan, and P
 pushes to catch it up.
 
+<a id="figure-26-1"></a>
+![Speed along the line against time for the (1, 1) to (5, 4) drive: the two-stage plan is a trapezoid that peaks at 3 m/s, steps down at the handoff and slows to a stop, with the measured speed tracking it closely; the old design launches to about 4 m/s in under half a second and then decays slowly into the handover; below, measured minus plan speed peaks at +0.3 m/s while the plan slows](images/26-two-stage-speed.png)
+
+*Figure 26.1 — Speed along the line from (1, 1) to (5, 4), two stages against the old design. One run each. The blue plan line was read out of the controller by a test, so your own logs won't have it.*
+
+Figure 26.1 plots both designs on one set of axes, and the shape of each curve is
+the whole story. Read the top panel first. The thick blue line is the plan, the
+speed the profile asked for on each tick, and the orange line on top of it is how
+fast the robot really went. The grey line is the old design.
+
+Follow the blue line from the left. It climbs at the 4 m/s² of `kTravelAccel` to
+3 m/s at 0.75 s, cruises, and starts slowing at about 1.4 s. At the dotted line,
+1.8 s, stage one hands over. Stage two starts a fresh plan from the speed the robot
+actually has, about 1.45 m/s, under its own gentler limits: the plan comes down
+to 1.2 m/s, stage two's top speed, flattens there for a moment, then slows at
+1.5 m/s² to a stop. The robot arrives at about 3.4 s. The little dip
+of the orange line just under zero at 3 s is the roll past the target and back that
+the callout below describes.
+
+Now the grey line, which is nothing like it. The old sketch launched at the tyres'
+limit: 3.8 m/s inside 0.4 s, and 4.1 m/s at the top, faster than the new design
+ever goes. Its speed is just 1.5 times the distance left, so it falls away smoothly
+and crawls into the handover at 3.2 s doing 0.08 m/s. Both designs arrive at about
+the same time, which is why the table says the time barely changed. One does it
+with a violent launch and a long, slow tail. The other does it with a plan.
+
+The bottom panel is the orange line minus the blue one, and it's the drive lag from
+section 6 made visible. While the plan slows, the robot runs ahead of it by up to
+0.3 m/s, at 1.5 s. At 4 m/s², 0.3 m/s is 0.07 s, which is where that number came from.
+In the first tenth of a second the robot trails the plan by about the same amount
+the other way: the wheels haven't caught up yet. This is why stage one hands over at
+1.2 m/s and not at the 1.7 m/s that would just fit.
+
 Two other runs worth doing yourself:
 
 - **Start on the target, facing backwards.** The sketch called that done on

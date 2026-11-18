@@ -160,6 +160,30 @@ decision built on top of it says otherwise points somewhere completely
 different — not at the elevator, but at whatever is *asking the
 question*.
 
+Figure 32.1 stacks the three traces the way you'd see them in AdvantageScope,
+from a recording made the way section 3 describes. Read the top panel first.
+The dashed line is `GoalMeters`, a step to 0.75 m, and the orange line is
+`HeightMeters` climbing to meet it and settling in by about 1.3 s. That is a
+mechanism doing its job. The middle panel is `AtGoal` over the same seconds,
+and it's a flat line on *false*. It doesn't flicker while the carriage is
+climbing and it doesn't change when the carriage has been sitting at the goal
+for five seconds. Those two panels disagree, and that's the diagnosis.
+
+The bottom panel is a zoom your own graph doesn't have yet: height minus goal,
+in millimetres, worked out by hand from the two traces (section 6 does that
+subtraction on your recording, and section 7 has the robot log it). The scale
+is squeezed to a few millimetres either side of zero, so the first second, a
+climb of three quarters of a metre, runs off the bottom of the panel. What's
+left is the part you couldn't see up top: a brief overshoot at 1.2 s, then a
+height that sits a hair below the goal and stays there. Next to that hair, the
+band `AtGoal` was asking the height to land in is thinner than the zero line
+drawn on the panel.
+
+<a id="figure-32-1"></a>
+![Three stacked panels over the same seconds. Top: the goal steps to 0.75 m and the height climbs to it and settles by about 1.3 seconds. Middle: AtGoal is flat on false the whole time. Bottom: height minus goal zoomed to millimetres, showing a 1.2 mm overshoot, then a settled error between 0.15 and 0.19 mm below the goal, against a tolerance band of 0.0002 mm](images/32-at-goal-never-true.png)
+
+*Figure 32.1 — The height arrives, and `AtGoal` never says so. Height minus goal in the bottom panel is computed by hand; section 7 logs it.*
+
 That's the move this lesson is teaching: **put the measurement and the
 decision built from it on the same graph, and read where they stop
 agreeing.** One trace tells you something happened. Two traces, read
@@ -250,6 +274,25 @@ same evidence. That's the idea Lesson 13 introduced — "a replay is your
 code, today's version, fed the readings of a run that already happened" —
 and here it's not a demonstration. It's the proof that your fix works,
 checked against a session that already happened instead of a fresh guess.
+
+Figure 32.2 is what you should see in the `_sim` file, from a replay of the
+same recording as Figure 32.1. The top panel is the recorded `HeightMeters`
+next to the goal, which is the same measurement as before and is not going to
+change, because replay feeds the code the recorded readings. The middle panel
+is height minus goal in millimetres with the new tolerance drawn as a green
+band, ±1 mm. Follow the orange line: it climbs into the band at 1.2 s,
+overshoots to a little over 1 mm, which leaves the band for a tick, then
+settles in and stays inside by a margin of about 0.8 mm. The bottom panel is
+the payoff. The lower trace is `RealOutputs/Elevator/AtGoal`, what the
+recorded code decided: false, all of it. The upper trace is
+`ReplayOutputs/Elevator/AtGoal`, what today's code decides about those same
+readings: true at 1.20 s, false for the one tick of overshoot, true for good
+from 1.26 s. One constant changed, and the decision flipped.
+
+<a id="figure-32-2"></a>
+![Three stacked panels over seconds 0.5 to 3. Top: the recorded height settling on the goal. Middle: height minus goal in millimetres with a green band of plus and minus 1 mm; the line enters the band at 1.2 seconds, overshoots to about 1.2 mm, drops back in and stays at about minus 0.2 mm. Bottom: the recorded AtGoal flat on false, and the replayed AtGoal true from 1.2 seconds with a one-tick drop at 1.24 seconds, true for good from 1.26 seconds](images/32-replay-fixed-code.png)
+
+*Figure 32.2 — The same recorded match through the fixed code: the readings are identical, the replayed `AtGoal` is true from 1.26 s.*
 
 > **Trying more than one fix?** `./gradlew replayWatch` (Lesson 13)
 > replays the log AdvantageScope has open every time you save a change,

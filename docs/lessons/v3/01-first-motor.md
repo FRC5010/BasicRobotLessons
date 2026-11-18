@@ -442,27 +442,42 @@ doesn't pick one up on its own, and this is the step everybody misses the
 first time — then spends ten minutes convinced their perfectly good binding
 is broken.
 
-Two panels do the work. **System Joysticks** lists what your laptop
+Two panels do the work, and Figure 1.1 shows where they are and what the
+drag looks like. **System Joysticks** (1 in the figure) lists what your laptop
 currently has attached: any real controllers, plus a few entries named
-**Keyboard 0**, **Keyboard 1**, and so on. **Joysticks** is the panel your
+**Keyboard 0**, **Keyboard 1**, and so on. **Joysticks** (2) is the panel your
 robot code actually reads, and it's a set of numbered slots starting at 0.
 
-**Drag an entry from System Joysticks into slot 0 of the Joysticks panel.**
-If you have a controller plugged in, drag that. If you don't, drag
-**Keyboard 0** and your keyboard will stand in for one — that's how most of
-this course gets driven.
+**Drag an entry from System Joysticks onto the `Joystick[0]` heading of the
+Joysticks panel.** The heading is the slot. If you have a
+controller plugged in, drag that. If you don't, drag **Keyboard 0** and your
+keyboard will stand in for one — that's how most of this course gets driven.
+When it works, the slot fills in with the controller's name and a list of its
+axes, as in the bottom half of the figure.
+
+<a id="figure-1-1"></a>
+![SimGUI's System Joysticks panel with Keyboard 0 marked 1, an arrow from it to the Joystick[0] heading in the Joysticks panel marked 2, the same panel afterwards with slot 0 reading 16: Keyboard 0 and its axes, and the Other Devices panel marked 3 with the Talon FX's dutyCycle reading 0.25](images/01-simgui-joystick-slot.png)
+
+*Figure 1.1 — Drag Keyboard 0 (1) onto the Joystick[0] heading (2); the TalonFX's numbers show up in Other Devices (3).*
 
 Slot 0 isn't an arbitrary choice. It's the `0` you just read in
 `CommandGamepad(0)`: your controller reads whichever slot number it was
 handed, so the field and the panel have to agree. Plug in a second
 controller someday and it goes in slot 1, with a `1` in its constructor.
 
-Pick **My Teleop** on the opmode selector, set **Robot State** to
-**Enabled**, and open the **Other Devices** panel, where the TalonFX turns
-up. Hold the bottom face button — on the controller, on the keyboard, or by
-clicking it in the Joysticks panel — and watch the motor's output jump to
-`0.3` and drop back to `0` when you let go. (On a real robot the wheel would
-spin. We'll get proper motion in the simulation lesson.)
+Pick **Teleoperated** and **MyTeleop** in the Robot State panel and click
+**Enable** (Lesson 0's [Figure 0.1](00-orientation.md#figure-0-1) shows
+where), then open the **Other Devices** panel (3), where the TalonFX turns up
+as **Talon FX (v6)[1]**. Open it, and open the **Talon FX (v6)[1]** inside it:
+its rows are `supplyVoltage`, `dutyCycle`, `motorVoltage`, `torqueCurrent` and
+`supplyCurrent`. Watch `dutyCycle`. Hold the bottom face button — on a
+controller, or on **Keyboard 0** the **Z** key, with the SimGUI window
+selected — and the output jumps from `0` to about `0.25` and drops back to `0`
+when you let go. (It reads `0.25`, not the `0.3` your code asks for. The
+simulated motor has nothing to turn yet, so it stalls, and `torqueCurrent`
+pins at 119 A, which looks like Phoenix's default current limit trimming the
+output. Lesson 4 gives the motor something to spin. On a real robot the wheel
+would spin.)
 
 > **Using a real gamepad?** Turn on the **Map gamepad** toggle underneath
 > the Joysticks panel. The real Driver Station quietly remaps gamepads so

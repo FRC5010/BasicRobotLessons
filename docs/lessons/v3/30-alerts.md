@@ -262,10 +262,18 @@ import org.wpilib.util.Alert.Level;
 ```
 
 **Run the robot in simulation.** In SimGUI, open **NetworkTables →
-AdvantageKit → RealOutputs → Alerts**.
-The panel says `Elevator has never been homed`, with a yellow warning sign,
-which is correct. Enable Teleoperated and press **Back** to home it, and
-watch the line disappear on its own. Nothing clears it explicitly:
+AdvantageKit → RealOutputs → Alerts**. Figure 30.1 shows the menu, which
+opens three levels deep, and the panel that appears when you click **Alerts**.
+
+<a id="figure-30-1"></a>
+![SimGUI's NetworkTables menu opened to AdvantageKit, then RealOutputs, then Alerts, and beside it the panel that opens, titled /AdvantageKit/RealOutputs/Alerts, with a Medium group holding one amber warning, Elevator has never been homed](images/30-simgui-alerts-panel.png)
+
+*Figure 30.1 — The path to the alerts panel (1), and the panel (2) on a fresh launch.*
+
+The panel groups alerts by level and says `Elevator has never been homed`
+under **Medium**, with a yellow warning sign, which is correct. Enable
+Teleoperated and press **Back** to home it, and watch the line disappear on
+its own. Nothing clears it explicitly:
 `set(false)` runs every tick once `m_homed` is true.
 
 You may also catch a burst of red the moment the robot starts. It happens on
