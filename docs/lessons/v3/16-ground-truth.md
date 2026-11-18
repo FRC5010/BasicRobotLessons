@@ -410,6 +410,33 @@ addition never forgets, which is precisely the argument Lesson 14 opened
 with, except this time you're watching it happen instead of taking its
 word.
 
+Figure 16.1 plots three drives, with nothing but odometry feeding the
+estimate (no cameras), so you can see the creep without anything pulling
+it back.
+
+<a id="figure-16-1"></a>
+![A graph over six seconds of how far ahead of the truth the estimate is, in centimeters, for three drives. A quarter-stick drive stays at zero. A full-stick start from a stop opens a gap of about 32 centimeters while the robot is moving, which closes to about 8 centimeters after the stick is released and then stays there. Driving full forward and then full reverse opens a gap of about 100 centimeters that closes only to about 78 centimeters and stays there.](images/16-estimate-creeps-ahead.png)
+
+*Figure 16.1 — How much farther the estimate has travelled than the truth, with the cameras left out.*
+
+The vertical axis is how much farther the estimate has travelled than
+the truth, in centimeters (zero means they agree), and the horizontal axis
+is time from the start of the drive. The gentle drive, a quarter of full
+stick for three seconds, is the grey line along zero: the tires never slip, so the estimate
+and the truth agree to within about 3 mm. It is there to show that the
+creep isn't a bug in the odometry: when the wheels do what the chassis
+does, it's right. The orange line is a full-stick start from a stop, held
+for a second and a half. The gap opens as the wheels get ahead of the
+chassis, reaches about **32 cm** while the robot is at full speed, shrinks
+as the chassis catches up when you let go, and then stops at
+about **8 cm**. It is flat from there on. That flat line is the
+point of this section: nothing in the estimator knows a wheel slipped, so
+nothing takes the 8 cm back. The green line is a harder drive, full
+forward and then straight into full reverse. The tires slip at each
+change of direction, so it climbs twice, to about **100 cm**, and settles at about
+**78 cm**, again for good. The harder you ask the tires to work, the further
+ahead of the truth the estimate gets, and it never comes back on its own.
+
 ---
 
 ## 7. Closing the loop: vision checks itself against truth

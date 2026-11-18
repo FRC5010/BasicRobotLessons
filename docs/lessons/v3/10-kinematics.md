@@ -36,11 +36,32 @@ two.
 That math is simple once it's spelled out: at each corner, add the
 **translation velocity vector** to the **rotation velocity vector** (which
 points tangent to the circle around the center, with magnitude `ω × r`).
-WPILib packages it as **`SwerveDriveKinematics`** so you never have to
+Figure 10.1 draws it. WPILib packages it as **`SwerveDriveKinematics`** so you never have to
 re-derive it. Give it a `ChassisVelocities`; it hands back four
 `SwerveModuleVelocity`s — the same type you've been logging to the Swerve tab
 since Lesson 7. Today it stops being just telemetry and becomes the language
 the whole drivetrain speaks.
+
+<a id="figure-10-1"></a>
+![Two top-down views of the robot with its four corners. On the left, driving forward at 1 m/s, every corner has the same forward arrow. On the right, driving forward while spinning at 2 rad/s, each corner has the same forward arrow plus a different spin arrow along the circle, and the four sums point in four different directions with four different lengths.](images/10-translation-plus-rotation.svg)
+
+*Figure 10.1 — Each wheel's velocity is the translation plus the spin. The numbers are the corners' places in the array.*
+
+Read the left panel first. The robot is driving straight ahead at 1 m/s
+and not spinning, so the "spin" part is zero and every wheel does the same
+thing: the thin blue translation arrow, which the thick orange arrow (the
+wheel's answer) sits right on top of. Now the right panel, where the same
+robot also spins at 2 rad/s. The blue arrows are unchanged, because the
+translation hasn't changed. What's new is the purple arrow at each corner:
+it points along the circle that corner traces around the robot's center,
+and its length is `ω × r`, the same at all four because the corners are
+all the same distance out. The orange arrow is the two added tip to tail.
+Spinning counterclockwise, the right side of the robot moves forward and
+the left side backward. So the two right-hand wheels (1 FR and 3 BR) get
+a spin arrow that points the way the robot is going, and end up with the
+longest orange arrows, while the two left-hand wheels (0 FL and 2 BL) get
+one that points against it, and end up with short ones. Same inputs for
+the whole chassis, four different answers, one for each wheel.
 
 ---
 
@@ -75,7 +96,8 @@ private final SwerveDriveKinematics m_kinematics = new SwerveDriveKinematics(
 
 The order matters — whatever order you list the corners here is the order
 `toSwerveModuleVelocities` returns states in. Match the array you built in
-Lesson 7 (FL, FR, BL, BR) exactly. A swapped pair here produces a robot that
+Lesson 7 (FL, FR, BL, BR) exactly; the numbers beside the corners on
+Figure 10.1 are the array indices. A swapped pair here produces a robot that
 *almost* drives right, which is the most confusing kind of wrong.
 
 Now a max wheel speed, since kinematics speaks meters per second and
@@ -400,8 +422,23 @@ the robot in *its* forward direction, wherever it happens to be
 pointing — which means after a 180° turn, forward is backward and half your
 drivers' brains melt. Most drivers prefer **field-relative**: pushing
 forward always drives *away from the driver's station*, regardless of robot
-orientation. Thanks to the helper, this is now a genuinely small method —
+orientation. Figure 10.2 shows the same stick push both ways. Thanks to the helper, this is now a genuinely small method —
 one new line of math and a delegation.
+
+<a id="figure-10-2"></a>
+![Two top-down fields with the driver station at the bottom and the robot turned so its nose points toward the driver. On the left, robot-relative: the stick pushed forward moves the robot toward its nose, back toward the driver. On the right, field-relative: the same stick push moves the robot away from the driver station, in +X, with the nose still pointing the other way.](images/10-robot-vs-field-relative.svg)
+
+*Figure 10.2 — The same stick push on a robot turned 180°. +X is away from the driver station, the convention Lesson 11 uses for the field.*
+
+In both panels the driver does exactly the same thing with the same
+stick, and the robot is turned all the way around, nose toward the driver
+station. On the left the stick means "toward the nose", so the robot comes
+straight back at you. On the right the stick means "away from the driver
+station", so the robot goes the other way even though its nose points
+back at you. The purple note is the one step that makes the right-hand
+panel work: the drivetrain only knows how to drive in the robot's own
+frame, so the stick's field-frame direction has to be rotated by the
+robot's heading first.
 
 **Add to `Drivetrain`:**
 

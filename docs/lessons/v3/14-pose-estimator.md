@@ -84,6 +84,24 @@ two unlike classes answer the same call in their own way. Handing each
 provider the whole estimator is a small liberty (a camera *could* call
 `update`); the tradeoff buys a dead-simple contract, and we take it.
 
+Figure 14.1 shows where each piece plugs in. You'll build the pieces in
+the sections that follow, so use it as a map for now and come back to it
+afterward.
+
+<a id="figure-14-1"></a>
+![A diagram with the Localizer in the middle, holding a SwerveDrivePoseEstimator. On the left, three PoseProviders registered with addProvider: Drivetrain, which calls estimator.update every tick; VisionPoseProvider, which calls addVisionMeasurement now and then; and a dashed box for a provider added next season. On the right, whatever asks getPose(): the Localizer/Pose log output, the Field2d view in SimGUI, and autos and aiming later.](images/14-localizer-providers.svg)
+
+*Figure 14.1 — The `Localizer` collects evidence from its providers and hands out one pose.*
+
+Left to right, the figure is the whole lesson. Providers on the left each
+contribute evidence in their own way: the drivetrain with a small
+odometry step on every tick (smooth, but it drifts), a camera with an
+occasional claim about where the robot really is (jumpy, but it doesn't
+drift). The `Localizer` in the middle is the only thing that touches the
+estimator, and everything on the right just asks it for `getPose()`. The
+dashed box is the point of the interface: a provider added later plugs
+into the same place, and nothing else in the picture changes.
+
 Now the class itself. It owns the estimator, keeps a **list** of providers,
 ticks every one of them each cycle, and exposes the fused pose.
 

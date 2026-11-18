@@ -157,7 +157,18 @@ already the default, so the ratio chain is visible in the code instead of
 implied. The drive motor never picked up a remote sensor, so its
 `SensorToMechanismRatio` keeps doing exactly what it always did: "rotor
 turns per wheel turn," `6.75 : 1`, converting `getPosition()`/`getVelocity()`
-from rotor units to wheel units directly.
+from rotor units to wheel units directly. Figure 12.1 shows the two
+chains.
+
+<a id="figure-12-1"></a>
+![Two gear chains. Steering: the steer motor's rotor connects through a 25 to 1 ratio called RotorToSensorRatio to the CANcoder on the wheel, then through a 1 to 1 ratio called SensorToMechanismRatio to the wheel angle, and the motor's closed loop reads the CANcoder. Drive: the drive motor's rotor, which is its own sensor, connects through a 6.75 to 1 SensorToMechanismRatio to the wheel.](images/12-sensor-gear-chain.svg)
+
+*Figure 12.1 — The ratio before the sensor is `RotorToSensorRatio`; the ratio after it is `SensorToMechanismRatio`.*
+
+The same `25 : 1` that used to sit between the rotor and the wheel now
+sits between the rotor and the CANcoder, and that's why it changed names.
+On the drive side the sensor *is* the rotor, so there's nothing before it
+and the whole `6.75 : 1` comes after it.
 
 **`ContinuousWrap`** tells the steering closed loop that its mechanism is a
 circle: position `0.9` rotations and position `-0.1` are one small step
@@ -393,6 +404,50 @@ barely has anything to do. Which suggests a way to tune: set `kDriveKP =
 0`, adjust `kV` until measured speed roughly matches requested speed,
 *then* bring in a little `kP` for the residue. Model first, feedback
 second.
+
+Figure 12.2 is what the first two Try It items let you see for yourself.
+It's one step on one module: the wheel points straight ahead and sits at
+rest, and at time zero we ask for 2 m/s, which is 6.27 wheel rotations per
+second. The orange line is the code you wrote today, with `kDriveKV =
+0.8` and `kDriveKP = 0.1`.
+
+<a id="figure-12-2"></a>
+![Two stacked graphs over the first second after a step to 2 meters per second. Top, wheel speed: with the full model the wheel reaches 2 m/s in about a third of a second and stays there; with half the model it levels off at 1.11 m/s; with no model, kP alone, it levels off at 0.22 m/s. Bottom, applied voltage: the full model ends at 5.01 volts, half the model at 2.78 volts, kP alone at 0.55 volts.](images/12-feedforward-step.png)
+
+*Figure 12.2 — A step to 2 m/s with the full model, half the model, and no model at all.*
+
+Read the bottom panel first, because it's what the firmware actually does
+with your request. With the model right (orange) the voltage lands on
+**5.01 V**, which is exactly `kV` times the requested speed, 0.8 × 6.27.
+Nothing had to go wrong first for it to get there: the model said "this
+speed costs about 5 V" and the firmware paid it. Now the top panel. The
+wheel follows the voltage up and settles on **2.006 m/s**, a few
+millimeters per second over the request. That sliver is all `kP` was left
+to correct, and with `kDriveKP = 0` the wheel settles at the same 2.006,
+so here `kP` has almost nothing to do.
+
+Then look at what happens as the model gets worse. With half a model
+(green, `kDriveKV = 0.4`) the firmware starts out paying only about half
+the voltage, the wheel can't get past **1.11 m/s**, and the voltage
+settles at 2.78 V. `kP` is trying: the wheel is about 2.8 rotations per
+second short, so it adds 0.1 V for each of them, 0.28 V on top of the
+2.51 V the model gave. But that is a small push for a big gap, and the
+wheel settles where the push and the motor's own back-pressure balance,
+well short of 2 m/s. With no model at all (the dotted grey line, `kDriveKV
+= 0`) only `kP` is left, and it can't do anything until an error exists:
+the wheel levels off at **0.22 m/s**, about a tenth of what you asked for,
+on just 0.55 V. A gain of 0.1 volt per rps was only ever meant to nudge. If you
+ask it to do the model's job, it falls short. That's the whole case for
+feedforward: it supplies nearly all of the voltage up front, and `kP` is
+left to correct what's left.
+
+Two small things you may notice. The first tick or two read **3 V**
+rather than 5 V: a TalonFX caps the current it will push into a wheel
+that hasn't started turning, and in the simulation that cap holds the
+voltage down until the wheel moves (with that limit switched off, the
+first reading was about 4.6 V). And the exact tick where the orange line
+climbs differs by one or two ticks from run to run, so yours won't be
+identical to the figure.
 
 ---
 

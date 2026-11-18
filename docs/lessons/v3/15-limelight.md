@@ -144,7 +144,9 @@ fixed name instead, one per port; the library has constants for them, like
 
 > **Measure this for real.** On an actual robot, `kFrontRobotToCamera` isn't
 > a guess. You measure the camera's physical mount with a tape measure (or
-> read it off the CAD model) and get it right to the centimeter. A wrong
+> read it off the CAD model) and get it right to the centimeter. (The
+> numbers drawn in Figure 15.1, a few paragraphs down, are the ones the
+> transform stores.) A wrong
 > transform doesn't crash anything. It quietly reports a robot position
 > that's off by however wrong the measurement was. Try It #4 has more to say
 > about why this course's simulator, specifically, can't show you that
@@ -160,6 +162,23 @@ public static final double kSimHorizontalFovDegrees = 80.0;
 public static final double kSimVerticalFovDegrees = 56.0;
 public static final double kSimMaxRangeMeters = 6.0;
 ```
+
+Figure 15.1 draws both mounts, and the field of view the simulated
+cameras will have, from exactly these constants.
+
+<a id="figure-15-1"></a>
+![A top-down view of the robot with the front camera's 80 degree, 6 meter viewing wedge pointing along +X and the back camera's wedge pointing the opposite way, with blind spots to the robot's left and right. Beside it, a zoomed view of the robot with the front camera at 0.3 meters forward and the back camera at 0.3 meters back, and a side view showing both cameras 0.2 meters above the ground.](images/15-camera-mounts.svg)
+
+*Figure 15.1 — Where the two cameras are and what each can see. The wedges are the simulated camera's field of view.*
+
+The big picture on the left is a top view, drawn to scale: the front
+camera looks along +X, and the back camera's yaw of π (`Rotation3d(0, 0,
+Math.PI)`) turns it to look along −X. Each wedge is 80° wide and 6 m
+long. Between them, on either side of the robot, are two blind spots that
+neither camera covers. Anything beside the robot at that moment can't
+help the estimate. The zoomed view on the right shows the two
+`Translation3d`s: 0.3 m forward and 0.3 m back, centered. The side view
+is the new axis. Both cameras sit 0.2 m up, the **+Z** in each transform.
 
 **Add the imports `VisionConstants` needs** — let autocomplete find them:
 `Field` and `Fields` live under `org.wpilib.fields`; `Transform3d`,
@@ -401,6 +420,21 @@ because from where it sits there *is* no difference.
 
 That's why the simulated camera doesn't need `m_camera`. It doesn't talk to
 the library at all. It talks to the network, the way the real camera does.
+Figure 15.2 shows the two paths.
+
+<a id="figure-15-2"></a>
+![Two pipelines meeting at one point. On the real robot, a Limelight sees AprilTags and publishes a results frame. In simulation, VisionIOLimelightSim builds a frame from the truth pose and publishes it. Both publish to the same NetworkTables topic, limelight-front/results_msgpack. From there, one shared chain, identical and unmodified in both worlds: LimelightLib, VisionIOLimelight.updateInputs, Logger.processInputs, LimelightPoseProvider, and the Localizer's addVisionMeasurement.](images/15-real-vs-sim-camera.svg)
+
+*Figure 15.2 — Real camera and simulated camera publish to the same topic, so everything after it is the same code.*
+
+The top row is the only place the two worlds differ. A real Limelight
+looks at tags and writes a frame; the simulated camera, which you're about
+to build, works out which tags a camera standing at the robot's true pose
+could see and writes a frame in the same format, to the same topic name.
+From the topic down, the chain in the dashed box doesn't know which one
+you are running. That's the whole argument of this section, and it's
+what you'll use when you decide which side of a box a bug lives on in the
+Try It problems.
 
 ### 8a. The message format
 
@@ -926,7 +960,9 @@ camera misbehaves, this is the first place to look.
    Limelight does — turn "I see this tag, here in my picture" back into a
    robot position *through* the mount you told it. A real robot has no such
    luck: the physical mount doesn't care what number you typed, so this
-   exact mistake would quietly offset every correction. Put the number
+   exact mistake would quietly offset every correction. Figure 15.2 shows
+   where the fake sits: it publishes a frame whose pose is already the
+   robot's, so nothing after the topic ever sees the mount. Put the number
    back, and take the lesson: some bugs this simulator simply cannot show
    you, and knowing which ones is its own kind of expertise.
 5. **Code — replay what the cameras saw.** Record a run that drives past a

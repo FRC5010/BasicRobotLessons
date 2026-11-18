@@ -52,6 +52,25 @@ again with no simulator and no hardware at all: every reading comes out of
 the file, and your code works out everything else from scratch. Change the
 code first, and the replay shows you what the robot *would* have done.
 
+Figure 13.1 is the map for the rest of the lesson.
+
+<a id="figure-13-1"></a>
+![A map of the IO layer. On the left, SwerveModule holds a ModuleIO and its inputs bundle and owns no motors. In the middle, the ModuleIO interface has two lists: inputs, the readings steerAngleDegrees, drivePositionMeters and driveVelocityMetersPerSec filled by updateInputs, and commands, setSteerAngleDegrees and setDriveVelocityMetersPerSec. On the right, ModuleIOTalonFX for the real robot, ModuleIOSim for simulation and an empty ModuleIO for replay, one of which Drivetrain's makeModule switch picks. Below, a smaller copy of the same shape for the gyro: GyroIO with GyroIOPigeon2, GyroIOSim and an empty GyroIO.](images/13-io-door.svg)
+
+*Figure 13.1 — One door per sensor: the logic on one side, three things that can stand on the other.*
+
+Start on the left: `SwerveModule` is the logic, and the only thing it
+knows about hardware is the interface box in the middle, `ModuleIO`. That
+interface has just two kinds of member. One is the readings that come
+*in*: a bundle of three numbers that `updateInputs` fills. The other is the
+commands that go *out*: steer here, drive that fast. On the right are the
+things that can stand behind the door (the real motors, the physics model,
+or nothing at all for a replay), and the purple box at the top is where
+`Drivetrain` picks one, once, when the robot is built. The lower half of the
+figure is the same shape again for the gyro, in section 8. You'll
+recognize it every time it comes back: in later lessons the camera, the
+elevator and the other mechanisms each get their own door like this one.
+
 ---
 
 ## 2. Install AdvantageKit
@@ -603,7 +622,8 @@ isn't there. Ten characters of syntax for "hardware that doesn't exist,"
 and this is exactly why the interface's methods got default bodies in
 section 3: without them, `new ModuleIO() {}` wouldn't compile, because
 you'd owe the compiler four method bodies for a class that's supposed to
-do nothing at all.
+do nothing at all. In Figure 13.1, this `switch` is the purple box, and
+the three arrows below it are its three arms.
 
 ---
 
@@ -970,6 +990,21 @@ import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 Time to use all of it. A replay is two runs: one that records, and one
 that plays the recording back.
 
+<a id="figure-13-2"></a>
+![Two columns of boxes. Record: the real motors or the simulator feed updateInputs, which fills the inputs, which are logged; your logic works out outputs, recorded as RealOutputs; commands go to the IO. Replay: the motors and simulator are not running; the inputs are read back from the log file by processInputs; your logic, as it is today, works out the outputs again as ReplayOutputs; the commands go nowhere. A blue arrow carries the inputs from the recording to the replay, and a dashed orange arrow marks the two outputs that get compared.](images/13-record-replay.svg)
+
+*Figure 13.2 — Record, then replay: the inputs come out of the file, and the outputs are worked out again.*
+
+Figure 13.2 shows what is read from the file and what is worked out again.
+Compare the two columns box by box. On the left, the readings come from
+the robot or the simulator and are written down as they pass through. On
+the right, there is no robot and no simulator, and the same readings are
+filled in from the file instead: the thick blue arrow is the whole
+recording. Everything below that point (your logic, today's version of it)
+runs again from scratch, and what it works out is saved as
+`ReplayOutputs`, ready to compare with the `RealOutputs` from the run that
+was recorded. Keep that picture in mind for the rest of the section.
+
 **Record.** With `kSimMode` still set to `Mode.SIM`, run the robot in
 simulation. In SimGUI, pick **RobotTeleop**, enable, and drive for ten
 seconds or so.
@@ -1050,7 +1085,8 @@ Replay the *same* recording again (`REPLAY`, the variable, `./gradlew run`)
 and compare the two poses. `ReplayOutputs/Drivetrain/Pose` now ends
 farther from where the robot started: measured, exactly 1.1 times as far.
 The run you're looking at happened before you made this change. Your new
-code just drove it again.
+code just drove it again. In Figure 13.2, `getPosition()` is in the "your
+logic" box, below the line where the inputs come out of the file.
 
 **Put `getPosition()` back** — no `* 1.1` — and both switches with it.
 
@@ -1084,8 +1120,9 @@ code, replay the match, and see what the change would have done.
    pose). Work out why before reading on. The IO layer runs *before*
    `processInputs`, so its mistake is written into the recording, and a
    replay can't unread a reading. `getPosition()` runs after it, so it's a
-   decision, and a replay makes every decision again. **Remove both `1.1`s
-   when you're done.**
+   decision, and a replay makes every decision again. Figure 13.2 draws
+   that line: the IO is above it, in the recording, and your logic is
+   below it, run again. **Remove both `1.1`s when you're done.**
 2. **Code — a new output for an old run.** Work out the robot's speed in
    meters per second from the module states (`m_kinematics` can turn them
    into a `ChassisVelocities`), and record it with `Logger.recordOutput`
