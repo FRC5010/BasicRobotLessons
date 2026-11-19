@@ -196,7 +196,7 @@ one line per mechanism, all in one obvious place.
 ## 5. Run it
 
 Run the robot in simulation, pick **Teleoperated** and **MyTeleop**, then
-**Enable** (Lesson 0's [Figure 0.1](00-orientation.md#figure-0-1) shows the panel). Push the stick and
+**Enable** (Lesson 0's [Figure 0.2](00-orientation.md#figure-0-2) shows the panel). Push the stick and
 watch the plots from Lesson 3 — this is the payoff Lesson 3 promised:
 
 - **Velocity** ramps up to a steady value and back to zero — like a real motor
@@ -221,6 +221,32 @@ You now have a robot you can develop against with no hardware on the bench.
    inside `simulatePeriodic()` and overlay it against velocity in
    AdvantageScope. (A value that only exists in sim gets logged from
    `simulatePeriodic()` — it's the `logTelemetry()` of the sim world.)
+
+Made your predictions for 1 and 2? Then compare them with Figure 4.2, which
+plots the velocity with the stick held for one second and then let go, for
+`0.001` and for `0.05`.
+
+<a id="figure-4-2"></a>
+![Two plots of rotor velocity against time. Top: with inertia 0.001 the velocity climbs to a steady 30.5 rotations per second within half a second while the button is held, then drops to zero within half a second of letting go; with inertia 0.05 it creeps up to under 6 and drifts back down slowly. Bottom: with inertia 0.05 and the button held throughout, the velocity takes about 4.6 seconds to reach 63 percent of the same 30.5 and about 20 seconds to settle](images/04-velocity-two-inertias.png)
+
+*Figure 4.2 — Velocity after holding `driveAtSpeed(0.3)`: the lesson's inertia (orange) and `0.05` (green).*
+
+Read the top panel first. The orange curve is what your plot from section 5
+shows: steep at first, then rounding off as it nears the **steady value**,
+30.5 rotations per second, and falling away the same way once you let go.
+That rounded shape is the one to remember. The time it takes to cover the
+first 63% of the way is the number to compare between wheels: about 0.16 s
+here. The green curve is the same motor asked to spin a wheel fifty times
+heavier. In one second it only gets to about 6 rot/s, and when you let go it
+doesn't stop quickly either. The bottom panel holds the button for 20
+seconds so you can watch green finish the climb: 63% takes about 4.6 s, and
+it's close to the steady value after 15 or so. Both wheels end at the same
+30.5, because the motor and the 3.6 V (0.3 of a 12 V battery) are the same;
+the inertia decides how long the trip takes, not where it ends. One oddity
+in the top panel: the plot sits at zero for the first tenth of a second or so
+after the press. The model is already moving at that point (it's the TalonFX's
+reading that takes a few ticks to catch up), so don't count that gap as part
+of the wheel's response.
 
 ---
 

@@ -452,7 +452,19 @@ controller you'll ever write.
 Ask for `0°` while sitting at `350°`. Error = `0 − 350 = −350`, so it spins almost
 all the way around backwards — when it *could* have nudged +10° forward. Real
 steering code "wraps" the error to the range −180°…+180° so it always takes the
-short path. Try writing that in the challenge; it's a great `if` exercise.
+short path. Figure 5.3 draws it: the circle is the steering's full turn, the
+black dot is where the wheel points now, the blue dot is where you asked it to
+point. The **orange** arc is the long way the raw error asks for, and the **green**
+arc is the short one the wrapped error takes. The right-hand circle is a
+trap you'll meet again in Lesson 8: from `-170°` to `170°` the raw error is
+`+340°`, and the wrapped one is `-20°`.
+
+<a id="figure-5-3"></a>
+![Two compass circles. On the left the wheel is at 350 degrees and the target is 0: a long orange arc sweeps 350 degrees all the way around the circle, while a short green arc nudges 10 degrees. On the right the wheel is at minus 170 and the target is 170: the orange arc sweeps 340 degrees round and the green arc turns 20 degrees across the 180 mark](images/05-error-wrap.svg)
+
+*Figure 5.3 — The long way round (orange) and the short way (green), for 350° → 0° and for -170° → 170°.*
+
+Try writing that wrap in the challenge; it's a great `if` exercise.
 
 ---
 

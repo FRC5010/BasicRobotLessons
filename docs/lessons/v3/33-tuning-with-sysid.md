@@ -340,7 +340,7 @@ clearing two separate hurdles on purpose.
 
 Run the robot in simulation. In SimGUI's Robot State panel, pick **Utility**,
 then **RobotUtility** from the OpMode drop-down — the same moves as
-**Teleoperated** and **MyTeleop** back in Lesson 0 ([Figure 0.1](00-orientation.md#figure-0-1)), just a different mode and
+**Teleoperated** and **MyTeleop** back in Lesson 0 ([Figure 0.2](00-orientation.md#figure-0-2)), just a different mode and
 opmode — then click **Enable**. Hold **Back + the top
 face button** for a few seconds — the applied voltage climbs steadily, and the
 wheel, after a dip (see the note below), spins up slowly and smoothly.

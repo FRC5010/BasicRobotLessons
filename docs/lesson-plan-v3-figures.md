@@ -37,26 +37,26 @@ Type: a = sim plot, b = SimGUI screenshot, c = SVG diagram, d = needs the user. 
 
 | Figure | Title | Lesson | Type | Priority | Batch |
 |---|---|---|---|---|---|
-| S.1 | Two folders and a GitHub repo | Setup aside | c | medium | 2 |
-| 0.1 | An opmode's life | 0 | c | medium | 2 |
+| S.1 | Two folders and a GitHub repo | Setup aside | c | medium | 2 (built) |
+| 0.1 | An opmode's life | 0 | c | medium | 2 (built) |
 | 0.2 | SimGUI: opmode selector and Robot State | 0 | b | high | 1 (built) |
 | 1.1 | SimGUI: dragging a controller into slot 0 | 1 | b | high | 1 (built) |
-| 1.2 | SimGUI: NetworkTables, Telemetry, DriveModule | 1 | b | medium | 2 |
+| 1.2 | SimGUI: NetworkTables, Telemetry, DriveModule | 1 | b | medium | 2 (built) |
 | 3.1 | AdvantageScope: tree and a two-signal graph | 3 | d | medium | needs user |
 | 4.1 | The simulation loop | 4 | c | high | 1 (built) |
-| 4.2 | Velocity response, two inertias | 4 | a | medium | 2 |
+| 4.2 | Velocity response, two inertias | 4 | a | medium | 2 (built) |
 | 5.1 | Setpoint, measurement and error in one move | 5 | a | high | 1 (built) |
 | 5.2 | `kP` too small, just right, too big | 5 | a | high | 1 (built) |
-| 5.3 | The long way round (error wrap) | 5 | c | medium | 2 |
-| 6.1 | Two ways a command ends | 6 | c | medium | 2 |
-| 6.2 | `driveDistance(1.0, 0.4)` trace | 6 | a | medium | 2 |
+| 5.3 | The long way round (error wrap) | 5 | c | medium | 2 (built) |
+| 6.1 | Two ways a command ends | 6 | c | medium | 2 (built) |
+| 6.2 | `driveDistance(1.0, 0.4)` trace | 6 | a | medium | 2 (built) |
 | 7.1 | Chassis frame, corners and the two moves | 7 | c | high | 1 (built) |
 | 7.2 | AdvantageScope: Swerve tab, States slot | 7 | d | medium | needs user |
 | 7.3 | Steering 90 degrees through 25:1, two gains | 7 | a | high | 1 (built) |
 | 8.1 | `turnToHeading(90)`: heading, command, band | 8 | a | high | 1 (built) |
 | 8.2 | AdvantageScope: Swerve tab, Rotation slot | 8 | d | low | needs user |
-| 9.1 | Why scale drive by cosine | 9 | a | medium | 2 |
-| 9.2 | Sequence, parallel, race, optional | 9 | c | medium | 2 |
+| 9.1 | Why scale drive by cosine | 9 | a | medium | 2 (built) |
+| 9.2 | Sequence, parallel, race, optional | 9 | c | medium | 2 (built) |
 | 10.1 | Translation plus rotation at each corner | 10 | c | high | 1 (built) |
 | 10.2 | `optimize`: take the short way | 10 | c | low | 3 |
 | 10.3 | Robot-relative versus field-relative | 10 | c | high | 1 (built) |
@@ -1080,3 +1080,15 @@ All 39 batch 1 figures are built, in their lessons, and committed; the site buil
 - **Screenshots 1.1 and 30.1** retaken at SimGUI's 200% zoom as vertical stacks (900 and 870 px wide), legible at 390 px.
 - **Open questions settled:** the Lesson 1/2 boot crash and the SimGUI wording are fixed; Lesson 5 keeps `kP = 0.0005` and teaches the ringing; Lesson 12 now says feedforward asks for `kV × request` at once, with the current limit holding the first tick or two lower.
 
+
+## 10. Batch 2 status (in progress, 2026-11-19)
+
+Built two agents at a time, in lesson groups, to stay inside the usage window.
+
+- **Round 1 (built):** S.1, 0.1, 1.2, 4.2, 5.3, 6.1, 6.2, 9.1, 9.2. Every figure kept its working number except at Lesson 0: the new lifecycle diagram is 0.1, and the SimGUI screenshot (batch 1's 0.1) is now **0.2**, with its links from Lessons 1, 4, 17 and 33 repointed. Back-links added from Lessons 3, 6, 7, 8, 9, 10, 12 and 25.
+- **Text fixes it found:**
+  - Lesson 0 now says Disable runs `end()` then `close()` and a fresh opmode is built. This was measured; see CLAUDE.md's "Batch 2 found".
+  - Lesson 6's recap no longer says "exactly 1.0".
+  - Lesson 9 §5 describes what the module arrows show.
+  - Lesson 25 credits `Command.parallel` to Lesson 9.
+- **Not linked yet:** Figure 0.1 from Lesson 1 §6, until the user decides on that section's constructor rationale.

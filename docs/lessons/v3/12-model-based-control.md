@@ -172,7 +172,7 @@ and the whole `6.75 : 1` comes after it.
 
 **`ContinuousWrap`** tells the steering closed loop that its mechanism is a
 circle: position `0.9` rotations and position `-0.1` are one small step
-apart, not most of a revolution. That's the Lesson 5 wrap trick — the two
+apart, not most of a revolution. That's the Lesson 5 wrap trick ([Figure 5.3](05-steering-p-control.md#figure-5-3)) — the two
 `while` loops, then `MathUtil.inputModulus` from Lesson 10 — implemented in
 silicon. (This part doesn't care which sensor feeds the loop — wrap-around
 is about the *mechanism*, not the sensor.)

@@ -187,7 +187,8 @@ public void setDesiredState(SwerveModuleVelocity state) {
 the next section.
 
 Two of this lesson's tools show up in that little method. The two `while`
-loops you wrote in Lesson 5 to wrap the error into ±180° collapse into
+loops you wrote in Lesson 5 to wrap the error into ±180°
+([Figure 5.3](05-steering-p-control.md#figure-5-3)) collapse into
 **`MathUtil.inputModulus(value, -180, 180)`** — it does exactly what the
 loops did, and you get the one-liner now that you've built the hand-rolled
 version and know what it's doing. (Your `clamp` two lines down doesn't get
@@ -356,7 +357,7 @@ awful and burns time. With it, they nudge a few degrees and reverse — as
 swerve robots should. Note what it needs to decide: the wheel's *current*
 angle. That's why the measurement gets passed in.
 
-It's also best friends with Lesson 9's cosine trick: `optimize` keeps every
+It's also best friends with Lesson 9's cosine trick ([Figure 9.1](09-autonomous.md#figure-9-1)): `optimize` keeps every
 steering move under 90°, which means the cosine scale in `setDesiredState`
 never goes negative — the two together give you wheels that take the short
 path *and* hold their push until they're pointed right.

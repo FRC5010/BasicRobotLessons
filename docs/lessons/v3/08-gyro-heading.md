@@ -152,7 +152,8 @@ Lesson 5 promised its five moves would come back — measure, subtract, multiply
 clamp, command — and here they are, pointed at the whole robot. Two things
 differ from `steerToAngle`: which sensor gets measured, and that headings
 **wrap** around a circle, so the subtract step needs the wrap trick baked in
-(`-170°` to `170°` should turn `20°`, not `340°`).
+(`-170°` to `170°` should turn `20°`, not `340°`; [Figure 5.3](05-steering-p-control.md#figure-5-3)
+draws it).
 
 The wrap logic goes in its own little question-method, because the finish
 condition is about to need it too.
@@ -204,7 +205,7 @@ condition to poll. The moment the error drops under 2°, the loop exits and the
 coroutine body is out of code — finished, the same way `driveDistance`
 finished in Lesson 6.
 
-And because Lesson 6's rule about endings hasn't gone anywhere:
+And because Lesson 6's rule about endings ([Figure 6.1](06-distance-and-commands.md#figure-6-1)) hasn't gone anywhere:
 `.whenExited(() -> commandRotation(0.0))` stops the turn whether the loop
 finished or something interrupted this command first. Two endings, one stop,
 same as `driveDistance`. The clamp

@@ -2636,6 +2636,49 @@ at least twice.
   - Five parallel Sonnet agents used up a 5-hour usage window in about an
     hour (300–430k tokens each); run two or three at a time.
 
+**Batch 2 found (2026-11-19, alpha-8; status in the plan's section 9).**
+- **Every Disable throws the opmode away and builds a new one.** Measured on
+  the real Lesson 1 robot (LOOP; `--replace` edits bumped a counter in
+  `MyTeleop`'s constructor, `start()`, `end()` and `close()`): picking
+  `MyTeleop` constructs it on the next tick. Enable runs `start()`. Disable
+  runs `end()` and `close()` on the same tick, and a fresh `MyTeleop` is
+  constructed on the next tick. Over three enable cycles the counts were:
+  constructor 4, `start()` 3, `end()` 3, `close()` 3. One press of the bottom
+  face button ran `driveAtSpeed`'s body once in every cycle. The bytecode
+  agrees: `OpModeRobot.loopFunc`, on enabled → disabled, calls
+  `endCurrentOpMode()` (`end()` if it was started, then `close()`) and sets
+  `m_lastModeId = -1`, which forces a re-create. The template's `close()`
+  comment ("de-selected") leaves this out.
+  - Lesson 0's new paragraph and Figure 0.1 now say so.
+  - **Open, for the user:** Lesson 1 §6 explains putting bindings in the
+    constructor because it "only runs once", while `start()` runs on every
+    enable. Both now run once per enable cycle.
+- **Through Lesson 12 at least, the simulated gyro integrates the
+  *commanded* turn rate** (`m_simHeadingDegrees += m_lastCommandedOmega × 360
+  × 0.02`), not the wheels. So in sim a turn finishes on schedule wherever
+  the wheels point.
+  - Lesson 9 RIG, `turnToHeading(90)` after `driveDistance(1.0)`: module 0's
+    target is 135°. The command ends at 0.70 s, with the wheel at 54°.
+    - Without the cosine line, the throttle sits at 0.5 for 0.38 s, then
+      tapers.
+    - With it, the throttle goes to −0.30, then shrinks toward 0.
+  - §5's "the wheels settle before the drive effort ramps in" now says what
+    the module arrows show.
+- **Lesson 6 RIG, `driveDistance(1.0, 0.4)`:** `waitUntil` returns at 0.62 s
+  at 1.013 m, and the wheel coasts on to 1.145 m. The first ticks apply 3 V
+  (most likely the stator limit; not checked here). The recap no longer says
+  "exactly 1.0".
+- **Lesson 4 rig, `driveAtSpeed(0.3)`:** steady 30.47 rot/s on 3.598 V.
+  - J = 0.001: 63% at 0.16 s after the press.
+  - J = 0.05: 5.7 rot/s after a 1 s hold; held, 63% at 4.55 s.
+  - The TalonFX velocity reading stays 0 for about 0.12–0.14 s after the
+    press, while the model is already moving. That the cause is status-signal
+    latency is a guess.
+- Lesson 25's concepts line said `Command.parallel` was "from Lesson 24";
+  Lesson 9 introduced it.
+- **Usage:** the window reset at 03:40 UTC on 2026-11-19. Two Sonnet agents
+  used about 230k and 260k tokens for four and five figures.
+
 ## Rewriting lessons in a teacher's voice
 
 The lessons started in a slightly "AI voice" — clinical, evenly-weighted, with

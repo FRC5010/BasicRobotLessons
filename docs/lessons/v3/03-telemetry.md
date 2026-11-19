@@ -323,7 +323,7 @@ import org.wpilib.command3.SchedulerEvent;
 ```
 
 Run it again and press the button — `DriveModule/CurrentCommand` on the
-dashboard still flips between `"Drive With Joystick"` and `"Drive At Speed"`,
+dashboard (where [Figure 1.2](01-first-motor.md#figure-1-2) found it) still flips between `"Drive With Joystick"` and `"Drive At Speed"`,
 exactly like before. What changed is *how* it knows. The old version
 asked, every tick, and got lucky every time, because nothing could finish
 between one ask and the next. The new version can't get unlucky, because

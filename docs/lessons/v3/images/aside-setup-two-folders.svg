@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 580" width="800" height="580" font-family="sans-serif">
+<defs><marker id="a000000" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="17" markerHeight="17" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#000000"/></marker><marker id="aD55E00" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="17" markerHeight="17" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#D55E00"/></marker></defs>
+<rect x="0" y="0" width="800" height="580" fill="#ffffff"/>
+<rect x="40" y="30" width="520" height="100" rx="8" fill="#EEEEEE" stroke="#777777" stroke-width="2"/>
+<text x="300.0" y="66.1" font-size="15" fill="#000000" text-anchor="middle" font-weight="bold">BasicRobotLessons</text>
+<text x="300.0" y="84.9" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">the course repo, with its own .git</text>
+<text x="300.0" y="103.6" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">you clone it; you never commit your work here</text>
+<rect x="40" y="220" width="520" height="100" rx="8" fill="#E3F0FA" stroke="#0072B2" stroke-width="2"/>
+<text x="300.0" y="256.1" font-size="15" fill="#000000" text-anchor="middle" font-weight="bold">~/dev/MyOpModeRobot</text>
+<text x="300.0" y="274.9" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">your project: starts as a plain folder</text>
+<text x="300.0" y="293.6" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">git init and git commit make it a repo (section 5)</text>
+<rect x="40" y="410" width="520" height="100" rx="8" fill="#DDF3EB" stroke="#009E73" stroke-width="2"/>
+<text x="300.0" y="446.1" font-size="15" fill="#000000" text-anchor="middle" font-weight="bold">GitHub: MyOpModeRobot</text>
+<text x="300.0" y="464.9" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">your private remote repo</text>
+<text x="300.0" y="483.6" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">created and pushed to in section 7</text>
+<line x1="90.0" y1="130.0" x2="90.0" y2="220.0" stroke="#000000" stroke-width="2" marker-end="url(#a000000)"/>
+<text x="110.0" y="168.0" font-size="15" fill="#000000" text-anchor="start" font-weight="normal">verify-lessons-v3.sh -1 --sandbox</text>
+<text x="110.0" y="186.8" font-size="15" fill="#000000" text-anchor="start" font-weight="normal">(strips .git, build, .gradle)</text>
+<line x1="90.0" y1="320.0" x2="90.0" y2="410.0" stroke="#000000" stroke-width="2" marker-end="url(#a000000)"/>
+<text x="110.0" y="358.0" font-size="15" fill="#000000" text-anchor="start" font-weight="normal">gh repo create ... --push</text>
+<text x="110.0" y="376.8" font-size="15" fill="#000000" text-anchor="start" font-weight="normal">(section 7, run from this folder)</text>
+<line x1="500.0" y1="220.0" x2="500.0" y2="130.0" stroke="#D55E00" stroke-width="3" marker-end="url(#aD55E00)"/>
+<path d="M482,164 L518,186 M518,164 L482,186" stroke="#D55E00" stroke-width="5" fill="none"/>
+<text x="580.0" y="158.0" font-size="15" fill="#D55E00" text-anchor="start" font-weight="bold">never push or</text>
+<text x="580.0" y="176.8" font-size="15" fill="#D55E00" text-anchor="start" font-weight="bold">commit work</text>
+<text x="580.0" y="195.5" font-size="15" fill="#D55E00" text-anchor="start" font-weight="bold">into the course</text>
+<text x="580.0" y="214.2" font-size="15" fill="#D55E00" text-anchor="start" font-weight="bold">repo</text>
+</svg>

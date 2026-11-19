@@ -114,7 +114,8 @@ Two things changed from Lesson 4:
 
 - **Inertia** grew from `0.001` to `0.025` (kg·m² at the wheel). A bare rotor
   spins up nearly instantly; a rotor pulling a wheel through a gearbox has more
-  to move. `0.025` gives a visible ramp without dragging.
+  to move. `0.025` gives a visible ramp without dragging ([Figure 4.2](04-simulation.md#figure-4-2)
+  shows what inertia does to the ramp).
 - **Gearing** is now `DriveConstants.kDriveGearRatio` (`6.75`) instead of `1.0`.
 
 Here's the subtlety worth slowing down for. Because `DCMotorSim` now models a
@@ -207,6 +208,17 @@ different ways:
   scheduled on it, or the driver mashing a different button mid-drive), and
   the body never reached the end.
 
+<a id="figure-6-1"></a>
+![Two timelines of driveDistance. Finished: start, waitUntil returns, the body ends, and whenExited runs while whenCanceled stays silent. Canceled: start, waitUntil still waiting, another command interrupts, and whenExited runs first, then whenCanceled](images/06-two-ways-to-end.svg)
+
+*Figure 6.1 — The two endings of `driveDistance`, and which hooks run.*
+
+Figure 6.1 lays the two endings side by side. Read the top half first: the
+`waitUntil` returns, the body runs out, and `.whenExited(...)` is the only hook
+that fires. The bottom half is the interruption: the `waitUntil` never gets to
+return, and both hooks fire, `.whenExited(...)` first. The one hook that
+tells the two halves apart is `.whenCanceled(...)`.
+
 **`.whenCanceled(...)` runs only on the second one.** Every earlier command in
 this course had a single ending: `driveAtSpeed` and `steerToAngle` never
 finish on their own, so a cancel was the *only* way they could stop, and
@@ -267,7 +279,26 @@ robot.driverController.dpadUp().onTrue(robot.module.driveDistance(1.0, 0.4));
 ```
 
 Run in sim, plot `DriveModule/DistanceMeters` in AdvantageScope, and tap D-pad
-up. The trace should climb to 1.0 and flatten as the command stops itself.
+up. The trace should climb to about 1.0 and flatten as the command stops
+itself.
+
+<a id="figure-6-2"></a>
+![Distance and drive throttle during driveDistance(1.0, 0.4): the distance climbs in a straight line, the command ends at 1.013 m, and the wheel rolls on to 1.145 m after the throttle drops to 0](images/06-drive-distance-trace.png)
+
+*Figure 6.2 — One `driveDistance(1.0, 0.4)`: distance (top) and drive throttle (bottom).*
+
+Figure 6.2 is that trace, with the throttle underneath it. Read the bottom
+panel first: the throttle sits at 0.4 for just over half a second (it starts
+nearer 0.25 for the first few ticks while the wheel gets going), then drops
+straight to 0 at the grey line. That line is the moment `waitUntil` returned
+and `.whenExited(...)` ran, with the distance at 1.013 m. In the top panel the
+distance climbs in a nearly straight line while the throttle is on, which is a
+wheel at steady speed. Then it **doesn't stop at the grey line**: the wheel has
+speed and inertia, and setting the throttle to 0 doesn't stop it. It rolls on
+and settles at 1.145 m, about 15 cm past the target. The command stops *itself*
+at the right moment; stopping the *wheel* on the spot is a separate problem,
+and Try It #2's idea of slowing down as you arrive is aimed at it.
+
 Change the target to `2.0` and confirm it goes twice as far. You've built a
 command that *accomplishes a goal and reports done* — exactly what autonomous
 routines are made of.
@@ -313,7 +344,8 @@ hears both, so it's the one for cleanup that must always happen, like
 stopping a motor. That distinction is easy to miss and expensive to get
 wrong, so it's worth carrying forward deliberately. Lesson 7 turns your one module into four, and
 Lesson 9 strings finishing commands into a full autonomous routine. If the
-gearbox math felt dense, let the plot reassure you — when the trace stops at
-exactly 1.0 meters, every conversion in the chain earned its keep.
+gearbox math felt dense, let the plot reassure you — when the command stops
+itself at 1.0 meters, every conversion in the chain earned its keep. (The
+wheel coasting on afterwards is Figure 6.2's story, not a math error.)
 
 Next: Lesson 7 — Four modules.

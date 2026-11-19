@@ -884,7 +884,7 @@ public final class Autos {
 
 ## 10. Run it
 
-Run the robot in simulation. Before you click anything in **Robot State** (Lesson 0's [Figure 0.1](00-orientation.md#figure-0-1)),
+Run the robot in simulation. Before you click anything in **Robot State** (Lesson 0's [Figure 0.2](00-orientation.md#figure-0-2)),
 find SimGUI's **DS** window and set **Alliance Station** to **Blue 1**. You
 can only change it while Robot State says *Disconnected*, which it does when
 SimGUI first opens, and it starts on Red 1 every time. (Red works too now —

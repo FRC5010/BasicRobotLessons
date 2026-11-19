@@ -92,12 +92,12 @@ public void resetDrivePosition() {
 ```
 
 Now read `driveDistance` top to bottom: it's **the same shape as Lesson 6's
-`driveDistance`**, applied one level up. We ask *every module* to point
+`driveDistance`** ([Figure 6.2](06-distance-and-commands.md#figure-6-2) traces one), applied one level up. We ask *every module* to point
 forward and roll, and we watch *one wheel* to know when we've gone far
 enough. Watching one wheel works for straight-ahead driving because, with all
 four wheels aimed the same direction at the same speed, they all cover the
 same distance. Two endings, same as every finishing command since Lesson
-6 — and the same answer: `.whenExited(...)` stops the wheels whether the
+6 ([Figure 6.1](06-distance-and-commands.md#figure-6-1)) — and the same answer: `.whenExited(...)` stops the wheels whether the
 loop finished or something interrupted it. If that is starting to feel
 routine, good — routine is the point.
 
@@ -301,10 +301,30 @@ WPILib ships this exact idea as `SwerveModuleVelocity.cosineScale` (Lesson
 7's renamed `SwerveModuleState`), which you'll be able to swap in once
 Lesson 10 has the module speaking in states.
 
-Re-run the auto and watch the transitions again: the wheels now settle onto
-their new angles *before* the drive effort ramps in, the scrub is gone, and
-the distance the odometer counts is distance the robot actually traveled in
-the right direction. One line, visibly better auto.
+Re-run the auto and watch the module arrows at the transitions again: the
+drive effort now waits on the wheels. It stays small (and even points
+backward while a wheel is more than 90° off) and only grows as each wheel
+lines up. On a real robot that's what makes the scrub go away, and the
+distance the odometer counts is distance the robot actually traveled in the
+right direction. One line, a cleaner auto.
+
+<a id="figure-9-1"></a>
+![Two panels over the first 0.8 seconds of turnToHeading(90): the front-left module's steering angle climbs slowly from 0 toward its 135 degree target, and its drive throttle is a steady 0.5 without the cosine line but goes negative and shrinks toward zero with it](images/09-cosine-scrub.png)
+
+*Figure 9.1 — The start of step 2 for the front-left module, with and without `cos(error)`.*
+
+Figure 9.1 shows the same first 0.8 seconds with and without it, for one
+module (the front left, whose pinwheel angle is 135°). Start with the top
+panel: that's the steering angle, a straight, slowish climb from 0° toward
+135°. The grey line is where the turn command finishes, 0.70 s in, and the wheel
+has only reached about 54° by then. (The simulated heading follows the commanded
+rotation rate, not the wheels, so the turn doesn't wait for them.) Now the
+bottom panel. Without the cosine line, the drive throttle jumps to 0.5 and holds
+there for almost 0.4 s while the wheel is pointed nowhere near where it will end
+up: that's the scrub. With the line, the throttle is never 0.5. It goes
+*negative*, to about −0.30, because the wheel is more than 90° from its target
+and cosine is negative out there (the backward-rolling case from a moment ago),
+then shrinks toward zero as the error closes in on 90°.
 
 ---
 
@@ -318,6 +338,16 @@ both static methods on `Command`, both returning a builder that needs
 - **`Command.parallel(a, b)`** runs both and finishes when **all** are done.
 - **`Command.race(a, b)`** runs both, but finishes the instant **any one**
   of them finishes, canceling the rest.
+
+<a id="figure-9-2"></a>
+![Timelines of commands A and B under Command.sequence, parallel, race and parallel with optional, with a dashed line where each group ends and the cut-off part of any command that was canceled](images/09-sequence-parallel-race.svg)
+
+*Figure 9.2 — When each group ends: `sequence` ends with its last command, `parallel` with the slowest, `race` with the fastest, and `.optional(...)` with the required command.*
+
+Figure 9.2 draws all four, using one pair of commands, A and B, each time. The
+dashed line marks the moment the whole group is done, and a dashed "cut off"
+box is a command that was still running when that happened and got canceled. The
+last row is the shared-requirement rule that comes up below.
 
 *Nothing to add — this is just an example, not code for any file:*
 

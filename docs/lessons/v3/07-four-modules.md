@@ -787,7 +787,7 @@ configuration reads the same constant.
 3. **Code — add `driveForwardMeters` to `Drivetrain`.** Add a
    `driveForwardMeters(double meters)` method — read
    `getDistanceMeters()` from `m_modules[0]` after resetting, sequence steps like
-   Lesson 6's `driveDistance`. This is the whole-chassis version we'll formalize
+   Lesson 6's `driveDistance` ([Figure 6.2](06-distance-and-commands.md#figure-6-2)). This is the whole-chassis version we'll formalize
    in Lesson 9.
 4. **Code — move the CAN IDs and offsets into `Constants.java`.** The array above
    bakes them in as literals (`new SwerveModule(1, 2, 9, 0.0, ...)`) — fine to

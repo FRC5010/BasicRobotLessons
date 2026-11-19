@@ -137,6 +137,23 @@ plug things into it. If you take one thing from this lesson, take that
 picture, with one layer added: *which* piece of code the framework is
 ticking depends on what's selected.
 
+Figure 0.1 shows when each of the five methods from section 1 fires. Read
+it left to right, like a timeline. Picking the opmode runs its **constructor**
+(`MyTeleop(robot)`), once. While the robot is disabled the opmode sits there
+ticking `disabledPeriodic()`. **Enable** runs `start()` once, and then
+`periodic()` ticks about every 20 ms for as long as you stay enabled.
+**Disable** runs `end()` and then `close()`, and that opmode is finished: the
+framework builds a fresh one straight away (its constructor runs again), and
+the new one ticks `disabledPeriodic()` until you enable. Picking a different
+opmode runs `close()` too. (The template's comment on `close()` only mentions
+de-selecting; disabling counts as well.) Each method fires at one moment, and
+only the two `periodic` ones repeat.
+
+<a id="figure-0-1"></a>
+![A timeline in three stretches: disabled, enabled, disabled. The constructor fires once at the left edge when the opmode is picked, start() once when the robot is enabled, end() and then close() when it is disabled, and a fresh MyTeleop is constructed right after, which ticks disabledPeriodic() in the last stretch. Ticks of disabledPeriodic() fill the disabled stretches and ticks of periodic(), about every 20 milliseconds, fill the enabled one](images/00-opmode-lifecycle.svg)
+
+*Figure 0.1 — An opmode's life: constructor, `start()`, a row of `periodic()` ticks, then `end()` and `close()`, and a fresh opmode takes its place.*
+
 ---
 
 ## 3. Run it
@@ -160,7 +177,7 @@ want Sim GUI and/or Real Driverstation. **Sim GUI** is correct for now.
 From the terminal, the SimGUI window just opens. When it does:
 
 The panel you want is **Robot State**, in the top left, and it holds
-everything you need. It's three steps, top to bottom, and Figure 0.1 numbers
+everything you need. It's three steps, top to bottom, and Figure 0.2 numbers
 them:
 
 1. Click **Teleoperated** in the list of modes. The panel starts on
@@ -171,10 +188,10 @@ them:
    why step 1 comes first. (`MyAuto` shows up under **Autonomous**.)
 3. Click **Enable**. The robot is now running `MyTeleop`.
 
-<a id="figure-0-1"></a>
+<a id="figure-0-2"></a>
 ![The Robot State panel in SimGUI with three numbered marks: 1 on the Teleoperated row of the mode list, 2 on the OpMode drop-down showing MyTeleop, 3 on the Enable row at the bottom](images/00-simgui-opmode-state.png)
 
-*Figure 0.1 — SimGUI's Robot State panel: (1) pick the mode, (2) pick the opmode, (3) enable.*
+*Figure 0.2 — SimGUI's Robot State panel: (1) pick the mode, (2) pick the opmode, (3) enable.*
 
 Congratulations — you're "driving" a simulated robot. Nothing moves,
 because there's no motor yet. That's Lesson 1.
@@ -214,7 +231,7 @@ beginner compile error — better to meet the error message now than be
 surprised by it later.
 
 Run the robot in simulation again, pick **Teleoperated** and **MyTeleop**
-the way Figure 0.1 shows, click **Enable**, and glance at the terminal. Your
+the way Figure 0.2 shows, click **Enable**, and glance at the terminal. Your
 message should be sitting right there. You just changed what the robot does.
 
 ---

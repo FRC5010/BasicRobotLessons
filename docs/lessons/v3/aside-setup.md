@@ -226,6 +226,15 @@ takes a few minutes — normal, not broken. Later runs are seconds.
   a wizard-generated project would be. This is what the rest of this page —
   and every lesson from here on — is talking about.
 
+<a id="figure-s-1"></a>
+![Three boxes top to bottom: the BasicRobotLessons course repo, an arrow labelled verify-lessons-v3.sh -1 --sandbox down to your project folder ~/dev/MyOpModeRobot, and an arrow labelled gh repo create down to your GitHub repo MyOpModeRobot. A crossed-out arrow runs from your project back up to the course repo](images/aside-setup-two-folders.svg)
+
+*Figure S.1 — The three places: the course repo, your project, and your GitHub repo. Your work only ever flows down.*
+
+Figure S.1 shows the three places, and the one direction your work travels.
+The two black arrows are this page's work (section 4's script, then section
+7's push); the crossed-out one is the mistake to avoid.
+
 **Verify it builds:**
 
 ```powershell
@@ -338,7 +347,7 @@ gh repo view --web
 
 opens the repo in your browser. You should see every file from your
 project — and none of `BasicRobotLessons`, the course repo. If you see the
-whole course in there instead, you pushed from the wrong folder; go back to
+whole course in there instead, you pushed from the wrong folder (see Figure S.1); go back to
 section 4's warning about the two folders.
 
 Prefer to do it in two steps? Create the repo on github.com first — **+**

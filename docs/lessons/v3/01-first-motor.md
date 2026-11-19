@@ -467,7 +467,7 @@ handed, so the field and the panel have to agree. Plug in a second
 controller someday and it goes in slot 1, with a `1` in its constructor.
 
 Pick **Teleoperated** and **MyTeleop** in the Robot State panel and click
-**Enable** (Lesson 0's [Figure 0.1](00-orientation.md#figure-0-1) shows
+**Enable** (Lesson 0's [Figure 0.2](00-orientation.md#figure-0-2) shows
 where), then open the **Other Devices** panel (3), where the TalonFX turns up
 as **Talon FX (v6)[1]**. Open it, and open the **Talon FX (v6)[1]** inside it:
 its rows are `supplyVoltage`, `dutyCycle`, `motorVoltage`, `torqueCurrent` and
@@ -560,10 +560,18 @@ Run it again, hold the bottom face button, and open **NetworkTables →
 Telemetry → DriveModule** in SimGUI or AdvantageScope. `CurrentCommand`
 reads `"none"` while nothing owns the module (before you enable, and at
 rest) and flips to `"Drive At Speed"` the instant you hold the button, back
-to `"none"` the instant you let go. That's the payoff of
+to `"none"` the instant you let go. Figure 1.2 shows both readings: expand
+**Telemetry**, then **DriveModule**, and `CurrentCommand` is the value on the
+row beneath it. (In SimGUI the bottom face button is the **Z** key, once
+Keyboard 0 is in slot 0.) That's the payoff of
 `.named(...)`: not decoration, an actual answer to
 "what is this thing doing right now," readable from a laptop instead of a
 debugger.
+
+<a id="figure-1-2"></a>
+![SimGUI's NetworkTables window twice, with Telemetry and DriveModule expanded: CurrentCommand reads "none" with nothing pressed, and "Drive At Speed" while the bottom face button is held](images/01-simgui-telemetry-drivemodule.png)
+
+*Figure 1.2 — `Telemetry/DriveModule/CurrentCommand` at rest, and while the bottom face button is held.*
 
 > This is a small, direct version of something this course will keep
 > building on. It also has a quiet limitation: it only sees what's

@@ -12,7 +12,7 @@ it. Along the way, every path auto becomes one line instead of one class.
   something back. You've passed suppliers around since Lesson 2; this is the
   same idea with an argument.
 - Everything else is command composition you already know — coroutines and
-  `waitUntil` from Lesson 6, `Command.parallel` from Lesson 24, `Optional` from
+  `waitUntil` from Lesson 6, `Command.parallel` from Lesson 9, `Optional` from
   Lesson 15 — pointed at a problem you haven't solved yet. The hard part of this
   lesson is the design, not the syntax.
 
@@ -60,7 +60,8 @@ goal. Nothing waits for anything else unless it genuinely has to.
 
 Here's the thing worth naming, because it's the whole lesson: **you already know
 how to run two commands at once.** Lesson 24's `handoffMotion` runs the arm and
-the elevator together with `Command.parallel(...)`. What you don't have yet is a
+the elevator together with `Command.parallel(...)` (when a group like that ends is
+[Figure 9.2](09-autonomous.md#figure-9-2)). What you don't have yet is a
 way to say *when* — a way to start the second thing partway through the first.
 That, and a robot that checks before it moves, is all this lesson adds.
 
