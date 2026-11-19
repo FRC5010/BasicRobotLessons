@@ -1,0 +1,110 @@
+# Numbers Lesson 31 (testing) quotes that a library change could move.
+# All from the lesson's own ElevatorHomingTest with Thread.sleep varied, a fresh JVM per run.
+
+[[claim]]
+id = "l31.sleep20-height"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "ElevatorHomingTest with a full 20 ms sleep per tick ends at a final height of 0.0090 m."
+evidence = "CLAUDE.md, 'Lessons 28-32 re-measured on alpha-8', Lesson 31 (eight runs); tools/figures/data/31-homing-20ms-*.csv"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "0.0090 m; Figure 31.2's alt text and prose: jumps to 0.009 m"
+unit = "m"
+range = [0.00895, 0.00905]
+measured = "0.0090 m in 8 of 8; figure data 0.00904 m"
+test = "tools/figures/probes/Fig31HomingHeight.java"
+figure = "31-homing-test-height.png"
+note = "The alt text and prose say 0.009 m (a looser rounding); 0.0090 in the table is the tighter wording."
+
+[[claim]]
+id = "l31.sleep4-height"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With a 4 ms sleep the final height is 0.0075-0.0094 m, still within tolerance."
+evidence = "CLAUDE.md, 'Lessons 28-32 re-measured on alpha-8', Lesson 31 (eight runs); data/31-homing-4ms-1.csv"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "0.0075-0.0094 m"
+unit = "m"
+range = [0.00745, 0.00945]
+measured = "0.0090 five times, 0.0075 twice, 0.0094 once (eight runs); figure data 0.00748 m"
+test = "tools/figures/probes/Fig31HomingHeight.java"
+
+[[claim]]
+id = "l31.sleep0-fail"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C1"
+statement = "With no sleep the homing test ends at about -0.34 m (a third of a metre below the floor) in seven runs of eight and at 0.0094 m in the eighth, so the trap is intermittent."
+evidence = "CLAUDE.md, 'Lessons 28-32 re-measured on alpha-8', Lesson 31; Batch 2 found, Lesson 31's trap (Figure 31.2): five of six no-sleep runs end at -0.3415 m; tools/figures/data/31-homing-0ms-*.csv"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "-0.34 m in seven runs of eight (0.0094 m in the eighth); a third of a metre; about minus 0.34 m (Figure 31.1 and 31.2 alt text); one fails one run in five"
+unit = "m"
+range = [-0.345, -0.335]
+measured = "-0.3396 to -0.3415 in 7 of 8 (alpha-7 build: 5 of 8); figure data -0.34151 in 5 of 6 runs"
+test = "tools/figures/probes/Fig31HomingHeight.java"
+figure = "31-two-clocks.svg"
+note = "Range is for the failing runs' final height. A count of random outcomes: the lesson's conclusion (a cliff, intermittent, usually fails) holds for roughly 4 to 8 failures of 8; only 0 or 1 would make the lesson's 'it can be intermittent' stop being true."
+
+[[claim]]
+id = "l31.pass-run-height"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "In Figure 31.2 the no-sleep run that passes ends at 0.006 m."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 31's trap (Figure 31.2): one of six no-sleep runs passed at 0.0061 m; data/31-homing-0ms-1.csv"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "0.006 m (alt text)"
+unit = "m"
+range = [0.0055, 0.0065]
+measured = "0.00608 m"
+figure = "31-homing-test-height.png"
+
+[[claim]]
+id = "l31.tick-181"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "With the 20 ms sleep, the re-zero shows in the height reading on tick 181 of the test."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 31's trap (Figure 31.2): 'snaps to +0.009 m on tick 181'; data/31-homing-20ms-*.csv"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "tick 181"
+unit = "tick"
+range = [180.5, 181.5]
+measured = "tick 181 in the figure's run; one 20 ms run in the data stops at tick 183 (0.00997 m at tick 181)"
+figure = "31-homing-test-height.png"
+note = "How soon homing finishes depends on how long the carriage has sunk; the figure's run is the reference."
+
+[[claim]]
+id = "l31.test-wall-time"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "The whole homing test takes 4.1 s of wall clock with the 20 ms sleep and 0.23 s without."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 31's trap (Figure 31.2); data/31-homing-*.csv wall_ms column"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "0.23 s without the sleep; 4.1 s with it"
+unit = "s"
+range = [0.225, 0.235]
+measured = "no sleep: 0.223-0.325 s over six runs; 20 ms sleep: 4.100 and 4.037 s"
+note = "The range is for the no-sleep time (the tighter one). The 4.1 s wording is [4.05, 4.15]."
+
+[[claim]]
+id = "l31.mutation-fail-time"
+kind = "number"
+library = ["wpilib"]
+criticality = "C3"
+statement = "Letting IDLE reach SCORING makes scoringRequiresSomethingToScore fail, by name, in about a second."
+evidence = "No record found in CLAUDE.md or tools/figures/data of the time; CLAUDE.md, 'v3 Lesson 31 on alpha-7' records only that the test fails by name; stated by the lesson"
+measured_on = "unverified"
+wording = "about a second"
+unit = "s"
+range = [0.9, 1.1]
+measured = "not recorded"

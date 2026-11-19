@@ -70,3 +70,14 @@ statement = "Files under src/main/deploy are copied onto the robot at deploy, an
 evidence = "CLAUDE.md, 'v3 snapshots can ship deploy/ files' (deploy/** maps to src/main/deploy/**) and 'v3 Lesson 17': path files under deploy/autos were loaded in the sim runs"
 measured_on = "alpha-8"
 method = "LOOP"
+
+[[claim]]
+id = "gradlerio.test-task-config"
+kind = "api"
+library = ["gradlerio"]
+criticality = "C1"
+statement = "The template's build.gradle already ships JUnit 5 (junit-jupiter and junit-platform-launcher), wpi.java.configureTestTasks(test) (which makes the HAL and simulation libraries available to tests), and --add-opens jvmArgs in the test block that a test scheduling any Commands V3 command needs."
+evidence = "CLAUDE.md, 'v3 Lesson 31'; 2026/CLAUDE.md Lesson 32 notes for the JUnit and configureTestTasks lines (classic track). The --add-opens lines are stated by the lesson; no record of re-reading them on alpha-8."
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "SOURCE"
+note = "Lesson 33's tests pass on alpha-8 (CLAUDE.md, batch 3), which is indirect evidence the test setup works."
