@@ -2674,6 +2674,20 @@ at least twice.
   - The TalonFX velocity reading stays 0 for about 0.12–0.14 s after the
     press, while the model is already moving. That the cause is status-signal
     latency is a guess.
+- **SimGUI's NetworkTables *menu* lists only widgets** (`Field`, `Mechanism`,
+  `Alerts`, AdvantageKit's `RealOutputs` ones). Plain values and AdvantageKit
+  inputs are in the **NetworkTables View** window's tree (opened from that
+  menu), under **Transitory Values**. Lessons 1 and 15 now say so; the
+  "NetworkTables → AdvantageKit → …" paths in Lessons 18, 20 and 21 are
+  AdvantageScope's sidebar.
+- **Lesson 15 Try It #3, re-run** (LOOP, the Try It's scatter applied with
+  `--replace`, three 60 s parked runs): ended 17, 39 and 39 cm from the park
+  point, and the farthest each got was 25, 52 and 50 cm. The text says "15 to
+  50 cm".
+- SimGUI tips (b2g4):
+  - Keyboard 0 shows only Axis[0..2], and W holds Axis[1] at −1.0.
+  - Drag a keyboard onto the Joystick[N] header, and wiggle the mouse for
+    about 2 s before releasing (the drop lags the cursor).
 - Lesson 25's concepts line said `Command.parallel` was "from Lesson 24";
   Lesson 9 introduced it.
 - **Usage:** the window reset at 03:40 UTC on 2026-11-19. Two Sonnet agents

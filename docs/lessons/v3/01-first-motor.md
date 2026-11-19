@@ -556,12 +556,13 @@ only updates its list when it ticks — ask before the tick and you'd be
 reading what was running on the *previous* one. `robotPeriodic()` already
 ticks first and reads second here, so this just slots in.
 
-Run it again, hold the bottom face button, and open **NetworkTables →
-Telemetry → DriveModule** in SimGUI or AdvantageScope. `CurrentCommand`
+Run it again, hold the bottom face button, and find **Telemetry →
+DriveModule** in SimGUI's NetworkTables tree (or AdvantageScope's). `CurrentCommand`
 reads `"none"` while nothing owns the module (before you enable, and at
 rest) and flips to `"Drive At Speed"` the instant you hold the button, back
-to `"none"` the instant you let go. Figure 1.2 shows both readings: expand
-**Telemetry**, then **DriveModule**, and `CurrentCommand` is the value on the
+to `"none"` the instant you let go. Figure 1.2 shows both readings in SimGUI's
+**NetworkTables View** window (open it from the **NetworkTables** menu if it
+isn't showing): expand **Telemetry**, then **DriveModule**, and `CurrentCommand` is the value on the
 row beneath it. (In SimGUI the bottom face button is the **Z** key, once
 Keyboard 0 is in slot 0.) That's the payoff of
 `.named(...)`: not decoration, an actual answer to

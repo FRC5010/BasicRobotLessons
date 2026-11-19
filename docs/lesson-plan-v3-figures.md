@@ -71,8 +71,8 @@ Type: a = sim plot, b = SimGUI screenshot, c = SVG diagram, d = needs the user. 
 | 14.2 | Each sighting is a nudge | 14 | a | medium | 2 |
 | 15.1 | Where the cameras are | 15 | c | high | 1 (built) |
 | 15.2 | Real camera and simulated camera, same wire | 15 | c | high | 1 (built) |
-| 15.3 | SimGUI: AdvantageKit menu for a camera | 15 | b | medium | 2 |
-| 15.4 | A parked robot still drifts | 15 | a | medium | 2 |
+| 15.3 | SimGUI: AdvantageKit menu for a camera | 15 | b | medium | 2 (built) |
+| 15.4 | A parked robot still drifts | 15 | a | medium | 2 (built) |
 | 16.1 | The estimate creeps ahead and stays there | 16 | a | high | 1 (built) |
 | 16.2 | Truth and estimate are different loops | 16 | c | medium | 2 |
 | 16.3 | The grip limit | 16 | a | medium | 2 |

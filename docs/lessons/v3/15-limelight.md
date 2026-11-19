@@ -869,9 +869,19 @@ only that method used:** `Command`, `Pose2d`, and `Rotation2d`.
 Now run the robot in simulation → **RobotTeleop**, and watch the
 **Field** widget in SimGUI next to `Localizer/limelight-front/PoseObservations`
 and `Localizer/limelight-back/PoseObservations`. They're inputs now, so look
-for them under **NetworkTables → AdvantageKit → Localizer**, not under
-**Telemetry**: SimGUI shows each one as `[]` while its camera has nothing to
-report, and `[...]` once frames arrive. The robot starts at (0, 0),
+for them under **AdvantageKit → Localizer** in SimGUI's NetworkTables tree, not
+under **Telemetry**: SimGUI shows each one as `[]` while its camera has nothing
+to report, and `[...]` once frames arrive. Figure 15.3 shows where they are
+(open **NetworkTables → NetworkTables View** if that window isn't showing, then
+expand **AdvantageKit**, **Localizer**, and a camera's name), before and after
+the robot moves.
+
+<a id="figure-15-3"></a>
+![SimGUI's NetworkTables window with AdvantageKit, Localizer, limelight-back and limelight-front expanded: each camera's PoseObservations reads [] before the robot moves, and [...] after a nudge forward](images/15-simgui-advantagekit-menu.png)
+
+*Figure 15.3 — Each camera's `PoseObservations` input in SimGUI: `[]` while it has nothing to report, `[...]` once frames arrive.*
+
+The robot starts at (0, 0),
 in the blue corner, facing down the field — and the front camera can
 already see a pair of tags 4 to 6 m down the field. Nudge the robot off its starting
 spot and the front camera's observations start arriving every loop. Now
@@ -943,7 +953,7 @@ camera misbehaves, this is the first place to look.
    returns a random number that's usually near zero and occasionally not:
    the bell curve.) Now nudge the robot off (0, 0) and leave it parked
    where the front camera can see those two tags. Watch `Localizer/Pose`
-   for a minute. It drifts — in this course's runs, between 25 and 50 cm
+   for a minute. It drifts — in this course's runs, anywhere from 15 to 50 cm
    in 60 seconds, with nothing moving. Work out why before reading on.
    Here's the answer: the camera looks out from the estimate itself, so each
    frame says "you're where you think you are, give or take a little," the
@@ -951,6 +961,20 @@ camera misbehaves, this is the first place to look.
    shifted spot. Nothing pulls it back, because nothing in this simulator
    knows where the robot really is. Take the scatter back out: a shaky
    camera needs a truth to be shaky *around*, and that's Lesson 16.
+
+   Figure 15.4 shows three runs of exactly this: the estimate's straight-line
+   distance from where the robot parked, for 60 seconds. Each line wanders
+   rather than climbing steadily, because every frame's scatter is random in
+   both directions, and a wander has no reason to come back. The three runs
+   end at 17, 39 and 39 cm, and between them reached 25, 52 and 50 cm at their
+   farthest. Run 1 is also a reminder that "drifts" isn't "runs away": it
+   spent the last 20 seconds hovering between 6 and 23 cm.
+
+   <a id="figure-15-4"></a>
+   ![Distance of the estimate from where the robot parked against time for three 60 second runs: each wanders away from zero, ending at 17, 39 and 39 centimeters](images/15-parked-drift.png)
+
+   *Figure 15.4 — A parked robot's estimate under the shaky camera: three 60 s runs.*
+
 4. **Code — prove a miscalibrated camera is invisible here, and understand
    why.** Add 0.3 m to `kFrontRobotToCamera`'s forward offset, pretending
    you measured wrong, and drive around watching `Localizer/Pose`. It
