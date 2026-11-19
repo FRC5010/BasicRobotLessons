@@ -543,6 +543,25 @@ one second, under 2 after three, 0.56 at five. Then it settles at
 **0.41 rot/s** by about nine seconds, and stays there. It's still turning.
 0.05 V × 8.47 rot/s per volt = 0.42.
 
+<a id="figure-33-2"></a>
+![Three stacked panels over the ten seconds after the right bumper goes down. Top: wheel speed falls from the idle 30.4 rot/s through 13.5, 4.67, 1.80 and 0.56 rot/s. Middle: the same curve zoomed to 0 to 3 rot/s, flattening onto a dashed line at the predicted 0.42 rot/s, well above zero. Bottom: the applied voltage steps down from 3.6 V and reaches 0.05 V at about 0.8 s](images/33-ks-hold-005v.png)
+
+*Figure 33.2 — Holding 0.05 V from the idle speed: the wheel coasts down and settles at 0.41 rot/s, not at zero.*
+
+Figure 33.2 shows the ten seconds you're watching. Start with the top panel:
+the orange line is the wheel's speed, and it falls like any coasting wheel,
+steeply at first and then flatter, passing the labelled points at 1, 2, 3 and
+5 seconds. It looks as if it's heading for zero. The middle panel is the
+same curve with the speed axis stretched to 0–3 rot/s, and it says otherwise:
+the curve flattens onto the dashed line at 0.42, the prediction, and the
+solid grey line at zero stays clear of it. That gap, small as it is, is
+the whole check: the wheel is still turning on 0.05 V. The bottom panel shows
+the voltage actually applied. It isn't 0.05 V at once: it starts well above
+and takes about 0.8 s to come down to it (most likely the stator current
+limit from Lesson 29 holding it up while the wheel is still fast, though this
+wasn't isolated), so the first second of the top panel isn't a pure 0.05 V
+response. From then on it is.
+
 A wheel that turns on 0.05 V doesn't have 0.9 V of friction in it. For this
 simulation that's also the right answer, not a warning: `FlywheelSim` has no
 friction (Lesson 28 said so), so a fit that finds `kS` near zero is agreeing
@@ -579,7 +598,7 @@ model rearranged.) The ramp's own acceleration goes into the `kA` term, and the
 dynamic test, which accelerates as hard as the routine can make it, is what pins
 `kA` down. Nothing is left over to land in `kS`.
 
-Figure 33.2 plots exactly this. Read it as speed along the bottom and the
+Figure 33.3 plots exactly this. Read it as speed along the bottom and the
 logged voltage up the side. The dashed black line is steady state: the voltage
 that would hold each speed if you set it and waited, `speed ÷ 8.47`, and it
 passes through zero because a frictionless wheel needs no voltage to start.
@@ -597,10 +616,10 @@ there. (The figure fits a ramp started from a true standstill, over 4 to 6 V,
 which gives 0.88 V and 0.23 V; the 0.90 below fits both slow tests of a real
 run, which start from idle. The exact digit depends on which stretch you fit.)
 
-<a id="figure-33-2"></a>
+<a id="figure-33-3"></a>
 ![Speed on the horizontal axis and logged voltage on the vertical. A dashed black steady-state line through zero; the 1 V per second ramp curve well above it with a dotted straight fit meeting the voltage axis near 0.88 V; the 0.25 V per second ramp close to the dashed line with a fit meeting the axis near 0.23 V; horizontal arrows at 1 V and 5 V show the 1 V per second ramp's lag](images/33-ramp-vs-steady-state.png)
 
-*Figure 33.2 — A ramp's speed against its voltage, from a standstill. The distance above the steady-state line is lag, and a fit without an acceleration term reads it as `kS`. Hand fit, not the tool's.*
+*Figure 33.3 — A ramp's speed against its voltage, from a standstill. The distance above the steady-state line is lag, and a fit without an acceleration term reads it as `kS`. Hand fit, not the tool's.*
 
 **The 0.90 V is what you get without that term.** Fit just the two ramps,
 voltage against speed with nothing else (with the coast-down at the start
@@ -770,7 +789,7 @@ default 1 V/s: the carriage has covered 0.44 m by the time the ramp reaches
 the span of voltage you actually covered. A short honest run beats a long one
 that spent its last second driving into a hard stop.
 
-Figure 33.3 draws those numbers. In the top panel, the bottom axis is the
+Figure 33.4 draws those numbers. In the top panel, the bottom axis is the
 voltage the ramp has reached and the side axis is how far the carriage has
 travelled by then. The three curves are the three ramp rates, and the dashed
 line is the elevator's 1.5 m of travel. Look first at the line you'll actually
@@ -783,15 +802,15 @@ The two dots on the 1 V/s curve are the stopping voltages above: 3 V is about
 0.44 m, and 4.5 V is about 1 m, still inside the travel. The bottom panel is
 the step test, which the next heading covers.
 
-<a id="figure-33-3"></a>
+<a id="figure-33-4"></a>
 ![Top panel: distance travelled against voltage reached for three ramp rates, with a dashed line at the elevator's 1.5 m of travel. The 1 volt per second curve ends at 1.9 m and crosses 1.5 m near 5.4 volts, the 0.5 curve ends at 3.8 m, the 0.25 curve at 7.6 m; dots mark 0.44 m at 3 volts and 1.0 m at 4.5 volts on the first. Bottom panel: bars for the 1.5 second step test, 1.10 m at 7 volts, 0.63 m at 4 and 0.30 m at 2, all left of the 1.5 m line](images/33-ramp-room-elevator.png)
 
-*Figure 33.3 — How far the elevator travels under a ramp (top) and a step (bottom), against its 1.5 m of travel. Open loop, physics widened so nothing stops it.*
+*Figure 33.4 — How far the elevator travels under a ramp (top) and a step (bottom), against its 1.5 m of travel. Open loop, physics widened so nothing stops it.*
 
 ### And lower the step voltage
 
 The dynamic test has the same problem in a more concentrated form, since it
-jumps straight to full step voltage and stays there. Same widened rig, 1.5 seconds (the bottom panel of Figure 33.3 draws these three bars):
+jumps straight to full step voltage and stays there. Same widened rig, 1.5 seconds (the bottom panel of Figure 33.4 draws these three bars):
 
 *Nothing to add — measured, not asserted:*
 

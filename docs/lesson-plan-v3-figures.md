@@ -97,7 +97,7 @@ Type: a = sim plot, b = SimGUI screenshot, c = SVG diagram, d = needs the user. 
 | 25.3 | Pick Up timeline | 25 | a | high | 1 (built) |
 | 26.1 | The line's frame and the two stages | 26 | c | medium | 2 (built) |
 | 26.2 | Speed during the two-stage drive | 26 | a | high | 1 (built) |
-| 26.3 | The path bows out while turning | 26 | a | low | 3 |
+| 26.3 | The path bows out while turning | 26 | a | low | 3 (built) |
 | 27.1 | Why a strafing robot has to spin | 27 | c | medium | 2 (built) |
 | 27.2 | Aim error on a 3 m orbit | 27 | a | high | 1 (built) |
 | 28.1 | The speedometer: needle against speed | 28 | c | medium | 2 (built) |
@@ -109,12 +109,12 @@ Type: a = sim plot, b = SimGUI screenshot, c = SVG diagram, d = needs the user. 
 | 30.2 | SimGUI: Unplug Gyro | 30 | b | medium | 2 (built) |
 | 30.3 | Why the low-battery alert only looks while disabled | 30 | a | medium | 2 (built) |
 | 31.1 | Two clocks | 31 | c | medium | 2 (built) |
-| 31.2 | Homing test height with and without the sleep | 31 | a | medium | 3 |
+| 31.2 | Homing test height with and without the sleep | 31 | a | medium | 3 (built) |
 | 32.1 | The height arrives; `AtGoal` never says so | 32 | a | high | 1 (built) |
 | 32.2 | The same match through the fixed code | 32 | a | high | 1 (built) |
 | 32.3 | Aim While Driving, right tag and typo | 32 | a | medium | 2 (built) |
 | 33.1 | What the four tests look like | 33 | a | high | 1 (built) |
-| 33.2 | `kS` check: 0.05 V and the wheel still turns | 33 | a | low | 3 |
+| 33.2 | `kS` check: 0.05 V and the wheel still turns | 33 | a | low | 3 (built) |
 | 33.3 | Why a 1 V/s ramp isn't quasistatic | 33 | a | high | 1 (built) |
 | 33.4 | A ramp costs room: elevator travel | 33 | a | medium | 2 (built) |
 | 34.1 | Two angles and a floor | 34 | c | high | after L34 migration |
@@ -1113,3 +1113,17 @@ Built two agents at a time, in lesson groups, to stay inside the usage window.
   - Working ID 33.4 is **Figure 33.3** (33.3 isn't built), and D.2 is **Figure D.1** (D.1 needs the user).
   - The git aside's new figure is G.2, and batch 1's rebase figure is now **G.3**.
 - **Batch 2 is complete:** all 34 figures are built.
+
+## 11. Batch 3 status (built 2026-11-19)
+
+All 8 batch 3 figures are built: 10.2, 12.1, 17.1, 20.2, 25.1, 26.3, 31.2 and 33.2.
+- **Renumbered:**
+  - 10.2 → 10.3.
+  - 12.1 → 12.2 and 12.2 → 12.3.
+  - Lesson 17's four earlier figures become 17.2–17.5.
+  - 25.1 → 25.2 and 25.2 → 25.3.
+  - 33.2 → 33.3 and 33.3 → 33.4.
+- **Inbound links:** those from Lessons 11, 18, 25 and 26 follow them.
+- **Plot beside a table:** 20.2 and 31.2 sit beside measured tables. 20.2 shows the cosine shape across 23 angles. 31.2 shows the stale, stepped reading and the missing re-zero.
+- **Text fix:** Lesson 26's no-turn trip is now "about 5 mm" off the line (was 11).
+- **Left:** the figures that need the user (3.1, 7.2, 8.2, and the debugger screenshot D.1), and Lesson 34's figures after its migration.

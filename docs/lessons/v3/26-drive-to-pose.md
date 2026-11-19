@@ -717,9 +717,25 @@ You'll also see two honest imperfections in the field view:
 >
 > **The path bows out sideways while the robot turns.** Measured, about
 > 26 cm at the widest, on a trip that turns 90°. The same trip with no turn
-> stays within about 11 mm of the line, so it's the turning that does it:
+> stays within about 5 mm of the line, so it's the turning that does it:
 > a chassis that turns and drives at once doesn't quite go where it was
 > told. The cross-track term pulls it back; it can't prevent it.
+
+<a id="figure-26-3"></a>
+![Top: a field view from S at (1, 1) to T at (5, 4). The orange path of the trip that turns 90 degrees swings out to the left of the dashed straight line, widest about 26 cm off it near the first third, and rejoins it at T; the green path of the trip with no turn lies on the line. Bottom: the sideways offset in millimetres against distance along the line, a hump peaking at 264 mm for the turning trip and a flat line within 5 mm for the other](images/26-bow-while-turning.png)
+
+*Figure 26.3 — The same trip with and without the 90° turn, from above (top) and as the sideways distance from the line (bottom). One run each, the simulated robot's true position.*
+
+Figure 26.3 overlays both trips. The top panel is the field from above, with
+the dashed black line from S to T that the plan wants the robot to follow. The
+green path is the trip with no turn, and you can't see it because it's lying
+on the dashed line. The orange path is the trip that turns 90° on the way: it
+swings out to the left, up to 26 cm off, and comes back to land on T. The
+bottom panel measures the same thing as a sideways distance, so the size of
+the bulge reads directly. The orange hump peaks about two metres along the
+line, and the green line stays within 5 mm. The only difference between the
+two runs is the heading of the target. Turning is what does it, and that's as
+far as this measurement goes: it doesn't say why.
 
 Worth plotting while you watch:
 

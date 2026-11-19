@@ -2789,10 +2789,30 @@ at least twice.
     agree. The table's five points read +0.251 / +0.178 / −0.000 / −0.178 /
     −0.250, and the −20° stop reads +0.237. The arm settles 0.05–0.25°
     short of its goal.
+  - **Lesson 26's no-turn trip is about 5 mm off the line, not 11**
+    (Figure 26.3; `Fig26TwoStage` unchanged, `kScoringPose`'s heading set to
+    0 with `--replace`, the simulated truth, four runs): 5.3–5.6 mm at most,
+    early in the launch (0.16 m along). The turning trip bows 264–275 mm,
+    widest about 1.93 m along. The lesson said "about 11 mm" from the
+    2026-10-30 re-measure (10–12 mm, its probe not kept). The original
+    design's log also showed 5.1 mm, so the lesson now says about 5 mm. Why
+    that re-measure read double is unexplained.
+  - **Lesson 31's trap, drawn** (Figure 31.2; `Fig31HomingHeight`, the
+    lesson's own test with `SLEEP_MS` from the environment, a fresh JVM per
+    run): with no sleep the height reading is a staircase of stale firmware
+    readings. Five of six no-sleep runs never read the re-zero and end at
+    −0.3415 m; one passed at 0.0061 m. With the 20 ms sleep the reading
+    slides smoothly and snaps to +0.009 m on tick 181. The whole test takes
+    4.1 s of wall clock with the sleep and 0.23 s without.
+  - **Lesson 33's 0.05 V hold** (Figure 33.2, `Fig33HoldVoltage`, two
+    runs): the speeds match the notes (13.45 / 4.67 / 1.80 / 0.56, 0.414
+    from 9 s). The applied voltage drops from 3.59 V to about 1.5–1.6 V,
+    ramps down, and first reads 0.05 V at 0.82 s. The lesson says "about
+    0.8 s".
   - **Renumbered by batch 3:** Lesson 10: 10.2 → 10.3. Lesson 12: 12.1 →
     12.2 and 12.2 → 12.3. Lesson 17: 17.1–17.4 → 17.2–17.5. Lesson 25:
-    25.1 → 25.2 and 25.2 → 25.3. Links from Lessons 11, 18, 25 and 26
-    follow them.
+    25.1 → 25.2 and 25.2 → 25.3. Lesson 33: 33.2 → 33.3 and 33.3 → 33.4.
+    Links from Lessons 11, 18, 25 and 26 follow them.
 - **SimGUI's addressable LED strip** is under **Hardware → Addressable
   LEDs** ("LEDs[5]", 40 pixels). It opens as 10 columns × 4 rows, and Lesson
   23 tells the student to set Columns to 40.

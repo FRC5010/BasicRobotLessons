@@ -378,6 +378,29 @@ the bottom half there's no sleep, so the model takes many 20 ms steps while
 the firmware's clock has barely moved, and the model ends up far ahead of
 the controller that's supposed to be steering it.
 
+<a id="figure-31-2"></a>
+![Left: the elevator's height reading against the tick of the test. With a 20 ms sleep it falls smoothly from 0 to about minus 0.34 m, then jumps to 0.009 m on tick 181. The two no-sleep runs fall in steps, the reading staying flat for several ticks at a time; the passing run jumps to 0.006 m on tick 181, the failing one stays at minus 0.34 m. Right: a zoom on the last ticks. A grey band marks the test's tolerance around 0.01 m](images/31-homing-test-height.png)
+
+*Figure 31.2 — The homing test's height reading, tick by tick: a 20 ms sleep, and two runs with no sleep, one that passes and one that fails. Three runs, each in a fresh JVM.*
+
+The table gave you only the final heights. Figure 31.2 plots the reading on
+every tick of the same test, from the first tick to the last. The black line
+is the correct test, with its 20 ms sleep: the height reading slides down
+smoothly as the carriage sinks toward the switch, then jumps up to 0.009 m
+once homing re-zeroes the encoder, which is exactly what the test expects.
+The grey band is the test's tolerance around 0.01 m.
+
+Now the two no-sleep runs. They don't slide: they fall in steps, the reading
+sitting flat for several ticks and then jumping to catch up. Every tick of
+the test took no time at all, which fits the picture above: the firmware's
+clock barely moves between ticks, so its reading is stale for several of them. The whole test took 0.23 s of wall clock where the
+correct one took 4.1 s. The steps are the evidence you'd have missed in a
+single number. Then look at the right-hand panel, which zooms in on the
+last ticks. The green run lands its re-zero just like the black one, and
+passes. The orange run never reads the new zero: it ends where the sinking
+carriage left it, at −0.34 m. Same test, same code, two outcomes, and the only
+difference between them is a race you can't see.
+
 **If a test involves physics, sleep the full tick.** A slow correct test
 is worth more than a fast one that lies — and "slightly shortened"
 isn't a safe middle ground just because it happened not to break this
