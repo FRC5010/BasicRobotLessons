@@ -275,6 +275,62 @@ and the lesson tables in Lessons 5, 18, 20, 28, 29, 31 and 33.
 | **5. Watching** | Replace the alpha-7 vendor Routine with one that covers every pinned library and starts the upgrade loop (section 3.4) | A simulated "new release" (a pin changed by hand on a branch) produces a report |
 | **6. Screens** | Tier S re-shoot and diff | Each SimGUI figure re-shoots, and a changed menu is flagged |
 
+## 5a. Phase 0 findings (for the user)
+
+The inventory reads every lesson against CLAUDE.md's measurements, so it turns up places where the
+text and the libraries disagree. Nothing below has been changed in the lessons; each is the user's
+call. Updated as the waves finish.
+
+**Wave 1 (the asides and Lessons 0–16, 2026-11-19): 360 markers, about 100 new library claims.**
+
+The lesson says something the libraries or the code contradict:
+
+1. **Lesson 1 §5's watch-out** says the scheduler doesn't check whether the robot is enabled and
+   only the motor hardware keeps a disabled robot still. On alpha-8 the scheduler cancels every
+   command that needs a mechanism when the robot disables, and refuses to schedule one while
+   disabled.
+2. **Lesson 1, line 228** says `` `set(fraction)` ``; the lesson's code calls `setThrottle`.
+3. **Lesson 3 §6** says Lesson 1 reads the running command off entry zero of a list that is
+   "guaranteed non-empty". Since the batch 1 fix, Lesson 1 checks `isEmpty()` and logs "none",
+   because the list is empty on every disabled tick. §6's motivation needs rewording; its point
+   (a command that starts and finishes within one tick is invisible to a poll) still stands.
+4. **Lesson 6 §5** says to tap D-pad up in SimGUI. Keyboard 0 can't press the gamepad's D-pad
+   (CLAUDE.md, SimGUI tips: buttons 11–14 need a keyboard with 15 buttons).
+5. **Lesson 10 Try It #2** says `RadiansPerSecond.of(Math.PI / 2)` is "half a turn per second";
+   it's a quarter.
+6. **Lesson 14 §2** says every subsystem class "extended `Mechanism`" and that `Mechanism` gives
+   "an automatic `idle()` default command". `Mechanism` is an interface, and nothing installs a
+   default command on alpha-7 or alpha-8 (Lesson 28 has to call `setDefaultCommand(idle())`).
+7. **The debugger aside §3** says the button is bound to `westFace()`; Lesson 5 binds
+   `faceLeft()`.
+
+The wording stretches the measurement:
+
+8. **Lesson 12 Try It #1:** "within about a tenth of a second the voltage is at `kV ×
+   requested`". At 0.08–0.12 s it reads 4.54–4.96 V against 5.01 V, and is within 0.01 V only from
+   about 0.26 s.
+9. **Lesson 4, Figure 4.2:** "within half a second" for a wheel at 99% of steady speed at 0.48 s.
+10. **Lesson 6:** "just over half a second" for 0.62 s.
+11. **Lesson 15 Try It #3:** "15 to 50 cm in 60 seconds". The three runs ended 16.5–38.9 cm out,
+    but one got as far as 52.3 cm on the way.
+12. **Lesson 13:** "37 ticks" differ when `kP` is quartered. That's 37 on alpha-8, but alpha-7 gave
+    38, so the exact count is fragile.
+13. **Lesson 18, Figure 18.1's alt text:** "0.19 mm". Every Lesson 18 run reads 0.194 mm, but at
+    the Lesson 32 state the same hold can sit at 0.155 mm.
+
+**28 claims have no recorded evidence** (`measured_on = "unverified"`), and Phase 2 or 3 should
+test them first: the VS Code simulate prompt; `Command.parallel`'s optional race and its
+shared-requirements exception; `Mechanism` having no periodic; a no-yield command finishing in
+its tick, and a short command being invisible to a poll; the `andThen` builder; the command
+trace helper; `ORG_GRADLE_JAVA_HOME`; two Lesson 15 numbers (the two-tag trust 0.47 m, the
+starting tags 4–6 m away); LimelightLib screening single-tag MegaTag1 harder; Phoenix's 1 kHz
+onboard loop, remote CANcoder feedback, `RotorToSensorRatio`, the CANcoder offset and direction,
+and the first signal read waiting; five `wpilib-tools` claims (mapping a gamepad in SimGUI, VS
+Code's simulate and vendordep commands, connecting AdvantageScope, the installer's contents, the
+VS Code debugger); and six WPILib ones (swerve velocity methods returning new objects, the cosine
+scale, pose estimator latency compensation, `DataLogManager`'s location on a real robot,
+`MathUtil.applyDeadband`, odometry using `Twist2d.exp`).
+
 ## 6. What this doesn't cover
 
 - **Real hardware.** Every test runs in the simulator. Claims about a real robot (the stator limit
