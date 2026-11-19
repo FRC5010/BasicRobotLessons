@@ -331,6 +331,52 @@ VS Code debugger); and six WPILib ones (swerve velocity methods returning new ob
 scale, pose estimator latency compensation, `DataLogManager`'s location on a real robot,
 `MathUtil.applyDeadband`, odometry using `Twist2d.exp`).
 
+**Wave 2, part 1 (Lessons 17 and 19–26, 2026-11-19): 325 markers, about 50 new library claims.**
+
+The lesson says something the libraries contradict:
+
+14. **Lesson 21 §6** says this framework's `Scheduler` "doesn't do that gating at all" on disable.
+    On alpha-8 it cancels every command that needs a mechanism. The lesson's re-zero command needs
+    none, so the sentence is true of that command, not of the scheduler. It's the same family as
+    item 1.
+
+The wording stretches the measurement (the number in brackets is what was measured):
+
+15. **Lesson 17:**
+    - "178.8°" at the end of Two Corners [178.7–178.9 across runs].
+    - "about 6 cm" past the end at 2 m/s [6–7 cm].
+    - "roughly 35 cm" and "about 36 cm" past the end at 3 m/s [36–37 cm in five of six runs].
+    - "half a second longer" with a 5 cm handoff radius [+0.4–0.5 s].
+    - Figure 17.5's "0.47 m at 1.44 s" and "x = 5.58" [0.464–0.474 m, 1.44–1.46 s, 5.568–5.577 m
+      over three runs], which are precise only for the one run drawn.
+    - "about 82%" of the leg for the `shoot` event [the figure data's handler runs at 83.0–83.3%;
+      the marker itself fires at 82%].
+16. **Lesson 24:** "125 to 155 ticks" to home [a press 300 ticks after launch takes 95]. The lesson
+    already says a later press is quicker; the range is just for presses soon after enabling.
+17. **Lesson 25:**
+    - "a tenth of a second" from beam break to `HANDOFF` [4–5 ticks, 0.08–0.10 s].
+    - `HOLDING` at "2.9 s" [2.92–2.96 s].
+    - The slow run scoring at "y 1.48" [1.479 and 1.461].
+18. **Lesson 26** (most already known in CLAUDE.md's Lesson 26 notes):
+    - The two-stage final error "7–8 mm" [7.9–9.2 mm on arrival, 6.6–8.2 mm half a second later].
+    - The old design's "14 mm" [15.7–16.5, then 12.3–12.8].
+    - Braking "about 7 m/s²" [6.5–8.6].
+    - Handing over at "about 1.45 m/s" [1.43–1.47].
+    - Slowing "about 1.4 m/s² on average" [1.17–1.32 by every definition tried; the original
+      definition is lost].
+    - Rolling "37 mm" past [37–38].
+    - The bow "about 26 cm" [262–269 mm in 7 of 9 runs, 284 and 292 in two].
+    - The no-turn trip "within 5 mm" (§10 and Figure 26.3's alt text) [5.3–5.6 mm, 5.27 in the
+      figure's data]; the callout says "within about 5 mm", which fits.
+    - Facing backwards, "0.3°" [0.43–0.45° on arrival, 0.23–0.26° later].
+    - The sketch finishing on the "first tick" when facing backwards [the alpha-8 re-measure says
+      the second, 0.04 s].
+
+Checked and not a problem: Figure 26.2's text says the robot trails the plan by about 0.3 m/s in
+the first tenth of a second. CLAUDE.md records 0.05–0.09 m/s, but the figure's own data, from
+position differences, gives 0.28 m/s at 0.08 s, so the lesson matches its figure. Which quantity
+CLAUDE.md's figure measured isn't recorded.
+
 ## 6. What this doesn't cover
 
 - **Real hardware.** Every test runs in the simulator. Claims about a real robot (the stator limit
