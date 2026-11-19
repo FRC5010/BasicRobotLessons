@@ -215,11 +215,19 @@ that moment* — log it once in the constructor and the view would show the
 robot where it started, forever. So it goes where the numbers go: in the
 method that runs every tick.
 
-Now in **SimGUI**: menu **NetworkTables → Telemetry → Field**, and a
-top-down field pane opens right in the sim window, robot moving as you
-drive. Same pose, two viewers: `Field2d` for the quick glance while sim is
+Now in **SimGUI** (the sim window itself, not AdvantageScope): menu
+**NetworkTables → Telemetry → Field**, and a top-down field pane opens right in
+the sim window, robot moving as you drive. Figure 11.1 shows where to click
+and what you get: a box for the field, with the robot drawn as a red outline
+and a green arrow for the way it faces, bottom-left until you drive.
+Same pose, two viewers: `Field2d` for the quick glance while sim is
 already open, the logged `Pose2d` for AdvantageScope's field images,
 replays, and everything else.
+
+<a id="figure-11-1"></a>
+![SimGUI's NetworkTables menu open with Telemetry and then Field highlighted, above the Field pane showing the field's outline with the robot drawn after a short drive](images/11-simgui-field-widget.png)
+
+*Figure 11.1 — Where to find the Field widget in SimGUI, and the field pane with the robot after a short drive.*
 
 ---
 

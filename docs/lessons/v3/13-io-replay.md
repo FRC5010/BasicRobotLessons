@@ -1088,6 +1088,27 @@ The run you're looking at happened before you made this change. Your new
 code just drove it again. In Figure 13.2, `getPosition()` is in the "your
 logic" box, below the line where the inputs come out of the file.
 
+Figure 13.3 plots both replays over the recording. It shows the robot's
+position on the field as seen from above, one line per run, from a drive
+of forward, then left, then forward and right.
+
+<a id="figure-13-3"></a>
+![Top-down track of one recorded drive. The recording and the unchanged replay lie exactly on top of each other, ending 4.78 m from the start. The replay with the 1.1 has the same shape, stretched away from the start, ending 5.26 m from it.](images/13-replay-scaled-pose.png)
+
+*Figure 13.3 — One recorded drive, replayed twice: the unchanged code lands on the recording; the code with `* 1.1` draws the same shape, stretched.*
+
+Read the thick orange line first: that's `RealOutputs/Drivetrain/Pose`, the
+drive as the robot saw it while it was recorded. The black dashed line is the
+replay of the unchanged code, and it sits on the orange one so exactly that
+you can't see the orange under it. That's the match from a moment ago. Now
+the green line: the same recording, replayed with the `* 1.1`. It has the
+same shape (the same three legs and the same corners), but every distance
+from the start is 1.1 times as long, so the whole track is pushed away from
+the grey dot. The start doesn't move because odometry starts at (0, 0), and
+ten percent of nothing is nothing. The farther the robot goes, the bigger the
+gap: here the green line ends 5.26 m from the start where the recording ends
+4.78 m from it, 0.48 m apart.
+
 **Put `getPosition()` back** — no `* 1.1` — and both switches with it.
 
 That's the whole idea. A replay is your code, today's version, fed the
