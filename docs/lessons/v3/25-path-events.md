@@ -359,7 +359,8 @@ single motor. It just asks.
 ```
 
 Lesson 17 mentioned that `registerEventTrigger` also takes a `Command`, and
-`requestIntake()` is one. Everything after the request is Lesson 24's machinery ([Figure 24.1](24-superstructure.md#figure-24-1) draws it),
+`requestIntake()` is one. Everything after the request is Lesson 24's machinery ([Figure 24.1](24-superstructure.md#figure-24-1) draws it,
+and [Figure 24.2](24-superstructure.md#figure-24-2) times one cycle),
 running unchanged: `INTAKING` drops the arm and starts the roller; the beam break
 moves the state to `HANDOFF`, which tucks the arm and raises the elevator; and once
 both arrive, it's `HOLDING`. The auto never mentions the arm, the roller or the
@@ -434,16 +435,37 @@ the two waypoints, so it's on the only leg, and `t_ratio` is a fraction of that 
 0.1 of the 6.4 m from y = 7.4 to y = 1.0 puts it at y ≈ 6.8.
 
 **Placing a marker is arithmetic, not taste.** The piece goes into the intake when
-it's about 0.6 m ahead of the robot's center: the bumper is 0.3 m out, and the
-intake reaches another 30 cm past it. So the roller has to be running by the time
-the robot's center reaches y ≈ 4.4. And the arm starts tucked in — the get-ready
+it's about 0.6 m ahead of the robot's center ([Figure 22.1](22-light-sensors.md#figure-22-1)): the bumper is 0.3 m out, and the
+intake reaches another 30 cm past it. So the piece comes within reach when the
+robot's center reaches y ≈ 4.4, and it slips under the bumper 30 cm later, at
+y ≈ 4.1: the roller has to be running somewhere in that window, and the earlier
+the better. And the arm starts tucked in — the get-ready
 step made sure of that — so the request isn't instant. In this course's sim the arm
 takes about 0.8 s to swing below horizontal, and the roller starts about 1.1 s after
 the request, because `intakeMotion` swings first and spins second. At 2 m/s, a
 second is two meters of path. Measured, the marker fires 0.6 s into the drive at
 y ≈ 6.7, the roller is running by y ≈ 4.5, and the piece goes in at y ≈ 4.4. Move
-the marker to 0.2 and the roller doesn't start until y ≈ 3.8 — by which point the
+the marker to 0.2 and the roller doesn't start until y ≈ 3.9 — by which point the
 piece is already under the bumper, and the robot drives straight over it.
+
+<a id="figure-25-1"></a>
+![Three top-down maps of the Pick Up path, one per marker position, with the hub beside it and the piece on it: with the marker at 0.1 the roller starts at y 4.5 and the piece goes in at 4.4; at 0.15 the roller starts at 4.2 and the piece goes in at 4.2; at 0.2 the roller starts at 3.9, with the piece already under the bumper, and it is never caught](images/25-marker-position.png)
+
+*Figure 25.1 — Where the roller starts on Pick Up's leg for three marker positions. The robot drives down the page along x = 6. One run of each, on a fresh launch.*
+
+Figure 25.1 shows that arithmetic as a map. Each panel is the same path, with the
+hub drawn beside it, the piece as the star, and the dashed line at y = 4.4, the
+point where the piece comes within 0.6 m of the robot's center. Find the dashed
+line first, then the orange square, where the roller starts.
+In the left panel the marker fires at y ≈ 6.7, the roller is running by
+y ≈ 4.5, just before the line, and the piece goes in at 4.4. In the middle panel
+the marker is 0.05 of the leg later (about 0.3 m of path), the roller starts at
+4.2 and the piece goes in at 4.2: a little past the line, and still in time. In
+the right panel the marker is another 0.05 later, and the roller starts at
+y ≈ 3.9, beside the star. The piece is under the bumper before anything can
+pick it up. Each 0.05 you move the marker moves the roller about a third of a
+meter down the leg, because the delay between the marker and the roller stays
+the same.
 
 ---
 
@@ -827,7 +849,7 @@ and `FollowPath/remainingPathDistanceMeters`. (B-Line's `FollowPath/` keys are u
 LED strip, because it tells the whole story.
 
 Here's what happens in this course's sim, timed from when the drive starts, about
-4.1 s after you enable (homing, then the stow). Figure 25.1, just below the table,
+4.1 s after you enable (homing, then the stow). Figure 25.2, just below the table,
 plots the same run:
 
 | When | What |
@@ -840,12 +862,12 @@ plots the same run:
 | 3.2 s, 0.48 m left | The score request: `SCORING`, the piece leaves, and the next loop is `IDLE` |
 | 3.4 s | The path finishes at (6, 1), with the elevator already on its way down |
 
-<a id="figure-25-1"></a>
+<a id="figure-25-2"></a>
 ![A four-panel timeline of one Pick Up run, from the start of the drive: the robot's y falls steadily from 7.4 to about 1; below it the superstructure state runs IDLE, INTAKING, HANDOFF, HOLDING, a brief SCORING and IDLE; the arm swings from 90 degrees down to -20 and back up; the elevator rises from 0 to 0.75 m and starts back down. Dashed lines mark the intake event, the roller start, HOLDING, the score request and the end of the path](images/25-pick-up-timeline.png)
 
-*Figure 25.1 — One Pick Up run on a fresh launch, from the moment the drive starts. All four panels share the time axis. One run (three recorded for this figure agreed to within a tick).*
+*Figure 25.2 — One Pick Up run on a fresh launch, from the moment the drive starts. All four panels share the time axis. One run (three recorded for this figure agreed to within a tick).*
 
-Figure 25.1 puts the same events on a time axis, and what to look for is overlap. Read it from the top.
+Figure 25.2 puts the same events on a time axis, and what to look for is overlap. Read it from the top.
 The first panel is the robot's `y`, and it is the one thing the whole run hangs on. It's a straight, steady
 slope from 7.4 down to about 1, flattening only in the last 0.2 s as the path ends. The dotted
 horizontal line is where the piece goes into the intake, 0.6 m ahead of the robot's center. Nothing

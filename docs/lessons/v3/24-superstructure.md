@@ -851,6 +851,39 @@ ticks (1.1 s) after that, with the elevator inside its 2 cm tolerance of
 0.75 m and the arm at its goal. The strip reads solid yellow in `INTAKING`, solid green
 in `HOLDING`, and dim blue in `IDLE` (breathing while disabled).
 
+<a id="figure-24-2"></a>
+![One capture cycle: the state bands INTAKING, HANDOFF, HOLDING, a one-tick SCORING and IDLE above a strip showing when the elevator and arm are both at goal, the arm angle swinging from 90 to minus 20 degrees and back, and the elevator height rising from 0.02 to 0.73 m and back down after the score request](images/24-capture-cycle.png)
+
+*Figure 24.2 — One capture cycle, from the intake request to the stow after the score. Time zero is the moment the quarter-stick drive starts. One run (three more fresh runs agreed to the tick, except that one had the handoff a tick sooner).*
+
+Figure 24.2 is one run of that cycle, and it shows what drives each arrow in
+Figure 24.1. Read the colored state bar at the top first; everything below it
+is the evidence for why it changes color where it does.
+
+The first change, `IDLE` to `INTAKING`, is a button: the intake request at the
+far left, then the arm swinging down from 90° to its −20° stop and the roller
+starting once it's there. In this run the drive starts when the arm is down and
+the roller is spinning, so that's time zero. After that the bar doesn't change
+for a while, because nothing the state machine watches has changed: the robot
+rolls toward the piece with the arm out. The beam break sees the piece at
+0.58 s, and the bar turns to `HANDOFF` at 0.68 s (34 ticks after the drive
+started). The tenth of a second between the two is the debounce doing its job.
+
+`HANDOFF` is the long one. The arm swings up and the elevator climbs to 0.75 m
+(the bottom two curves), and the bar stays orange the whole time. The strip
+under the state bar is the other half of the condition: it's green only when
+the elevator *and* the arm are both at their goals, and it's blank all through
+the move. The moment both arrive it turns green, and the state becomes
+`HOLDING` in that same tick: 1.12 s (56 ticks) after `HANDOFF` began, with the
+elevator at 0.73 m, inside its 2 cm tolerance. Nothing was pressed and nothing
+was timed; both mechanisms arriving is the whole reason.
+
+`HOLDING` then just sits there until the score request at 2.80 s. The next tick
+is `SCORING`, the thin blue sliver, and the tick after that is `IDLE`: the piece
+leaves the instant the roller reverses, and it's the piece leaving that ends
+`SCORING`, not a timer. The stow starts at once, and by the right edge the
+elevator is nearly back down.
+
 ---
 
 ## Try it

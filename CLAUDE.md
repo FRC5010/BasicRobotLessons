@@ -2713,6 +2713,22 @@ at least twice.
   - At 2 m/s the robot crosses the end at about 0.8 m/s and rolls 6–7 cm
     past (5 cm tolerance), settling about 2 cm past.
   - Lesson 17's batch 1 figures are now 17.2–17.4.
+- **Lesson 24, one capture cycle** (Figure 24.2; four fresh LOOP runs,
+  quarter stick from (3.5, 3.2)):
+  - The raw beam break comes 29 ticks after the drive starts, and the 0.1 s
+    debounce adds 5, so `HANDOFF` is at 34 ticks (33 in one run).
+  - `HOLDING` follows 56 ticks later, with the elevator at 0.734 m.
+  - `SCORING` lasts one tick.
+- **Lesson 25 markers, one run each:**
+  - Marker 0.1: fires at y 6.69, roller at 4.49, beam break at 4.37.
+  - Marker 0.15: fires at 6.37, roller at 4.16, beam break at 4.20.
+  - Marker 0.2: fires at 6.05, roller at 3.88, never caught.
+  - The sim catches whenever the roller has been *told* to pull in, so at
+    0.15 the beam break comes before the roller's first non-zero reading.
+  - The piece is within reach from y 4.4 to 4.1, under the bumper below
+    that, so §4 now gives the window, not "by y ≈ 4.4". The 0.2 text says
+    y ≈ 3.9 (was 3.8).
+  - Lesson 25's Pick Up timeline is now Figure 25.2.
 - **SimGUI's addressable LED strip** is under **Hardware → Addressable
   LEDs** ("LEDs[5]", 40 pixels). It opens as 10 columns × 4 rows, and Lesson
   23 tells the student to set Columns to 40.

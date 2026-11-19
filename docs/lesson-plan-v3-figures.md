@@ -91,9 +91,9 @@ Type: a = sim plot, b = SimGUI screenshot, c = SVG diagram, d = needs the user. 
 | 22.1 | The intake box in the robot's frame | 22 | c | medium | 2 (built) |
 | 23.1 | SimGUI: the LED strip | 23 | b | medium | 2 (built) |
 | 24.1 | Six states and their transitions | 24 | c | high | 1 (built) |
-| 24.2 | One capture cycle on a timeline | 24 | a | medium | 2 |
+| 24.2 | One capture cycle on a timeline | 24 | a | medium | 2 (built) |
 | 25.1 | Sequence holds the elevator, coroutine doesn't | 25 | c | low | 3 |
-| 25.2 | Marker position against roller start | 25 | a | medium | 2 |
+| 25.2 | Marker position against roller start | 25 | a | medium | 2 (built) |
 | 25.3 | Pick Up timeline | 25 | a | high | 1 (built) |
 | 26.1 | The line's frame and the two stages | 26 | c | medium | 2 |
 | 26.2 | Speed during the two-stage drive | 26 | a | high | 1 (built) |
@@ -1101,3 +1101,7 @@ Built two agents at a time, in lesson groups, to stay inside the usage window.
   - Lesson 15 Try It #3's drift range is now "15 to 50 cm".
   - Lesson 11 warns that the Robot State window can hide the robot.
   - Lesson 17 reports that one of six 3 m/s runs stopped short.
+- **Round 3 (built):** 19.1, 19.2, 22.1, 23.1, 24.2, 25.2.
+  - Working ID 25.2 is **Figure 25.1** in the lesson, and batch 1's Pick Up timeline (25.1) is now **25.2**. No other lesson linked to it.
+  - Back-links were added from Lessons 20 and 25.
+  - Lesson 25 §4 now gives the catch window, y 4.4 to 4.1, instead of a single deadline.
