@@ -1,0 +1,31 @@
+# Numbers Lesson 1 quotes that a library change could move. Format: tools/claims/README.md.
+
+[[claim]]
+id = "l01.stalled-duty-cycle"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With the simulated wheel held (no physics yet), a 0.3 throttle request reads dutyCycle 0.25 in SimGUI's Other Devices."
+evidence = "CLAUDE.md, 'Batch 1 found', Lesson 1 (a 0.3 request with the wheel held reads dutyCycle 0.250, 3.0 V, 119 A; it looks like the stator limit, inferred)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 0.25 (section 7); 0.25 (Figure 1.1's alt text and caption)"
+unit = "fraction"
+range = [0.245, 0.255]
+measured = "0.250 (0.2498 in the first ticks' data)"
+figure = "01-simgui-joystick-slot.png"
+note = "The cause (the default 120 A stator limit) is the phoenix6.stator-limit-caps-startup-voltage claim; the lesson itself says 'looks like'."
+
+[[claim]]
+id = "l01.stalled-torque-current"
+kind = "number"
+library = ["phoenix6"]
+criticality = "C2"
+statement = "With the simulated wheel held, torqueCurrent pins at 119 A."
+evidence = "CLAUDE.md, 'Batch 1 found', Lesson 1 (0.250 duty, 3.0 V, 119 A)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "119 A"
+unit = "A"
+range = [118.5, 119.5]
+measured = "119 A"

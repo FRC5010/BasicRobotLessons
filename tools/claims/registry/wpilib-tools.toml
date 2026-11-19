@@ -1,0 +1,97 @@
+# Claims about WPILib's tools: the installer, VS Code extension, SimGUI, AdvantageScope.
+# Format: tools/claims/README.md.
+
+[[claim]]
+id = "wpilib-tools.simgui-robot-state-panel"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C1"
+statement = "SimGUI's Robot State panel has a list of modes (Teleoperated, Autonomous, Utility), an OpMode drop-down that lists only the opmodes of the picked mode, and Enable/Disable; picking a mode attaches the simulated Driver Station."
+evidence = "CLAUDE.md, 'Batch 1 found', Fixed 2026-11-19: the SimGUI wording; 'v3 Lesson 17' (the DS window is Disconnected until attached). That the panel starts on 'Disconnected' is not separately recorded."
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib-tools.simgui-joystick-slots"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C1"
+statement = "SimGUI has no controller until one is dragged from System Joysticks (real devices and Keyboard 0, 1, ...) onto the Joystick[0] heading of the Joysticks panel; slot N is what CommandGamepad(N) reads, and Keyboard 0's bottom face button is the Z key."
+evidence = "CLAUDE.md, 'Batch 1 found' (Keyboard 0's bottom face button is the Z key; the Joysticks panel's button squares are indicators only) and 'Batch 3' SimGUI tips (W/S, A/D, E/R; drag onto the Joystick[N] header)"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib-tools.simgui-keyboard-dpad"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C2"
+statement = "SimGUI's default Keyboard 0 has 4 buttons and a POV, so it cannot press the Gamepad D-pad (buttons 11-14); a real gamepad or an edited simgui-ds.json is needed for dpadUp()."
+evidence = "CLAUDE.md, 'Batch 3' SimGUI tips (b2g6): the D-pad on SimGUI's keyboard. Lesson 6 section 5 binds dpadUp() and doesn't say this."
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib-tools.simgui-other-devices-talonfx"
+kind = "behaviour"
+library = ["wpilib-tools", "phoenix6"]
+criticality = "C2"
+statement = "SimGUI's Other Devices panel lists the simulated TalonFX as 'Talon FX (v6)[ID]' with rows supplyVoltage, dutyCycle, motorVoltage, torqueCurrent and supplyCurrent."
+evidence = "CLAUDE.md, 'Batch 1 found', Lesson 1 and 'v3 Lesson 30' (Phoenix 6's sim devices are in Other Devices: Talon FX (v6)[1]); Figure 1.1's capture. The five row names are read from the lesson, not from a recorded listing."
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib-tools.simgui-networktables-view"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C2"
+statement = "SimGUI's NetworkTables menu lists only widgets; plain values such as Telemetry/DriveModule/CurrentCommand are in the NetworkTables View window (opened from that menu), under the Telemetry folder."
+evidence = "CLAUDE.md, 'Batch 2 found' (SimGUI's NetworkTables menu lists only widgets; plain values and AdvantageKit inputs are in the NetworkTables View window; Lessons 1 and 15 now say so)"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib-tools.simgui-map-gamepad"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C3"
+statement = "SimGUI's Joysticks panel has a 'Map gamepad' toggle, off by default, which the real Driver Station does implicitly so every gamepad reports its buttons in the same order."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson"
+measured_on = "unverified"
+
+[[claim]]
+id = "wpilib-tools.vscode-simulate-and-vendor-manager"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C2"
+statement = "In WPILib VS Code the WPILib icon / 'WPILib: Simulate Robot Code' builds and starts the simulation (asking Sim GUI or Real Driverstation), 'WPILib: Manage Vendor Libraries' lists Phoenix 6 and installs its vendordep, and 'WPILib: Build Robot Code' builds."
+evidence = "CLAUDE.md, 'v3 Lesson 30 (alerts) on alpha-7': 'VS Code's button is still unverified on alpha-7'; the vendor manager and build commands are not recorded at all"
+measured_on = "unverified"
+
+[[claim]]
+id = "wpilib-tools.advantagescope-connect"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C2"
+statement = "AdvantageScope ships in the WPILib installer, starts from the command palette's Start Tool, connects with File > Connect to Simulator over NetworkTables 4, shows NetworkTables > Telemetry > DriveModule in its sidebar, plots on a Line Graph tab, and opens .wpilog files with File > Open Log(s)."
+evidence = "No record found in CLAUDE.md or tools/figures/data (CLAUDE.md: AdvantageScope isn't installed in the container); stated by the lesson"
+measured_on = "unverified"
+
+[[claim]]
+id = "wpilib-tools.installer-contents"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C3"
+statement = "The WPILib 2027 alpha installer (v2027.0.0-alpha-8 on the allwpilib releases page; .iso, .dmg or .tar.gz) with 'Everything' installs a separate 'WPILib VS Code 2027' with Eclipse Temurin 25, Gradle and the extension; its VS Code step ('Download for this computer only') fetches about 300 MB; its New Project wizard has an OpMode template without Commands V3."
+evidence = "CLAUDE.md, 'The v3 track builds on WPILib 2027 alpha-8' (GradleRIO 2027.0.0-alpha-8 builds the lessons); the installer itself was never run here, so nothing else in this claim is recorded"
+measured_on = "unverified"
+
+[[claim]]
+id = "wpilib-tools.vscode-debugger"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C3"
+statement = "In WPILib VS Code, 'WPILib: Simulate Robot Code' (with the debugger option) or F5 launches the simulation with the debugger attached, 'Debug Robot Code' deploys with it attached to a SystemCore, and a paused breakpoint freezes the whole robot loop and sim time."
+evidence = "No record found in CLAUDE.md or tools/figures/data; the lesson itself says the launch configs are unverified on a 2027-alpha OpMode project"
+measured_on = "unverified"

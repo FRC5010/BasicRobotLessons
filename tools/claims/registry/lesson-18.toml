@@ -59,11 +59,11 @@ measured_on = "alpha-8"
 method = "RIG"
 wording = "a fifth of a millimeter low; under a quarter of a millimeter; 0.19 mm (Figure 18.1's alt text)"
 unit = "mm"
-range = [0.15, 0.25]
+range = [0.185, 0.195]
 measured = "0.194 mm in Lesson 18's runs and Figure 18.1's data; Lesson 32's runs also read 0.155 mm"
 test = "tools/figures/probes/Fig18KpAlone.java"
 figure = "18-kp-alone.png"
-note = "The alt text's bare 0.19 allows only 0.185-0.195, but the hold can sit on 0.155 mm (Lesson 32's runs), so the range is the prose's. Reported as too precise."
+note = "The range is the tightest wording, the alt text's bare 0.19. Every Lesson 18 run read 0.194 mm; at the Lesson 32 state the hold can also sit on 0.155 mm, so if a re-measure finds 0.155 here, the wording is too precise."
 
 [[claim]]
 id = "l18.kv-zeroed-lag"

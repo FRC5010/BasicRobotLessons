@@ -73,3 +73,171 @@ measured_on = "alpha-8"
 method = "RIG"
 test = "tools/figures/probes/Fig18HeightSetpointGoal.java"
 figure = "18-height-setpoint-goal.png"
+
+[[claim]]
+id = "phoenix6.steer-inverted-default"
+kind = "api"
+library = ["phoenix6"]
+criticality = "C2"
+statement = "MotorOutputConfigs.Inverted defaults to CounterClockwise_Positive, and applying a TalonFXConfiguration sets every setting it holds, so a fresh configuration applied later resets Inverted to that default."
+evidence = "CLAUDE.md, merge_constants notes: steering inversion default CounterClockwise_Positive; a fresh config applied after it would reset Inverted (measured in Phoenix sim)"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "BARE"
+
+[[claim]]
+id = "phoenix6.get-value-in-units"
+kind = "api"
+library = ["phoenix6"]
+criticality = "C1"
+statement = "A status signal's getValue() returns a measure, so getValue().in(Degrees) (or Volts, RotationsPerSecond) unpacks it to a double; getValueAsDouble() also exists."
+evidence = "CLAUDE.md, 'v3 Lesson 20 (intake arm) on alpha-7', getValueAsDouble() exists on alpha-7's Phoenix; Lessons 7-12 compile on alpha-8"
+measured_on = "alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "phoenix6.onboard-loop-1khz"
+kind = "behaviour"
+library = ["phoenix6"]
+criticality = "C3"
+statement = "A TalonFX runs its closed-loop control about 1000 times per second, independent of the robot code's 50 Hz loop."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by Lesson 12 (CTRE documentation figure)"
+measured_on = "unverified"
+method = "SOURCE"
+
+[[claim]]
+id = "phoenix6.remote-cancoder-feedback"
+kind = "behaviour"
+library = ["phoenix6"]
+criticality = "C1"
+statement = "With FeedbackRemoteSensorID and FeedbackSensorSource set to a CANcoder, the steering TalonFX's getPosition()/getVelocity() and its closed loop read the CANcoder continuously, not the rotor, so setPosition on the motor changes nothing."
+evidence = "Lesson 12 compiles and runs on alpha-8 (verify-lessons-v3.sh); Lesson 12 Try It #4 (setPosition has no effect) has no recorded probe in CLAUDE.md"
+measured_on = "unverified"
+method = "LOOP"
+
+[[claim]]
+id = "phoenix6.rotor-to-sensor-ratio"
+kind = "behaviour"
+library = ["phoenix6"]
+criticality = "C1"
+statement = "With a remote CANcoder, RotorToSensorRatio is the rotor turns per CANcoder turn (25 for the steering gearbox) and SensorToMechanismRatio the CANcoder turns per mechanism turn (1, the CANcoder is on the wheel); with the rotor as the sensor (drive), SensorToMechanismRatio alone carries the 6.75 reduction."
+evidence = "Lesson 12 compiles and the steering tracks its target on alpha-8 (CLAUDE.md 'Lesson 12 extends' note); no dedicated probe recorded in CLAUDE.md"
+measured_on = "unverified"
+method = "LOOP"
+
+[[claim]]
+id = "phoenix6.control-request-measures"
+kind = "api"
+library = ["phoenix6"]
+criticality = "C1"
+statement = "PositionVoltage.withPosition takes an Angle measure and VelocityVoltage.withVelocity an AngularVelocity measure, in mechanism units after the configured ratios."
+evidence = "Lesson 12 compiles on alpha-8 (verify-lessons-v3.sh); no source reading recorded in CLAUDE.md"
+measured_on = "alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "phoenix6.talonfx-canbus-constructor"
+kind = "api"
+library = ["phoenix6", "wpilib"]
+criticality = "C1"
+statement = "new TalonFX(id, new CANBus(CANPort.CAN_S0)) and new CANcoder(id, new CANBus(CANPort.CAN_S0)) build a device on SystemCore's first built-in CAN bus (com.ctre.phoenix6.CANBus, org.wpilib.hardware.bus.CANPort)."
+evidence = "CLAUDE.md, 'v3 Lesson 28 ... on alpha-7' (CANBus(CANPort.CAN_S0) unchanged in alpha-7); Lessons 1-6 compile on alpha-8"
+measured_on = "alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "phoenix6.talonfx-set-throttle"
+kind = "api"
+library = ["phoenix6"]
+criticality = "C1"
+statement = "TalonFX.setThrottle(double) takes a -1..1 fraction of full power, and the motor keeps applying it until something else is set."
+evidence = "Lessons 1-6 snapshots compile and run on alpha-8 (CLAUDE.md, 'Batch 1 found': a 0.3 request reads dutyCycle 0.25); the hold-the-last-value behaviour is the phoenix6.control-request-persists claim"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "phoenix6.status-signal-get-value-in"
+kind = "api"
+library = ["phoenix6"]
+criticality = "C1"
+statement = "motor.getPosition().getValue().in(Rotations), getVelocity().getValue().in(RotationsPerSecond) and CANcoder.getAbsolutePosition().getValue().in(Rotations) work: the signal's getValue() is a unit-carrying measure."
+evidence = "CLAUDE.md, 'v3 Lesson 20 ... on alpha-7' (getValueAsDouble() also exists; the course keeps .getValue().in(...) by design); Lessons 3-6 compile on alpha-8"
+measured_on = "alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "phoenix6.talonfx-sim-state-api"
+kind = "api"
+library = ["phoenix6"]
+criticality = "C1"
+statement = "TalonFX.getSimState() returns a TalonFXSimState with setSupplyVoltage, getMotorVoltage, setRawRotorPosition(rotations) and setRotorVelocity(rotations/s), which put fake sensor readings into the motor."
+evidence = "Lessons 4-6 snapshots compile on alpha-8 and the Lesson 4 rig drove them (CLAUDE.md, 'Batch 2 found', Lesson 4 rig)"
+measured_on = "alpha-8"
+method = "RIG"
+
+[[claim]]
+id = "phoenix6.sim-motor-stalls-without-physics"
+kind = "behaviour"
+library = ["phoenix6"]
+criticality = "C2"
+statement = "A simulated TalonFX with no physics model fed back to it does not move: a throttle request stalls it, its position and velocity stay at 0, and torqueCurrent pins at the stator limit (about 119 A)."
+evidence = "CLAUDE.md, 'Batch 1 found', Lesson 1 (a 0.3 request with the wheel held reads dutyCycle 0.250, 3.0 V, 119 A)"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "phoenix6.talonfx-set-position"
+kind = "api"
+library = ["phoenix6"]
+criticality = "C1"
+statement = "TalonFX.setPosition(rotations) tells the motor what its own sensor should read now, without moving it (used to zero the encoder and to prime the steering motor from the CANcoder)."
+evidence = "Lessons 5 and 6 snapshots compile on alpha-8; CLAUDE.md, 'Batch 2 found' (Lesson 6 RIG, driveDistance zeroes with setPosition(0) and reads 1.013 m)"
+measured_on = "alpha-8"
+method = "RIG"
+
+[[claim]]
+id = "phoenix6.cancoder-config-api"
+kind = "api"
+library = ["phoenix6"]
+criticality = "C1"
+statement = "CANcoderConfiguration.MagnetSensor.MagnetOffset (rotations) and SensorDirection (SensorDirectionValue.Clockwise_Positive) exist, applied with getConfigurator().apply(config)."
+evidence = "Lesson 5 snapshot compiles on alpha-8 (verify-lessons-v3.sh); SensorDirectionValue is named in the lesson only"
+measured_on = "alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "phoenix6.cancoder-offset-and-direction"
+kind = "behaviour"
+library = ["phoenix6"]
+criticality = "C3"
+statement = "A CANcoder reads counterclockwise-positive by default, and a MagnetOffset equal to the negative of the raw reading at wheel-forward makes it report 0 there."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson (hardware behaviour, not measurable in the simulation)"
+measured_on = "unverified"
+
+[[claim]]
+id = "phoenix6.first-signal-read-waits"
+kind = "behaviour"
+library = ["phoenix6"]
+criticality = "C3"
+statement = "Reading a status signal in the first line of a constructor is usually fine because Phoenix's default read waits briefly for a value; if it ever returns 0 the device hadn't reported yet."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson"
+measured_on = "unverified"
+
+[[claim]]
+id = "phoenix6.talonfx-no-output-when-disabled"
+kind = "behaviour"
+library = ["phoenix6"]
+criticality = "C2"
+statement = "A TalonFX applies no power while the robot is disabled, whatever the code commands (the simulated arm sagged, the elevator went limp), and resumes its last request on enable."
+evidence = "CLAUDE.md, 'v3 Lesson 24 ... on alpha-7', Disable/re-enable (arm sagged to 63 deg while disabled; the elevator was limp at 0.733 m; a TalonFX resumes its last control request on enable). Real-hardware behaviour is not measured."
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "phoenix6.sim-small-voltage-rounds-to-zero"
+kind = "behaviour"
+library = ["phoenix6"]
+criticality = "C3"
+statement = "In the simulated TalonFX a very small commanded voltage (kP 0.00001 on the lesson's steering) is applied as 0 V, so the angle stalls short of the setpoint."
+evidence = "CLAUDE.md, 'Batch 1 found', user decision 2026-11-19 table (kP 1e-5 stalls at 78.6 deg: applied volts quantize to 0)"
+measured_on = "alpha-8"
+method = "RIG"

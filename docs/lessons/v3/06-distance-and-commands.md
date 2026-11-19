@@ -120,7 +120,7 @@ Two things changed from Lesson 4:
 
 Here's the subtlety worth slowing down for. Because `DCMotorSim` now models a
 gearbox, `getAngularPosition()` and `getAngularVelocity()` report the
-**wheel** (output) motion, not the rotor. But the TalonFX's fake encoder
+**wheel** (output) motion, not the rotor. <!-- claim: wpilib.dcmotorsim-reports-output-side --> But the TalonFX's fake encoder
 still lives on the *rotor* — the sensor is physically on the motor, gearbox
 or not. So `simulatePeriodic()` has to convert wheel-side back to
 rotor-side by *multiplying* by the ratio — on top of the radians-to-rotations
@@ -138,7 +138,7 @@ m_driveSim.setRotorVelocity(
 Now the whole chain is honest: applied volts spin the *rotor*, the *wheel* moves
 `1/6.75` as fast, `getDistanceMeters()` divides `getPosition()` by that same
 ratio, and the number of meters on the plot matches what the real robot would
-roll. If you ever see sim distances off by a suspiciously round factor, check
+roll. <!-- claim: wpilib.dcmotorsim-reports-output-side --> If you ever see sim distances off by a suspiciously round factor, check
 this chain first — a gear ratio applied twice (or not at all) is the classic
 cause.
 
@@ -161,7 +161,7 @@ Here's the idea, and it's smaller than it sounds: a coroutine body is just
 code, top to bottom, like any method. `driveAtSpeed`'s body never ends because
 it calls `coroutine.park()`, which means "suspend here forever." Leave that
 call out, and once the body's last line runs, the coroutine is *done* — same
-as a method returning — and the command finishes right along with it.
+as a method returning — and the command finishes right along with it. <!-- claim: commandsv3.coroutine-command-api -->
 
 **Add to `DriveModule`, with the other command factories:**
 
@@ -181,17 +181,17 @@ public Command driveDistance(double meters, double speed) {
 **Reading it top to bottom:**
 1. **`m_driveMotor.setPosition(0)`** tells the encoder "call right here zero"
    — so `getDistanceMeters()` measures *from the start of this command*, not
-   since boot.
+   since boot. <!-- claim: phoenix6.talonfx-set-position -->
 2. **`m_driveMotor.setThrottle(speed)`** starts the wheel moving, once.
 3. **`coroutine.waitUntil(condition)`** is new — a coroutine method that
    suspends the command right here, checking the condition every tick, and
-   only lets execution continue once it's true. The condition is a lambda
+   only lets execution continue once it's true. <!-- claim: commandsv3.coroutine-command-api --> The condition is a lambda
    that answers true or false — the same trick as Lesson 2's `DoubleSupplier`,
    but yes/no instead of a number.
 4. **`.whenExited(() -> m_driveMotor.setThrottle(0))`** is the cleanup. The
    body has nothing left to do after `waitUntil` returns, so it falls off the
    end, the coroutine is done, and so is the command, and that's when this
-   lambda runs and stops the wheel.
+   lambda runs and stops the wheel. <!-- claim: commandsv3.when-exited-on-cancel -->
 
 One method, a handful of lines, and look at what you built: a command that
 sets up, works, waits for done, and cleans up. "Do this, then wait, then do
@@ -211,13 +211,13 @@ different ways:
 <a id="figure-6-1"></a>
 ![Two timelines of driveDistance. Finished: start, waitUntil returns, the body ends, and whenExited runs while whenCanceled stays silent. Canceled: start, waitUntil still waiting, another command interrupts, and whenExited runs first, then whenCanceled](images/06-two-ways-to-end.svg)
 
-*Figure 6.1 — The two endings of `driveDistance`, and which hooks run.*
+*Figure 6.1 — The two endings of `driveDistance`, and which hooks run.* <!-- claim: commandsv3.when-exited-on-cancel -->
 
 Figure 6.1 lays the two endings side by side. Read the top half first: the
 `waitUntil` returns, the body runs out, and `.whenExited(...)` is the only hook
 that fires. The bottom half is the interruption: the `waitUntil` never gets to
 return, and both hooks fire, `.whenExited(...)` first. The one hook that
-tells the two halves apart is `.whenCanceled(...)`.
+tells the two halves apart is `.whenCanceled(...)`. <!-- claim: commandsv3.when-exited-on-cancel -->
 
 **`.whenCanceled(...)` runs only on the second one.** Every earlier command in
 this course had a single ending: `driveAtSpeed` and `steerToAngle` never
@@ -225,7 +225,7 @@ finish on their own, so a cancel was the *only* way they could stop, and
 `.whenCanceled(...)` was enough by itself. `driveDistance` is the first
 command that can also end by finishing. If it used `.whenCanceled(...)`,
 the wheel would keep spinning every time the drive succeeded, because
-nothing in the body stops it. You could put a `setThrottle(0)` after the
+nothing in the body stops it. <!-- claim: commandsv3.when-exited-on-cancel --> You could put a `setThrottle(0)` after the
 `waitUntil` too, but then the same cleanup lives in two places, and you'd have
 to remember both every time you change it.
 
@@ -233,15 +233,15 @@ to remember both every time you change it.
 a button, or interrupted by a rival. One lambda, one place to look. When a
 command is canceled, `.whenExited(...)` runs first and `.whenCanceled(...)`
 after it, so you can have both on one command if a cancel needs something
-extra.
+extra. <!-- claim: commandsv3.when-exited-on-cancel -->
 
 **The rule to carry forward:** if the cleanup should happen no matter how
 the command ends, use `.whenExited(...)`. If it only makes sense when
 something interrupted the command, use `.whenCanceled(...)`. A command that
 can't finish on its own, like Lesson 1's, can use either, which is why
-`.whenCanceled(...)` has been enough so far. Lesson 1's rule that motors
+`.whenCanceled(...)` has been enough so far. <!-- claim: commandsv3.when-exited-on-cancel --> Lesson 1's rule that motors
 hold their last value is still true; it just has two doors to guard now, and
-`.whenExited(...)` guards both.
+`.whenExited(...)` guards both. <!-- claim: commandsv3.when-exited-on-cancel -->
 
 Last piece: the only new decorator here is `.whenExited(...)`. `run(...)` and
 `.named(...)` are things you already had from Lesson 1. What's new inside the
@@ -261,7 +261,7 @@ but if you want to experiment now, `Command` has an `.andThen(...)` decorator
 for exactly this: `steerToAngle(90).andThen(driveDistance(1.0, 0.4)).named("Turn And Drive")`
 sequences the two commands, one after the other, and (like every command
 builder in this course) needs its own `.named(...)` before it's ready to
-schedule. You already know both bricks; snapping them together is the point.
+schedule. <!-- claim: commandsv3.andthen-builder --> You already know both bricks; snapping them together is the point.
 
 ---
 
@@ -269,7 +269,7 @@ schedule. You already know both bricks; snapping them together is the point.
 
 `dpadUp()` is a new button family: the **D-pad** reports its four directions
 separately, and `dpadUp()` fires on the up direction — handy once the face
-buttons fill up.
+buttons fill up. <!-- claim: commandsv3.command-gamepad-api -->
 
 **Add to `MyTeleop`'s constructor, with the rest of the wiring:**
 
@@ -280,22 +280,22 @@ robot.driverController.dpadUp().onTrue(robot.module.driveDistance(1.0, 0.4));
 
 Run in sim, plot `DriveModule/DistanceMeters` in AdvantageScope, and tap D-pad
 up. The trace should climb to about 1.0 and flatten as the command stops
-itself.
+itself. <!-- claim: wpilib-tools.simgui-keyboard-dpad -->
 
 <a id="figure-6-2"></a>
 ![Distance and drive throttle during driveDistance(1.0, 0.4): the distance climbs in a straight line, the command ends at 1.013 m, and the wheel rolls on to 1.145 m after the throttle drops to 0](images/06-drive-distance-trace.png)
 
-*Figure 6.2 — One `driveDistance(1.0, 0.4)`: distance (top) and drive throttle (bottom).*
+*Figure 6.2 — One `driveDistance(1.0, 0.4)`: distance (top) and drive throttle (bottom).* <!-- claim: l06.exit-distance, l06.settle-distance, l06.startup-throttle, l06.throttle-on-duration -->
 
 Figure 6.2 is that trace, with the throttle underneath it. Read the bottom
 panel first: the throttle sits at 0.4 for just over half a second (it starts
-nearer 0.25 for the first few ticks while the wheel gets going), then drops
+nearer 0.25 for the first few ticks while the wheel gets going), <!-- claim: l06.throttle-on-duration, l06.startup-throttle, phoenix6.stator-limit-caps-startup-voltage --> then drops
 straight to 0 at the grey line. That line is the moment `waitUntil` returned
-and `.whenExited(...)` ran, with the distance at 1.013 m. In the top panel the
+and `.whenExited(...)` ran, with the distance at 1.013 m. <!-- claim: l06.exit-distance --> In the top panel the
 distance climbs in a nearly straight line while the throttle is on, which is a
 wheel at steady speed. Then it **doesn't stop at the grey line**: the wheel has
 speed and inertia, and setting the throttle to 0 doesn't stop it. It rolls on
-and settles at 1.145 m, about 15 cm past the target. The command stops *itself*
+and settles at 1.145 m, about 15 cm past the target. <!-- claim: l06.settle-distance --> The command stops *itself*
 at the right moment; stopping the *wheel* on the spot is a separate problem,
 and Try It #2's idea of slowing down as you arrive is aimed at it.
 
@@ -323,7 +323,7 @@ routines are made of.
    finish — which prints appeared? Now tap it again and immediately press a
    different drive button to interrupt it — which appeared *that* time?
    You should see the exit print on both runs, and the cancel print only on
-   the second. That's section 3's split, confirmed by watching it happen.
+   the second. <!-- claim: commandsv3.when-exited-on-cancel --> That's section 3's split, confirmed by watching it happen.
 
 ---
 
@@ -341,11 +341,11 @@ code instead of chained decorators. The sharper edge underneath that: a
 command can end **finished** or **canceled**, they're genuinely different
 events, and `.whenCanceled(...)` only hears the second. `.whenExited(...)`
 hears both, so it's the one for cleanup that must always happen, like
-stopping a motor. That distinction is easy to miss and expensive to get
+stopping a motor. <!-- claim: commandsv3.when-exited-on-cancel --> That distinction is easy to miss and expensive to get
 wrong, so it's worth carrying forward deliberately. Lesson 7 turns your one module into four, and
 Lesson 9 strings finishing commands into a full autonomous routine. If the
 gearbox math felt dense, let the plot reassure you — when the command stops
 itself at 1.0 meters, every conversion in the chain earned its keep. (The
-wheel coasting on afterwards is Figure 6.2's story, not a math error.)
+wheel coasting on afterwards is Figure 6.2's story, not a math error.) <!-- claim: l06.settle-distance -->
 
 Next: Lesson 7 — Four modules.

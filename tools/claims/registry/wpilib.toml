@@ -143,3 +143,297 @@ statement = "BatterySim.calculateLoadedBatteryVoltage(11.0, 0.04, total) gives 1
 evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, The arithmetic that makes the rows readable"
 measured_on = "alpha-8"
 method = "LOOP"
+
+[[claim]]
+id = "wpilib.telemetry-log-overloads"
+kind = "api"
+library = ["wpilib"]
+criticality = "C1"
+statement = "Telemetry.log has overloads for a plain number, a struct value with its .struct (Rotation2d, Pose2d), an array of structs with the type's .struct (SwerveModuleVelocity[]), and a dashboard widget such as Field2d, which it tells apart from what it is handed."
+evidence = "Lessons 7, 8, 10 and 11 compile on alpha-8 (verify-lessons-v3.sh); CLAUDE.md records the snapshot behaviour but no reading of the overloads. Lesson 11's Field2d view was seen in SimGUI (Batch 2 found)."
+measured_on = "alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "wpilib.swerve-kinematics-api"
+kind = "api"
+library = ["wpilib"]
+criticality = "C1"
+statement = "SwerveDriveKinematics(Translation2d...) has toSwerveModuleVelocities(ChassisVelocities) returning SwerveModuleVelocity[] in constructor order, and desaturateWheelVelocities(states, LinearVelocity). ChassisVelocities(vx, vy, omega) and SwerveModuleVelocity(LinearVelocity, Rotation2d) take Units measures but store plain doubles (vx, vy, omega, velocity in m/s and rad/s); SwerveModuleVelocity() is zero speed at zero angle."
+evidence = "Lessons 10-12 compile on alpha-8 (verify-lessons-v3.sh); no dedicated reading recorded in CLAUDE.md"
+measured_on = "alpha-8"
+method = "SOURCE"
+note = "These alpha names (SwerveModuleVelocity, ChassisVelocities, toSwerveModuleVelocities, desaturateWheelVelocities) replace the 2026 SwerveModuleState, ChassisSpeeds, toSwerveModuleStates and desaturateWheelSpeeds."
+
+[[claim]]
+id = "wpilib.swerve-velocity-methods-return-new"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "SwerveModuleVelocity.optimize(Rotation2d) and ChassisVelocities.toRobotRelative(Rotation2d) do not change the object they are called on; they return a new one, so the result has to be assigned back. optimize picks the shorter steering move (flipping the sign of the drive speed), so no steering move exceeds 90 degrees."
+evidence = "Lesson 10 states it; no probe or source reading recorded in CLAUDE.md. Lesson 10 compiles on alpha-8."
+measured_on = "unverified"
+method = "SOURCE"
+
+[[claim]]
+id = "wpilib.swerve-module-velocity-cosine-scale"
+kind = "api"
+library = ["wpilib"]
+criticality = "C3"
+statement = "SwerveModuleVelocity.cosineScale(Rotation2d) exists and scales the speed by the cosine of the steering error."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by Lessons 9 and 10"
+measured_on = "unverified"
+method = "SOURCE"
+
+[[claim]]
+id = "wpilib.swerve-odometry-api"
+kind = "api"
+library = ["wpilib"]
+criticality = "C1"
+statement = "SwerveDriveOdometry(kinematics, heading, SwerveModulePosition[]) has update(heading, positions) that integrates and returns the new Pose2d; SwerveDrivePoseEstimator has the same update shape plus addVisionMeasurement. SwerveModulePosition(meters, angle) bundles a wheel's distance and angle."
+evidence = "Lessons 11 and 14 compile on alpha-8 (verify-lessons-v3.sh); no dedicated reading recorded in CLAUDE.md"
+measured_on = "alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "wpilib.rotation2d-minus-wraps"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "Rotation2d.minus returns the shortest signed angle between the two: 170 degrees minus -170 degrees is -20 degrees, not 340."
+evidence = "CLAUDE.md, 'v3 Lesson 25 (path events)' Translation2d.getAngle() bullet: Rotation2d.minus wraps (170 minus -170 = -20)"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib.units-measure-arithmetic"
+kind = "api"
+library = ["wpilib"]
+criticality = "C1"
+statement = "Unit singletons build measures (MetersPerSecond.of(x)), a LinearVelocity can be scaled with .times(double) and stays a LinearVelocity, and .in(unit) unpacks to a double."
+evidence = "Lessons 10-12 compile on alpha-8 (verify-lessons-v3.sh); no dedicated reading recorded in CLAUDE.md"
+measured_on = "alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "wpilib.simgui-field-widget"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C2"
+statement = "In SimGUI, NetworkTables -> Telemetry -> Field opens a field pane with only the field's outline and the robot drawn from the logged Field2d; the default Robot State window sits over the field's bottom-left corner, where the robot starts."
+evidence = "CLAUDE.md, 'Batch 2 found', SimGUI Field pane; Figure 11.1"
+measured_on = "alpha-8"
+method = "LOOP"
+figure = "11-simgui-field-widget.png"
+
+[[claim]]
+id = "wpilib.pose-estimator-latency-compensation"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C2"
+statement = "SwerveDrivePoseEstimator.addVisionMeasurement(pose, timestampSeconds) keeps a short history, rewinds to the timestamp, blends the correction in there and replays its own updates forward."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson (WPILib's documented estimator behaviour; Lesson 14 only measured sightings stamped 'now')"
+measured_on = "unverified"
+method = "SOURCE"
+
+[[claim]]
+id = "wpilib.pose-estimator-vision-trust"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "With the estimator's default trust each addVisionMeasurement closes about a tenth of the gap to the sighting (position and heading); setVisionMeasurementStdDevs(VecBuilder.fill(0.5, 0.5, 999999)) makes it about a sixth for position and the heading never moves."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 14, five fake sightings, robot parked at the origin; tools/figures/data/14-sighting-nudges-default.csv and -knob.csv"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib.opmode-periodic-20ms"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C2"
+statement = "A selected, enabled opmode's periodic() runs every 20 ms (about 50 times a second), and robotPeriodic() runs on the same schedule, disabled or enabled."
+evidence = "CLAUDE.md, 'Lessons 24-27 re-measured on alpha-8' (the loop ran at 20.0-20.2 ms per tick) and the Lesson 28-33 probes at a 20 ms rate; the Lesson 1 boot test read the scheduler while disabled"
+measured_on = "alpha-8"
+method = "LOOP"
+note = "Lessons 0 and 4 say 'about 50 times a second' and '20 ms'; the debugger aside says 50 Hz."
+
+[[claim]]
+id = "wpilib.opmode-annotation-class-name"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "An opmode annotated @Teleop, @Autonomous or @Utility is listed in the Driver Station / SimGUI OpMode drop-down of its mode by its class name unless told otherwise (MyTeleop under Teleoperated, MyAuto under Autonomous)."
+evidence = "CLAUDE.md, 'Batch 1 found', Fixed 2026-11-19: the SimGUI wording (the OpMode drop-down lists only that mode's opmodes, by class name: MyTeleop)"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib.opmode-template-files"
+kind = "api"
+library = ["wpilib"]
+criticality = "C1"
+statement = "The OpMode template has first/Main.java, first/robot/Robot.java and first/robot/opmode/MyTeleop.java (@Teleop, extends PeriodicOpMode, with a robot field, a constructor taking Robot, and empty disabledPeriodic(), start(), periodic(), end() and close()) and MyAuto.java (@Autonomous)."
+evidence = "code/OpModeV3Robot, the pristine template the course starts from (CLAUDE.md, 'What this repo is'); its file list read on 2026-11-19; the template is identical on alpha-8 (CLAUDE.md, 'The v3 track builds on WPILib 2027 alpha-8')"
+measured_on = "alpha-8"
+method = "SOURCE"
+note = "The method comments quoted in Lesson 0's code block are the template's own."
+
+[[claim]]
+id = "wpilib.robot-built-once"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "The Robot (OpModeRobot subclass) is constructed once when the program starts and keeps its fields through every opmode selection, while an opmode is constructed when it is selected and rebuilt on every Disable, so hardware belongs on Robot."
+evidence = "CLAUDE.md, 'v3 Lesson 17 runs on BLine' (an opmode is constructed when it's selected, from OpModeRobot's source) and 'Batch 2 found' (every Disable throws the opmode away and builds a new one)"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib.robot-periodic-always"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "OpModeRobot.robotPeriodic() runs every tick whichever opmode is selected and whether the robot is enabled or disabled, so Scheduler.getDefault().run() belongs there."
+evidence = "CLAUDE.md, 'Batch 1 found', Lesson 1 boot test (the real Robot loop read the scheduler on disabled ticks: [none, none, Drive At Speed, none])"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib.simulation-periodic-sim-only"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "OpModeRobot.simulationPeriodic() is called every tick, on robotPeriodic()'s schedule, only when running in simulation; Mechanism has no sim hook of its own, so Robot calls each mechanism's simulatePeriodic()."
+evidence = "CLAUDE.md, 'v3 Lesson 29 (current limits) on alpha-7' (simulationPeriodic() runs the battery model) and the Lesson 13 notes (LoggedOpModeRobot calls simulationPeriodic() whenever isSimulation(), in REPLAY too)"
+measured_on = "alpha-8"
+method = "LOOP"
+note = "That it never runs on a real robot is WPILib's documented contract, not measured here."
+
+[[claim]]
+id = "wpilib.telemetry-log-publishes-under-telemetry"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "Telemetry.log(key, value) (org.wpilib.telemetry.Telemetry) publishes to NetworkTables under /Telemetry/<key>, and a slash in the key makes a folder tree that SimGUI and AdvantageScope show."
+evidence = "CLAUDE.md, 'v3 Lesson 13 records with AdvantageKit' (RobotBase registers NetworkTablesTelemetryBackend at '' under /Telemetry; widgets publish under /Telemetry/<key>) and the Lesson 1 Figure 1.2 capture"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib.datalogmanager-mirrors-published-values"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C2"
+statement = "org.wpilib.system.DataLogManager.start() mirrors every NetworkTables value published (including Telemetry.log) into a WPILIB_*.wpilog file; in simulation the file lands in a logs/ folder in the project."
+evidence = "CLAUDE.md, 'v3 Lesson 13 records with AdvantageKit' (DataLogManager.start() saves what is published outside AdvantageKit in WPILIB_*.wpilog; a relative logs\\ path works because run starts in the project folder)"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib.datalogmanager-real-robot-location"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C3"
+statement = "On a real robot DataLogManager writes its file on SystemCore, or on a USB stick plugged into it."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson"
+measured_on = "unverified"
+
+[[claim]]
+id = "wpilib.units-package-and-rotations"
+kind = "api"
+library = ["wpilib"]
+criticality = "C1"
+statement = "org.wpilib.units.Units has the static unit constants Rotations, RotationsPerSecond and Degrees, and a Measure converts with .in(unit)."
+evidence = "CLAUDE.md, 'Voice, structure, and style' (Units from Lesson 10) and the lesson snapshots, which compile on alpha-8 with zero warnings ('Use it instead of reasoning about whether a snippet compiles')"
+measured_on = "alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "wpilib.sim-model-api"
+kind = "api"
+library = ["wpilib"]
+criticality = "C1"
+statement = "org.wpilib.simulation.DCMotorSim(Models.singleJointedArmFromPhysicalConstants(DCMotor.getKrakenX60(1), inertia, gearing), DCMotor.getKrakenX60(1)) exists, with setInputVoltage, update(dt), getAngularPosition() and getAngularVelocity() in radians and radians per second; RobotController.getBatteryVoltage() is in org.wpilib.system."
+evidence = "CLAUDE.md, 'v3 Lesson 28 (flywheel) on alpha-7' (Models.flywheelFromPhysicalConstants, FlywheelSim unchanged) and 'Lesson 29' (RobotController); the Lesson 4-6 snapshots compile on alpha-8"
+measured_on = "alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "wpilib.dcmotorsim-reports-output-side"
+kind = "behaviour"
+library = ["wpilib", "phoenix6"]
+criticality = "C1"
+statement = "A DCMotorSim built with a gear ratio reports the output (wheel) angle and velocity, so the TalonFX's rotor-side sim readings must multiply by the ratio, and the simulated distance then matches the real chain."
+evidence = "CLAUDE.md, 'Batch 2 found' (Lesson 6 RIG, driveDistance(1.0, 0.4) reads 1.013 m through the ratio chain)"
+measured_on = "alpha-8"
+method = "RIG"
+
+[[claim]]
+id = "wpilib.sim-battery-rests-at-12v"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C2"
+statement = "In simulation RobotController.getBatteryVoltage() rests at 12.0 V, so a 0.3 throttle is 3.6 V."
+evidence = "CLAUDE.md, 'v3 Lesson 30 (alerts) on alpha-7' (the rail rests at 12.0 V) and 'Batch 2 found', Lesson 4 rig (driveAtSpeed(0.3) settles on 3.598 V)"
+measured_on = "alpha-8"
+method = "RIG"
+
+[[claim]]
+id = "wpilib.mathutil-apply-deadband"
+kind = "api"
+library = ["wpilib"]
+criticality = "C3"
+statement = "MathUtil.applyDeadband(value, band) exists, zeroes values inside the band and rescales the rest smoothly."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson"
+measured_on = "unverified"
+
+[[claim]]
+id = "wpilib.field-default-layout"
+kind = "api"
+library = ["wpilib"]
+criticality = "C2"
+statement = "Fields.DEFAULT_FIELD loads FRC_2026_REBUILT_WELDED (16.54 m by 8.07 m, 32 tags), FRC_2026_REBUILT_ANDY_MARK also exists, and Field has getTags() and getTagPose(int); Field is the tag data, separate from the Field2d widget."
+evidence = "docs/lesson-plan-opmode-restructure.md, 'alpha-7 field layout, javap-verified, 2026-09-24' and Lesson 15 findings (Welded 16.54x8.07 m, 32 tags)"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "BYTECODE"
+
+[[claim]]
+id = "wpilib.slew-rate-limit-translation"
+kind = "api"
+library = ["wpilib"]
+criticality = "C1"
+statement = "MathUtil.slewRateLimit(Translation2d current, Translation2d target, maxRate, dt) exists and limits the magnitude of the change in the 2D vector, not each axis separately."
+evidence = "Lesson 16 compiles on alpha-8 (verify-lessons-v3.sh 0-33, zero warnings, CLAUDE.md alpha-8 block); the magnitude behaviour is the lesson's reading of the API and no probe of it is recorded"
+measured_on = "alpha-8"
+method = "SOURCE"
+note = "The compile covers the signature only. The lesson also says the library ships only the vector version (no scalar overload); not checked."
+
+[[claim]]
+id = "wpilib.twist-exp-integration"
+kind = "api"
+library = ["wpilib"]
+criticality = "C1"
+statement = "ChassisVelocities.toTwist2d(dt), Twist2d.exp() (giving a Transform2d) and Pose2d.plus(Transform2d) exist and integrate a pose exactly along a curved path."
+evidence = "Lesson 16 compiles on alpha-8 (CLAUDE.md alpha-8 block); ChassisSimulation's truth matches the estimate to 0.3 cm on a gentle drive (tools/figures/data/16-creep-gentle-a.csv)"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib.swerve-odometry-uses-twist-exp"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C3"
+statement = "SwerveDriveOdometry.update integrates with the same Twist2d.exp() math the lesson's ChassisSimulation writes out by hand."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson (the gentle-drive agreement within 3 mm in Figure 16.1 is consistent with it)"
+measured_on = "unverified"
+method = "SOURCE"
+
+[[claim]]
+id = "wpilib.swerve-kinematics-inverse"
+kind = "api"
+library = ["wpilib"]
+criticality = "C1"
+statement = "SwerveDriveKinematics.toChassisVelocities(...) takes the four measured SwerveModuleVelocity values and returns the one ChassisVelocities they add up to, the reverse of toSwerveModuleVelocities."
+evidence = "CLAUDE.md, 'Lesson 16's ChassisSimulation follows the wheels, not the command' (m_kinematics.toChassisVelocities of the measured module states); Lesson 16 compiles on alpha-8"
+measured_on = "alpha-8"
+method = "LOOP"

@@ -1,0 +1,48 @@
+# Numbers Lesson 7 quotes that a library change could move. Format: tools/claims/README.md.
+
+[[claim]]
+id = "l07.kp-0005-within-1deg"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With the geared steering module and kP = 0.0005, a 90 degree turn is within 1 degree at about 6 simulated seconds."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 7 (one SwerveModule, 90 degrees at 20 ms, RIG); data/07-steer-geared-kp-*.csv"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "about 6 simulated seconds (prose); 6.3 seconds (Figure 7.2)"
+unit = "s"
+range = [6.25, 6.35]
+measured = "6.3 s (alpha-7 build: 6.4 s)"
+figure = "07-steering-geared-two-gains.png"
+note = "The tightest wording is the figure text 6.3 seconds; the prose says about 6."
+
+[[claim]]
+id = "l07.kp-0005-within-third"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With kP = 0.0005 the geared steering module is within a third of a degree at about 9 seconds, decaying with no overshoot."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 7 (one SwerveModule, 90 degrees at 20 ms, RIG); data/07-steer-geared-kp-*.csv"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "about 9 [seconds] to get within a third of one; 9.0 seconds (Figure 7.2)"
+unit = "s"
+range = [8.95, 9.05]
+measured = "within 0.3 degrees at 9.0 s; stops 0.24 degrees short from 10 s; no overshoot"
+figure = "07-steering-geared-two-gains.png"
+
+[[claim]]
+id = "l07.kp-005-within-1deg"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With kP = 0.005 (ten times Lesson 5's) the geared steering module is within 1 degree in half a second and never overshoots."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 7 (one SwerveModule, 90 degrees at 20 ms, RIG); data/07-steer-geared-kp-*.csv"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "within a degree in half a second"
+unit = "s"
+range = [0.4, 0.6]
+measured = "0.5 s; within 0.1 degrees at 0.76 s; overshoot 0.000 degrees"
+figure = "07-steering-geared-two-gains.png"
+note = "Half a second is read as 0.5 plus or minus 0.1 s."

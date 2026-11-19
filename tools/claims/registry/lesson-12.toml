@@ -1,0 +1,153 @@
+# Numbers Lesson 12 quotes that a library change could move. Format: tools/claims/README.md.
+
+[[claim]]
+id = "l12.step-full-voltage"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With kDriveKV = 0.8 the applied voltage after a 2 m/s step settles at 5.01 V (0.8 x 6.27 wheel rps)."
+evidence = "CLAUDE.md, 'Batch 1 found', Lesson 12, a 2 m/s step on one module; data/12-feedforward-step-*.csv"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "5.01 V"
+unit = "V"
+range = [5.005, 5.015]
+measured = "5.01 V in all six runs"
+figure = "12-feedforward-step.png"
+
+[[claim]]
+id = "l12.step-full-speed"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With the full model the wheel settles at 2.006 m/s, and with kDriveKP = 0 at the same 2.006."
+evidence = "CLAUDE.md, 'Batch 1 found', Lesson 12, a 2 m/s step on one module; data/12-feedforward-step-*.csv"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "2.006 m/s"
+unit = "m/s"
+range = [2.0055, 2.0065]
+measured = "2.0055 m/s with kP 0.1 and with kP 0"
+figure = "12-feedforward-step.png"
+
+[[claim]]
+id = "l12.step-rise-time"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "With the full model the wheel reaches 2 m/s in about a third of a second."
+evidence = "CLAUDE.md, 'Batch 1 found', Lesson 12, a 2 m/s step on one module; data/12-feedforward-step-*.csv"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "about a third of a second"
+unit = "s"
+range = [0.27, 0.4]
+measured = "1.99 m/s at 0.32 s, 2.0 at 0.34 s (csv)"
+figure = "12-feedforward-step.png"
+note = "A third is 0.33; the range is 0.33 plus or minus 0.05 by judgement. Range per the README fraction rule (about a third: 20% either way), 2026-11-19."
+
+[[claim]]
+id = "l12.step-half-model-speed"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With kDriveKV = 0.4 the wheel levels off at 1.11 m/s."
+evidence = "CLAUDE.md, 'Batch 1 found', Lesson 12, a 2 m/s step on one module; data/12-feedforward-step-*.csv"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "1.11 m/s"
+unit = "m/s"
+range = [1.105, 1.115]
+measured = "1.113 m/s"
+figure = "12-feedforward-step.png"
+
+[[claim]]
+id = "l12.step-half-model-voltage"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With kDriveKV = 0.4 the applied voltage settles at 2.78 V."
+evidence = "CLAUDE.md, 'Batch 1 found', Lesson 12, a 2 m/s step on one module; data/12-feedforward-step-*.csv"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "2.78 V"
+unit = "V"
+range = [2.775, 2.785]
+measured = "2.78 V"
+figure = "12-feedforward-step.png"
+
+[[claim]]
+id = "l12.step-half-model-shortfall"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "With kDriveKV = 0.4 the wheel is about 2.8 rotations per second short of the 6.27 requested, so kP adds about 0.28 V on top of the model's 2.51 V."
+evidence = "CLAUDE.md, 'Batch 1 found', Lesson 12, a 2 m/s step on one module; data/12-feedforward-step-*.csv"
+measured_on = "alpha-8"
+method = "ARITHMETIC"
+wording = "about 2.8 rotations per second short"
+unit = "rot/s"
+range = [2.7, 2.9]
+measured = "2.79 rot/s, derived from the measured 1.11 m/s"
+figure = "12-feedforward-step.png"
+note = "Derived from l12.step-half-model-speed; the 0.28 V and 2.51 V are arithmetic on course gains (0.1 x 2.8, 0.4 x 6.27)."
+
+[[claim]]
+id = "l12.step-no-model-speed"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With kDriveKV = 0 only kP acts and the wheel levels off at 0.22 m/s, about a tenth of the request."
+evidence = "CLAUDE.md, 'Batch 1 found', Lesson 12, a 2 m/s step on one module; data/12-feedforward-step-*.csv"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "0.22 m/s"
+unit = "m/s"
+range = [0.215, 0.225]
+measured = "0.219 m/s"
+figure = "12-feedforward-step.png"
+
+[[claim]]
+id = "l12.step-no-model-voltage"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With kDriveKV = 0 the applied voltage settles at 0.55 V."
+evidence = "CLAUDE.md, 'Batch 1 found', Lesson 12, a 2 m/s step on one module; data/12-feedforward-step-*.csv"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "0.55 V"
+unit = "V"
+range = [0.545, 0.555]
+measured = "0.55 V"
+figure = "12-feedforward-step.png"
+
+[[claim]]
+id = "l12.startup-voltage-unlimited"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "With the stator limit switched off, the first reading after the 2 m/s step is about 4.6 V instead of 3 V."
+evidence = "CLAUDE.md, 'Batch 1 found', Lesson 12 section 5 (about 4.6 V with the limit disabled, measured)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "about 4.6 V"
+unit = "V"
+range = [4.5, 4.7]
+measured = "about 4.6 V (the 3 V capped ticks are in the phoenix6.stator-limit-caps-startup-voltage claim)"
+figure = "12-feedforward-step.png"
+
+[[claim]]
+id = "l12.voltage-reaches-model-time"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "Within about a tenth of a second of a step from a standstill the applied voltage is at kV x requested."
+evidence = "CLAUDE.md, 'Batch 1 found', Lesson 12; data/12-feedforward-step-kv08-*.csv"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "within about a tenth of a second"
+unit = "s"
+range = [0.08, 0.12]
+measured = "4.54-4.96 V at 0.08-0.12 s, 5.1-5.25 V at 0.14 s, within 0.01 V of 5.01 only from about 0.26 s"
+note = "Try It #1. The first ticks read 3 V (current limit), so how closely the voltage must match kV x requested decides whether the wording holds; see the findings. Range per the README fraction rule. DISAGREE: at 0.08-0.12 s the voltage is 4.54-4.96 V against 5.01 V, within 0.01 V only from about 0.26 s; reported to the user 2026-11-19."

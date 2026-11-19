@@ -72,11 +72,18 @@ The range is the set of values for which the lesson's sentence is still true as 
 
 - **A bare number** gets its rounding interval at the precision written: "60.47 rot/s" is
   [60.465, 60.475], "0.19 mm" is [0.185, 0.195], "a fifth of a millimeter" is [0.15, 0.25].
-- **"about X"** (or "around", "roughly", "some", "nearly") allows one unit either way in the last
+- **"about X"** (or "around", "roughly", "some") allows one unit either way in the last
   digit written: "about 9 cm" is [8, 10] cm, "about 1.5 mm" is [1.4, 1.6], "about 91 mm" is
   [90, 92].
 - **A stated range** keeps its endpoints, each widened by half a unit of its last digit: "1-2 cm"
   is [0.5, 2.5] cm, "25 to 50 cm" is [24.5, 50.5].
+- **"almost X", "nearly X", "just under X"**: from one unit below X up to X ("almost 0.4 s" is
+  [0.3, 0.4]); "just over X" is the mirror image.
+- **A fraction in words** ("a tenth", "a third", "half") allows 10% either way bare and 20% with
+  "about": "a fifth of a millimeter" is [0.18, 0.22] mm, "about a third of a second" is
+  [0.27, 0.40] s.
+- **In a whole number that ends in zero, a unit is ten**: "about 100 cm" is [90, 110] cm, "about
+  60" is [50, 70]. (A whole number not ending in zero keeps a unit of one: "about 37" is [36, 38].)
 - **"under X", "more than X"**: one-sided at X, using `inf` or `-inf`: `range = [100.0, inf]`.
 - **A count of random outcomes** ("4 of 30 runs browned out"): the band in which the lesson's
   conclusion still holds, explained in `note`.

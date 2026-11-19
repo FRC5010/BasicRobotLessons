@@ -176,7 +176,7 @@ subsystem-shaped class you've written since Lesson 1 has extended
 worth asking about directly. What does `Mechanism` actually buy a class?
 Command-builder methods (`run`, `runRepeatedly`) so it can be *required* by
 a command, and an automatic `idle()` default command to fall back to when
-nothing else is running it. `Localizer` needs neither: it drives no motors,
+nothing else is running it. <!-- claim: commandsv3.mechanism-no-default-command --> `Localizer` needs neither: it drives no motors,
 so no command will ever `.require()` it, and there's no "idle" behavior to
 fall back to when nothing else is happening — it's *always* just reading
 providers and publishing a pose. All it actually needs from the scheduler is
@@ -184,7 +184,7 @@ a heartbeat, and `Scheduler.getDefault().addPeriodic(Runnable)` — the exact
 call `Drivetrain`'s own constructor has used since Lesson 11 — gives it
 that with no extra machinery attached. **Being a `Mechanism` is for classes
 the scheduler needs to run *commands* against; being ticked every frame is a
-smaller ask, and `addPeriodic` is the tool sized for it.**
+smaller ask, and `addPeriodic` is the tool sized for it.** <!-- claim: commandsv3.periodic-before-commands -->
 
 The drivetrain plays two roles here, and it's worth seeing both. It's the
 **odometry backbone** the estimator is literally built around — a swerve
@@ -203,7 +203,7 @@ the pose to keep tracking if someone shoves the robot on the field.
 The fused pose is something the robot works out, not something it read, so
 it goes through `Logger.recordOutput`, the way `Drivetrain/Pose` did in
 Lesson 13, and a replay works it out again. The field widget stays on
-`Telemetry.log` for SimGUI, as it did in `Drivetrain`.
+`Telemetry.log` for SimGUI, as it did in `Drivetrain`. <!-- claim: advantagekit.telemetry-log-not-recorded, advantagekit.record-output-wpilib-types -->
 
 ---
 
@@ -280,7 +280,7 @@ use fresh numbers, `Drivetrain`'s periodic callback must run before
 in the order they were registered — and each class registers its own
 callback in its own constructor, so as long as `drivetrain` is built (and
 therefore registers) before `localizer` is, the dependency takes care of
-itself. Declare the fields in that order in `Robot.java` and you never have
+itself. <!-- claim: commandsv3.periodic-before-commands --> Declare the fields in that order in `Robot.java` and you never have
 to think about it again.
 
 One method used to ask the drivetrain for its own pose — Lesson 11's
@@ -334,7 +334,7 @@ robot has moved. The estimator handles this with quiet brilliance: it keeps
 a short history, rewinds to the timestamp, blends the correction in *where
 it belongs*, and replays its own updates forward. Data that knows its own
 age is what makes fusing a slow sensor with a fast one possible — remember
-that; it's everywhere in robotics.
+that; it's everywhere in robotics. <!-- claim: wpilib.pose-estimator-latency-compensation -->
 
 We have no camera on the bench, so we'll write a stand-in that holds a
 pending sighting until the next tick folds it in. It's a `PoseProvider` of a
@@ -375,7 +375,7 @@ honest timestamp for a zero-latency fake; a real vision system hands you the
 capture time instead.) The sighting it logs is an output, not an input:
 it comes from a button press, and AdvantageKit already records the buttons
 and the clock, so a replay presses the same button on the same tick and
-works the sighting out again. Look at what `Localizer` never had to learn: it
+works the sighting out again. <!-- claim: advantagekit.logged-opmode-robot-captures-ds, advantagekit.replay-matches-recording --> Look at what `Localizer` never had to learn: it
 loops `PoseProvider`s and calls `updatePoseEstimate`. It has no idea one of
 them is a camera. Add a real vision provider next season and `Localizer`
 doesn't change by a line — that's the interface earning its keep, exactly
@@ -428,7 +428,7 @@ is right because reporting a sighting isn't *driving*: it claims no
 mechanism and interrupts nothing. The coroutine body here has no
 `coroutine.yield()` in it at all, so it runs once and the command is done on
 the very same tick — the same one-shot shape Lesson 9's `Autos` used, just
-with nothing to sequence.
+with nothing to sequence. <!-- claim: commandsv3.noyield-command-finishes-same-tick -->
 
 Now run it. Sim up, watch the **Field** widget in SimGUI ([Figure 11.1](11-odometry-field.md#figure-11-1)
 shows where it is). Drive somewhere,
@@ -436,7 +436,7 @@ then press Start. The robot on the field slides toward (2, 5) — not a
 teleport, a real pull. Press it again and it slides a little further; the
 first press doesn't finish the job on its own. That's the estimator's
 default trust settings at work: each reported sighting nudges the estimate,
-it doesn't overwrite it. A real camera reports dozens of times a second, so
+it doesn't overwrite it. <!-- claim: wpilib.pose-estimator-vision-trust, l14.default-nudge-fraction --> A real camera reports dozens of times a second, so
 in practice the pull looks instantaneous — press Start repeatedly here to
 see the same thing happen in slow motion, one "camera frame" at a time.
 That division of labor — **odometry for smoothness, vision for truth** — is
@@ -448,18 +448,18 @@ distance from the estimate to (2, 5), second by second.
 <a id="figure-14-2"></a>
 ![Distance from the pose estimate to (2, 5) over eight seconds with Start pressed once a second. With default trust the distance falls in a staircase from 5.39 m to 3.18 m, each step smaller than the last. With the trust knob set it falls faster, to 2.16 m.](images/14-sighting-nudges.png)
 
-*Figure 14.2 — Each sighting is a nudge: five presses of Start, and the estimate is still 3.18 m from where the camera says the robot is.*
+*Figure 14.2 — Each sighting is a nudge: five presses of Start, and the estimate is still 3.18 m from where the camera says the robot is.* <!-- claim: l14.five-press-distance, l14.knob-five-press-distance, l14.default-nudge-fraction -->
 
 Read the orange line first. It starts at 5.39 m, the distance from the
 origin to (2, 5), and it stays flat until the first press, because nothing
 changes the estimate between sightings. Each press drops it in one step, and
 each step is smaller than the one before: about a tenth of the distance that's
-left (the first press is 0.54 m; the fifth is 0.35 m). That's the shape of
+left (the first press is 0.54 m; the fifth is 0.35 m). <!-- claim: l14.default-nudge-fraction, l14.first-press-step, l14.fifth-press-step --> That's the shape of
 a nudge. A teleport would be one step to zero. After five presses the
 estimate is still 3.18 m away, which is why one press never finishes the job,
 and why a real camera needs to report dozens of times a second before the
-pull looks instant. The estimate moves along the straight line toward (2, 5),
-and its heading turns toward the sighting's 90° by the same tenth each time.
+pull looks instant. <!-- claim: l14.five-press-distance --> The estimate moves along the straight line toward (2, 5),
+and its heading turns toward the sighting's 90° by the same tenth each time. <!-- claim: l14.heading-nudge-fraction -->
 
 > **The trust knob.** How hard a measurement pulls is set by its **standard
 > deviations** — smaller numbers mean "trust this more." The defaults are
@@ -469,7 +469,7 @@ and its heading turns toward the sighting's 90° by the same tenth each time.
 > heading entirely" — a common real-robot choice, since the gyro's heading is
 > usually better than a camera's. In Figure 14.2, the green line is the same
 > five presses with that line added: each one now closes about a sixth of the
-> remaining distance instead of a tenth, and the heading never moves.
+> remaining distance instead of a tenth, and the heading never moves. <!-- claim: wpilib.pose-estimator-vision-trust, l14.knob-nudge-fraction -->
 > Tuning trust is a deep art; knowing the knob exists is enough for today.
 
 ---

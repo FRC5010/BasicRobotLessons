@@ -19,7 +19,7 @@ message the moment your robot's teleop code wakes up.
 
 ## 1. What am I even looking at?
 
-Open `src/main/java/first/robot/` and you'll find three files.
+Open `src/main/java/first/robot/` and you'll find three files. <!-- claim: wpilib.opmode-template-files -->
 
 ```
 first/
@@ -100,7 +100,7 @@ public class MyTeleop extends PeriodicOpMode {
 }
 ```
 
-Five methods, all currently empty, each named after the moment it fires.
+Five methods, all currently empty, each named after the moment it fires. <!-- claim: wpilib.opmode-template-files, wpilib.opmode-lifecycle -->
 The one to focus on today is `periodic()` — you'll meet the others as you
 need them. Like every method WPILib calls for you, you don't call
 `periodic()` yourself. The framework does, on its own schedule. The
@@ -111,7 +111,7 @@ The `@Teleop` sitting *above* the whole class is a different kind of thing:
 an **annotation** — a tag that tells the framework something about the class
 underneath it, without being a method or a field itself. `@Teleop` says
 "this is a piece of robot behavior a human can pick on the Driver Station,
-and list it by its class name, `MyTeleop`, unless told otherwise." `MyAuto.java` has the same
+and list it by its class name, `MyTeleop`, unless told otherwise." <!-- claim: wpilib.opmode-annotation-class-name --> `MyAuto.java` has the same
 idea with `@Autonomous` instead. Neither annotation runs any code by
 itself — it's a label the framework reads before your code ever executes.
 
@@ -131,7 +131,7 @@ Station before anything in it runs.
 Once an opmode is picked and the robot is enabled, its `periodic()` method
 runs **about 50 times a second**, forever, until something else is picked or
 the robot disables. Each run is a **tick**. That's the heartbeat — the same
-idea as always: a fast loop, ticking away, doing a little work each time.
+idea as always: a fast loop, ticking away, doing a little work each time. <!-- claim: wpilib.opmode-periodic-20ms -->
 You never write `while (true)` yourself; the framework is the loop, and you
 plug things into it. If you take one thing from this lesson, take that
 picture, with one layer added: *which* piece of code the framework is
@@ -147,12 +147,12 @@ framework builds a fresh one straight away (its constructor runs again), and
 the new one ticks `disabledPeriodic()` until you enable. Picking a different
 opmode runs `close()` too. (The template's comment on `close()` only mentions
 de-selecting; disabling counts as well.) Each method fires at one moment, and
-only the two `periodic` ones repeat.
+only the two `periodic` ones repeat. <!-- claim: wpilib.opmode-lifecycle, wpilib.opmode-periodic-20ms -->
 
 <a id="figure-0-1"></a>
 ![A timeline in three stretches: disabled, enabled, disabled. The constructor fires once at the left edge when the opmode is picked, start() once when the robot is enabled, end() and then close() when it is disabled, and a fresh MyTeleop is constructed right after, which ticks disabledPeriodic() in the last stretch. Ticks of disabledPeriodic() fill the disabled stretches and ticks of periodic(), about every 20 milliseconds, fill the enabled one](images/00-opmode-lifecycle.svg)
 
-*Figure 0.1 — An opmode's life: constructor, `start()`, a row of `periodic()` ticks, then `end()` and `close()`, and a fresh opmode takes its place.*
+*Figure 0.1 — An opmode's life: constructor, `start()`, a row of `periodic()` ticks, then `end()` and `close()`, and a fresh opmode takes its place.* <!-- claim: wpilib.opmode-lifecycle -->
 
 ---
 
@@ -173,8 +173,8 @@ The very first run downloads a pile of dependencies and can take several
 minutes. Grab a drink.
 
 If you started it from VS Code, it asks when the build finishes whether you
-want Sim GUI and/or Real Driverstation. **Sim GUI** is correct for now.
-From the terminal, the SimGUI window just opens. When it does:
+want Sim GUI and/or Real Driverstation. **Sim GUI** is correct for now. <!-- claim: wpilib-tools.vscode-simulate-and-vendor-manager -->
+From the terminal, the SimGUI window just opens. When it does: <!-- claim: gradlerio.run-starts-simgui -->
 
 The panel you want is **Robot State**, in the top left, and it holds
 everything you need. It's three steps, top to bottom, and Figure 0.2 numbers
@@ -182,16 +182,16 @@ them:
 
 1. Click **Teleoperated** in the list of modes. The panel starts on
    *Disconnected*: the simulated Driver Station isn't attached yet, and
-   picking a mode attaches it.
+   picking a mode attaches it. <!-- claim: wpilib-tools.simgui-robot-state-panel -->
 2. Open the **OpMode** drop-down underneath and pick **MyTeleop**. That's the
    **opmode selector**. It only lists opmodes of the mode you picked, which is
-   why step 1 comes first. (`MyAuto` shows up under **Autonomous**.)
+   why step 1 comes first. (`MyAuto` shows up under **Autonomous**.) <!-- claim: wpilib-tools.simgui-robot-state-panel, wpilib.opmode-annotation-class-name -->
 3. Click **Enable**. The robot is now running `MyTeleop`.
 
 <a id="figure-0-2"></a>
 ![The Robot State panel in SimGUI with three numbered marks: 1 on the Teleoperated row of the mode list, 2 on the OpMode drop-down showing MyTeleop, 3 on the Enable row at the bottom](images/00-simgui-opmode-state.png)
 
-*Figure 0.2 — SimGUI's Robot State panel: (1) pick the mode, (2) pick the opmode, (3) enable.*
+*Figure 0.2 — SimGUI's Robot State panel: (1) pick the mode, (2) pick the opmode, (3) enable.* <!-- claim: wpilib-tools.simgui-robot-state-panel -->
 
 Congratulations — you're "driving" a simulated robot. Nothing moves,
 because there's no motor yet. That's Lesson 1.
@@ -218,7 +218,7 @@ public void start() {
 ```
 
 `start()` runs exactly once — the instant your opmode goes from disabled to
-enabled. That makes it a better home for a one-time message than
+enabled. <!-- claim: wpilib.opmode-lifecycle --> That makes it a better home for a one-time message than
 `periodic()`, which would print the same line fifty times a second and flood
 your terminal.
 
@@ -264,6 +264,6 @@ by name on the Driver Station. Whichever opmode gets picked is the one whose
 `periodic()` starts ticking about 50 times a second — that's still the
 heartbeat everything else in this course hangs off, just with one more
 layer: which piece of code the heartbeat is driving is now a choice made at
-runtime, not baked into a single class. That's plenty for one sitting.
+runtime, not baked into a single class. <!-- claim: wpilib.opmode-periodic-20ms --> That's plenty for one sitting.
 
 Next: Lesson 1 — Your first motor.

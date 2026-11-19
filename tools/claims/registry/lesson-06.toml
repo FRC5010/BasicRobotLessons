@@ -1,0 +1,64 @@
+# Numbers Lesson 6 (distance and commands) quotes that a library change could move. Format: tools/claims/README.md.
+# Method: RIG, driveDistance(1.0, 0.4) (CLAUDE.md, 'Batch 2 found'); data in tools/figures/data/06-drive-distance.csv.
+
+[[claim]]
+id = "l06.exit-distance"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "driveDistance(1.0, 0.4) ends (waitUntil returns) at 1.013 m."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 6 RIG (waitUntil returns at 0.62 s at 1.013 m)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "1.013 m (section 5's walkthrough and the alt text)"
+unit = "m"
+range = [1.0125, 1.0135]
+measured = "1.013 m; the figure's CSV reads 1.051 m at its first sample after the exit (0.04 s grid)"
+figure = "06-drive-distance-trace.png"
+note = "The CSV's 0.04 s sampling can't show the exact exit tick; the CLAUDE.md RIG reading is the record."
+
+[[claim]]
+id = "l06.settle-distance"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "After the throttle drops to 0 the wheel coasts on and settles at 1.145 m, about 15 cm past the target."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 6 RIG (the wheel coasts on to 1.145 m); data/06-drive-distance.csv ends at 1.14523 m"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "1.145 m; about 15 cm past the target"
+unit = "m"
+range = [1.1445, 1.1455]
+measured = "1.145 m (1.1452 in the figure's data)"
+figure = "06-drive-distance-trace.png"
+note = "'About 15 cm' alone would allow 1.14 to 1.16 m; the bare 1.145 is tighter."
+
+[[claim]]
+id = "l06.startup-throttle"
+kind = "number"
+library = ["phoenix6"]
+criticality = "C3"
+statement = "For the first few ticks the applied throttle reads nearer 0.25 than the 0.4 requested (3 V), before the wheel gets going."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 6 RIG (the first ticks apply 3 V, most likely the stator limit; not checked); data/06-drive-distance.csv reads 0.2498 for the first four ticks"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "nearer 0.25 for the first few ticks"
+unit = "fraction"
+range = [0.24, 0.26]
+measured = "0.2498-0.2500 for 4 ticks, then 0.39975"
+figure = "06-drive-distance-trace.png"
+
+[[claim]]
+id = "l06.throttle-on-duration"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "The throttle stays on for just over half a second before waitUntil returns."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 6 RIG (waitUntil returns at 0.62 s); data/06-drive-distance.csv shows the command running until about 0.62 s"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "just over half a second"
+unit = "s"
+range = [0.5, 0.7]
+measured = "0.62 s"
+figure = "06-drive-distance-trace.png"

@@ -130,3 +130,170 @@ statement = "org.wpilib.command3.sysid.SysIdRoutine(Config, SysIdMechanism): Con
 evidence = "CLAUDE.md, 'v3 Lesson 33 rebuilt on WPILib's SysIdRoutine', The real API"
 measured_on = "alpha-8"
 method = "SOURCE"
+
+[[claim]]
+id = "commandsv3.default-command-resumes"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "When a command that requires a mechanism finishes or is cancelled, the mechanism's default command is scheduled again, so a driver's stick command takes over without any code."
+evidence = "CLAUDE.md, 'Batch 1 found', Lesson 2 boot test reads [none, Drive With Joystick, Drive At Speed, Drive With Joystick]; 'v3 Lesson 28', Flywheel falls back to idle on release"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.coroutine-await-yield-wait"
+kind = "api"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "In a coroutine body, coroutine.yield() suspends until the next tick, coroutine.waitUntil(condition) polls it each tick, coroutine.wait(Time) pauses, and coroutine.await(command) schedules the command and suspends until it finishes; a coroutine written this way ends when its body runs out of code."
+evidence = "Lessons 6, 8 and 9 compile and run on alpha-8 (verify-lessons-v3.sh; Figure 8.1's probe); no source reading recorded in CLAUDE.md"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.parallel-race-optional"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C2"
+statement = "Command.parallel(a, b) finishes when all its commands finish, Command.race(a, b) finishes when any one does and cancels the rest, and .optional(...) adds a command that rides along and is cancelled when the required ones finish."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by Lesson 9 (Figure 9.2 is a diagram, not a measurement)"
+measured_on = "unverified"
+method = "SOURCE"
+
+[[claim]]
+id = "commandsv3.parallel-shared-requirements-throws"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "Building Command.parallel(...) with two required commands that share a mechanism throws IllegalArgumentException (\"Commands running in parallel cannot share requirements\") at construction."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by Lesson 9"
+measured_on = "unverified"
+method = "SOURCE"
+
+[[claim]]
+id = "commandsv3.robot-mode-triggers-autonomous"
+kind = "api"
+library = ["commandsv3", "wpilib"]
+criticality = "C1"
+statement = "RobotModeTriggers.autonomous() is a Trigger true while the Driver Station is in Autonomous and enabled, so .onTrue(command) schedules once per enable."
+evidence = "Lesson 9 compiles and its auto runs on alpha-8 (verify-lessons-v3.sh); no source reading recorded in CLAUDE.md"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.command-requirements-and-mechanism-name"
+kind = "api"
+library = ["commandsv3"]
+criticality = "C2"
+statement = "Command.requirements() returns the set of mechanisms a command needs, and Mechanism.getName() returns the mechanism's name (\"Drivetrain\")."
+evidence = "Lesson 7 compiles on alpha-8 (verify-lessons-v3.sh); no source reading recorded in CLAUDE.md"
+measured_on = "alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "commandsv3.mechanism-no-periodic"
+kind = "api"
+library = ["commandsv3"]
+criticality = "C3"
+statement = "Mechanism has no periodic() method, so a mechanism that must run every tick registers a callback with Scheduler.getDefault().addPeriodic."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by Lesson 11 (Lesson 13 introduces its own periodic())"
+measured_on = "unverified"
+method = "SOURCE"
+
+[[claim]]
+id = "commandsv3.noyield-command-finishes-same-tick"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C3"
+statement = "A Command.noRequirements coroutine with no yield in its body runs once and finishes on the same tick, claiming no mechanism and interrupting nothing."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson (Lesson 14's Start-button command ran in the Batch 2 five-sighting measurement, which doesn't test the tick)"
+measured_on = "unverified"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.coroutine-command-api"
+kind = "api"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "On a Mechanism, run(coroutine -> ...), runRepeatedly(Runnable), coroutine.park(), coroutine.waitUntil(BooleanSupplier), and the builder's whenCanceled, whenExited and named exist; a command whose body runs out finishes, and park() suspends it until something cancels it."
+evidence = "CLAUDE.md, 'v3 Lesson 17' and the Lesson 28-33 notes (whenExited/whenCanceled probed on the real scheduler, 2026-11-12); Lessons 1-6 compile on alpha-8; 'Batch 2 found' (Lesson 6 RIG, waitUntil returns at 0.62 s and the command ends)"
+measured_on = "alpha-8"
+method = "RIG"
+
+[[claim]]
+id = "commandsv3.command-gamepad-api"
+kind = "api"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "org.wpilib.command3.button.CommandGamepad(port) has getLeftY() and the button methods faceDown(), faceLeft(), faceRight(), faceUp(), leftBumper() and dpadUp() (faceDown is the bottom face button), each returning a Trigger with whileTrue and onTrue."
+evidence = "CLAUDE.md, 'Batch 1 found' (Keyboard 0's bottom face button is the Z key) and 'Lesson 24' notes (Gamepad D-pad is buttons 11-14); Lessons 1-6 compile on alpha-8"
+measured_on = "alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "commandsv3.running-commands-for"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "Scheduler.getDefault().getRunningCommandsFor(mechanism) returns a List<Command> of what runs on that mechanism now, updated when the scheduler ticks; it is empty while nothing runs (on alpha-8, every disabled tick), and get(0) on the empty list throws ArrayIndexOutOfBoundsException."
+evidence = "CLAUDE.md, 'Batch 1 found', Fixed 2026-11-19: Lessons 1 and 2 crashed at boot on alpha-8 (running.get(0) on an empty list); the boot test reads [none, none, Drive At Speed, none]"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.mechanism-registers-with-scheduler"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C2"
+statement = "A class that implements Mechanism is known to Scheduler.getDefault() from construction on (no registration call), so Scheduler.run() runs its commands and getRunningCommandsFor(module) answers for it."
+evidence = "CLAUDE.md, 'Batch 1 found' (the Lesson 1 boot test drove DriveModule through only Scheduler.getDefault().run()); registration itself was not read from source"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.default-command-runs-when-idle"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "A mechanism's default command (setDefaultCommand) runs whenever no other command requires the mechanism and resumes by itself when that command ends; scheduling another command on the mechanism ends the running one (the later one wins at equal priority)."
+evidence = "CLAUDE.md, 'v3 Lesson 24 ... on alpha-7' (a new command preempts a conflicting running one of equal priority; default commands come back on enable) and the Lesson 28 notes (Flywheel idles through a default command)"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.scheduler-events"
+kind = "api"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "Scheduler.getDefault().addEventListener(Consumer<SchedulerEvent>) hears every scheduler event; SchedulerEvent.Scheduled has command(), SchedulerEvent.Completed, Canceled and Interrupted also exist, and command.requires(mechanism) and command.name() work."
+evidence = "The Lesson 3 snapshot compiles on alpha-8 (verify-lessons-v3.sh, CLAUDE.md 'Use it instead of reasoning about whether a snippet compiles'); no source reading of SchedulerEvent is recorded in CLAUDE.md"
+measured_on = "alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "commandsv3.short-command-invisible-to-poll"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C3"
+statement = "A command that finishes the instant it is scheduled can start and end inside one scheduler tick, so a once-a-tick poll of getRunningCommandsFor never sees it, while an event listener does."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson"
+measured_on = "unverified"
+
+[[claim]]
+id = "commandsv3.andthen-builder"
+kind = "api"
+library = ["commandsv3"]
+criticality = "C3"
+statement = "Command has an andThen(Command) decorator that sequences two commands, and the result needs its own .named(...) before it is ready to schedule."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson"
+measured_on = "unverified"
+
+[[claim]]
+id = "commandsv3.command-trace-helper"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C3"
+statement = "Commands V3 rewrites an exception's stack trace through CommandTraceHelper: it strips the internal Coroutine/Continuation/Scheduler frames and splices in the trace captured when the command was scheduled, after a marker frame '=== Command Binding Trace ==='."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson (it says it was confirmed by decompiling the class and forcing a NullPointerException; the trace in the lesson is from a bare test harness)"
+measured_on = "unverified"

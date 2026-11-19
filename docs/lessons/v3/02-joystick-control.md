@@ -20,7 +20,7 @@ deadband so the motor doesn't creep when the stick is centered.
 ## 1. A joystick axis is just a number
 
 A controller axis reports a `double` — a number with a decimal point — from
-`-1.0` to `1.0`. Centered is `0.0` (ish — section 3 deals with the "ish").
+`-1.0` to `1.0`. Centered is `0.0` (ish — section 3 deals with the "ish"). <!-- claim: commandsv3.command-gamepad-api -->
 WPILib hands it to you like this:
 
 *Nothing to add — this is just how you read one:*
@@ -106,7 +106,7 @@ public class DriveModule implements Mechanism {
 `runRepeatedly(...)` is built for exactly this: hand it a plain block of
 code and it runs that code once per tick, forever, until the command is
 canceled — no `coroutine.park()` needed this time, since the repeating loop
-itself is what keeps the command alive.
+itself is what keeps the command alive. <!-- claim: commandsv3.coroutine-command-api -->
 
 `DoubleSupplier` is a class from another package, so the file needs an
 import — up top with the others, below the `package` line (or click the red
@@ -163,7 +163,7 @@ takes the path you expect.
 > WPILib actually ships `MathUtil.applyDeadband(value, band)` that does
 > this (and rescales smoothly). You wrote your own so you'd know exactly
 > what's inside it. Feel free to swap in `MathUtil.applyDeadband` later —
-> knowing what a library call does beats trusting it blindly.
+> knowing what a library call does beats trusting it blindly. <!-- claim: wpilib.mathutil-apply-deadband -->
 
 ---
 
@@ -195,14 +195,14 @@ Read the new statement inside-out. `() -> -robot.driverController.getLeftY()`
 is a `DoubleSupplier` lambda — and it's re-asked every tick, so it always
 reflects where the stick is *right now*. And that **minus sign** is doing
 real work: on most sticks, pushing *forward* reads *negative*. Negating
-makes "push forward" = "positive speed" = "drive forward." Small detail,
+makes "push forward" = "positive speed" = "drive forward." <!-- claim: commandsv3.command-gamepad-api --> Small detail,
 endless confusion if you forget it — someday a robot will lurch backward
 off the starting line, and the first thing to check will be a sign.
 
 Now the stick always drives the module — unless some other command (like a
 future "drive to distance") temporarily takes over. When that command
 finishes, the default resumes on its own. You never write that hand-off;
-the scheduler does it. That's the quiet payoff of making everything a
+the scheduler does it. <!-- claim: commandsv3.default-command-runs-when-idle --> That's the quiet payoff of making everything a
 command.
 
 ---
@@ -211,7 +211,7 @@ command.
 
 Run the robot in simulation, pick **Teleoperated** and **MyTeleop**, then
 **Enable**. Push the left
-stick (or SimGUI's joystick slider, in the slot you filled in [Figure 1.1](01-first-motor.md#figure-1-1)). The motor output should track the
+stick (or SimGUI's joystick slider, in the slot you filled in [Figure 1.1](01-first-motor.md#figure-1-1)). <!-- claim: wpilib-tools.simgui-joystick-slots --> The motor output should track the
 stick, snap to zero near center, and reverse when you pull back. If it
 creeps at rest instead, your deadband isn't in the path — check that
 `driveWithJoystick` really calls `applyDeadband`.
@@ -246,7 +246,7 @@ you picked up your first **`if`**, plus `Math.abs` and `return`, and used
 all three to build a **deadband** so a resting stick means a resting motor.
 The robot-side idea to carry forward is the **default command**: what a
 mechanism does when nothing else claims it, with the scheduler handing
-control back automatically. If lambdas still feel like strange syntax,
+control back automatically. <!-- claim: commandsv3.default-command-runs-when-idle --> If lambdas still feel like strange syntax,
 that's normal — you'll write so many `() ->`s over the coming lessons that
 the arrow will stop registering as weird. Next, we make the robot's numbers
 visible, because plots beat print statements.

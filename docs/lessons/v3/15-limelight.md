@@ -41,7 +41,7 @@ video feed, finds AprilTags, and does all the geometry itself — "I see tag
 26 at this spot in the image" becomes "the robot is at (1.7, 4.0) on the
 field" before your code hears a word. Systemcore can also run the same
 vision software on a plain USB camera plugged into it, and to your code that
-looks exactly like a Limelight. Either way, the answer travels to your robot
+looks exactly like a Limelight. <!-- claim: limelightlib.systemcore-usb-names --> Either way, the answer travels to your robot
 code over NetworkTables, the same network pipe every published value in
 this course already rides on. Your code never touches a pixel — it asks
 Limelight's Java library, **LimelightLib 2**, for the answer.
@@ -58,7 +58,7 @@ because it was never told there was one.
 ## 2. Install LimelightLib 2
 
 Same ritual as Lesson 1's Phoenix 6 install, with one difference: LimelightLib
-isn't in WPILib's online search list, so you install it by URL. Open the
+isn't in WPILib's online search list, so you install it by URL. <!-- claim: limelightlib.vendordep-by-commit-url --> Open the
 vendor dependency manager (Ctrl+Shift+P → **WPILib: Manage Vendor Libraries**
 → **Install new library (online)**) and paste this:
 
@@ -75,7 +75,7 @@ Rebuild to confirm: `./gradlew build`.
 > from one day to the next. The long URL above names one exact commit of
 > that file, and a commit can't change. Every WPILib-marketplace vendordep
 > in this course is pinned the same way, by version; this one just had to be
-> pinned by hand.
+> pinned by hand. <!-- claim: limelightlib.vendordep-by-commit-url -->
 
 ---
 
@@ -96,10 +96,10 @@ public static final class VisionConstants {
 
 `Fields` is an enum with one entry per field WPILib knows about, and
 `DEFAULT_FIELD` is a standing alias to the current season's — as of this
-writing, `FRC_2026_REBUILT_WELDED`: 16.54 m by 8.07 m, with 32 tags. (If your
+writing, `FRC_2026_REBUILT_WELDED`: 16.54 m by 8.07 m, with 32 tags. <!-- claim: wpilib.field-default-layout --> (If your
 event's field was built by AndyMark instead, swap in
 `Fields.FRC_2026_REBUILT_ANDY_MARK` — WPILib keeps separate measurements for
-the two builds.)
+the two builds.) <!-- claim: wpilib.field-default-layout -->
 
 Don't mix this `Field` up with Lesson 11's `Field2d`. `Field2d` is a
 *drawing* — a dashboard widget you move a robot icon around on. `Field` is
@@ -140,7 +140,7 @@ Every Limelight has a name, set in its web interface, and that name is how
 your code finds it on the network — a camera named `limelight-front`
 publishes under `limelight-front`. A USB camera running on Systemcore gets a
 fixed name instead, one per port; the library has constants for them, like
-`Limelight.SYSTEMCORE_USB0` (which is `"limelightsc0"`).
+`Limelight.SYSTEMCORE_USB0` (which is `"limelightsc0"`). <!-- claim: limelightlib.systemcore-usb-names -->
 
 > **Measure this for real.** On an actual robot, `kFrontRobotToCamera` isn't
 > a guess. You measure the camera's physical mount with a tape measure (or
@@ -200,11 +200,11 @@ square seen a little from the right. One tag alone can leave two believable
 answers for where you're standing. **MegaTag1** works everything out from
 the tags alone, so with a single tag in view it inherits that blind spot —
 the library screens single-tag MegaTag1 answers extra hard for exactly this
-reason. **MegaTag2** sidesteps it: you *tell* the camera which way the robot
+reason. **MegaTag2** sidesteps <!-- claim: limelightlib.single-tag-mt1-screened --> it: you *tell* the camera which way the robot
 is facing — your gyro already knows that far better than a picture of a tag
 does — and the camera only has to work out where you are. That's the one
 you'll use. The price is that you have to send the heading every loop, and
-that call looks like this:
+that call looks like this: <!-- claim: limelightlib.limelight-api -->
 
 *Nothing to add yet — this is the call you'll write in section 7:*
 
@@ -225,7 +225,7 @@ the robot reads.
 **The trust problem.** Lesson 14 showed you the trust knob —
 `VecBuilder.fill(0.5, 0.5, 999999)`, "trust x and y to about half a meter,
 ignore heading" — and said tuning it was a deep art. The library does the
-first round of that art for you, fresh for every frame:
+first round of that art for you, fresh for every frame: <!-- claim: limelightlib.mt2-trust-formula -->
 
 > trust (in meters) = 0.3 × distance to the tags ÷ √(number of tags)
 
@@ -233,10 +233,10 @@ A frame built from one tag 2 m away gets 0.3 × 2 = **0.6 m**. Back off to
 4 m and it's **1.2 m** — a farther tag is a smaller target, so the answer is
 shakier, so it pulls on the estimate less. Two tags at about 2.2 m each get
 0.3 × 2.2 ÷ √2 ≈ **0.47 m** — which is exactly what this course's own
-simulation reported, standing 2 m from a hub. More tags, closer tags: more
+simulation reported, standing 2 m from a hub. <!-- claim: l15.two-tag-trust, limelightlib.mt2-trust-formula --> More tags, closer tags: more
 trust. And heading is always
 marked "ignore" — which makes sense, since MegaTag2's heading is just yours,
-handed back.
+handed back. <!-- claim: limelightlib.mt2-trust-formula -->
 
 The library also **filters** before it hands you anything, which is Lesson
 14's last Try It paying off. The call you'll use,
@@ -244,12 +244,12 @@ The library also **filters** before it hands you anything, which is Lesson
 frames that passed its checks: a real tag was used, a pose came back, the
 timestamp makes sense. `MT2` is MegaTag2, and `WPIBLUE` means the answer uses
 the same origin WPILib's field does — the blue alliance's corner — so the
-pose means the same thing to your estimator that it means to the camera.
+pose means the same thing to your estimator that it means to the camera. <!-- claim: limelightlib.accepted-estimates-filter -->
 
 And each estimate comes with a **timestamp** that's already been corrected
 for the camera's delay. A frame that took 30 ms to capture and process is
 stamped 30 ms in the past, which is exactly the "when was this true?" that
-Lesson 14's estimator knows how to rewind to.
+Lesson 14's estimator knows how to rewind to. <!-- claim: limelightlib.accepted-estimates-filter -->
 
 ---
 
@@ -298,7 +298,7 @@ public interface VisionIO {
 Most of that is familiar. The `default` do-nothing methods and the nested
 `Inputs` class are exactly what `ModuleIO` and `GyroIO` already taught you,
 and `@AutoLog` is Lesson 13's annotation: AdvantageKit writes a
-`VisionIOInputsAutoLogged` from it as the project compiles.
+`VisionIOInputsAutoLogged` from it as the project compiles. <!-- claim: advantagekit.autolog-generates-class -->
 `setRobotHeading` is something your code tells the hardware, the same way
 `ModuleIO.setSteerAngleDegrees` is.
 
@@ -321,7 +321,7 @@ of value `VecBuilder.fill(0.5, 0.5, 999999)` made in Lesson 14's callout),
 and that isn't on the list. Put one in the record anyway and AdvantageKit
 complains that it "failed to load nested struct", then logs the trust as
 nothing; a replay of that run crashes on its first camera frame, when
-`addVisionMeasurement` is handed trust that isn't there.
+`addVisionMeasurement` is handed trust that isn't there. <!-- claim: advantagekit.vector-record-field-not-loggable -->
 
 So the record keeps the three numbers, and a method rebuilds the column
 when it's needed. A record can have methods, like any class, and
@@ -383,7 +383,7 @@ from the robot's center" spelled as a pose. `updateInputs` reads every frame
 that arrived since last time, keeps only the ones the library accepted, and
 copies each one into a `PoseObservation`. The library hands over its trust
 as a `Vector<N3>`, and `.get(0)`, `.get(1)` and `.get(2)` take the three
-numbers out of it, x first.
+numbers out of it, x first. <!-- claim: limelightlib.limelight-api -->
 
 Notice what it *doesn't* do. It never touches `Localizer`'s estimator and
 never decides whether a correction is good enough to use. Reading is the
@@ -416,7 +416,7 @@ latency-corrected timestamps — happens inside the library, on the robot, as
 it reads those messages. So the most honest possible fake is one that
 publishes the same message to the same topic. Then the real library runs,
 unmodified, on your fake camera's output. It can't tell the difference,
-because from where it sits there *is* no difference.
+because from where it sits there *is* no difference. <!-- claim: limelightlib.parses-sim-frames -->
 
 That's why the simulated camera doesn't need `m_camera`. It doesn't talk to
 the library at all. It talks to the network, the way the real camera does.
@@ -425,7 +425,7 @@ Figure 15.2 shows the two paths.
 <a id="figure-15-2"></a>
 ![Two pipelines meeting at one point. On the real robot, a Limelight sees AprilTags and publishes a results frame. In simulation, VisionIOLimelightSim builds a frame from the truth pose and publishes it. Both publish to the same NetworkTables topic, limelight-front/results_msgpack. From there, one shared chain, identical and unmodified in both worlds: LimelightLib, VisionIOLimelight.updateInputs, Logger.processInputs, LimelightPoseProvider, and the Localizer's addVisionMeasurement.](images/15-real-vs-sim-camera.svg)
 
-*Figure 15.2 — Real camera and simulated camera publish to the same topic, so everything after it is the same code.*
+*Figure 15.2 — Real camera and simulated camera publish to the same topic, so everything after it is the same code.* <!-- claim: limelightlib.parses-sim-frames -->
 
 The top row is the only place the two worlds differ. A real Limelight
 looks at tags and writes a frame; the simulated camera, which you're about
@@ -533,17 +533,17 @@ actually checks. `"v"` says whether the camera saw a target at all.
 Limelight's naming, `orb` marks the MegaTag2 answers). `"botpose_avgdist"` feeds the trust formula from
 section 5. And each entry in `"Fiducial"` is one tag, marked as having
 helped place the robot — the library rejects a pose that no real tag
-contributed to.
+contributed to. <!-- claim: limelightlib.frame-format -->
 
 Two keys are there for reasons you'd only find the hard way. `"cl"` is
 **capture latency**: how many milliseconds old this frame already is when it
-arrives. The library subtracts it to get the timestamp. And `"fidx"`, the
+arrives. The library subtracts it to get the timestamp. <!-- claim: limelightlib.frame-format --> And `"fidx"`, the
 frame number, keeps any two frames from being byte-for-byte identical.
 That matters more than it looks. NetworkTables quietly drops a value that's
 exactly the same as the last one, so without a frame number, a camera
 staring at an empty wall would send the same "saw nothing" frame over and
 over, NetworkTables would throw the repeats away, and the library would
-decide the camera had gone silent. A real Limelight numbers its frames too.
+decide the camera had gone silent. A real Limelight numbers its frames too. <!-- claim: limelightlib.identical-frames-dropped, limelightlib.frame-format -->
 
 Each helper ends in `return this`, which is what lets the calls chain —
 `.key("v").number(1)` — the same way `.until(...)` and `.named(...)` chain
@@ -785,7 +785,7 @@ each observation into the estimator, trust and all. The frames are readings,
 so they're inputs: `processInputs` records every one under the camera's key
 (`Localizer/limelight-front/PoseObservations`), and in a replay, where
 `makeCamera`'s `REPLAY` arm built a do-nothing `new VisionIO() {}`, it fills
-the bundle from the log instead. That third argument to
+the bundle from the log instead. <!-- claim: advantagekit.autolog-key-names --> That third argument to
 `addVisionMeasurement` is the per-frame version of Lesson 14's trust knob:
 instead of one setting for every frame, each frame brings its own.
 
@@ -871,7 +871,7 @@ Now run the robot in simulation → **RobotTeleop**, and watch the
 and `Localizer/limelight-back/PoseObservations`. They're inputs now, so look
 for them under **AdvantageKit → Localizer** in SimGUI's NetworkTables tree, not
 under **Telemetry**: SimGUI shows each one as `[]` while its camera has nothing
-to report, and `[...]` once frames arrive. Figure 15.3 shows where they are
+to report, and `[...]` once frames arrive. <!-- claim: advantagekit.simgui-struct-array-display --> Figure 15.3 shows where they are
 (open **NetworkTables → NetworkTables View** if that window isn't showing, then
 expand **AdvantageKit**, **Localizer**, and a camera's name), before and after
 the robot moves.
@@ -879,11 +879,11 @@ the robot moves.
 <a id="figure-15-3"></a>
 ![SimGUI's NetworkTables window with AdvantageKit, Localizer, limelight-back and limelight-front expanded: each camera's PoseObservations reads [] before the robot moves, and [...] after a nudge forward](images/15-simgui-advantagekit-menu.png)
 
-*Figure 15.3 — Each camera's `PoseObservations` input in SimGUI: `[]` while it has nothing to report, `[...]` once frames arrive.*
+*Figure 15.3 — Each camera's `PoseObservations` input in SimGUI: `[]` while it has nothing to report, `[...]` once frames arrive.* <!-- claim: advantagekit.simgui-struct-array-display -->
 
 The robot starts at (0, 0),
 in the blue corner, facing down the field — and the front camera can
-already see a pair of tags 4 to 6 m down the field. Nudge the robot off its starting
+already see a pair of tags 4 to 6 m down the field. <!-- claim: l15.start-tags-distance --> Nudge the robot off its starting
 spot and the front camera's observations start arriving every loop. Now
 spin 180° in place: the front camera goes quiet and the back camera takes
 over, logging under its own name, through the exact same `Localizer` loop.
@@ -899,7 +899,7 @@ it to watch the two cameras hand it back and forth.
 > library: the day a genuine answer happens to equal the stand-in for "no
 > answer," they're indistinguishable. A real robot never sits exactly on
 > the field's corner, so this one only bites in simulation, and only until
-> you move.
+> you move. <!-- claim: limelightlib.zero-pose-missing -->
 
 The library keeps its own notes, too. Under
 `limelight_telemetry/limelight-front/` it publishes a **`status`** string —
@@ -907,7 +907,7 @@ The library keeps its own notes, too. Under
 ever came — and, under `MT2_WPIBLUE/`, the poses it **accepted** and
 **rejected**, with a `rejectionReasons` string explaining the last
 rejection. Before you move, that string reads `MISSING_POSE`. When a real
-camera misbehaves, this is the first place to look.
+camera misbehaves, this is the first place to look. <!-- claim: limelightlib.telemetry-status, limelightlib.zero-pose-missing -->
 
 > **Why you won't see vision rescue anything.** Lesson 14's fake camera
 > could pull a wrong pose toward (2, 5) dramatically ([Figure 14.2](14-pose-estimator.md#figure-14-2)), because it was an
@@ -954,7 +954,7 @@ camera misbehaves, this is the first place to look.
    the bell curve.) Now nudge the robot off (0, 0) and leave it parked
    where the front camera can see those two tags. Watch `Localizer/Pose`
    for a minute. It drifts — in this course's runs, anywhere from 15 to 50 cm
-   in 60 seconds, with nothing moving. Work out why before reading on.
+   in 60 seconds, with nothing moving. <!-- claim: l15.parked-drift-range --> Work out why before reading on.
    Here's the answer: the camera looks out from the estimate itself, so each
    frame says "you're where you think you are, give or take a little," the
    estimate shifts by that little, and the next frame starts from the
@@ -967,13 +967,13 @@ camera misbehaves, this is the first place to look.
    rather than climbing steadily, because every frame's scatter is random in
    both directions, and a wander has no reason to come back. The three runs
    end at 17, 39 and 39 cm, and between them reached 25, 52 and 50 cm at their
-   farthest. Run 1 is also a reminder that "drifts" isn't "runs away": it
-   spent the last 20 seconds hovering between 6 and 23 cm.
+   farthest. Run 1 <!-- claim: l15.parked-drift-ends, l15.parked-drift-farthest --> is also a reminder that "drifts" isn't "runs away": it
+   spent the last 20 seconds hovering between 6 and 23 cm. <!-- claim: l15.parked-drift-run1-late -->
 
    <a id="figure-15-4"></a>
    ![Distance of the estimate from where the robot parked against time for three 60 second runs: each wanders away from zero, ending at 17, 39 and 39 centimeters](images/15-parked-drift.png)
 
-   *Figure 15.4 — A parked robot's estimate under the shaky camera: three 60 s runs.*
+   *Figure 15.4 — A parked robot's estimate under the shaky camera: three 60 s runs.* <!-- claim: l15.parked-drift-ends -->
 
 4. **Code — prove a miscalibrated camera is invisible here, and understand
    why.** Add 0.3 m to `kFrontRobotToCamera`'s forward offset, pretending
@@ -994,18 +994,18 @@ camera misbehaves, this is the first place to look.
    `kSimMode` set to `Mode.REPLAY`, `$env:AKIT_LOG_PATH` naming the
    recording, `./gradlew run`. In the `_sim` file,
    `Localizer/limelight-front/PoseObservations` holds every frame the camera
-   sent, read back from the recording. No camera ran in the replay:
+   sent, read back from the recording. <!-- claim: advantagekit.autolog-key-names --> No camera ran in the replay:
    `makeCamera`'s `REPLAY` arm built `new VisionIO() {}`. And
    `RealOutputs/Localizer/Pose` matches `ReplayOutputs/Localizer/Pose` on
-   every tick. Now change the frames on each side of the door ([Figure 13.2](13-io-replay.md#figure-13-2) shows which side is which), replaying the
+   every tick. Now change <!-- claim: advantagekit.replay-matches-recording --> the frames on each side of the door ([Figure 13.2](13-io-replay.md#figure-13-2) shows which side is which), replaying the
    same recording after each change. First, in `VisionIOLimelight.updateInputs`,
    build each observation's pose half a meter further along X:
    `new Pose2d(estimate.pose.getX() + 0.5, estimate.pose.getY(), estimate.pose.getRotation())`
    in place of `estimate.pose` (it needs `import org.wpilib.math.geometry.Pose2d;`).
-   Measured, the replayed pose doesn't move at all. Put it back, and make
+   Measured, the replayed pose doesn't move at all. <!-- claim: l15.replay-io-shift --> Put it back, and make
    the same change in `LimelightPoseProvider`, to the pose you hand
    `addVisionMeasurement`. Replay again: measured, the replayed pose ends
-   0.5 m further along X than the recorded one. Work out why before reading
+   0.5 m further along X than the recorded one. <!-- claim: l15.replay-provider-shift --> Work out why before reading
    on. A replay never builds a `VisionIOLimelight`, so nothing inside it
    runs; the frames come out of the log exactly as the camera reported
    them. The provider's loop runs after `processInputs`, so it's a decision,
@@ -1030,7 +1030,7 @@ the heading your gyro already knows, and every frame arrives with its own
 **trust** — tighter for closer tags and more of them — plus a timestamp
 that's already been corrected for the camera's delay. The library filters
 before it feeds, so a frame no real tag contributed to never reaches your
-estimator.
+estimator. <!-- claim: limelightlib.accepted-estimates-filter -->
 
 On the Java side, **`Optional`** gave "that tag isn't visible" an honest,
 checkable type, and this time you were on both ends of it — filling the box
@@ -1047,7 +1047,7 @@ imitate the library or reach inside it. It stands where a real camera stands
 — on the network, publishing the same message to the same topic — so the
 real library, filters and timestamps and health checks included, runs on
 your fake camera exactly as it will on a real one. When you have to fake
-something, fake it at the boundary where the real thing would plug in.
+something, fake it at the boundary where the real thing would plug in. <!-- claim: limelightlib.parses-sim-frames -->
 
 And you ran head-first into an honest limit. Because the simulated camera
 looks out from the same estimate it then corrects, it can confirm a good

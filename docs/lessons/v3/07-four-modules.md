@@ -166,7 +166,7 @@ schedule.
 
 **Keep `SwerveModule`'s private `clamp` helper from Lesson 5, unchanged** —
 this alpha's WPILib doesn't ship a `MathUtil.clamp` to replace it with, so the
-one you wrote is still the tool for the job.
+one you wrote is still the tool for the job. <!-- claim: wpilib.no-mathutil-clamp -->
 
 ### Pay off Lesson 5's IOU: real steering gearing
 
@@ -287,7 +287,7 @@ rotor's instant snap, so your Lesson 5 `kP` is now tuned for the wrong plant.
 Measured against this model: the same `kP = 0.0005` that rang in Lesson 5's
 [Figure 5.2](05-steering-p-control.md#figure-5-2) now crawls — a 90° turn takes about 6 simulated seconds to get
 within a degree, and about 9 to get within a third of one, decaying smoothly
-with no overshoot at all (Figure 7.2 plots it). That's not a
+with no overshoot at all (Figure 7.2 plots it). <!-- claim: l07.kp-0005-within-1deg, l07.kp-0005-within-third --> That's not a
 bug; the thing being controlled changed, and a 25:1 reduction resists motion
 harder than a bare rotor did. You can't retune yet (nothing runs until the
 wiring in section 6), so sit tight — section 7 comes back to this the moment
@@ -438,13 +438,13 @@ single number, logged one at a time with `Telemetry.log(name, value)`.
 **`SwerveModuleVelocity`** is different: a WPILib data-carrier bundling one
 wheel's speed (in m/s — which is why you wrote
 `getDriveVelocityMetersPerSec`) with its angle as a **`Rotation2d`**,
-WPILib's angle type (`Rotation2d.fromDegrees(...)` builds one).
+WPILib's angle type (`Rotation2d.fromDegrees(...)` builds one). <!-- claim: wpilib.swerve-kinematics-api -->
 `Telemetry.log` has an overload for exactly this: hand it a whole array
 plus the type's **`.struct`** — a value `SwerveModuleVelocity` ships that
 knows how to turn one into bytes and back — and one call publishes all four
 modules' speed and angle together, as one labeled topic AdvantageScope's
 Swerve tab knows how to draw, instead of four separate numbers it would
-have no way to know belong to the same picture.
+have no way to know belong to the same picture. <!-- claim: wpilib.telemetry-log-overloads -->
 
 Step back and look at the division of labor, because this is the lesson's
 real idea. The periodic callback registered in the constructor runs rain or
@@ -452,7 +452,7 @@ shine — every tick, even while the robot is disabled — so it holds the
 *watching*: reading and logging what the four corners are doing. The *acting*
 lives in commands, which the next two sections build: each one calls
 `setDesiredState` on every module, every tick it runs, and commands only run
-while the robot is enabled. The modules themselves never talk to the
+while the robot is enabled. <!-- claim: commandsv3.disable-cancels-mechanism-commands --> The modules themselves never talk to the
 scheduler at all. That's the whole point of dropping `Mechanism` from
 `SwerveModule` — one mechanism, one lock, four workers commanded together.
 
@@ -539,7 +539,7 @@ because `Drivetrain` is never actually idle. `translate` is about to become
 the *default* command in section 6, so the instant `rotate` is canceled (a
 bumper released), the scheduler hands the mechanism straight back to
 `translate`, which immediately commands fresh output. Nothing is ever left
-dangling long enough to matter. Contrast that with `driveDistance` back in
+dangling long enough to matter. <!-- claim: commandsv3.default-command-resumes --> Contrast that with `driveDistance` back in
 Lesson 6, which really could end with nothing else queued up — that's the
 difference that decides whether cleanup is required.
 
@@ -608,7 +608,7 @@ point. `mechanism.getName()` reads back the same name every `Mechanism`
 already carries (here, `"Drivetrain"`), so the dashboard key builds itself: `Drivetrain/CurrentCommand`
 for a command on `drivetrain`, whatever a future mechanism happens to be
 called for one of its own. Add a second mechanism to `Robot` someday, and
-this method won't need to hear about it.
+this method won't need to hear about it. <!-- claim: commandsv3.command-requirements-and-mechanism-name -->
 
 **Add to `Robot`'s imports:**
 
@@ -649,7 +649,7 @@ coordinate convention: pushing the stick forward reads negative but means +X;
 pushing it left reads negative but means +Y. And because both bumper commands
 and the default translate require the Drivetrain, holding a bumper cancels
 the default (as expected); releasing it hands control back automatically —
-the same pattern from Lesson 2, now moving eight motors' worth of robot. The
+the same pattern from Lesson 2, now moving eight motors' worth of robot. <!-- claim: commandsv3.default-command-resumes --> The
 project should compile clean again.
 
 ---
@@ -672,7 +672,7 @@ to forget it before a match.
 Now the payoff for publishing `ModuleStates`: open AdvantageScope's **Swerve**
 tab and drag `NetworkTables/Telemetry/Drivetrain/ModuleStates` into its **States** slot
 (set the tab's *Max Speed* to about `5` — that's roughly what a Kraken-driven
-wheel tops out at in m/s). You get a live diagram of the chassis: one arrow
+wheel tops out at in m/s). <!-- claim: wpilib.kraken-x60-model --> You get a live diagram of the chassis: one arrow
 per module, direction showing steer angle, length showing wheel speed. Push
 the stick and all four arrows swing together and grow with speed; hold the
 left bumper and they snap into the pinwheel — the table above, drawn for you,
@@ -687,20 +687,20 @@ crawl into position, no overshoot, just patient. **Retune it the Lesson 5
 way** now that you can see it move: nudge `kP` up and watch the arrow snap
 into place faster. Verified against this model, `kP = 0.005` — ten times
 Lesson 5's value — gets within a degree in half a second and never overshoots
-(Figure 7.2 plots both gains). The gearbox adds real damping, so a bigger gain is both safe and needed here,
+(Figure 7.2 plots both gains). <!-- claim: l07.kp-005-within-1deg --> The gearbox adds real damping, so a bigger gain is both safe and needed here,
 the opposite of Lesson 5's ungeared case. This is the first moment you could
 actually see it and tune it.
 
 <a id="figure-7-2"></a>
 ![Two graphs of one steering module turning from 0 to 90 degrees through the 25 to 1 gearbox. Top, ten seconds: with kP 0.0005 the angle creeps up and is within one degree of 90 at 6.3 seconds and within 0.3 degrees at 9.0 seconds; with kP 0.005 it is there in half a second. Bottom, the first 1.5 seconds enlarged: the 0.005 curve climbs steeply and levels off at 90 with no overshoot, while 0.0005 is still at 60 degrees](images/07-steering-geared-two-gains.png)
 
-*Figure 7.2 — One steering module turning 90° through the real 25:1 gearbox, with Lesson 5's gain and with ten times it.*
+*Figure 7.2 — One steering module turning 90° through the real 25:1 gearbox, with Lesson 5's gain and with ten times it.* <!-- claim: l07.kp-0005-within-1deg, l07.kp-0005-within-third, l07.kp-005-within-1deg -->
 
 Figure 7.2 is the same tap as Lesson 5's [Figure 5.2](05-steering-p-control.md#figure-5-2), on the geared module.
 The top panel gives the whole ten seconds. The orange line, Lesson 5's
 `0.0005`, climbs slowly and smoothly: within a degree at 6.3 seconds, within
-a third of a degree at 9.0. The green line, ten times the gain, is within a degree
-after half a second, when the orange line is barely a quarter of the way there. The bottom panel zooms in on the first
+a third of a degree at 9.0. <!-- claim: l07.kp-0005-within-1deg, l07.kp-0005-within-third --> The green line, ten times the gain, is within a degree
+after half a second, when the orange line is barely a quarter of the way there. <!-- claim: l07.kp-005-within-1deg --> The bottom panel zooms in on the first
 second and a half so you can see green's shape: steep at the start, rounding off
 into 90° with nothing above the setpoint at all. Compare it with Lesson 5's
 orange ring. Same controller, same

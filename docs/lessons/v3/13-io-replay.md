@@ -88,7 +88,7 @@ Lesson 1.
 2. In the list of available dependencies, find **AdvantageKit** and
    install it.
 
-A new file, `vendordeps/AdvantageKit.json`, appears.
+A new file, `vendordeps/AdvantageKit.json`, appears. <!-- claim: advantagekit.vendordep-installs -->
 
 Lesson 1 told you that you never edit `build.gradle` for a vendor library,
 and for almost all of them that's true. AdvantageKit is the exception,
@@ -118,7 +118,7 @@ The file already has a `dependencies` block higher up; a second one adds
 to it rather than replacing it. The `annotationProcessor` line is the
 compile-time part, and the line above it reads AdvantageKit's version out
 of the vendordep file, so the two can never disagree. `replayWatch` is a
-shortcut you'll meet in section 11.
+shortcut you'll meet in section 11. <!-- claim: advantagekit.autolog-generates-class, advantagekit.replay-needs-no-sim-gui -->
 
 The second edit is about the simulator's window. **SimGUI** is a
 simulation *extension*: a plug-in loaded into your robot program when it
@@ -126,7 +126,7 @@ starts. It can change what the robot reads — the joysticks, enabled or
 disabled, which opmode is selected — and in a replay all of that has to
 come from the log and nowhere else. So AdvantageKit refuses to start a
 replay while any extension is loaded, and this template loads SimGUI every
-time.
+time. <!-- claim: advantagekit.replay-needs-no-sim-gui -->
 
 **Find this line, near the bottom of `build.gradle`:**
 
@@ -145,7 +145,7 @@ wpi.sim.addGui().defaultEnabled = System.getenv("AKIT_LOG_PATH") == null
 Every normal run still gets SimGUI. Only a run started with an
 **environment variable** named `AKIT_LOG_PATH` goes without it, and that
 variable is exactly how you'll start a replay in section 11. Build once
-(`./gradlew build`) to make sure both edits took.
+(`./gradlew build`) to make sure both edits took. <!-- claim: advantagekit.replay-needs-no-sim-gui -->
 
 ---
 
@@ -204,7 +204,7 @@ a subclass of `ModuleIOInputs` that knows how to write every field into a
 log and how to read every field back out of one. You'll never open that
 file (it lives under `build/`, where generated code goes), but you'll use
 it in section 6. Add a field to `ModuleIOInputs` later and the next build
-regenerates the class to match, so there's nothing to keep in sync by hand.
+regenerates the class to match, so there's nothing to keep in sync by hand. <!-- claim: advantagekit.autolog-generates-class -->
 
 ---
 
@@ -520,7 +520,7 @@ bundle under the module's key, `Drivetrain/Module0` and so on: one line for
 all of them, where you used to write one `Telemetry.log` per field. In a
 replay it does the opposite. There's no hardware, the IO reads nothing,
 and `processInputs` *loads* every field from the log, for this exact tick.
-Either way, every line after it sees the numbers the robot saw.
+Either way, every line after it sees the numbers the robot saw. <!-- claim: advantagekit.autolog-key-names -->
 
 Two things to sit with. First, the split between the two methods is a
 rule, not a style choice: **sense in `periodic()`, act in a command.**
@@ -529,7 +529,7 @@ harmless read-and-log — and the writes live in `setDesiredState`, which a
 command calls. Because the scheduler runs `periodic()` before any command
 each tick, the bundle is always fresh by the time `setDesiredState` reads
 it for the cosine error: **inputs first, then logic**, which is exactly
-what makes a tick reproducible. Second, look at the question-methods: they
+what makes a tick reproducible. <!-- claim: commandsv3.periodic-before-commands --> Second, look at the question-methods: they
 read the *bundle*, not the hardware. Every sensor fact now takes exactly
 one path into the program — which is why logging all of it is one line,
 sitting right where the bundle gets filled, instead of scattered wherever
@@ -760,16 +760,16 @@ kinds:
 - **Inputs** are what the robot *read*: sensors, the gyro, and (handled
   for you) the joysticks and the clock. They go through
   `Logger.processInputs`, which records them, and in a replay supplies
-  them.
+  them. <!-- claim: advantagekit.logged-opmode-robot-captures-ds -->
 - **Outputs** are what the robot *worked out* from those readings: a
   pose, a heading, the module states it asked for. They go through
   **`Logger.recordOutput`**, which records them in a live run. In a
   replay, your code works every one of them out again, and the new answer
-  is what gets recorded.
+  is what gets recorded. <!-- claim: advantagekit.replay-file-layout -->
 
 **Readings go through `processInputs`; everything you work out from them
 goes through `recordOutput`.** A value that's still logged with
-`Telemetry.log` shows up live, but it isn't part of the replay.
+`Telemetry.log` shows up live, but it isn't part of the replay. <!-- claim: advantagekit.telemetry-log-not-recorded -->
 
 `applyChassisSpeeds` ends by logging the module states it asked for. That's
 an output.
@@ -782,7 +782,7 @@ an output.
 
 `recordOutput` knows how to log a `SwerveModuleVelocity[]` (and a `Pose2d`,
 and a `Rotation2d`) on its own, so the `.struct` argument `Telemetry.log`
-needed goes away.
+needed goes away. <!-- claim: advantagekit.record-output-wpilib-types -->
 
 Now the method that used to be `logTelemetry()`. It reads the gyro first,
 gives each module its own read, and records what it works out.
@@ -829,7 +829,7 @@ to ask.
 The field widget is the one line that stays on `Telemetry.log`.
 AdvantageKit records values, not widgets, and the pose the widget draws is
 already recorded one line up, as `Drivetrain/Pose`. AdvantageScope can draw
-a field from that on its own.
+a field from that on its own. <!-- claim: advantagekit.telemetry-log-not-recorded -->
 
 And that's why the method needed a new name. It doesn't just report numbers
 any more: it's where the drivetrain reads every sensor, once a tick, and
@@ -882,7 +882,7 @@ same moment is when it puts the recorded values back. So the robot class
 changes to AdvantageKit's version of the one you've been using:
 `LoggedOpModeRobot`. It does everything `OpModeRobot` does (the same
 opmodes, found the same way, with the same `robotPeriodic()` and
-`simulationPeriodic()`), plus the capturing.
+`simulationPeriodic()`), plus the capturing. <!-- claim: advantagekit.logged-opmode-robot-captures-ds -->
 
 **In `Robot.java`, change the class line, and add the block below it:**
 
@@ -908,7 +908,7 @@ Anything built earlier could read the clock or a joystick while
 AdvantageKit isn't watching, and a replay can't put back a reading nobody
 recorded. Putting the block above every field makes it the very first
 thing to run. **Keep it at the top of the class**, above every field, as
-`Robot` grows over the coming lessons.
+`Robot` grows over the coming lessons. <!-- claim: advantagekit.start-from-instance-initializer -->
 
 **Replace the constructor with:**
 
@@ -953,13 +953,13 @@ date and time. In a replay, the *source* changes instead: `WPILOGReader`
 reads the recording, `setUseTiming(false)` lets the code race through it
 instead of waiting 20 ms per tick, and the results go to a new file with
 `_sim` on the end. `LogFileUtil.findReplayLog()` finds out which recording
-you mean; section 11 covers the ways to tell it.
+you mean; section 11 covers the ways to tell it. <!-- claim: advantagekit.data-receivers-and-files, advantagekit.find-replay-log-sources -->
 
 `DataLogManager` keeps going in a live run, so you'll get two files in
 `logs/` from now on. AdvantageKit's `akit_` file holds every input and
 every recorded output, and it's the one a replay reads. DataLogManager's
 `WPILIB_` file still saves everything published to NetworkTables, which
-includes anything still logged with `Telemetry.log`, like the field widget.
+includes anything still logged with `Telemetry.log`, like the field widget. <!-- claim: advantagekit.wpilib-log-saves-telemetry, advantagekit.data-receivers-and-files -->
 
 One output lives in `Robot` itself: the name of the command each mechanism
 is running. It's worked out from the scheduler, so it's an output too.
@@ -1029,7 +1029,7 @@ This time no window opens. `build.gradle` saw `AKIT_LOG_PATH` and left
 SimGUI out, `findReplayLog()` read the same variable, and the console says
 which file it's replaying. The whole thing takes a few seconds, most of
 it Gradle starting up, and a new file appears next to your recording,
-ending in `_sim.wpilog`.
+ending in `_sim.wpilog`. <!-- claim: advantagekit.replay-needs-no-sim-gui, advantagekit.find-replay-log-sources, l13.replay-wall-time -->
 
 **Then put both switches back:**
 
@@ -1042,30 +1042,30 @@ and set `kSimMode` back to `Mode.SIM`.
 > `$env:` sets a variable for this one terminal, until you close it or
 > remove it. While it's set, every `./gradlew run` in that terminal starts
 > without SimGUI. If the simulator window ever stops appearing, this is
-> the first thing to check.
+> the first thing to check. <!-- claim: advantagekit.replay-needs-no-sim-gui -->
 
 **Look at it.** When a replay finishes, AdvantageKit tries to hand the new
 file to AdvantageScope (the console says `Log sent to AdvantageScope.`).
 If AdvantageScope doesn't open it on its own, open the `_sim.wpilog` file
-yourself. Inside are three things worth finding:
+yourself. Inside are three things worth finding: <!-- claim: advantagekit.find-replay-log-sources -->
 
 - The inputs, at the top level: `Drivetrain/Module0/DrivePositionMeters`,
   `Drivetrain/Gyro/YawDegrees`, and the rest. These are the recording,
-  unchanged.
+  unchanged. <!-- claim: advantagekit.replay-file-layout -->
 - `RealOutputs`: what the robot worked out during the recording, copied
-  across.
+  across. <!-- claim: advantagekit.replay-file-layout -->
 - `ReplayOutputs`: what your code worked out just now, from the same
-  inputs.
+  inputs. <!-- claim: advantagekit.replay-file-layout -->
 
 Plot `RealOutputs/Drivetrain/Pose` and `ReplayOutputs/Drivetrain/Pose`
 together and you get one line. Measured on recorded drives in this
 course's simulator: the pose, the heading and the module states matched
 their replayed twins exactly, on every tick, and so did the name of the
-running command.
+running command. <!-- claim: advantagekit.replay-matches-recording -->
 
 > In one test, where a program moved the sticks partway through a loop,
 > the replayed *commands* reacted to a stick movement one tick (20 ms)
-> sooner than the live robot had. The pose still matched exactly.
+> sooner than the live robot had. The pose still matched exactly. <!-- claim: advantagekit.replay-matches-recording -->
 > AdvantageKit's own advice is to replay now and then and check that the
 > replayed outputs match the real ones, so a mismatch gets noticed early.
 
@@ -1083,7 +1083,7 @@ you can prove it without recording anything new.
 
 Replay the *same* recording again (`REPLAY`, the variable, `./gradlew run`)
 and compare the two poses. `ReplayOutputs/Drivetrain/Pose` now ends
-farther from where the robot started: measured, exactly 1.1 times as far.
+farther from where the robot started: measured, exactly 1.1 times as far. <!-- claim: l13.replay-scaled-ratio -->
 The run you're looking at happened before you made this change. Your new
 code just drove it again. In Figure 13.2, `getPosition()` is in the "your
 logic" box, below the line where the inputs come out of the file.
@@ -1095,7 +1095,7 @@ of forward, then left, then forward and right.
 <a id="figure-13-3"></a>
 ![Top-down track of one recorded drive. The recording and the unchanged replay lie exactly on top of each other, ending 4.78 m from the start. The replay with the 1.1 has the same shape, stretched away from the start, ending 5.26 m from it.](images/13-replay-scaled-pose.png)
 
-*Figure 13.3 — One recorded drive, replayed twice: the unchanged code lands on the recording; the code with `* 1.1` draws the same shape, stretched.*
+*Figure 13.3 — One recorded drive, replayed twice: the unchanged code lands on the recording; the code with `* 1.1` draws the same shape, stretched.* <!-- claim: l13.fig-recording-distance, l13.fig-scaled-distance -->
 
 Read the thick orange line first: that's `RealOutputs/Drivetrain/Pose`, the
 drive as the robot saw it while it was recorded. The black dashed line is the
@@ -1107,7 +1107,7 @@ from the start is 1.1 times as long, so the whole track is pushed away from
 the grey dot. The start doesn't move because odometry starts at (0, 0), and
 ten percent of nothing is nothing. The farther the robot goes, the bigger the
 gap: here the green line ends 5.26 m from the start where the recording ends
-4.78 m from it, 0.48 m apart.
+4.78 m from it, 0.48 m apart. <!-- claim: l13.replay-scaled-ratio, l13.fig-recording-distance, l13.fig-scaled-distance, l13.fig-scaled-gap -->
 
 **Put `getPosition()` back** — no `* 1.1` — and both switches with it.
 
@@ -1122,10 +1122,10 @@ code, replay the match, and see what the change would have done.
 > - **`./gradlew replayWatch`** replays the file AdvantageScope has open,
 >   then keeps watching your code: every time you save a change, it
 >   replays again. It's the fastest way to try fix after fix against one
->   run. Press Ctrl+C to stop it.
+>   run. Press Ctrl+C to stop it. <!-- claim: advantagekit.replay-needs-no-sim-gui, advantagekit.find-replay-log-sources -->
 > - **VS Code's Simulate Robot Code** (Ctrl+Shift+P → **WPILib: Simulate
 >   Robot Code**) asks which extensions to load. Untick **Sim GUI**, or
->   AdvantageKit won't start the replay.
+>   AdvantageKit won't start the replay. <!-- claim: advantagekit.vscode-simulate-extension-prompt, advantagekit.replay-needs-no-sim-gui -->
 
 ---
 
@@ -1135,10 +1135,10 @@ code, replay the match, and see what the change would have done.
    multiply `drivePositionMeters` by `1.1`: a fake "wheel slip" baked into
    the hardware layer. Record a run and replay it, then delete the `1.1`
    and replay the same recording again. Measured, the pose didn't move by
-   a millimetre. Now put the same `* 1.1` in `SwerveModule.getPosition()`
+   a millimetre. <!-- claim: l13.iolayer-bug-pose-shift --> Now put the same `* 1.1` in `SwerveModule.getPosition()`
    instead, record, remove it, and replay: this time the replay lands
    where the robot really was (measured, 0.66 m away from the recorded
-   pose). Work out why before reading on. The IO layer runs *before*
+   pose). <!-- claim: l13.getposition-replay-gap --> Work out why before reading on. The IO layer runs *before*
    `processInputs`, so its mistake is written into the recording, and a
    replay can't unread a reading. `getPosition()` runs after it, so it's a
    decision, and a replay makes every decision again. Figure 13.2 draws
@@ -1149,12 +1149,12 @@ code, replay the match, and see what the change would have done.
    into a `ChassisVelocities`), and record it with `Logger.recordOutput`
    under `Drivetrain/SpeedMetersPerSec`. Replay a recording you made
    *before* you wrote that line. The value is there in `ReplayOutputs`,
-   for a run that happened before the code to log it existed.
+   for a run that happened before the code to log it existed. <!-- claim: advantagekit.replay-file-layout -->
 3. **Change a gain, and replay.** Divide `HeadingConstants.kP` by four and
    replay a recording where you used the turn button. Compare
    `RealOutputs` with `ReplayOutputs` for `Drivetrain/DesiredModuleStates`,
    then for `Drivetrain/Pose`. Measured: the commanded module states
-   differed on 37 ticks; the pose didn't differ on any. The robot in the
+   differed on 37 ticks; the pose didn't differ on any. <!-- claim: l13.kp-quarter-desired-ticks, l13.kp-quarter-pose-ticks --> The robot in the
    recording never received the new commands, so its readings, and the pose
    built from them, can't change. A replay answers "what would my code
    have *decided*?", not "where would the robot have *gone*?" That second
@@ -1188,10 +1188,10 @@ Then the payoff. Because every reading comes through one door,
 AdvantageKit could stand in that doorway. `@AutoLog` wrote the code that
 logs each bundle; `Logger.processInputs` records the readings in a live
 run and supplies them in a replay; and everything worked out from them
-goes through `Logger.recordOutput`, so a replay works it all out again.
+goes through `Logger.recordOutput`, so a replay works it all out again. <!-- claim: advantagekit.autolog-generates-class -->
 `LoggedOpModeRobot` runs the loop so the clock and the joysticks are
 captured too, and logging starts in an **initializer block**, before
-anything that could read them is built.
+anything that could read them is built. <!-- claim: advantagekit.logged-opmode-robot-captures-ds, advantagekit.start-from-instance-initializer -->
 
 If one thing sticks, make it this: **readings go in through
 `processInputs`, decisions come out through `recordOutput`, and a replay

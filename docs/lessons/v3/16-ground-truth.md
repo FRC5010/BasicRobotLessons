@@ -166,7 +166,7 @@ toward `target`, never faster than `maxRate` per second — and handing it a
 **`Translation2d`** instead of a bare number is the whole trick. `vx` and
 `vy` don't get clamped separately; they're bundled into one 2D vector and
 rate-limited as a *magnitude*, so a diagonal acceleration is limited by the
-same grip a straight-line one is, not double-counted on each axis. Nothing
+same grip a straight-line one is, not double-counted on each axis. <!-- claim: wpilib.slew-rate-limit-translation --> Nothing
 stops you from repurposing a geometry type to hold a velocity instead of a
 position — `Translation2d` is just an (x, y) pair, and this is a legitimate
 use of one.
@@ -196,7 +196,7 @@ use of one.
 
 Read that as the scalar sibling of `slewRateLimit` — same idea, one number
 instead of two, written by hand because the library only ships the vector
-version.
+version. <!-- claim: wpilib.slew-rate-limit-translation -->
 
 The pose update deserves a slow read too. `m_velocity.toTwist2d(dtSeconds)`
 turns "this velocity, held for this long" into a **`Twist2d`** — how far the
@@ -208,7 +208,7 @@ straight line for the tick — and `Pose2d.plus(Transform2d)` — the same call
 `Drivetrain` doesn't use directly but that odometry does — composes it onto
 where the chassis already was. You're not approximating anything here; this
 is precisely what `SwerveDriveOdometry.update(...)` does under the hood,
-written out instead of hidden behind a library call.
+written out instead of hidden behind a library call. <!-- claim: wpilib.twist-exp-integration, wpilib.swerve-odometry-uses-twist-exp -->
 
 ---
 
@@ -282,7 +282,7 @@ same kind of value `applyChassisSpeeds` hands each module as a target — and
 **`toChassisVelocities`** runs kinematics backward: four wheel velocities
 in, the one chassis velocity they add up to out. It's the reverse of the
 `toSwerveModuleVelocities` call `applyChassisSpeeds` has made since Lesson
-10.
+10. <!-- claim: wpilib.swerve-kinematics-inverse -->
 
 **Delete the line that fed the old fake gyro from inside `applyChassisSpeeds`:**
 
@@ -392,11 +392,11 @@ few lines up, handed a `Pose2d` this time. The `if` matters in a replay as
 much as on a real robot: neither has a simulated chassis, so neither records
 a truth. A replay of a simulated run still shows the truth from the
 recording under `RealOutputs`; it just has no `ReplayOutputs` twin, because
-nothing in the replay could work it out again.
+nothing in the replay could work it out again. <!-- claim: advantagekit.replay-file-layout -->
 
 Open AdvantageScope's **Odometry** tab and put both `Localizer/Pose` and
 `Drivetrain/SimulatedPose` on the field at once. Both are outputs, so live
-they're under **AdvantageKit → RealOutputs**, not under **Telemetry**.
+they're under **AdvantageKit → RealOutputs**, not under **Telemetry**. <!-- claim: advantagekit.data-receivers-and-files -->
 Drive gently and they sit on top of each other. Then drive like you mean
 it — full stick from a stop, a hard reversal, a fast spin — and watch them
 separate. The wheel
@@ -417,24 +417,24 @@ it back.
 <a id="figure-16-1"></a>
 ![A graph over six seconds of how far ahead of the truth the estimate is, in centimeters, for three drives. A quarter-stick drive stays at zero. A full-stick start from a stop opens a gap of about 32 centimeters while the robot is moving, which closes to about 8 centimeters after the stick is released and then stays there. Driving full forward and then full reverse opens a gap of about 100 centimeters that closes only to about 78 centimeters and stays there.](images/16-estimate-creeps-ahead.png)
 
-*Figure 16.1 — How much farther the estimate has travelled than the truth, with the cameras left out.*
+*Figure 16.1 — How much farther the estimate has travelled than the truth, with the cameras left out.* <!-- claim: l16.gentle-gap, l16.hardstart-peak, l16.hardstart-held, l16.fwdrev-peak, l16.fwdrev-held -->
 
 The vertical axis is how much farther the estimate has travelled than
 the truth, in centimeters (zero means they agree), and the horizontal axis
 is time from the start of the drive. The gentle drive, a quarter of full
 stick for three seconds, is the grey line along zero: the tires never slip, so the estimate
-and the truth agree to within about 3 mm. It is there to show that the
+and the truth agree to within about 3 mm. <!-- claim: l16.gentle-gap --> It is there to show that the
 creep isn't a bug in the odometry: when the wheels do what the chassis
 does, it's right. The orange line is a full-stick start from a stop, held
 for a second and a half. The gap opens as the wheels get ahead of the
 chassis, reaches about **32 cm** while the robot is at full speed, shrinks
 as the chassis catches up when you let go, and then stops at
-about **8 cm**. It is flat from there on. That flat line is the
+about **8 cm**. <!-- claim: l16.hardstart-peak, l16.hardstart-held --> It is flat from there on. That flat line is the
 point of this section: nothing in the estimator knows a wheel slipped, so
 nothing takes the 8 cm back. The green line is a harder drive, full
 forward and then straight into full reverse. The tires slip at each
 change of direction, so it climbs twice, to about **100 cm**, and settles at about
-**78 cm**, again for good. The harder you ask the tires to work, the further
+**78 cm**, again for good. <!-- claim: l16.fwdrev-peak, l16.fwdrev-held --> The harder you ask the tires to work, the further
 ahead of the truth the estimate gets, and it never comes back on its own.
 
 ---
@@ -545,11 +545,11 @@ log says (3, 3), so the replay starts there; a real robot's says "not
 known", so the replay doesn't move the estimate. Every replay starts where
 its run did, and nothing has to be switched by hand. Measured: a simulated
 run and a run recorded with "not known" both replayed with `Localizer/Pose`
-matching the recording on every tick, starting at (3, 3) and at (0, 0).
+matching the recording on every tick, starting at (3, 3) and at (0, 0). <!-- claim: advantagekit.replay-matches-recording, advantagekit.replay-loads-first-tick-in-constructor -->
 
 It can sit in the constructor because logging already started, in the block
 at the top of `Robot`. A replay loads the log's first tick before anything is
-built, and that tick holds what the constructor recorded.
+built, and that tick holds what the constructor recorded. <!-- claim: advantagekit.replay-loads-first-tick-in-constructor, advantagekit.start-from-instance-initializer -->
 Now run the robot in simulation → **RobotTeleop**. The first thing
 you'll feel is the grip limit: push the stick to full and the robot doesn't
 reach speed instantly — it ramps, the way a real chassis with real tires
@@ -559,17 +559,17 @@ plots one start and one release.
 <a id="figure-16-3"></a>
 ![Speed against time for a full-stick start from a stop and a release 1.5 seconds later: the requested speed is a step up to 4.8 m/s and back to zero; the true chassis speed climbs in a straight line at 11.77 m/s² to the top in under half a second, holds, and falls at the same slope after the release](images/16-grip-limit.png)
 
-*Figure 16.3 — Full stick from a stop, then let go. The dashed line is what you asked for; the orange line is what the chassis did.*
+*Figure 16.3 — Full stick from a stop, then let go. The dashed line is what you asked for; the orange line is what the chassis did.* <!-- claim: l16.grip-slope, l16.grip-time-to-top, wpilib.kraken-x60-model -->
 
 The dashed line is the stick: a jump to full speed (about 4.8 m/s) at time
-zero, and a jump back to zero at 1.5 s. The orange line is
+zero, and a jump back to zero at 1.5 s. <!-- claim: wpilib.kraken-x60-model --> The orange line is
 `ChassisSimulation`'s speed, and the thing to notice is that it's a straight
 line. The chassis can't change speed faster than the tires can push, so every
 tick it takes the same small step toward the request, and a steady step per
 tick is a constant slope. Measured, that slope is 11.77 m/s², the
-`kMaxAccelMps2` you computed in section 2 (1.2 × 9.81). It reaches the top
+`kMaxAccelMps2` you computed in section 2 (1.2 × 9.81). <!-- claim: l16.grip-slope --> It reaches the top
 about 0.45 s after the stick moves, and on release it comes back down at the
-same slope, because the limit doesn't care which direction the change goes.
+same slope, because the limit doesn't care which direction the change goes. <!-- claim: l16.grip-time-to-top, l16.grip-slope -->
 Drive
 hard enough to make `Localizer/Pose` and `Drivetrain/SimulatedPose`
 separate, the way section 6 showed you, then park somewhere a tag is
@@ -577,7 +577,7 @@ visible. Watch `Localizer/Pose` get pulled back toward
 `Drivetrain/SimulatedPose` (the same pull as [Figure 14.2](14-pose-estimator.md#figure-14-2), toward
 the truth this time) — odometry for smoothness, vision for truth,
 with, for the first time, a truth to compare against instead of a guess
-checking itself.
+checking itself. <!-- claim: wpilib.pose-estimator-vision-trust -->
 
 ---
 

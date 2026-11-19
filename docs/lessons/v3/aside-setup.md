@@ -40,7 +40,7 @@ the classic track uses, just pointed at the alpha instead of the released
 season — and its New Project wizard even has an OpMode template. What that
 template doesn't have is **Commands V3**, the coroutine-style command
 framework this whole track is built around — it's a separate add-on
-vendordep, not something the wizard wires in for you. So instead of
+vendordep, not something the wizard wires in for you. <!-- claim: wpilib-tools.installer-contents --> So instead of
 generating a project and then hand-adding that piece yourself, this course
 hands you a starting project with it already in place, using a script this
 course already uses on itself. That's not a downgrade so much as a
@@ -61,13 +61,13 @@ those separately.
 GitHub](https://github.com/wpilibsuite/allwpilib/releases). Grab
 **v2027.0.0-alpha-8** — the current top alpha for this season — and pick
 the file for your OS (`.iso` for Windows, `.dmg` for macOS, `.tar.gz` for
-Linux).
+Linux). <!-- claim: wpilib-tools.installer-contents -->
 
 **Run it.** On Windows, right-click the downloaded `.iso` and choose
 **Mount**, then launch `WPILibInstaller.exe` (7-Zip's "Extract to..." works
 too, if nothing offers to mount it). Press **Start**, then choose
 **Everything** — not **Tools Only** — so you get VS Code, the JDK, Gradle,
-and the extension in one pass instead of just the standalone dashboards.
+and the extension in one pass instead of just the standalone dashboards. <!-- claim: wpilib-tools.installer-contents -->
 **Install for this User** is the option that doesn't need administrator
 access.
 
@@ -76,7 +76,7 @@ computer only."** VS Code can't be bundled directly into the installer for
 licensing reasons, so this step fetches it separately — it's a ~300MB
 download. The installer keeps its own copy of VS Code per season (you'll
 see it as **WPILib VS Code 2027**), so it won't touch any VS Code you
-already have installed for other work.
+already have installed for other work. <!-- claim: wpilib-tools.installer-contents -->
 
 Once it finishes, launch **WPILib VS Code 2027** — not any other VS Code
 shortcut on your machine — to confirm it opens.
@@ -119,7 +119,7 @@ up under your profile.
 
 Section 1's installer already gave you a JDK — this alpha bundles **Eclipse
 Temurin 25**, matching what this course's `build.gradle` targets directly
-(`sourceCompatibility = JavaVersion.VERSION_25`). You don't need to install
+(`sourceCompatibility = JavaVersion.VERSION_25`). <!-- claim: gradlerio.requires-jdk-25, wpilib-tools.installer-contents --> You don't need to install
 one yourself. This section is just making sure Gradle actually finds it,
 which matters most if you also did the classic track's setup — that one
 runs on **Java 17**, a different JDK entirely, so you'll have two JDKs on
@@ -140,7 +140,7 @@ set the `JAVA_HOME` environment variable to its install folder, or use
 `JAVA_HOME` system-wide. This isn't optional bookkeeping — Gradle fails
 loudly (`invalid source release: 25`) rather than quietly picking a JDK that
 doesn't match, so it's worth confirming now rather than three commands from
-now.
+now. <!-- claim: gradlerio.requires-jdk-25, gradlerio.org-gradle-java-home -->
 
 ---
 
@@ -152,7 +152,7 @@ carry Commands V3 — so instead of generating one and then hand-adding that
 piece, you're going to ask this course's own repository for a clean copy of
 the one it already ships: `code/OpModeV3Robot`, the pristine 2027 alpha
 template every lesson in this track builds forward from, Commands V3
-already wired in.
+already wired in. <!-- claim: gradlerio.template-has-commandsv3 -->
 
 First, one more tool that neither WPILib nor Git installs: **Python 3**.
 The course's scripts use it whenever they install a vendordep, and the
@@ -235,7 +235,7 @@ Figure S.1 shows the three places, and the one direction your work travels.
 The two black arrows are this page's work (section 4's script, then section
 7's push); the crossed-out one is the mistake to avoid.
 
-**Verify it builds:**
+**Verify it builds:** <!-- claim: gradlerio.run-starts-simgui -->
 
 ```powershell
 cd ~/dev/MyOpModeRobot
@@ -253,11 +253,11 @@ debugging) against this alpha's project shape, so this page doesn't rely on
 them. Everything above and below works from a plain terminal, in whatever
 editor you like. If the extension's buttons do work for you, great, use
 them; if `F5` doesn't do anything, `./gradlew run` from a terminal is
-the path every lesson in this track was actually verified against. When a
+the path every lesson in this track was actually verified against. <!-- claim: gradlerio.run-starts-simgui --> When a
 lesson says "run the robot in simulation", either one will do.
 
 Set your team number in `.wpilib/wpilib_preferences.json` — the template
-ships `5010`, same as the classic track's.
+ships `5010`, same as the classic track's. <!-- claim: gradlerio.template-project-config -->
 
 ---
 
@@ -271,7 +271,7 @@ git branch -M main
 ```
 
 The template already ships with a `.gitignore` that excludes `build/`,
-`.gradle/`, and other things that shouldn't be tracked. Trust it — don't
+`.gradle/`, and other things that shouldn't be tracked. <!-- claim: gradlerio.template-project-config --> Trust it — don't
 hand-edit unless you have a specific reason.
 
 **See what Git sees:**

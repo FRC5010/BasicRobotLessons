@@ -1,0 +1,110 @@
+# Numbers Lesson 4 (simulation) quotes that a library change could move. Format: tools/claims/README.md.
+# Method: the Lesson 4 rig (CLAUDE.md, 'Batch 2 found'); data in tools/figures/data/04-velocity-*.csv.
+
+[[claim]]
+id = "l04.steady-velocity"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "driveAtSpeed(0.3) on the lesson's DCMotorSim settles at 30.5 rotations per second on 3.6 V, for either inertia."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 4 rig (steady 30.47 rot/s on 3.598 V)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "30.5 rotations per second (section 6 and the alt text)"
+unit = "rot/s"
+range = [30.45, 30.55]
+measured = "30.47 rot/s; 30.469 in the figure's data"
+figure = "04-velocity-two-inertias.png"
+note = "Derived from the Kraken model and the 12 V battery, so it also moves with wpilib.kraken-x60-model and wpilib.sim-battery-rests-at-12v."
+
+[[claim]]
+id = "l04.light-wheel-63pct"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With inertia 0.001 the wheel covers the first 63% of the way to its steady speed in about 0.16 s after the press."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 4 rig (J = 0.001: 63% at 0.16 s after the press)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "about 0.16 s"
+unit = "s"
+range = [0.15, 0.17]
+measured = "0.16 s"
+figure = "04-velocity-two-inertias.png"
+
+[[claim]]
+id = "l04.light-wheel-ramp-half-second"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "With inertia 0.001 the velocity is at its steady value within half a second of the press and back to zero within half a second of letting go."
+evidence = "tools/figures/data/04-velocity-j001.csv: reads 30.47 from 0.16 s, 95% at 0.34 s and 99% at 0.48 s after the plot starts, and under 0.5 rot/s 0.38 s after the release"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "within half a second (the alt text, both)"
+unit = "s"
+range = [0.0, 0.5]
+measured = "99% by 0.48 s; under 0.5 rot/s 0.38 s after release"
+figure = "04-velocity-two-inertias.png"
+note = "The 99% point (0.48 s) sits just under the limit; the figure's own CSV is the only record."
+
+[[claim]]
+id = "l04.heavy-wheel-one-second"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With inertia 0.05 the wheel is only at about 6 rot/s after one second held."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 4 rig (J = 0.05: 5.7 rot/s after a 1 s hold); data/04-velocity-j05.csv reads 5.6 at 1.0 s"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "about 6 rot/s (section 6); under 6 (the alt text)"
+unit = "rot/s"
+range = [5.0, 6.0]
+measured = "5.6-5.7 rot/s"
+figure = "04-velocity-two-inertias.png"
+
+[[claim]]
+id = "l04.heavy-wheel-63pct"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With inertia 0.05 and the button held, 63% of the steady speed takes about 4.6 s."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 4 rig (J = 0.05 held: 63% at 4.55 s); data/04-velocity-j05-long.csv reads 4.54 s"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "about 4.6 s"
+unit = "s"
+range = [4.5, 4.7]
+measured = "4.54-4.55 s"
+figure = "04-velocity-two-inertias.png"
+
+[[claim]]
+id = "l04.heavy-wheel-settle"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "With inertia 0.05 and the button held, the wheel is close to its steady speed after 15 s or so and settled by about 20 s."
+evidence = "tools/figures/data/04-velocity-j05-long.csv (the 20 s run): 95% of 30.47 at 13.5 s, 98.8% at 20 s. No CLAUDE.md block records these two."
+measured_on = "alpha-8"
+method = "RIG"
+wording = "close to the steady value after 15 or so (section 6); about 20 seconds to settle (the alt text)"
+unit = "s"
+range = [14.0, 21.0]
+measured = "95% at 13.5 s; 98.8% at 20 s"
+figure = "04-velocity-two-inertias.png"
+note = "The two wordings describe different closeness ('close to' and 'settle'), so the range spans both, 14 to 21 s."
+
+[[claim]]
+id = "l04.velocity-reading-delay"
+kind = "number"
+library = ["phoenix6"]
+criticality = "C3"
+statement = "The TalonFX velocity reading stays 0 for about a tenth of a second after the press while the model is already moving."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 4 rig (the velocity reading stays 0 for about 0.12-0.14 s after the press; cause, status-signal latency, is a guess); data/04-velocity-j001.csv reads 0 until 0.14 s"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "the first tenth of a second or so"
+unit = "s"
+range = [0.05, 0.15]
+measured = "0.12-0.14 s"
+figure = "04-velocity-two-inertias.png"

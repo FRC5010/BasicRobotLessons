@@ -1,0 +1,119 @@
+# Numbers Lesson 16 (ground truth) quotes that a library change could move.
+# Format: tools/claims/README.md. Figure 16.1/16.3 data: tools/figures/data/16-creep-*.csv, from
+# tools/figures/probes/Fig16EstimateCreeps.java (real Drivetrain and Localizer, cameras off).
+# Figure 16.1 plots how much farther the estimate has travelled than the truth (both unsigned).
+
+[[claim]]
+id = "l16.gentle-gap"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C2"
+statement = "On a quarter-stick drive, the estimate and the truth agree to within about 3 mm of travelled distance."
+evidence = "tools/figures/data/16-creep-gentle-a.csv and -b.csv (largest gap 0.3 cm); CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 16, quarter stick for 3 s ends 0.0 cm off (0.7 cm at the worst, a different measure)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "to within about 3 mm"
+unit = "mm"
+range = [2.0, 4.0]
+measured = "3 mm largest travelled-distance gap in Figure 16.1's data; 0.7 cm worst position error in the re-measure"
+test = "tools/figures/probes/Fig16EstimateCreeps.java"
+figure = "16-estimate-creeps-ahead.png"
+
+[[claim]]
+id = "l16.hardstart-peak"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C2"
+statement = "A full-stick start from a stop held 1.5 s opens a gap of about 32 cm (estimate ahead of the truth) while the robot is at speed."
+evidence = "tools/figures/data/16-creep-hardstart-a.csv and -b.csv (31.7 cm); CLAUDE.md, 'Batch 1 found' / 'Batch 2 found', Lesson 16, Figure 16.1"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 32 cm (Figure 16.1's alt text: about 32 centimeters)"
+unit = "cm"
+range = [31.0, 33.0]
+measured = "31.7 cm in both runs (re-measure on position error: 34 cm at the worst)"
+test = "tools/figures/probes/Fig16EstimateCreeps.java"
+figure = "16-estimate-creeps-ahead.png"
+
+[[claim]]
+id = "l16.hardstart-held"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C2"
+statement = "After the stick is released, the full-stick start's gap closes to about 8 cm and stays there."
+evidence = "tools/figures/data/16-creep-hardstart-a.csv and -b.csv (7.9 cm); CLAUDE.md, 'Batch 1 found', Lesson 16 (a full-stick start holds 7.9 cm ahead, 31.7 cm worst)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 8 cm (alt text: about 8 centimeters)"
+unit = "cm"
+range = [7.0, 9.0]
+measured = "7.9 cm in both runs"
+test = "tools/figures/probes/Fig16EstimateCreeps.java"
+figure = "16-estimate-creeps-ahead.png"
+
+[[claim]]
+id = "l16.fwdrev-peak"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C2"
+statement = "Driving full forward and then straight into full reverse opens a gap of about 100 cm."
+evidence = "tools/figures/data/16-creep-fwdrev-a.csv and -b.csv (101.8 cm); CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 16 (98 cm at the worst, position error) and 'Batch 1 found' (102 cm worst)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 100 cm (alt text: about 100 centimeters)"
+unit = "cm"
+range = [90.0, 110.0]
+measured = "101.8 cm in both runs; 98 cm and 102 cm in CLAUDE.md"
+test = "tools/figures/probes/Fig16EstimateCreeps.java"
+figure = "16-estimate-creeps-ahead.png"
+note = "The measurements (101.8, 102, 98) fall outside the +-1 cm range the 'about 100' rule gives; reported as a disagreement. Range per the README round-number rule (about 100: a unit is ten), 2026-11-19; the measured 98-102 cm fits."
+
+[[claim]]
+id = "l16.fwdrev-held"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C2"
+statement = "After the forward-then-reverse drive the gap settles at about 78 cm and stays."
+evidence = "tools/figures/data/16-creep-fwdrev-a.csv and -b.csv (77.8 and 78.1 cm); CLAUDE.md, 'Batch 1 found', Lesson 16 (forward then reverse holds 78 cm)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 78 cm (alt text: about 78 centimeters)"
+unit = "cm"
+range = [77.0, 79.0]
+measured = "77.8 and 78.1 cm"
+test = "tools/figures/probes/Fig16EstimateCreeps.java"
+figure = "16-estimate-creeps-ahead.png"
+
+[[claim]]
+id = "l16.grip-slope"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C2"
+statement = "With kWheelCoF 1.2, the true chassis speed ramps at 11.77 m/s^2 on a full-stick start and on release."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 16, the grip limit (the true chassis speed ramps at 11.77 m/s^2 both ways); tools/figures/data/16-creep-hardstart-a.csv (0.2355 m/s per 20 ms tick)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "11.77 m/s^2"
+unit = "m/s^2"
+range = [11.765, 11.775]
+measured = "11.77 m/s^2 (0.2355 m/s per tick) up and down"
+test = "tools/figures/probes/Fig16EstimateCreeps.java"
+figure = "16-grip-limit.png"
+note = "Equals kWheelCoF x 9.81, so it depends on the course's constant and on slewRateLimit's arithmetic, not on a motor model."
+
+[[claim]]
+id = "l16.grip-time-to-top"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C2"
+statement = "The true chassis speed reaches its top about 0.45 s after a full-stick request (in under half a second)."
+evidence = "tools/figures/data/16-creep-hardstart-a.csv (speed 4.709 m/s at 0.44 s, 4.784 at 0.46 s, top 4.793); CLAUDE.md, 'Batch 2 found', Lesson 16 (reaches 90% at 0.42 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 0.45 s; under half a second"
+unit = "s"
+range = [0.44, 0.46]
+measured = "0.46 s to within 0.2% of the top speed; 0.42 s to 90%"
+test = "tools/figures/probes/Fig16EstimateCreeps.java"
+figure = "16-grip-limit.png"
+note = "Includes the two ticks before the chassis first moves; the top speed (4.793 m/s) sits 0.3% above kMaxSpeed's 4.780, not looked into."

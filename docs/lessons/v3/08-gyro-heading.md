@@ -67,7 +67,7 @@ import static org.wpilib.units.Units.Degrees;
 ```
 
 Reading yaw has the same shape as reading motor position: `getYaw()` returns a
-signal, `.getValue().in(Degrees)` pulls the number out in the unit you want.
+signal, `.getValue().in(Degrees)` pulls the number out in the unit you want. <!-- claim: phoenix6.get-value-in-units -->
 Sensors all feel alike once you've read one.
 
 Finally, log it — the same two audiences as the module states from Lesson 7.
@@ -85,7 +85,7 @@ slot — same fact, packaged for a tool that draws instead of plots.
 `Telemetry.log` has a single-value overload for exactly this, the same idea
 as the module-states array from Lesson 7: hand it the value plus
 **`Rotation2d.struct`**, and it publishes the structured type instead of a
-bare number. (`Rotation2d` is already imported from Lesson 7.)
+bare number. <!-- claim: wpilib.telemetry-log-overloads --> (`Rotation2d` is already imported from Lesson 7.)
 
 ---
 
@@ -203,12 +203,12 @@ fresh `omega` from the current error, hands it to `commandRotation`, then
 out by hand because this loop has real work to do on every pass, not just a
 condition to poll. The moment the error drops under 2°, the loop exits and the
 coroutine body is out of code — finished, the same way `driveDistance`
-finished in Lesson 6.
+finished in Lesson 6. <!-- claim: commandsv3.coroutine-await-yield-wait -->
 
 And because Lesson 6's rule about endings ([Figure 6.1](06-distance-and-commands.md#figure-6-1)) hasn't gone anywhere:
 `.whenExited(() -> commandRotation(0.0))` stops the turn whether the loop
 finished or something interrupted this command first. Two endings, one stop,
-same as `driveDistance`. The clamp
+same as `driveDistance`. <!-- claim: commandsv3.when-exited-on-cancel --> The clamp
 is tighter than Lesson 5's `±1.0` on purpose: full-power spins are violent,
 and a heading turn never needs more than half throttle. And because the
 finish condition calls the *same* `headingError` the loop body used, "done"
@@ -218,7 +218,7 @@ itself.
 **Add a private `clamp` helper to `Drivetrain`** — this alpha's WPILib has no
 `MathUtil.clamp` (Lesson 7 already found that out), and `Drivetrain` needs
 its own copy; it's a different class from `SwerveModule`, so it can't reach
-that one's private helper:
+that one's private helper: <!-- claim: wpilib.no-mathutil-clamp -->
 
 ```java
 /** Keeps 'value' between 'min' and 'max'. */
@@ -261,7 +261,7 @@ robot.driverController.faceRight().onTrue(robot.drivetrain.turnToHeading(0));
 
 Because `turnToHeading` requires the Drivetrain, pressing the bottom button
 cancels the default translate command; when it finishes (or is interrupted by
-the right button), the default resumes automatically. Unlike Lesson 5's
+the right button), the default resumes automatically. <!-- claim: commandsv3.default-command-resumes --> Unlike Lesson 5's
 `steerToAngle`, this command *finishes* — so the stick comes back to life on
 its own the moment the robot faces 90°.
 
@@ -316,29 +316,29 @@ rotation command. Verified against this model: from a standing start,
 `turnToHeading(90)` gets inside the band in about 0.7 seconds — no
 overshoot, no oscillation, because integrating a commanded rate has no
 momentum to fight, unlike the bare motor that rang in Lesson 5's
-[Figure 5.2](05-steering-p-control.md#figure-5-2).
+[Figure 5.2](05-steering-p-control.md#figure-5-2). <!-- claim: l08.turn-exit-time -->
 
 <a id="figure-8-1"></a>
 ![Two stacked graphs of turnToHeading(90). Top: the heading rises in a straight line, then curves in and levels off at 88.2 degrees, inside the grey 2 degree band around the 90 degree target; the loop exits at 0.70 seconds. Bottom: the commanded omega is flat at the 0.5 limit until about 0.38 seconds, then falls in steps towards zero and drops to zero when the loop exits](images/08-turn-to-heading.png)
 
-*Figure 8.1 — `turnToHeading(90)`: the heading, the `omega` the command sends, and where the loop stops.*
+*Figure 8.1 — `turnToHeading(90)`: the heading, the `omega` the command sends, and where the loop stops.* <!-- claim: l08.turn-exit-time, l08.turn-exit-heading, l08.clamp-release-time -->
 
 Figure 8.1 shows the saturated start and the P tail. Read the bottom panel
 first, because it explains the top one. For the first 0.38 seconds `omega`
 is flat at 0.5: the error is more than 25°, so `kP × error` would ask for
-more than the `±0.5` clamp allows, and the clamp wins. The heading in the
+more than the `±0.5` clamp allows, and the clamp wins. <!-- claim: l08.clamp-release-time --> The heading in the
 top panel is a straight line for the same stretch, because turning at a
 constant rate is a straight line. Once the error falls under 25° (`0.5 ÷
 0.02`) the clamp lets go and `omega` becomes `kP × error`, shrinking with
 the gap — it's Lesson 5's fading push again — and the heading curves in
 like the tail of Figure 5.1's first swing, with no ringing. At 0.70 seconds the error is under 2°, the loop
-exits, and `.whenExited` commands zero. The heading sits at 88.2°: inside the grey band, not on
-the target, and that is exactly what "within 2°" means.
+exits, and `.whenExited` commands zero. <!-- claim: l08.turn-exit-time --> The heading sits at 88.2°: inside the grey band, not on
+the target, and that is exactly what "within 2°" means. <!-- claim: l08.turn-exit-heading -->
 
 One small oddity: the heading reads 0° for the first 0.12 seconds even
 though `omega` is already 0.5, then jumps to 25°. That looks like the
 simulated gyro's reading catching up (we didn't dig into it); it doesn't change the
-shape of anything after it.
+shape of anything after it. <!-- claim: l08.gyro-zero-delay, l08.gyro-first-jump -->
 
 Then watch the same thing as a picture: open the **Swerve** tab from Lesson 7
 (with `NetworkTables/Telemetry/Drivetrain/ModuleStates` in its **States** slot) and drop

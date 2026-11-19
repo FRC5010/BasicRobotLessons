@@ -98,7 +98,7 @@ enough. Watching one wheel works for straight-ahead driving because, with all
 four wheels aimed the same direction at the same speed, they all cover the
 same distance. Two endings, same as every finishing command since Lesson
 6 ([Figure 6.1](06-distance-and-commands.md#figure-6-1)) — and the same answer: `.whenExited(...)` stops the wheels whether the
-loop finished or something interrupted it. If that is starting to feel
+loop finished or something interrupted it. <!-- claim: commandsv3.when-exited-on-cancel --> If that is starting to feel
 routine, good — routine is the point.
 
 ---
@@ -169,7 +169,7 @@ public static Command driveTurnDrive(Drivetrain drivetrain) {
 ```
 
 **`coroutine.await(command)`** schedules `command` and suspends this
-coroutine right there until it finishes — then the next line runs. Read the
+coroutine right there until it finishes — then the next line runs. <!-- claim: commandsv3.coroutine-await-yield-wait --> Read the
 method top to bottom and it *is* the plan you'd say out loud: drive a meter,
 await it; turn to ninety, await it; drive a meter, await it. No decorators
 gluing pieces together from outside — the sequencing *is* the code's own
@@ -188,7 +188,7 @@ of how you write the sequence. It matters the moment a routine mixes
 mechanisms — drive somewhere, then run an arm, then drive again — where a
 `sequence(...)` group would hold the *drivetrain* mechanism reserved even
 during the arm step it doesn't need, while an awaited version only ever holds
-exactly what the current step is using. Get comfortable with the shape now;
+exactly what the current step is using. <!-- claim: commandsv3.sequence-requires-union --> Get comfortable with the shape now;
 it pays off the moment this robot has more than one mechanism to coordinate.
 
 Both versions produce a working `Autos.driveTurnDrive` — this course uses the
@@ -230,7 +230,7 @@ import first.robot.commands.Autos;
 `robot.driverController.faceDown()` gives you — except its condition isn't a
 button, it's "is the Driver Station currently in Autonomous, and enabled."
 `.onTrue(...)` schedules `driveTurnDrive` the instant that becomes true,
-exactly once per enable, the same `onTrue` you've used since Lesson 5.
+exactly once per enable, the same `onTrue` you've used since Lesson 5. <!-- claim: commandsv3.robot-mode-triggers-autonomous -->
 
 Why does this belong in the constructor and not `start()`? The same reason
 every other binding has, since Lesson 1: the constructor is where an opmode
@@ -238,7 +238,7 @@ says what it *is*, and it runs while the robot is still disabled, so the
 trigger is in place before you click **Enable**. A binding made there is
 also *scoped* to `RobotAuto` specifically: it's torn down the moment the
 Driver Station selects a different opmode, the same scoping that already
-protects every button binding you've written.
+protects every button binding you've written. <!-- claim: wpilib.opmode-lifecycle, commandsv3.opmode-bindings-dropped -->
 
 Run the robot in simulation, pick **Autonomous** and then **Drive Turn
 Drive** from the OpMode drop-down, click **Enable**, and watch your plots and the Swerve tab.
@@ -298,7 +298,7 @@ That's not a bug — it's the honest answer to "how much of my rolling points
 the right way": at 180° off, rolling backward *is* rolling the right way.
 WPILib ships this exact idea as `SwerveModuleVelocity.cosineScale` (Lesson
 7's renamed `SwerveModuleState`), which you'll be able to swap in once
-Lesson 10 has the module speaking in states.
+Lesson 10 has the module speaking in states. <!-- claim: wpilib.swerve-module-velocity-cosine-scale -->
 
 Re-run the auto and watch the module arrows at the transitions again: the
 drive effort now waits on the wheels. It stays small (and even points
@@ -310,20 +310,20 @@ right direction. One line, a cleaner auto.
 <a id="figure-9-1"></a>
 ![Two panels over the first 0.8 seconds of turnToHeading(90): the front-left module's steering angle climbs slowly from 0 toward its 135 degree target, and its drive throttle is a steady 0.5 without the cosine line but goes negative and shrinks toward zero with it](images/09-cosine-scrub.png)
 
-*Figure 9.1 — The start of step 2 for the front-left module, with and without `cos(error)`.*
+*Figure 9.1 — The start of step 2 for the front-left module, with and without `cos(error)`.* <!-- claim: l09.turn-exit-time, l09.wheel-angle-at-exit, l09.throttle-without-cos, l09.throttle-min-with-cos -->
 
 Figure 9.1 shows the same first 0.8 seconds with and without it, for one
 module (the front left, whose pinwheel angle is 135°). Start with the top
 panel: that's the steering angle, a straight, slowish climb from 0° toward
 135°. The grey line is where the turn command finishes, 0.70 s in, and the wheel
-has only reached about 54° by then. (The simulated heading follows the commanded
+has only reached about 54° by then. <!-- claim: l09.turn-exit-time, l09.wheel-angle-at-exit --> (The simulated heading follows the commanded
 rotation rate, not the wheels, so the turn doesn't wait for them.) Now the
 bottom panel. Without the cosine line, the drive throttle jumps to 0.5 and holds
 there for almost 0.4 s while the wheel is pointed nowhere near where it will end
-up: that's the scrub. With the line, the throttle is never 0.5. It goes
+up: that's the scrub. <!-- claim: l09.throttle-without-cos --> With the line, the throttle is never 0.5. It goes
 *negative*, to about −0.30, because the wheel is more than 90° from its target
 and cosine is negative out there (the backward-rolling case from a moment ago),
-then shrinks toward zero as the error closes in on 90°.
+then shrinks toward zero as the error closes in on 90°. <!-- claim: l09.throttle-min-with-cos -->
 
 ---
 
@@ -334,14 +334,14 @@ say, running a mechanism (once you have one) alongside a drive step. Two tools,
 both static methods on `Command`, both returning a builder that needs
 `.named(...)`:
 
-- **`Command.parallel(a, b)`** runs both and finishes when **all** are done.
+- **`Command.parallel(a, b)`** runs both and finishes when **all** are done. <!-- claim: commandsv3.parallel-race-optional -->
 - **`Command.race(a, b)`** runs both, but finishes the instant **any one**
-  of them finishes, canceling the rest.
+  of them finishes, canceling the rest. <!-- claim: commandsv3.parallel-race-optional -->
 
 <a id="figure-9-2"></a>
 ![Timelines of commands A and B under Command.sequence, parallel, race and parallel with optional, with a dashed line where each group ends and the cut-off part of any command that was canceled](images/09-sequence-parallel-race.svg)
 
-*Figure 9.2 — When each group ends: `sequence` ends with its last command, `parallel` with the slowest, `race` with the fastest, and `.optional(...)` with the required command.*
+*Figure 9.2 — When each group ends: `sequence` ends with its last command, `parallel` with the slowest, `race` with the fastest, and `.optional(...)` with the required command.* <!-- claim: commandsv3.parallel-race-optional -->
 
 Figure 9.2 draws all four, using one pair of commands, A and B, each time. The
 dashed line marks the moment the whole group is done, and a dashed "cut off"
@@ -366,14 +366,14 @@ keep the group alive — the group finishes based on its required commands
 alone, and optional ones just get cancelled when that happens. That's exactly
 "run this, and something else alongside it for as long as it takes" — one
 designated command sets the pace, everything else just comes along for the
-ride.
+ride. <!-- claim: commandsv3.parallel-race-optional -->
 
 **One hard rule, and this framework tells you about it immediately:** two
 *required* commands in a parallel group must not use the same mechanism.
 Try `Command.parallel(drivetrain.driveDistance(1.0), drivetrain.turnToHeading(90))`
 and building it throws right away — `IllegalArgumentException: Commands
 running in parallel cannot share requirements` — not a mysterious runtime
-hang, a clear error the moment you build the group. Both of those require
+hang, a clear error the moment you build the group. <!-- claim: commandsv3.parallel-shared-requirements-throws --> Both of those require
 the Drivetrain, so they'd fight over the same actuator. The way to *combine*
 translation and rotation on one mechanism is Lesson 10's
 `SwerveDriveKinematics`.
@@ -430,7 +430,7 @@ small `@Autonomous` class, not a dropdown living inside a bigger one.
    distance` parameter so the same factory makes short and long autos, and
    add a third `@Autonomous` opmode that calls it with a different distance.
 3. **Code — a deliberate wait.** Add a `coroutine.wait(Seconds.of(1.0))`
-   between two of the `await` calls and watch the pause on your plots. When
+   between two of the `await` calls and watch the pause on your plots. <!-- claim: commandsv3.coroutine-await-yield-wait --> When
    might a deliberate wait help a real auto? (Hint: letting a mechanism
    settle.)
 
@@ -441,15 +441,15 @@ small `@Autonomous` class, not a dropdown living inside a bigger one.
 Autonomous turned out to be the least mysterious thing in robot programming:
 just another opmode, whose whole job is scheduling one plan the moment
 `RobotModeTriggers.autonomous()` fires — built by composing the small
-finishing commands you already had. `Command.sequence(...)` runs steps in
+finishing commands you already had. <!-- claim: commandsv3.robot-mode-triggers-autonomous --> `Command.sequence(...)` runs steps in
 order, `Command.parallel`/`.race`/`.optional` run them at once as long as no
 two share a mechanism, and an auto factory that takes the drivetrain as a
 parameter — **dependency injection** — keeps every command pointed at the
-one real robot. The bigger idea underneath: **`coroutine.await(...)`** turns
+one real robot. <!-- claim: commandsv3.parallel-race-optional --> The bigger idea underneath: **`coroutine.await(...)`** turns
 a sequence from something you build by gluing commands together into
 something you just *write*, one line per step, each mechanism held only as
 long as its own step needs it — a shape that pays for itself the moment a
-routine spans more than one mechanism. Running a plan with nobody's hands on
+routine spans more than one mechanism. <!-- claim: commandsv3.sequence-requires-union --> Running a plan with nobody's hands on
 the sticks also exposed a flaw teleop had been hiding, and **cosine
 compensation** fixed it with one line: scale the drive by `cos(steer error)`,
 so a wheel doesn't push hard until it's pointing the right way. And the

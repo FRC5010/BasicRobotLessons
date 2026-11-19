@@ -80,3 +80,123 @@ statement = "An @AutoLog inputs class logs each field under the processInputs ke
 evidence = "CLAUDE.md, 'v3 Lessons 18-22 record with AdvantageKit', Lesson 18 (AdvantageKit names each value after its field, capitalized)"
 measured_on = "alpha-7 (AdvantageKit's alpha-7 jar, run on alpha-8)"
 method = "REPLAY"
+
+[[claim]]
+id = "advantagekit.vendordep-installs"
+kind = "api"
+library = ["advantagekit"]
+criticality = "C1"
+statement = "AdvantageKit is in WPILib's vendor marketplace; installing it writes vendordeps/AdvantageKit.json, and build.gradle reads its version out of that file for the akit-autolog annotation processor."
+evidence = "CLAUDE.md, 'v3 Lesson 13 records with AdvantageKit and replays' (vendordep in the marketplace's 2027_alpha7 folder, pinned from Lesson 13; vendordep saved under its declared fileName)"
+measured_on = "alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "advantagekit.autolog-generates-class"
+kind = "api"
+library = ["advantagekit"]
+criticality = "C1"
+statement = "@AutoLog on an inputs class makes the akit-autolog annotation processor generate NameAutoLogged (a subclass) at compile time; it needs the annotationProcessor line in build.gradle and can write every field into a log and read it back."
+evidence = "CLAUDE.md, 'v3 Lesson 13 records with AdvantageKit and replays', What Lesson 13 changes (the processor generates ...InputsAutoLogged); tools/lib/patch_build_gradle.py"
+measured_on = "alpha-8"
+method = "REPLAY"
+
+[[claim]]
+id = "advantagekit.logged-opmode-robot-captures-ds"
+kind = "behaviour"
+library = ["advantagekit", "wpilib"]
+criticality = "C1"
+statement = "LoggedOpModeRobot runs the robot loop like OpModeRobot (same opmode discovery, robotPeriodic and simulationPeriodic) and, before user code each tick, records the clock, joysticks, enabled state and selected opmode, supplying them back in a replay."
+evidence = "CLAUDE.md, 'v3 Lesson 13 records with AdvantageKit and replays' (the selected opmode replays; LoggedOpModeRobot registers annotated opmodes alphabetically); 'v3 Lessons 23-27', the driver station replays (LoggedDriverStation.replayFromLog)"
+measured_on = "alpha-7 (AdvantageKit's alpha-7 jar, run on alpha-8)"
+method = "REPLAY"
+
+[[claim]]
+id = "advantagekit.data-receivers-and-files"
+kind = "behaviour"
+library = ["advantagekit"]
+criticality = "C2"
+statement = "Live, NT4Publisher publishes under /AdvantageKit and WPILOGWriter writes logs/akit_<date>.wpilog; in REPLAY, WPILOGReader reads the recording, setUseTiming(false) runs it as fast as possible, and the output goes to a file with _sim added to the name."
+evidence = "CLAUDE.md, 'v3 Lesson 13 records with AdvantageKit and replays' (NT4Publisher under /AdvantageKit; the _sim file; a ~7 s drive replays in ~5 s wall)"
+measured_on = "alpha-8"
+method = "REPLAY"
+
+[[claim]]
+id = "advantagekit.wpilib-log-saves-telemetry"
+kind = "behaviour"
+library = ["advantagekit", "wpilib"]
+criticality = "C2"
+statement = "DataLogManager.start() still runs in a live run and saves, in WPILIB_*.wpilog beside the akit_ file, everything published to NetworkTables outside AdvantageKit (the Field2d widget, B-Line's values, SysId signals) and a copy of AdvantageKit's own outputs."
+evidence = "CLAUDE.md, 'v3 Lesson 13 records with AdvantageKit and replays', What Lesson 13 changes; 'v3 Lessons 31-33 record with AdvantageKit', Lesson 33"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "advantagekit.find-replay-log-sources"
+kind = "behaviour"
+library = ["advantagekit"]
+criticality = "C1"
+statement = "LogFileUtil.findReplayLog() reads AKIT_LOG_PATH if set, else the log AdvantageScope has open (a hand-off file in the temp folder), else prompts; at the end of a replay AdvantageKit tells AdvantageScope about the _sim file (console: 'Log sent to AdvantageScope.')."
+evidence = "CLAUDE.md, 'v3 Lesson 13 records with AdvantageKit and replays', Replay refuses any HAL sim extension (tested by writing the hand-off file by hand; AdvantageScope itself not installed here)"
+measured_on = "alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "advantagekit.replay-file-layout"
+kind = "behaviour"
+library = ["advantagekit"]
+criticality = "C2"
+statement = "A replay's _sim log holds the recorded inputs at the top level, the recording's outputs under RealOutputs, and the outputs the code worked out again under ReplayOutputs, including outputs for code written after the recording."
+evidence = "CLAUDE.md, 'v3 Lessons 14-17 record with AdvantageKit' (every /RealOutputs key compared with its /ReplayOutputs twin in the _sim file); 'v3 Lessons 31-33', Lesson 32 (a new output replayed over an old recording)"
+measured_on = "alpha-8"
+method = "REPLAY"
+
+[[claim]]
+id = "advantagekit.telemetry-log-not-recorded"
+kind = "behaviour"
+library = ["advantagekit", "wpilib"]
+criticality = "C1"
+statement = "Telemetry.log values (and widgets such as Field2d) are not captured by AdvantageKit, so they aren't part of a replay; AdvantageKit records values passed to processInputs and recordOutput."
+evidence = "CLAUDE.md, 'v3 Lesson 13 records with AdvantageKit and replays', Telemetry.log is not captured by AdvantageKit"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "advantagekit.record-output-wpilib-types"
+kind = "api"
+library = ["advantagekit", "wpilib"]
+criticality = "C1"
+statement = "Logger.recordOutput accepts SwerveModuleVelocity[] (and SwerveModuleState[]), Pose2d, Rotation2d, doubles and strings directly, with no struct argument."
+evidence = "CLAUDE.md, 'v3 Lesson 13 records with AdvantageKit and replays' (Drivetrain/ModuleStates, DesiredModuleStates, Pose, Heading recorded with recordOutput; Lesson 13 compiles and replays on alpha-8)"
+measured_on = "alpha-8"
+method = "REPLAY"
+
+[[claim]]
+id = "advantagekit.vscode-simulate-extension-prompt"
+kind = "behaviour"
+library = ["advantagekit", "gradlerio"]
+criticality = "C3"
+statement = "VS Code's WPILib: Simulate Robot Code asks which extensions to load, and a replay needs Sim GUI unticked."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson (CLAUDE.md says the popup was not tested)"
+measured_on = "unverified"
+method = "SOURCE"
+
+[[claim]]
+id = "advantagekit.simgui-struct-array-display"
+kind = "behaviour"
+library = ["advantagekit", "wpilib"]
+criticality = "C3"
+statement = "In SimGUI's NetworkTables View an AdvantageKit input appears under AdvantageKit/<key>; an empty struct array is shown as [] and one with frames as [...]; a single struct such as a Pose2d is decoded."
+evidence = "CLAUDE.md, 'v3 Lessons 14-17 record with AdvantageKit', Lesson 15 (SimGUI input under NetworkTables -> AdvantageKit -> Localizer -> camera, shown [] when empty and [...] with frames)"
+measured_on = "alpha-7 (AdvantageKit's alpha-7 jar)"
+method = "LOOP"
+
+[[claim]]
+id = "advantagekit.replay-loads-first-tick-in-constructor"
+kind = "behaviour"
+library = ["advantagekit"]
+criticality = "C1"
+statement = "Logger.start() (in the instance initializer) ends with periodicBeforeUser(), which in replay loads the log's first entry, so Logger.processInputs called in Robot's constructor gets the values the recorded run's constructor wrote."
+evidence = "CLAUDE.md, 'v3 Lessons 14-17 record with AdvantageKit', Lesson 16 (read in AdvantageKit's source; a SIM run and a 'not known' run both replayed with Localizer/Pose matching on every tick)"
+measured_on = "alpha-7 (AdvantageKit's alpha-7 jar, run on alpha-8)"
+method = "REPLAY"

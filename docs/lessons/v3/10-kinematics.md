@@ -39,7 +39,7 @@ points tangent to the circle around the center, with magnitude `ω × r`).
 Figure 10.1 draws it. WPILib packages it as **`SwerveDriveKinematics`** so you never have to
 re-derive it. Give it a `ChassisVelocities`; it hands back four
 `SwerveModuleVelocity`s — the same type you've been logging to the Swerve tab
-since Lesson 7. Today it stops being just telemetry and becomes the language
+since Lesson 7. <!-- claim: wpilib.swerve-kinematics-api --> Today it stops being just telemetry and becomes the language
 the whole drivetrain speaks.
 
 <a id="figure-10-1"></a>
@@ -95,7 +95,7 @@ private final SwerveDriveKinematics m_kinematics = new SwerveDriveKinematics(
 ```
 
 The order matters — whatever order you list the corners here is the order
-`toSwerveModuleVelocities` returns states in. Match the array you built in
+`toSwerveModuleVelocities` returns states in. <!-- claim: wpilib.swerve-kinematics-api --> Match the array you built in
 Lesson 7 (FL, FR, BL, BR) exactly; the numbers beside the corners on
 Figure 10.1 are the array indices. A swapped pair here produces a robot that
 *almost* drives right, which is the most confusing kind of wrong.
@@ -108,7 +108,7 @@ and converts itself to whatever unit you ask for. What's new today is that
 `SwerveModuleVelocity`, and `SwerveDriveKinematics` all take measures
 directly, so a `LinearVelocity` flows straight through them — you don't
 unpack it to a `double` until you hit something that genuinely only speaks
-numbers, like Phoenix's `setThrottle`.
+numbers, like Phoenix's `setThrottle`. <!-- claim: wpilib.swerve-kinematics-api, wpilib.units-measure-arithmetic -->
 
 **Add to the top of `Constants.java`:**
 
@@ -120,7 +120,7 @@ import org.wpilib.units.measure.AngularVelocity;
 import org.wpilib.units.measure.LinearVelocity;
 ```
 
-**Add to `DriveConstants`:**
+**Add to `DriveConstants`:** <!-- claim: wpilib.kraken-x60-model -->
 
 ```java
 public static final class DriveConstants {
@@ -140,13 +140,13 @@ That `6065` is the Kraken X60's free speed according to WPILib's own motor
 model: the `DCMotor.getKrakenX60(1)` you've been handing the simulations since
 Lesson 4. WPILib takes its Kraken numbers from CTRE's published dynamometer
 test data (their Motor Testing Lab), so the figure has a source you can go
-look at. Lesson 18 uses the same page for the rest of the motor's numbers.
+look at. Lesson 18 uses the same page for the rest of the motor's numbers. <!-- claim: wpilib.kraken-x60-model -->
 
 `MetersPerSecond.of(...)` builds a `LinearVelocity` from a plain number — the
 arithmetic stays in doubles (readable), and the *result* becomes unit-aware.
 That's the pattern for making one: **compute in doubles, wrap the answer.**
 (This is close to the `5` you eyeballed for the Swerve tab's Max Speed back
-in Lesson 7 — now it's a computed, typed constant instead of a guess.)
+in Lesson 7 — now it's a computed, typed constant instead of a guess.) <!-- claim: wpilib.kraken-x60-model -->
 
 ---
 
@@ -191,19 +191,19 @@ loops you wrote in Lesson 5 to wrap the error into ±180°
 ([Figure 5.3](05-steering-p-control.md#figure-5-3)) collapse into
 **`MathUtil.inputModulus(value, -180, 180)`** — it does exactly what the
 loops did, and you get the one-liner now that you've built the hand-rolled
-version and know what it's doing. (Your `clamp` two lines down doesn't get
+version and know what it's doing. <!-- claim: wpilib.mathutil-helpers --> (Your `clamp` two lines down doesn't get
 the same treatment — this alpha's `MathUtil` has no `clamp` to graduate to,
 so the private helper from Lesson 5 stays, permanently, same as it did in
-Lesson 7.) And **`kMaxSpeed.in(MetersPerSecond)`** is the Units boundary in
+Lesson 7.) <!-- claim: wpilib.no-mathutil-clamp --> And **`kMaxSpeed.in(MetersPerSecond)`** is the Units boundary in
 action: the constant is a typed `LinearVelocity`, but the division needs a
-plain number, so `.in(...)` hands one back.
+plain number, so `.in(...)` hands one back. <!-- claim: wpilib.units-measure-arithmetic -->
 
 Notice `state.velocity` is read as a plain `double`, not unpacked with
 `.in(...)`. `SwerveModuleVelocity`'s constructor accepts a `LinearVelocity`
 if you want to build one that way, but the value it actually stores is a
 bare `double` in meters per second — Units at the boundary where you build
 the value, plain numbers once it's inside a kinematics type built for speed.
-You'll see the same thing on `ChassisVelocities` in a moment.
+You'll see the same thing on `ChassisVelocities` in a moment. <!-- claim: wpilib.swerve-kinematics-api -->
 
 Otherwise the control body carried over intact — the target arrives as a
 `SwerveModuleVelocity`, which bundles the angle and speed together and lets
@@ -215,7 +215,7 @@ less to hold in your head.
 > used here, because the hand-rolled version already lives inside
 > `setDesiredState` right next to the P control it depends on, and moving it
 > wouldn't simplify anything. If you ever see it in someone else's code, now
-> you know what it's for.
+> you know what it's for. <!-- claim: wpilib.swerve-module-velocity-cosine-scale -->
 
 > **Update `Drivetrain.driveDistance` from Lesson 9** — it called
 > `setDesiredState(0.0, 0.4)`, which no longer compiles. Build a state
@@ -244,7 +244,7 @@ becomes a thin caller.
 
 The helper is about to publish the chassis's *desired* states, right next to
 Lesson 7's *measured* ones — the same `Telemetry.log` struct-array overload,
-one more call, no new field.
+one more call, no new field. <!-- claim: wpilib.telemetry-log-overloads -->
 
 **Add to `Drivetrain`:**
 
@@ -317,11 +317,11 @@ same story as `SwerveModuleVelocity.velocity` a section ago: the constructor
 speaks Units, the value inside doesn't. **`toSwerveModuleVelocities`** is the
 library math this lesson exists for: one chassis motion in, one
 `SwerveModuleVelocity[]` out — one entry per corner, in the order you gave
-the constructor. **`desaturateWheelVelocities`** matters at the edge of the
+the constructor. <!-- claim: wpilib.swerve-kinematics-api --> **`desaturateWheelVelocities`** matters at the edge of the
 envelope: if translation-plus-rotation asks one wheel for 6 m/s but the max
 is 4.8, it scales *all four* down so the motion keeps its shape, just
 slower — without it, the overasked wheel silently caps and the robot curves
-off course.
+off course. <!-- claim: wpilib.swerve-kinematics-api, wpilib.kraken-x60-model -->
 
 Now look closely at the loop, because it hides a real trap. `optimize`
 doesn't change `states[i]` in place — it's a pure function, same as
@@ -330,7 +330,7 @@ doesn't change `states[i]` in place — it's a pure function, same as
 `states[i].optimize(...)` and throw away the result, and nothing happens —
 the module gets commanded with the un-optimized state, silently. That's why
 the loop reads `states[i] = states[i].optimize(...)` — assign it back before
-it's used. The **indexed `for` loop** is the new loop shape from the
+it's used. <!-- claim: wpilib.swerve-velocity-methods-return-new --> The **indexed `for` loop** is the new loop shape from the
 concepts list, and it's why: an enhanced `for` walks *one* array, but here
 `states[i]` has to be paired with `m_modules[i]`, and pairing two arrays
 takes an index. The **`m_lastCommandedOmega`** line keeps Lesson 8's fake
@@ -350,7 +350,7 @@ and drive at `+2 m/s`," it's much faster to steer to `10°` and drive at
 **`-2 m/s`** (spin the drive motor backward) than to physically turn 180°.
 `optimize` picks whichever of those two equivalent options is the shorter
 *steering* move, flipping the drive speed's sign if needed, and hands back a
-fresh `SwerveModuleVelocity` with the answer.
+fresh `SwerveModuleVelocity` with the answer. <!-- claim: wpilib.swerve-velocity-methods-return-new -->
 
 Without it, wheels routinely make 180° pirouettes for no reason, which looks
 awful and burns time. With it, they nudge a few degrees and reverse — as
@@ -360,14 +360,14 @@ angle. That's why the measurement gets passed in.
 It's also best friends with Lesson 9's cosine trick ([Figure 9.1](09-autonomous.md#figure-9-1)): `optimize` keeps every
 steering move under 90°, which means the cosine scale in `setDesiredState`
 never goes negative — the two together give you wheels that take the short
-path *and* hold their push until they're pointed right.
+path *and* hold their push until they're pointed right. <!-- claim: wpilib.swerve-velocity-methods-return-new -->
 
 Figure 10.2 draws the example from the top of this section.
 
 <a id="figure-10-2"></a>
 ![Two copies of one steering wheel drawn as a circle, currently pointing at 10 degrees, with kinematics asking for 190 degrees. Left, without optimize: a long orange arc turns the wheel 180 degrees, and the drive runs at plus 2 meters per second. Right, with optimize: the wheel stays at 10 degrees, no steering turn, and the drive runs backward at minus 2 meters per second.](images/10-optimize-short-way.svg)
 
-*Figure 10.2 — Steering to 190° and driving forward, or staying at 10° and driving backward: the wheel moves the robot the same way, and `optimize` picks the one that needs no pirouette.*
+*Figure 10.2 — Steering to 190° and driving forward, or staying at 10° and driving backward: the wheel moves the robot the same way, and `optimize` picks the one that needs no pirouette.* <!-- claim: wpilib.swerve-velocity-methods-return-new -->
 
 Read the left panel first. The solid arrow is where the wheel points now, 10°;
 the dashed one is the 190° the kinematics asked for. Getting there means the
@@ -376,7 +376,7 @@ right. The wheel stays where it is and the drive motor spins the other way,
 `-2 m/s`, and the robot goes exactly where it would have gone. The floor can't
 tell the difference. Your steering motor can: one of these costs a half turn
 of waiting, and the other costs nothing. That's the whole trick, and it's why
-no steering move ever has to exceed 90°.
+no steering move ever has to exceed 90°. <!-- claim: wpilib.swerve-velocity-methods-return-new -->
 
 ---
 
@@ -416,7 +416,7 @@ Look at each supplier: the stick reads a fraction from −1 to 1, and
 `kMaxSpeed.times(fraction)` scales the max-speed *measure* down to that
 fraction — the result is still a `LinearVelocity`, exactly what `drive` now
 asks for. No `maxMps` local, no `.in(...)` — the unit rides all the way from
-the constant into `ChassisVelocities`. Same story for the rotation supplier
+the constant into `ChassisVelocities`. <!-- claim: wpilib.units-measure-arithmetic --> Same story for the rotation supplier
 with `kMaxAngularSpeed`. This is the Units payoff: because every hop speaks
 the type, there's simply no boundary to convert at until Phoenix's
 `setThrottle`, deep inside `setDesiredState`.
@@ -473,7 +473,7 @@ The one new line is `fieldSpeeds.toRobotRelative(...)`: it rotates the
 field-frame velocity into the robot's frame using the current heading — the
 gyro from Lesson 8 quietly becoming load-bearing. `toRobotRelative` reads
 the same way `optimize` and `cosineScale` do: it doesn't change
-`fieldSpeeds`, it *returns* the converted value. Everything downstream still
+`fieldSpeeds`, it *returns* the converted value. <!-- claim: wpilib.swerve-velocity-methods-return-new --> Everything downstream still
 speaks robot frame, and `applyChassisSpeeds` neither knows nor cares where
 the speeds came from. That's the extraction paying rent already.
 
@@ -520,11 +520,11 @@ overask, **`optimize`** trading a 180° pirouette for a sign flip — plus the
 `turnToHeading` survived untouched. One library tool also graduated:
 **`MathUtil.inputModulus`** retired the wrap loop, the same trade your
 hand-rolled `clamp` *didn't* get to make, because this alpha never shipped
-one to graduate to. The quieter thread running through the whole lesson:
+one to graduate to. <!-- claim: wpilib.mathutil-helpers, wpilib.no-mathutil-clamp --> The quieter thread running through the whole lesson:
 `optimize`, `cosineScale`, and `toRobotRelative` all share a shape — call
 them, get a new value back, original untouched — the same immutable style
 `Rotation2d` and `Translation2d` have had all along, now showing up in the
-kinematics types too. **Field-relative** is the version your drivers will
+kinematics types too. <!-- claim: wpilib.swerve-velocity-methods-return-new --> **Field-relative** is the version your drivers will
 never let you take away. One thing is still missing: the robot can move any
 way you ask, but it has no idea *where it is*. A future lesson gives it a
 map.

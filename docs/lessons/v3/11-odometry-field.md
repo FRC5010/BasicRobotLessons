@@ -42,7 +42,7 @@ you know your heading and how far you've traveled each hour, you can plot
 your position on the chart. Our version just samples fifty times a second:
 `SwerveDriveOdometry` combines **wheel motion** (how far each wheel rolled
 and in which direction) with **gyro heading**, integrates the change every
-tick, and answers `getPose()` any time you ask.
+tick, and answers `getPose()` any time you ask. <!-- claim: wpilib.swerve-odometry-api -->
 
 ---
 
@@ -75,7 +75,7 @@ just two values riding together. By now you've met the whole family
 and the pattern behind them should be visible: WPILib bundles related
 numbers into little named types because a `SwerveModulePosition` in a method
 signature says *meters and an angle, in that order* — where two bare
-`double`s say nothing and let you swap them silently.
+`double`s say nothing and let you swap them silently. <!-- claim: wpilib.swerve-odometry-api -->
 
 ---
 
@@ -138,7 +138,7 @@ ever changes.)
 Odometry needs feeding every tick, same as everything else `logTelemetry()`
 already does. There's no separate `periodic()` to hook here — you already
 know why: `Mechanism` doesn't have one, which is exactly why
-`logTelemetry()` exists as a periodic callback in the first place.
+`logTelemetry()` exists as a periodic callback in the first place. <!-- claim: commandsv3.mechanism-no-periodic -->
 
 **Add to `Drivetrain.logTelemetry()`, after the heading log:**
 
@@ -149,7 +149,7 @@ Pose2d pose = m_odometry.update(Rotation2d.fromDegrees(getHeadingDegrees()), mod
 That's the whole loop: `update(newHeading, newPositions)` integrates the
 change since the last call *and* hands back the fresh pose — one call does
 both jobs, which is why you don't see a separate `getPose()` call right
-here.
+here. <!-- claim: wpilib.swerve-odometry-api -->
 
 ---
 
@@ -157,7 +157,7 @@ here.
 
 Here's where the logging discipline you've kept since Lesson 3 pays off in
 full. Drawing the robot on a field takes exactly one more `Telemetry.log`
-call, the same struct-value shape as the heading in Lesson 8.
+call, the same struct-value shape as the heading in Lesson 8. <!-- claim: wpilib.telemetry-log-overloads -->
 
 **Add to `Drivetrain.logTelemetry()`, right after the odometry update:**
 
@@ -188,7 +188,7 @@ is a dashboard *widget* that does exactly that. Logging it is still a plain
 Lesson 3 — but notice what you're handing it this time: not a number, a
 whole **widget** object, a thing dashboards know how to draw rather than
 just plot. `Telemetry.log` tells the two apart automatically from what you
-pass in.
+pass in. <!-- claim: wpilib.telemetry-log-overloads -->
 
 **Add to `Drivetrain.java`'s imports:**
 
@@ -213,7 +213,7 @@ Order matters: move the robot on the widget first, then log it. Like every
 number you've logged, `Telemetry.log` sends whatever the widget holds *at
 that moment* — log it once in the constructor and the view would show the
 robot where it started, forever. So it goes where the numbers go: in the
-method that runs every tick.
+method that runs every tick. <!-- claim: wpilib.telemetry-log-is-a-snapshot -->
 
 Now in **SimGUI** (the sim window itself, not AdvantageScope): menu
 **NetworkTables → Telemetry → Field**, and a top-down field pane opens right in
@@ -221,7 +221,7 @@ the sim window, robot moving as you drive. Figure 11.1 shows where to click
 and what you get: a box for the field, with the robot drawn as a red outline
 and a green arrow for the way it faces, bottom-left until you drive. (If
 you can't see it, SimGUI's **Robot State** window may be sitting on that
-corner of the field; drag it out of the way.)
+corner of the field; drag it out of the way.) <!-- claim: wpilib.simgui-field-widget -->
 Same pose, two viewers: `Field2d` for the quick glance while sim is
 already open, the logged `Pose2d` for AdvantageScope's field images,
 replays, and everything else.
@@ -229,7 +229,7 @@ replays, and everything else.
 <a id="figure-11-1"></a>
 ![SimGUI's NetworkTables menu open with Telemetry and then Field highlighted, above the Field pane showing the field's outline with the robot drawn after a short drive](images/11-simgui-field-widget.png)
 
-*Figure 11.1 — Where to find the Field widget in SimGUI, and the field pane with the robot after a short drive.*
+*Figure 11.1 — Where to find the Field widget in SimGUI, and the field pane with the robot after a short drive.* <!-- claim: wpilib.simgui-field-widget -->
 
 ---
 
@@ -306,7 +306,7 @@ into your real robot they belong in `Constants.java` like every other
 tuning number. The heading term needs no wrap helper —
 `Rotation2d.minus` already returns the shortest angle, and there's no
 `MathUtil.clamp` to reach for here either — that's still `Drivetrain`'s own
-private `clamp` from Lesson 5, same as everywhere else in this file.
+private `clamp` from Lesson 5, same as everywhere else in this file. <!-- claim: wpilib.rotation2d-minus-wraps, wpilib.no-mathutil-clamp -->
 
 `vx`/`vy` are computed straight from field-frame position error, so
 they're field-relative speeds — the same shape `driveFieldRelative` builds
@@ -325,14 +325,14 @@ needed `.whenExited(...)` because its body could finish by itself; this
 body is a loop that never finishes, so the only way it ends is a cancel,
 and `.whenCanceled(...)` here covers both "got there" and "got
 interrupted," because as far as the scheduler's concerned, both endings are
-the same kind of ending.
+the same kind of ending. <!-- claim: commandsv3.when-exited-on-cancel -->
 
 > **When you outgrow odometry:** wheels slip, wheels drift, and after a
 > minute of driving the pose can be meters off from reality.
 > **`SwerveDrivePoseEstimator`** is a drop-in replacement that fuses
 > odometry with camera measurements (AprilTags, etc.) to keep the pose
 > honest. Same `update` shape; extra `addVisionMeasurement(...)` calls when
-> you have a camera pose.
+> you have a camera pose. <!-- claim: wpilib.swerve-odometry-api -->
 
 ---
 
@@ -353,7 +353,7 @@ the same kind of ending.
    robot near −170°, and call `driveToPose` with a target facing +170°.
    The logged error should read about **−20°** (turn the short way), not
    +340°. `minus` always hands back the shortest turn, so the pose
-   controller can't take the long way around.
+   controller can't take the long way around. <!-- claim: wpilib.rotation2d-minus-wraps -->
 
 ---
 
@@ -373,7 +373,7 @@ this course has been measure-subtract-multiply-clamp-command wearing
 different sensors. You also picked up **`.until(...)`**, and with it a
 a cleanup story that stays short — `.whenCanceled(...)` covers every way
 `.until(...)` can end a command, because that's the only way it *does* end
-one.
+one. <!-- claim: commandsv3.when-exited-on-cancel -->
 
 The *robot* is now complete — but the *programming* has one more act. Your
 control loops are still 50 Hz software P, your log files can only be

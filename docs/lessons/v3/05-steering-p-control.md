@@ -145,7 +145,7 @@ that gap once, with a number called the **magnet offset**: point the wheel
 straight forward by hand, read the CANcoder's raw position in Phoenix Tuner
 X, and store the *negative* of that reading as the offset. Configured with
 that number, the CANcoder reports exactly `0` when the wheel is at true
-forward.
+forward. <!-- claim: phoenix6.cancoder-offset-and-direction -->
 
 **Add to `Constants.java`:**
 
@@ -179,7 +179,7 @@ private final CANcoder m_steerEncoder =
 ```
 
 Same shape as the motors: a `CANcoder` needs a CAN ID *and* a bus, just like
-`TalonFX` has since Lesson 1.
+`TalonFX` has since Lesson 1. <!-- claim: phoenix6.talonfx-canbus-constructor -->
 
 This is the first time this lesson has had anything to put in the
 constructor.
@@ -205,11 +205,11 @@ you'll see constantly from here on: build a small object describing what you
 want, hand it to the device once, done. And **`setPosition(...)`** is new —
 every Phoenix device lets you *tell* it what its own sensor should currently
 read, which is exactly what priming means: not moving the wheel, just
-correcting what the motor believes about where it already is.
+correcting what the motor believes about where it already is. <!-- claim: phoenix6.talonfx-set-position, phoenix6.cancoder-config-api -->
 `getAbsolutePosition()` hands back the same kind of chained value
 `getPosition()` always has — a `StatusSignal` wrapping a measurement — so it
 gets the same `.getValue().in(Rotations)` treatment before `setPosition`
-can use it as a plain number.
+can use it as a plain number. <!-- claim: phoenix6.status-signal-get-value-in -->
 
 **Add to `DriveModule`'s imports:**
 
@@ -226,7 +226,7 @@ directly, the way the code above does.
 > after power-on. Reading one in the very first line of the constructor is
 > usually fine — Phoenix's default read waits briefly for a value to arrive —
 > but if a prime ever looks like it read `0` instead of the real angle,
-> that's the usual suspect.
+> that's the usual suspect. <!-- claim: phoenix6.first-signal-read-waits -->
 
 > **Mounting matters.** A CANcoder reads counterclockwise-positive by
 > default, matching this course's convention for the rest of the robot. If
@@ -234,7 +234,7 @@ directly, the way the code above does.
 > the other — set `MagnetSensor.SensorDirection =
 > SensorDirectionValue.Clockwise_Positive` in its config. Get this wrong and
 > priming will confidently seed the *wrong* zero, every single boot — one
-> flipped sign, easy to fix once you know to look for it.
+> flipped sign, easy to fix once you know to look for it. <!-- claim: phoenix6.cancoder-offset-and-direction, phoenix6.cancoder-config-api -->
 
 This isn't the last word on the subject — a wheel can still slip against the
 gearbox mid-match, and a one-time prime won't notice. Lesson 12 replaces
@@ -296,7 +296,7 @@ private double clamp(double value, double min, double max) {
 <a id="figure-5-1"></a>
 ![Two stacked graphs of one move to 90 degrees with kP 0.0005. Top: the setpoint as a dashed line at 90 degrees and the measured angle in orange, rising fast, overshooting to 158 degrees, then ringing back and forth around 90 with shrinking swings; an arrow marks the 70 degree error when the angle passes 20 degrees. Bottom: the output, kP times the error, starting at 0.045, passing 0.035 at 20 degrees, then swinging negative and positive in step with the error](images/05-setpoint-measurement-error.png)
 
-*Figure 5.1 — One move to 90° with `kP = 0.0005`: the measurement against the setpoint, and the output that follows the gap.*
+*Figure 5.1 — One move to 90° with `kP = 0.0005`: the measurement against the setpoint, and the output that follows the gap.* <!-- claim: l05.kp-0005-overshoot, l05.kp-0005-first-arrival, l05.kp-0005-settle -->
 
 Figure 5.1 plots exactly that move, tap to settle. Read the top panel first:
 the dashed line is the setpoint, the orange curve is the measurement, and
@@ -307,12 +307,12 @@ the same shape, just scaled down by `kP`. The output starts at 0.045 (90° of
 error), is the 0.035 from step 2 at 20°, and shrinks as the curve climbs —
 step 3, happening on screen.
 
-Now look at 0.26 seconds. The error reaches zero, so the output reaches
+Now look at 0.26 seconds. <!-- claim: l05.kp-0005-first-arrival --> The error reaches zero, so the output reaches
 zero — and the wheel is still moving. Zero push isn't the same as stopped:
 the motor has inertia, and it carries the angle right past 90°, to 158° in
-this run. That makes the error negative, so the output goes negative and the
+this run. <!-- claim: l05.kp-0005-overshoot --> That makes the error negative, so the output goes negative and the
 motor pushes back. Each swing comes out smaller than the one before, and the
-wheel only settles inside a degree of 90° after about seven seconds. Hold on
+wheel only settles inside a degree of 90° after about seven seconds. <!-- claim: l05.kp-0005-settle --> Hold on
 to that ringing; the next section is about it.
 
 And notice the math handles direction for free: overshoot past 90° and
@@ -327,7 +327,7 @@ chain you've built twice already. `runRepeatedly(...)` is Lesson 2's shape:
 the lambda runs fresh every tick, which is exactly what a controller needs —
 it has to keep re-measuring. `.whenCanceled(...)` is Lesson 1's shape:
 cleanup that fires once, when something takes the module away from this
-command. `steerToAngle` is just the first method that needed both at once.
+command. `steerToAngle` is just the first method that needed both at once. <!-- claim: commandsv3.coroutine-command-api -->
 
 **The lambda remembers `targetDegrees`.** Look closely: `targetDegrees` is a
 parameter of `steerToAngle`, but the lambda uses it tick after tick, long
@@ -382,17 +382,17 @@ public MyTeleop(Robot robot) {
 
 New word: **`onTrue`**, where Lesson 1 used `whileTrue`. `whileTrue` runs a
 command while you hold the button; `onTrue` schedules it once when the button
-is *pressed* and then walks away. Since `steerToAngle` is built on
+is *pressed* and then walks away. <!-- claim: commandsv3.command-gamepad-api --> Since `steerToAngle` is built on
 `runRepeatedly(...)`, it never finishes on its own — so a single tap of the
 left button sends the module to 90° *and holds it there*, no need to keep the
 button down. Tap the top button and the scheduler swaps commands: one
 command per mechanism, so scheduling the go-to-0 command cancels the
-go-to-90 one (firing its `whenCanceled` cleanup on the way out).
+go-to-90 one (firing its `whenCanceled` cleanup on the way out). <!-- claim: commandsv3.default-command-runs-when-idle, commandsv3.when-exited-on-cancel -->
 
 > **Watch out:** while a steering command owns the module, your joystick stops
 > driving the wheel — the default command from Lesson 2 only runs when *no
 > other command* is using the mechanism, and `steerToAngle` never lets go.
-> That's the one-command-per-mechanism rule doing exactly what it promised.
+> That's the one-command-per-mechanism rule doing exactly what it promised. <!-- claim: commandsv3.default-command-runs-when-idle -->
 > It's fine for this lesson — we're steering, not driving — and the module
 > learns to do both at once when it grows up in Lesson 7.
 
@@ -419,16 +419,16 @@ the left button:
 <a id="figure-5-2"></a>
 ![One graph of the steering angle against time for three gains, with the 90 degree setpoint dashed. kP 0.0005 rises fastest, overshoots to 158 degrees and rings for about seven seconds. kP 0.00003 climbs smoothly with no overshoot and is within one degree of 90 at 2.7 seconds. kP 0.00001 climbs slowly and flattens out at 79 degrees, short of the setpoint](images/05-kp-three-gains.png)
 
-*Figure 5.2 — The same tap with three gains: too big, about right, too small.*
+*Figure 5.2 — The same tap with three gains: too big, about right, too small.* <!-- claim: l05.kp-0005-overshoot, l05.kp-0005-settle, l05.kp-3e-5-settle, l05.kp-1e-5-stall -->
 
 Figure 5.2 shows all three on one plot, the same tap from 0° each time.
 The **pink** line, `kP = 0.00001`, is too small: the push is so gentle that
 it crawls, and the closer it gets the gentler the push becomes, until the
 voltage it asks for rounds down to zero in the simulated motor and it stops
-short at 79°. The **orange** line is the `0.0005` from Figure 5.1: the first to
+short at 79°. <!-- claim: l05.kp-1e-5-stall, phoenix6.sim-small-voltage-rounds-to-zero --> The **orange** line is the `0.0005` from Figure 5.1: the first to
 reach 90°, but it can't stop there, and it rings. The **green** line,
 `kP = 0.00003`, is the one in between: no overshoot, and inside a degree of
-90° after about 2.7 seconds.
+90° after about 2.7 seconds. <!-- claim: l05.kp-3e-5-settle -->
 
 Notice what a *good* gain costs you. The orange line is faster than green at
 the start; it just can't hold what it gains. Too big and the controller

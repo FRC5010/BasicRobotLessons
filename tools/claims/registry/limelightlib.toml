@@ -10,3 +10,103 @@ statement = "The unmodified LimelightLib parses the results frames the simulated
 evidence = "CLAUDE.md, the alpha-7 upgrade notes (Lesson 15's simulated camera); 'v3 Lessons 14-17 record with AdvantageKit', Lesson 15"
 measured_on = "alpha-8"
 method = "LOOP"
+
+[[claim]]
+id = "limelightlib.vendordep-by-commit-url"
+kind = "api"
+library = ["limelightlib"]
+criticality = "C1"
+statement = "LimelightLib 2 is not in WPILib's marketplace; it installs by URL, and the vendordep pinned by commit (717a921 of LimelightVision/limelightlib-public) stays buildable, while Limelight's own LimelightLib-alpha7.json link is overwritten with each release."
+evidence = "CLAUDE.md, the alpha-7 upgrade notes; docs/lesson-plan-alpha7-upgrade.md, 2026-09-24 update (overwritten five times, beta5 to beta9, 2026-09-04 to 2026-09-11)"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "limelightlib.mt2-trust-formula"
+kind = "behaviour"
+library = ["limelightlib"]
+criticality = "C1"
+statement = "A MegaTag2 estimate's default trust is x and y = 0.3 x average tag distance / sqrt(fielded tag count), with heading trust 9999999 (ignored); it is delivered as the estimate's stdDevs Vector<N3>."
+evidence = "docs/lesson-plan-opmode-restructure.md, LimelightLib 2 API table (Default MegaTag2 trust: xy = 0.3 x avg distance / sqrt(fielded tags), heading 9999999); CLAUDE.md, 'v3 Lessons 14-17 record with AdvantageKit', Lesson 15 (MT2 heading trust measured ~1e7)"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "limelightlib.accepted-estimates-filter"
+kind = "behaviour"
+library = ["limelightlib"]
+criticality = "C1"
+statement = "readAcceptedPoseEstimates(PoseEstimateType.MT2_WPIBLUE) returns only frames the library accepted (a target seen, a non-zero pose, a fielded tag, a sane timestamp), in the blue-alliance-origin frame, each stamped with the receive time minus the frame's capture and pipeline latency; it consumes the frame queue."
+evidence = "docs/lesson-plan-opmode-restructure.md, LimelightLib 2 API table (compiled against the real jar and runtime-verified, 2026-09-24)"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "limelightlib.zero-pose-missing"
+kind = "behaviour"
+library = ["limelightlib"]
+criticality = "C2"
+statement = "An all-zero pose in a frame is the library's 'no answer': it rejects the frame as MISSING_POSE, so a robot standing exactly at (0, 0, 0 degrees) gets no accepted observations until it moves."
+evidence = "docs/lesson-plan-opmode-restructure.md, Lesson 15 findings (every frame rejected MISSING_POSE until the robot moves); LimelightLib 2 API table"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "limelightlib.telemetry-status"
+kind = "behaviour"
+library = ["limelightlib"]
+criticality = "C3"
+statement = "LimelightLib publishes limelight_telemetry/<name>/status (OK while frames arrive, STALE after 0.25 s without one, NO_DATA if none ever came) and, under MT2_WPIBLUE/, the accepted and rejected poses and a rejectionReasons string."
+evidence = "docs/lesson-plan-opmode-restructure.md, LimelightLib 2 API table and Lesson 15 findings (a repeated identical frame went STALE after 0.25 s)"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "limelightlib.frame-format"
+kind = "behaviour"
+library = ["limelightlib"]
+criticality = "C1"
+statement = "The library reads a MessagePack map from <name>/results_msgpack; an accepted MegaTag2 estimate needs v=1, botpose_orb_wpiblue (x, y, z, roll, pitch, yaw, not all zero), botpose_avgdist > 0 and a Fiducial array of maps with fID and fielded=1; cl (capture latency, ms) sets the timestamp and fidx numbers the frames."
+evidence = "docs/lesson-plan-opmode-restructure.md, LimelightLib 2 results frame table (decoded by the real library, 2026-09-24)"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "limelightlib.identical-frames-dropped"
+kind = "behaviour"
+library = ["limelightlib", "wpilib"]
+criticality = "C2"
+statement = "NetworkTables drops a repeated identical value, so a camera that publishes byte-identical frames goes STALE after 0.25 s; numbering frames (fidx) keeps each frame distinct."
+evidence = "docs/lesson-plan-opmode-restructure.md, Lesson 15 findings (identical frames are dropped; measured in desktop sim)"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "limelightlib.systemcore-usb-names"
+kind = "api"
+library = ["limelightlib"]
+criticality = "C3"
+statement = "Limelight.SYSTEMCORE_USB0 to SYSTEMCORE_USB3 exist and name USB cameras on Systemcore (NetworkTables names limelightsc0 to limelightsc3)."
+evidence = "docs/lesson-plan-alpha7-upgrade.md, 2026-09-24 update; docs/lesson-plan-opmode-restructure.md, LimelightLib 2 API table"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "limelightlib.limelight-api"
+kind = "api"
+library = ["limelightlib"]
+criticality = "C1"
+statement = "new Limelight(String name, Pose3d cameraPoseRobotSpace) publishes the camera mount; the static Limelight.setSharedRobotOrientation(yawDegrees) sets the shared robot heading MegaTag2 needs; PoseEstimate has pose, timestampSeconds, fieldedTagCount, avgTagDistanceMeters and stdDevs."
+evidence = "docs/lesson-plan-opmode-restructure.md, LimelightLib 2 API table (compiled against the real jar and runtime-verified, 2026-09-24); Lesson 15 compiles on alpha-8"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "limelightlib.single-tag-mt1-screened"
+kind = "behaviour"
+library = ["limelightlib"]
+criticality = "C3"
+statement = "The library screens single-tag MegaTag1 answers harder than multi-tag ones, because one tag can leave two believable poses."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson"
+measured_on = "unverified"
+method = "SOURCE"

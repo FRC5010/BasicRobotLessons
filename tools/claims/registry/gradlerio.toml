@@ -10,3 +10,53 @@ statement = "In the OpMode template, ./gradlew run builds the robot program and 
 evidence = "CLAUDE.md, 'v3 Lesson 30 (alerts) on alpha-7', ./gradlew simulateJava doesn't start a simulation (re-checked on the Lesson 0 state, 2026-10-29); the alpha-8 block, simulateJava now fails"
 measured_on = "alpha-8"
 method = "LOOP"
+
+[[claim]]
+id = "gradlerio.vendordeps-auto-loaded"
+kind = "behaviour"
+library = ["gradlerio"]
+criticality = "C1"
+statement = "A vendordep JSON saved in vendordeps/ is found by GradleRIO with no edit to build.gradle, and its classes are importable after a rebuild."
+evidence = "CLAUDE.md, 'Verifying lesson code' (verify-lessons-v3.sh and update-lesson-v3.sh install vendordeps by saving the JSON; build.gradle is patched only from Lesson 13, for AdvantageKit's replay)"
+measured_on = "alpha-8"
+method = "BARE"
+
+[[claim]]
+id = "gradlerio.requires-jdk-25"
+kind = "behaviour"
+library = ["gradlerio"]
+criticality = "C1"
+statement = "The OpMode template targets Java 25 (sourceCompatibility = JavaVersion.VERSION_25), and building under an older JDK fails with 'invalid source release: 25'."
+evidence = "CLAUDE.md, 'Verifying lesson code' (this container's JAVA_HOME at 21 failed every lesson with invalid source release: 25); code/OpModeV3Robot/build.gradle lines 8-9"
+measured_on = "alpha-8"
+method = "BARE"
+note = "That the WPILib installer bundles Eclipse Temurin 25 and that ORG_GRADLE_JAVA_HOME works are separate unverified statements (wpilib-tools.installer-contents)."
+
+[[claim]]
+id = "gradlerio.template-project-config"
+kind = "api"
+library = ["gradlerio"]
+criticality = "C3"
+statement = "The template ships team number 5010 in .wpilib/wpilib_preferences.json and a .gitignore that excludes build/ and .gradle/."
+evidence = "code/OpModeV3Robot/.wpilib/wpilib_preferences.json (teamNumber 5010) and .gitignore (lines 139-140) read on 2026-11-19"
+measured_on = "alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "gradlerio.org-gradle-java-home"
+kind = "behaviour"
+library = ["gradlerio"]
+criticality = "C3"
+statement = "Setting the ORG_GRADLE_JAVA_HOME environment variable points Gradle at JDK 25 without changing JAVA_HOME system-wide."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson (CLAUDE.md records only JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64)"
+measured_on = "unverified"
+
+[[claim]]
+id = "gradlerio.template-has-commandsv3"
+kind = "api"
+library = ["gradlerio", "commandsv3"]
+criticality = "C2"
+statement = "code/OpModeV3Robot, the course's starting project, is the pristine WPILib 2027 alpha OpMode template with the CommandsV3 vendordep already in vendordeps/, and builds as it stands."
+evidence = "CLAUDE.md, 'What this repo is' (code/OpModeV3Robot ships the CommandsV3 vendordep) and 'Verifying lesson code' (verify-lessons-v3.sh -1 builds it); vendordeps/ listed on 2026-11-19"
+measured_on = "alpha-8"
+method = "BARE"

@@ -1,0 +1,62 @@
+# Numbers Lesson 9 quotes that a library change could move. Format: tools/claims/README.md.
+
+[[claim]]
+id = "l09.turn-exit-time"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "In Lesson 9's rig the turnToHeading(90) command ends 0.70 s in (same as Lesson 8's)."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 9 RIG (turnToHeading(90) after driveDistance(1.0)); data/09-cosine-with.csv and 09-cosine-without.csv"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "0.70 s in"
+unit = "s"
+range = [0.695, 0.705]
+measured = "0.70 s"
+figure = "09-cosine-scrub.png"
+
+[[claim]]
+id = "l09.wheel-angle-at-exit"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "At the moment the turn command ends, front-left module's steering angle has only reached about 54 degrees of its 135 degree target."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 9 RIG (turnToHeading(90) after driveDistance(1.0)); data/09-cosine-with.csv and 09-cosine-without.csv"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "about 54 degrees"
+unit = "degrees"
+range = [53, 55]
+measured = "53.7 degrees at 0.70 s with the cosine line (53.69 without)"
+figure = "09-cosine-scrub.png"
+
+[[claim]]
+id = "l09.throttle-without-cos"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "Without the cosine line the front-left drive throttle jumps to 0.5 and holds almost 0.4 s while the wheel is far from its target."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 9 RIG (turnToHeading(90) after driveDistance(1.0)); data/09-cosine-with.csv and 09-cosine-without.csv"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "jumps to 0.5 and holds there for almost 0.4 s"
+unit = "s"
+range = [0.3, 0.4]
+measured = "0.5 for 0.38 s (CLAUDE.md, Lesson 9 RIG)"
+figure = "09-cosine-scrub.png"
+note = "Almost 0.4 s is read as just under 0.4 s."
+
+[[claim]]
+id = "l09.throttle-min-with-cos"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With the cosine line the throttle goes negative, to about -0.30, then shrinks toward zero."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 9 RIG (turnToHeading(90) after driveDistance(1.0)); data/09-cosine-with.csv and 09-cosine-without.csv"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "about -0.30"
+unit = "throttle"
+range = [-0.31, -0.29]
+measured = "-0.302 (csv minimum)"
+figure = "09-cosine-scrub.png"
