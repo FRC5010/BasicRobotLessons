@@ -377,6 +377,34 @@ the first tenth of a second. CLAUDE.md records 0.05–0.09 m/s, but the figure's
 position differences, gives 0.28 m/s at 0.08 s, so the lesson matches its figure. Which quantity
 CLAUDE.md's figure measured isn't recorded.
 
+**Wave 2, part 2 (Lessons 27–30, 2026-11-19): 150 markers, 11 new library claims.**
+
+The lesson contradicts the libraries or itself:
+
+19. **Lesson 29** says "Six motors is a swerve drivetrain plus two mechanisms". A swerve
+    drivetrain has eight motors, as the lesson says later.
+20. **Lesson 30 §3** says SimGUI "has no way in" to alerts. That was alpha-7; alpha-8 added
+    SimGUI's DS → Alerts window, which §4 describes.
+21. **Lesson 30 Try It #7** says the robot now has twelve alerts; share F counted thirteen built
+    by the lesson (not re-counted).
+22. **Lesson 28's recap** says spinning up takes "two and a half seconds"; its table says 2.3 s.
+23. **Lesson 29** mentions the roboRIO in places (lines 41, 426, 475) in a SystemCore course;
+    whether the sim class or the hardware is meant wasn't checked.
+
+The wording stretches the measurement [measured]:
+
+24. **Lesson 27:** "9.7°" at 2 m/s [9.66–9.85]; "as much as a degree" for a camera correction
+    [spikes up to 1.19°]; "0.8° on average" [0.76–0.90]; Aim While Driving ends "facing 0°"
+    [−1.6°]; Figure 27.2's "first 0.7 seconds" [0.76 s at 3 m/s, 0.62 s at 2 m/s].
+25. **Lesson 28:** "0.70 s" from a 45 rot/s idle [Figure 28.3's data enters the band at 0.68 s;
+    CLAUDE.md's five runs read 0.70]; the "about 6.7 V" jump [6.69 in the rig, 6.79–6.81 in the
+    real loop].
+26. **Lesson 29:** nine motors "384 A" [one run 383.4]; Figure 29.2's text has the budget's rail
+    dipping to about 9 V during the moves [the data reads 7.90 V]; the fresh-battery table says
+    "Ten runs of each" [the no-limits row is from thirty]; the fresh defaults' 84–126 A [batch 1's
+    four runs included 141 A].
+27. **Lesson 30:** the bare 11.27 V, 1.56 s and 11.19 V [some runs read 11.26 V, 1.54 s, 11.18 V].
+
 ## 6. What this doesn't cover
 
 - **Real hardware.** Every test runs in the simulator. Claims about a real robot (the stator limit
