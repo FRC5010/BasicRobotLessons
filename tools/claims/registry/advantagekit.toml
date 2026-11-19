@@ -1,0 +1,82 @@
+# Claims about AdvantageKit (LoggedOpModeRobot, Logger, replay).
+# Format: tools/claims/README.md.
+
+[[claim]]
+id = "advantagekit.start-from-instance-initializer"
+kind = "behaviour"
+library = ["advantagekit"]
+criticality = "C1"
+statement = "Logger.start() works from an instance initializer block at the top of a LoggedOpModeRobot subclass (it exits unless such a class is on the stack), which runs before every field initializer."
+evidence = "CLAUDE.md, 'v3 Lesson 13 records with AdvantageKit and replays', Why the initializer block"
+measured_on = "alpha-7 (AdvantageKit's alpha-7 jar, run on alpha-8)"
+method = "SOURCE"
+
+[[claim]]
+id = "advantagekit.logger-noop-when-not-started"
+kind = "behaviour"
+library = ["advantagekit"]
+criticality = "C1"
+statement = "Logger.processInputs and recordOutput do nothing unless Logger.start() has run, so in a unit test the inputs object is still filled by updateInputs but no output can be read back."
+evidence = "CLAUDE.md, 'v3 Lessons 31-33 record with AdvantageKit', Lesson 31"
+measured_on = "alpha-7 (AdvantageKit's alpha-7 jar)"
+method = "SOURCE"
+
+[[claim]]
+id = "advantagekit.vector-record-field-not-loggable"
+kind = "behaviour"
+library = ["advantagekit", "wpilib"]
+criticality = "C1"
+statement = "A record field of type Vector<N3> can't be logged (RecordStruct looks for a static struct field, which Vector lacks): the trust is lost and replay fails, so the record holds three doubles and rebuilds the vector."
+evidence = "CLAUDE.md, 'v3 Lessons 14-17 record with AdvantageKit', Lesson 15"
+measured_on = "alpha-7 (AdvantageKit's alpha-7 jar)"
+method = "REPLAY"
+
+[[claim]]
+id = "advantagekit.replay-needs-no-sim-gui"
+kind = "behaviour"
+library = ["advantagekit", "gradlerio"]
+criticality = "C1"
+statement = "Replay exits if any HAL sim extension is loaded, so the build.gradle edit turns SimGUI off when AKIT_LOG_PATH is set; ./gradlew run with AKIT_LOG_PATH replays, and ./gradlew replayWatch sets it itself."
+evidence = "CLAUDE.md, 'v3 Lesson 13 records with AdvantageKit and replays', Replay refuses any HAL sim extension"
+measured_on = "alpha-8"
+method = "REPLAY"
+
+[[claim]]
+id = "advantagekit.records-wpilib-alerts"
+kind = "behaviour"
+library = ["advantagekit", "wpilib"]
+criticality = "C1"
+statement = "AdvantageKit records each WPILib alert group as outputs every tick (the default group as RealOutputs/Alerts, type Alerts, with errors, warnings and infos), and SimGUI draws it as an alerts panel."
+evidence = "CLAUDE.md, 'v3 Lessons 28-30 record with AdvantageKit', Lesson 30"
+measured_on = "alpha-7 (AdvantageKit's alpha-7 jar)"
+method = "LOOP"
+
+[[claim]]
+id = "advantagekit.replay-matches-recording"
+kind = "behaviour"
+library = ["advantagekit"]
+criticality = "C1"
+statement = "A clean replay of a recorded sim run reproduces every recorded output sample for sample, with opmode IDs stable across runs; opmode selection and the disable edge can replay one tick early."
+evidence = "CLAUDE.md, 'v3 Lesson 13 records with AdvantageKit and replays', Measured replay; 'v3 Lessons 14-17', Opmode selection can replay one tick early; 'v3 Lessons 23-27', Lesson 25 addOpMode IDs are stable"
+measured_on = "alpha-8"
+method = "REPLAY"
+
+[[claim]]
+id = "advantagekit.battery-voltage-not-replayed"
+kind = "behaviour"
+library = ["advantagekit", "wpilib"]
+criticality = "C1"
+statement = "AdvantageKit doesn't replay RobotController.getBatteryVoltage() (LoggedSystemStats only saves it), so the lessons record the voltage as an input."
+evidence = "CLAUDE.md, 'v3 Lessons 28-30 record with AdvantageKit', Lesson 29"
+measured_on = "alpha-7 (AdvantageKit's alpha-7 jar)"
+method = "REPLAY"
+
+[[claim]]
+id = "advantagekit.autolog-key-names"
+kind = "behaviour"
+library = ["advantagekit"]
+criticality = "C2"
+statement = "An @AutoLog inputs class logs each field under the processInputs key, named after the field with its first letter capitalized (heightMeters is Elevator/HeightMeters), and fills the fields back from the log in a replay."
+evidence = "CLAUDE.md, 'v3 Lessons 18-22 record with AdvantageKit', Lesson 18 (AdvantageKit names each value after its field, capitalized)"
+measured_on = "alpha-7 (AdvantageKit's alpha-7 jar, run on alpha-8)"
+method = "REPLAY"

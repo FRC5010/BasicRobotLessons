@@ -1,0 +1,12 @@
+# Claims about GradleRIO and the build (tasks, vendordep loading).
+# Format: tools/claims/README.md.
+
+[[claim]]
+id = "gradlerio.run-starts-simgui"
+kind = "behaviour"
+library = ["gradlerio"]
+criticality = "C1"
+statement = "In the OpMode template, ./gradlew run builds the robot program and starts it with SimGUI."
+evidence = "CLAUDE.md, 'v3 Lesson 30 (alerts) on alpha-7', ./gradlew simulateJava doesn't start a simulation (re-checked on the Lesson 0 state, 2026-10-29); the alpha-8 block, simulateJava now fails"
+measured_on = "alpha-8"
+method = "LOOP"

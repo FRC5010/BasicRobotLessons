@@ -1,0 +1,36 @@
+#!/bin/sh
+# Runs before every commit once a clone has `git config core.hooksPath tools/githooks`.
+# The repo's Claude Code SessionStart hook (.claude/settings.json) sets that, so it runs
+# before every commit an agent makes; people committing by hand opt in the same way.
+#
+# It checks what is being committed, not the working tree: the staged lessons and tools are
+# checked out into a temporary folder first. So another agent's unfinished, unstaged work in
+# the same checkout can't block this commit, and `git commit -a` or `git commit <paths>`
+# (which commit through a temporary index) are checked as committed.
+#
+# What it runs (docs/lesson-plan-v3-claims-tests.md, section 3.5, says what comes later):
+#   - tools/claims/check_claims.py: the claims registry against the lessons' claim markers.
+#   - its unit tests, when the commit changes the checker or its tests.
+# Don't skip it with --no-verify; fix what it reports.
+set -eu
+
+top=$(git rev-parse --show-toplevel)
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT INT TERM
+
+cd "$top"
+git ls-files -z -- docs/lessons/v3 tools | xargs -0 -r git checkout-index --prefix="$tmp/" --
+
+py=${PYTHON:-python3}
+if ! "$py" "$tmp/tools/claims/check_claims.py" --root "$tmp" --quiet; then
+  echo "pre-commit: the claims check failed (tools/claims/check_claims.py). Fix the markers or the registry, then commit again." >&2
+  exit 1
+fi
+
+if git diff --cached --name-only -- tools/claims tools/tests/test_check_claims.py | grep -q .; then
+  if ! out=$(cd "$tmp" && "$py" -m unittest -q tools.tests.test_check_claims 2>&1); then
+    printf '%s\n' "$out" | tail -20 >&2
+    echo "pre-commit: tools/tests/test_check_claims.py failed." >&2
+    exit 1
+  fi
+fi

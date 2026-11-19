@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "git -C \"${CLAUDE_PROJECT_DIR:-.}\" config core.hooksPath tools/githooks 2>/dev/null || true",
+            "statusMessage": "Turning on the repo's pre-commit checks"
+          }
+        ]
+      }
+    ]
+  }
+}

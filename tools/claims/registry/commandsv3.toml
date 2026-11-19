@@ -1,0 +1,132 @@
+# Claims about Commands V3 (org.wpilib.command3): the scheduler, commands, triggers, mechanisms.
+# Format: tools/claims/README.md.
+
+[[claim]]
+id = "commandsv3.periodic-before-commands"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "Scheduler.run() runs every addPeriodic callback, in registration order, before any command, so subsystem readings are fresh when commands and later periodics read them."
+evidence = "CLAUDE.md, 'Facts from the alpha-7 jars' (bytecode); 'v3 Lesson 24 (superstructure) on alpha-7', No premature HOLDING"
+measured_on = "alpha-7 (bytecode), relied on in alpha-8 measurements"
+method = "BYTECODE"
+
+[[claim]]
+id = "commandsv3.commands-run-in-reverse-order"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "Scheduler.runCommands runs the running commands in reverse insertion order, so in a parallel group the later command's first check can come before the earlier one's first run (why Lesson 25 waits for the remaining distance to go above 0)."
+evidence = "CLAUDE.md, 'v3 Lesson 25 (path events)', getRemainingPathDistanceMeters() is 0.0 before the path's first run"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.disable-cancels-mechanism-commands"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "On disable the scheduler cancels every command that requires a mechanism not controllableDuringDisabled (the default), and queues no default commands while disabled; default commands come back on enable."
+evidence = "CLAUDE.md, the alpha-8 block, Mechanism commands are cancelled on disable (#9417); 'Batch 1 found', Lessons 1 and 2 crashed at boot"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.whiletrue-edge-and-enable"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "whileTrue schedules only on a rising edge and a schedule while disabled is refused, so inState(X).whileTrue(motion) never restarts after a disable; inState(X).and(RobotState::isEnabled).whileTrue(motion) restarts it on enable."
+evidence = "CLAUDE.md, 'v3 Lesson 24 (superstructure) on alpha-7', Alpha-8: the bindings are inState(X).and(RobotState::isEnabled) (Check24Probe)"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.when-exited-on-cancel"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "whenExited runs when a command finishes, is cancelled, is interrupted, or is cancelled by a disable; whenCanceled runs only when it doesn't finish by itself. On a cancel the order is exit, then cancel, and .until(...) ends its inner command by cancelling it."
+evidence = "CLAUDE.md, the alpha-8 block, New Commands V3 API (hook probe, 2026-11-12)"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.sequence-requires-union"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "A SequentialGroup (Command.sequence) requires the union of its steps' mechanisms for its whole run, so a sequence that homes the elevator holds the elevator and is evicted by the IDLE motion."
+evidence = "CLAUDE.md, 'v3 Lesson 25 (path events)', Every path auto gets ready first"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.debounce-rising"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "Trigger.debounce(Time) takes the measure directly and debounces the RISING edge by default, so a sensor flickering every other tick never passes a 0.1 s debounce."
+evidence = "CLAUDE.md, 'v3 Lesson 22 (beam breaks)'"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "BYTECODE"
+
+[[claim]]
+id = "commandsv3.opmode-bindings-dropped"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "A Trigger binding made while an opmode is being built belongs to that opmode and is torn down when another opmode is selected."
+evidence = "CLAUDE.md, 'v3 Lesson 24 (superstructure) on alpha-7', The four state-motion bindings live in Robot's constructor"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.trigger-cache-fixed"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "Plain controller triggers (driverController.back()) in a second opmode fire after another opmode bound the same buttons, in every selection order (the alpha-7 Trigger-cache bug is fixed)."
+evidence = "CLAUDE.md, 'v3 Lesson 33 rebuilt on WPILib's SysIdRoutine', Plain triggers on the final code (T,U,T,U,U,T)"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.no-requirements-exists"
+kind = "api"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "Command.noRequirements() builds a command that requires no mechanism, and there is no onlyIf."
+evidence = "CLAUDE.md, 'v3 Lesson 24 (superstructure) on alpha-7' (a hand-built noRequirements guard; there is no onlyIf); listed unchanged on alpha-8"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "commandsv3.finished-command-reschedulable"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "A finished Command object can be scheduled again, so one instance registered in Robot's constructor serves every run of a path event."
+evidence = "CLAUDE.md, 'v3 Lesson 25 (path events)', Event markers"
+measured_on = "alpha-7"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.mechanism-no-default-command"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "Mechanism is an interface, and getDefaultCommand() is null until setDefaultCommand is called; nothing installs an idle command for you."
+evidence = "CLAUDE.md, 'v3 Lesson 28 (flywheel) on alpha-7'; 'Batch 1 found', no idle command ever runs in Lesson 1"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.sysid-routine"
+kind = "api"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "org.wpilib.command3.sysid.SysIdRoutine(Config, SysIdMechanism): Config.defaults() is 1 V/s, 7 V and 10 s; Direction.FORWARD/REVERSE; the commands are named sysid-quasistatic-forward-<mechanism> and so on, and the SysId signals go to WPILib's DataLogManager log (the WPILIB_ file), not AdvantageKit's."
+evidence = "CLAUDE.md, 'v3 Lesson 33 rebuilt on WPILib's SysIdRoutine', The real API"
+measured_on = "alpha-8"
+method = "SOURCE"

@@ -1,0 +1,145 @@
+# Claims about WPILib itself (the OpModeRobot framework, telemetry, math, the simulator).
+# Format: tools/claims/README.md.
+
+[[claim]]
+id = "wpilib.opmode-lifecycle"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "Picking an opmode constructs it; Enable runs start(); Disable runs end() then close() on the same tick, and a fresh opmode is constructed on the next one. Picking a different opmode runs close() on the one left."
+evidence = "CLAUDE.md, 'Batch 2 found', first bullet (Check00OpModeLifecycle, OpModeRobot.loopFunc bytecode)"
+measured_on = "alpha-8"
+method = "LOOP"
+test = "tools/figures/probes/Check00OpModeLifecycle.java"
+figure = "00-opmode-lifecycle.svg"
+
+[[claim]]
+id = "wpilib.add-opmode-needs-second-publish"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "Opmodes added with addOpMode in Robot's constructor appear only after a second publishOpModes(), because OpModeRobot's constructor scans and publishes before the subclass body runs. A name already used by an annotated opmode throws IllegalArgumentException at boot."
+evidence = "CLAUDE.md, 'v3 Lesson 25 (path events)', One opmode class, many autos"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib.opmode-id-zero-in-robot-constructor"
+kind = "behaviour"
+library = ["wpilib", "commandsv3"]
+criticality = "C1"
+statement = "RobotState.getOpModeId() is 0 until the user program has started, so a Trigger binding made in Robot's constructor is Global and keeps running when another opmode is selected."
+evidence = "CLAUDE.md, 'v3 Lesson 24 (superstructure) on alpha-7' (DriverStationBackend source; measured Intake Motion surviving an opmode change)"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib.telemetry-log-is-a-snapshot"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "Telemetry.log(widget) publishes the widget's state at that moment; changing the widget afterwards publishes nothing until it is logged again, so a Field2d is logged every tick."
+evidence = "CLAUDE.md, 'Facts from the alpha-7 jars', Telemetry.log(widget) writes a snapshot (setRobotPose(4, 5) still read (1, 1))"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib.sim-never-browns-out"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "In simulation RobotController.isBrownedOut() stays false, even at 4.0 V held for 2.5 s, so the lesson computes its own brownout flag from the voltage."
+evidence = "CLAUDE.md, 'v3 Lesson 29 (current limits) on alpha-7', Unchanged"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "BARE"
+
+[[claim]]
+id = "wpilib.simdevice-duplicate-returns-null"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "SimDevice.create returns null for a name already in use, so the unplug switch guards against null."
+evidence = "CLAUDE.md, 'v3 Lesson 30 (alerts) on alpha-7', The unplug switch"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib.alert-duplicate-throws"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "org.wpilib.util.Alert(id, text, level): a second alert with the same id and level throws AlertException at construction; the same id at another level is allowed."
+evidence = "CLAUDE.md, 'v3 Lesson 30 (alerts) on alpha-7', Alert moved again"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib.field-tag-20-position"
+kind = "api"
+library = ["wpilib"]
+criticality = "C1"
+statement = "Field.loadField(Fields.DEFAULT_FIELD).getTagPose(20) is at (5.229, 4.035) m; an ID not on the field gives an empty Optional."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8', Lesson 27; 'v3 Lesson 27 (aim at tag) on alpha-7'"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib.translation-angle-optional"
+kind = "api"
+library = ["wpilib"]
+criticality = "C1"
+statement = "Translation2d.getAngle() returns Optional<Rotation2d>, empty for a zero vector; Rotation2d.minus wraps (170 deg minus -170 deg is -20 deg)."
+evidence = "CLAUDE.md, 'v3 Lesson 25 (path events)', Translation2d.getAngle(); listed unchanged on alpha-8"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib.mathutil-helpers"
+kind = "api"
+library = ["wpilib"]
+criticality = "C1"
+statement = "MathUtil.inputModulus(value, min, max) and Units.radiansToRotations exist."
+evidence = "CLAUDE.md, the alpha-8 block's 'Unchanged and still relied on' (Units.radiansToRotations), and Lessons 10-12 compiling"
+measured_on = "alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "wpilib.no-mathutil-clamp"
+kind = "api"
+library = ["wpilib"]
+criticality = "C1"
+statement = "WPILib has no MathUtil.clamp, so the lessons keep Lesson 5's hand-written clamp helper."
+evidence = "CLAUDE.md, the alpha-8 block's 'Unchanged and still relied on'"
+measured_on = "alpha-8"
+method = "SOURCE"
+note = "An absence: nothing fails to compile if a later release adds the method, so only a test can catch it."
+
+[[claim]]
+id = "wpilib.kraken-x60-model"
+kind = "api"
+library = ["wpilib"]
+criticality = "C1"
+statement = "DCMotor.getKrakenX60(n) is 7.157 N*m stall torque, 374.4 A stall current, 2 A free current and 6065 RPM free speed on 12 V (from CTRE's dynamometer data). The lessons' feedforward gains and kMaxSpeed are derived from these."
+evidence = "CLAUDE.md, the alpha-8 block, DCMotor.getKrakenX60 changed (#9378; javap of wpimath-java-2027.0.0-alpha-8)"
+measured_on = "alpha-8"
+method = "BYTECODE"
+
+[[claim]]
+id = "wpilib.debouncer-replayable-clock"
+kind = "behaviour"
+library = ["wpilib", "advantagekit"]
+criticality = "C1"
+statement = "org.wpilib.math.filter.Debouncer takes its time in seconds as a double and reads MathSharedStore.getTimestamp(), the clock AdvantageKit replays, so a debounced decision replays on the same tick."
+evidence = "CLAUDE.md, 'v3 Lessons 23-27 record with AdvantageKit', Lesson 24 (the Debouncer replays)"
+measured_on = "alpha-7 (AdvantageKit's alpha-7 jar)"
+method = "REPLAY"
+
+[[claim]]
+id = "wpilib.battery-sim-loaded-voltage"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "BatterySim.calculateLoadedBatteryVoltage(11.0, 0.04, total) gives 11 V minus 40 mOhm times the current, so the 6.3 V brownout line is 117.5 A."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, The arithmetic that makes the rows readable"
+measured_on = "alpha-8"
+method = "LOOP"

@@ -1,0 +1,75 @@
+# Claims about CTRE Phoenix 6 (TalonFX, CANcoder, Pigeon 2, and their simulation).
+# Format: tools/claims/README.md.
+
+[[claim]]
+id = "phoenix6.talonfx-default-current-limits"
+kind = "api"
+library = ["phoenix6"]
+criticality = "C1"
+statement = "A fresh TalonFXConfiguration has a 120 A stator current limit and a 70 A supply current limit, both enabled, with SupplyCurrentLowerLimit 40 A after 1.0 s."
+evidence = "CLAUDE.md, 'v3 Lesson 29 (current limits) on alpha-7', Unchanged"
+measured_on = "alpha-7 (Phoenix 26.70.0-alpha-2, the same pin on alpha-8)"
+method = "BARE"
+
+[[claim]]
+id = "phoenix6.stator-limit-caps-startup-voltage"
+kind = "behaviour"
+library = ["phoenix6"]
+criticality = "C2"
+statement = "From a standstill, the default 120 A stator limit holds a large voltage request to about 3 V for the first ticks (12 V and 8 V requests both read 3.0 V applied, about 119 A)."
+evidence = "CLAUDE.md, 'Batch 1 found', Lesson 12 §5 and Lesson 1; 'Batch 2 found', Lesson 6 RIG"
+measured_on = "alpha-8"
+method = "RIG"
+
+[[claim]]
+id = "phoenix6.soft-limit-stops-motion-magic"
+kind = "behaviour"
+library = ["phoenix6"]
+criticality = "C1"
+statement = "With ForwardSoftLimitEnable on, Motion Magic's setpoint stops at the limit and the output falls to the feedforward; with it off, the setpoint runs on and a stalled Kraken holds 3.0 V at about 119 A."
+evidence = "CLAUDE.md, 'v3 Lesson 20 (intake arm) on alpha-7', The soft limit can't be seen in the angle; 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 20 Try It #3"
+measured_on = "alpha-8"
+method = "RIG"
+
+[[claim]]
+id = "phoenix6.continuous-wrap"
+kind = "behaviour"
+library = ["phoenix6"]
+criticality = "C1"
+statement = "With ClosedLoopGeneral.ContinuousWrap on, the TalonFX's position loop takes the short way round, so the software angle wrap is no longer needed."
+evidence = "Lesson 12 compiling and running in the Lessons 7-22 re-measure; no dedicated probe recorded in CLAUDE.md"
+measured_on = "alpha-8"
+method = "LOOP"
+note = "Phase 0 should confirm what Lesson 12 says and whether CLAUDE.md records a measurement."
+
+[[claim]]
+id = "phoenix6.sensor-to-mechanism-ratio"
+kind = "behaviour"
+library = ["phoenix6"]
+criticality = "C1"
+statement = "With Feedback.SensorToMechanismRatio set, the TalonFX reports position and velocity in mechanism rotations and its closed-loop gains (kV, kA, kP) act on mechanism units, not rotor units."
+evidence = "Lessons 12 and 18 (the drive and elevator gains are per mechanism rotation and the measured lag matches them); no dedicated probe recorded in CLAUDE.md"
+measured_on = "alpha-8"
+method = "RIG"
+
+[[claim]]
+id = "phoenix6.control-request-persists"
+kind = "behaviour"
+library = ["phoenix6"]
+criticality = "C1"
+statement = "A control request sent to a TalonFX (Motion Magic to a position, a voltage) keeps running in the firmware until another request replaces it; in the Phoenix sim it also resumes after a disable and enable."
+evidence = "CLAUDE.md, 'v3 Lesson 24 (superstructure) on alpha-7', Disabled mid-HANDOFF (a TalonFX resumes its last control request on enable)"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "phoenix6.closed-loop-reference-is-profile-setpoint"
+kind = "behaviour"
+library = ["phoenix6"]
+criticality = "C1"
+statement = "Under Motion Magic, getClosedLoopReference() reads the profile's setpoint at this moment (the firmware's plan, ramping from the start to the goal), which is what the elevator logs as SetpointMeters."
+evidence = "CLAUDE.md, 'v3 Lessons 18-22 record with AdvantageKit', Lesson 18 (the profile setpoint stays an input); Figure 18.2's data"
+measured_on = "alpha-8"
+method = "RIG"
+test = "tools/figures/probes/Fig18HeightSetpointGoal.java"
+figure = "18-height-setpoint-goal.png"

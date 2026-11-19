@@ -1,0 +1,12 @@
+# Claims about LimelightLib (pinned by commit in tools/lib/v3-lessons.sh).
+# Format: tools/claims/README.md.
+
+[[claim]]
+id = "limelightlib.parses-sim-frames"
+kind = "behaviour"
+library = ["limelightlib"]
+criticality = "C1"
+statement = "The unmodified LimelightLib parses the results frames the simulated camera publishes on the NetworkTables topic a real Limelight uses, and gives a MegaTag2 pose estimate with its standard deviations."
+evidence = "CLAUDE.md, the alpha-7 upgrade notes (Lesson 15's simulated camera); 'v3 Lessons 14-17 record with AdvantageKit', Lesson 15"
+measured_on = "alpha-8"
+method = "LOOP"

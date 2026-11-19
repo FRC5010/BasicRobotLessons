@@ -2340,6 +2340,29 @@ Hard-won details worth not rediscovering:
 
 Target platform (assumed by every lesson): **WPILib 2027 alpha**, **Phoenix 6**, **TalonFX** drive/steer motors, **Pigeon 2** gyro, Xbox controller, **AdvantageKit** logging (from Lesson 13 on; Lessons 3–12 use WPILib's `Telemetry`). The classic track's own hard-won details (script deletions, `deploy/` and `tests/` mapping, maple-sim hosting) are in [2026/CLAUDE.md](2026/CLAUDE.md).
 
+## Lesson claims and the pre-commit check
+
+Claims the lessons make about how a library behaves, and the numbers they quote from the
+simulation, are listed in `tools/claims/registry/*.toml`. A lesson points at one with a hidden
+comment at the end of the sentence that relies on it: `<!-- claim: l18.kv-zeroed-lag -->`. The
+format, the marker rules and how a number's range is set are in
+[tools/claims/README.md](tools/claims/README.md); the plan is
+[docs/lesson-plan-v3-claims-tests.md](docs/lesson-plan-v3-claims-tests.md) (Phase 0, the
+inventory, started 2026-11-19).
+
+- **Every agent commit runs `tools/githooks/pre-commit`**, which checks the staged registry and
+  markers with `tools/claims/check_claims.py`. `.claude/settings.json`'s SessionStart hook turns it
+  on (`git config core.hooksPath tools/githooks`). **Never commit with `--no-verify`**; fix what it
+  reports.
+- **Editing a marked sentence:** re-read the claim it names, and update the claim (or the
+  sentence) if they no longer agree.
+- **Writing a sentence that relies on library behaviour or a measured number:** mark it, and add a
+  claim if none fits. A changed number gets its claim's `measured`, `measured_on` and range updated
+  in the same commit.
+- Markers go inline, or on their own line with a blank line after them, and never inside a code
+  block: an own-line marker directly above a table turns the table into a paragraph (measured with
+  the site's kramdown).
+
 ## Lessons are strictly sequential
 
 Lessons 0–34 form a single build. Each one:
@@ -2429,7 +2452,7 @@ Prose conventions used consistently across lessons:
 - **The real hazard is an instruction buried in a paragraph.** Any *actionable* code step hiding in a wall of explanation — a deletion, a rename, an added import, a re-binding ("bind this instead of that"), a "update every caller" — must be lifted onto its own bold line (or short blockquote), never left mid-sentence where a skimming student sails past it. The test: someone who reads **only** the bold lines and the code blocks, skipping every explanatory paragraph, should still perform every required edit and end up with compiling code. If skipping the prose would make them miss a step, that step is in the wrong place.
 - Blockquote callouts and code comments render gray, but they are still teaching text: write them **to the student**, never about the lesson from the outside. "Watch out: motors don't stop on their own" — not "this is the misconception of the lesson" or other narration about the material.
 - **WPILib Units** (`edu.wpi.first.units`) get peppered in from [Lesson 10](docs/lessons/v3/10-kinematics.md) on — *after* the by-hand math has been taught, never before (Lessons 1–9 keep bare `double`s with unit-suffixed names like `kMaxSpeedMps`, which is the teaching version). Scope is **constants + signatures**: named physical constants (`Distance kWheelDiameter = Inches.of(4)`, `LinearVelocity kMaxSpeed = MetersPerSecond.of(...)`, chassis `Distance`s) and human-authored command parameters (`driveDistance(Distance distance)`, `turnToHeading(Angle target)`). **WPILib's own APIs speak Units — prefer passing measures directly over unpacking.** `ChassisSpeeds(LinearVelocity, LinearVelocity, AngularVelocity)`, `SwerveModuleState(LinearVelocity, Rotation2d)`, `SwerveDriveKinematics.desaturateWheelSpeeds(states, LinearVelocity)`, the geometry/kinematics/estimator classes, and `Rotation2d`/`Angle` interop all take measures, so let a `LinearVelocity`/`Angle` flow straight through them; scale with measure arithmetic (`kMaxSpeed.times(fraction)`, `.plus`, `.div`) rather than converting to a double and back. Only unpack with `.in(Meters)` / `.in(Degrees)` / `.in(MetersPerSecond)` at a *genuine* double-only boundary — chiefly Phoenix `motor.set`/`setControl` (which want a −1..1 fraction or a plain number) and any hand-rolled arithmetic that must stay double for readability. Dimensionless values (gear ratios, `kP`/`kV` gains) stay `double`. **Unpack only when necessary, and convert once:** if you *do* need a bare `double` more than once in a scope (or inside a per-tick lambda), pull it into a local once and reuse it rather than calling `.in(...)` repeatedly in a hot path. But first prefer not unpacking at all — scaling the measure with `.times(fraction)` (as the joystick suppliers do) keeps the unit and sidesteps the conversion entirely. Migrate the unitless constants gradually: a `double` from an earlier lesson becomes typed only when a lesson has reason to touch it, not in a sweep. Imports: `import static edu.wpi.first.units.Units.*;` for the unit singletons, plus the measure types from `edu.wpi.first.units.measure` (`Distance`, `Angle`, `LinearVelocity`, …). Introduce the library with a teaching beat that builds on the unit-in-the-name habit ("you've been writing `Mps` in the name; the type can carry the unit for you").
-- From [Lesson 10](docs/lessons/v3/10-kinematics.md) on, the hand-written angle-wrap `while` loops (`while (error > 180) { error -= 360; } …`) become one call: `MathUtil.inputModulus(error, -180, 180)`. Lessons 5–9 keep the explicit loop as the teaching version, then Lesson 10 swaps to the library call the same way `clamp` became `MathUtil.clamp` in Lesson 7 ("now that you know what it does by hand, here's the one-liner"). By [Lesson 12](docs/lessons/v3/12-model-based-control.md) the steering wrap moves into firmware (`ContinuousWrap`) and the software wrap retires entirely.
+- From [Lesson 10](docs/lessons/v3/10-kinematics.md) on, the hand-written angle-wrap `while` loops (`while (error > 180) { error -= 360; } …`) become one call: `MathUtil.inputModulus(error, -180, 180)`. Lessons 5–9 keep the explicit loop as the teaching version, then Lesson 10 swaps to the library call ("now that you know what it does by hand, here's the one-liner"). `clamp` gets no such swap: this alpha's WPILib has no `MathUtil.clamp`, so Lesson 5's private helper stays, and Lessons 7, 8, 11, 18, 20 and 28 say so (the classic track, on WPILib 2026, did swap to `MathUtil.clamp` in its Lesson 7). By [Lesson 12](docs/lessons/v3/12-model-based-control.md) the steering wrap moves into firmware (`ContinuousWrap`) and the software wrap retires entirely.
 
 ## Figures in lessons
 

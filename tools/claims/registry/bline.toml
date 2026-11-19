@@ -1,0 +1,72 @@
+# Claims about BLine (pinned by commit in tools/lib/v3-lessons.sh).
+# Format: tools/claims/README.md.
+
+[[claim]]
+id = "bline.builder-distinct-pids"
+kind = "api"
+library = ["bline"]
+criticality = "C1"
+statement = "FollowPath's builder takes nine arguments (DriveType.SWERVE, the drivetrain Mechanism, pose, resetPose, measured velocities, output, and three PIDControllers); passing the same PIDController object twice throws."
+evidence = "CLAUDE.md, 'v3 Lesson 17 runs on BLine v2027.0.0-beta.1', The API differs"
+measured_on = "alpha-7 (BLine d996781), relied on in alpha-8 runs"
+method = "SOURCE"
+
+[[claim]]
+id = "bline.profiled-rotation-default-false"
+kind = "behaviour"
+library = ["bline"]
+criticality = "C1"
+statement = "A path's rotation target is aimed at immediately unless it says \"profiled_rotation\": true; the default is false."
+evidence = "CLAUDE.md, 'v3 Lesson 17 runs on BLine v2027.0.0-beta.1', A rotation target is aimed at immediately"
+measured_on = "alpha-7 (BLine d996781)"
+method = "SOURCE"
+
+[[claim]]
+id = "bline.events-next-poll"
+kind = "behaviour"
+library = ["bline", "commandsv3"]
+criticality = "C1"
+statement = "A path event fires on the next default-event-loop poll, one loop after the marker, outside the follower; a Command event is scheduled then, and an event that requires the drivetrain cancels the path."
+evidence = "CLAUDE.md, 'v3 Lesson 17 runs on BLine', registerEventTrigger; 'v3 Lesson 25 (path events)', Event markers"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "bline.remaining-distance-zero-before-run"
+kind = "behaviour"
+library = ["bline"]
+criticality = "C1"
+statement = "getRemainingPathDistanceMeters() reads 0.0 before the path's first run, even inside a parallel group."
+evidence = "CLAUDE.md, 'v3 Lesson 25 (path events)', getRemainingPathDistanceMeters() is 0.0 before the path's first run"
+measured_on = "alpha-7"
+method = "LOOP"
+
+[[claim]]
+id = "bline.pose-reset-estimate-only"
+kind = "behaviour"
+library = ["bline"]
+criticality = "C1"
+statement = "withPoseReset() resets only the pose estimate, not where the simulated robot is, so the sim places the robot at the path's start separately."
+evidence = "CLAUDE.md, 'v3 Lesson 17 runs on BLine', In sim, selecting an auto sets the simulated robot down at its start"
+measured_on = "alpha-7"
+method = "LOOP"
+
+[[claim]]
+id = "bline.override-rotation"
+kind = "behaviour"
+library = ["bline"]
+criticality = "C1"
+statement = "FollowPath.overrideRotation takes an angular velocity; the one-argument form bypasses the path's constraints, RESPECT_CONSTRAINTS holds the configured limit, and the override is static, so it stays on until cleared."
+evidence = "CLAUDE.md, 'v3 Lesson 25 (path events)', Rotation override; 'There was no finallyDo on alpha-7'"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "bline.bad-path-name-throws"
+kind = "behaviour"
+library = ["bline"]
+criticality = "C1"
+statement = "A misspelled path name throws IllegalArgumentException when the path is loaded, which happens in the auto opmode's constructor, at selection."
+evidence = "CLAUDE.md, 'v3 Lesson 17 runs on BLine', An opmode is constructed when it's selected"
+measured_on = "alpha-7"
+method = "LOOP"

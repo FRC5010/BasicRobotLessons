@@ -60,7 +60,7 @@ elevator, in the simulator, with every gain but `kP` set to zero.
 <a id="figure-18-1"></a>
 ![Above: one move from stowed to the mid-score height. With the full model the carriage's height sits on the planned path the whole way; with kP alone it trails the plan by up to 8 cm while moving, then catches up. Below: the hold after the move, zoomed in to millimeters. With kP alone the carriage settles about 1.5 mm below the height asked for and stays there; with the model it sits 0.19 mm low](images/18-kp-alone.png)
 
-*Figure 18.1 — What `kP` alone does, moving and holding, next to the full model this lesson builds. The lower panel zooms in on the hold.*
+*Figure 18.1 — What `kP` alone does, moving and holding, next to the full model this lesson builds. The lower panel zooms in on the hold.* <!-- claim: l18.kp-alone-lag, l18.kp-alone-hold, l18.model-hold-gap -->
 
 Start with the top panel, one move from stowed to `kScoreMid`. The
 dashed line is the height you asked for. The thick blue line is the path
@@ -69,18 +69,18 @@ it's simply where the carriage should be at each moment). The orange
 line is the carriage with the full model you're about to build, and it
 sits right on the blue. The green line is the same move with `kP` alone,
 and it trails the plan the whole way up, about 8 cm behind at the
-widest, catching up only once the plan stops moving. That's the same
+widest, catching up only once the plan stops moving. <!-- claim: l18.kp-alone-lag --> That's the same
 rule as the sag at a bigger scale: a moving carriage needs several volts,
 and `kP` can only make them out of error.
 
 Now the lower panel, which zooms in on the hold that follows, measured
 in millimeters below the height you asked for. With `kP` alone the
 carriage settles about **1.5 mm low** and stays there for as long as the
-request stands. It isn't drifting, and it isn't noise: 1.5 mm of error is
+request stands. <!-- claim: l18.kp-alone-hold --> It isn't drifting, and it isn't noise: 1.5 mm of error is
 just enough for `kP` to make the voltage that holds the carriage up,
 so the controller has nothing left to correct. A small number, but it's
 `kG`'s whole job, missing. (The model's orange line sits a fifth of a
-millimeter low; §10 comes back to it.)
+millimeter low; §10 comes back to it.) <!-- claim: l18.model-hold-gap -->
 
 Deliberate, not accidental voltage is the fix: instead of asking `kP` to
 back into the right voltage through tolerated error, you compute the
@@ -98,7 +98,7 @@ Two facts about the Kraken X60 do almost all of the work. They're the
 numbers WPILib's own motor model uses for it, `DCMotor.getKrakenX60(1)` —
 the one you've been handing the simulations since Lesson 4 — and WPILib
 takes them from CTRE's published dynamometer test data, the Motor Testing
-Lab on CTRE's website.
+Lab on CTRE's website. <!-- claim: wpilib.kraken-x60-model -->
 
 - **Free speed:** 6065 RPM at 12 V, which is 101.08 rotations/sec. That's
   **0.1187 V per rotor rotation/sec** (`12 / 101.08`).
@@ -118,7 +118,7 @@ closed loop runs in drum rotations, not rotor rotations — Phoenix's
 `SensorToMechanismRatio` handles that conversion ([Figure 12.2](12-model-based-control.md#figure-12-2) draws the chain), the same way
 `DriveConstants.kDriveKV = 0.8` is volts per *wheel* rotation/sec, not
 per rotor rotation/sec. `kV`, `kA`, and `kP` all live on the mechanism
-side of that ratio.)
+side of that ratio.) <!-- claim: phoenix6.sensor-to-mechanism-ratio -->
 
 **`kG` — voltage to hold position.** The carriage weighs `kCarriageMass`
 = 5 kg, so gravity pulls with `5 × 9.81 ≈ 49.05` N. That force acts at
@@ -350,7 +350,7 @@ A few things worth pointing at directly:
   uses for the drive and steer motors.
 - **`getClosedLoopReference()`** is new: it's the profile's own live
   setpoint, straight from the firmware — exactly the third number §5
-  flagged.
+  flagged. <!-- claim: phoenix6.closed-loop-reference-is-profile-setpoint -->
 - Every read here goes through `.getValue()`, which hands back the
   signal's real type: for a `Voltage` or an `Angle` that means unpacking
   with `.in(...)`, and for a bare `Double` like `getClosedLoopReference()`'s
@@ -510,7 +510,7 @@ public class Elevator implements Mechanism {
 The logging is Lesson 13's rule again. `processInputs` records all four
 readings as `Elevator/HeightMeters`, `Elevator/VelocityMetersPerSec`,
 `Elevator/AppliedVolts` and `Elevator/SetpointMeters` — it names each one
-after its field — and fills them from the log in a replay. The goal is
+after its field — and fills them from the log in a replay. <!-- claim: advantagekit.autolog-key-names --> The goal is
 different: nothing measured it, your code chose it, so it's an output and
 goes through `recordOutput`.
 
@@ -522,14 +522,14 @@ library gives every measure type ordering for free through the `Measure`
 interface — `.gt`, `.lt`, `.gte`, `.lte` — so a typed clamp reads almost
 exactly like the `double`-based one `Drivetrain` already has, just
 comparing `Distance`s instead of raw numbers. There's no `MathUtil.clamp`
-here to shortcut it, so this is the natural thing to reach for instead.
+here to shortcut it, so this is the natural thing to reach for instead. <!-- claim: wpilib.no-mathutil-clamp -->
 
 **`goToHeight` never calls `.whenCanceled(...)`.** Every drive command
 you've written so far stops the robot on cancellation, because leaving a
 swerve module spinning is dangerous. An elevator command is the opposite
 case: a Motion Magic request is a standing order to the firmware —
 "go here and stay" — that keeps running on its own until something
-replaces it. If `goToHeight` gets interrupted by a fresh call to itself
+replaces it. <!-- claim: phoenix6.control-request-persists --> If `goToHeight` gets interrupted by a fresh call to itself
 (pressing a different D-pad direction, say), the *new* command's
 `runRepeatedly` immediately issues a new goal, and the old one's absence
 changes nothing. There's no gap where the carriage is uncommanded.
@@ -595,18 +595,18 @@ what a missing gain looks like.
 <a id="figure-18-2"></a>
 ![Above: goal, setpoint and height during one move from stowed to the top of the travel. The goal is a step to 1.5 m and the setpoint ramps up to it over about two seconds. The height with the model follows so closely that it overlaps the setpoint; with kElevatorKV zeroed it runs parallel but about 9 cm behind through the middle of the move. Below: setpoint minus height in millimeters, which opens, holds at about 91 mm through the cruise and closes with kElevatorKV zeroed, and stays near a centimeter with the model](images/18-height-setpoint-goal.png)
 
-*Figure 18.2 — One move from stowed to the top. Above: goal, setpoint and height, with the model and with `kElevatorKV` zeroed. Below: setpoint minus height for both.*
+*Figure 18.2 — One move from stowed to the top. Above: goal, setpoint and height, with the model and with `kElevatorKV` zeroed. Below: setpoint minus height for both.* <!-- claim: l18.kv-zeroed-lag, l18.model-lag, l18.profile-duration, phoenix6.closed-loop-reference-is-profile-setpoint -->
 
 Read the top panel first. The dashed goal jumps to 1.5 m the moment you
 press the button and stays there. The thick blue setpoint is Motion
 Magic's plan: it speeds up, cruises at 1 m/s through the middle, and
-slows into the goal about two seconds later. The long gray arrow on the
+slows into the goal about two seconds later. <!-- claim: l18.profile-duration --> The long gray arrow on the
 left is the gap between those two, and it's the profile doing its job,
 not a problem. The orange height, with the model, sits on the setpoint
 so closely that the two lines merge at this scale. The green height is
 the same move with `kElevatorKV` zeroed: it runs parallel to the
 setpoint but about 9 cm behind it, and only catches up as the profile
-slows near the top.
+slows near the top. <!-- claim: l18.kv-zeroed-lag -->
 
 The lower panel zooms in on the gap you tune, setpoint minus height, in
 millimeters. Look at the *shape* of the green line before its size: it
@@ -615,7 +615,7 @@ closes as the profile slows down. A gap that only exists while the
 carriage moves, and is biggest when it moves fastest, points straight at
 the gain that pays for speed. The orange line, with the model, never
 gets past about a centimeter, which is what a good model looks like on
-this graph: small, and flat once the carriage is up to speed. The rest
+this graph: small, and flat once the carriage is up to speed. <!-- claim: l18.model-lag --> The rest
 of this section reads the gains off graphs like this one.
 
 The order that makes sense to tune in is the order the model was built:
@@ -627,20 +627,20 @@ possible trim.
   matter how long you wait. That's the green line in
   [Figure 18.1](#figure-18-1)'s lower panel (holding still, `kP` alone
   is the same as `kG` missing): the hold sags about **1.5 mm**. Small,
-  because 0.17 V is small, but it never goes away on its own.
+  because 0.17 V is small, but it never goes away on its own. <!-- claim: l18.kp-alone-hold -->
 - **`kV` wrong** shows up *only while moving*: the green lines in
   Figure 18.2. You can predict its size: a
   1.0 m/s cruise is about 6.3 drum rotations a second, which costs
   `1.42 × 6.3 ≈ 9 V`, and with no `kV`, `kP = 20` can only make 9 V out
-  of about 0.45 rotations of error — some 7 cm. Measured with
-  `kElevatorKV` zeroed: about **9 cm**. With the model in place:
+  of about 0.45 rotations of error — some 7 cm. <!-- claim: wpilib.kraken-x60-model --> Measured with
+  `kElevatorKV` zeroed: about **9 cm**. <!-- claim: l18.kv-zeroed-lag --> With the model in place:
   **1–2 cm**. Expect your own numbers to wander by a centimeter from run
-  to run.
+  to run. <!-- claim: l18.model-lag -->
 
   Why 9 and not 7? The motor's own error report (Phoenix's
   `ClosedLoopError`, which this course doesn't log) does read 7 cm; in
   the simulator the logged gap runs a centimeter or two bigger, and that
-  extra is most of the model's 1–2 cm too. So with the model in place,
+  extra is most of the model's 1–2 cm too. <!-- claim: l18.kv-zeroed-firmware-error --> So with the model in place,
   `kP` has almost nothing left to do while the carriage moves.
 - **`kA` wrong** is the subtlest: a brief spike in the setpoint-vs-height
   gap right at the start and end of the move, where the profile is
@@ -652,7 +652,7 @@ possible trim.
   on this course's own gains lands under a quarter of a millimeter (the
   orange line in Figure 18.1's lower panel) — if
   you find yourself raising `kP` to chase a bigger gap than that, the
-  actual bug is almost always upstream, in `kG`, `kV`, or `kA`.
+  actual bug is almost always upstream, in `kG`, `kV`, or `kA`. <!-- claim: l18.model-hold-gap -->
 
 > **On real hardware:** don't skip straight to full-height moves while
 > tuning. Start with `kScoreMid` from a stop, watch it settle, then try a
@@ -669,7 +669,7 @@ possible trim.
 > already are). Number 2 takes `kG` away on purpose, and on a real elevator
 > `kG` is part of what holds the carriage up: without it, the carriage drops
 > until `kP` has built up enough error to catch it. With this course's
-> numbers that's about 1.5 mm; a heavier carriage drops further. In sim, being
+> numbers that's about 1.5 mm; a heavier carriage drops further. <!-- claim: l18.kg-zeroed-sag --> In sim, being
 > wrong is free — that's the point of having it.
 
 1. **Code — add a fourth preset.** Give `ElevatorConstants` a `kScoreLow`
@@ -677,7 +677,7 @@ possible trim.
 2. **Code — watch the sag.** Temporarily set `kElevatorKG` to `0.0`, command
    `kScoreMid`, and let it settle. Compare the steady-state
    `HeightMeters` against `GoalMeters` on the graph — you should see
-   almost exactly the gap in Figure 18.1's lower panel. Put `0.17` back
+   almost exactly the gap in Figure 18.1's lower panel. <!-- claim: l18.kg-zeroed-sag --> Put `0.17` back
    when you're done.
 3. **Code — ask for somewhere the elevator can't go.** Bind a spare button to
    `elevator.goToHeight(Meters.of(3.0))` — well past `kMaxHeight`. Watch
