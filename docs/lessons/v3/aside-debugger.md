@@ -184,7 +184,13 @@ Exception in thread "main" java.lang.NullPointerException: Cannot invoke
         at first.robot.opmode.RobotTeleop.<init>(RobotTeleop.java:41)
 ```
 
-Read it in two passes.
+Read it in two passes. Figure D.1 is the same trace with each pass marked on
+it, so keep it open while you read the next two paragraphs.
+
+<a id="figure-d-1"></a>
+![The stack trace from this section in a monospaced block. The first three lines, the exception message, are shaded blue and labeled pass one: what went wrong. The first frame, in DriveModule, is shaded orange and labeled pass two: the first frame that is yours. The Mechanism and Robot frames below it are grey, to skim. A boxed line, Command Binding Trace, divides the trace: above is where it broke, below is which binding scheduled it, and the last frame, in RobotTeleop, is shaded green](images/aside-debugger-stack-trace.svg)
+
+*Figure D.1 — The same trace, read in two passes. The `=== Command Binding Trace ===` line splits it in two: where the exception happened above, which binding scheduled the command below. The last two frames are relabeled as in the listing above.*
 
 **Pass one — the first line.** It says *what* went wrong in almost-plain
 English:

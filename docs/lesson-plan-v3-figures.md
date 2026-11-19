@@ -112,17 +112,17 @@ Type: a = sim plot, b = SimGUI screenshot, c = SVG diagram, d = needs the user. 
 | 31.2 | Homing test height with and without the sleep | 31 | a | medium | 3 |
 | 32.1 | The height arrives; `AtGoal` never says so | 32 | a | high | 1 (built) |
 | 32.2 | The same match through the fixed code | 32 | a | high | 1 (built) |
-| 32.3 | Aim While Driving, right tag and typo | 32 | a | medium | 2 |
+| 32.3 | Aim While Driving, right tag and typo | 32 | a | medium | 2 (built) |
 | 33.1 | What the four tests look like | 33 | a | high | 1 (built) |
 | 33.2 | `kS` check: 0.05 V and the wheel still turns | 33 | a | low | 3 |
 | 33.3 | Why a 1 V/s ramp isn't quasistatic | 33 | a | high | 1 (built) |
-| 33.4 | A ramp costs room: elevator travel | 33 | a | medium | 2 |
+| 33.4 | A ramp costs room: elevator travel | 33 | a | medium | 2 (built) |
 | 34.1 | Two angles and a floor | 34 | c | high | after L34 migration |
 | 34.2 | Why `HasTarget` flickers | 34 | c | medium | after L34 migration |
 | D.1 | The debugger window | Debugger aside | d | high | needs user |
-| D.2 | A stack trace, two passes | Debugger aside | c | medium | 2 |
+| D.2 | A stack trace, two passes | Debugger aside | c | medium | 2 (built) |
 | G.1 | A branch is a label on a commit | Git aside | c | high | 1 (built) |
-| G.2 | Fast-forward, and the diamond | Git aside | c | medium | 2 |
+| G.2 | Fast-forward, and the diamond | Git aside | c | medium | 2 (built) |
 | G.3 | Rebase: replaying commits onto a new base | Git aside | c | high | 1 (built) |
 
 Batch 3 reasons, beyond "low priority": 20.2 and 31.2 are medium but restate a table the lesson keeps (the proposers said so), so they wait to see whether the plot should replace the table.
@@ -1109,3 +1109,7 @@ Built two agents at a time, in lesson groups, to stay inside the usage window.
   - Each of Lessons 26, 27 and 29 gains its new figure as N.1, and its batch 1 figure becomes N.2. Lesson 28's two become 28.2 and 28.3.
   - Lesson 30's link to the tired-battery plot follows it to 29.2, and Lesson 28's callout link follows the aim-error plot to 27.2.
   - Lessons 30 and 31 kept their numbers.
+- **Round 5 (built):** 32.3, 33.4, D.2, G.2.
+  - Working ID 33.4 is **Figure 33.3** (33.3 isn't built), and D.2 is **Figure D.1** (D.1 needs the user).
+  - The git aside's new figure is G.2, and batch 1's rebase figure is now **G.3**.
+- **Batch 2 is complete:** all 34 figures are built.

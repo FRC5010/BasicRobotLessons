@@ -2761,6 +2761,25 @@ at least twice.
   click 5). `simgui.json` can open a widget window at startup:
   `"NTProvider": {"/AdvantageKit/RealOutputs/Alerts": {"window": {"visible":
   true}}}`.
+- **Lesson 32, Aim While Driving with tag 20 and 220** (Figure 32.3, LOOP,
+  one run each): the override is on from 0.56 s to 4.22 s into the drive.
+  With tag 20 the estimate's heading is −123.8° at release (truth −124.3°),
+  after first swinging to about +14° (not looked into). `Aim/ErrorDegrees`
+  falls from 27° to about 0 over 183 samples. With 220 the heading is 0.00°
+  throughout and the key never exists.
+- **Lesson 33, elevator room** (Figure 33.3, RIG through the real
+  `SysIdRoutine`, `Fig33ElevatorRoom`):
+  - Ramps to 6 V reach 1.884 / 3.787 / 7.597 m.
+  - At 1 V/s the carriage is at 0.436 m by 3 V and 1.033 m by 4.5 V, and
+    crosses 1.5 m at about 5.4 V. At 0.25 V/s it crosses 1.5 m before 3 V.
+  - Steps reach 1.102 / 0.625 / 0.302 m.
+  - Probe trap: the rig's clock leads the routine's own timer by about one
+    tick, so the generator draws the commanded voltage at rate × (t − 0.02 s).
+    Unshifted, the 6 V figure reads 0.5% lower.
+- **Asides:** the debugger aside's stack-trace figure is D.1 for now; the
+  user's planned screenshot (working ID D.1) will push it to D.2. The git
+  aside's new fast-forward/diamond figure is G.2, so the rebase figure is G.3.
+  No other lesson links into either aside.
 - **SimGUI's addressable LED strip** is under **Hardware → Addressable
   LEDs** ("LEDs[5]", 40 pixels). It opens as 10 columns × 4 rows, and Lesson
   23 tells the student to set Columns to 40.

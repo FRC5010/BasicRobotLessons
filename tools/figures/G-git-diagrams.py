@@ -1,10 +1,12 @@
-"""Git-branching aside: Figure G.1 (a branch is a label on a commit) and Figure G.2
-(rebase replays your commit onto a new base). Drawn from the hashes and branch names
-the aside itself shows (its sections 2, 3 and 6); no measurement, so no data file.
+"""Git-branching aside: Figure G.1 (a branch is a label on a commit), Figure G.2 (fast-forward,
+and the diamond: two lessons branched from one commit, merged one after the other) and Figure
+G.3 (rebase replays your commit onto a new base). Drawn from the hashes and branch names the
+aside itself shows (its sections 2, 4 and 6); no measurement, so no data file.
 
     python3 tools/figures/G-git-diagrams.py
 
-Writes docs/lessons/v3/images/aside-git-branching-branch-label.svg and aside-git-branching-rebase.svg.
+Writes docs/lessons/v3/images/aside-git-branching-branch-label.svg,
+aside-git-branching-fast-forward-diamond.svg and aside-git-branching-rebase.svg.
 """
 
 import os
@@ -13,6 +15,7 @@ REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 IMAGES = os.path.join(REPO, "docs", "lessons", "v3", "images")
 
 BLUE, ORANGE, BLACK, GREY = "#0072B2", "#D55E00", "#000000", "#777777"
+GREEN = "#009E73"
 FONT = 'font-family="sans-serif"'
 
 
@@ -28,10 +31,11 @@ class Svg:
         self.add(f'<text x="{x}" y="{y}" {FONT} font-size="{size}" fill="{fill}" '
                  f'text-anchor="{anchor}" font-weight="{weight}"{st}>{s}</text>')
 
-    def commit(self, x, y, h, msg="", fill="#ffffff", stroke=BLACK, dashed=False, hash_color=BLACK):
+    def commit(self, x, y, h, msg="", fill="#ffffff", stroke=BLACK, dashed=False, hash_color=BLACK,
+               hash_above=False):
         d = ' stroke-dasharray="6 5"' if dashed else ""
         self.add(f'<circle cx="{x}" cy="{y}" r="22" fill="{fill}" stroke="{stroke}" stroke-width="3"{d}/>')
-        self.text(x, y + 46, h, 16, hash_color, weight="bold")
+        self.text(x, y - 34 if hash_above else y + 46, h, 16, hash_color, weight="bold")
         if msg:
             self.text(x, y + 66, msg, 14, GREY)
 
@@ -46,13 +50,16 @@ class Svg:
         self.add(f'<line x1="{x1:.1f}" y1="{y1:.1f}" x2="{x2:.1f}" y2="{y2:.1f}" stroke="{color}" '
                  f'stroke-width="2.5"{d} marker-end="url(#a{"d" if dashed else ""})"/>')
 
-    def label(self, x, y, name, color, w=None, above_of=None, tx=None):
+    def label(self, x, y, name, color, w=None, above_of=None, tx=None, below_of=None):
         """A branch label (rounded box) at (x, y) centre, with a stem down to a commit."""
         w = w or (len(name) * 10 + 24)
         self.add(f'<rect x="{x - w / 2}" y="{y - 15}" width="{w}" height="30" rx="8" fill="{color}"/>')
         self.text(x, y + 5, name, 16, "#ffffff", weight="bold")
         if above_of:
             self.add(f'<line x1="{x}" y1="{y + 15}" x2="{above_of[0]}" y2="{above_of[1] - 24}" '
+                     f'stroke="{color}" stroke-width="2.5"/>')
+        if below_of:  # the label sits under the commit
+            self.add(f'<line x1="{x}" y1="{y - 15}" x2="{below_of[0]}" y2="{below_of[1] + 24}" '
                      f'stroke="{color}" stroke-width="2.5"/>')
 
     def write(self, name):
@@ -91,6 +98,55 @@ def branch_label():
     s.commit(x1, y, "3cf14a0", "Project from template")
     s.commit(x2, y, "79bf90a", "Lesson 1: spin a motor")
     s.write("aside-git-branching-branch-label.svg")
+
+
+def fast_forward_diamond():
+    s = Svg(800, 1050)
+    base_x, x1, x2 = 130, 330, 560
+    panels = [
+        "1. Both branches start from the same commit, 6af60ff",
+        "2. git merge lesson-18: main slides up the chain (fast-forward, no new commit)",
+        "3. git merge lesson-20: main can't slide, so Git adds a commit with two parents",
+    ]
+    for n, title in enumerate(panels):
+        oy = n * 345
+        if n:
+            s.add(f'<line x1="20" y1="{oy - 6}" x2="780" y2="{oy - 6}" stroke="#dddddd" stroke-width="2"/>')
+        s.text(20, oy + 28, title, 17, BLACK, "start", "bold")
+        top, mid, bot = oy + 125, oy + 190, oy + 255
+        base = (base_x, mid)
+        a = (x1, top)   # lesson-18's commit
+        b = (x1, bot)   # lesson-20's commit
+        s.parent(a, base)
+        s.parent(b, base)
+        s.commit(*base, "6af60ff", "Lesson 17 complete")
+        s.commit(*a, "d79e9ea", "", stroke=GREEN)
+        s.commit(*b, "cd93da0", "", stroke=ORANGE, hash_above=True)
+        if n < 2:
+            s.text(x1 + 40, top + 6, "Lesson 18: scoring elevator", 14, GREY, "start")
+            s.text(x1 + 40, bot + 6, "Lesson 20: intake arm", 14, GREY, "start")
+        if n == 2:
+            m = (x2 + 100, mid)
+            s.parent(m, a)
+            s.parent(m, b)
+            s.commit(*m, "50c8826", "Merge branch 'lesson-20'", stroke=BLUE, fill="#dcebf5")
+            s.label(m[0], oy + 100, "main", BLUE, above_of=m)
+        # main label: on the base commit, then on d79e9ea, then on the merge commit.
+        if n == 0:
+            s.label(base_x, oy + 100, "main", BLUE, above_of=base)
+        if n == 1:
+            s.add(f'<rect x="{base_x - 38}" y="{oy + 85}" width="76" height="30" rx="8" fill="none" '
+                  f'stroke="{GREY}" stroke-width="2" stroke-dasharray="6 4"/>')
+            s.text(base_x, oy + 105, "main", 16, GREY, weight="bold")
+            s.add(f'<line x1="{base_x}" y1="{oy + 115}" x2="{base_x}" y2="{mid - 24}" stroke="{GREY}" '
+                  f'stroke-width="2" stroke-dasharray="6 4"/>')
+            s.text(base_x + 50, oy + 105, "main was here", 14, GREY, "start", italic=True)
+            s.label(x1 - 70, oy + 70, "main", BLUE, above_of=a)
+            s.label(x1 + 70, oy + 70, "lesson-18", GREEN, w=110, above_of=a)
+        else:
+            s.label(x1, oy + 70, "lesson-18", GREEN, w=110, above_of=a)
+        s.label(x1, oy + 318, "lesson-20", ORANGE, w=110, below_of=b)
+    s.write("aside-git-branching-fast-forward-diamond.svg")
 
 
 def rebase():
@@ -143,4 +199,5 @@ def rebase():
 
 if __name__ == "__main__":
     branch_label()
+    fast_forward_diamond()
     rebase()

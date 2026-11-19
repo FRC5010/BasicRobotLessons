@@ -770,10 +770,28 @@ default 1 V/s: the carriage has covered 0.44 m by the time the ramp reaches
 the span of voltage you actually covered. A short honest run beats a long one
 that spent its last second driving into a hard stop.
 
+Figure 33.3 draws those numbers. In the top panel, the bottom axis is the
+voltage the ramp has reached and the side axis is how far the carriage has
+travelled by then. The three curves are the three ramp rates, and the dashed
+line is the elevator's 1.5 m of travel. Look first at the line you'll actually
+run, the 1 V/s curve: it crosses 1.5 m at about 5.4 V, so the end of the ramp
+is already past the top. Then compare the curves with each other. Each one
+bends upward, because the faster the carriage goes the more ground every
+extra second covers, and halving the rate lifts the whole curve to about twice
+the height. The 0.25 V/s curve crosses the dashed line before it reaches 3 V.
+The two dots on the 1 V/s curve are the stopping voltages above: 3 V is about
+0.44 m, and 4.5 V is about 1 m, still inside the travel. The bottom panel is
+the step test, which the next heading covers.
+
+<a id="figure-33-3"></a>
+![Top panel: distance travelled against voltage reached for three ramp rates, with a dashed line at the elevator's 1.5 m of travel. The 1 volt per second curve ends at 1.9 m and crosses 1.5 m near 5.4 volts, the 0.5 curve ends at 3.8 m, the 0.25 curve at 7.6 m; dots mark 0.44 m at 3 volts and 1.0 m at 4.5 volts on the first. Bottom panel: bars for the 1.5 second step test, 1.10 m at 7 volts, 0.63 m at 4 and 0.30 m at 2, all left of the 1.5 m line](images/33-ramp-room-elevator.png)
+
+*Figure 33.3 — How far the elevator travels under a ramp (top) and a step (bottom), against its 1.5 m of travel. Open loop, physics widened so nothing stops it.*
+
 ### And lower the step voltage
 
 The dynamic test has the same problem in a more concentrated form, since it
-jumps straight to full step voltage and stays there. Same widened rig, 1.5 seconds:
+jumps straight to full step voltage and stays there. Same widened rig, 1.5 seconds (the bottom panel of Figure 33.3 draws these three bars):
 
 *Nothing to add — measured, not asserted:*
 

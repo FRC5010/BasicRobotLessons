@@ -374,6 +374,27 @@ the simulator, the two runs look like this:
 | `kAimTagId = 20` | `true`, about 3.7 s | follows the bearing to the tag, round to about −124° by `release` |
 | `kAimTagId = 220` | `true`, about 3.7 s | stays at **0.0°** the whole time |
 
+Figure 32.3 draws both runs on one time axis, zero being the moment the
+drive starts. Start with the top panel. The grey band is
+`FollowPath/rotationOverrideActive`, true from about 0.6 s to 4.2 s, and it is
+the same band in both runs, which is the first clue that the path itself did
+nothing wrong. The green line is the heading with the right tag: it swings
+round and is at about −124° when the band ends (the nose is on the tag), then
+turns back to the path's own heading after `release`. The orange line is the
+typo run, and it is a flat line at 0.0° under the whole band. Override on,
+nobody turning.
+
+Then look down at the bottom panel, because it holds the odd part. With the
+right tag, `Aim/ErrorDegrees` is a trace: it starts near 27° and settles to
+nearly zero inside the band. With the typo there is no trace to draw. The
+panel is empty on purpose, because the log has no samples of that key at
+all.
+
+<a id="figure-32-3"></a>
+![Two panels over one drive. Top: the heading with tag 20 swings to about minus 124 degrees by the end of the shaded rotation-override window, while the heading with tag 220 stays flat at zero. Bottom: Aim/ErrorDegrees is a curve falling from about 27 degrees to zero with tag 20 and has no samples with tag 220](images/32-aim-typo-heading.png)
+
+*Figure 32.3 — Aim While Driving with `kAimTagId` 20 and 220: the override window is identical, the heading follows only with the right tag, and `Aim/ErrorDegrees` is absent with the typo.*
+
 Read them *together*, as in section 5: the override says the aiming code
 has the wheel, and the heading says nobody is turning it. Neither trace
 is wrong. Now look for the third trace, `Aim/ErrorDegrees`, over that same
