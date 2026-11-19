@@ -64,7 +64,7 @@ remark.
 
 **`measured_on`.** The library versions the claim was last confirmed on. `alpha-8` means GradleRIO
 `2027.0.0-alpha-8` with the vendordeps pinned in `tools/lib/v3-lessons.sh` at the time. Say so
-when a claim was only checked on alpha-7 (`alpha-7, listed unchanged on alpha-8`).
+when a claim was only checked on alpha-7 (`alpha-7, listed unchanged on alpha-8`). Write `unverified` when nothing records a measurement or a reading of the source, and say so in `evidence`.
 
 ## The range of a number
 
