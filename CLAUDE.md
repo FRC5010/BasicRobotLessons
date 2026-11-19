@@ -2713,6 +2713,24 @@ at least twice.
   - At 2 m/s the robot crosses the end at about 0.8 m/s and rolls 6–7 cm
     past (5 cm tolerance), settling about 2 cm past.
   - Lesson 17's batch 1 figures are now 17.2–17.4.
+- **SimGUI's addressable LED strip** is under **Hardware → Addressable
+  LEDs** ("LEDs[5]", 40 pixels). It opens as 10 columns × 4 rows, and Lesson
+  23 tells the student to set Columns to 40.
+- **The D-pad on SimGUI's keyboard:** the `Gamepad` D-pad is buttons 11–14
+  (`DPAD_UP` 11, `DPAD_RIGHT` 14). Keyboard 0 has only 4 buttons and a POV,
+  so it can't press the D-pad. b2g6 edited `simgui-ds.json`'s
+  `keyboardJoysticks[0]` to `buttonCount` 15, with `buttonKeys`
+  `[571,569,548,567]` plus `551..561` (the keys F..P). Then M is D-pad up, P
+  is D-pad right and F is Back. Lessons that ask for the D-pad in SimGUI
+  don't explain this yet.
+- SimGUI tips (b2g6):
+  - Seed `simgui-window.json` (`userScaling` "200"), `simgui.json` and
+    `simgui-ds.json` before the first run.
+  - ImGui misses a click unless the mouse moves, pauses, moves a little, then
+    presses.
+  - Open menus by hovering along the row.
+  - A Mechanism window opens small; drag its title, then its corner, to
+    enlarge it.
 - SimGUI tips (b2g3): keyboard 0 drives with W/S (left Y), A/D (left X) and
   E/R (right X). The axes ramp at about 1.2/s and decay slowly, so tap for
   0.3–1 s; longer holds run the robot off the field.

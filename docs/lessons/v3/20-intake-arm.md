@@ -691,7 +691,8 @@ readings, the roller's speed included, under `Arm/`, one key per field,
 and fills them from the log in a replay. The goal and the "am I there?"
 answer are the arm's own decisions, so they're outputs.
 
-`toDrawingAngle` is Lesson 19's rule applied rather than explained: a
+`toDrawingAngle` is Lesson 19's rule applied rather than explained
+([Figure 19.1](19-mechanism2d.md#figure-19-1) draws it): a
 child's angle is measured from its parent, the carriage points straight up
 at 90°, so an arm that is horizontal in the world is at −90° in the
 drawing. Get that subtraction backwards and the picture will tell you

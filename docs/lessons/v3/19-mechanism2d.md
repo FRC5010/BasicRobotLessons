@@ -184,6 +184,25 @@ starts at length zero because the elevator starts stowed. `m_effector`
 attaches to *the carriage* and points at −90°, which is 90° back from its
 parent — so it sticks out sideways from the top of the carriage.
 
+<a id="figure-19-1"></a>
+![The 1 m by 2 m canvas drawn to scale, twice. The Base root is a dot at the middle of the floor edge, the orange carriage rises from it at 90 degrees from the world's x axis, and the blue 25 cm effector leaves the top of the carriage at minus 90 degrees from the carriage's own direction, so it points right. In the second canvas the carriage is longer and the effector sits higher, still pointing right.](images/19-mechanism-chain.svg)
+
+*Figure 19.1 — The canvas, the `Base` anchor and the chain of segments, at two carriage lengths.*
+
+Figure 19.1 draws the chain, to scale. Look at the left canvas first. The gray
+rectangle is the `LoggedMechanism2d`: 1 m wide and 2 m tall, the two
+constants you just added. The black dot is `m_base`, at (0.5 m, 0), the
+middle of the bottom edge. The orange line is `m_carriage`; its 90° is
+measured from the world's +x direction (along the floor, to the right), so it
+points straight up, and the length you give it is how far up it reaches. The
+blue line is `m_effector`. Follow the dashed line that continues the
+carriage past its top: that is the direction the effector's angle is measured
+from, and −90° is a quarter turn clockwise from it, which lands on "right".
+Now look at the right canvas, where the carriage is longer. Nothing about the
+effector changed: it is still 25 cm long and still at −90°, and it rides up
+with the carriage because its anchor is the carriage's tip. That is the
+whole payoff of measuring a child's angle from its parent.
+
 Two details in there are worth stopping on.
 
 **`append` hands you back the thing you appended.** That's why
@@ -285,6 +304,16 @@ You can also find it inside SimGUI without opening a second tool: menu
 **NetworkTables → AdvantageKit → RealOutputs → Elevator → Mechanism**. Same
 drawing, same two viewers as the field view in Lesson 11 — the quick glance while
 sim is already open, and the full tool for anything careful.
+
+<a id="figure-19-2"></a>
+![SimGUI's NetworkTables menu opened down to AdvantageKit, RealOutputs, Elevator and Mechanism, and below it the Mechanism window showing a tall dark canvas with an orange vertical line and a short orange stub at its top](images/19-simgui-mechanism.png)
+
+*Figure 19.2 — SimGUI: the Mechanism drawing, mid-move.*
+
+Figure 19.2 shows where to find it: each menu level opens the next, and
+clicking **Mechanism** opens a window you can drag and resize. The orange line
+in the second picture was caught while the carriage was still rising. Once it
+settles, it turns green.
 
 Now do the thing that makes it worth having. Put the Mechanism tab and the
 `HeightMeters` graph on screen at the same time and press a preset. The

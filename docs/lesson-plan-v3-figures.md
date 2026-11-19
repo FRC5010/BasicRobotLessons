@@ -83,13 +83,13 @@ Type: a = sim plot, b = SimGUI screenshot, c = SVG diagram, d = needs the user. 
 | 17.5 | Cross-track error at the corner | 17 | a | high | 1 (built) |
 | 18.1 | What `kP` alone does, moving and holding | 18 | a | high | 1 (built) |
 | 18.2 | Goal, setpoint and height in one move | 18 | a | high | 1 (built) |
-| 19.1 | Canvas, anchor and a chain of segments | 19 | c | medium | 2 |
-| 19.2 | SimGUI: the Mechanism drawing | 19 | b | medium | 2 |
+| 19.1 | Canvas, anchor and a chain of segments | 19 | c | medium | 2 (built) |
+| 19.2 | SimGUI: the Mechanism drawing | 19 | b | medium | 2 (built) |
 | 20.1 | Arm angle convention and the drawing angle | 20 | c | high | 1 (built) |
 | 20.2 | Holding voltage is a cosine | 20 | a | medium | 3 |
 | 21.1 | Encoder belief against carriage truth | 21 | a | high | 1 (built) |
-| 22.1 | The intake box in the robot's frame | 22 | c | medium | 2 |
-| 23.1 | SimGUI: the LED strip | 23 | b | medium | 2 |
+| 22.1 | The intake box in the robot's frame | 22 | c | medium | 2 (built) |
+| 23.1 | SimGUI: the LED strip | 23 | b | medium | 2 (built) |
 | 24.1 | Six states and their transitions | 24 | c | high | 1 (built) |
 | 24.2 | One capture cycle on a timeline | 24 | a | medium | 2 |
 | 25.1 | Sequence holds the elevator, coroutine doesn't | 25 | c | low | 3 |

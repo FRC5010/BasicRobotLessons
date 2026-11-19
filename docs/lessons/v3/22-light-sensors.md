@@ -356,6 +356,18 @@ the robot is, so the robot is at the origin, then undo the robot's heading with
 "is it in the box?" is three plain comparisons. You'll meet this exact move again
 any time the robot has to reason about something on the field.
 
+<a id="figure-22-1"></a>
+![Top: the field's frame, with the piece at (4.5, 3.2) and a tilted robot and intake box. Middle: two steps, subtract the robot's position, then rotate by the robot's opposite heading. Bottom: the robot's frame, with the robot square at the origin facing right, the intake box just past its front edge, and the piece inside the box.](images/22-intake-box-frames.svg)
+
+*Figure 22.1 — The same piece and intake box, in the field's frame and in the robot's.*
+
+Figure 22.1 shows the two frames. In the top picture the box is tilted
+with the robot, so asking "is the piece inside it?" means working out where a
+slanted rectangle is. After the two steps in the middle, the robot sits
+at the origin facing +x, the box is a plain rectangle, and the piece is at a
+number you can compare directly. (The robot pose in the figure is only an
+example, chosen so the piece lands inside the box.)
+
 The comment in `updateInputs` is the whole section. In simulation you can now hold
 the intake button down in the middle of an empty field for as long as you like and
 `Arm/HasGamePiece` stays `false`, exactly as it would on a real robot — because

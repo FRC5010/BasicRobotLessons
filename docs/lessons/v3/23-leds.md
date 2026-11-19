@@ -390,6 +390,18 @@ Run the robot in simulation. Before you enable anything, find the LED view
 in **SimGUI** — the strip shows up as a row of colored pixels you can
 watch change.
 
+<a id="figure-23-1"></a>
+![SimGUI's Hardware menu with Addressable LEDs, then the Addressable LEDs window twice: a strip of 40 bright red squares before homing, and the same strip dim red after homing](images/23-simgui-led-strip.png)
+
+*Figure 23.1 — SimGUI's Addressable LEDs window, before and after homing.*
+
+Figure 23.1 shows what you're looking for: open the **Hardware** menu and
+pick **Addressable LEDs**. The window starts with the 40 pixels folded into
+rows of 10; the figure has **Columns** set to 40 so they sit in one line,
+like the real strip. A screenshot catches only one phase of a blink, so the
+strip you see may be dark at the moment you look. SimGUI starts every launch
+on Red 1, so the dim color after homing is dim red.
+
 It's **blinking red**, because nothing has homed the elevator yet — and
 notice it's blinking red even though the robot is *also* currently
 disabled. That's the priority chain working: two conditions are true at
