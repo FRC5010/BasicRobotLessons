@@ -872,7 +872,7 @@ not an achievement it can keep without continuing to work for it. That one
 difference changed the shape of every command in the subsystem.
 
 **Recovery time, not error.** Being 0.5 rot/s off doesn't cost a match;
-taking two and a half seconds to be ready for the next shot does. And the
+taking more than two seconds to be ready for the next shot does. <!-- claim: l28.spinup-from-0 --> And the
 lever on it turned out not to be a gain at all — it was deciding what the
 wheel does while it's waiting, which is a design decision rather than a
 tuning one.

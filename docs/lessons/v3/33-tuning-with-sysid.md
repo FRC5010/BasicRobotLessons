@@ -171,7 +171,7 @@ course keeps the log.) <!-- claim: commandsv3.sysid-routine -->
 
 **A `SysIdRoutine.SysIdMechanism`** says how to reach one particular
 mechanism. The name is the awkward bit: `org.wpilib.command3.Mechanism` is
-already the base class of every subsystem in this course, so WPILib called
+already the interface every subsystem in this course implements, so WPILib called
 this one `SysIdMechanism`. It takes four things, in this order: <!-- claim: commandsv3.sysid-routine -->
 
 - `drive` — a lambda that receives a `Voltage` and sends it to the motor.
@@ -610,7 +610,7 @@ The green curve is the 0.25 V/s ramp, which hugs the dashed line much more
 closely. Now do what a fit with no acceleration term does: draw the straight
 line through the orange curve's upper part and read where it hits zero
 speed. The dotted orange line does, and it lands near 0.9 V up the side. <!-- claim: l33.fig-ramp-fit-1vps --> The
-green fit lands near 0.2 V. <!-- claim: l33.fig-ramp-fit-025 --> Neither is friction. Both are the gap between the
+green fit lands near 0.23 V. <!-- claim: l33.fig-ramp-fit-025 --> Neither is friction. Both are the gap between the
 curve and the dashed line, and it's the ramp's lag, not the wheel, that put it
 there. (The figure fits a ramp started from a true standstill, over 4 to 6 V,
 which gives 0.88 V and 0.23 V; the 0.90 below fits both slow tests of a real

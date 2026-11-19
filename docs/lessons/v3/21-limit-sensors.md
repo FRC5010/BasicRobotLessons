@@ -403,9 +403,11 @@ motion because a switch brushed would be a bug rather than a feature.
 scheduler does: an `ignoringDisable` opt-in.** That scheduler cancels
 every running command the instant the robot goes disabled, so a command
 that must keep working — like this one — has to explicitly ask to be
-spared. This framework's `Scheduler` doesn't do that gating at all;
-confirmed by a real test, a `Trigger`-bound command fires and runs
-whether the robot is enabled or not, with nothing extra required. <!-- claim: commandsv3.trigger-from-supplier-runs-disabled, commandsv3.disable-cancels-mechanism-commands --> That
+spared. This framework's `Scheduler` cancels only commands that need a
+mechanism, and `rezeroAtBottom()` needs none: it's built with
+`Command.noRequirements`. Confirmed by a real test, a `Trigger`-bound
+command like it fires and runs whether the robot is enabled or not, with
+nothing extra required. <!-- claim: commandsv3.trigger-from-supplier-runs-disabled, commandsv3.disable-cancels-mechanism-commands --> That
 matters here specifically, because the moment somebody pushes the
 carriage down by hand between matches is exactly when the robot is
 disabled, and the switch is still telling the truth.

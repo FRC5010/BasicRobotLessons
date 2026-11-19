@@ -126,7 +126,7 @@ Hardware like `m_driveMotor` stays `private`, same as always.
 import org.wpilib.math.geometry.Translation2d;
 ```
 
-Now the methods. Because the module no longer extends `Mechanism`, the
+Now the methods. Because the module no longer implements `Mechanism`, the
 command factories are literally gone — `run`, `runRepeatedly`, and friends were
 *inherited* from `Mechanism`, so `driveAtSpeed`, `driveWithJoystick`,
 `steerToAngle`, and `driveDistance` don't compile anymore. That's fine: commands

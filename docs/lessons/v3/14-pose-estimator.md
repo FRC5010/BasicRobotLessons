@@ -171,12 +171,12 @@ public class Localizer {
 ```
 
 Stop on one word in that code: `Localizer` isn't a `Mechanism`. Every
-subsystem-shaped class you've written since Lesson 1 has extended
+subsystem-shaped class you've written since Lesson 1 has implemented
 `Mechanism` — `Drivetrain` still does, two sections from now — so this is
 worth asking about directly. What does `Mechanism` actually buy a class?
 Command-builder methods (`run`, `runRepeatedly`) so it can be *required* by
-a command, and an automatic `idle()` default command to fall back to when
-nothing else is running it. <!-- claim: commandsv3.mechanism-no-default-command --> `Localizer` needs neither: it drives no motors,
+a command, and a default command to fall back to when nothing else is
+running it, once you install one with `setDefaultCommand`. <!-- claim: commandsv3.mechanism-no-default-command --> `Localizer` needs neither: it drives no motors,
 so no command will ever `.require()` it, and there's no "idle" behavior to
 fall back to when nothing else is happening — it's *always* just reading
 providers and publishing a pose. All it actually needs from the scheduler is

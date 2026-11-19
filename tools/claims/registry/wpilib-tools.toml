@@ -26,8 +26,8 @@ id = "wpilib-tools.simgui-keyboard-dpad"
 kind = "behaviour"
 library = ["wpilib-tools"]
 criticality = "C2"
-statement = "SimGUI's default Keyboard 0 has 4 buttons and a POV, so it cannot press the Gamepad D-pad (buttons 11-14); a real gamepad or an edited simgui-ds.json is needed for dpadUp()."
-evidence = "CLAUDE.md, 'Batch 3' SimGUI tips (b2g6): the D-pad on SimGUI's keyboard. Lesson 6 section 5 binds dpadUp() and doesn't say this."
+statement = "SimGUI's default Keyboard 0 has four buttons (0-3) and a POV, so it can't press the Gamepad D-pad (buttons 11-14) until DS -> Keyboard 0 Settings -> Buttons -> Count is raised to 15 and keys are given (click a button's (None) box, press a key); SimGUI's keyboard Button N is Gamepad button N, and the settings are saved in the project's simgui-ds.json."
+evidence = "Checked in SimGUI on alpha-8 under Xvfb, 2026-11-19 (the Count + button and key assignment); Gamepad$Button values read from wpilibj-java-2027.0.0-alpha-8 (BACK 4, DPAD_UP 11, DPAD_DOWN 12, DPAD_LEFT 13, DPAD_RIGHT 14); CLAUDE.md, Batch 2 found (a keyboard with keys at buttons 11 and 14 pressed D-pad up and right in the running robot)"
 measured_on = "alpha-8"
 method = "LOOP"
 

@@ -278,9 +278,23 @@ buttons fill up. <!-- claim: commandsv3.command-gamepad-api -->
 robot.driverController.dpadUp().onTrue(robot.module.driveDistance(1.0, 0.4));
 ```
 
+**Give SimGUI's keyboard a D-pad.** Keyboard 0 starts with four buttons (Z,
+X, C and V are buttons 0 to 3), and on a gamepad the D-pad is buttons 11 to
+14, so the keyboard can't press it yet. If you drive with a real controller,
+skip this; otherwise, once:
+
+1. Open **DS → Keyboard 0 Settings** and find **Buttons**.
+2. Press **+** until **Count** reads 15.
+3. Click the **(None)** box beside **Button 11** and press **I**. Do the same
+   for **Button 12** (**K**), **Button 13** (**J**) and **Button 14** (**L**):
+   D-pad up, down, left and right, laid out like arrow keys.
+
+SimGUI saves this in your project's `simgui-ds.json`, so it's still there next
+time, and later lessons give other buttons keys the same way. <!-- claim: wpilib-tools.simgui-keyboard-dpad -->
+
 Run in sim, plot `DriveModule/DistanceMeters` in AdvantageScope, and tap D-pad
-up. The trace should climb to about 1.0 and flatten as the command stops
-itself. <!-- claim: wpilib-tools.simgui-keyboard-dpad -->
+up (**I** on the keyboard). The trace should climb to about 1.0 and flatten as
+the command stops itself.
 
 <a id="figure-6-2"></a>
 ![Distance and drive throttle during driveDistance(1.0, 0.4): the distance climbs in a straight line, the command ends at 1.013 m, and the wheel rolls on to 1.145 m after the throttle drops to 0](images/06-drive-distance-trace.png)

@@ -2847,8 +2847,13 @@ at least twice.
   so it can't press the D-pad. b2g6 edited `simgui-ds.json`'s
   `keyboardJoysticks[0]` to `buttonCount` 15, with `buttonKeys`
   `[571,569,548,567]` plus `551..561` (the keys F..P). Then M is D-pad up, P
-  is D-pad right and F is Back. Lessons that ask for the D-pad in SimGUI
-  don't explain this yet.
+  is D-pad right and F is Back. **SimGUI can do the same from its own
+  window** (checked 2026-11-19): **DS → Keyboard 0 Settings → Buttons**, `+`
+  to raise Count, then click a button's **(None)** box and press a key.
+  SimGUI's keyboard Button N is `Gamepad` button N (`Gamepad$Button` in the
+  alpha-8 jar: Back 4, D-pad up/down/left/right 11–14). Lesson 6 now
+  teaches this for the D-pad (I/K/J/L). The bumpers (Lesson 7), Start (14),
+  Back (21) and the trigger axes (22, 27) still have no keyboard line.
 - SimGUI tips (b2g6):
   - Seed `simgui-window.json` (`userScaling` "200"), `simgui.json` and
     `simgui-ds.json` before the first run.

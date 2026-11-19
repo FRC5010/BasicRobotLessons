@@ -38,7 +38,7 @@ drivetrain misbehave — not by sharing any code with it, but by getting to
 the electricity first.
 
 And the symptom is horrible. A robot short of voltage doesn't fail
-cleanly: the motors get weak, the roboRIO starts shedding load, the CAN
+cleanly: the motors get weak, the robot controller starts shedding load, the CAN
 bus gets flaky, the camera drops out, and every subsystem misbehaves at
 once. There is nothing in the log that says "brownout" unless you put it
 there. It just looks like everything broke simultaneously, which is
@@ -132,8 +132,9 @@ collapses to 0 V, or close to it, and the averages differ from run to run,
 which is why the 12-motor row is a range. Every average was well under
 6.3 V either way.)*
 
-Six motors is not an exotic scenario. Six motors is a swerve drivetrain
-plus two mechanisms — an ordinary second of an ordinary match.
+Six motors is not an exotic scenario. Six motors is the four drive motors
+of a swerve drivetrain shoving against a defender, plus two mechanisms — an
+ordinary second of an ordinary match.
 
 Notice how much more slowly the total grows past six. Going from three
 motors to six adds over 200 A; six to nine adds about 60, and nine to
@@ -422,8 +423,8 @@ the voltage the robot really had. <!-- claim: advantagekit.battery-voltage-not-r
 > instead of trusting a flag that never flips. <!-- claim: wpilib.sim-never-browns-out -->
 
 Making the sag itself real, though — the *cause*, not just the reading —
-only means anything in sim: nothing simulated is driving the real
-roboRIO's input rail. `Robot.simulationPeriodic()` has been empty since
+only means anything in sim: nothing simulated is driving a real
+controller's input rail. `Robot.simulationPeriodic()` has been empty since
 Lesson 13, when every mechanism's physics moved inside its own IO
 implementation — there's been nothing left for it to do. **A battery
 breaks that pattern.** No single mechanism owns it, and every one of them
@@ -471,8 +472,8 @@ each piece was already asking the right question.
 
 `calculateDefaultBatteryLoadedVoltage` models a nominal 12 V battery with
 20 milliohms of internal resistance, the standard FRC approximation.
-100 A costs you 2 V. 300 A costs you 6, and 6 V is close to where a real
-roboRIO gives up. <!-- claim: wpilib.battery-sim-default-model -->
+100 A costs you 2 V. 300 A costs you 6, and 6 V is already below the 6.3 V
+brownout line. <!-- claim: wpilib.battery-sim-default-model -->
 
 ---
 

@@ -281,8 +281,23 @@ and the lesson tables in Lessons 5, 18, 20, 28, 29, 31 and 33.
 ## 5a. Phase 0 findings (for the user)
 
 The inventory reads every lesson against CLAUDE.md's measurements, so it turns up places where the
-text and the libraries disagree. Nothing below has been changed in the lessons; each is the user's
-call. Updated as the waves finish.
+text and the libraries disagree.
+
+**Fixed 2026-11-19 (user: "Fix the contradictions"):** items 1–7, 14, 19, 20, 22, 23, 28 and 29,
+plus the same `extends Mechanism` slip in Lesson 7. Item 6's fix says `Mechanism` is implemented and
+gives a default command only once you install one. Item 4's fix teaches SimGUI's **DS → Keyboard 0
+Settings**: raise the button count to 15 and give buttons 11–14 the keys I, K, J and L. That was
+checked in SimGUI on alpha-8, against WPILib's own button numbers (D-pad up 11, down 12, left 13,
+right 14). Item 23: WPILib 2027 still names the simulator class `RoboRioSim`, so only the sentences
+about real hardware changed. **Withdrawn:** item 21. Lesson 30 builds twelve alerts (one in `Robot`,
+two cameras, the arm, two for the elevator, the gyro, four steering encoders, the flywheel), so the
+lesson is right. The wording items (8–13, 15–18, 24–27, 30–32) are unchanged.
+
+**Follow-up found while fixing item 4:** Keyboard 0 also can't press the other controls the course
+binds. Those are the bumpers (from Lesson 7), Start (14), Back (21) and the triggers (22 and 27,
+which are axes, beyond the keyboard's three). Each of those lessons needs a line giving that button
+or axis a key, the way Lesson 6 now does for the D-pad. The gamepad's axis numbers for the
+triggers haven't been checked.
 
 **Wave 1 (the asides and Lessons 0–16, 2026-11-19): 360 markers, about 100 new library claims.**
 
@@ -464,7 +479,8 @@ range or with "about", and keep bare digits for numbers that repeat exactly.
    GitHub Actions workflow. Section 3.5.
 2. **How a claim points at a lesson:** hidden HTML comments in the lessons. Section 3.1.
 3. **How far Tier C goes:** numbers that a library change could move, checked with room for
-   fluctuation. Section 3.6 gives the range rule; it is a first proposal and can be loosened.
+   fluctuation. Section 3.6 gives the range rule; after Phase 0 the user confirmed the capped
+   "about X" (one unit in the last digit or 10%, whichever is smaller): "seems about right".
 4. **What the upgrade agent may do:** propose changes on a branch. Section 3.4.
 
 Chosen while building, open to change: TOML for the registry (no extra Python package), the range

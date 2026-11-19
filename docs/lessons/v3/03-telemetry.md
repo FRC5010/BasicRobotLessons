@@ -226,21 +226,23 @@ robot drive around a virtual field.
 ## 6. Listening instead of asking
 
 Back in Lesson 1, `Robot` got a `logRunningCommand()` method: ask the
-scheduler what's running on `module` right now, read its name off entry
-zero. It works, and it'll keep working for everything you've built so
-far — `driveAtSpeed` parks until canceled, `driveWithJoystick` loops until
-canceled, so there's always *something* running whenever you ask. Every
-mechanism, every tick, guaranteed non-empty. <!-- claim: commandsv3.running-commands-for, commandsv3.disable-cancels-mechanism-commands -->
+scheduler what's running on `module` right now, and log `"none"` if the
+list is empty or the name of entry zero if it isn't. The empty case is
+real: the list is empty on every disabled tick, because disabling cancels
+the module's command. While you're enabled, though, everything you've
+built so far keeps something running — `driveAtSpeed` parks until
+canceled, `driveWithJoystick` loops until canceled — so whenever you ask,
+you get an answer. <!-- claim: commandsv3.running-commands-for, commandsv3.disable-cancels-mechanism-commands -->
 
-That guarantee won't last forever. Later lessons build commands that
+That won't last forever. Later lessons build commands that
 finish on their own — and some of them can finish the instant they're
 asked to run, before a poll ever gets a chance to see them run at all.
 (Lesson 8 ships a real one: a "turn to heading" command bound to a button,
 already done if the robot happens to be facing that way already when you
 press it. Its entire lifetime — start and finish — can fit inside a single
-scheduler tick.) <!-- claim: commandsv3.short-command-invisible-to-poll --> Ask `getRunningCommandsFor(module).get(0)` on a tick like
-that, at just the wrong moment, and you're not reading a stale answer —
-you're reading past the end of an empty list.
+scheduler tick.) <!-- claim: commandsv3.short-command-invisible-to-poll --> Poll `getRunningCommandsFor(module)` before or after a
+tick like that and the list is empty both times: the log says `"none"`, and
+the command that just ran never shows up at all.
 
 The fix isn't a smarter poll. It's not polling at all. The scheduler
 doesn't just run commands quietly — every time it does something worth

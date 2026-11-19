@@ -103,9 +103,9 @@ Station"*. They used to be a dashboard trick riding on NetworkTables. Now
 they're part of the driver station itself, which is a better home for
 "should I be worried right now". <!-- claim: wpilib-tools.driverstation-2027-shows-alerts -->
 
-SimGUI can't read them on its own, though. On this version of WPILib,
-alerts are kept inside the robot program, and SimGUI has no way in.
-Something already running in your robot can, which is the next section.
+In simulation you don't need that driver station to see them: something
+already running in your robot collects them every tick, which is the next
+section.
 
 ---
 

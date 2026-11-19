@@ -225,7 +225,7 @@ this course gets one — it's how you'll recognize your own commands later,
 in logs and on screen.
 
 > **Watch out:** motors do **not** stop on their own when a command ends.
-> `set(fraction)` writes a value that the motor keeps applying until
+> `setThrottle(fraction)` writes a value that the motor keeps applying until
 > something overwrites it. Leave off `.whenCanceled(...)` and the wheel
 > keeps spinning after you release the button — the scheduler stops
 > *running* the command, but nobody ever commands `0`. <!-- claim: phoenix6.control-request-persists --> Explicit stop, every
@@ -379,13 +379,14 @@ and nothing would ever happen when you pressed one.
 import org.wpilib.command3.Scheduler;
 ```
 
-> **Watch out:** this scheduler doesn't check whether the robot is enabled
-> before it runs commands — `robotPeriodic()` fires on every tick,
-> disabled or not, and `Scheduler.run()` doesn't ask. What actually keeps a
-> disabled robot from moving is the motor hardware itself: a TalonFX
-> refuses to apply power while the robot is disabled, no matter what your
-> code commands. Real safety net, just not a software one — worth knowing
-> your code isn't the thing enforcing it. <!-- claim: phoenix6.talonfx-no-output-when-disabled, commandsv3.disable-cancels-mechanism-commands -->
+> **Watch out:** `robotPeriodic()` fires on every tick, disabled or not, so
+> `Scheduler.run()` runs while the robot is disabled too. That's where the
+> safety comes in: the moment the robot disables, the scheduler cancels
+> every running command that needs a mechanism (`driveAtSpeed` needs
+> `module`), and it won't run one again until you enable. The motor
+> hardware has a safety net of its own underneath: a TalonFX refuses to
+> apply power while the robot is disabled, no matter what your code
+> commands. <!-- claim: commandsv3.disable-cancels-mechanism-commands, commandsv3.disabled-scheduler-refuses-commands, phoenix6.talonfx-no-output-when-disabled -->
 
 ---
 

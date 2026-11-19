@@ -116,7 +116,7 @@ double error = targetDegrees - measurement;
    click **Enable** — there's no code to run until an opmode is actually
    selected. <!-- claim: wpilib-tools.simgui-robot-state-panel -->
 3. Press **X** on the controller (from Lesson 5, that's `steerToAngle(90)`,
-   bound to `westFace()`).
+   bound to `faceLeft()`).
    Execution hits the breakpoint and VSCode steals focus.
 4. Look at the **Variables** panel:
    - `targetDegrees` = `90.0`
