@@ -60,3 +60,13 @@ statement = "code/OpModeV3Robot, the course's starting project, is the pristine 
 evidence = "CLAUDE.md, 'What this repo is' (code/OpModeV3Robot ships the CommandsV3 vendordep) and 'Verifying lesson code' (verify-lessons-v3.sh -1 builds it); vendordeps/ listed on 2026-11-19"
 measured_on = "alpha-8"
 method = "BARE"
+
+[[claim]]
+id = "gradlerio.deploy-folder-read-by-sim"
+kind = "behaviour"
+library = ["gradlerio"]
+criticality = "C2"
+statement = "Files under src/main/deploy are copied onto the robot at deploy, and the simulator reads from the same folder, so a path file dropped there works in sim immediately."
+evidence = "CLAUDE.md, 'v3 snapshots can ship deploy/ files' (deploy/** maps to src/main/deploy/**) and 'v3 Lesson 17': path files under deploy/autos were loaded in the sim runs"
+measured_on = "alpha-8"
+method = "LOOP"

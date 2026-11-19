@@ -200,3 +200,13 @@ statement = "Logger.start() (in the instance initializer) ends with periodicBefo
 evidence = "CLAUDE.md, 'v3 Lessons 14-17 record with AdvantageKit', Lesson 16 (read in AdvantageKit's source; a SIM run and a 'not known' run both replayed with Localizer/Pose matching on every tick)"
 measured_on = "alpha-7 (AdvantageKit's alpha-7 jar, run on alpha-8)"
 method = "REPLAY"
+
+[[claim]]
+id = "advantagekit.replay-clock"
+kind = "behaviour"
+library = ["advantagekit", "wpilib"]
+criticality = "C2"
+statement = "Logger.start() replaces the robot's time source (RobotController.setTimeSource), so Timer.getTimestamp() and anything built on it, such as BLine's timing and the pose estimator, replays with the recording and decides exactly what it decided before."
+evidence = "CLAUDE.md, 'v3 Lessons 14-17 record with AdvantageKit', Lesson 17 (read from bytecode and source; Two Corners replayed with every output matching)"
+measured_on = "alpha-8"
+method = "REPLAY"

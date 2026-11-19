@@ -95,3 +95,14 @@ criticality = "C3"
 statement = "In WPILib VS Code, 'WPILib: Simulate Robot Code' (with the debugger option) or F5 launches the simulation with the debugger attached, 'Debug Robot Code' deploys with it attached to a SystemCore, and a paused breakpoint freezes the whole robot loop and sim time."
 evidence = "No record found in CLAUDE.md or tools/figures/data; the lesson itself says the launch configs are unverified on a 2027-alpha OpMode project"
 measured_on = "unverified"
+
+[[claim]]
+id = "wpilib-tools.simgui-alliance-station"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C1"
+statement = "SimGUI's DS window has an Alliance Station drop-down that is editable only while Robot State says Disconnected (plain text afterwards), and every launch starts on Red 1, which the first mode click pushes to the robot."
+evidence = "CLAUDE.md, 'v3 Lesson 17 runs on BLine', SimGUI starts every launch on Red 1 (alpha-7's DriverStationGui.cpp); Figure 17.3's screenshot"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "SOURCE"
+figure = "17-simgui-ds-window.png"

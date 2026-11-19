@@ -437,3 +437,23 @@ statement = "SwerveDriveKinematics.toChassisVelocities(...) takes the four measu
 evidence = "CLAUDE.md, 'Lesson 16's ChassisSimulation follows the wheels, not the command' (m_kinematics.toChassisVelocities of the measured module states); Lesson 16 compiles on alpha-8"
 measured_on = "alpha-8"
 method = "LOOP"
+
+[[claim]]
+id = "wpilib.pid-controller-api"
+kind = "api"
+library = ["wpilib"]
+criticality = "C1"
+statement = "org.wpilib.math.controller.PIDController(kP, kI, kD) exists and calculate(measured, setpoint) returns the P output (kP times error with the I and D gains at zero)."
+evidence = "CLAUDE.md, 'v3 Lesson 17 runs on BLine': three PIDControllers built this way run in the real Robot loop"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib.match-state-alliance-optional"
+kind = "api"
+library = ["wpilib"]
+criticality = "C2"
+statement = "org.wpilib.driverstation.MatchState.getAlliance() returns an Optional<Alliance>, empty until the Driver Station says which alliance the robot is on."
+evidence = "CLAUDE.md, 'v3 Lesson 17 runs on BLine' (Autos.startPose reads MatchState.getAlliance() in the real loop through DriverStationSim)"
+measured_on = "alpha-8"
+method = "LOOP"

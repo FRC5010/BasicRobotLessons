@@ -70,3 +70,116 @@ statement = "A misspelled path name throws IllegalArgumentException when the pat
 evidence = "CLAUDE.md, 'v3 Lesson 17 runs on BLine', An opmode is constructed when it's selected"
 measured_on = "alpha-7"
 method = "LOOP"
+
+[[claim]]
+id = "bline.vendordep-and-packages"
+kind = "api"
+library = ["bline", "gradlerio"]
+criticality = "C1"
+statement = "BLine 2027 installs by URL from a vendordep pinned by commit (d996781, what the 2027.0.0-beta.1 tag names), the file is BLine-Lib-2027.json (the 2026 build's BLine-Lib.json is a different file for Commands V2), and its classes live in frc.robot.lib.BLine.{commands,path,following,field}."
+evidence = "CLAUDE.md, 'v3 Lesson 17 runs on BLine v2027.0.0-beta.1', first bullet and API differs bullet"
+measured_on = "alpha-7 (BLine d996781), relied on in alpha-8 runs"
+method = "SOURCE"
+
+[[claim]]
+id = "bline.path-json-format"
+kind = "api"
+library = ["bline"]
+criticality = "C1"
+statement = "A path file is JSON with path_elements of type waypoint (translation_target plus rotation_target), translation (x_meters, y_meters), rotation (rotation_radians, t_ratio, profiled_rotation) and event_trigger (t_ratio, lib_key); angles are radians and t_ratio is a fraction of the segment. config.json beside the paths holds kinematic_constraints (default_max_velocity_meters_per_sec and the rest, including default_intermediate_handoff_radius_meters)."
+evidence = "CLAUDE.md, 'v3 Lesson 17 runs on BLine' and 'v3 Lesson 25': paths and config of this shape were loaded and followed in the real Robot loop"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "bline.path-class-api"
+kind = "api"
+library = ["bline"]
+criticality = "C1"
+statement = "new Path(name) reads deploy/autos/paths/<name>.json (the .json is added) and config.json beside it; getAuthoredStartPose() returns an Optional (empty when a path starts with a bare rotation); FlippingUtil.flipFieldPose(pose) mirrors a pose the way BLine mirrors a path; FollowPath.Builder.build(path) gives a Commands V3 Command, and withPoseReset() (no argument) is per command."
+evidence = "CLAUDE.md, 'v3 Lesson 17 runs on BLine' (withPoseReset per command; Autos.startPose flips for red like BLine does)"
+measured_on = "alpha-7 (BLine d996781), relied on in alpha-8 runs"
+method = "SOURCE"
+
+[[claim]]
+id = "bline.no-lookahead-planning"
+kind = "behaviour"
+library = ["bline"]
+criticality = "C1"
+statement = "BLine plans nothing ahead: the translation loop asks for kTranslationP times the distance left, capped at the max speed, and the acceleration limit decides how fast the request can change, so the robot stops in time only when max speed squared over twice max acceleration fits inside max speed over kTranslationP."
+evidence = "CLAUDE.md, 'v3 Lesson 17 runs on BLine', BLine plans nothing ahead"
+measured_on = "alpha-7 (BLine d996781), relied on in alpha-8 runs"
+method = "LOOP"
+
+[[claim]]
+id = "bline.handoff-radius"
+kind = "behaviour"
+library = ["bline"]
+criticality = "C2"
+statement = "Once the robot is within default_intermediate_handoff_radius_meters of an intermediate point, the follower gives it up and measures against the next segment, so the cross-track error and the remaining path distance both step on the tick the radius is entered, and a smaller radius makes the robot take a corner at speed and swing wider."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 17 Two Corners (cross-track jumps on the tick the robot enters the 0.5 m radius); tools/figures/data/17-two-corners-run*.csv"
+measured_on = "alpha-8"
+method = "LOOP"
+test = "tools/figures/probes/Fig17TwoCorners.java"
+figure = "17-cross-track-error.png"
+
+[[claim]]
+id = "bline.flip-for-alliance"
+kind = "behaviour"
+library = ["bline", "wpilib"]
+criticality = "C1"
+statement = "withDefaultShouldFlip() mirrors the whole path to the red end of the field (and resets the estimate there) when the Driver Station reports red, and treats an unreported alliance as blue; SimGUI starts every launch on Red 1."
+evidence = "CLAUDE.md, 'v3 Lesson 17 runs on BLine', SimGUI starts every launch on Red 1"
+measured_on = "alpha-7 (BLine d996781), relied on in alpha-8 runs"
+method = "LOOP"
+
+[[claim]]
+id = "bline.telemetry-signals"
+kind = "behaviour"
+library = ["bline"]
+criticality = "C2"
+statement = "withTelemetry(Telemetry.getTable()) makes the follower log FollowPath/... values (crossTrackError, remainingPathDistanceMeters and others) through Telemetry, not AdvantageKit, so they appear under Telemetry live and in the WPILIB_ log only."
+evidence = "CLAUDE.md, 'v3 Lesson 17 runs on BLine' (withTelemetry logs its FollowPath/... signals) and 'v3 Lessons 14-17 record with AdvantageKit', Lesson 17"
+measured_on = "alpha-8"
+method = "LOOP"
+test = "tools/figures/probes/Fig17TwoCorners.java"
+
+[[claim]]
+id = "bline.register-event-trigger"
+kind = "api"
+library = ["bline"]
+criticality = "C1"
+statement = "FollowPath.registerEventTrigger(key, Runnable) (and a Command overload) is static, keeps one table for the whole program, and the event for a marker runs once, on the loop after the follower passes it."
+evidence = "CLAUDE.md, 'v3 Lesson 17 runs on BLine' (registerEventTrigger has a Runnable overload; events dispatch on the next default-event-loop poll)"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "bline.unregistered-key-logs"
+kind = "behaviour"
+library = ["bline"]
+criticality = "C2"
+statement = "An event marker whose lib_key was never registered doesn't crash: BLine looks the key up when the robot reaches the marker, logs 'FollowPath: Unregistered event trigger key: <key>' and keeps driving."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson"
+measured_on = "unverified"
+method = "SOURCE"
+
+[[claim]]
+id = "bline.config-json-required"
+kind = "behaviour"
+library = ["bline"]
+criticality = "C2"
+statement = "config.json is not optional: B-Line reads it every time it loads a path, so a missing file is an error at load, not a quiet default."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson"
+measured_on = "unverified"
+method = "SOURCE"
+
+[[claim]]
+id = "bline.controllers-reset-per-path"
+kind = "behaviour"
+library = ["bline"]
+criticality = "C3"
+statement = "B-Line resets its three controllers each time a path starts, so one builder (one set of PIDController objects) can serve every path, because every command it makes requires the drivetrain and only one runs at a time."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson"
+measured_on = "unverified"
+method = "SOURCE"
