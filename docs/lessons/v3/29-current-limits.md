@@ -530,7 +530,7 @@ Figure 29.1 shows one run of each row of the table, with the moves identical and
 
 The first bump, in the first second or two, is the flywheel spinning up to its idle speed. The limits show up here already: the green line, with no limits, peaks near 160 A and pulls the rail down to about 8.9 V, the blue line peaks near 64 A, and the orange line near 36 A, and each bump ends when the wheel gets up to speed.
 
-Then the moves at 6 s. Green jumps to its **200 A** peak and the rail drops to **8.0 V** in the same tick: that's the bottom row of the table. Blue peaks near **111 A** and bottoms out near 9.8 V, and orange peaks near **78 A** and 10.4 V. Then look at the dashed line. Even the green run, the worst of the three, stays almost 2 V above it. That's what "sags, survives" means: a real dip, a real distance from the brownout line, and no brownout.
+Then the moves at 6 s. Green jumps to its **200 A** peak and the rail drops to **8.0 V** with it: that's the table's first row. Blue peaks near **111 A** and bottoms out near 9.8 V, and orange peaks near **78 A** and 10.4 V. Then look at the dashed line. Even the green run, the worst of the three, stays almost 2 V above it. That's what "sags, survives" means: a real dip, a real distance from the brownout line, and no brownout.
 
 Three mechanism motors, even unlimited, can't pull a fresh battery under
 6.3 V. That's honest, and it's the same thing section 3 said: this robot has

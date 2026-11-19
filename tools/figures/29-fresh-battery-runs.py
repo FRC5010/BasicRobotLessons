@@ -26,9 +26,8 @@ Re-measure (build once per config, then rerun the sandbox test for more runs):
         --replace subsystems/ArmIOTalonFX.java "    config.CurrentLimits.SupplyCurrentLimitEnable = true;" "    config.CurrentLimits.SupplyCurrentLimitEnable = false;" \\
         --replace subsystems/ArmIOTalonFX.java "rollerConfig.CurrentLimits.StatorCurrentLimitEnable = true;" "rollerConfig.CurrentLimits.StatorCurrentLimitEnable = false;" \\
         --replace subsystems/ArmIOTalonFX.java "rollerConfig.CurrentLimits.SupplyCurrentLimitEnable = true;" "rollerConfig.CurrentLimits.SupplyCurrentLimitEnable = false;"
-    # defaults: delete the four limit lines in each config (elevator, flywheel, arm pivot, arm roller),
-    # as the lesson says: --replace FILE "<the four lines, ending in the newline>" "" for each of the four
-    # configs (Stator/SupplyCurrentLimitEnable = true plus the two limits from PowerConstants).
+    # defaults: every motor on Phoenix's defaults (the four limit lines deleted in each config)
+    tools/figures/29-fresh-battery-defaults.sh
     # More runs: cd into the sandbox measure.sh printed and run
     #   FIGURE_OUT=... ./gradlew cleanTest test --tests first.robot.figures.Fig29TiredBattery -q
 

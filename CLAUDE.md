@@ -2729,6 +2729,24 @@ at least twice.
     that, so §4 now gives the window, not "by y ≈ 4.4". The 0.2 text says
     y ≈ 3.9 (was 3.8).
   - Lesson 25's Pick Up timeline is now Figure 25.2.
+- **Lesson 29, fresh battery, four runs per configuration** (Figure 29.1,
+  `Fig29TiredBattery` unchanged; the defaults run is
+  `tools/figures/29-fresh-battery-defaults.sh`):
+  - no limits peaked at 219 / 200 / 199 / 200 A, lows 7.62–8.01 V;
+  - defaults peaked at 130 / 111 / 141 / 124 A, lows 9.17–9.78 V;
+  - the budget peaked at 54 / 96 / 78 / 87 A, lows 10.08–10.93 V.
+  The defaults' 141 A and the budget's 54 A / 10.93 V fall outside the
+  lesson's ranges (from 10–30 runs); taken as spread, the text unchanged. The
+  idle spin-up in the first 1.3 s peaked at 158 A / 8.85 V (no limits), 64 A
+  (defaults) and 36 A (budget). The total goes negative and the rail above
+  12 V when the mechanisms coast down (the battery model's accounting).
+- **Lesson 28's dial at 60 rot/s is −197°**, not the −198° in the Lesson 28
+  notes below: that was measured with `kFreeSpeed` 100. With 101.08 the
+  formula gives −196.9° for the goal and about −197.7° for the speed needle
+  at 60.47 rot/s. The lesson never quoted −198.
+- Renumbered in round 4: Lessons 26, 27 and 29's batch 1 figures moved up
+  one, and Lesson 28's two moved to 28.2 and 28.3. Lesson 28's callout link
+  follows the aim-error plot to 27.2.
 - **SimGUI's addressable LED strip** is under **Hardware → Addressable
   LEDs** ("LEDs[5]", 40 pixels). It opens as 10 columns × 4 rows, and Lesson
   23 tells the student to set Columns to 40.

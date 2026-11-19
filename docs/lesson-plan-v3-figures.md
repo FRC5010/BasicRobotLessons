@@ -95,15 +95,15 @@ Type: a = sim plot, b = SimGUI screenshot, c = SVG diagram, d = needs the user. 
 | 25.1 | Sequence holds the elevator, coroutine doesn't | 25 | c | low | 3 |
 | 25.2 | Marker position against roller start | 25 | a | medium | 2 (built) |
 | 25.3 | Pick Up timeline | 25 | a | high | 1 (built) |
-| 26.1 | The line's frame and the two stages | 26 | c | medium | 2 |
+| 26.1 | The line's frame and the two stages | 26 | c | medium | 2 (built) |
 | 26.2 | Speed during the two-stage drive | 26 | a | high | 1 (built) |
 | 26.3 | The path bows out while turning | 26 | a | low | 3 |
-| 27.1 | Why a strafing robot has to spin | 27 | c | medium | 2 |
+| 27.1 | Why a strafing robot has to spin | 27 | c | medium | 2 (built) |
 | 27.2 | Aim error on a 3 m orbit | 27 | a | high | 1 (built) |
-| 28.1 | The speedometer: needle against speed | 28 | c | medium | 2 |
+| 28.1 | The speedometer: needle against speed | 28 | c | medium | 2 (built) |
 | 28.2 | Holding 60 rot/s with and without the model | 28 | a | high | 1 (built) |
 | 28.3 | Spin-up from four idle speeds | 28 | a | high | 1 (built) |
-| 29.1 | Fresh battery, one run per configuration | 29 | a | medium | 2 |
+| 29.1 | Fresh battery, one run per configuration | 29 | a | medium | 2 (built) |
 | 29.2 | Tired battery: budget and no limits | 29 | a | high | 1 (built) |
 | 30.1 | SimGUI: the Alerts panel | 30 | b | high | 1 (built) |
 | 30.2 | SimGUI: Unplug Gyro | 30 | b | medium | 2 |
