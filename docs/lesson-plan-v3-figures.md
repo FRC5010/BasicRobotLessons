@@ -58,10 +58,10 @@ Type: a = sim plot, b = SimGUI screenshot, c = SVG diagram, d = needs the user. 
 | 9.1 | Why scale drive by cosine | 9 | a | medium | 2 (built) |
 | 9.2 | Sequence, parallel, race, optional | 9 | c | medium | 2 (built) |
 | 10.1 | Translation plus rotation at each corner | 10 | c | high | 1 (built) |
-| 10.2 | `optimize`: take the short way | 10 | c | low | 3 |
+| 10.2 | `optimize`: take the short way | 10 | c | low | 3 (built) |
 | 10.3 | Robot-relative versus field-relative | 10 | c | high | 1 (built) |
 | 11.1 | SimGUI: the Field widget | 11 | b | medium | 2 (built) |
-| 12.1 | Coach and player (50 Hz over 1 kHz) | 12 | c | low | 3 |
+| 12.1 | Coach and player (50 Hz over 1 kHz) | 12 | c | low | 3 (built) |
 | 12.2 | The sensor and gear chain | 12 | c | high | 1 (built) |
 | 12.3 | A feedforward step | 12 | a | high | 1 (built) |
 | 13.1 | The IO door | 13 | c | high | 1 (built) |
@@ -76,7 +76,7 @@ Type: a = sim plot, b = SimGUI screenshot, c = SVG diagram, d = needs the user. 
 | 16.1 | The estimate creeps ahead and stays there | 16 | a | high | 1 (built) |
 | 16.2 | Truth and estimate are different loops | 16 | c | medium | 2 (built) |
 | 16.3 | The grip limit | 16 | a | medium | 2 (built) |
-| 17.1 | Three loops at once | 17 | c | low | 3 |
+| 17.1 | Three loops at once | 17 | c | low | 3 (built) |
 | 17.2 | Can it stop in time? | 17 | a | medium | 2 (built) |
 | 17.3 | SimGUI: DS window for an auto | 17 | b | high | 1 (built) |
 | 17.4 | Two Corners, drawn and driven | 17 | a | high | 1 (built) |

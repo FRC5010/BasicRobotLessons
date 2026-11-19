@@ -47,6 +47,21 @@ That's the whole lesson: teach the firmware about your mechanism (gearing,
 wrap-around, gains), then change `setDesiredState` — the method every
 command calls each tick — from "do the math" to "state the goal."
 
+Figure 12.1 puts the two rates side by side.
+
+<a id="figure-12-1"></a>
+![Two timelines covering the same 60 milliseconds. The top one, in blue, has a tick every 20 milliseconds, labelled as your 50 hertz code stating a target. Green arrows carry each new target down to the bottom timeline, in orange, which has a tick every millisecond: the TalonFX closing the loop about 1000 times per second.](images/12-coach-and-player.svg)
+
+*Figure 12.1 — The same 60 ms, seen by each computer. Your code states a target every 20 ms; the TalonFX closes the loop itself about 1000 times per second.*
+
+Start with the blue line, the coach. Three ticks, 20 ms apart, and at each one
+your code says what it wants and goes quiet. The orange line underneath is the
+player, over the very same stretch of time: its ticks are 1 ms apart, so it
+gets about twenty looks at the sensor and twenty chances to adjust the output
+between one target and the next. The green arrows are the only things that
+cross from your code to the firmware, and that's the shape the rest of the
+lesson builds: you send goals, the firmware does the chasing.
+
 ---
 
 ## 2. Priming isn't enough
@@ -157,13 +172,13 @@ already the default, so the ratio chain is visible in the code instead of
 implied. The drive motor never picked up a remote sensor, so its
 `SensorToMechanismRatio` keeps doing exactly what it always did: "rotor
 turns per wheel turn," `6.75 : 1`, converting `getPosition()`/`getVelocity()`
-from rotor units to wheel units directly. Figure 12.1 shows the two
+from rotor units to wheel units directly. Figure 12.2 shows the two
 chains.
 
-<a id="figure-12-1"></a>
+<a id="figure-12-2"></a>
 ![Two gear chains. Steering: the steer motor's rotor connects through a 25 to 1 ratio called RotorToSensorRatio to the CANcoder on the wheel, then through a 1 to 1 ratio called SensorToMechanismRatio to the wheel angle, and the motor's closed loop reads the CANcoder. Drive: the drive motor's rotor, which is its own sensor, connects through a 6.75 to 1 SensorToMechanismRatio to the wheel.](images/12-sensor-gear-chain.svg)
 
-*Figure 12.1 — The ratio before the sensor is `RotorToSensorRatio`; the ratio after it is `SensorToMechanismRatio`.*
+*Figure 12.2 — The ratio before the sensor is `RotorToSensorRatio`; the ratio after it is `SensorToMechanismRatio`.*
 
 The same `25 : 1` that used to sit between the rotor and the wheel now
 sits between the rotor and the CANcoder, and that's why it changed names.
@@ -309,7 +324,7 @@ backwards (the motor's 101.08 rotations/sec ÷ 6.75 turns per wheel turn =
 rps, the firmware asks for `10 × 0.8 = 8` volts on the very first tick,
 because the model says that's what 10 rps costs — no waiting for error to
 build up. (From a standstill the motor's current limit holds the actual
-voltage a little lower for the first tick or two; Figure 12.2 shows it.)
+voltage a little lower for the first tick or two; Figure 12.3 shows it.)
 Then `kP` handles only the leftover: friction, battery sag, carpet. The
 model does most of the work by prediction; feedback trims the rest by
 reaction. That division of labor — predict with a model, correct with
@@ -407,16 +422,16 @@ barely has anything to do. Which suggests a way to tune: set `kDriveKP =
 *then* bring in a little `kP` for the residue. Model first, feedback
 second.
 
-Figure 12.2 is what the first two Try It items let you see for yourself.
+Figure 12.3 is what the first two Try It items let you see for yourself.
 It's one step on one module: the wheel points straight ahead and sits at
 rest, and at time zero we ask for 2 m/s, which is 6.27 wheel rotations per
 second. The orange line is the code you wrote today, with `kDriveKV =
 0.8` and `kDriveKP = 0.1`.
 
-<a id="figure-12-2"></a>
+<a id="figure-12-3"></a>
 ![Two stacked graphs over the first second after a step to 2 meters per second. Top, wheel speed: with the full model the wheel reaches 2 m/s in about a third of a second and stays there; with half the model it levels off at 1.11 m/s; with no model, kP alone, it levels off at 0.22 m/s. Bottom, applied voltage: the full model ends at 5.01 volts, half the model at 2.78 volts, kP alone at 0.55 volts.](images/12-feedforward-step.png)
 
-*Figure 12.2 — A step to 2 m/s with the full model, half the model, and no model at all.*
+*Figure 12.3 — A step to 2 m/s with the full model, half the model, and no model at all.*
 
 Read the bottom panel first, because it's what the firmware actually does
 with your request. With the model right (orange) the voltage lands on
@@ -460,7 +475,7 @@ identical to the figure.
    requested and measured wheel speed. Command a step from a standstill:
    within about a tenth of a second the voltage is at `kV × requested`,
    long before error could have built it up. (The first tick or two read
-   lower; that's the current limit from Figure 12.2's note.) That jump is
+   lower; that's the current limit from Figure 12.3's note.) That jump is
    feedforward; the small corrections after it are feedback.
 2. **Break the model on purpose.** Set `kDriveKV = 0.4` (half right) and
    watch `kP` struggle to make up the difference — speed settles well

@@ -30,7 +30,7 @@ it. Along the way, every path auto becomes one line instead of one class.
 
 ## 1. The dead time, and the guess
 
-Pull up Lesson 17's **Two Corners** auto ([Figure 17.3](17-bline-autos.md#figure-17-3) draws its track) and run it again, with Lesson 22's game
+Pull up Lesson 17's **Two Corners** auto ([Figure 17.4](17-bline-autos.md#figure-17-4) draws its track) and run it again, with Lesson 22's game
 pieces on the field and the LED strip open in SimGUI.
 
 Two things are wrong, and neither one looks like a bug.
@@ -839,7 +839,7 @@ The `release` marker is the plan; `handingRotationBack` is the guarantee.
 ## 8. Run it
 
 **Run the robot in simulation.** Set the DS window's **Alliance Station**
-to **Blue 1** first, the way you did in Lesson 17 ([Figure 17.2](17-bline-autos.md#figure-17-2)) — the numbers below are for blue.
+to **Blue 1** first, the way you did in Lesson 17 ([Figure 17.3](17-bline-autos.md#figure-17-3)) — the numbers below are for blue.
 
 **Run Pick Up first, on a fresh launch,** while the piece at (6.0, 3.8) is still
 on the field. Put `Sim/GamePieces` and `Drivetrain/SimulatedPose` on

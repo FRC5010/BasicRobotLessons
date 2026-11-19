@@ -310,7 +310,7 @@ private `clamp` from Lesson 5, same as everywhere else in this file.
 
 `vx`/`vy` are computed straight from field-frame position error, so
 they're field-relative speeds — the same shape `driveFieldRelative` builds
-from joystick input in Lesson 10 ([Figure 10.2](10-kinematics.md#figure-10-2) shows the difference). `fieldSpeeds.toRobotRelative(...)` is
+from joystick input in Lesson 10 ([Figure 10.3](10-kinematics.md#figure-10-3) shows the difference). `fieldSpeeds.toRobotRelative(...)` is
 the identical conversion, just fed by a P controller instead of a stick.
 
 **`.until(...)` is new**, and it's worth being precise about what it does.

@@ -362,6 +362,22 @@ steering move under 90°, which means the cosine scale in `setDesiredState`
 never goes negative — the two together give you wheels that take the short
 path *and* hold their push until they're pointed right.
 
+Figure 10.2 draws the example from the top of this section.
+
+<a id="figure-10-2"></a>
+![Two copies of one steering wheel drawn as a circle, currently pointing at 10 degrees, with kinematics asking for 190 degrees. Left, without optimize: a long orange arc turns the wheel 180 degrees, and the drive runs at plus 2 meters per second. Right, with optimize: the wheel stays at 10 degrees, no steering turn, and the drive runs backward at minus 2 meters per second.](images/10-optimize-short-way.svg)
+
+*Figure 10.2 — Steering to 190° and driving forward, or staying at 10° and driving backward: the wheel moves the robot the same way, and `optimize` picks the one that needs no pirouette.*
+
+Read the left panel first. The solid arrow is where the wheel points now, 10°;
+the dashed one is the 190° the kinematics asked for. Getting there means the
+long orange arc, a full 180° of steering, and then driving at `+2 m/s`. Now look
+right. The wheel stays where it is and the drive motor spins the other way,
+`-2 m/s`, and the robot goes exactly where it would have gone. The floor can't
+tell the difference. Your steering motor can: one of these costs a half turn
+of waiting, and the other costs nothing. That's the whole trick, and it's why
+no steering move ever has to exceed 90°.
+
 ---
 
 ## 6. Wire up the joysticks
@@ -423,13 +439,13 @@ the robot in *its* forward direction, wherever it happens to be
 pointing — which means after a 180° turn, forward is backward and half your
 drivers' brains melt. Most drivers prefer **field-relative**: pushing
 forward always drives *away from the driver's station*, regardless of robot
-orientation. Figure 10.2 shows the same stick push both ways. Thanks to the helper, this is now a genuinely small method —
+orientation. Figure 10.3 shows the same stick push both ways. Thanks to the helper, this is now a genuinely small method —
 one new line of math and a delegation.
 
-<a id="figure-10-2"></a>
+<a id="figure-10-3"></a>
 ![Two top-down fields with the driver station at the bottom and the robot turned so its nose points toward the driver. On the left, robot-relative: the stick pushed forward moves the robot toward its nose, back toward the driver. On the right, field-relative: the same stick push moves the robot away from the driver station, in +X, with the nose still pointing the other way.](images/10-robot-vs-field-relative.svg)
 
-*Figure 10.2 — The same stick push on a robot turned 180°. +X is away from the driver station, the convention Lesson 11 uses for the field.*
+*Figure 10.3 — The same stick push on a robot turned 180°. +X is away from the driver station, the convention Lesson 11 uses for the field.*
 
 In both panels the driver does exactly the same thing with the same
 stick, and the robot is turned all the way around, nose toward the driver

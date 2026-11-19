@@ -185,7 +185,7 @@ target. The profile only cares about one number: **how far along that line
 the robot is.** Something else has to keep it *on* the line.
 
 That's a question you've answered before. In Lesson 17, BLine followed
-paths with three loops, and one of them was **cross-track** ([Figure 17.4](17-bline-autos.md#figure-17-4) plots it): you're headed
+paths with three loops, and one of them was **cross-track** ([Figure 17.5](17-bline-autos.md#figure-17-5) plots it): you're headed
 the right way at the right speed, but half a metre to the left of the
 line, and this loop pushes you back. You'll use the same idea, and even
 the same gain, `PathConstants.kCrossTrackP`.

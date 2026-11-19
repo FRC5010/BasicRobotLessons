@@ -115,7 +115,7 @@ multiply by whichever of those two factors applies.
 drum rotation/sec means sustaining *twelve* rotor rotations/sec. Multiply
 by the speed factor: `12 × 0.1187 ≈ 1.42`. That's `kElevatorKV`. (The
 closed loop runs in drum rotations, not rotor rotations — Phoenix's
-`SensorToMechanismRatio` handles that conversion ([Figure 12.1](12-model-based-control.md#figure-12-1) draws the chain), the same way
+`SensorToMechanismRatio` handles that conversion ([Figure 12.2](12-model-based-control.md#figure-12-2) draws the chain), the same way
 `DriveConstants.kDriveKV = 0.8` is volts per *wheel* rotation/sec, not
 per rotor rotation/sec. `kV`, `kA`, and `kP` all live on the mechanism
 side of that ratio.)
