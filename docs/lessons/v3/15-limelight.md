@@ -910,7 +910,7 @@ rejection. Before you move, that string reads `MISSING_POSE`. When a real
 camera misbehaves, this is the first place to look.
 
 > **Why you won't see vision rescue anything.** Lesson 14's fake camera
-> could pull a wrong pose toward (2, 5) dramatically, because it was an
+> could pull a wrong pose toward (2, 5) dramatically ([Figure 14.2](14-pose-estimator.md#figure-14-2)), because it was an
 > independent claim. This one can't, and section 8 already told you why: it
 > looks out from `localizer::getPose` — the very estimate vision is supposed
 > to correct. So every frame reports "you're exactly where you think you

@@ -41,7 +41,7 @@ def main(rec, clean, scaled, out):
               ("clean", poses(clean, "/ReplayOutputs/Drivetrain/Pose")),
               ("scaled", poses(scaled, "/ReplayOutputs/Drivetrain/Pose"))]
     with open(out, "w", newline="") as f:
-        w = csv.writer(f)
+        w = csv.writer(f, lineterminator="\n")
         w.writerow(["series", "t_s", "x_m", "y_m", "heading_deg"])
         for name, rows in series:
             for t, x, y, r in rows:

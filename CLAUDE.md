@@ -2684,6 +2684,24 @@ at least twice.
   `--replace`, three 60 s parked runs): ended 17, 39 and 39 cm from the park
   point, and the farthest each got was 25, 52 and 50 cm. The text says "15 to
   50 cm".
+- **Lesson 14, five fake sightings, robot parked at the origin** (LOOP, Start
+  pressed once a second): at default trust each press closes exactly a tenth
+  of the gap to (2, 5) (5.385 → 4.847 → … → 3.180 m), along the straight
+  line, and the heading turns a tenth of the way to 90° each time. With
+  `setVisionMeasurementStdDevs(0.5, 0.5, 999999)` it's a sixth per press
+  (→ 2.164 m), and the heading never moves.
+- **Lesson 13, Figure 13.3's drive** (quarter stick: forward 3 s, left 3 s,
+  forward and right 3 s): the recording ends 4.78 m from the start. The clean
+  replay matches it on all 470 poses, and the `* 1.1` replay ends 5.26 m out
+  (×1.1000, 0.48 m beyond the recording). The gap grows with distance; a
+  half-stick drive gave 1.25 m. Try It's "0.66 m" is CLAUDE.md's earlier
+  drive.
+- **SimGUI Field pane:** only the field's outline, no image. The default
+  **Robot State** window covers the field's bottom-left corner, where the
+  robot starts; Lesson 11 now says to drag it aside.
+- SimGUI tips (b2g3): keyboard 0 drives with W/S (left Y), A/D (left X) and
+  E/R (right X). The axes ramp at about 1.2/s and decay slowly, so tap for
+  0.3–1 s; longer holds run the robot off the field.
 - SimGUI tips (b2g4):
   - Keyboard 0 shows only Axis[0..2], and W holds Axis[1] at −1.0.
   - Drag a keyboard onto the Joystick[N] header, and wiggle the mouse for

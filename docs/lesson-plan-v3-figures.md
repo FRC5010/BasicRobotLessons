@@ -60,15 +60,15 @@ Type: a = sim plot, b = SimGUI screenshot, c = SVG diagram, d = needs the user. 
 | 10.1 | Translation plus rotation at each corner | 10 | c | high | 1 (built) |
 | 10.2 | `optimize`: take the short way | 10 | c | low | 3 |
 | 10.3 | Robot-relative versus field-relative | 10 | c | high | 1 (built) |
-| 11.1 | SimGUI: the Field widget | 11 | b | medium | 2 |
+| 11.1 | SimGUI: the Field widget | 11 | b | medium | 2 (built) |
 | 12.1 | Coach and player (50 Hz over 1 kHz) | 12 | c | low | 3 |
 | 12.2 | The sensor and gear chain | 12 | c | high | 1 (built) |
 | 12.3 | A feedforward step | 12 | a | high | 1 (built) |
 | 13.1 | The IO door | 13 | c | high | 1 (built) |
 | 13.2 | Record, then replay | 13 | c | high | 1 (built) |
-| 13.3 | The x1.1 experiment | 13 | a | medium | 2 |
+| 13.3 | The x1.1 experiment | 13 | a | medium | 2 (built) |
 | 14.1 | Localizer and its providers | 14 | c | high | 1 (built) |
-| 14.2 | Each sighting is a nudge | 14 | a | medium | 2 |
+| 14.2 | Each sighting is a nudge | 14 | a | medium | 2 (built) |
 | 15.1 | Where the cameras are | 15 | c | high | 1 (built) |
 | 15.2 | Real camera and simulated camera, same wire | 15 | c | high | 1 (built) |
 | 15.3 | SimGUI: AdvantageKit menu for a camera | 15 | b | medium | 2 (built) |

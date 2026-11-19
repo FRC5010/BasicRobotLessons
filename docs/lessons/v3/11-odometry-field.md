@@ -219,7 +219,9 @@ Now in **SimGUI** (the sim window itself, not AdvantageScope): menu
 **NetworkTables → Telemetry → Field**, and a top-down field pane opens right in
 the sim window, robot moving as you drive. Figure 11.1 shows where to click
 and what you get: a box for the field, with the robot drawn as a red outline
-and a green arrow for the way it faces, bottom-left until you drive.
+and a green arrow for the way it faces, bottom-left until you drive. (If
+you can't see it, SimGUI's **Robot State** window may be sitting on that
+corner of the field; drag it out of the way.)
 Same pose, two viewers: `Field2d` for the quick glance while sim is
 already open, the logged `Pose2d` for AdvantageScope's field images,
 replays, and everything else.

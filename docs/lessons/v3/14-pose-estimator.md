@@ -430,7 +430,8 @@ mechanism and interrupts nothing. The coroutine body here has no
 the very same tick — the same one-shot shape Lesson 9's `Autos` used, just
 with nothing to sequence.
 
-Now run it. Sim up, watch the **Field** widget in SimGUI. Drive somewhere,
+Now run it. Sim up, watch the **Field** widget in SimGUI ([Figure 11.1](11-odometry-field.md#figure-11-1)
+shows where it is). Drive somewhere,
 then press Start. The robot on the field slides toward (2, 5) — not a
 teleport, a real pull. Press it again and it slides a little further; the
 first press doesn't finish the job on its own. That's the estimator's
@@ -441,14 +442,35 @@ see the same thing happen in slow motion, one "camera frame" at a time.
 That division of labor — **odometry for smoothness, vision for truth** — is
 modern FRC localization in one sentence.
 
+Figure 14.2 plots five presses with the robot parked at the origin: the
+distance from the estimate to (2, 5), second by second.
+
+<a id="figure-14-2"></a>
+![Distance from the pose estimate to (2, 5) over eight seconds with Start pressed once a second. With default trust the distance falls in a staircase from 5.39 m to 3.18 m, each step smaller than the last. With the trust knob set it falls faster, to 2.16 m.](images/14-sighting-nudges.png)
+
+*Figure 14.2 — Each sighting is a nudge: five presses of Start, and the estimate is still 3.18 m from where the camera says the robot is.*
+
+Read the orange line first. It starts at 5.39 m, the distance from the
+origin to (2, 5), and it stays flat until the first press, because nothing
+changes the estimate between sightings. Each press drops it in one step, and
+each step is smaller than the one before: about a tenth of the distance that's
+left (the first press is 0.54 m; the fifth is 0.35 m). That's the shape of
+a nudge. A teleport would be one step to zero. After five presses the
+estimate is still 3.18 m away, which is why one press never finishes the job,
+and why a real camera needs to report dozens of times a second before the
+pull looks instant. The estimate moves along the straight line toward (2, 5),
+and its heading turns toward the sighting's 90° by the same tenth each time.
+
 > **The trust knob.** How hard a measurement pulls is set by its **standard
 > deviations** — smaller numbers mean "trust this more." The defaults are
 > reasonable, and one line in `Localizer` adjusts them:
 > `m_estimator.setVisionMeasurementStdDevs(VecBuilder.fill(0.5, 0.5, 999999));`
 > reads as "trust vision's x and y to about half a meter, and ignore its
 > heading entirely" — a common real-robot choice, since the gyro's heading is
-> usually better than a camera's. Tuning trust is a deep art; knowing the knob
-> exists is enough for today.
+> usually better than a camera's. In Figure 14.2, the green line is the same
+> five presses with that line added: each one now closes about a sixth of the
+> remaining distance instead of a tenth, and the heading never moves.
+> Tuning trust is a deep art; knowing the knob exists is enough for today.
 
 ---
 
@@ -456,7 +478,8 @@ modern FRC localization in one sentence.
 
 1. **Code — drift, then correct.** Resurrect Lesson 13's Try It — multiply
    `drivePositionMeters` by `1.1` in `ModuleIOTalonFX.updateInputs` — drive
-   a lap, and watch the pose wander somewhere false. Now press Start a few
+   a lap, and watch the pose wander somewhere false (stretched away from the
+   start, like the green track in [Figure 13.3](13-io-replay.md#figure-13-3)). Now press Start a few
    times. The lie gets pulled back toward the "camera's" truth — the exact
    drama that plays out on a real field, in slow motion. Remove the slip
    after.
