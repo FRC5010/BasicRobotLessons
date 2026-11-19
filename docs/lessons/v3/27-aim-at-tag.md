@@ -281,8 +281,8 @@ away and it swings half as fast.
 
 Figure 27.1 draws it. The robot's velocity has two parts. The part along the line to the tag, the blue arrow, only moves the robot closer or farther, so the sight line keeps pointing the same way. The part across the line, the orange arrow, is the one that makes the bearing swing, and it's the only one that counts. Compare the two panels: the same sideways step turns the sight line through a big angle at 3 m and a small one at 6 m, which is the "twice as far, half as fast" of the paragraph above. The rate is **v⊥ ÷ r**: 3 ÷ 3 = 1.0 rad/s at 3 m (the number from section 4) and 3 ÷ 6 = 0.5 rad/s at 6 m.
 
-That's the cross product of the robot's velocity with the direction to the
-target, divided by the distance squared.
+In code, that's the cross product of the robot's velocity with the direction to
+the target, divided by the distance squared.
 
 **Add to `Aim`, below `error`:**
 

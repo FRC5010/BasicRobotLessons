@@ -196,6 +196,13 @@ along x. **After that rotation, x is how far along the line, and y is how
 far off to the left.** To turn a speed along the line and a speed across it
 back into field speeds, rotate the other way.
 
+<a id="figure-26-1"></a>
+![Top-down view of the drive from S at (1, 1) to T at (5, 4): the line between them is split at the handoff point, one metre short of T, into stage one (blue, travelToward) and stage two (orange, approach); the robot sits 2.0 m along the line and 0.8 m to its left, with x-prime along the line, y-prime across it, the plan's speed along the line, the P push back toward the line, and their sum](images/26-line-frame-stages.svg)
+
+*Figure 26.1 — The line's frame and the two stages, for the (1, 1) to (5, 4) drive. The robot's position is an example, not a measurement.*
+
+Figure 26.1 draws it. Start at S: the line to T is fixed, and x′ and y′ are measured from S along it and across it. The robot sits 2.0 m along and 0.8 m to the left of the line, so its offset is x′ = 2.0 and y′ = +0.8. The blue arrow is what the plan says to do, a speed along the line. The orange arrow is the cross-track P push, `kCrossTrackP` times y′, aimed along −y′ back toward the line. Add them and you get the dashed arrow, which is still in the line's frame; rotating it the other way turns it into the field speeds the drivetrain is asked for. The line is also split in two: stage one runs from S to the handoff point, a metre short of T (the 1.0 m you met in section 3), and stage two takes over from there. Section 6 puts numbers on both stages.
+
 > Why a fixed line, instead of pointing at the target afresh every tick?
 > Because the line stays put while the stage runs. If the robot rolls a
 > little past the target, "how far along" just reads a little past the
@@ -657,12 +664,12 @@ peaks above 4 m/s² at the start are what you'd expect from the P term: the
 wheels take a moment to spin up, the robot falls behind the plan, and P
 pushes to catch it up.
 
-<a id="figure-26-1"></a>
+<a id="figure-26-2"></a>
 ![Speed along the line against time for the (1, 1) to (5, 4) drive: the two-stage plan is a trapezoid that peaks at 3 m/s, steps down at the handoff and slows to a stop, with the measured speed tracking it closely; the old design launches to about 4 m/s in under half a second and then decays slowly into the handover; below, measured minus plan speed peaks at +0.3 m/s while the plan slows](images/26-two-stage-speed.png)
 
-*Figure 26.1 — Speed along the line from (1, 1) to (5, 4), two stages against the old design. One run each. The blue plan line was read out of the controller by a test, so your own logs won't have it.*
+*Figure 26.2 — Speed along the line from (1, 1) to (5, 4), two stages against the old design. One run each. The blue plan line was read out of the controller by a test, so your own logs won't have it.*
 
-Figure 26.1 plots both designs on one set of axes, and the shape of each curve is
+Figure 26.2 plots both designs on one set of axes, and the shape of each curve is
 the whole story. Read the top panel first. The thick blue line is the plan, the
 speed the profile asked for on each tick, and the orange line on top of it is how
 fast the robot really went. The grey line is the old design.

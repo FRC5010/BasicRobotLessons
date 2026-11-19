@@ -39,7 +39,7 @@ def main():
                     color=figstyle.MEASURED, alpha=0.35, linewidth=0)
     ax.plot(t, v, color=figstyle.MEASURED, label="Power/BatteryVolts")
     ax.axhline(LIMIT_V, color=figstyle.NEUTRAL, linestyle="--")
-    ax.text(2.0, LIMIT_V - 0.04, "11.5 V: kLowBatteryVoltage", color=figstyle.NEUTRAL, ha="left", va="top")
+    ax.text(1.55, LIMIT_V + 0.04, "11.5 V: kLowBatteryVoltage", color=figstyle.NEUTRAL, ha="left", va="bottom")
     ax.axvline(SHOT_S, color="#bbbbbb", linewidth=1, zorder=0)
     ax.axvline(RELEASE_S, color="#bbbbbb", linewidth=1, zorder=0)
     ax.text(SHOT_S - 0.06, 12.4, "left trigger\npressed", va="center", ha="right", fontsize=9.5, color="#555555")
