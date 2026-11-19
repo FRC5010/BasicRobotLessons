@@ -97,9 +97,10 @@ kind = "api"
 library = ["commandsv3"]
 criticality = "C1"
 statement = "Command.noRequirements() builds a command that requires no mechanism, and there is no onlyIf."
-evidence = "CLAUDE.md, 'v3 Lesson 24 (superstructure) on alpha-7' (a hand-built noRequirements guard; there is no onlyIf); listed unchanged on alpha-8"
-measured_on = "alpha-7, listed unchanged on alpha-8"
-method = "SOURCE"
+evidence = "tools/claims/java/claims/CommandsV3ApiTest.java on alpha-8 (2026-11-19): Command.noRequirements(...).named(...) requires nothing, and none of the classes in the Commands V3 jar's org.wpilib.command3 packages has an onlyIf method"
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/CommandsV3ApiTest.java"
 
 [[claim]]
 id = "commandsv3.finished-command-reschedulable"
@@ -198,9 +199,10 @@ kind = "api"
 library = ["commandsv3"]
 criticality = "C3"
 statement = "Mechanism has no periodic() method, so a mechanism that must run every tick registers a callback with Scheduler.getDefault().addPeriodic."
-evidence = "No record found in CLAUDE.md or tools/figures/data; stated by Lesson 11 (Lesson 13 introduces its own periodic())"
-measured_on = "unverified"
-method = "SOURCE"
+evidence = "tools/claims/java/claims/CommandsV3ApiTest.java on alpha-8 (2026-11-19): Mechanism is an interface with no periodic() method; Scheduler has addPeriodic(Runnable)"
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/CommandsV3ApiTest.java"
 
 [[claim]]
 id = "commandsv3.noyield-command-finishes-same-tick"
@@ -287,8 +289,10 @@ kind = "api"
 library = ["commandsv3"]
 criticality = "C3"
 statement = "Command has an andThen(Command) decorator that sequences two commands, and the result needs its own .named(...) before it is ready to schedule."
-evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson"
-measured_on = "unverified"
+evidence = "tools/claims/java/claims/CommandsV3ApiTest.java on alpha-8 (2026-11-19): Command.andThen(Command) returns a SequentialGroupBuilder, which is not a Command; its named(String) gives the Command, and on an independent scheduler two two-tick commands run one after the other"
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/CommandsV3ApiTest.java"
 
 [[claim]]
 id = "commandsv3.command-trace-helper"

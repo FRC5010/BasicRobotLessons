@@ -11,6 +11,13 @@ when a library changes, a test can say which lessons are affected. The plan is
 - `check_claims.py`: checks the registry and the lessons' markers. It runs before every commit
   an agent makes (`tools/githooks/pre-commit`, turned on by `.claude/settings.json`).
   Tests: `python3 -m unittest tools.tests.test_check_claims`.
+- `java/claims/*.java`: JUnit tests for claims, one file per library (`WpilibApiTest`,
+  `CommandsV3ApiTest`, `Phoenix6ApiTest`). Each test's `@DisplayName` is the claim id it checks,
+  and the claim's `test` field names the file. `run-java-tests.sh` builds the code after the
+  cut-off lesson (every pinned vendordep installed) with `verify-lessons-v3.sh --sandbox`, copies
+  the tests in and runs them, then lists each claim as `ok` or `FAIL`. The pre-commit hook runs it
+  when the tests, the runner, the pins (`tools/lib/v3-lessons.sh`) or the template change.
+  `--sandbox DIR --reuse` re-tests an already-built sandbox in seconds.
 
 ## How a lesson points at a claim
 
@@ -48,7 +55,7 @@ unit = "mm"
 range = [85.0, 95.0]              # the values the wording still describes truthfully
 measured = "90.96-90.98 mm over five moves"
 # optional:
-method = "RIG"                    # RIG | LOOP | BARE | REPLAY | SOURCE | BYTECODE | ARITHMETIC (see CLAUDE.md)
+method = "RIG"                    # RIG | LOOP | BARE | REPLAY | SOURCE | BYTECODE | ARITHMETIC | TEST (see below)
 test = "tools/figures/probes/Fig18HeightSetpointGoal.java"   # a kept probe or test that measures it
 figure = "18-height-setpoint-goal.png"
 note = "..."
@@ -61,6 +68,14 @@ lesson quotes that comes out of running the simulation, so a library change coul
 **Criticality.** C1: if it's wrong, student code fails, crashes, or behaves as the lesson says it
 won't. C2: a number or figure the student is told to look for and compare against. C3: a side
 remark.
+
+**`method`.** How the claim was last confirmed. The first seven are CLAUDE.md's probe methods;
+`TEST` means a kept test checks it every time it runs (the file in `test`), so `measured_on` is the
+pins it last passed on.
+
+**A test for a claim** checks the whole statement, not only the part that's easy to check; if it
+can't, leave `test` unset. Before relying on it, break it on purpose (flip what it expects, as a
+library change would) and see that exactly that test fails, by its claim id.
 
 **`measured_on`.** The library versions the claim was last confirmed on. `alpha-8` means GradleRIO
 `2027.0.0-alpha-8` with the vendordeps pinned in `tools/lib/v3-lessons.sh` at the time. Say so

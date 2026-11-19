@@ -16,6 +16,8 @@
 #     staged code/v3/lesson-K file affects K and every later lesson up to the cut-off; the
 #     template, the shared roll-forward rules, the checker or its exceptions affect them all.
 #   - the unit tests of either checker, when the commit changes that checker or its tests.
+#   - tools/claims/run-java-tests.sh, the claims' JUnit tests against the pinned libraries, when
+#     the commit changes those tests, the pins (tools/lib/v3-lessons.sh) or the template.
 # Don't skip it with --no-verify; fix what it reports.
 set -eu
 
@@ -79,3 +81,15 @@ if [ "${1:-}" != skip ]; then
 fi
 unit_tests tools.tests.test_check_lesson_code tools/check-lesson-code-v3.py tools/check-lesson-markers-v3.py \
   tools/lib/v3-lessons.sh tools/tests/test_check_lesson_code.py
+
+# The claims' JUnit tests, against the pinned libraries: when the tests or their runner change, or
+# anything that can change a library (the vendordep pins in tools/lib/v3-lessons.sh, GradleRIO in
+# the template). It builds the cut-off lesson's code first: about 20 s with a warm Gradle cache,
+# minutes on a cold one, and it needs the network for the vendordeps and JDK 25.
+if git diff --cached --name-only -- tools/claims/java tools/claims/run-java-tests.sh tools/lib/v3-lessons.sh \
+    code/OpModeV3Robot | grep -q .; then
+  if ! out=$(bash "$tmp/tools/claims/run-java-tests.sh" 2>&1); then
+    printf '%s\n' "$out" | grep -v '^Picked up' | tail -30 >&2
+    fail "the claims' Java tests failed (tools/claims/run-java-tests.sh). A FAIL line names the claim: a library may have changed what a lesson relies on."
+  fi
+fi

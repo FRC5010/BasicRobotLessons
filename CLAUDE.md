@@ -2370,6 +2370,14 @@ the user.
   blocks, or a block that now passes is an error, so remove it when it stops being needed. Run it
   by hand with `./tools/check-lesson-code-v3.py [N ...] [--from K] [--show]`; tests in
   `tools/tests/test_check_lesson_code.py`.
+- **Claims that compiling can't prove have JUnit tests** in `tools/claims/java/claims/` (Phase
+  1b, 2026-11-19): absences (no `MathUtil.clamp`, no `onlyIf`, no `Mechanism.periodic()`, …) and
+  API claims no snapshot uses. Each test's `@DisplayName` is its claim id, and the claim's `test`
+  field names the file. `tools/claims/run-java-tests.sh [--sandbox DIR [--reuse]] [--lesson N]`
+  builds the code after the cut-off lesson and runs them; the hook runs it when the tests, the
+  runner, the pins in `tools/lib/v3-lessons.sh` or the template change. A `FAIL` line names the
+  claim a library change broke: fix the lessons that mark it, then the claim. Write a new test
+  the same way, and break it on purpose once to see it fail by name.
 - **Editing a marked sentence:** re-read the claim it names, and update the claim (or the
   sentence) if they no longer agree.
 - **Writing a sentence that relies on library behaviour or a measured number:** mark it, and add a

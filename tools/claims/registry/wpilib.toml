@@ -100,9 +100,10 @@ kind = "api"
 library = ["wpilib"]
 criticality = "C1"
 statement = "MathUtil.inputModulus(value, min, max) and Units.radiansToRotations exist."
-evidence = "CLAUDE.md, the alpha-8 block's 'Unchanged and still relied on' (Units.radiansToRotations), and Lessons 10-12 compiling"
+evidence = "CLAUDE.md, the alpha-8 block's 'Unchanged and still relied on' (Units.radiansToRotations), and Lessons 10-12 compiling; and tools/claims/java/claims/WpilibApiTest.java on alpha-8 (2026-11-19)"
 measured_on = "alpha-8"
-method = "SOURCE"
+method = "TEST"
+test = "tools/claims/java/claims/WpilibApiTest.java"
 
 [[claim]]
 id = "wpilib.no-mathutil-clamp"
@@ -110,9 +111,10 @@ kind = "api"
 library = ["wpilib"]
 criticality = "C1"
 statement = "WPILib has no MathUtil.clamp, so the lessons keep Lesson 5's hand-written clamp helper."
-evidence = "CLAUDE.md, the alpha-8 block's 'Unchanged and still relied on'"
+evidence = "CLAUDE.md, the alpha-8 block's 'Unchanged and still relied on'; and tools/claims/java/claims/WpilibApiTest.java on alpha-8 (2026-11-19)"
 measured_on = "alpha-8"
-method = "SOURCE"
+method = "TEST"
+test = "tools/claims/java/claims/WpilibApiTest.java"
 note = "An absence: nothing fails to compile if a later release adds the method, so only a test can catch it."
 
 [[claim]]
@@ -182,9 +184,10 @@ kind = "api"
 library = ["wpilib"]
 criticality = "C3"
 statement = "SwerveModuleVelocity.cosineScale(Rotation2d) exists and scales the speed by the cosine of the steering error."
-evidence = "No record found in CLAUDE.md or tools/figures/data; stated by Lessons 9 and 10"
-measured_on = "unverified"
-method = "SOURCE"
+evidence = "tools/claims/java/claims/WpilibApiTest.java on alpha-8 (2026-11-19): 2 m/s at 60 degrees, cosineScale(0 degrees), gives 1 m/s and keeps the angle"
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/WpilibApiTest.java"
 
 [[claim]]
 id = "wpilib.swerve-odometry-api"
@@ -385,8 +388,10 @@ kind = "api"
 library = ["wpilib"]
 criticality = "C3"
 statement = "MathUtil.applyDeadband(value, band) exists, zeroes values inside the band and rescales the rest smoothly."
-evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson"
-measured_on = "unverified"
+evidence = "tools/claims/java/claims/WpilibApiTest.java on alpha-8 (2026-11-19): 0.05 and -0.1 in a 0.1 band give 0; just past the band gives just past 0; 0.55 gives 0.5 and -0.55 gives -0.5; 1 stays 1"
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/WpilibApiTest.java"
 
 [[claim]]
 id = "wpilib.field-default-layout"
@@ -475,9 +480,10 @@ kind = "api"
 library = ["wpilib"]
 criticality = "C1"
 statement = "org.wpilib.hardware.led.AddressableLED(pwmPort) is set up with setLength(...) once and handed an AddressableLEDBuffer with setData(...) every tick; there is no start() call, and the strip shows whatever it was last handed."
-evidence = "CLAUDE.md, 'v3 Lesson 23 (LEDs) on alpha-7' (Leds built and read back through AddressableLEDSim(kPwmPort).getData()); lessons 0-33 compile on alpha-8. That start() no longer exists is stated by the lesson; no separate record."
-measured_on = "alpha-7, listed unchanged on alpha-8"
-method = "RIG"
+evidence = "tools/claims/java/claims/WpilibApiTest.java on alpha-8 (2026-11-19): AddressableLED has no start(); on port 5 (Lesson 23's kPwmPort) the strip reads back the data handed to setData, and a later change to the buffer shows only after the next setData"
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/WpilibApiTest.java"
 
 [[claim]]
 id = "wpilib.addressable-led-duplicate-channel-throws"
@@ -563,9 +569,10 @@ kind = "api"
 library = ["wpilib"]
 criticality = "C1"
 statement = "org.wpilib.util.Color has all-caps named constants (Color.ORANGE, Color.LIME_GREEN, with no k prefix: kOrange does not exist) and new Color8Bit(Color) wraps one; Color.LIME_GREEN is (50, 205, 50)."
-evidence = "CLAUDE.md, 'v3 Lesson 23 (LEDs)' (Color.LIME_GREEN is (50, 205, 50)); the Lesson 19 snapshot compiles with Color.ORANGE and Color.LIME_GREEN"
+evidence = "CLAUDE.md, 'v3 Lesson 23 (LEDs)' (Color.LIME_GREEN is (50, 205, 50)); the Lesson 19 snapshot compiles with Color.ORANGE and Color.LIME_GREEN; and tools/claims/java/claims/WpilibApiTest.java on alpha-8 (2026-11-19)"
 measured_on = "alpha-8"
-method = "BYTECODE"
+method = "TEST"
+test = "tools/claims/java/claims/WpilibApiTest.java"
 
 [[claim]]
 id = "wpilib.timer-get-timestamp"
@@ -573,9 +580,10 @@ kind = "api"
 library = ["wpilib"]
 criticality = "C3"
 statement = "org.wpilib.system.Timer.getTimestamp() returns the current time in seconds (getFPGATime is gone)."
-evidence = "CLAUDE.md, 'v3 Lesson 25', Probe recipe (Time is org.wpilib.system.Timer.getTimestamp(); getFPGATime is gone)"
-measured_on = "alpha-7, listed unchanged on alpha-8"
-method = "LOOP"
+evidence = "tools/claims/java/claims/WpilibApiTest.java on alpha-8 (2026-11-19): neither Timer nor RobotController has a getFPGA... method, and Timer.getTimestamp() moves 0.3 over a 300 ms wait"
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/WpilibApiTest.java"
 
 [[claim]]
 id = "wpilib.single-jointed-arm-sim-api"

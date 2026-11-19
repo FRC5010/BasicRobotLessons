@@ -90,9 +90,10 @@ kind = "api"
 library = ["phoenix6"]
 criticality = "C1"
 statement = "A status signal's getValue() returns a measure, so getValue().in(Degrees) (or Volts, RotationsPerSecond) unpacks it to a double; getValueAsDouble() also exists."
-evidence = "CLAUDE.md, 'v3 Lesson 20 (intake arm) on alpha-7', getValueAsDouble() exists on alpha-7's Phoenix; Lessons 7-12 compile on alpha-8"
+evidence = "CLAUDE.md, 'v3 Lesson 20 (intake arm) on alpha-7', getValueAsDouble() exists on alpha-7's Phoenix; Lessons 7-12 compile on alpha-8; and tools/claims/java/claims/Phoenix6ApiTest.java on alpha-8 (2026-11-19)"
 measured_on = "alpha-8"
-method = "SOURCE"
+method = "TEST"
+test = "tools/claims/java/claims/Phoenix6ApiTest.java"
 
 [[claim]]
 id = "phoenix6.onboard-loop-1khz"
