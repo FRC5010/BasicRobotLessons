@@ -1,0 +1,852 @@
+# Numbers Lesson 29 (current limits) quotes that a library change could move.
+# Format: tools/claims/README.md. Tables: CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8'
+# (batch 2b), Lesson 29. BARE rigs: one default-config Kraken on a FlywheelSim, no Robot. LOOP: the
+# real Robot with GamepadSim (Back, D-pad up, left trigger + left face button), ten runs per
+# fresh-battery configuration (thirty for no limits in the notes), ten/thirty per tired-battery one.
+# Figure data: tools/figures/data/29-*.csv. Counts of random outcomes carry the band in which
+# the lesson's conclusion still holds, in the note.
+
+[[claim]]
+id = "l29.stall-supply-0"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "A default-config Kraken given a full 12 V from a standstill, 0.00 s after the request, draws 29.8 A of supply current (same row: 0.0 rot/s, 119.0 A stator, 3.00 V applied)."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the supply/stator table (BARE); alpha-7 reproduced the old table to the digit"
+measured_on = "alpha-8"
+method = "BARE"
+wording = "29.8 A supply at 0.00 s (the table row, and the arithmetic checks in section 2: 119.0 x 3.00/12 = 29.8, 114.7 x 7.25/12 = 69.3)"
+unit = "A"
+range = [29.75, 29.85]
+measured = "29.8 A, runs agree within 0.2 A (alpha-7: a single early 116.3 A / 29.1 A sample)"
+note = "The row's other numbers (speed, stator current, applied volts) are the same run; a check should read all four columns. Stated per row because a claim holds one range."
+
+[[claim]]
+id = "l29.stall-supply-60"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "A default-config Kraken given a full 12 V from a standstill, 0.60 s after the request, draws 51.3 A of supply current (same row: 17.2 rot/s, 119.4 A stator, 5.15 V applied)."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the supply/stator table (BARE); alpha-7 reproduced the old table to the digit"
+measured_on = "alpha-8"
+method = "BARE"
+wording = "51.3 A supply at 0.60 s (the table row, and the arithmetic checks in section 2: 119.0 x 3.00/12 = 29.8, 114.7 x 7.25/12 = 69.3)"
+unit = "A"
+range = [51.25, 51.35]
+measured = "51.3 A, runs agree within 0.2 A (alpha-7: 50.7 A)"
+note = "The row's other numbers (speed, stator current, applied volts) are the same run; a check should read all four columns. Stated per row because a claim holds one range."
+
+[[claim]]
+id = "l29.stall-supply-90"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "A default-config Kraken given a full 12 V from a standstill, 0.90 s after the request, draws 62.4 A of supply current (same row: 26.1 rot/s, 119.6 A stator, 6.26 V applied)."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the supply/stator table (BARE); alpha-7 reproduced the old table to the digit"
+measured_on = "alpha-8"
+method = "BARE"
+wording = "62.4 A supply at 0.90 s (the table row, and the arithmetic checks in section 2: 119.0 x 3.00/12 = 29.8, 114.7 x 7.25/12 = 69.3)"
+unit = "A"
+range = [62.35, 62.45]
+measured = "62.4 A, runs agree within 0.2 A (alpha-7: 61.4 A)"
+note = "The row's other numbers (speed, stator current, applied volts) are the same run; a check should read all four columns. Stated per row because a claim holds one range."
+
+[[claim]]
+id = "l29.stall-supply-120"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "A default-config Kraken given a full 12 V from a standstill, 1.20 s after the request, draws 69.3 A of supply current (same row: 35.0 rot/s, 114.7 A stator, 7.25 V applied)."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the supply/stator table (BARE); alpha-7 reproduced the old table to the digit"
+measured_on = "alpha-8"
+method = "BARE"
+wording = "69.3 A supply at 1.20 s (the table row, and the arithmetic checks in section 2: 119.0 x 3.00/12 = 29.8, 114.7 x 7.25/12 = 69.3)"
+unit = "A"
+range = [69.25, 69.35]
+measured = "69.3 A, runs agree within 0.2 A (alpha-7: 69.2 A)"
+note = "The row's other numbers (speed, stator current, applied volts) are the same run; a check should read all four columns. Stated per row because a claim holds one range."
+
+[[claim]]
+id = "l29.stall-stator-pinned"
+kind = "number"
+library = ["phoenix6"]
+criticality = "C3"
+statement = "The stator current sits pinned near 120 A through the first 1.2 s of the stall table."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the supply/stator table (BARE)"
+measured_on = "alpha-8"
+method = "BARE"
+wording = "pinned near 120 A"
+unit = "A"
+range = [110.0, 130.0]
+measured = "114.7-119.6 A over the four rows"
+
+[[claim]]
+id = "l29.motors-3-amps"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "3 default-config Krakens held at rotor velocity 0 on 12 V draw 109 A in total."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the motor-count table (BARE)"
+measured_on = "alpha-8"
+method = "BARE"
+wording = "109 A (3 motors, section 3's table)"
+unit = "A"
+range = [108.5, 109.5]
+measured = "109.0 A / 9.82 V on both alphas, every run"
+note = "Deterministic: 3 and 6 came out the same every run, on both alphas."
+
+[[claim]]
+id = "l29.motors-3-volts"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With 3 default-config Krakens stalled, the battery sags to 9.82 V."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the motor-count table (BARE)"
+measured_on = "alpha-8"
+method = "BARE"
+wording = "9.82 V (3 motors)"
+unit = "V"
+range = [9.815, 9.825]
+measured = "109.0 A / 9.82 V on both alphas, every run"
+note = "Deterministic across runs."
+
+[[claim]]
+id = "l29.motors-6-amps"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "6 default-config Krakens held at rotor velocity 0 on 12 V draw 326 A in total."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the motor-count table (BARE)"
+measured_on = "alpha-8"
+method = "BARE"
+wording = "326 A (6 motors, section 3's table)"
+unit = "A"
+range = [325.5, 326.5]
+measured = "325.8 A / 5.48 V on both alphas, every run"
+note = "Deterministic: 3 and 6 came out the same every run, on both alphas."
+
+[[claim]]
+id = "l29.motors-6-volts"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With 6 default-config Krakens stalled, the battery sags to 5.48 V."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the motor-count table (BARE)"
+measured_on = "alpha-8"
+method = "BARE"
+wording = "5.48 V (6 motors)"
+unit = "V"
+range = [5.475, 5.485]
+measured = "325.8 A / 5.48 V on both alphas, every run"
+note = "Deterministic across runs."
+
+[[claim]]
+id = "l29.motors-9-amps"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "9 default-config Krakens held at rotor velocity 0 on 12 V draw 384 A in total."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the motor-count table (BARE)"
+measured_on = "alpha-8"
+method = "BARE"
+wording = "384 A (9 motors, section 3's table)"
+unit = "A"
+range = [383.5, 384.5]
+measured = "383.4, 384.3 and 384.3 A (mean 384.0), 4.31-4.33 V; alpha-7 367-384 A / 4.31-4.65 V"
+note = "The 383.4 A run is outside the bare 384 range. Reported as too precise."
+
+[[claim]]
+id = "l29.motors-9-volts"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With 9 default-config Krakens stalled, the battery sags to 4.3 V."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the motor-count table (BARE)"
+measured_on = "alpha-8"
+method = "BARE"
+wording = "4.3 V (9 motors)"
+unit = "V"
+range = [4.25, 4.35]
+measured = "383.4, 384.3 and 384.3 A (mean 384.0), 4.31-4.33 V; alpha-7 367-384 A / 4.31-4.65 V"
+note = "Bare 4.3 gives [4.25, 4.35]; the 9-motor averages were 4.31-4.33."
+
+[[claim]]
+id = "l29.motors-12-amps"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "12 default-config Krakens stalled draw 412-426 A in total, depending on the run."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the motor-count table (BARE)"
+measured_on = "alpha-8"
+method = "BARE"
+wording = "412-426 A (12 motors)"
+unit = "A"
+range = [411.5, 426.5]
+measured = "411.9, 422.1 and 425.7 A; alpha-7 411-422 A"
+note = "Chaotic past six motors: some ticks collapse the rail to 0 V, so the average differs run to run (the lesson says so)."
+
+[[claim]]
+id = "l29.motors-12-volts"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With 12 default-config Krakens stalled the battery sags to 3.6-4.3 V."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the motor-count table (BARE)"
+measured_on = "alpha-8"
+method = "BARE"
+wording = "3.6-4.3 V (12 motors)"
+unit = "V"
+range = [3.55, 4.35]
+measured = "4.30, 3.56 and 3.57 V; alpha-7 3.55-4.30 V"
+note = "The lesson's lower end 3.6 is a rounding of 3.56; the range is the stated one widened by half a unit."
+
+[[claim]]
+id = "l29.growth-3-to-6"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "Going from three motors to six adds over 200 A."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the motor-count table (BARE)"
+measured_on = "alpha-8"
+method = "BARE"
+wording = "over 200 A"
+unit = "A"
+range = [200.0, inf]
+measured = "+217 A (means: 325.8 - 109.0)"
+
+[[claim]]
+id = "l29.growth-6-to-9"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "Going from six motors to nine adds about 60 A."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the motor-count table (BARE)"
+measured_on = "alpha-8"
+method = "BARE"
+wording = "about 60"
+unit = "A"
+range = [54.0, 66.0]
+measured = "+58 A"
+
+[[claim]]
+id = "l29.growth-9-to-12"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "Going from nine motors to twelve adds about 35 A."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the motor-count table (BARE)"
+measured_on = "alpha-8"
+method = "BARE"
+wording = "about 35"
+unit = "A"
+range = [34.0, 36.0]
+measured = "+36 A (means of the three runs of each)"
+note = "Twelve-motor runs vary 412-426 A, so the difference varies with the run; 'about 35' is a mean-to-mean figure."
+
+[[claim]]
+id = "l29.fresh-budget-peak"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With the budget on a fresh battery, doing everything at once, the total draw peaks at 61-110 A."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the fresh battery (LOOP); data/29-fresh-battery-runs-budget.csv"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "61-110 A (section 7 and the table)"
+unit = "A"
+range = [60.5, 110.5]
+measured = "61.4-109.9 A over the ten-run recipe (two runs above 90 A: 92.1 and 109.9); 78.4 A in Figure 29.1's run"
+figure = "29-fresh-battery-runs.png"
+note = "Ranges of random spikes: a check should require the run's peak inside the range, with the typical (median) run near 78 A (Figure 29.1 text: near 78 A)."
+
+[[claim]]
+id = "l29.fresh-budget-low"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With the budget on a fresh battery the rail bottoms out between 9.80 and 10.77 V."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the fresh battery (LOOP)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "around 9.8-10.8 V (prose); 9.80-10.77 V (table)"
+unit = "V"
+range = [9.795, 10.775]
+measured = "9.80-10.77 V; 10.43 V in Figure 29.1's run"
+figure = "29-fresh-battery-runs.png"
+
+[[claim]]
+id = "l29.fresh-nolimits-peak"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With every limit off on a fresh battery, the total draw peaks at 197-275 A."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the fresh battery (LOOP) (30 runs)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "197-275 A (the table); spikes up to 275 A in the worst runs"
+unit = "A"
+range = [196.5, 275.5]
+measured = "197.4-275.0 A over 30 runs (6 of 30 above 205 A); 199.8 A in Figure 29.1's run"
+figure = "29-fresh-battery-runs.png"
+note = "6 of 30 runs spike above 205 A, so a check should use the range, not the typical 200 A (see l29.fresh-nolimits-typical)."
+
+[[claim]]
+id = "l29.fresh-nolimits-typical"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "With every limit off the draw 'peaks near 200 A' in a typical run."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the fresh battery (LOOP); data/29-fresh-battery-runs-nolimits.csv"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "near 200 A (section 7 and Figure 29.1's text)"
+unit = "A"
+range = [190.0, 210.0]
+measured = "199.8 A in Figure 29.1's run; 199-219 A in the four Fig29 runs; alpha-7 199.4-200.8 A"
+figure = "29-fresh-battery-runs.png"
+note = "'Near 200' is read as 'about 200' (a whole number ending in zero has a unit of ten)."
+
+[[claim]]
+id = "l29.fresh-nolimits-low"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With every limit off on a fresh battery the rail sags to 6.50-8.05 V ('8.0 V, or 6.5 V in the worst of them')."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the fresh battery (LOOP)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "8.0 V, or 6.5 V in the worst; 6.50-8.05 V (table)"
+unit = "V"
+range = [6.495, 8.055]
+measured = "6.50-8.05 V over 30 runs; 8.00 V in Figure 29.1's run"
+figure = "29-fresh-battery-runs.png"
+
+[[claim]]
+id = "l29.fresh-defaults-peak"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "On Phoenix's defaults on a fresh battery the total draw peaks at 84-126 A."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the fresh battery (LOOP)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "84-126 A"
+unit = "A"
+range = [83.5, 126.5]
+measured = "83.7-126.1 A over ten runs; 110.9 A in Figure 29.1's run"
+figure = "29-fresh-battery-runs.png"
+note = "The Figure 29 probe's four runs peaked 111-141 A (the 141 A run is outside the lesson's range; batch 1 notes call it spread)."
+
+[[claim]]
+id = "l29.fresh-defaults-low"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "On Phoenix's defaults on a fresh battery the rail bottoms out at 9.5-10.3 V."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the fresh battery (LOOP)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "9.5-10.3 V (prose); 9.48-10.33 V (table)"
+unit = "V"
+range = [9.475, 10.335]
+measured = "9.48-10.33 V; 9.78 V in Figure 29.1's run"
+figure = "29-fresh-battery-runs.png"
+
+[[claim]]
+id = "l29.fresh-no-brownout"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "On a fresh battery, three mechanisms' motors never pull the rail under 6.3 V in any configuration (Power/BrownedOut stays false)."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the fresh battery (LOOP) (0 brownouts in 30 no-limits runs; lowest rail 6.50 V)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "not a brownout; sags, survives"
+unit = "runs browned out"
+range = [0, 0]
+measured = "0 of 30 no-limits runs, lowest low 6.50 V"
+figure = "29-fresh-battery-runs.png"
+note = "Band [0, 0]: the lesson says three mechanism motors cannot brown out a fresh battery, and the table's 'sags, survives' depends on it. The 6.50 V worst case is 0.2 V above the line."
+
+[[claim]]
+id = "l29.fig1-idle-nolimits"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "In Figure 29.1, the flywheel's idle spin-up with no limits peaks near 160 A and pulls the rail to about 8.9 V."
+evidence = "data/29-fresh-battery-runs-nolimits.csv; CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29 (Batch 2: the idle spin-up peaked 158 A / 8.85 V)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "near 160 A; about 8.9 V"
+unit = "A"
+range = [150.0, 170.0]
+measured = "157.5 A / 8.85 V"
+figure = "29-fresh-battery-runs.png"
+note = "Range is for the 160 A; the 8.9 V reads 8.85 V."
+
+[[claim]]
+id = "l29.fig1-idle-defaults"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "In Figure 29.1 the defaults' idle spin-up peaks near 64 A."
+evidence = "data/29-fresh-battery-runs-defaults.csv (63.5 A); CLAUDE.md, Batch 2 found (64 A)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "near 64 A"
+unit = "A"
+range = [63.0, 65.0]
+measured = "63.5 A"
+figure = "29-fresh-battery-runs.png"
+
+[[claim]]
+id = "l29.fig1-idle-budget"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "In Figure 29.1 the budget's idle spin-up peaks near 36 A."
+evidence = "data/29-fresh-battery-runs-budget.csv (35.8 A); CLAUDE.md, Batch 2 found (36 A)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "near 36 A"
+unit = "A"
+range = [35.0, 37.0]
+measured = "35.8 A"
+figure = "29-fresh-battery-runs.png"
+
+[[claim]]
+id = "l29.fig1-defaults-moves"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "In Figure 29.1 the defaults' moves at 6 s peak near 111 A and 9.8 V."
+evidence = "data/29-fresh-battery-runs-defaults.csv (110.9 A, 9.78 V)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "near 111 A; near 9.8 V"
+unit = "A"
+range = [110.0, 112.0]
+measured = "110.9 A / 9.78 V"
+figure = "29-fresh-battery-runs.png"
+
+[[claim]]
+id = "l29.fig1-budget-moves"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "In Figure 29.1 the budget's moves at 6 s peak near 78 A and 10.4 V."
+evidence = "data/29-fresh-battery-runs-budget.csv (78.4 A, 10.43 V)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "near 78 A; 10.4 V"
+unit = "A"
+range = [77.0, 79.0]
+measured = "78.4 A / 10.43 V"
+figure = "29-fresh-battery-runs.png"
+
+[[claim]]
+id = "l29.fig1-margin"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "Even the no-limits run in Figure 29.1 stays almost 2 V above the 6.3 V line."
+evidence = "data/29-fresh-battery-runs-nolimits.csv (low 8.00 V, 1.7 V above)"
+measured_on = "alpha-8"
+method = "ARITHMETIC"
+wording = "almost 2 V above the dashed line"
+unit = "V"
+range = [1.0, 2.0]
+measured = "1.70 V (8.00 - 6.3)"
+figure = "29-fresh-battery-runs.png"
+
+[[claim]]
+id = "l29.tired-nolimits-peak"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With every limit off on the tired battery (11 V, 40 mOhm) the total draw peaks at 226-642 A."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the tired battery (LOOP)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "226-642 A"
+unit = "A"
+range = [225.5, 642.5]
+measured = "226-642 A over 10 runs"
+figure = "29-tired-battery-brownout.png"
+
+[[claim]]
+id = "l29.tired-nolimits-low"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With every limit off on the tired battery the rail's low point is 0.00-1.94 V."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the tired battery (LOOP)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "0.00-1.94 V"
+unit = "V"
+range = [-0.005, 1.945]
+measured = "0.00-1.94 V over 10 runs"
+figure = "29-tired-battery-brownout.png"
+
+[[claim]]
+id = "l29.tired-nolimits-browns-out"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With every limit off on the tired battery, every run browns out (10 of 10)."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the tired battery (LOOP)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "browned out in every one of its ten runs; 10 of 10"
+unit = "runs of 10"
+range = [10, 10]
+measured = "10 of 10 (alpha-7 10 of 10)"
+figure = "29-tired-battery-brownout.png"
+note = "Band [10, 10]: the lesson says every run, and the contrast with the other two rows depends on that."
+
+[[claim]]
+id = "l29.tired-defaults-peak"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "On Phoenix's defaults on the tired battery the total draw peaks at 85-129 A."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the tired battery (LOOP) (30 runs)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "85-129 A"
+unit = "A"
+range = [84.5, 129.5]
+measured = "85-129 A over 30 runs"
+
+[[claim]]
+id = "l29.tired-defaults-low"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "On Phoenix's defaults on the tired battery the rail's low point is 5.82-7.62 V."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the tired battery (LOOP) (30 runs)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "5.82-7.62 V"
+unit = "V"
+range = [5.815, 7.625]
+measured = "5.82-7.62 V over 30 runs"
+
+[[claim]]
+id = "l29.tired-defaults-browns-out"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "On Phoenix's defaults on the tired battery, some but a minority of runs brown out (4 of 30; 26 of 30 got through)."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the tired battery (LOOP) (30 runs; alpha-7 2 of 20; 6 of 50 over both alphas)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "4 of 30; twenty-six of the thirty got through"
+unit = "runs of 30"
+range = [1, 10]
+measured = "4 of 30 on alpha-8; 2 of 20 on alpha-7"
+figure = "29-tired-battery-brownout.png"
+note = "Band [1, 10] of 30: the lesson's conclusion is that the defaults are a gamble, which holds while some runs brown out and most do not (fewer than a third). 0 of 30 would make 'a gamble' false, 11 or more would make 'most get through' shaky."
+
+[[claim]]
+id = "l29.tired-budget-peak"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With the budget on the tired battery the total draw peaks at 65-121 A."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the tired battery (LOOP) (30 runs)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "65-121 A"
+unit = "A"
+range = [64.5, 121.5]
+measured = "65-121 A over 30 runs; 77.4 A in Figure 29.2's run"
+figure = "29-tired-battery-brownout.png"
+
+[[claim]]
+id = "l29.tired-budget-low"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With the budget on the tired battery the rail's low point is 6.17-8.42 V."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the tired battery (LOOP) (30 runs)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "6.17-8.42 V"
+unit = "V"
+range = [6.165, 8.425]
+measured = "6.17-8.42 V over 30 runs"
+figure = "29-tired-battery-brownout.png"
+
+[[claim]]
+id = "l29.tired-budget-browns-out"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With the budget on the tired battery, a brownout is rare but not impossible (1 of 30)."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the tired battery (LOOP) (30 runs; alpha-7 1 of 20; 2 of 50 over both alphas)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "one run browned out; 1 of 30; lost one run in thirty (Try It #4)"
+unit = "runs of 30"
+range = [0, 4]
+measured = "1 of 30 on alpha-8; 1 of 20 on alpha-7"
+figure = "29-tired-battery-brownout.png"
+note = "Band [0, 4] of 30: the conclusion is that the budget is much safer than the defaults but not zero-risk, so the count must stay clearly under the defaults'. The text describes a specific brownout run, so a check of 0 of 30 would leave that paragraph without an example even though the safety conclusion holds."
+
+[[claim]]
+id = "l29.tired-defaults-under-7"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "On the tired battery the defaults dip under 7 V in most runs (twenty-one of thirty)."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the tired battery (LOOP) (30 runs; 21 of 30 lows under 7 V)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "twenty-one of the defaults' thirty"
+unit = "runs of 30"
+range = [15, 27]
+measured = "21 of 30"
+note = "Band [15, 27]: the conclusion is that most defaults runs sag under 7 V, against only a couple of the budget's."
+
+[[claim]]
+id = "l29.tired-budget-under-7"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "On the tired battery only two of the budget's thirty runs dip under 7 V."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the tired battery (LOOP) (30 runs; 2 of 30 lows under 7 V)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "only two of its thirty"
+unit = "runs of 30"
+range = [0, 5]
+measured = "2 of 30 (lows 6.17 and 6.43 V)"
+note = "Band [0, 5] of 30: the conclusion is that few budget runs sag under 7 V, far fewer than the defaults'."
+
+[[claim]]
+id = "l29.tired-line-amps"
+kind = "number"
+library = ["wpilib"]
+criticality = "C2"
+statement = "On the tired battery (11 V, 40 mOhm) the 6.3 V brownout line is 117.5 A."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the tired battery (LOOP) (117.8 A gives 6.29 V, 120.7 A gives 6.17 V, 129.4 A gives 5.82 V)"
+measured_on = "alpha-8"
+method = "ARITHMETIC"
+wording = "6.3 V is 117.5 A"
+unit = "A"
+range = [117.45, 117.55]
+measured = "117.5 A (arithmetic: (11 - 6.3) / 0.04)"
+figure = "29-tired-battery-brownout.png"
+note = "Arithmetic from the 11 V / 40 mOhm the lesson chose; kept as a number because it uses BatterySim.calculateLoadedBatteryVoltage (wpilib.battery-sim-loaded-voltage)."
+
+[[claim]]
+id = "l29.tired-nolimits-first-brownout"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With every limit off on the tired battery, the robot browns out within half a second of enabling, before any button is pressed."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the tired battery (LOOP) (first brownout 0.31-0.39 s after enable); 'Batch 2 found' (first tick under 6.3 V 0.18 s after enable in 6 of 6 runs); data/29-tired-battery-brownout-nolimits.csv (0.18 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "within half a second; through the 117.5 A line by 0.2 s (Figure 29.2's text)"
+unit = "s"
+range = [0.0, 0.5]
+measured = "0.31-0.39 s (batch 2b probe); 0.18 s (Fig29 probe, 6 of 6 runs and the figure's data)"
+figure = "29-tired-battery-brownout.png"
+note = "The 0.2 s in Figure 29.2's walk-through is the 117.5 A crossing (0.16 s in the data), consistent with 'within half a second'."
+
+[[claim]]
+id = "l29.tired-flywheel-idle-amps"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With every limit off on the tired battery, the flywheel's idle spin-up alone pulls 119-130 A."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the tired battery (LOOP) (119.0-129.5 A in the tick that caused the first brownout)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "119-130 A"
+unit = "A"
+range = [118.5, 130.5]
+measured = "119.0-129.5 A"
+
+[[claim]]
+id = "l29.tired-collapse-count"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "Of ten no-limits runs on the tired battery, eight collapse to 0 V and two dip to about 1.9 V and finish."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the tired battery (LOOP)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "eight of the ten runs; the other two"
+unit = "runs of 10"
+range = [6, 10]
+measured = "8 of 10 collapsed (alpha-7 9 of 10)"
+note = "Band [6, 10] of 10: the conclusion is that most no-limits runs collapse completely, with the finishing ones the exception."
+
+[[claim]]
+id = "l29.tired-collapse-elevator"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "In a collapsed no-limits run the elevator gets only 0.12-0.53 m up on its way to 1.45 m."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the tired battery (LOOP)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "0.12-0.53 m"
+unit = "m"
+range = [0.115, 0.535]
+measured = "0.12-0.53 m"
+
+[[claim]]
+id = "l29.tired-collapse-flywheel"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "In a collapsed no-limits run the flywheel reaches 39-48 rot/s and then falls to nothing."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the tired battery (LOOP)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "39-48 rot/s"
+unit = "rot/s"
+range = [38.5, 48.5]
+measured = "38.5-48.3 rot/s"
+
+[[claim]]
+id = "l29.tired-collapse-peaks"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "The collapsed no-limits runs peak at 510-642 A; the two that finish peak at 226-228 A."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the tired battery (LOOP)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "510-642 A; 226-228 A"
+unit = "A"
+range = [509.5, 642.5]
+measured = "510-642 A; 226 and 228 A"
+note = "Range is for the collapsed runs; the finishing runs' 226-228 A is the table's low end (l29.tired-nolimits-peak)."
+
+[[claim]]
+id = "l29.tired-defaults-typical-low"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "On the tired battery the defaults' typical run bottoms out at 6.6 V, only 0.3 V above the line."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the tired battery (LOOP) (median low 6.61 V)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "6.6 V; 0.3 V above the line"
+unit = "V"
+range = [6.55, 6.65]
+measured = "6.61 V median"
+
+[[claim]]
+id = "l29.tired-defaults-brownout-lows"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "The four defaults runs that browned out had low points of 5.82-6.29 V and peaks of 118, 119, 125 and 129 A; the other twenty-six never passed 115.4 A."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the tired battery (LOOP)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "5.82-6.29 V; 118, 119, 125 and 129 A; none of the other twenty-six passed 115.4 A"
+unit = "A"
+range = [115.35, 115.45]
+measured = "117.8, 119.3, 124.6 and 129.4 A; lows 6.29, 6.23, 6.02, 5.82 V; the others at or under 115.4 A"
+note = "Range is for the 115.4 A ceiling of the 26 runs that got through; the other values are in wording."
+
+[[claim]]
+id = "l29.tired-budget-typical-low"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "On the tired battery the budget's typical run bottoms out at 7.9 V, 1.6 V above the line."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29, the tired battery (LOOP) (median low 7.87 V)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "7.9 V; 1.6 V above the line"
+unit = "V"
+range = [7.85, 7.95]
+measured = "7.87 V median"
+
+[[claim]]
+id = "l29.fig2-nolimits-start"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "In Figure 29.2 the no-limits run jumps to about 90 A at once on enable, passes the 117.5 A line by 0.2 s and drops the rail under 6.3 V."
+evidence = "data/29-tired-battery-brownout-nolimits.csv (84-93 A in the first ticks, over 117.5 A at 0.16 s, under 6.3 V at 0.18 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 90 A at once; through the 117.5 A line by 0.2 s"
+unit = "A"
+range = [81.0, 99.0]
+measured = "84.2 A on the first tick, 93.0 A on the second"
+figure = "29-tired-battery-brownout.png"
+note = "Range is for the 90 A."
+
+[[claim]]
+id = "l29.fig2-nolimits-bottom"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "In Figure 29.2 the no-limits rail bottoms out near 4.7 V and climbs back over 6.3 V at about 0.7 s."
+evidence = "data/29-tired-battery-brownout-nolimits.csv (low 4.65 V in the first 3 s; back over 6.3 V at 0.66 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "bottoms out near 4.7 V; about 0.7 s"
+unit = "V"
+range = [4.6, 4.8]
+measured = "4.65 V; 0.66 s"
+figure = "29-tired-battery-brownout.png"
+note = "Range is for the 4.7 V; the 0.7 s reads 0.66 s."
+
+[[claim]]
+id = "l29.fig2-budget-start"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "In Figure 29.2 the budget's idle spin-up never gets near the line and the rail stays above 9 V."
+evidence = "data/29-tired-battery-brownout-budget.csv (peak 39.6 A, low 9.42 V in the first 3 s); Lesson 29's 40 A cap"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "above 9 V"
+unit = "V"
+range = [9.0, inf]
+measured = "low 9.42 V"
+figure = "29-tired-battery-brownout.png"
+
+[[claim]]
+id = "l29.fig2-budget-moves"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "In Figure 29.2 the budget's moves take the current into the 45 to 77 A range and the rail dips to about 9 V."
+evidence = "data/29-tired-battery-brownout-budget.csv (peak 77.4 A; lowest rail 7.90 V between 6 and 8 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "45 to 77 A; about 9 V"
+unit = "A"
+range = [44.5, 77.5]
+measured = "peak 77.4 A"
+figure = "29-tired-battery-brownout.png"
+note = "Range is for the 45-77 A. The rail dip 'about 9 V' reads 7.90 V in the data (reported as a disagreement)."
+
+[[claim]]
+id = "l29.fig2-nolimits-swing"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "In Figure 29.2 the no-limits run, once the moves start, swings between about 0 and 500 A and 0 and 11 V tick to tick."
+evidence = "data/29-tired-battery-brownout-nolimits.csv (peak 537 A, voltage 0 to 21 V including the model's accounting after release)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "between about 0 and 500 A, 0 and 11 V"
+unit = "A"
+range = [450.0, 550.0]
+measured = "peak 537 A in the 6-9 s window"
+figure = "29-tired-battery-brownout.png"
+note = "Range is for the 500 A top of the swing."

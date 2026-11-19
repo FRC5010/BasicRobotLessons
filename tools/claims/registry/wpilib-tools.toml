@@ -116,3 +116,32 @@ statement = "SimGUI's Hardware menu has an Addressable LEDs item; the window ope
 evidence = "CLAUDE.md, 'Figures in lessons', Batch 3: SimGUI's addressable LED strip is under Hardware -> Addressable LEDs ('LEDs[5]', 40 pixels), opens as 10 columns x 4 rows, and Lesson 23 tells the student to set Columns to 40"
 measured_on = "alpha-8"
 method = "LOOP"
+
+[[claim]]
+id = "wpilib-tools.simgui-ds-alerts-window"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C3"
+statement = "SimGUI has a native Alerts window under DS -> Alerts, hidden by default, that reads the robot program's alerts directly and lists them sorted by level."
+evidence = "CLAUDE.md, 'The v3 track builds on WPILib 2027 alpha-8' (SimGUI has a native Alerts window, DS -> Alerts, #9353; on a fresh Lesson 30 launch it lists 'Elevator has never been homed')"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib-tools.simgui-input-boolean-dropdown"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C2"
+statement = "SimGUI draws a SimDevice boolean created as INPUT as a false/true drop-down the user can change (read-only only for OUTPUT), and lists the Unplug switches at the bottom of the Other Devices window, below every expanded Talon FX node."
+evidence = "CLAUDE.md, 'v3 Lesson 30 (alerts) on alpha-7' (DeviceTree.cpp; clicked by hand: true raised the alert) and 'Batch 2 found' (Unplug switches are at the bottom of Other Devices, so scroll there)"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "wpilib-tools.driverstation-2027-shows-alerts"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C3"
+statement = "On a real robot, alerts are shown by the 2027 Driver Station app (WPILib's Systemcore testing notes list Alerts among the features only available in it)."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson, which quotes WPILib's Systemcore testing notes"
+measured_on = "unverified"

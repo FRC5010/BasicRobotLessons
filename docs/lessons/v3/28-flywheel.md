@@ -49,7 +49,7 @@ the shape of a command:
 
 That `.until(this::atGoal)` works because a Phoenix control request
 persists after the command ends — the elevator keeps holding its height
-with nobody asking. A flywheel command that ended on reaching speed would
+with nobody asking. <!-- claim: phoenix6.control-request-persists --> A flywheel command that ended on reaching speed would
 be a disaster: the request would persist, sure, but the *command* ending
 means the mechanism falls back to its default command, and in the
 half-second while you're deciding to shoot, the wheel is doing whatever
@@ -106,7 +106,7 @@ bundles: every reading gets recorded, and a replay can feed it back in.
 
 `stop()` earns its place. A goal of zero rot/s means "actively brake to a
 stop", which wastes energy and heat; a neutral output means "stop trying".
-Those are different requests and a shooter wants the second one.
+Those are different requests and a shooter wants the second one. <!-- claim: phoenix6.neutral-out-vs-zero-velocity -->
 
 **Create `subsystems/FlywheelIOTalonFX.java`:**
 
@@ -174,7 +174,7 @@ public class FlywheelIOTalonFX implements FlywheelIO {
 missing: any Motion Magic configuration at all.** The elevator needed a
 cruise velocity and an acceleration because it had to plan a trip. A
 flywheel is already being told a velocity — there's nothing left to
-profile. The firmware just drives at it.
+profile. The firmware just drives at it. <!-- claim: phoenix6.velocity-voltage-no-profile -->
 
 **Create `subsystems/FlywheelIOSim.java`:**
 
@@ -236,7 +236,7 @@ public class FlywheelIOSim extends FlywheelIOTalonFX {
 and built their own model. `FlywheelSim` asks you for the model directly,
 via `Models.flywheelFromPhysicalConstants` — not because it's harder, but
 because it's so simple there's nothing to infer. One number describes the
-whole mechanism: how hard it is to spin up.
+whole mechanism: how hard it is to spin up. <!-- claim: wpilib.sim-model-api -->
 
 ---
 
@@ -295,7 +295,7 @@ The two that remain come out of Lesson 18's arithmetic unchanged. A Kraken
 X60 free-spins at 6065 rpm on 12 V (WPILib's motor model, from CTRE's
 dynamometer data, as in Lesson 18) — that's 101.08 rotations per second, so
 **0.1187 V per rotation per second**, and with no gearbox the wheel *is* the
-rotor.
+rotor. <!-- claim: wpilib.kraken-x60-model -->
 
 *Nothing to add — the arithmetic, not code:*
 
@@ -305,11 +305,11 @@ kV = 0.1187 ≈ 0.119 V per rot/s  →  holding 60 rot/s costs 0.119 × 60 = 7.1
 
 Seven and a bit volts out of twelve, just to stay spinning. That leaves
 about 4.9 V of headroom for accelerating, which is why the wheel takes a
-moment to come up.
+moment to come up. <!-- claim: wpilib.kraken-x60-model -->
 
 `kA` is the torque side of the same recipe. Speeding a wheel up by 1 rot/s²
 needs `J × 2π` newton-metres, and the Kraken stalls at 7.157 N·m on 12 V, so
-**1.677 V per N·m**.
+**1.677 V per N·m**. <!-- claim: wpilib.kraken-x60-model -->
 
 *Nothing to add — the arithmetic, not code:*
 
@@ -388,7 +388,7 @@ when you get there.)
 Everything here is the same shape as the elevator's subsystem, with speeds
 where the heights were. `processInputs` records the four readings under
 `Flywheel/`; the goal and "am I at speed?" are the flywheel's own
-decisions, so they're outputs.
+decisions, so they're outputs. <!-- claim: advantagekit.autolog-key-names -->
 
 **Wire it up. Add the field to `Robot.java`, below `leds`:**
 
@@ -491,7 +491,7 @@ recording a drawing writes down what the drawing looks like *right now*, so
 it has to run every tick, right after the needles move. Record it once in
 the constructor and the dial would sit at rest forever. It's an output like
 the elevator's picture, worked out from the goal and the recorded speed, so
-a replay draws it again.
+a replay draws it again. <!-- claim: advantagekit.logged-mechanism-recorded-each-tick -->
 
 **Add the default command to the constructor, below the `addPeriodic` call:**
 
@@ -585,7 +585,7 @@ it, and *your* version is what `idle()` means for this class** — so
 not a command that does nothing. The drivetrain's default command is set in
 `RobotTeleop`, because driving with the sticks belongs to teleop. Idling
 belongs to the wheel in every opmode, which is why this one lives in the
-constructor.
+constructor. <!-- claim: commandsv3.mechanism-idle-overridable, commandsv3.mechanism-no-default-command -->
 
 That one expression is the whole dial.
 
@@ -605,9 +605,9 @@ sign.
 <a id="figure-28-1"></a>
 ![A circular dial with five needles from the hub: 0 rot/s points straight down at −90°, 30 rot/s (idle) points down and left at −143°, 60 rot/s points up and left at −197°, 101.08 rot/s points straight up at −270° where a mark shows the clamp, and −50% points straight right at 0°, where the unclamped 150% needle would also land](images/28-dial-needle.svg)
 
-*Figure 28.1 — The speedometer needle at five speeds, drawn from the constants in `FlywheelConstants`. The dial is 2 m across and the needle 0.8 m long. Angles are the formula's, measured the way `LoggedMechanismLigament2d` measures them: 0° is straight right and positive turns counterclockwise.*
+*Figure 28.1 — The speedometer needle at five speeds, drawn from the constants in `FlywheelConstants`. The dial is 2 m across and the needle 0.8 m long. Angles are the formula's, measured the way `LoggedMechanismLigament2d` measures them: 0° is straight right and positive turns counterclockwise.* <!-- claim: wpilib.kraken-x60-model -->
 
-Figure 28.1 marks the needle at rest, at idle, at shooting speed and at full scale, and at one more place the formula can send it. Start at the bottom: **0 rot/s is −90°, straight down.** Idle, 30 rot/s, is 30 ÷ 101.08 = 30% of the way round, which is −143°, down and to the left. Shooting speed, 60 rot/s, is 59.4% of the way, −197°, just above the horizontal on the left. Full scale is −270°, straight up, and the black tick there is where the clamp stops the needle. The pink needle is the negative side: −50% lands on 0°, pointing right. The grey dashed line carries on past it to the rim, and it marks where a speed of 150% of full scale would land if nothing clamped it: the same place, looking like a modest negative speed.
+Figure 28.1 marks the needle at rest, at idle, at shooting speed and at full scale, and at one more place the formula can send it. Start at the bottom: **0 rot/s is −90°, straight down.** Idle, 30 rot/s, is 30 ÷ 101.08 = 30% of the way round, which is −143°, down and to the left. Shooting speed, 60 rot/s, is 59.4% of the way, −197°, just above the horizontal on the left. Full scale is −270°, straight up, and the black tick there is where the clamp stops the needle. The pink needle is the negative side: −50% lands on 0°, pointing right. The grey dashed line carries on past it to the rim, and it marks where a speed of 150% of full scale would land if nothing clamped it: the same place, looking like a modest negative speed. <!-- claim: wpilib.kraken-x60-model -->
 
 The clamp matters more than it looks. Without it, a wheel commanded past
 its free speed would carry the needle round past vertical and back down
@@ -617,7 +617,7 @@ look broken.
 
 Shooting speed lands at about 60% of full scale, so the needle sits in the
 upper-left when the wheel is ready — a glance-able position you'll come to
-recognise.
+recognise. <!-- claim: wpilib.kraken-x60-model -->
 
 ---
 
@@ -628,7 +628,7 @@ the answer is much starker.
 
 Set `kFlywheelKV` and `kFlywheelKA` to zero, leaving only `kP`, and ask for
 60 rot/s. Wait five seconds — as long as you like, really. It settles
-around **43 rot/s** and stays there. Nearly thirty percent low, forever.
+around **43 rot/s** and stays there. Nearly thirty percent low, forever. <!-- claim: l28.no-model-speed -->
 
 And you can predict roughly where before running it. With only a `Slot0`
 `kP` term, the wheel stops gaining speed once the correction it's
@@ -646,7 +646,7 @@ kP × (goal − ω)  =  kV × ω
 ```
 
 Measured here: 43.40 (Figure 28.2, just below, shows that run beside the full
-model's). Close enough to confirm the arithmetic, not exact —
+model's). <!-- claim: l28.no-model-speed --> Close enough to confirm the arithmetic, not exact —
 the small remaining gap is this simulator's own motor model, not a flaw in
 the reasoning. (Zero both gains, hold the request for five seconds on a
 20 ms schedule, and that is what the wheel reads.)
@@ -658,12 +658,12 @@ permanently, and no amount of patience recovers it.
 
 With the model in place, the same request settles at **60.47 rot/s** —
 comfortably inside the 1.5 rot/s tolerance — holding **7.14 V**, matching
-`kV × 60 = 7.1 V` almost exactly.
+`kV × 60 = 7.1 V` almost exactly. <!-- claim: l28.model-speed, l28.model-volts, wpilib.kraken-x60-model -->
 
 <a id="figure-28-2"></a>
 ![Flywheel speed and applied volts after a request for 60 rot/s from a stopped wheel: with the full model the speed climbs on a straight line, eases in and settles at 60.47; with kV and kA zeroed it follows the same line for 1.3 seconds, then bends over and flattens at 43.40, and the applied volts settle at 7.14 against 5.12](images/28-hold-with-without-model.png)
 
-*Figure 28.2 — The same request for 60 rot/s from a stopped wheel, with the full model (orange) and with `kFlywheelKV` and `kFlywheelKA` zeroed (green). One run each: this simulation gives the same settled numbers every time.*
+*Figure 28.2 — The same request for 60 rot/s from a stopped wheel, with the full model (orange) and with `kFlywheelKV` and `kFlywheelKA` zeroed (green). One run each: this simulation gives the same settled numbers every time.* <!-- claim: l28.model-speed, l28.model-volts, l28.no-model-speed, l28.no-model-volts -->
 
 Figure 28.2 puts the two runs on one set of axes, and it's worth a slow read.
 Start with the top panel. The dashed black line is the goal, 60 rot/s. The orange
@@ -673,23 +673,23 @@ The dotted grey line is the 42.96 from the arithmetic above.
 
 The first thing to notice is how long the two runs are the same line. For the
 first 1.3 seconds you can't see the orange one at all: both wheels climb on one
-straight line, about 29 rot/s every second. The bottom panel shows the volts they
+straight line, about 29 rot/s every second. <!-- claim: l28.climb-rate, l28.diverge-time --> The bottom panel shows the volts they
 were given, and they match too, starting near 3 V and rising as the wheel speeds
 up. That's the motor controller's own current limit at work (Lesson 29 is about
 it): with the wheel barely turning, it won't push more than that into the motor,
 so the request for 18 V of `kP` gets 3. While the error is that big, the model
-has nothing to add.
+has nothing to add. <!-- claim: phoenix6.stator-limit-caps-startup-voltage -->
 
 Then they part. By 1.3 s the green wheel is at about 37 rot/s, and `kP × error`
 (0.3 × 23 rot/s, about 7 V) has dropped below what the current limit lets through, so
-the volts start following it down. The line bends over and flattens at **43.40**. That's the fixed point: the wheel is turning fast enough that its own
+the volts start following it down. <!-- claim: l28.diverge-time --> The line bends over and flattens at **43.40**. <!-- claim: l28.no-model-speed --> That's the fixed point: the wheel is turning fast enough that its own
 back-EMF cancels what `kP` is asking for, so there's nothing left to accelerate
 it. The bottom panel shows the same thing from the other side. The green run's
 5.1 V is `kP × 16.6 rot/s` of error plus the 0.15 V of `kS`, and it stays there,
-flat, for as long as you let the run go. The orange wheel keeps climbing for another
+flat, for as long as you let the run go. <!-- claim: l28.no-model-volts --> The orange wheel keeps climbing for another
 0.6 seconds, because the model is adding `kV × speed` on top, then eases into
 **60.47** at 7.14 V. The 2 V between the two voltage lines is what the model was
-worth, and 17 rot/s is what going without it costs.
+worth, and 17 rot/s is what going without it costs. <!-- claim: l28.model-speed, l28.model-volts, l28.no-model-speed, l28.no-model-volts -->
 
 The shape to remember is the green line's, not the number. It isn't late, and it
 isn't catching up. It's finished.
@@ -715,15 +715,15 @@ sits while it's waiting.
 
 | Idle speed | Time to reach shooting speed |
 |---|---|
-| 0 rot/s (stopped) | 2.3 s |
-| 15 rot/s | 1.72 s |
-| 30 rot/s | 1.22 s |
-| 45 rot/s | 0.70 s |
+| 0 rot/s (stopped) | 2.3 s <!-- claim: l28.spinup-from-0 --> |
+| 15 rot/s | 1.72 s <!-- claim: l28.spinup-from-15 --> |
+| 30 rot/s | 1.22 s <!-- claim: l28.spinup-from-30 --> |
+| 45 rot/s | 0.70 s <!-- claim: l28.spinup-from-45 --> |
 
 <a id="figure-28-3"></a>
 ![Flywheel speed against time for four requests for 60 rot/s, from idle speeds of 0, 15, 30 and 45 rot/s: four parallel climbs, each entering the AtSpeed band at 2.26, 1.72, 1.22 and 0.70 seconds; below, the applied volts for the 30 rot/s start jump to about 6.7, peak at 9.05 and settle at 7.14](images/28-spin-up-from-idle.png)
 
-*Figure 28.3 — Spin-up to 60 rot/s from four idle speeds. The shaded band is `AtSpeed` (within 1.5 rot/s of 60); each dot is where a curve enters it. Below: the applied volts for the 30 rot/s start. One run per idle speed.*
+*Figure 28.3 — Spin-up to 60 rot/s from four idle speeds. The shaded band is `AtSpeed` (within 1.5 rot/s of 60); each dot is where a curve enters it. Below: the applied volts for the 30 rot/s start. One run per idle speed.* <!-- claim: l28.spinup-from-0, l28.spinup-from-15, l28.spinup-from-30, l28.spinup-from-45, l28.jump-volts, l28.peak-volts, l28.idle-hold-volts, l28.model-volts -->
 
 Figure 28.3 shows why. Read the top panel first: four requests for 60 rot/s, each
 from a wheel that had been idling at a different speed (the darker the line, the
@@ -731,7 +731,7 @@ faster the idle). The shaded band is what `atSpeed()` accepts, and each dot mark
 where a curve gets into it, at the four times in the table.
 
 Look at how alike the curves are. They're the same straight climb, about 29 rot/s
-every second, with the same ease-in at the top, just shifted. The idle wheel doesn't
+every second, with the same ease-in at the top, just shifted. <!-- claim: l28.climb-rate --> The idle wheel doesn't
 accelerate any harder. **It starts partway up the same climb**, so a wheel idling at
 45 rot/s has 15 rot/s to go and one starting from a stop has 60, and the time
 difference is just the distance divided by the same speed of climb. That's the
@@ -740,17 +740,17 @@ climb you don't have to make.
 
 The bottom panel is the 30 rot/s run's applied volts, the "about 7 V, towards
 9 V" you'll see in section 9. For the first two ticks the wheel is idling, with
-3.6 V holding it there. The request lands and the voltage jumps to about 6.7 V,
+3.6 V holding it there. <!-- claim: l28.idle-hold-volts --> The request lands and the voltage jumps to about 6.7 V,
 then climbs as the wheel speeds up (the same limit as above: the same current
 allows more volts as the wheel's own back-EMF grows) until 9.05 V at 0.92 s, about
 where the straight climb ends. After that `kP` is looking at an error that's almost gone, and the
-voltage falls away to the 7.14 V that `kV × 60` says holds the wheel there.
+voltage falls away to the 7.14 V that `kV × 60` says holds the wheel there. <!-- claim: l28.jump-volts, l28.peak-volts, l28.model-volts, phoenix6.stator-limit-caps-startup-voltage -->
 
 Idling at half the shooting speed cuts the wait roughly in half, and
 that's why `idle()` returning `spinUp(kIdleSpeed)` is the flywheel's
-default rather than doing nothing. In a two-minute match with a dozen
+default rather than doing nothing. <!-- claim: l28.idle-half-wait --> In a two-minute match with a dozen
 shots, the difference between idling and not is more than ten seconds of
-standing around.
+standing around. <!-- claim: l28.dozen-shots-saved -->
 
 It isn't free — the wheel draws current the whole match and gets warm, and
 a later lesson is about what happens when everything on the robot wants
@@ -769,7 +769,7 @@ explaining why.
 It's still zero, in effect. **The simulation has no friction term at
 all.** A voltage far below what would break any real wheel free will still
 produce a small, honest, nonzero speed in sim — a real wheel wouldn't have
-twitched.
+twitched. <!-- claim: phoenix6.sim-no-static-friction -->
 
 So `kFlywheelKS = 0.15` is in the constants because it's the honest value
 for hardware, and it will do essentially nothing while you're running in
@@ -793,13 +793,13 @@ bearings were pressed, how much the belt is tensioned.
 Run the robot in simulation. Enable teleop and watch `Flywheel/GoalRps` and
 `Flywheel/VelocityRps` on the same graph. The wheel should come up to
 30 rot/s on its own and sit there — that's `idle()`, the default command
-the constructor installed.
+the constructor installed. <!-- claim: commandsv3.mechanism-idle-overridable -->
 
 Hold the left trigger. The goal jumps to 60, the wheel climbs, and
-`Flywheel/AtSpeed` goes true a bit over a second later. Let go and it
+`Flywheel/AtSpeed` goes true a bit over a second later. <!-- claim: l28.press-to-atspeed --> Let go and it
 drops back to idle. Add `Flywheel/AppliedVolts` to the graph and you'll
 see it jump to about 7 V, climb towards 9 V as the wheel speeds up, and
-settle around 7.1 — which is `kV × 60`, exactly as computed in section 3.
+settle around 7.1 — which is `kV × 60`, exactly as computed in section 3. <!-- claim: l28.jump-volts, l28.peak-volts, l28.model-volts -->
 Your `Flywheel/AppliedVolts` should have the shape of the lower panel of
 [Figure 28.3](#figure-28-3).
 
@@ -807,16 +807,16 @@ Worth doing deliberately:
 
 - **Time it yourself.** Note how long `AtSpeed` takes to go true from
   idle, then change `kIdleSpeed` to `RotationsPerSecond.of(0)` and time it
-  again. The table in section 7 should reproduce.
+  again. The table in section 7 should reproduce. <!-- claim: l28.spinup-from-0, l28.spinup-from-15, l28.spinup-from-30, l28.spinup-from-45 -->
 - **Zero out `kFlywheelKV`** and watch the wheel settle around 43 and
-  refuse to climb further, no matter how long you wait. Put it back.
+  refuse to climb further, no matter how long you wait. Put it back. <!-- claim: l28.no-model-speed -->
 - **Watch `Flywheel/SetpointRps`.** Unlike the elevator's, it snaps
   straight to the goal instead of ramping — there's no profile, because
-  there's nothing to profile.
+  there's nothing to profile. <!-- claim: phoenix6.velocity-voltage-no-profile -->
 - **Open the dial in SimGUI**, from the **NetworkTables** menu:
   **AdvantageKit → RealOutputs → Flywheel → Dial** (or in AdvantageScope's
   Mechanism tab, from `/AdvantageKit/RealOutputs/Flywheel/Dial`), and hold the
-  trigger. The goal needle jumps to the shooting mark and the speed needle
+  trigger. <!-- claim: advantagekit.simgui-mechanism-menu --> The goal needle jumps to the shooting mark and the speed needle
   chases it round the left of the dial, turning green as it arrives. Do it
   once with the graph and once with the dial, and notice they tell you
   different things: the graph shows you the shape over time, the dial
@@ -884,7 +884,7 @@ keeping error alive. The arithmetic predicted 42.96 before the test ran,
 and the measurement landed within half a rotation of it — when a model and
 a measurement agree that closely, you understand the mechanism, and
 that's a much better position to be in than having found some gains that
-seemed to work.
+seemed to work. <!-- claim: l28.no-model-speed -->
 
 One small structural note worth keeping, too: **the default command
 belongs wherever its job does.** The drivetrain's sticks are teleop's, so

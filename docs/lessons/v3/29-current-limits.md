@@ -63,19 +63,19 @@ flywheel:
 
 | Time | Speed | Stator | Supply | Applied |
 |---|---|---|---|---|
-| 0.00 s | 0.0 rot/s | 119.0 A | 29.8 A | 3.00 V |
-| 0.60 s | 17.2 rot/s | 119.4 A | 51.3 A | 5.15 V |
-| 0.90 s | 26.1 rot/s | 119.6 A | 62.4 A | 6.26 V |
-| 1.20 s | 35.0 rot/s | 114.7 A | 69.3 A | 7.25 V |
+| 0.00 s | 0.0 rot/s | 119.0 A | 29.8 A | 3.00 V <!-- claim: l29.stall-supply-0, phoenix6.stator-limit-caps-startup-voltage --> |
+| 0.60 s | 17.2 rot/s | 119.4 A | 51.3 A | 5.15 V <!-- claim: l29.stall-supply-60 --> |
+| 0.90 s | 26.1 rot/s | 119.6 A | 62.4 A | 6.26 V <!-- claim: l29.stall-supply-90 --> |
+| 1.20 s | 35.0 rot/s | 114.7 A | 69.3 A | 7.25 V <!-- claim: l29.stall-supply-120 --> |
 
 Stator current sits pinned near 120 A the whole time. Supply current
-starts at a quarter of that and climbs steadily as the motor speeds up.
+starts at a quarter of that and climbs steadily as the motor speeds up. <!-- claim: l29.stall-stator-pinned -->
 
 The reason is in the last column. A controller that only wants to apply
 3 V out of 12 does it by being switched on a quarter of the time, so it
-only draws off the battery a quarter of the time.
+only draws off the battery a quarter of the time. <!-- claim: phoenix6.supply-current-duty-scaling -->
 
-*Nothing to add — the arithmetic, not code:*
+*Nothing to add — the arithmetic, not code:* <!-- claim: l29.stall-supply-0, l29.stall-supply-120, phoenix6.supply-current-duty-scaling -->
 
 ```
 supply current  ≈  stator current × (applied volts / battery volts)
@@ -94,9 +94,9 @@ not limit the other, which is why there are two settings.
 
 Here's the part that surprises people: **Phoenix is already limiting
 current, and has been since Lesson 1.** Print a fresh config and you get
-this.
+this. <!-- claim: phoenix6.talonfx-default-current-limits -->
 
-*Nothing to add — sample output, not code:*
+*Nothing to add — sample output, not code:* <!-- claim: phoenix6.talonfx-default-current-limits -->
 
 ```
 StatorCurrentLimit      = 120 A   enabled = true
@@ -106,12 +106,12 @@ SupplyCurrentLowerLimit =  40 A   after 1.0 s
 
 That last pair is a nice touch — a motor may pull 70 A briefly, but if
 it's still pulling after a second, it gets cut to 40 A. Brief surges are
-normal; sustained ones mean something is stuck.
+normal; sustained ones mean something is stuck. <!-- claim: phoenix6.talonfx-default-current-limits -->
 
 So why does anything ever brown out? Because **those limits are per
 motor, and the battery is per robot.** Nothing in that config has any
 idea how many other motors are on the same battery. Twelve motors each
-entitled to 70 A is 840 A of entitlement, and a battery cannot do that.
+entitled to 70 A is 840 A of entitlement, and a battery cannot do that. <!-- claim: phoenix6.talonfx-default-current-limits -->
 
 Watch it break as the robot gets bigger. Same defaults, every motor
 stalled against a jammed mechanism and commanded at full output, just more
@@ -121,10 +121,10 @@ that:
 
 | Motors, all on defaults | Total draw | Battery sagged to | |
 |---|---|---|---|
-| 3 | 109 A | 9.82 V | fine |
-| 6 | 326 A | 5.48 V | **brownout** |
-| 9 | 384 A | 4.3 V | **brownout** |
-| 12 | 412–426 A | 3.6–4.3 V | **brownout** |
+| 3 | 109 A | 9.82 V <!-- claim: l29.motors-3-amps, l29.motors-3-volts --> | fine |
+| 6 | 326 A | 5.48 V <!-- claim: l29.motors-6-amps, l29.motors-6-volts --> | **brownout** |
+| 9 | 384 A | 4.3 V <!-- claim: l29.motors-9-amps, l29.motors-9-volts --> | **brownout** |
+| 12 | 412–426 A | 3.6–4.3 V <!-- claim: l29.motors-12-amps, l29.motors-12-volts --> | **brownout** |
 
 *(Three runs of each. Three motors and six came out the same every time.
 Past six the rail stops being steady: some runs have ticks where it
@@ -137,7 +137,7 @@ plus two mechanisms — an ordinary second of an ordinary match.
 
 Notice how much more slowly the total grows past six. Going from three
 motors to six adds over 200 A; six to nine adds about 60, and nine to
-twelve about 35. It isn't that the extra motors want less, it's that
+twelve about 35. <!-- claim: l29.growth-3-to-6, l29.growth-6-to-9, l29.growth-9-to-12 --> It isn't that the extra motors want less, it's that
 there's less battery left to give them. That's the death spiral in
 miniature: once the rail sags, every motor's own duty cycle throttles back
 with it, so the total creeps up ever more slowly at exactly the point where
@@ -201,7 +201,7 @@ Every number there is a decision with a reason:
   supply limit's lower tier is built for.
 - **The stator limit is 80 A for everything**, well under the 120 A
   default, because none of these mechanisms should ever need to push that
-  hard, and if one is, it's stuck against something.
+  hard, and if one is, it's stuck against something. <!-- claim: phoenix6.talonfx-default-current-limits -->
 
 That's 130 A of supply if every mechanism goes flat out simultaneously, a
 number you can hold in your head and check against a battery.
@@ -314,7 +314,7 @@ nothing on this robot knows its own total draw, so start by measuring.
 There's no log line to add. Each bundle is `@AutoLog`'d, so
 `processInputs` records the new fields along with the old ones the moment
 they exist: `Elevator/SupplyCurrentAmps`, `Flywheel/SupplyCurrentAmps`,
-`Arm/PivotSupplyCurrentAmps` and `Arm/RollerSupplyCurrentAmps`. All that's
+`Arm/PivotSupplyCurrentAmps` and `Arm/RollerSupplyCurrentAmps`. <!-- claim: advantagekit.autolog-key-names --> All that's
 left is for each subsystem to answer for itself.
 
 **Add to `Elevator` and `Flywheel`, near their other getters:**
@@ -411,7 +411,7 @@ In a replay it does the opposite, the same as every bundle since Lesson 13
 ([Figure 13.2](13-io-replay.md#figure-13-2)): it overwrites `power.batteryVolts` with the voltage from the log. That's
 why everything after it reads `power.batteryVolts` and never asks
 `RobotController` again — the brownout flag in a replay is worked out from
-the voltage the robot really had.
+the voltage the robot really had. <!-- claim: advantagekit.battery-voltage-not-replayed, advantagekit.autolog-key-names -->
 
 > Worth trying, and worth not being surprised by: `RobotController.isBrownedOut()`
 > looks like the obvious call for that boolean, and it exists. It just
@@ -419,7 +419,7 @@ the voltage the robot really had.
 > rail is driven, even held there for seconds. That's an alpha gap in
 > this simulator, not something you did wrong, and it's exactly why the
 > line above compares the voltage against `kBrownoutVoltage` itself
-> instead of trusting a flag that never flips.
+> instead of trusting a flag that never flips. <!-- claim: wpilib.sim-never-browns-out -->
 
 Making the sag itself real, though — the *cause*, not just the reading —
 only means anything in sim: nothing simulated is driving the real
@@ -444,7 +444,7 @@ reason to live in that method instead.
 > own from the replayed currents — and nothing reads it, because the
 > voltage your code uses came out of the log. Replay a run from a real
 > robot, or one recorded on a different simulated battery, and
-> `Power/BatteryVolts` is still the voltage that run really had.
+> `Power/BatteryVolts` is still the voltage that run really had. <!-- claim: advantagekit.battery-voltage-not-replayed, wpilib.simulation-periodic-sim-only -->
 
 **Add the imports:**
 
@@ -472,7 +472,7 @@ each piece was already asking the right question.
 `calculateDefaultBatteryLoadedVoltage` models a nominal 12 V battery with
 20 milliohms of internal resistance, the standard FRC approximation.
 100 A costs you 2 V. 300 A costs you 6, and 6 V is close to where a real
-roboRIO gives up.
+roboRIO gives up. <!-- claim: wpilib.battery-sim-default-model -->
 
 ---
 
@@ -480,7 +480,7 @@ roboRIO gives up.
 
 **Run the robot in simulation.** Graph `Power/TotalCurrentAmps` and
 `Power/BatteryVolts` together in AdvantageScope. The voltage is a reading, so it's at `/AdvantageKit/Power`;
-the total is an output, at `/AdvantageKit/RealOutputs/Power`. Drive around normally and
+the total is an output, at `/AdvantageKit/RealOutputs/Power`. <!-- claim: advantagekit.data-receivers-and-files --> Drive around normally and
 you'll see the voltage twitch and recover — that's the sag every robot has
 all the time.
 
@@ -491,8 +491,8 @@ elevator climbs, the flywheel spins up, and the arm swings down with the
 roller running.
 
 With the budget from section 4, the total draw peaks at **61–110 A** and the
-battery bottoms out around **9.8–10.8 V**. Everything works, and
-`Power/BrownedOut` stays false.
+battery bottoms out around **9.8–10.8 V**. <!-- claim: l29.fresh-budget-peak, l29.fresh-budget-low --> Everything works, and
+`Power/BrownedOut` stays false. <!-- claim: l29.fresh-no-brownout -->
 
 Now see what the budget bought. Turn every limit off:
 
@@ -506,15 +506,15 @@ Now see what the budget bought. Turn every limit off:
 *(In `ArmIOTalonFX`, that's `rollerConfig` too.)* Repeat exactly the same
 thing. The draw peaks near **200 A**, with spikes up to 275 A in the worst
 runs, and the battery sags to **8.0 V**, or 6.5 V in the worst of them:
-worse, and still not a brownout. Delete those limit lines entirely and you're
+worse, and still not a brownout. <!-- claim: l29.fresh-nolimits-typical, l29.fresh-nolimits-peak, l29.fresh-nolimits-low, l29.fresh-no-brownout --> Delete those limit lines entirely and you're
 on Phoenix's defaults, which peak around **84–126 A** and sag to
-**9.5–10.3 V**.
+**9.5–10.3 V**. <!-- claim: l29.fresh-defaults-peak, l29.fresh-defaults-low, phoenix6.talonfx-default-current-limits -->
 
 | Configuration | Peak draw | Battery low point | |
 |---|---|---|---|
-| No limits at all | 197–275 A | 6.50–8.05 V | sags, survives |
-| Phoenix defaults | 84–126 A | 9.48–10.33 V | fine |
-| The budget above | 61–110 A | 9.80–10.77 V | comfortable |
+| No limits at all | 197–275 A | 6.50–8.05 V <!-- claim: l29.fresh-nolimits-peak, l29.fresh-nolimits-low --> | sags, survives |
+| Phoenix defaults | 84–126 A | 9.48–10.33 V <!-- claim: l29.fresh-defaults-peak, l29.fresh-defaults-low --> | fine |
+| The budget above | 61–110 A | 9.80–10.77 V <!-- claim: l29.fresh-budget-peak, l29.fresh-budget-low --> | comfortable |
 
 *(Ten runs of each, the same moves every time. The peaks are spikes a few
 ticks long, and a 20 ms sample catches some of them and misses others, so
@@ -524,16 +524,16 @@ are ranges.)*
 <a id="figure-29-1"></a>
 ![Total current and battery voltage over a 10-second run on a fresh battery for no limits, Phoenix defaults and the budget: each draws a bump while the flywheel spins up to idle in the first second or two, then nothing until the moves at 6 seconds, where no limits jumps to 200 A and drops the rail to 8.0 V, the defaults peak near 111 A and 9.8 V, and the budget near 78 A and 10.4 V; the rail never gets near the dashed 6.3 V line](images/29-fresh-battery-runs.png)
 
-*Figure 29.1 — The same moves on the fresh battery, one run for each configuration (no limits in green, Phoenix defaults in blue, the budget in orange). Each run is a middling one of several, and the peaks vary from run to run as the table says. The dips below zero and bumps above 12 V after 6 s are the battery model's accounting while the motors slow down; ignore them.*
+*Figure 29.1 — The same moves on the fresh battery, one run for each configuration (no limits in green, Phoenix defaults in blue, the budget in orange). Each run is a middling one of several, and the peaks vary from run to run as the table says. The dips below zero and bumps above 12 V after 6 s are the battery model's accounting while the motors slow down; ignore them.* <!-- claim: l29.fresh-nolimits-typical, l29.fresh-nolimits-low, l29.fig1-defaults-moves, l29.fig1-budget-moves -->
 
 Figure 29.1 shows one run of each row of the table, with the moves identical and only the limits different. The top panel is `Power/TotalCurrentAmps`, the bottom is `Power/BatteryVolts`, and the dashed line is the 6.3 V brownout threshold. Read the quiet stretch first. Between about 2 s and 6 s nothing is asking for current, and all three runs sit at 12 V, so the difference you're about to see comes only from what each configuration lets the motors take.
 
-The first bump, in the first second or two, is the flywheel spinning up to its idle speed. The limits show up here already: the green line, with no limits, peaks near 160 A and pulls the rail down to about 8.9 V, the blue line peaks near 64 A, and the orange line near 36 A, and each bump ends when the wheel gets up to speed.
+The first bump, in the first second or two, is the flywheel spinning up to its idle speed. The limits show up here already: the green line, with no limits, peaks near 160 A and pulls the rail down to about 8.9 V, the blue line peaks near 64 A, and the orange line near 36 A, and each bump ends when the wheel gets up to speed. <!-- claim: l29.fig1-idle-nolimits, l29.fig1-idle-defaults, l29.fig1-idle-budget -->
 
-Then the moves at 6 s. Green jumps to its **200 A** peak and the rail drops to **8.0 V** with it: that's the table's first row. Blue peaks near **111 A** and bottoms out near 9.8 V, and orange peaks near **78 A** and 10.4 V. Then look at the dashed line. Even the green run, the worst of the three, stays almost 2 V above it. That's what "sags, survives" means: a real dip, a real distance from the brownout line, and no brownout.
+Then the moves at 6 s. Green jumps to its **200 A** peak and the rail drops to **8.0 V** with it: that's the table's first row. Blue peaks near **111 A** and bottoms out near 9.8 V, and orange peaks near **78 A** and 10.4 V. Then look at the dashed line. Even the green run, the worst of the three, stays almost 2 V above it. That's what "sags, survives" means: a real dip, a real distance from the brownout line, and no brownout. <!-- claim: l29.fresh-nolimits-typical, l29.fresh-nolimits-low, l29.fig1-defaults-moves, l29.fig1-budget-moves, l29.fig1-margin -->
 
 Three mechanism motors, even unlimited, can't pull a fresh battery under
-6.3 V. That's honest, and it's the same thing section 3 said: this robot has
+6.3 V. <!-- claim: l29.fresh-no-brownout --> That's honest, and it's the same thing section 3 said: this robot has
 only three mechanism motors in the sum. The drivetrain's eight are what
 turn "sags" into "browns out" — Try It #1 adds them.
 
@@ -541,7 +541,7 @@ You don't have to build that to see a brownout, though. A fresh battery is the
 best day your robot will have. **Make it a tired one.** An old battery at the
 end of an event is closer to 11 V with twice the internal resistance.
 
-**Replace the line in `Robot.simulationPeriodic()` while you experiment — and put it back after:**
+**Replace the line in `Robot.simulationPeriodic()` while you experiment — and put it back after:** <!-- claim: wpilib.battery-sim-loaded-voltage -->
 
 ```java
     RoboRioSim.setVInVoltage(BatterySim.calculateLoadedBatteryVoltage(11.0, 0.04, getTotalCurrentAmps()));
@@ -549,53 +549,53 @@ end of an event is closer to 11 V with twice the internal resistance.
 
 Run the same three configurations again. No limits browned out in every one
 of its ten runs. The other two got thirty each, because in them a brownout
-comes and goes from run to run, and a handful of runs can miss it:
+comes and goes from run to run, and a handful of runs can miss it: <!-- claim: l29.tired-nolimits-browns-out -->
 
 | Configuration, 11 V battery, 40 mΩ | Peak draw | Battery low point | Browned out |
 |---|---|---|---|
-| No limits at all | 226–642 A | 0.00–1.94 V | **10 of 10** |
-| Phoenix defaults | 85–129 A | 5.82–7.62 V | **4 of 30** |
-| The budget above | 65–121 A | 6.17–8.42 V | **1 of 30** |
+| No limits at all | 226–642 A | 0.00–1.94 V <!-- claim: l29.tired-nolimits-peak, l29.tired-nolimits-low, l29.tired-nolimits-browns-out --> | **10 of 10** |
+| Phoenix defaults | 85–129 A | 5.82–7.62 V <!-- claim: l29.tired-defaults-peak, l29.tired-defaults-low, l29.tired-defaults-browns-out --> | **4 of 30** |
+| The budget above | 65–121 A | 6.17–8.42 V <!-- claim: l29.tired-budget-peak, l29.tired-budget-low, l29.tired-budget-browns-out --> | **1 of 30** |
 
 With no limits the robot browns out within half a second of enabling,
 before you've pressed a thing: the flywheel's idle spin-up alone
 pulls 119–130 A, which drags the rail under 6.3 V, and `Power/BrownedOut`
-goes true. Then ask for everything at once. In eight of the ten runs the
+goes true. <!-- claim: l29.tired-nolimits-first-brownout, l29.tired-flywheel-idle-amps --> Then ask for everything at once. In eight of the ten runs the
 battery collapsed all the way to 0 V. The elevator got only 0.12–0.53 m on
 its way to 1.45 m and stalled, and the flywheel reached 39–48 rot/s and
-then fell to nothing. In the other two the rail dipped to 1.9 V and the
+then fell to nothing. <!-- claim: l29.tired-collapse-count, l29.tired-collapse-elevator, l29.tired-collapse-flywheel --> In the other two the rail dipped to 1.9 V and the
 robot carried on: the elevator reached the top and the flywheel made its
-60 rot/s in both.
+60 rot/s in both. <!-- claim: l29.tired-collapse-count -->
 
 The other two rows need one piece of arithmetic. On this battery the rail is
 11 V minus 40 mΩ times the current, so **6.3 V is 117.5 A**. A brownout here
-means the total draw reached 117.5 A on a single tick, and nothing more.
+means the total draw reached 117.5 A on a single tick, and nothing more. <!-- claim: l29.tired-line-amps, wpilib.battery-sim-loaded-voltage -->
 
 <a id="figure-29-2"></a>
 ![Total current and battery voltage over a 10-second run on the tired battery, for no limits and for the budget: with no limits the current passes the 117.5 A line within the first 0.2 seconds and the rail drops under 6.3 V, recovers, then swings violently between about 0 and 11 V once the moves start at 6 seconds; with the budget the current stays well under the line and the rail never gets near 6.3 V](images/29-tired-battery-brownout.png)
 
-*Figure 29.2 — The same moves on the tired battery, no limits (green) against the budget (orange). One run of each: the no-limits run is a typical collapse (eight of its ten runs looked like this), and the budget run is a typical one of its thirty, so it doesn't show the rare brownout described below.*
+*Figure 29.2 — The same moves on the tired battery, no limits (green) against the budget (orange). One run of each: the no-limits run is a typical collapse (eight of its ten runs looked like this), and the budget run is a typical one of its thirty, so it doesn't show the rare brownout described below.* <!-- claim: l29.tired-collapse-count, l29.tired-budget-browns-out, l29.tired-line-amps -->
 
 Figure 29.2 shows the line. The top panel is `Power/TotalCurrentAmps` and the bottom is
 `Power/BatteryVolts`, over the same ten seconds. The two dashed lines are one line
 seen from two sides: on this battery the rail is 11 V minus 40 mΩ times the current,
 so 117.5 A on the top panel is 6.3 V on the bottom one. When the current is above
-its dashed line, the voltage is under its own.
+its dashed line, the voltage is under its own. <!-- claim: l29.tired-line-amps, wpilib.battery-sim-loaded-voltage -->
 
 Read the left edge first, because nothing has been pressed yet. The robot is enabled at
 time zero and the flywheel starts its idle spin-up. The green line, with no limits,
 jumps to about 90 A at once and is through the 117.5 A line by 0.2 s. The
 voltage panel mirrors it: the rail falls under 6.3 V, bottoms out near 4.7 V, and
-only climbs back over 6.3 V at about 0.7 s, as the wheel gets up to speed. The orange line, the budget, gives the same flywheel a 40 A cap, so the same
-spin-up never gets near the line and the rail stays above 9 V.
+only climbs back over 6.3 V at about 0.7 s, as the wheel gets up to speed. <!-- claim: l29.fig2-nolimits-start, l29.fig2-nolimits-bottom --> The orange line, the budget, gives the same flywheel a 40 A cap, so the same
+spin-up never gets near the line and the rail stays above 9 V. <!-- claim: l29.fig2-budget-start -->
 
 Now the right half. At 6 s, the moves: the D-pad, the left trigger and the intake
 button, all together. The orange current rises to the 45 to 77 A range, ragged
 where the three mechanisms trade the load, and the rail dips to about 9 V and
-climbs back as they finish. Everything gets where it was going. The green line is
+climbs back as they finish. <!-- claim: l29.fig2-budget-moves --> Everything gets where it was going. The green line is
 a different kind of picture. Once the moves start, it isn't a trend any more: the
 current and the voltage swing between about 0 and 500 A, and 0 and 11 V, from one
-tick to the next. That is the feedback loop from section 6 with nothing to stop it:
+tick to the next. <!-- claim: l29.fig2-nolimits-swing --> That is the feedback loop from section 6 with nothing to stop it:
 the rail sags, the motors weaken and draw less, the rail jumps back, the motors
 pull hard again. A brownout is an instant, and this is what a run of them looks
 like. (After the release, both traces in the orange run go below zero and above
@@ -604,26 +604,26 @@ model lets the rail rise for it. It's the simulation's accounting, so ignore it.
 
 Phoenix's defaults are a gamble on this battery. Twenty-six of the thirty
 runs got through, but the typical one bottomed out at 6.6 V, only 0.3 V
-above the line. The other four browned out partway through the moves, each
+above the line. <!-- claim: l29.tired-defaults-browns-out, l29.tired-defaults-typical-low --> The other four browned out partway through the moves, each
 for one or two ticks, with low points of 5.82–6.29 V, and still finished.
 Those four were the runs whose peak passed 117.5 A (118, 119, 125 and
-129 A); none of the other twenty-six passed 115.4 A.
+129 A); none of the other twenty-six passed 115.4 A. <!-- claim: l29.tired-defaults-brownout-lows, l29.tired-line-amps -->
 
 The budget is much safer, and it still isn't safe. Its typical run bottomed
 out at 7.9 V, 1.6 V above the line, and only two of its thirty went under
-7 V, against twenty-one of the defaults' thirty. But one run browned out: a
+7 V, against twenty-one of the defaults' thirty. <!-- claim: l29.tired-budget-typical-low, l29.tired-budget-under-7, l29.tired-defaults-under-7 --> But one run browned out: a
 single tick at 120.7 A, when the elevator's supply current read 83 A
 against its 40 A limit, beside the flywheel's 38 A, and the rail dipped to
 6.17 V for that one tick. Everything still finished. The next-worst budget
 run peaked at 114 A and cleared the line by 0.13 V. A budget lowers the
-odds; it doesn't make them zero.
+odds; it doesn't make them zero. <!-- claim: l29.tired-budget-browns-out -->
 
 Same code, same moves, so you can't know beforehand which kind of run
 you'll get.
 
 *(The peaks vary for the same reason as on the fresh battery, and the
 no-limits ones vary the most: the eight runs that collapsed peaked at
-510–642 A, the two that didn't at 226–228 A.)*
+510–642 A, the two that didn't at 226–228 A.)* <!-- claim: l29.tired-collapse-peaks -->
 
 > **The one thing to carry away from watching this:** nothing in the log
 > said "brownout" until you added that line. Everything else just looked
@@ -652,7 +652,7 @@ no-limits ones vary the most: the eight runs that collapsed peaked at
    11.5 V and 30 mΩ, a realistic third-match battery, and then find the
    internal resistance at which even the budget browns out most of the
    time. Run each setting many times, because one run can get lucky: the
-   budget above lost one run in thirty. That's the battery you should
+   budget above lost one run in thirty. <!-- claim: l29.tired-budget-browns-out --> That's the battery you should
    replace before a match.
 5. **Prioritise.** Right now every mechanism gets its budget regardless
    of what else is happening. Make the flywheel's limit drop while the
@@ -667,7 +667,7 @@ no-limits ones vary the most: the eight runs that collapsed peaked at
    for `Logger.recordOutput("Power/BatteryVolts", power.batteryVolts)`,
    do the same again, and compare `RealOutputs/Power/BatteryVolts` with
    `ReplayOutputs/Power/BatteryVolts`. Explain the gap before you put
-   `processInputs` back.
+   `processInputs` back. <!-- claim: advantagekit.battery-voltage-not-replayed -->
 
 ---
 
@@ -680,13 +680,13 @@ kind of problem from anything earlier in this course.
 in the windings; supply current is voltage off the battery. They diverge
 wildly at low speed — over 100 A through the motor while a fraction of
 that leaves the battery — because a controller applying a quarter of the
-voltage only draws for a quarter of the time. Two problems, two limits,
+voltage only draws for a quarter of the time. <!-- claim: phoenix6.supply-current-duty-scaling --> Two problems, two limits,
 and limiting one does nothing for the other.
 
 **Defaults protect the component, not the system.** Phoenix has been
 limiting every motor since Lesson 1, and it still isn't enough, because a
 per-motor limit multiplied by twelve motors is a number no battery can
-supply. That generalizes well beyond current: a library's defaults
+supply. <!-- claim: phoenix6.talonfx-default-current-limits --> That generalizes well beyond current: a library's defaults
 protect the thing the library knows about, and it doesn't know what else
 you've built.
 
@@ -701,7 +701,7 @@ single most misleading symptom a robot can produce. Three keys — total
 current, battery voltage, and the brownout flag — turn an evening of
 suspicion into a ten-second diagnosis. Put them in before you need them,
 and record the voltage as the reading it is, so a replay looks at the
-battery the robot really had.
+battery the robot really had. <!-- claim: advantagekit.battery-voltage-not-replayed -->
 
 That's the robot protected from itself. Go and brown it out a few times
 on purpose — it's the cheapest way to learn what the trace looks like,

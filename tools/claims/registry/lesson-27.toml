@@ -1,0 +1,327 @@
+# Numbers Lesson 27 (aim at tag) quotes that a library change could move.
+# Format: tools/claims/README.md. Measured with the real Drivetrain through the scheduler (LOOP),
+# orbit 3 m out of tag 20, 6 runs per configuration (CLAUDE.md, 'v3 Lessons 24-27 re-measured on
+# alpha-8', Lesson 27). Figure 27.2 data: tools/figures/data/27-orbit-aim-error-*.csv.
+# The 14.32 and 9.55 degree arithmetic (1.0 / kAimP, 0.667 / kAimP) comes from course constants
+# alone and is not a claim.
+
+[[claim]]
+id = "l27.orbit-p-3"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "Orbiting tag 20 at 3 m out and 3 m/s with only the P term aiming, the worst Aim/ErrorDegrees once settled (read from the pose estimate) is 14.6 degrees."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8', Lesson 27 (orbit); data/27-orbit-aim-error-P-3.csv"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "14.6 degrees (section 4, the table, Figure 27.2's alt text and caption walk-through)"
+unit = "deg"
+range = [14.55, 14.65]
+measured = "14.61-14.62 deg over 6 runs (alpha-7 14.61, once 14.83); 14.62 deg in Figure 27.2's data"
+test = "tools/figures/probes/Fig27Orbit.java"
+figure = "27-orbit-aim-error.png"
+note = "The wording is a bare 14.6, so the range is its rounding interval; the one alpha-7 run at 14.83 would fall outside it."
+
+[[claim]]
+id = "l27.orbit-p-2"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "The same orbit at 2 m/s with only the P term aiming settles at 9.7 degrees of error (estimate)."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8', Lesson 27 (orbit); data/27-orbit-aim-error-P-2.csv"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "9.7 degrees (section 4, the table, Figure 27.2's bottom panel)"
+unit = "deg"
+range = [9.65, 9.75]
+measured = "9.66-9.85 deg over 6 runs (alpha-7 9.83); 9.69 deg in Figure 27.2's data"
+test = "tools/figures/probes/Fig27Orbit.java"
+figure = "27-orbit-aim-error.png"
+note = "Bare 9.7 gives [9.65, 9.75]; the 9.85 run is outside it."
+
+[[claim]]
+id = "l27.wheel-lag"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "The wheels' lag adds about a third of a degree to the 3 m/s P-only error over the 14.32 degree arithmetic."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8', Lesson 27 (the lag over the 14.32 degree arithmetic is 0.29 deg)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about a third of a degree; the third of a degree of wheel lag"
+unit = "deg"
+range = [0.27, 0.40]
+measured = "0.29 deg (14.61 measured minus 14.32 predicted)"
+
+[[claim]]
+id = "l27.orbit-ff-error"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With feedforward added, a typical orbit run at 2 and 3 m/s reads 0.1 degrees of Aim/ErrorDegrees once settled."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8', Lesson 27, P + feedforward row (user decision 2026-10-30: the table gives the typical run); data/27-orbit-aim-error-FF-*.csv"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "0.1 degrees at 2 m/s and at 3 m/s (the table); sits on zero (Figure 27.2's alt text)"
+unit = "deg"
+range = [0.05, 0.15]
+measured = "typically 0.04-0.13 deg; 4 of 12 runs spiked to 0.19-1.19 deg at some tick when a camera correction landed; 0.01-0.05 deg at the end of Figure 27.2's runs"
+note = "A typical-run claim: check the median of the settled error, not the worst tick. The spikes are covered by l27.camera-bump."
+
+[[claim]]
+id = "l27.ff-factor"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "At 3 m/s, feedforward cuts the settled aim error by more than a hundred times (14.6 deg to 0.1 deg)."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8', Lesson 27 (user decision: the typical run, 'over a hundred times')"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "over a hundred times better at 3 m/s; more than a hundred times (recap)"
+unit = "ratio"
+range = [100.0, inf]
+measured = "typical run: 14.6 / 0.04-0.13 = 112-365 times"
+note = "Holds for the typical run only: a run with a camera-correction spike (0.8 deg worst, 12 times over) would not meet it, so a check should use the settled median."
+
+[[claim]]
+id = "l27.camera-bump"
+kind = "number"
+library = ["limelightlib", "wpilib"]
+criticality = "C3"
+statement = "Now and then a camera correction nudges the pose estimate and the feedforward run's error jumps to as much as a degree for a moment."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8', Lesson 27 (4 of 12 runs spiked 0.19-1.19 deg; cameras removed, no spikes)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "as much as a degree"
+unit = "deg"
+range = [0.9, 1.1]
+measured = "spikes of 0.19, 0.31, 0.79 and 1.19 deg in 4 of 12 runs"
+note = "The 1.19 deg spike is above the wording's range (as much as a degree). Reported as too tight."
+
+[[claim]]
+id = "l27.truth-p-3"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "Against the simulated chassis's true pose, the 3 m/s P-only run reads 13.5 degrees."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8', Lesson 27 (truth 13.47-13.49)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "13.5 degrees"
+unit = "deg"
+range = [13.45, 13.55]
+measured = "13.47-13.49 deg; 13.38 deg at the end of Figure 27.2's run"
+
+[[claim]]
+id = "l27.truth-ff-3"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "Against the simulated chassis's true pose, the 3 m/s feedforward run reads 1.2 degrees."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8', Lesson 27 (truth with feedforward 1.16-1.20 at 3 m/s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "1.2 degrees"
+unit = "deg"
+range = [1.15, 1.25]
+measured = "1.16-1.20 deg (alpha-7 1.03); 1.15 deg at the end of Figure 27.2's run"
+
+[[claim]]
+id = "l27.ff-bump-3"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "With feedforward at 3 m/s the error bumps up to about 4 degrees in the first half second (the orbit starts at full speed from a standstill) and is back on zero by about a second."
+evidence = "tools/figures/data/27-orbit-aim-error-FF-3.csv (Figure 27.2); not a CLAUDE.md figure"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "up to about 4 degrees (prose and Figure 27.2's alt text)"
+unit = "deg"
+range = [3.6, 4.4]
+measured = "3.99 deg at 0.30 s in the figure's run"
+
+[[claim]]
+id = "l27.ff-bump-2"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "With feedforward at 2 m/s the opening bump is about 3 degrees."
+evidence = "tools/figures/data/27-orbit-aim-error-FF-2.csv (Figure 27.2); not a CLAUDE.md figure"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 3 degrees (Figure 27.2's alt text)"
+unit = "deg"
+range = [2.7, 3.3]
+measured = "2.95 deg at 0.32 s in the figure's run"
+
+[[claim]]
+id = "l27.ff-settle-time"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "With feedforward the error is back on zero by about a second after the orbit starts."
+evidence = "tools/figures/data/27-orbit-aim-error-FF-3.csv, -FF-2.csv (Figure 27.2); not a CLAUDE.md figure"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "back on zero by about a second"
+unit = "s"
+range = [0.8, 1.2]
+measured = "last sample over 0.3 deg at 0.66 s (3 m/s) and 0.70 s (2 m/s); under 0.09 deg after 1 s"
+note = "'About a second' as a fraction-in-words with 20 percent either way. The measurements are earlier than the range; any time up to 1.2 s with the error near zero satisfies the sentence."
+
+[[claim]]
+id = "l27.p-shelf-time"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "With P only the error climbs to its flat shelf in the first 0.7 seconds ('in under a second' in the prose)."
+evidence = "tools/figures/data/27-orbit-aim-error-P-3.csv, -P-2.csv (Figure 27.2); not a CLAUDE.md figure"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "in the first 0.7 seconds (alt text); in under a second (prose)"
+unit = "s"
+range = [0.65, 0.75]
+measured = "97 percent of the shelf at 0.76 s (3 m/s) and 0.62 s (2 m/s) in the figure's runs"
+note = "Time to reach a shelf depends on the threshold chosen (97 percent here); the 3 m/s run is just outside the bare 0.7. Reported as a soft disagreement."
+
+[[claim]]
+id = "l27.stand-settle"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "Placed 34 degrees off the tag with the left trigger held, the robot is within 2 degrees in 0.5 s."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8', Lesson 27 (within 2 deg after 23-25 ticks, 0.46-0.50 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "within 2 degrees in 0.5 s"
+unit = "s"
+range = [0.45, 0.55]
+measured = "0.46-0.50 s (alpha-7: within 2 deg in 0.5 s)"
+
+[[claim]]
+id = "l27.stand-hold"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "Standing 34 degrees off with the trigger held, the robot holds 0.1 degrees of error."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8', Lesson 27 (holds 0.084-0.091)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "held 0.1 degrees"
+unit = "deg"
+range = [0.05, 0.15]
+measured = "0.084-0.091 deg"
+
+[[claim]]
+id = "l27.strafe-error"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "Strafing at half stick with feedforward, the aim error stays under 1 degree after the first second."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8', Lesson 27 (worst 2.6 deg in the first 0.2 s, 0.63-0.66 after the first second)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "under 1 degree after the first second"
+unit = "deg"
+range = [0.0, 1.0]
+measured = "0.63-0.66 deg after the first second; 2.6 deg worst in the first 0.2 s"
+
+[[claim]]
+id = "l27.strafe-recover"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "After the stick returns to centre the aim error is back under 0.1 degrees within half a second."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8', Lesson 27 (0.48-0.50 s; alpha-7 0.50 s; the lesson used to say a second)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "back under 0.1 degrees half a second after the stick came back to centre"
+unit = "s"
+range = [0.45, 0.55]
+measured = "0.48-0.50 s"
+
+[[claim]]
+id = "l27.awd-swing-time"
+kind = "number"
+library = ["bline", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "In Aim While Driving at tag 20, from the aim marker the nose swings round to within 2 degrees of the bearing in about 0.4 s."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8', Lesson 27 (within 2 deg 0.44 s after the override goes on)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 0.4 s"
+unit = "s"
+range = [0.36, 0.44]
+measured = "0.44 s in 5 of 5 runs (alpha-7 0.44 s)"
+
+[[claim]]
+id = "l27.awd-mean-error"
+kind = "number"
+library = ["bline", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "Between the aim and release markers the nose stays within 2 degrees of the tag, 0.8 degrees on average."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8', Lesson 27 (mean error after the first second 0.76-0.90 deg)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "0.8 degrees on average"
+unit = "deg"
+range = [0.75, 0.85]
+measured = "0.76-0.90 deg over 5 runs"
+note = "The 0.90 run is outside the bare 0.8. Reported as too precise."
+
+[[claim]]
+id = "l27.awd-release-time"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C2"
+statement = "The release marker takes the rotation back about 4.3 s into the drive."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8', Lesson 27 (override off 4.24-4.28 s after the start of the drive)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 4.3 s in"
+unit = "s"
+range = [4.2, 4.4]
+measured = "4.24-4.28 s in 5 runs (alpha-7 4.26 s)"
+
+[[claim]]
+id = "l27.awd-end-x"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C2"
+statement = "Aim While Driving finishes at x = 8.01 m."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8', Lesson 27 (ends 8.006-8.007, 7.021-7.022, -1.6 deg)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "(8.01, 7.02), the x coordinate"
+unit = "m"
+range = [8.005, 8.015]
+measured = "8.006-8.007 m"
+
+[[claim]]
+id = "l27.awd-end-y"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C2"
+statement = "Aim While Driving finishes at y = 7.02 m."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8', Lesson 27"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "(8.01, 7.02), the y coordinate"
+unit = "m"
+range = [7.015, 7.025]
+measured = "7.021-7.022 m"
+
+[[claim]]
+id = "l27.awd-end-heading"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C2"
+statement = "Aim While Driving finishes facing 0 degrees."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8', Lesson 27 (ends at -1.6 deg)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "facing 0 degrees"
+unit = "deg"
+range = [-0.5, 0.5]
+measured = "-1.6 deg (alpha-7 -1.1 deg)"
+note = "The path's final heading is 0, but the robot ends 1.6 deg off it. Reported as a disagreement; the wording is read as a bare 0."

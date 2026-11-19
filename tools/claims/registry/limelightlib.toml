@@ -110,3 +110,13 @@ statement = "The library screens single-tag MegaTag1 answers harder than multi-t
 evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson"
 measured_on = "unverified"
 method = "SOURCE"
+
+[[claim]]
+id = "limelightlib.sim-camera-frame-one-loop-late"
+kind = "behaviour"
+library = ["limelightlib"]
+criticality = "C3"
+statement = "Lesson 15's simulated camera publishes each frame one loop after it captures it, so on the first tick no frame has arrived and the camera reads disconnected."
+evidence = "CLAUDE.md, 'v3 Lesson 30 (alerts) on alpha-7' (cameras: no frame yet, since the sim publishes one loop late; both cameras read disconnected on the first tick in 20 of 20 launches on alpha-8)"
+measured_on = "alpha-8"
+method = "LOOP"

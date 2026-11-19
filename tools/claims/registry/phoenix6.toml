@@ -320,3 +320,13 @@ statement = "A TalonFX's supply current is about its stator current times applie
 evidence = "CLAUDE.md, 'v3 Lesson 29 (current limits) on alpha-7' (116.3 x 3.00/12 = 29.1 A; 115.3 x 7.20/12 = 69.2 A) and 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29 (119.0 x 3.00/12 = 29.8 A; 114.7 x 7.25/12 = 69.3 A)"
 measured_on = "alpha-8"
 method = "BARE"
+
+[[claim]]
+id = "phoenix6.talonfx-is-connected-boot"
+kind = "behaviour"
+library = ["phoenix6"]
+criticality = "C2"
+statement = "TalonFX and CANcoder isConnected() is true while the device has been answering on the CAN bus recently, and reads false on the first tick after the device is built, in sim too, clearing within a few ticks."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 30 (boot flicker: motors read disconnected on the first tick in 20 of 20 launches, alerts last 2-7 ticks) and 'v3 Lesson 30 (alerts) on alpha-7'"
+measured_on = "alpha-8"
+method = "LOOP"
