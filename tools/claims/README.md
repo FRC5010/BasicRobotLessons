@@ -73,8 +73,10 @@ The range is the set of values for which the lesson's sentence is still true as 
 - **A bare number** gets its rounding interval at the precision written: "60.47 rot/s" is
   [60.465, 60.475], "0.19 mm" is [0.185, 0.195], "a fifth of a millimeter" is [0.15, 0.25].
 - **"about X"** (or "around", "roughly", "some") allows one unit either way in the last
-  digit written: "about 9 cm" is [8, 10] cm, "about 1.5 mm" is [1.4, 1.6], "about 91 mm" is
-  [90, 92].
+  digit written, or 10% of X, whichever is smaller: "about 1.5 mm" is [1.4, 1.6], "about 91 mm"
+  is [90, 92], "about 9 cm" is [8.1, 9.9], "about 1 s" is [0.9, 1.1]. (The 10% cap keeps a
+  one-digit number from getting a range that can't fail: one unit either way of "about 1" would
+  be 0 to 2.)
 - **A stated range** keeps its endpoints, each widened by half a unit of its last digit: "1-2 cm"
   is [0.5, 2.5] cm, "25 to 50 cm" is [24.5, 50.5].
 - **"almost X", "nearly X", "just under X"**: from one unit below X up to X ("almost 0.4 s" is

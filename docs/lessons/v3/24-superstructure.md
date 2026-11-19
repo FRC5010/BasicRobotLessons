@@ -15,7 +15,7 @@ cycle.
   compiler stops compiling until you say what it's allowed to do.
 - A **hand-built guard.** This framework's `Command` doesn't ship a "run
   this only if" method, so you'll build the check yourself, once, and
-  reuse the shape for every request.
+  reuse the shape for every request. <!-- claim: commandsv3.no-requirements-exists -->
 
 **New robot concepts**
 - **Legality vs. readiness.** One rule decides what a request is *allowed*
@@ -141,7 +141,7 @@ this half is new except where it's written.
 
 It's called `SuperstructureState` and not `RobotState` because WPILib
 already ships a class called `RobotState` (Lesson 23's `Leds` imports it),
-and having two of those in one file is a first compile error nobody enjoys.
+and having two of those in one file is a first compile error nobody enjoys. <!-- claim: wpilib.robot-state-api -->
 
 **In `Constants.java`'s `LedConstants`, replace `kNotHomed`,
 `kHasGamePiece`, and `kBreathePeriod` with one pattern per state. Keep
@@ -313,7 +313,7 @@ That `Debouncer` is a familiar idea wearing different clothes. In Lesson 22
 you wrote `.debounce(ArmConstants.kBeamDebounce)` on a `Trigger`, and that
 decorator was wrapping this class the whole time. Now that the beam break
 is read here instead of in a binding, you use the filter directly: same
-behavior, same constant, one layer less.
+behavior, same constant, one layer less. <!-- claim: commandsv3.debounce-rising, wpilib.debouncer-replayable-clock -->
 
 **Add `periodic()` below the constructor — everything the robot decides for
 itself:**
@@ -382,7 +382,7 @@ requires *it*, so it never needed to be a `Mechanism`. **What makes
 something worth a heartbeat isn't owning hardware — it's needing the
 scheduler.** (Lesson 7 made the opposite call for `SwerveModule`, which
 stopped being a subsystem because it never decided anything on its own;
-this is the mirror image.)
+this is the mirror image.) <!-- claim: commandsv3.mechanism-no-periodic -->
 
 The last line records the state by name, so `Superstructure/State` shows
 up as one readable line of text rather than a wall of booleans. It replaces
@@ -392,7 +392,7 @@ reading a log a week later. The state is an output, worked out from
 readings that are already recorded (the beam break, the switch, the
 mechanisms' positions), so a replay walks through the same states on the
 same ticks. That includes the debounce: the `Debouncer` times itself with
-the robot's clock, and in a replay that clock is the log's.
+the robot's clock, and in a replay that clock is the log's. <!-- claim: wpilib.debouncer-replayable-clock, advantagekit.replay-matches-recording -->
 
 **Finish the read-side with two small accessors, below `periodic()`:**
 
@@ -429,7 +429,7 @@ elevator happened to be mid-motion on some other command, scheduling the
 request would cancel that motion just to ask a question. A request isn't
 motion. It's a decision. Decisions shouldn't be able to interrupt
 anything, and in this framework, a command that requires nothing *can't*
-— there's nothing for it to preempt.
+— there's nothing for it to preempt. <!-- claim: commandsv3.no-requirements-exists -->
 
 **Add to `Superstructure`, below the accessors:**
 
@@ -470,14 +470,14 @@ anything, and in this framework, a command that requires nothing *can't*
 
 `Command.noRequirements(...)` — you've used this exact call before, on
 `Elevator.rezeroAtBottom()` in Lesson 21. Its body is a `Coroutine`
-lambda that runs once, from the top, when the command starts. That's the
+lambda that runs once, from the top, when the command starts. <!-- claim: commandsv3.no-requirements-exists --> That's the
 whole trick behind the guard: `if (!allow(next)) { return; }` is checked
 exactly once, at the moment the button is pressed, and if it fails the
 command's body simply ends there. Nothing gets scheduled, nothing moves,
 and `m_state` never changes. There's no built-in "run this only if"
 method to reach for here — you don't need one. A coroutine that checks a
 condition and returns early *is* the guard, in one line, with nothing
-hidden behind it.
+hidden behind it. <!-- claim: commandsv3.no-requirements-exists -->
 
 `allow` records every refusal to `Superstructure/Rejected`. From the
 driver's seat, a request that got refused looks *exactly* like a request
@@ -548,11 +548,11 @@ Mechanism; it has no way to decide which one actually owns the motor.
 `Command.sequence` sidesteps the question by never running them at the
 same time — the arm swings down, and only once `goToAngle` finishes does
 `runRoller` start, which is a perfectly sensible way to intake anyway: get
-into position, then spin.
+into position, then spin. <!-- claim: commandsv3.parallel-shared-requirements-throws -->
 
 `HOLDING` has no motion at all. By the time the robot gets there the arm
 is stowed and the elevator is at `kScoreMid`, and Phoenix keeps holding
-both — there's nothing left to command.
+both — there's nothing left to command. <!-- claim: phoenix6.control-request-persists -->
 
 `scoreMotion` reaches for `ArmConstants.kEjectSpeed` — the roller running
 backward, which has been sitting in `Constants.java` since Lesson 20.
@@ -710,20 +710,20 @@ Declaration order still matters: `superstructure` reads the elevator and
 arm, so it comes after both, and `leds` reads the superstructure, so it
 comes last. It also fixes tick order — the scheduler runs periodic
 callbacks in registration order, so the elevator and arm have refreshed
-their inputs by the time `Superstructure` reads them.
+their inputs by the time `Superstructure` reads them. <!-- claim: commandsv3.periodic-before-commands -->
 
 That leaves the motion. The obvious home is `RobotTeleop`, right under the
 requests — and it would work, as long as teleop is the opmode you picked.
 That's the catch. Lesson 9 showed you that a binding made in an opmode's
 constructor is *scoped* to that opmode: the moment the Driver Station
-selects a different one, the binding is torn down. That's exactly right for
+selects a different one, the binding is torn down. <!-- claim: commandsv3.opmode-bindings-dropped --> That's exactly right for
 a button, because the driver's controls belong to teleop. But what the
 robot does in `INTAKING` isn't a driver's control. It's what `INTAKING`
 *means*, and it should mean the same thing in autonomous, where nobody is
 holding a controller at all.
 
 `Robot`'s constructor runs before any opmode exists, so a binding made there
-belongs to no opmode. It lasts for the whole program. **Bind a driver's
+belongs to no opmode. It lasts for the whole program. <!-- claim: wpilib.opmode-id-zero-in-robot-constructor --> **Bind a driver's
 control in the opmode it belongs to; bind what the robot itself means in
 `Robot`.**
 
@@ -779,7 +779,7 @@ starts. When the beam break fires, `periodic()` moves the state to
 `HANDOFF`, `inState(INTAKING)` goes false, and `intakeMotion()` is canceled
 — which means `runRoller`'s `.whenCanceled(...)` fires and the roller
 actually stops — while `inState(HANDOFF)` picks up `handoffMotion()` in
-the same tick. You never touch a motor directly. You say what state you
+the same tick. <!-- claim: commandsv3.whiletrue-schedules-and-cancels, commandsv3.when-exited-on-cancel --> You never touch a motor directly. You say what state you
 want, or the robot notices what state it's in, and the wiring turns that
 into motion.
 
@@ -792,7 +792,7 @@ that moves a mechanism.** `whileTrue` only starts its command when its
 `inState(INTAKING)` never went false, which means it has no new edge to
 start from, and when you enable again the robot sits in the right state
 doing nothing. Put the enabled half in the `Trigger` and disabling turns
-it false; enabling is the edge that starts the motion over.
+it false; enabling is the edge that starts the motion over. <!-- claim: commandsv3.whiletrue-edge-and-enable, commandsv3.disable-cancels-mechanism-commands, wpilib.robot-state-api -->
 
 Read the new bindings, in both files, and notice what's missing: no
 `hasGamePiece`, no `atGoal`, no debounce. **Not one binding mentions a
@@ -810,7 +810,7 @@ before — `UNHOMED` still carries a blinking red.
 1. **Press the left face button without homing first.** Nothing happens —
    not to the arm, not to `m_state`. Check `Superstructure/Rejected`
    (under **AdvantageKit → RealOutputs**): `UNHOMED -> INTAKING`. Try the right trigger and the top face button
-   too; each is refused and logged the same way.
+   too; each is refused and logged the same way. <!-- claim: advantagekit.data-receivers-and-files -->
 2. **Enable and press Back.** The elevator homes. The instant
    `elevator.isHomed()` goes true, `periodic()` moves `m_state` to `IDLE`
    on its own — nobody pressed anything for that part — the strip settles
@@ -828,13 +828,13 @@ before — `UNHOMED` still carries a blinking red.
 6. **Pull the right trigger while `HOLDING`.** State becomes `SCORING`
    and the roller reverses. The piece leaves almost at once, so the state
    drops to `IDLE` on its own and everything stows — `SCORING` is a
-   one-or-two-tick flicker in the log, which is fine. It's the *piece
+   one-or-two-tick flicker in the log, which is fine. <!-- claim: l24.scoring-ticks --> It's the *piece
    leaving*, not a timer, that ends it.
 7. **Disable in the middle of a motion.** From `IDLE`, press the left
    face button, **disable the robot while the arm is still swinging**,
    wait a second, and enable. The state never left `INTAKING`, and the
    intake motion starts over on the first tick: the arm finishes the
-   swing and the roller spins up.
+   swing and the roller spins up. <!-- claim: commandsv3.whiletrue-edge-and-enable -->
 
 Every one of those transitions is visible in exactly two outputs:
 `Superstructure/State` for what's happening, `Superstructure/Rejected` for
@@ -844,17 +844,17 @@ Measured in the simulator, with the real `Robot` and the real bindings,
 driven through `GamepadSim` on a fixed 20 ms loop: homing reaches `IDLE`
 125 to 155 ticks (2.5 to 3.1 s) after you press Back. The later you press
 it, the quicker it is, because the unpowered carriage has been sinking
-toward the switch the whole time. With the arm down and the robot driving
+toward the switch the whole time. <!-- claim: l24.homing-ticks --> With the arm down and the robot driving
 at a piece at a quarter stick, the beam break trips the handoff about 34
 ticks after the drive starts, and the machine reaches `HOLDING` about 56
 ticks (1.1 s) after that, with the elevator inside its 2 cm tolerance of
-0.75 m and the arm at its goal. The strip reads solid yellow in `INTAKING`, solid green
+0.75 m and the arm at its goal. <!-- claim: l24.handoff-after-drive, l24.holding-after-handoff, l24.holding-elevator-height --> The strip reads solid yellow in `INTAKING`, solid green
 in `HOLDING`, and dim blue in `IDLE` (breathing while disabled).
 
 <a id="figure-24-2"></a>
 ![One capture cycle: the state bands INTAKING, HANDOFF, HOLDING, a one-tick SCORING and IDLE above a strip showing when the elevator and arm are both at goal, the arm angle swinging from 90 to minus 20 degrees and back, and the elevator height rising from 0.02 to 0.73 m and back down after the score request](images/24-capture-cycle.png)
 
-*Figure 24.2 — One capture cycle, from the intake request to the stow after the score. Time zero is the moment the quarter-stick drive starts. One run (three more fresh runs agreed to the tick, except that one had the handoff a tick sooner).*
+*Figure 24.2 — One capture cycle, from the intake request to the stow after the score. Time zero is the moment the quarter-stick drive starts. One run (three more fresh runs agreed to the tick, except that one had the handoff a tick sooner).* <!-- claim: l24.handoff-after-drive, l24.holding-after-handoff, l24.raw-beam-break, l24.holding-elevator-height, l24.scoring-ticks -->
 
 Figure 24.2 is one run of that cycle, and it shows what drives each arrow in
 Figure 24.1. Read the colored state bar at the top first; everything below it
@@ -867,7 +867,7 @@ the roller is spinning, so that's time zero. After that the bar doesn't change
 for a while, because nothing the state machine watches has changed: the robot
 rolls toward the piece with the arm out. The beam break sees the piece at
 0.58 s, and the bar turns to `HANDOFF` at 0.68 s (34 ticks after the drive
-started). The tenth of a second between the two is the debounce doing its job.
+started). The tenth of a second between the two is the debounce doing its job. <!-- claim: l24.raw-beam-break, l24.handoff-after-drive -->
 
 `HANDOFF` is the long one. The arm swings up and the elevator climbs to 0.75 m
 (the bottom two curves), and the bar stays orange the whole time. The strip
@@ -875,14 +875,14 @@ under the state bar is the other half of the condition: it's green only when
 the elevator *and* the arm are both at their goals, and it's blank all through
 the move. The moment both arrive it turns green, and the state becomes
 `HOLDING` in that same tick: 1.12 s (56 ticks) after `HANDOFF` began, with the
-elevator at 0.73 m, inside its 2 cm tolerance. Nothing was pressed and nothing
+elevator at 0.73 m, inside its 2 cm tolerance. <!-- claim: l24.holding-after-handoff, l24.holding-elevator-height --> Nothing was pressed and nothing
 was timed; both mechanisms arriving is the whole reason.
 
 `HOLDING` then just sits there until the score request at 2.80 s. The next tick
 is `SCORING`, the thin blue sliver, and the tick after that is `IDLE`: the piece
 leaves the instant the roller reverses, and it's the piece leaving that ends
 `SCORING`, not a timer. The stow starts at once, and by the right edge the
-elevator is nearly back down.
+elevator is nearly back down. <!-- claim: l24.scoring-ticks -->
 
 ---
 
@@ -946,12 +946,12 @@ no `default` is a promise that nothing gets forgotten.
 **A command that requires nothing can't preempt anything.** That's not a
 limitation you worked around; it's why requests are safe to fire at any
 moment, from any button, without a second thought about what else is
-running.
+running. <!-- claim: commandsv3.no-requirements-exists -->
 
 If the guard in section 5 felt like more machinery than you'd expect for
 "only do this if," that's fair — you built it from a coroutine and an
 early `return`, because this framework doesn't hand you a shortcut for
 it. Now that you've built it once, you'll recognize the shape instantly
-next time you need it.
+next time you need it. <!-- claim: commandsv3.no-requirements-exists -->
 
 Next: [Lesson 25 — Doing two things at once](25-path-events.md).

@@ -457,3 +457,170 @@ statement = "org.wpilib.driverstation.MatchState.getAlliance() returns an Option
 evidence = "CLAUDE.md, 'v3 Lesson 17 runs on BLine' (Autos.startPose reads MatchState.getAlliance() in the real loop through DriverStationSim)"
 measured_on = "alpha-8"
 method = "LOOP"
+
+[[claim]]
+id = "wpilib.opmode-creation-console-line"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C3"
+statement = "Picking an opmode prints '********** Creating OpMode <name> **********' to the console, and prints it again for each new instance (after a Disable, or when another opmode is picked and the first picked again)."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson"
+measured_on = "unverified"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib.addressable-led-api"
+kind = "api"
+library = ["wpilib"]
+criticality = "C1"
+statement = "org.wpilib.hardware.led.AddressableLED(pwmPort) is set up with setLength(...) once and handed an AddressableLEDBuffer with setData(...) every tick; there is no start() call, and the strip shows whatever it was last handed."
+evidence = "CLAUDE.md, 'v3 Lesson 23 (LEDs) on alpha-7' (Leds built and read back through AddressableLEDSim(kPwmPort).getData()); lessons 0-33 compile on alpha-8. That start() no longer exists is stated by the lesson; no separate record."
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "RIG"
+
+[[claim]]
+id = "wpilib.addressable-led-duplicate-channel-throws"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C3"
+statement = "Two constructors claiming the same channel number on one peripheral type is a startup exception, not a silent bug; an LED strip's PWM port numbers are not a separate space from other channels in this respect."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson"
+measured_on = "unverified"
+
+[[claim]]
+id = "wpilib.led-pattern-combinators"
+kind = "api"
+library = ["wpilib"]
+criticality = "C1"
+statement = "LEDPattern.solid(Color) returns a pattern value; blink(Time), breathe(Time) and atBrightness(Dimensionless) each return a new pattern and leave the original untouched; applyTo(AddressableLEDBuffer) writes the pattern's current look into the buffer. progressMaskLayer(DoubleSupplier) and AddressableLEDBuffer.createView(int, int) also exist (Try It #2 and #4)."
+evidence = "CLAUDE.md, 'v3 Lesson 23 (LEDs) on alpha-7': the four indications read as bytes from AddressableLEDSim (red blink, LIME_GREEN (50, 205, 50), breathing 4 to 43, dim alliance blue byte 63); lessons compile on alpha-8. progressMaskLayer and createView were never run."
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "RIG"
+
+[[claim]]
+id = "wpilib.robot-state-api"
+kind = "api"
+library = ["wpilib"]
+criticality = "C1"
+statement = "org.wpilib.driverstation.RobotState exists (a class the course's own state enum cannot reuse the name of) with isDisabled() and isEnabled() static methods, usable as RobotState::isEnabled in Trigger.and(...)."
+evidence = "CLAUDE.md, 'v3 Lesson 24 (superstructure) on alpha-7' and the alpha-8 rebind to inState(X).and(RobotState::isEnabled); lessons compile on alpha-8"
+measured_on = "alpha-8"
+method = "RIG"
+
+[[claim]]
+id = "wpilib.field-blue-hub-extent"
+kind = "api"
+library = ["wpilib"]
+criticality = "C3"
+statement = "On the 2026 field layout (Fields.DEFAULT_FIELD), the blue hub fills about x 4.0 to 5.2 m and y 3.4 to 4.6 m, read from the tag poses; the simulator has no obstacles, only the drawing does."
+evidence = "CLAUDE.md, 'v3 Lesson 25 (path events)': blue hub x 4.02-5.23, y 3.43-4.64 from the alpha-7 2026 field's tag poses"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "wpilib.profiled-pid-reset-and-calculate"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "ProfiledPIDController.reset(position, velocity) starts the plan from a robot that is already moving; calculate(...) steps the plan one tick and returns only the P term, so it must run before getSetpoint() reads the plan's speed; setConstraints(...) swaps the limits so one controller serves two stages."
+evidence = "CLAUDE.md, 'v3 Lesson 26 (drive to pose) was redesigned on 2026-10-26' ('Call calculate before getSetpoint(): it steps the plan'; startStage seeds both controllers with reset(position, measured velocity) and swaps constraints per stage), re-measured on alpha-8 in 'Lessons 24-27 re-measured'"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib.trapezoid-profile-single-acceleration"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C2"
+statement = "A TrapezoidProfile uses one acceleration for speeding up and slowing down, so firm-out-of-the-blocks and gentle-into-the-target needs two profiles; TrapezoidProfile.State is a position and a speed, and a goal with a nonzero speed makes the profile slow to that speed by that point."
+evidence = "CLAUDE.md, 'v3 Lesson 26 (drive to pose) was redesigned on 2026-10-26' ('A TrapezoidProfile uses one acceleration for speeding up and slowing down, which is why two stages'); stage one's goal State(length - kHandoffDistance, kHandoffSpeed) measured handing over at 1.43-1.47 m/s"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib.profiled-pid-at-goal"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "ProfiledPIDController.setTolerance(position, velocity) takes two numbers, and atGoal() reports true only when the plan has finished and the measurement is within both; atGoal() answers for the last calculate(), so it means nothing before the first step."
+evidence = "CLAUDE.md, 'v3 Lesson 26 (drive to pose) was redesigned on 2026-10-26' (stage two ends on arrived(): along atGoal() at 2 cm and 0.05 m/s, heading atGoal() at 1 degree; measured arriving 3.36-3.38 s). That atGoal() reports on the last calculate() is stated by the lesson with no separate record."
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib.profiled-pid-continuous-input"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C2"
+statement = "enableContinuousInput(-pi, pi) on a ProfiledPIDController treats the input as a circle: asked to turn from 179 degrees to -179 degrees it plans a small turn, not 358 degrees."
+evidence = "CLAUDE.md measured turning to 90 and to -90 degrees through the heading controller (Lesson 26 block); the 179 to -179 example itself has no record"
+measured_on = "unverified"
+
+[[claim]]
+id = "wpilib.color-named-constants"
+kind = "api"
+library = ["wpilib"]
+criticality = "C1"
+statement = "org.wpilib.util.Color has all-caps named constants (Color.ORANGE, Color.LIME_GREEN, with no k prefix: kOrange does not exist) and new Color8Bit(Color) wraps one; Color.LIME_GREEN is (50, 205, 50)."
+evidence = "CLAUDE.md, 'v3 Lesson 23 (LEDs)' (Color.LIME_GREEN is (50, 205, 50)); the Lesson 19 snapshot compiles with Color.ORANGE and Color.LIME_GREEN"
+measured_on = "alpha-8"
+method = "BYTECODE"
+
+[[claim]]
+id = "wpilib.timer-get-timestamp"
+kind = "api"
+library = ["wpilib"]
+criticality = "C3"
+statement = "org.wpilib.system.Timer.getTimestamp() returns the current time in seconds (getFPGATime is gone)."
+evidence = "CLAUDE.md, 'v3 Lesson 25', Probe recipe (Time is org.wpilib.system.Timer.getTimestamp(); getFPGATime is gone)"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib.single-jointed-arm-sim-api"
+kind = "api"
+library = ["wpilib"]
+criticality = "C1"
+statement = "SingleJointedArmSim(DCMotor, gearing, moi, armLengthMeters, minAngleRad, maxAngleRad, simulateGravity, startingAngleRad) measures angles zero at horizontal, counter-clockwise positive; SingleJointedArmSim.estimateMOI(length, mass) treats the arm as a uniform rod about one end; and the model has hard stops at its min and max angles that it cannot swing past, whatever the motor's soft limits say."
+evidence = "CLAUDE.md, 'v3 Lesson 20 (intake arm) on alpha-7', The soft limit can't be seen in the angle (a 270 degree request settles at 179.82 with the limits on or off)"
+measured_on = "alpha-8"
+method = "RIG"
+
+[[claim]]
+id = "wpilib.elevator-sim-sinks-unpowered"
+kind = "behaviour"
+library = ["wpilib", "phoenix6"]
+criticality = "C1"
+statement = "With gravity simulated, nothing holds up a simulated carriage the motor isn't driving (no friction is modeled), so it sinks; ElevatorSim's own travel limits are hard stops (a carriage pushed past the top stalls at the frame top)."
+evidence = "CLAUDE.md, 'v3 Lesson 21 (homing) on alpha-7' (An unpowered carriage sinks at 2.0 cm/s; D-pad up before homing stalls at the 1.5 m frame top) and 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 21"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib.dio-pullup-high"
+kind = "api"
+library = ["wpilib"]
+criticality = "C2"
+statement = "Every DIO channel pulls up to high on its own, so a DigitalInput with nothing connected, or a fallen-off or cut wire, get()s true; a normally-closed switch wired to ground therefore reads true when pressed or broken."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson (a hardware fact; the simulator computes the switch from the carriage's true height instead)"
+measured_on = "unverified"
+method = "SOURCE"
+
+[[claim]]
+id = "wpilib.translation2d-frame-transform"
+kind = "api"
+library = ["wpilib"]
+criticality = "C2"
+statement = "Translation2d has minus(Translation2d) and rotateBy(Rotation2d), so a field position can be put in a robot's frame by subtracting the robot's position and rotating by the robot's opposite heading (rotation.unaryMinus()), after which 'ahead of the robot' is the x direction."
+evidence = "CLAUDE.md, 'v3 Lesson 22 (beam breaks) is hand-built' (verified through the real loop: caught when the piece is 0.59 m ahead of the robot's center); the Lesson 22 snapshot compiles on alpha-8"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib.battery-sim-default-model"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C3"
+statement = "BatterySim.calculateDefaultBatteryLoadedVoltage models a nominal 12 V battery with 20 milliohms of internal resistance, so 100 A costs 2 V and 300 A costs 6 V."
+evidence = "No record found in CLAUDE.md or tools/figures/data of the 12 V / 20 mOhm figures themselves (CLAUDE.md only says the motor-count rig closes the battery through this call); stated by the lesson"
+measured_on = "unverified"

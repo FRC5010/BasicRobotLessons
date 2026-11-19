@@ -183,3 +183,23 @@ statement = "B-Line resets its three controllers each time a path starts, so one
 evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson"
 measured_on = "unverified"
 method = "SOURCE"
+
+[[claim]]
+id = "bline.follow-path-class-methods"
+kind = "api"
+library = ["bline"]
+criticality = "C1"
+statement = "FollowPath.Builder.build(path) returns a FollowPath, and getRemainingPathDistanceMeters(), overrideRotation(...) (with a RESPECT_CONSTRAINTS mode) and the static clearRotationOverride live on FollowPath, not on Command, so the FollowPath must be held in a variable before it is handed to a parallel group."
+evidence = "CLAUDE.md, 'v3 Lesson 25 (path events)': read from BLine's source at the pinned commit; Pick Up/Aim While Driving autos built from these calls ran in the real Robot loop on alpha-7 and alpha-8"
+measured_on = "alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "bline.finish-needs-position-and-rotation"
+kind = "behaviour"
+library = ["bline"]
+criticality = "C1"
+statement = "A FollowPath finishes only when the robot is within the end translation tolerance (default_end_translation_tolerance_meters, 5 cm in the shipped config) and pointing within the end rotation tolerance; a rotation override still active at the end of the path means the second condition is never met and the command never finishes."
+evidence = "CLAUDE.md, 'v3 Lesson 25 (path events)': Aim While Driving without release never finishes (17.9 s watched on alpha-8), ends at (8.031, 6.982, -90.8 deg); kScoreDistance 0 leaves the path 0.04 m short of a 5 cm tolerance and the group never ends"
+measured_on = "alpha-8"
+method = "LOOP"

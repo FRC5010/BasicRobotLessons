@@ -57,7 +57,7 @@ it. That's the shape of every controller in this course.
 
 Run it from (1, 1) to a pose five metres away and it takes about **three
 seconds** to declare success, reporting **5 cm** out, because that's exactly
-what you told it to accept.
+what you told it to accept. <!-- claim: l26.sketch-arrival-time -->
 
 There are two worse problems hiding in it, though, and both are worth
 finding before someone finds them in a match.
@@ -67,7 +67,7 @@ for 7.5 m/s, which the clamp trims to the robot's top speed. So on tick one,
 standing still, the sketch asks for full speed. The wheels can't deliver
 that instantly. They spin up as hard as the tyres can push, which in this
 simulation measured **11.8 m/s²**, the grip limit itself ([Figure 16.3](16-ground-truth.md#figure-16-3)
-plots it). On a real robot,
+plots it). <!-- claim: l26.grip-launch-accel --> On a real robot,
 that's tyres on the edge of slipping, a lurch that throws everything on the
 robot forward, and wheel odometry you can't trust while it lasts ([Figure 16.1](16-ground-truth.md#figure-16-1) shows how far it drifts).
 
@@ -76,7 +76,7 @@ robot forward, and wheel odometry you can't trust while it lasts ([Figure 16.1](
 robot is from the spot. Nothing in there asks which way it's facing. Place
 the robot **exactly on the target, facing the opposite direction**, and run
 `driveToPose`. It declares arrival **instantly, on the first tick**, while
-sitting **180° out of alignment.** It is, by its own definition, done.
+sitting **180° out of alignment.** <!-- claim: l26.sketch-backwards-ticks --> It is, by its own definition, done.
 
 > Every finish condition is a claim about what "done" means, and it is
 > worth reading each one as if you were trying to break it. `.until(...)`
@@ -119,10 +119,10 @@ easy it is to get the handover wrong.
 
 Suppose the first stage hands over a metre out, and the second stage is a
 plain P controller like the sketch, three metres per second for every metre
-of error. At the handover the robot is doing about 1.7 m/s. The second
+of error. At the handover the robot is doing about 1.7 m/s. <!-- claim: l26.pp-handover-speed --> The second
 stage looks at its one metre of error and asks for **3.0 m/s** on the spot:
 measured, the request jumped from 1.5 to 2.9 m/s in a single tick, and
-then the robot braked at about 7 m/s² as the error shrank. Each stage was
+then the robot braked at about 7 m/s² as the error shrank. <!-- claim: l26.pp-request-jump, l26.pp-braking --> Each stage was
 reasonable on its own. Together they handed over with a jolt.
 
 What's missing is a **plan**: a controller that decides in advance how
@@ -164,17 +164,17 @@ ahead of time. `calculate` returns only the P term, which corrects for the
 robot drifting ahead of or behind the plan. That's the rule you met in
 Lesson 12, where `kV` turned a requested wheel speed straight into volts,
 and again in Lesson 18's elevator: **P is for correcting, not for
-sustaining.** Here the profile does the sustaining.
+sustaining.** Here the profile does the sustaining. <!-- claim: wpilib.profiled-pid-reset-and-calculate -->
 
 Notice `reset(0.0, 1.4)`. A profile doesn't have to start from rest. Tell
 it how fast the robot is already going and it plans from there, which is
 exactly what a stage needs when it takes over from another stage that
-hasn't stopped.
+hasn't stopped. <!-- claim: wpilib.profiled-pid-reset-and-calculate -->
 
 One more thing a profile can't do, and it's the reason this lesson still
 has two stages: a `TrapezoidProfile` uses **the same acceleration to speed
 up and to slow down.** Firm out of the blocks and gentle into the target is
-two different numbers. One profile can't have both. Two stages can.
+two different numbers. One profile can't have both. Two stages can. <!-- claim: wpilib.trapezoid-profile-single-acceleration -->
 
 ---
 
@@ -276,10 +276,10 @@ the fastest it can take over at is √(2 × 1.5 × 1.0) = **1.73 m/s**.
 
 Then the robot itself gets a say. The drive motors follow a speed request
 a little late: measured, about **0.07 s**, so while stage one slows at
-4 m/s² the real speed runs roughly **0.3 m/s** above the plan. Plan the
+4 m/s² the real speed runs roughly **0.3 m/s** above the plan. <!-- claim: l26.drive-lag-time, l26.drive-lag-speed --> Plan the
 handoff at 1.73 and the robot arrives at about 2 m/s, too fast to stop in
-time. So the plan says **1.2**, and the robot really arrives at about
-1.45, safely under the limit. Try It #1 shows what happens when you skip
+time. <!-- claim: l26.try1-arrival-speed --> So the plan says **1.2**, and the robot really arrives at about
+1.45, safely under the limit. <!-- claim: l26.handoff-speed-actual --> Try It #1 shows what happens when you skip
 that step.
 
 > Notice `kApproachLimits` uses `kHandoffSpeed` as its top speed. Stage two
@@ -332,7 +332,7 @@ where it was:**
 `setTolerance` takes two numbers here. The first is how close counts as
 "there"; the second is how slow counts as "stopped". With both set,
 `atGoal()` only says yes when the plan has finished *and* the robot is
-within both of them.
+within both of them. <!-- claim: wpilib.profiled-pid-at-goal -->
 
 `enableContinuousInput` is the last chapter of a story this course has
 been telling since Lesson 5. You wrapped angles by hand with a `while`
@@ -340,7 +340,7 @@ loop, swapped that for `MathUtil.inputModulus` in Lesson 10, and moved it
 into motor firmware with `ContinuousWrap` in Lesson 12. This is the same
 idea told to a controller: the input is a circle, so go the short way.
 Ask it to turn from 179° to −179° and it plans a small turn, not a 358°
-one.
+one. <!-- claim: wpilib.profiled-pid-continuous-input -->
 
 **Next, below the builders, the line's frame from section 5:**
 
@@ -374,7 +374,7 @@ Rotating it into the line's frame and taking x gives "how fast along the
 line". And `reset` starts the plan at the beginning of the line, already
 moving at that speed. The heading gets the same treatment with the measured
 turning rate. `setConstraints` is how one controller serves both stages:
-same controller, different limits.
+same controller, different limits. <!-- claim: wpilib.profiled-pid-reset-and-calculate -->
 
 **Then one tick of following the line:**
 
@@ -402,7 +402,7 @@ same controller, different limits.
 
 **Watch the order on the `along` lines.** `calculate` steps the plan
 forward a tick, so it has to run *before* `getSetpoint()` reads the plan's
-speed. Swap them and you're always feeding forward last tick's plan.
+speed. Swap them and you're always feeding forward last tick's plan. <!-- claim: wpilib.profiled-pid-reset-and-calculate -->
 
 The across speed has a minus sign because y is "off to the left": a robot
 to the left gets pushed right.
@@ -444,13 +444,13 @@ cruises, then slows to exactly that speed by exactly that point.
 
 `toTarget.getAngle()` is the same `Optional` Lesson 25's aiming code got
 back: empty when the robot is already on the target, because an arrow with
-no length has no direction. `orElse(...)` says what to use instead, and
+no length has no direction. <!-- claim: wpilib.translation-angle-optional --> `orElse(...)` says what to use instead, and
 any direction will do for a line with nothing left to drive along.
 
 When the loop ends, the command simply finishes, and there's no stop
 command after it. That's the point: the robot is meant to keep moving into
 stage two. Only `whenCanceled` stops it, because only an interruption
-means nothing is coming next.
+means nothing is coming next. <!-- claim: commandsv3.when-exited-on-cancel -->
 
 ---
 
@@ -498,13 +498,13 @@ of the target itself with a speed of zero, and a finish that asks
 
 The stop is different too. Nothing comes after stage two, so it stops the
 robot whether it arrived or was interrupted, and `.whenExited(...)` from
-Lesson 6 does both with one line.
+Lesson 6 does both with one line. <!-- claim: commandsv3.when-exited-on-cancel -->
 
 That loop is a **`do` … `while`**, which is new. It's a `while` with the
 test moved to the bottom, so the body always runs at least once. That's
 the right shape here: `atGoal()` reports on the last `calculate()`, so its
 answer only means something after a step. A plain `while` would ask first,
-about a plan that hasn't taken a single step.
+about a plan that hasn't taken a single step. <!-- claim: wpilib.profiled-pid-at-goal -->
 
 `arrived()` asks all three of section 2's questions. The along controller
 covers "there and stopped". `offLine` covers "on the line". The heading
@@ -551,10 +551,10 @@ row, at the same target both times.
 `Autos` already imports `PathConstants` and `Localizer` from Lesson 17.
 
 `coroutine.await(...)` runs a command to completion before moving to the
-next line, the same tool you used for `driveTurnDrive` back in Lesson 9.
+next line, the same tool you used for `driveTurnDrive` back in Lesson 9. <!-- claim: commandsv3.coroutine-await-yield-wait -->
 The first `await` finishes the moment stage one reaches the handoff point,
 and the second picks up a robot still rolling at about 1.45 m/s and plans
-from there. Nobody outside this method needs to
+from there. <!-- claim: l26.handoff-speed-actual --> Nobody outside this method needs to
 know there are two stages. It's one command.
 
 ---
@@ -595,7 +595,7 @@ public class RobotAutoDriveToPose extends PeriodicOpMode {
 
 Look at what's missing: the `@Autonomous` line. Since Lesson 25, autos are
 registered in `Robot`, and an annotated class with the same name as a
-registered one stops the program at boot. This one isn't a drawn path, so it
+registered one stops the program at boot. <!-- claim: wpilib.add-opmode-needs-second-publish --> This one isn't a drawn path, so it
 gets a class of its own instead of a `PathAuto`, but it's registered the same
 way.
 
@@ -615,7 +615,7 @@ import first.robot.opmode.RobotAutoDriveToPose;
 ```
 
 It shows up in the selector under its own group, **Poses**, beside **Paths**.
-The `publishOpModes()` call that was already there announces it too.
+The `publishOpModes()` call that was already there announces it too. <!-- claim: wpilib.add-opmode-needs-second-publish -->
 
 The same command is worth having in teleop, too, where lining up on a
 scoring position by hand is the slowest thing a driver does.
@@ -652,22 +652,22 @@ position, not the estimate:
 
 | | Old: sketch, then P | Two profiled stages |
 |---|---|---|
-| Time to "arrived" | 3.5 s | 3.4 s |
-| Where it ended up | 14 mm out | **7–8 mm out, under 0.01°** |
-| Hardest acceleration at the start | 11.8 m/s² (the tyres' limit) | about 4 m/s² on average, 6–8 at peak |
-| At the handover | nearly stopped (0.08 m/s) | still moving, about 1.45 m/s |
-| Slowing into the target | not measured | about 1.4 m/s² on average |
+| Time to "arrived" | 3.5 s | 3.4 s <!-- claim: l26.old-design-time, l26.two-stage-time --> |
+| Where it ended up | 14 mm out | **7–8 mm out, under 0.01°** <!-- claim: l26.old-design-final-error, l26.two-stage-final-error --> |
+| Hardest acceleration at the start | 11.8 m/s² (the tyres' limit) | about 4 m/s² on average, 6–8 at peak <!-- claim: l26.grip-launch-accel, l26.launch-mean-accel, l26.launch-peak-accel --> |
+| At the handover | nearly stopped (0.08 m/s) | still moving, about 1.45 m/s <!-- claim: l26.old-handover-speed, l26.handoff-speed-actual --> |
+| Slowing into the target | not measured | about 1.4 m/s² on average <!-- claim: l26.slowing-mean-decel --> |
 
 The time barely changed. What changed is *how* it gets there: no launch at
 the tyres' limit, no stop in the middle, and a gentle last metre. The
 peaks above 4 m/s² at the start are what you'd expect from the P term: the
 wheels take a moment to spin up, the robot falls behind the plan, and P
-pushes to catch it up.
+pushes to catch it up. <!-- claim: l26.launch-peak-accel -->
 
 <a id="figure-26-2"></a>
 ![Speed along the line against time for the (1, 1) to (5, 4) drive: the two-stage plan is a trapezoid that peaks at 3 m/s, steps down at the handoff and slows to a stop, with the measured speed tracking it closely; the old design launches to about 4 m/s in under half a second and then decays slowly into the handover; below, measured minus plan speed peaks at +0.3 m/s while the plan slows](images/26-two-stage-speed.png)
 
-*Figure 26.2 — Speed along the line from (1, 1) to (5, 4), two stages against the old design. One run each. The blue plan line was read out of the controller by a test, so your own logs won't have it.*
+*Figure 26.2 — Speed along the line from (1, 1) to (5, 4), two stages against the old design. One run each. The blue plan line was read out of the controller by a test, so your own logs won't have it.* <!-- claim: l26.old-launch-speed, l26.drive-lag-speed, l26.handoff-time, l26.two-stage-time -->
 
 Figure 26.2 plots both designs on one set of axes, and the shape of each curve is
 the whole story. Read the top panel first. The thick blue line is the plan, the
@@ -676,25 +676,25 @@ fast the robot really went. The grey line is the old design.
 
 Follow the blue line from the left. It climbs at the 4 m/s² of `kTravelAccel` to
 3 m/s at 0.75 s, cruises, and starts slowing at about 1.4 s. At the dotted line,
-1.8 s, stage one hands over. Stage two starts a fresh plan from the speed the robot
+1.8 s, stage one hands over. <!-- claim: l26.handoff-time --> Stage two starts a fresh plan from the speed the robot
 actually has, about 1.45 m/s, under its own gentler limits: the plan comes down
 to 1.2 m/s, stage two's top speed, flattens there for a moment, then slows at
-1.5 m/s² to a stop. The robot arrives at about 3.4 s. The little dip
+1.5 m/s² to a stop. <!-- claim: l26.handoff-speed-actual --> The robot arrives at about 3.4 s. <!-- claim: l26.two-stage-time --> The little dip
 of the orange line just under zero at 3 s is the roll past the target and back that
-the callout below describes.
+the callout below describes. <!-- claim: l26.roll-past -->
 
 Now the grey line, which is nothing like it. The old sketch launched at the tyres'
 limit: 3.8 m/s inside 0.4 s, and 4.1 m/s at the top, faster than the new design
-ever goes. Its speed is just 1.5 times the distance left, so it falls away smoothly
-and crawls into the handover at 3.2 s doing 0.08 m/s. Both designs arrive at about
-the same time, which is why the table says the time barely changed. One does it
+ever goes. <!-- claim: l26.old-launch-speed --> Its speed is just 1.5 times the distance left, so it falls away smoothly
+and crawls into the handover at 3.2 s doing 0.08 m/s. <!-- claim: l26.old-handover-speed --> Both designs arrive at about
+the same time, which is why the table says the time barely changed. <!-- claim: l26.two-stage-time, l26.old-design-time --> One does it
 with a violent launch and a long, slow tail. The other does it with a plan.
 
 The bottom panel is the orange line minus the blue one, and it's the drive lag from
 section 6 made visible. While the plan slows, the robot runs ahead of it by up to
-0.3 m/s, at 1.5 s. At 4 m/s², 0.3 m/s is 0.07 s, which is where that number came from.
+0.3 m/s, at 1.5 s. At 4 m/s², 0.3 m/s is 0.07 s, which is where that number came from. <!-- claim: l26.drive-lag-speed, l26.drive-lag-time -->
 In the first tenth of a second the robot trails the plan by about the same amount
-the other way: the wheels haven't caught up yet. This is why stage one hands over at
+the other way: the wheels haven't caught up yet. <!-- claim: l26.launch-lag --> This is why stage one hands over at
 1.2 m/s and not at the 1.7 m/s that would just fit.
 
 Two other runs worth doing yourself:
@@ -702,38 +702,38 @@ Two other runs worth doing yourself:
 - **Start on the target, facing backwards.** The sketch called that done on
   tick one. Now stage one finishes at once (it's already past its handoff
   point), and stage two turns the robot round on the spot: measured, about
-  **2.2 s**, ending 0.1 mm and 0.3° out.
+  **2.2 s**, ending 0.1 mm and 0.3° out. <!-- claim: l26.backwards-time, l26.backwards-error -->
 - **Start 0.6 m away.** That's already inside the handoff distance, so
   stage one finishes immediately and stage two does the whole trip: about
-  **1.65 s**, 1 cm out.
+  **1.65 s**, 1 cm out. <!-- claim: l26.near-start-time -->
 
 You'll also see two honest imperfections in the field view:
 
 > **The robot rolls a few centimetres past the target and comes back.**
-> Measured, 37 mm. That's the same 0.07 s drive lag from section 6: the real
+> Measured, 37 mm. <!-- claim: l26.roll-past --> That's the same 0.07 s drive lag from section 6: the real
 > speed trails the plan, so it reaches the end of the line still moving a
-> little. The plan and P bring it back, and `arrived()` won't say yes
+> little. <!-- claim: l26.drive-lag-time --> The plan and P bring it back, and `arrived()` won't say yes
 > until it's stopped.
 >
 > **The path bows out sideways while the robot turns.** Measured, about
-> 26 cm at the widest, on a trip that turns 90°. The same trip with no turn
-> stays within about 5 mm of the line, so it's the turning that does it:
+> 26 cm at the widest, on a trip that turns 90°. <!-- claim: l26.bow-turn --> The same trip with no turn
+> stays within about 5 mm of the line, so it's the turning that does it: <!-- claim: l26.bow-noturn -->
 > a chassis that turns and drives at once doesn't quite go where it was
 > told. The cross-track term pulls it back; it can't prevent it.
 
 <a id="figure-26-3"></a>
 ![Top: a field view from S at (1, 1) to T at (5, 4). The orange path of the trip that turns 90 degrees swings out to the left of the dashed straight line, widest about 26 cm off it near the first third, and rejoins it at T; the green path of the trip with no turn lies on the line. Bottom: the sideways offset in millimetres against distance along the line, a hump peaking at 264 mm for the turning trip and a flat line within 5 mm for the other](images/26-bow-while-turning.png)
 
-*Figure 26.3 — The same trip with and without the 90° turn, from above (top) and as the sideways distance from the line (bottom). One run each, the simulated robot's true position.*
+*Figure 26.3 — The same trip with and without the 90° turn, from above (top) and as the sideways distance from the line (bottom). One run each, the simulated robot's true position.* <!-- claim: l26.bow-turn, l26.bow-turn-position, l26.bow-noturn -->
 
 Figure 26.3 overlays both trips. The top panel is the field from above, with
 the dashed black line from S to T that the plan wants the robot to follow. The
 green path is the trip with no turn, and you can't see it because it's lying
 on the dashed line. The orange path is the trip that turns 90° on the way: it
-swings out to the left, up to 26 cm off, and comes back to land on T. The
+swings out to the left, up to 26 cm off, and comes back to land on T. <!-- claim: l26.bow-turn --> The
 bottom panel measures the same thing as a sideways distance, so the size of
 the bulge reads directly. The orange hump peaks about two metres along the
-line, and the green line stays within 5 mm. The only difference between the
+line, and the green line stays within 5 mm. <!-- claim: l26.bow-turn-position, l26.bow-noturn --> The only difference between the
 two runs is the heading of the target. Turning is what does it, and that's as
 far as this measurement goes: it doesn't say why.
 
@@ -752,18 +752,18 @@ Worth plotting while you watch:
    section 6's arithmetic allows, and run it again. The robot really
    arrives at the handoff at about 1.95 m/s, too fast to stop in a metre at
    1.5 m/s². Measured, it overshot by **46 cm**, came back, and took
-   **4.5 s** instead of 3.4. A plan that ignores how the robot actually
+   **4.5 s** instead of 3.4. <!-- claim: l26.try1-arrival-speed, l26.two-stage-time --> A plan that ignores how the robot actually
    responds isn't a plan.
 2. **Start every stage from rest.** In `startStage`, change both `reset`
    calls to start at a speed of `0.0`. Run it and watch the handover: a
    plan that starts at zero tells a robot doing 1.45 m/s to be standing
    still. Measured, it braked at the tyres' limit, **11.8 m/s²**, and the
-   trip took **3.8 s** instead of 3.4. That's the jolt this lesson exists
+   trip took **3.8 s** instead of 3.4. <!-- claim: l26.grip-launch-accel, l26.try2-time --> That's the jolt this lesson exists
    to remove, and it comes from one wrong number.
 3. **Take "stopped" out of arrived.** Set `kSpeedTolerance` to something
    enormous. Stage two now finishes while the robot is still rolling, and
    the stop after the loop has to catch it: measured, it ended **12 mm**
-   out instead of 7. Then put it back and decide which of the three
+   out instead of 7. <!-- claim: l26.try3-error, l26.two-stage-final-error --> Then put it back and decide which of the three
    questions in `arrived()` you could do without. (None.)
 4. **Move the handover.** Hand over 2 m out instead of 1. Work out the new
    largest safe `kHandoffSpeed` before you run it, allow for the lag, and
@@ -773,7 +773,7 @@ Worth plotting while you watch:
    speed has to open up an error before P pushes for it. That's a likely
    suspect for section 6's lag, though nobody has measured how much of it.
    Phoenix's `VelocityVoltage` takes an acceleration too
-   (`withAcceleration`, used with `Slot0.kA`). Work out `kA` the way
+   (`withAcceleration`, used with `Slot0.kA`). <!-- claim: phoenix6.velocity-voltage-acceleration --> Work out `kA` the way
    Lesson 18 did, pass the profile's acceleration down to each module, and
    measure whether the lag and the roll-past shrink. This one touches
    `ModuleIO` and `SwerveModule`, so plan it before you type it.

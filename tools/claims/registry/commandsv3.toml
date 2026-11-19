@@ -297,3 +297,73 @@ criticality = "C3"
 statement = "Commands V3 rewrites an exception's stack trace through CommandTraceHelper: it strips the internal Coroutine/Continuation/Scheduler frames and splices in the trace captured when the command was scheduled, after a marker frame '=== Command Binding Trace ==='."
 evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson (it says it was confirmed by decompiling the class and forcing a NullPointerException; the trace in the lesson is from a bare test harness)"
 measured_on = "unverified"
+
+[[claim]]
+id = "commandsv3.whiletrue-schedules-and-cancels"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "Trigger.whileTrue(command) schedules the command the tick the trigger turns true and cancels it the tick the trigger turns false; the next command bound to a different trigger that turns true in the same tick is picked up the same tick."
+evidence = "CLAUDE.md, 'The v3 track builds on WPILib 2027 alpha-8' (candidates from alpha-8's Trigger.java: whileTrue = rising edge, cancels on false) and 'v3 Lesson 24 ... alpha-8' (Scheduler.run()/Trigger.poll() read at the tag, Pick Up and capture runs measured)"
+measured_on = "alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "commandsv3.cancelled-coroutine-not-resumed"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "A coroutine command that is cancelled is simply never resumed, so no code after the line it was waiting on runs, not even a finally block; a finishing coroutine runs its trailing code, so cleanup after an await covers only the finish."
+evidence = "CLAUDE.md, 'v3 Lesson 25 (path events)', 'There was no finallyDo on alpha-7' (independent scheduler: a finishing coroutine runs its trailing code and finally, a canceled one runs whenCanceled only, never its finally)"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "RIG"
+
+[[claim]]
+id = "commandsv3.cancel-parent-cancels-awaited-child"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "Cancelling a coroutine command also cancels the child command it is awaiting (a cancelled parent runs its own exit and cancel hooks, then the child's), so a wrapper around a path's command still stops the robot."
+evidence = "CLAUDE.md, 'v3 Lesson 25 (path events)' ('Canceling a parent cancels the child it awaits') and the alpha-8 whenExited hook probe ('a cancelled parent runs its own EXIT, CANCEL, then the awaited child's EXIT, CANCEL')"
+measured_on = "alpha-8"
+method = "RIG"
+
+[[claim]]
+id = "commandsv3.mechanism-idle-overridable"
+kind = "api"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "Every Mechanism has a built-in do-nothing idle() command, which a class can override; setDefaultCommand(idle()) in the constructor then installs the override (the flywheel's spinUp(kIdleSpeed)), so the wheel idles in every opmode."
+evidence = "CLAUDE.md, 'v3 Lesson 28 (flywheel) on alpha-7' (Flywheel's constructor calls setDefaultCommand(idle()), overridden to spinUp(kIdleSpeed); measured 30.4 rot/s within 1.5 s of enabling)"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.conflicting-command-interrupts"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "Scheduling a command that requires a mechanism another running command requires cancels the running one (equal priority), so pressing the arm button while the roller runs cancels the roller, and a roller command cancels a pivot command mid-swing."
+evidence = "CLAUDE.md, 'v3 Lesson 22 (beam breaks)' (pressing the arm button while the roller runs cancels the roller, because both are the arm's mechanism) and the alpha-8 block, 'Scheduling a running command is a no-op, and a new command preempts a conflicting running one of equal priority'"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.trigger-from-supplier-runs-disabled"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "new Trigger(BooleanSupplier) builds a trigger out of any boolean; onTrue/whileTrue/onFalse behave as for buttons. A Trigger-bound Command.noRequirements command fires and runs while the robot is disabled (it needs no ignoringDisable), and a trigger bound after its condition is already true (the opmode picked after the switch is pressed) fires at once."
+evidence = "CLAUDE.md, 'v3 Lesson 21 (homing) on alpha-7' (the Trigger re-zeroes the carriage when it lands while disabled, or at the moment Teleoperated is selected if that comes later) and 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 21 (AtBottomLimit flips true 17.9-18.4 s after launch with the snap -0.3400 to 0.0100); the alpha-8 block (only commands requiring mechanisms that aren't controllableDuringDisabled are cancelled on disable)"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.trigger-combinators"
+kind = "api"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "Trigger has debounce(Time), and(Trigger or BooleanSupplier) (a method reference such as robot.arm::hasGamePiece works), and negate(); each and(...) builds a new Trigger the scheduler polls like any other, so a command bound with whileTrue runs while every part holds and stops when any one stops."
+evidence = "CLAUDE.md, 'v3 Lesson 22 (beam breaks) is hand-built' (Trigger.debounce(Time) takes the measure directly) and the Lesson 24 notes (inState(X).and(RobotState::isEnabled).whileTrue(...) measured on alpha-8); the Lesson 22 snapshot compiles on alpha-8 with zero warnings"
+measured_on = "alpha-8"
+method = "LOOP"

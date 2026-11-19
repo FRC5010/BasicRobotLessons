@@ -85,7 +85,7 @@ Start from a fact about the hardware: **every DIO channel pulls up to
 high on its own.** A channel with nothing connected reads `true`. So does
 a channel whose wire has fallen off, or been cut by a moving mechanism, or
 shaken out of its connector — which, in a robot, are the interesting
-cases.
+cases. <!-- claim: wpilib.dio-pullup-high -->
 
 Now ask the fail-safe question. If that wire breaks mid-match, which
 answer do you want the switch to be stuck giving?
@@ -98,7 +98,7 @@ and you find out by the sound. So the *safe* reading — the one that means
 That gives you the wiring: use a **normally-closed** switch, connected
 between the channel and ground. While the carriage is clear of it, the
 switch is closed and holds the line low. Press it and the circuit opens,
-so the line floats high. Cut the wire and the line also floats high.
+so the line floats high. Cut the wire and the line also floats high. <!-- claim: wpilib.dio-pullup-high -->
 
 **Which means `get() == true` is "at the limit," and a broken wire looks
 exactly like a pressed switch.** That's not a coincidence you're
@@ -137,7 +137,7 @@ position is precisely the thing you don't trust yet. −0.7 V gets a gentle
 descent. Gravity pulls the same way, and its pull is worth `kG`'s 0.17 V,
 so the carriage feels about 0.87 V of downhill drive. `kV` says 1.42 V
 buys one drum rotation per second, so that's about 0.6 rotations a second
-of a drum 16 cm around: a sink of about 10 cm/s. Slow is correct — you
+of a drum 16 cm around: a sink of about 10 cm/s. <!-- claim: l21.homing-speed, wpilib.kraken-x60-model --> Slow is correct — you
 are deliberately driving a mechanism into a hard stop.
 
 ---
@@ -169,7 +169,7 @@ replay.
 `setPositionMeters` is the one that matters. It doesn't move anything —
 it changes the encoder's *opinion*, resetting its count so the current
 position reads as the height you name. That single call is what homing
-exists to make.
+exists to make. <!-- claim: phoenix6.talonfx-set-position -->
 
 **Add to `ElevatorIOTalonFX`'s imports:**
 
@@ -215,9 +215,9 @@ import org.wpilib.hardware.discrete.DigitalInput;
 gains, no target — here are some volts. It's the firmware version of the
 open-loop `setThrottle` call the arm's roller already uses, and it's the
 right tool exactly once, here, when you have no trustworthy position to
-aim at.
+aim at. <!-- claim: phoenix6.voltage-out-request -->
 
-`statorCurrentAmps` comes along for the ride. You'll use it in section 9,
+`statorCurrentAmps` comes along for the ride. <!-- claim: phoenix6.stator-current-signal --> You'll use it in section 9,
 and it's worth logging regardless — a motor pulling current with nothing
 to show for it is how a jam looks in a log.
 
@@ -226,7 +226,7 @@ marked `@AutoLog`, so the class AdvantageKit writes for it logs *every*
 field, and `Elevator`'s `processInputs` line already hands it the whole
 bundle. Add a field to the bundle and it's in the log, as
 `Elevator/StatorCurrentAmps` and `Elevator/AtBottomLimit`, the next time
-you build. That's the payoff of putting readings in one bundle: there's no
+you build. <!-- claim: advantagekit.autolog-key-names --> That's the payoff of putting readings in one bundle: there's no
 second list of log lines to keep in step with it.
 
 ---
@@ -321,7 +321,7 @@ same `runRepeatedly(...).whenCanceled(...).until(...)` chain
 `Drivetrain.driveToPose` already uses, right down to why. `whenCanceled`
 runs whether the command was **interrupted** or **finished on its own**
 via `.until(...)` — confirmed by testing rather than assumed, since it's
-easy to guess wrong about a detail like this. That single guarantee is
+easy to guess wrong about a detail like this. <!-- claim: commandsv3.when-exited-on-cancel --> That single guarantee is
 what lets one cleanup block cover both "the switch tripped" and "the
 driver let go of the button mid-descent."
 
@@ -365,7 +365,7 @@ new Trigger(someBooleanSupplier)
 Any method reference that returns `boolean` works: a sensor, a
 comparison, whether a game piece is loaded, whether the battery is low.
 `onTrue`, `whileTrue`, `onFalse` and the rest behave exactly as they do
-for buttons, because they never cared where the boolean came from.
+for buttons, because they never cared where the boolean came from. <!-- claim: commandsv3.trigger-from-supplier-runs-disabled -->
 **That's the whole idea, and it's worth carrying: bindings aren't a
 controller feature, they're a scheduler feature.**
 
@@ -389,7 +389,7 @@ attaches that mechanism as a requirement — which is how the scheduler
 stops two commands fighting over a motor. This one is built from
 `Command.noRequirements(...)` instead — the same free-standing factory
 Lesson 14's fake-camera-sighting binding already used — so it requires
-nothing and interrupts nothing. It has to be: it can fire at any moment,
+nothing and interrupts nothing. <!-- claim: commandsv3.no-requirements-exists --> It has to be: it can fire at any moment,
 including in the middle of a `goToHeight`, and canceling the driver's
 motion because a switch brushed would be a bug rather than a feature.
 
@@ -405,7 +405,7 @@ every running command the instant the robot goes disabled, so a command
 that must keep working — like this one — has to explicitly ask to be
 spared. This framework's `Scheduler` doesn't do that gating at all;
 confirmed by a real test, a `Trigger`-bound command fires and runs
-whether the robot is enabled or not, with nothing extra required. That
+whether the robot is enabled or not, with nothing extra required. <!-- claim: commandsv3.trigger-from-supplier-runs-disabled, commandsv3.disable-cancels-mechanism-commands --> That
 matters here specifically, because the moment somebody pushes the
 carriage down by hand between matches is exactly when the robot is
 disabled, and the switch is still telling the truth.
@@ -449,9 +449,9 @@ graph and watch.
 
 It starts at **0.00**, with the simulated carriage 35 cm in the air. Then
 the number starts counting *down*: −0.02, −0.04, −0.06, about two
-centimeters every second. The carriage is sinking. Nothing in this
+centimeters every second. <!-- claim: l21.sink-rate --> The carriage is sinking. Nothing in this
 simulation holds up a carriage the motor isn't driving — there's no
-friction modeled — so it settles slowly under its own weight. The encoder
+friction modeled — so it settles slowly under its own weight. <!-- claim: wpilib.elevator-sim-sinks-unpowered --> The encoder
 dutifully counts every centimeter of that descent from a zero that was
 never the bottom, and before long it's telling you the carriage is 30 cm
 *below the floor*. That's the bug this whole lesson is about, and now
@@ -460,7 +460,7 @@ it's on a graph.
 <a id="figure-21-1"></a>
 ![Graph over 20 seconds. A black dashed line, the carriage's true height, slides from 0.35 meters down to 0. An orange line, the encoder's Elevator/HeightMeters, slides from 0 down to minus 0.34 meters, always 35 centimeters below the dashed line. At about 17.4 seconds the orange line jumps up to 0.01 and the two lines meet and stay together. A strip underneath shows AtBottomLimit false until that same moment, then true.](images/21-belief-vs-truth.png)
 
-*Figure 21.1 — What the encoder believes (orange) against where the carriage really is (black, dashed). The true height exists only inside the simulator, so on your robot, and in your logs, you can't graph the dashed line; this is the one place you get to see it. (Time is counted from the robot program's first loop, a moment after launch; Teleoperated was picked 3 s in.)*
+*Figure 21.1 — What the encoder believes (orange) against where the carriage really is (black, dashed). The true height exists only inside the simulator, so on your robot, and in your logs, you can't graph the dashed line; this is the one place you get to see it. (Time is counted from the robot program's first loop, a moment after launch; Teleoperated was picked 3 s in.)* <!-- claim: l21.fig-land-time -->
 
 Figure 21.1 plots both the encoder's belief and where the carriage really is.
 Start with the orange line, the one you'd see in AdvantageScope: a smooth, steady
@@ -476,19 +476,19 @@ dashed one. After that the two lines are the same line: the elevator is honest.
 
 > The speed is section 2's arithmetic with the motor left out. Gravity is
 > worth `kG`'s 0.17 V, and at 1.42 V per drum rotation per second that's
-> 0.12 rotations a second: just under 2 cm/s on a 16 cm drum. How fast a real
+> 0.12 rotations a second: just under 2 cm/s on a 16 cm drum. <!-- claim: l21.sink-rate, wpilib.kraken-x60-model --> How fast a real
 > elevator sinks when nothing drives it depends on its gearbox, its
 > friction and whether the motor is set to brake, so don't count on
 > seeing this on your robot.
 
 Leave it alone, and about **18 seconds** after launch the carriage
-reaches the bottom and `AtBottomLimit` flips true. If you've picked
+reaches the bottom and `AtBottomLimit` flips true. <!-- claim: l21.land-time, wpilib.elevator-sim-sinks-unpowered --> If you've picked
 Teleoperated by then, `HeightMeters` snaps from about −0.34 to **0.01** —
-with nobody touching anything, and the robot still disabled. That's section
+with nobody touching anything, and the robot still disabled. <!-- claim: l21.snap, commandsv3.trigger-from-supplier-runs-disabled --> That's section
 7's `Trigger` doing exactly its job: whenever the switch trips, take its
 word. (If you hadn't picked Teleoperated yet, `HeightMeters` keeps falling
 to −0.35 and sits there, and the snap happens the moment you do. That's when
-the binding is made, and the switch is already pressed.)
+the binding is made, and the switch is already pressed.) <!-- claim: commandsv3.trigger-from-supplier-runs-disabled -->
 
 Now make homing do the same thing on purpose. **Restart the simulation,
 and this time be quick:** pick **Teleoperated** and enable within ten
@@ -496,10 +496,10 @@ seconds or so, before the carriage lands.
 
 Press **D-pad up** first. The elevator climbs toward what it calls
 1.45 m — and stops. `HeightMeters` reads **1.15**, because the carriage
-has hit the top of its 1.5 m frame and the encoder started 35 cm short.
+has hit the top of its 1.5 m frame and the encoder started 35 cm short. <!-- claim: l21.top-stall-height, wpilib.elevator-sim-sinks-unpowered -->
 It never arrives: `AppliedVolts` sits at 3.00 and
 `Elevator/StatorCurrentAmps` at about **119**, a motor pushing its
-carriage into the frame with everything it's allowed. Nothing complains —
+carriage into the frame with everything it's allowed. <!-- claim: l21.stall-volts, l21.stall-amps, phoenix6.talonfx-default-current-limits --> Nothing complains —
 unless you happen to be graphing current, which is section 9's whole
 idea.
 
@@ -507,14 +507,14 @@ Now press **Back**. Three things happen in order, and all three are
 visible:
 
 1. `Elevator/AppliedVolts` drops to −0.7 and stays there. The carriage
-   descends steadily at about 10 cm/s.
+   descends steadily at about 10 cm/s. <!-- claim: l21.homing-speed -->
 2. `Elevator/HeightMeters` counts down from 1.15, past zero, and keeps
    going: −0.10, −0.20, −0.30. This is the encoder faithfully reporting
    how far it has moved from a starting point that was never right.
 3. About **15½ seconds** later `Elevator/AtBottomLimit` flips true, the
    voltage goes to zero, and the height snaps from about **−0.34 m to
    0.01 m**. That jump is 35 centimeters of accumulated wrongness being
-   deleted in one tick.
+   deleted in one tick. <!-- claim: l21.homing-time, l21.snap -->
 
 From then on the elevator is honest. Press D-pad right and it goes to
 0.75 m and *is* at 0.75 m. Press D-pad down and it settles at its stowed
@@ -529,7 +529,7 @@ encoder has been right since homing anyway.
 > recording already holds what the encoder read *after* the real re-zero.
 > Measured, replaying a homing run reproduced the `Home` command, the
 > switch tripping, the −0.34 → 0.01 snap and every goal after it, on the
-> same ticks.
+> same ticks. <!-- claim: advantagekit.replay-matches-recording -->
 
 ---
 
@@ -544,7 +544,7 @@ and watch `Elevator/StatorCurrentAmps`: while the carriage is descending
 it sits low, and the instant it lands the current climbs sharply while
 `VelocityMetersPerSec` sits at zero. In this simulation, held against the
 bottom stop at −3 V, the motor draws **≈119 amps** and moves at
-**0.000 m/s**. That pair — current up, speed zero — is a hard stop, and
+**0.000 m/s**. <!-- claim: l21.stall-amps, phoenix6.stator-current-signal --> That pair — current up, speed zero — is a hard stop, and
 you can home against it with no sensor at all.
 
 *Nothing to add — this is the shape of the idea, and Try It #3 is where

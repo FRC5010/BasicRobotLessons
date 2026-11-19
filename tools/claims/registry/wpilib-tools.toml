@@ -106,3 +106,13 @@ evidence = "CLAUDE.md, 'v3 Lesson 17 runs on BLine', SimGUI starts every launch 
 measured_on = "alpha-7, listed unchanged on alpha-8"
 method = "SOURCE"
 figure = "17-simgui-ds-window.png"
+
+[[claim]]
+id = "wpilib-tools.simgui-addressable-leds"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C2"
+statement = "SimGUI's Hardware menu has an Addressable LEDs item; the window opens as 10 columns by 4 rows for a 40-pixel strip, has a Columns setting that can be set to 40 for one line, and a screenshot catches only one phase of a blink."
+evidence = "CLAUDE.md, 'Figures in lessons', Batch 3: SimGUI's addressable LED strip is under Hardware -> Addressable LEDs ('LEDs[5]', 40 pixels), opens as 10 columns x 4 rows, and Lesson 23 tells the student to set Columns to 40"
+measured_on = "alpha-8"
+method = "LOOP"

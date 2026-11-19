@@ -1,0 +1,46 @@
+# Numbers Lesson 22 (beam breaks) quotes that a library change could move.
+# Format: tools/claims/README.md. Real Robot loop and real Arm/Elevator through the scheduler, alpha-8.
+
+[[claim]]
+id = "l22.roller-speed"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With the roller held at 0.6 in open field, Arm/RollerVelocityRotPerSec climbs to about sixty rotations a second while HasGamePiece stays false."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 22 (the roller at 0.6 holds 60.94 rot/s in open field with HasGamePiece false throughout)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "sixty rotations a second; about sixty rotations a second"
+unit = "rot/s"
+range = [50.0, 70.0]
+measured = "60.94 rot/s"
+
+[[claim]]
+id = "l22.catch-distance"
+kind = "number"
+library = ["wpilib"]
+criticality = "C2"
+statement = "Driving toward the piece with the arm down and the roller pulling in, the beam break trips when the piece's center is about 0.6 m ahead of the robot's center."
+evidence = "CLAUDE.md, 'v3 Lesson 22 (beam breaks) is hand-built' (caught when the piece is 0.59 m ahead of the robot's center)"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "LOOP"
+wording = "about 0.6 m ahead of the robot's"
+unit = "m"
+range = [0.54, 0.66]
+measured = "0.59 m"
+note = "The box is the course's own (kIntakeReach 12 inches, kIntakeWidth 24 inches past the front bumper); the distance also depends on the robot's size in the sim."
+
+[[claim]]
+id = "l22.land-time"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C3"
+statement = "Left alone, the elevator lands on its switch by itself about eighteen seconds after launch."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 21 (17.9, 18.1 and, in the Lesson 22 state, 18.4 s after launch)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "the eighteen seconds it takes to land on its switch"
+unit = "s"
+range = [17.5, 18.5]
+measured = "17.9, 18.1 and 18.4 s"
+note = "Same quantity as l21.land-time ('about 18 seconds', [17, 19]); here the spelled-out 'eighteen' is read as a bare number."

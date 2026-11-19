@@ -1,0 +1,452 @@
+# Numbers Lesson 26 (drive to pose) quotes that a library change could move.
+# Format: tools/claims/README.md. Real Robot loop on its own thread, 20 ms, Blue 1, error against the simulated truth.
+
+[[claim]]
+id = "l26.sketch-arrival-time"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "The Lesson 11 sketch, (1, 1) to (5, 4), declares success after about three seconds."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 26 (sketch declares success at 3.18-3.20 s with 45.6-46.8 mm left, 3 runs)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about three seconds"
+unit = "s"
+range = [2.0, 4.0]
+measured = "3.18-3.20 s"
+
+[[claim]]
+id = "l26.grip-launch-accel"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "A speed request of full speed from a standstill is met at the grip limit, 11.8 m/s^2 (kWheelCoF x 9.81); the same limit is hit when the plan is told the robot is stopped and it brakes."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 26 (acceleration on the first ticks 11.76-11.85 m/s^2; both resets from 0 brake at a peak of 11.77); see l16.grip-slope"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "11.8 m/s^2 (section 1, table, Try It #2)"
+unit = "m/s^2"
+range = [11.75, 11.85]
+measured = "11.76-11.85 m/s^2; 11.77 exactly"
+figure = "26-two-stage-speed.png"
+note = "Equals kWheelCoF x 9.81, so it tracks the course's constant and slewRateLimit arithmetic, not a motor model; the same quantity as l16.grip-slope."
+
+[[claim]]
+id = "l26.sketch-backwards-ticks"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "Placed on the target facing backwards, the sketch declares arrival instantly, on the first tick, 180 degrees out."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 26 (on the target facing backwards it finishes on the second tick (0.04 s), 179.4-180 degrees out); CLAUDE.md, 'v3 Lesson 26 (drive to pose) was redesigned on 2026-10-26' (finishes on tick 1)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "instantly, on the first tick"
+unit = "ticks"
+range = [1.0, 1.0]
+measured = "second tick (0.04 s) on alpha-8; tick 1 in the 2026-10-20 measurement"
+note = "The lesson says first tick; the alpha-8 re-measure read the second."
+
+[[claim]]
+id = "l26.pp-handover-speed"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With a first stage handing over a metre out, the robot is doing about 1.7 m/s at the handover."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 26 (P then P, handoff within 1 m: the robot moves 1.66-1.67 m/s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 1.7 m/s"
+unit = "m/s"
+range = [1.6, 1.8]
+measured = "1.66-1.67 m/s"
+
+[[claim]]
+id = "l26.pp-request-jump"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "At that handover a plain P second stage's request jumps from 1.5 to 2.9 m/s in a single tick."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 26 (request goes 1.51-1.52 to 2.92-2.94 m/s on consecutive ticks)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "from 1.5 to 2.9 m/s"
+unit = "m/s"
+range = [2.85, 2.95]
+measured = "1.51-1.52 to 2.92-2.94 m/s"
+note = "Range is for the 2.9; the 1.5 is [1.45, 1.55] and holds."
+
+[[claim]]
+id = "l26.pp-braking"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "After that jump the robot brakes at about 7 m/s^2 as the error shrinks."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 26 (deceleration afterwards peaks at 6.5-8.6 m/s^2 over the next 1.2 s; 9 by another window)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 7 m/s^2"
+unit = "m/s^2"
+range = [6.3, 7.7]
+measured = "peaks 6.5-8.6 m/s^2 (9 in another window)"
+note = "Measurements run above the range's top end (8.6, 9)."
+
+[[claim]]
+id = "l26.drive-lag-time"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "The drive follows a speed request about 0.07 s late."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 26 (real minus plan peaks at 0.28-0.29 m/s while the plan slows at 4 m/s^2, 0.07 s; a +2 m/s field-relative step: first motion 3 ticks after, 63% at 0.16 s, 90% at 0.20 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 0.07 s (section 6, the roll-past callout, Figure 26.2)"
+unit = "s"
+range = [0.063, 0.077]
+measured = "0.28-0.29 m/s / 4 m/s^2 = 0.07 s"
+figure = "26-two-stage-speed.png"
+
+[[claim]]
+id = "l26.drive-lag-speed"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "While stage one slows at 4 m/s^2 the real speed runs roughly 0.3 m/s above the plan."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 26 (real minus plan peaks at +0.28-0.29 m/s at 1.48-1.50 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "roughly 0.3 m/s; up to 0.3 m/s at 1.5 s; peaks at +0.3 m/s (Figure 26.2's alt text)"
+unit = "m/s"
+range = [0.27, 0.33]
+measured = "+0.28-0.29 m/s"
+figure = "26-two-stage-speed.png"
+
+[[claim]]
+id = "l26.launch-lag"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "In the first tenth of a second the robot trails the plan by about the same amount (0.3 m/s) the other way."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 26 (at launch the real speed is 0.05-0.09 m/s below the plan)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about the same amount the other way (as the 0.3 m/s above)"
+unit = "m/s"
+range = [0.2, 0.4]
+measured = "0.05-0.09 m/s below the plan"
+note = "Measured launch lag is far below the wording's range."
+
+[[claim]]
+id = "l26.handoff-speed-actual"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "Planned at 1.2 m/s, the robot really arrives at the handoff doing about 1.45 m/s."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 26 (hands over at 1.43-1.47 m/s; alpha-7 1.47-1.48; Figure 26.2's data 1.43 m/s at 1.8 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 1.45 m/s"
+unit = "m/s"
+range = [1.44, 1.46]
+measured = "1.43-1.47 m/s"
+figure = "26-two-stage-speed.png"
+note = "The measured spread runs a hundredth either side of the range."
+
+[[claim]]
+id = "l26.handoff-time"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "Stage one hands over at 1.8 s."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 26 (handoff at 1.78 s); tools/figures/data/26-two-stage-speed.csv (Approach starts at 1.80 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "1.8 s"
+unit = "s"
+range = [1.75, 1.85]
+measured = "1.78 s; 1.80 s in the figure's data"
+figure = "26-two-stage-speed.png"
+
+[[claim]]
+id = "l26.two-stage-time"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "The two-stage drive from (1, 1) to (5, 4) declares arrival in 3.4 s."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 26 (3.36-3.38 s); Figure 26.2's data (at_goal at 3.36 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "3.4 s (table, Try It #1 and #2, Figure 26.2's prose 'about 3.4 s')"
+unit = "s"
+range = [3.35, 3.45]
+measured = "3.36-3.38 s"
+figure = "26-two-stage-speed.png"
+
+[[claim]]
+id = "l26.old-design-time"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "The replaced design (sketch to 5 cm, then three PID controllers) takes 3.5 s."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 26 (rebuilt from the code at a2b3576: 3.46-3.48 s; alpha-7 3.52-3.54)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "3.5 s"
+unit = "s"
+range = [3.45, 3.55]
+measured = "3.46-3.48 s"
+figure = "26-two-stage-speed.png"
+
+[[claim]]
+id = "l26.two-stage-final-error"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "The two-stage drive ends 7-8 mm from the target, under 0.01 degrees out."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 26 (7.9-9.2 mm when it declares arrival, 6.6-8.2 mm half a second later, at most 0.01 degrees)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "7-8 mm out, under 0.01 degrees (table); 'instead of 7' (Try It #3)"
+unit = "mm"
+range = [6.5, 8.5]
+measured = "7.9-9.2 mm at arrival, 6.6-8.2 mm half a second later"
+note = "The arrival readings top 8.5 mm. Heading: 'under 0.01 degrees' is one-sided at 0.01."
+
+[[claim]]
+id = "l26.old-design-final-error"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "The replaced design ends 14 mm from the target."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 26 (15.7-16.5 mm when it declares arrival and 12.3-12.8 mm half a second later; 'the lesson's 14 mm sits between the two readings')"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "14 mm out"
+unit = "mm"
+range = [13.5, 14.5]
+measured = "15.7-16.5 mm at arrival, 12.3-12.8 mm half a second later"
+note = "Both readings are outside the bare range."
+
+[[claim]]
+id = "l26.launch-mean-accel"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "The two-stage drive's launch accelerates at about 4 m/s^2 on average."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 26 (launch mean 4.06-4.07 m/s^2, standing to 90% of top speed)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 4 m/s^2 on average"
+unit = "m/s^2"
+range = [3.6, 4.4]
+measured = "4.06-4.07 m/s^2"
+
+[[claim]]
+id = "l26.launch-peak-accel"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "Per-tick peaks at launch are 6-8 m/s^2, from the P term catching up."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 26 (per-tick peak 6.2-8.3 m/s^2)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "6-8 at peak"
+unit = "m/s^2"
+range = [5.5, 8.5]
+measured = "6.2-8.3 m/s^2"
+
+[[claim]]
+id = "l26.old-handover-speed"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "The old design hands over nearly stopped, at 0.08 m/s, at about 3.2 s."
+evidence = "CLAUDE.md, 'Batch 1 found', Lesson 26 old design rebuilt (11.8 m/s^2 launch, top speed 4.07 m/s, hands over at 0.077 m/s at 3.15 s); data/26-two-stage-speed-old.csv (Align To Pose starts at 3.16 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "0.08 m/s; at 3.2 s (Figure 26.2's prose)"
+unit = "m/s"
+range = [0.075, 0.085]
+measured = "0.077 m/s at 3.15 s"
+figure = "26-two-stage-speed.png"
+note = "The time wording 3.2 s is [3.15, 3.25]."
+
+[[claim]]
+id = "l26.slowing-mean-decel"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "Slowing into the target, the robot decelerates at about 1.4 m/s^2 on average."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 26 (no definition tried gives 1.4: 1.17-1.32 per-tick mean, 1.25-1.28 and 0.9 by other definitions; the figure plan says not to annotate it)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 1.4 m/s^2 on average"
+unit = "m/s^2"
+range = [1.3, 1.5]
+measured = "1.17-1.32 m/s^2 by every definition tried"
+note = "The figure's definition is lost; measured values are all below the range."
+
+[[claim]]
+id = "l26.old-launch-speed"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "The old design launches to 3.8 m/s inside 0.4 s and peaks at 4.1 m/s, faster than the new design ever goes."
+evidence = "CLAUDE.md, 'Batch 1 found', Lesson 26 old design rebuilt (top speed 4.07 m/s); tools/figures/data/26-two-stage-speed-old.csv (3.81 m/s at 0.40 s, peak 4.07 at 0.82 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "3.8 m/s inside 0.4 s; 4.1 m/s at the top (Figure 26.2's alt text says about 4 m/s in under half a second)"
+unit = "m/s"
+range = [4.05, 4.15]
+measured = "4.07 m/s top speed; 3.81 m/s at 0.4 s"
+figure = "26-two-stage-speed.png"
+note = "Range is for the 4.1 peak; 3.8 at 0.4 s is [3.75, 3.85] and holds."
+
+[[claim]]
+id = "l26.roll-past"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "The robot rolls past the target by 37 mm and comes back."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 26 (rolls 37-38 mm past; alpha-7 35-37)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "37 mm"
+unit = "mm"
+range = [36.5, 37.5]
+measured = "37-38 mm"
+note = "38 mm is outside the bare range."
+
+[[claim]]
+id = "l26.bow-turn"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "While turning 90 degrees on the trip, the path bows out sideways about 26 cm at the widest."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 26 (262-269 mm in 7 of 9 runs, 284 and 292 in the other two; alpha-7 263-265); Figure 26.3's data peak 264 mm"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 26 cm at the widest; 264 mm (Figure 26.3's alt text)"
+unit = "mm"
+range = [250.0, 270.0]
+measured = "262-269 mm in 7 of 9 runs, 284 and 292 mm in 2"
+figure = "26-bow-while-turning.png"
+note = "Range is the prose's 'about 26 cm' ([25, 27] cm). The figure's 264 mm is that one run. Two of nine runs read 284 and 292 mm, above the range."
+
+[[claim]]
+id = "l26.bow-turn-position"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "The turning trip's bulge peaks about two metres along the line."
+evidence = "CLAUDE.md, 'Batch 3' (the turning trip bows 264-275 mm, widest about 1.93 m along); data/26-bow-turn.csv (peak 1.92 m along)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about two metres along the line; near the first third"
+unit = "m"
+range = [1.0, 3.0]
+measured = "1.92-1.93 m along"
+figure = "26-bow-while-turning.png"
+
+[[claim]]
+id = "l26.bow-noturn"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "The same trip with no turn stays within 5 mm of the line (about 5 mm)."
+evidence = "CLAUDE.md, 'Batch 3 (2026-11-19)': Lesson 26's no-turn trip is about 5 mm off the line, not 11 (5.3-5.6 mm at most, four runs); data/26-bow-noturn.csv (5.27 mm)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "within about 5 mm (callout); within 5 mm (prose and Figure 26.3's alt text)"
+unit = "mm"
+range = [0.0, 5.0]
+measured = "5.3-5.6 mm at the worst in four runs; 5.27 mm in Figure 26.3's data"
+figure = "26-bow-while-turning.png"
+note = "Tightest wording is 'within 5 mm', one-sided at 5; the measurements run 0.3-0.6 mm over it."
+
+[[claim]]
+id = "l26.backwards-time"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "Started on the target facing backwards, the drive turns the robot round in about 2.2 s."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 26 (2.16 s; earlier 2.14-2.22 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 2.2 s"
+unit = "s"
+range = [2.1, 2.3]
+measured = "2.16 s"
+
+[[claim]]
+id = "l26.backwards-error"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "That run ends 0.1 mm and 0.3 degrees out."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 26 (0.0-0.1 mm; 0.43-0.45 degrees when it declares arrival and 0.23-0.26 half a second later)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "0.1 mm and 0.3 degrees out"
+unit = "deg"
+range = [0.25, 0.35]
+measured = "0.43-0.45 degrees at arrival, 0.23-0.26 degrees half a second later; 0.0-0.1 mm"
+note = "Range is for the 0.3 degrees; the 0.1 mm is [0.05, 0.15] and holds."
+
+[[claim]]
+id = "l26.near-start-time"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "Starting 0.6 m from the target, stage one finishes at once and stage two does the whole trip in about 1.65 s, 1 cm out."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 26 (0.6 m out: 1.66 s, 11.2-11.8 mm, 9.7-10.2 mm half a second later)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 1.65 s, 1 cm out"
+unit = "s"
+range = [1.55, 1.75]
+measured = "1.66 s; 11.2-11.8 mm at arrival"
+note = "The 1 cm is [0.5, 1.5] cm and holds."
+
+[[claim]]
+id = "l26.try1-arrival-speed"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With kHandoffSpeed at 1.73 the robot arrives at the handoff at about 1.95 m/s, overshoots by 46 cm, and takes 4.5 s instead of 3.4."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 26 (handoff planned at 1.73 arrives at 1.94 m/s, overshoots 456-464 mm, 4.52-4.54 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 1.95 m/s; 46 cm; 4.5 s"
+unit = "m/s"
+range = [1.94, 1.96]
+measured = "1.94 m/s; 456-464 mm; 4.52-4.54 s"
+note = "Range is for the speed. Overshoot '46 cm' is [45.5, 46.5] cm and holds; '4.5 s' is [4.45, 4.55] and holds; also the 'about 2 m/s' of section 6 ([1, 3])."
+
+[[claim]]
+id = "l26.try2-time"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With both resets from speed 0 the trip takes 3.8 s."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 26 (both resets from 0: braking peak 11.77 m/s^2, 3.80 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "3.8 s"
+unit = "s"
+range = [3.75, 3.85]
+measured = "3.80 s"
+
+[[claim]]
+id = "l26.try3-error"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With kSpeedTolerance enormous the drive ends 12 mm out instead of 7."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 26 (kSpeedTolerance 1000: 14.1-14.5 mm when it declares arrival, 11.8-12.0 mm half a second later, 3.24 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "12 mm out instead of 7"
+unit = "mm"
+range = [11.5, 12.5]
+measured = "11.8-12.0 mm half a second later; 14.1-14.5 mm at arrival"
+note = "Range is for the 12; the 'instead of 7' is l26.two-stage-final-error."

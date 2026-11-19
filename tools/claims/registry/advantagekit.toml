@@ -210,3 +210,44 @@ statement = "Logger.start() replaces the robot's time source (RobotController.se
 evidence = "CLAUDE.md, 'v3 Lessons 14-17 record with AdvantageKit', Lesson 17 (read from bytecode and source; Two Corners replayed with every output matching)"
 measured_on = "alpha-8"
 method = "REPLAY"
+
+[[claim]]
+id = "advantagekit.logged-mechanism-api"
+kind = "api"
+library = ["advantagekit"]
+criticality = "C1"
+statement = "org.littletonrobotics.junction.mechanism has LoggedMechanism2d(Distance, Distance), getRoot(String, Distance, Distance) giving a LoggedMechanismRoot2d, root.append(LoggedMechanismLigament2d) returning the appended ligament, and LoggedMechanismLigament2d(name, Distance, Angle) (also a five-argument form with a line weight and a Color8Bit, and double overloads in meters and degrees) with setLength, setAngle(Angle) and setColor; angles are counter-clockwise from +x and a child's angle is measured from its parent's direction."
+evidence = "CLAUDE.md, 'v3 Lessons 18-22 record with AdvantageKit', Lessons 19 and 20 (alpha-7's AdvantageKit classes take measures everywhere, getRoot(String, Distance, Distance) included; the arm's ligament is a LoggedMechanismLigament2d on the carriage with setAngle(Angle), drawn minus the carriage's 90 degrees)"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "advantagekit.logged-mechanism-recorded-each-tick"
+kind = "behaviour"
+library = ["advantagekit"]
+criticality = "C1"
+statement = "Logger.recordOutput(key, loggedMechanism) records the drawing as it looks at that moment, so it is called every tick right after the drawing changes, and it replays like any output (a recorded run's Elevator/Mechanism/... keys matched their replayed twins)."
+evidence = "CLAUDE.md, 'v3 Lessons 18-22 record with AdvantageKit', Lesson 19 (carriage length 318 changes, color 8, matched in replay)"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "REPLAY"
+
+[[claim]]
+id = "advantagekit.mechanism-record-once-freezes"
+kind = "behaviour"
+library = ["advantagekit"]
+criticality = "C3"
+statement = "Calling Logger.recordOutput(\"Elevator/Mechanism\", ...) once, in the constructor, leaves the drawing frozen where it started while the graph keeps moving."
+evidence = "No record found in CLAUDE.md or tools/figures/data for recordOutput; stated by the lesson. CLAUDE.md records the same snapshot behaviour for Telemetry.log (wpilib.telemetry-log-is-a-snapshot)"
+measured_on = "unverified"
+method = "LOOP"
+
+[[claim]]
+id = "advantagekit.simgui-mechanism-menu"
+kind = "behaviour"
+library = ["advantagekit", "wpilib-tools"]
+criticality = "C2"
+statement = "SimGUI lists a recorded LoggedMechanism2d under NetworkTables -> AdvantageKit -> RealOutputs -> <key path> (Elevator -> Mechanism) and draws it live in a window that opens small and can be dragged and resized; AdvantageScope's Mechanism tab reads it from /AdvantageKit/RealOutputs/Elevator/Mechanism."
+evidence = "CLAUDE.md, 'v3 Lessons 18-22 record with AdvantageKit', Lesson 19 (checked under Xvfb with an animated LoggedMechanism2d probe) and the SimGUI tips (b2g6: a Mechanism window opens small)"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "LOOP"
+figure = "19-simgui-mechanism.png"
