@@ -233,13 +233,12 @@ button, it's "is the Driver Station currently in Autonomous, and enabled."
 exactly once per enable, the same `onTrue` you've used since Lesson 5.
 
 Why does this belong in the constructor and not `start()`? The same reason
-every other binding has, since Lesson 1: the constructor runs exactly once,
-when `RobotAuto` is selected, and that's what makes this binding *scoped* to
-`RobotAuto` specifically — it's automatically torn down the moment the Driver
-Station selects a different opmode, the same scoping that already protects
-every button binding you've written. Put this logic in `start()` instead and
-you'd re-register a fresh trigger on every re-enable, stacking duplicates —
-Lesson 1's exact warning, still true here.
+every other binding has, since Lesson 1: the constructor is where an opmode
+says what it *is*, and it runs while the robot is still disabled, so the
+trigger is in place before you click **Enable**. A binding made there is
+also *scoped* to `RobotAuto` specifically: it's torn down the moment the
+Driver Station selects a different opmode, the same scoping that already
+protects every button binding you've written.
 
 Run the robot in simulation, pick **Autonomous** and then **Drive Turn
 Drive** from the OpMode drop-down, click **Enable**, and watch your plots and the Swerve tab.

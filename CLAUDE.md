@@ -2650,9 +2650,14 @@ at least twice.
   `m_lastModeId = -1`, which forces a re-create. The template's `close()`
   comment ("de-selected") leaves this out.
   - Lesson 0's new paragraph and Figure 0.1 now say so.
-  - **Open, for the user:** Lesson 1 §6 explains putting bindings in the
-    constructor because it "only runs once", while `start()` runs on every
-    enable. Both now run once per enable cycle.
+  - **Lesson 1 §6 rewritten (user, 2026-11-19).** It used to say bindings go
+    in the constructor because it "only runs once" while `start()` runs on
+    every enable. Now: the constructor says what the opmode *is* and runs
+    while disabled, so the wiring is ready before Enable, and an error in it
+    shows at selection. `start()` is for the moment of enabling. A second
+    paragraph says the opmode is rebuilt on every Disable (linking Figure
+    0.1), and that's why the `DriveModule` lives in `Robot`. The recap and
+    Lesson 9 §4's "Lesson 1's exact warning" paragraph changed to match.
 - **Through Lesson 12 at least, the simulated gyro integrates the
   *commanded* turn rate** (`m_simHeadingDegrees += m_lastCommandedOmega × 360
   × 0.02`), not the wheels. So in sim a turn finishes on schedule wherever

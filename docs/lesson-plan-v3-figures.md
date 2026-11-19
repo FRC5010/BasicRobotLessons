@@ -1091,7 +1091,7 @@ Built two agents at a time, in lesson groups, to stay inside the usage window.
   - Lesson 6's recap no longer says "exactly 1.0".
   - Lesson 9 §5 describes what the module arrows show.
   - Lesson 25 credits `Command.parallel` to Lesson 9.
-- **Not linked yet:** Figure 0.1 from Lesson 1 §6, until the user decides on that section's constructor rationale.
+- Figure 0.1 is linked from Lesson 1 §6, rewritten on 2026-11-19 at the user's request.
 - **Round 2 (built):** 11.1, 13.3, 14.2, 15.3, 15.4, 16.2, 16.3, 17.2.
   - Working ID 17.2 ("Can it stop in time?") is **Figure 17.1** in the lesson. Batch 1's 17.1–17.3 are now **17.2–17.4**, and their links from Lessons 25 and 26 follow.
   - The others kept their working numbers.

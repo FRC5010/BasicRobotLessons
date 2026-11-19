@@ -421,16 +421,23 @@ worth noticing: this line runs *once*, when `MyTeleop` is constructed. It
 doesn't press anything — it registers the wiring, and the scheduler does the
 watching from then on, tick after tick, all match long.
 
-**Why the constructor, and not `start()`?** Bindings like this one belong in
-the constructor because the constructor itself only runs once — the instant
-`MyTeleop` is built, when you select it on the Driver Station. `start()`
-runs on a different schedule: every time the robot goes from disabled to
-enabled, which happens more than once per opmode — toggle **Robot State**
-off and back on in SimGUI and watch. Wire a button in `start()` and you'd
-register a fresh binding on top of the old one each time the robot
-re-enables. Put the wiring in the constructor instead, and it's registered
-exactly once, then just sits there working for as long as this opmode stays
-selected.
+**Why the constructor, and not `start()`?** Because they answer different
+questions. The constructor runs when the framework *builds* `MyTeleop`,
+while the robot is still disabled, so it's the place to say what this opmode
+*is*: which button does what. `start()` runs at the moment you click
+**Enable**, so it's for things that should happen right then, like Lesson
+0's hello message. Wiring the buttons in the constructor means they're ready
+before you ever enable, and if a line of it throws an error, you find out
+when you pick the opmode, not when the robot starts moving.
+
+One fact about the framework surprises people, so it's worth knowing now:
+**an opmode doesn't live forever.** The framework builds a fresh `MyTeleop`
+when you pick it, and throws it away and builds another every time you click
+**Disable**. Lesson 0's [Figure 0.1](00-orientation.md#figure-0-1) draws the
+whole life. So the constructor runs once for every enable, the same as
+`start()`. That's also why the `DriveModule` lives in `Robot` and not in `MyTeleop`:
+`Robot` is built once, when the program starts, and keeps its fields for
+good, while anything you store in a `MyTeleop` field is gone after a Disable.
 
 ---
 
@@ -630,11 +637,11 @@ value** you set — which is why a command that spins a motor pairs a start
 with a `.whenCanceled(...)` cleanup. You also learned where hardware
 belongs: on `Robot`, which is built once and lasts the whole time the robot
 runs, not on an opmode like `MyTeleop`, which gets rebuilt fresh every time
-it's selected. Right alongside that, you gave `Robot` one more permanent
+it's selected and after every Disable. Right alongside that, you gave `Robot` one more permanent
 job: ticking the **`Scheduler`** from `robotPeriodic()`, the one call that
 makes every trigger and every command actually run. You wired a real button
 to real behavior — in the constructor, not `start()`, because the
-constructor runs once and `start()` runs on every re-enable — and learned
+constructor says what the opmode is and runs before you enable — and learned
 that the simulator needs a joystick dragged into slot 0 before any of it
 responds — worth remembering, because that one bites people every season.
 Last, you cashed in `.named(...)`'s promise: asking the scheduler for a
