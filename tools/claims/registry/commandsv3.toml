@@ -388,3 +388,14 @@ statement = "While the robot is disabled the scheduler refuses to run a mechanis
 evidence = "CLAUDE.md, 'v3 Lesson 31 (testing) on alpha-7' (with setEnabled(true) removed the test dies at its own isDisabled() assertion; with that removed too, at assertTrue(isHomed())), and the Lesson 24 alpha-8 notes (a schedule attempted while disabled is refused, RequiresUnsafeMechanisms, read from source)."
 measured_on = "alpha-7, listed unchanged on alpha-8"
 method = "LOOP"
+
+[[claim]]
+id = "commandsv3.sysid-log-keys"
+kind = "behaviour"
+library = ["commandsv3", "wpilib"]
+criticality = "C2"
+statement = "A SysIdRoutine run writes sysid-test-state-<name>, voltage-<motor>-<name> and velocity-<motor>-<name> through DataLogManager, so they are in the WPILIB_*.wpilog and never in the akit_ file; every test, finished by timeout or cancelled by letting go, leaves a 'none' state entry to mark its end."
+evidence = "CLAUDE.md, 'v3 Lesson 33 rebuilt on WPILib's SysIdRoutine and re-measured on alpha-8' (six runs: state entries = iterations + one none per test, 3502 = 3498 + 4)"
+measured_on = "alpha-8"
+method = "LOOP"
+note = "The SysId analysis tool itself was never run here."

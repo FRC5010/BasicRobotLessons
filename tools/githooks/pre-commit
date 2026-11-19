@@ -9,7 +9,8 @@
 # (which commit through a temporary index) are checked as committed.
 #
 # What it runs (docs/lesson-plan-v3-claims-tests.md, section 3.5, says what comes later):
-#   - tools/claims/check_claims.py: the claims registry against the lessons' claim markers.
+#   - tools/claims/check_claims.py --strict: the claims registry against the lessons' claim
+#     markers; since Phase 0 finished (2026-11-19) a claim no lesson marks is an error too.
 #   - its unit tests, when the commit changes the checker or its tests.
 # Don't skip it with --no-verify; fix what it reports.
 set -eu
@@ -22,7 +23,7 @@ cd "$top"
 git ls-files -z -- docs/lessons/v3 tools | xargs -0 -r git checkout-index --prefix="$tmp/" --
 
 py=${PYTHON:-python3}
-if ! "$py" "$tmp/tools/claims/check_claims.py" --root "$tmp" --quiet; then
+if ! "$py" "$tmp/tools/claims/check_claims.py" --root "$tmp" --strict --quiet; then
   echo "pre-commit: the claims check failed (tools/claims/check_claims.py). Fix the markers or the registry, then commit again." >&2
   exit 1
 fi

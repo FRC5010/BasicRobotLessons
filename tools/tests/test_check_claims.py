@@ -264,10 +264,10 @@ class Main(unittest.TestCase):
 
 
 class RealRepo(unittest.TestCase):
-    """The repo itself must pass (without --strict until Phase 0 is finished)."""
+    """The repo itself must pass, strictly: every claim marked somewhere (Phase 0 finished 2026-11-19)."""
 
     def test_the_repo_passes(self):
-        result = cc.check(REPO, strict=False)
+        result = cc.check(REPO, strict=True)
         self.assertEqual(result.errors, [], joined(result.errors))
 
 

@@ -5,8 +5,11 @@ When a library ships a new release (alpha, beta, the final 2027 release, patches
 which claims changed and which lessons rely on them. Agent sessions use the same tests to update the
 lessons.
 
-**Status (2026-11-19):** the user decided the open questions (section 8). Phase 0 has started: the
-checker, the pre-commit hook and the registry of library claims are built (section 5).
+**Status (2026-11-19):** the user decided the open questions (section 8). **Phase 0 is finished.**
+604 claims are registered (73 API, 151 behaviour, 380 numbers). 995 hidden markers tie them to
+every lesson from 0 to 33 and to the setup and debugger asides. The pre-commit check is strict, so
+a claim no lesson marks is an error. Lesson 34 joins when it's migrated. The findings for the user
+are in section 5a. Phase 1 is next.
 
 ## 1. What a "claim" is
 
@@ -267,7 +270,7 @@ and the lesson tables in Lessons 5, 18, 20, 28, 29, 31 and 33.
 
 | Phase | Work | Done when |
 |---|---|---|
-| **0. Inventory** | The checker, its tests, the pre-commit hook, and the library claims from section 4 (built 2026-11-19). Then a pass over every lesson: markers for the library claims it relies on, and `lesson-NN.toml` entries for its numbers, from its "measured" lines, tables and figures, with ranges per section 3.6 | `check_claims.py --strict` passes; the hook then uses `--strict` |
+| **0. Inventory** | The checker, its tests, the pre-commit hook, and the library claims from section 4 (built 2026-11-19). Then a pass over every lesson: markers for the library claims it relies on, and `lesson-NN.toml` entries for its numbers, from its "measured" lines, tables and figures, with ranges per section 3.6 | `check_claims.py --strict` passes; the hook then uses `--strict`. **Done 2026-11-19**: seven agent shares plus the Lesson 18 pilot, each reviewed (markers only, checked by stripping them; ranges against the README rules) |
 | **1. Cheap guards** | `check-lesson-code-v3.py` (in the hook for staged lessons); the absence tests | Both run green on today's lessons, and a deliberately stale block or absence makes them fail |
 | **2. Tier B** | Port the C1 behaviour claims into JUnit, starting with the ones that reach the most lessons (Kraken constants, opmode lifecycle, command hooks, disable behaviour, scheduler order) | Each C1 behaviour claim has a passing test, and breaking it (a mutated expectation) fails that test by name |
 | **3. Tier C** | `--check` mode for the 59 generators; new probes for the C2 numbers whose probes weren't kept | Every C2 number has a check with a range, and the generator summaries agree with the lesson text |
@@ -404,6 +407,34 @@ The wording stretches the measurement [measured]:
     "Ten runs of each" [the no-limits row is from thirty]; the fresh defaults' 84–126 A [batch 1's
     four runs included 141 A].
 27. **Lesson 30:** the bare 11.27 V, 1.56 s and 11.19 V [some runs read 11.26 V, 1.54 s, 11.18 V].
+
+**Wave 3 (Lessons 31–33, 2026-11-19): 137 markers, 13 new library claims.**
+
+The lesson contradicts the libraries or itself:
+
+28. **Lesson 33 §4** calls `Mechanism` "the base class"; it's an interface (the same slip as
+    item 6).
+29. **Lesson 33** says the slow-ramp two-term fit lands "near 0.2 V" in one sentence and 0.23 V
+    elsewhere.
+
+The wording stretches the measurement [measured]:
+
+30. **Lesson 31:** the whole test takes "0.23 s" without the sleep and "4.1 s" with it
+    [0.223–0.325 s; 4.037–4.100 s]; the figure's 20 ms run snaps on tick 181 [one run took 183].
+31. **Lesson 32:** the hold "a fifth of a millimetre" and "about minus 0.2 mm" low [0.155 mm in some
+    runs; −0.173 to −0.176 mm in the replay]; "the one tick" of dropout, also in Figure 32.2's alt
+    text [one of the figure's two steps has two false ticks]; "about 1.2 mm" of overshoot [one run
+    read 0.90 mm].
+32. **Lesson 33:** `kA` "0.106" [the tool-form hand fits give 0.1063–0.1073]; the reverse plateau
+    "−59.2" [−59.12 to −59.26] and "8.47 rot/s per volt" [8.459 in reverse]; the ramp distances
+    quoted to four digits, 1.885 / 3.794 / 7.605 m [1.884–1.888 / 3.787–3.797 / 7.597–7.608 across
+    the probes, as CLAUDE.md already notes]; "1.04 m" at 4.5 V [1.033 m in the figure run]; the
+    1 V/s table's 38% and 77% sit exactly on the rounding edges of 38.5 and 77.5.
+
+**Totals after Phase 0:** 32 items above (14 contradictions, the rest wordings tighter than the
+runs), and 46 claims nothing has measured (`measured_on = "unverified"`), the first candidates
+for the Phase 2 and 3 tests. A rule learned on the way: let a lesson word a run-to-run number as a
+range or with "about", and keep bare digits for numbers that repeat exactly.
 
 ## 6. What this doesn't cover
 

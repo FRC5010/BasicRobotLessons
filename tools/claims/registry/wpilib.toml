@@ -645,3 +645,13 @@ statement = "A DigitalInput holds its DIO channel for the life of the JVM, HAL.s
 evidence = "2026/CLAUDE.md, Lesson 32 (testing) notes: measured on the classic track; CLAUDE.md's Lesson 31 elevator test comment repeats it. Not re-recorded for alpha-8 in CLAUDE.md."
 measured_on = "unverified"
 note = "Measured on the classic track (WPILib 2026); the v3 lesson's test file says the same. No alpha-8 record."
+
+[[claim]]
+id = "wpilib.utility-opmode"
+kind = "api"
+library = ["wpilib"]
+criticality = "C1"
+statement = "@Utility (org.wpilib.opmode.Utility) is a third opmode category beside @Teleop and @Autonomous; a class extending PeriodicOpMode annotated bare @Utility is listed under the Utility mode in the Driver Station / SimGUI by its class name, must still override periodic(), and its bindings exist only while it is selected."
+evidence = "CLAUDE.md, 'v3 Lesson 33 (SysId) on alpha-7' and the batch 3 / 'plain triggers on the final code' measurements on alpha-8 (six selections each, every Utility selection ramped); SimGUI wording from 'Batch 1 found'"
+measured_on = "alpha-8"
+method = "LOOP"

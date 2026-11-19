@@ -1,0 +1,661 @@
+# Numbers Lesson 33 (SysId) quotes that a library change could move.
+# The hand fits are this course's own least-squares fits of the WPILIB_ log, not the SysId tool's output.
+# CLAUDE.md, 'v3 Lesson 33 rebuilt on WPILib's SysIdRoutine' and '§6-§7 rewritten'; data/33-*.csv.
+
+[[claim]]
+id = "l33.hand-fit-kv"
+kind = "number"
+library = ["wpilib", "phoenix6", "commandsv3"]
+criticality = "C2"
+statement = "A hand fit of all four default-config tests gives kV = 0.118."
+evidence = "CLAUDE.md, 'Lesson 33 §6-§7 rewritten' (0.1179-0.1180 in the tool's own regression form; 0.1180 in the batch 3 form)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "kV 0.118 (also in 12 / 0.118 = 101.7, 1 / 0.118 = 8.5 and 8.47, 0.106 / 0.118 = 0.9)"
+unit = "V per rot/s"
+range = [0.1175, 0.1185]
+measured = "0.1179-0.1180"
+
+[[claim]]
+id = "l33.hand-fit-ka"
+kind = "number"
+library = ["wpilib", "phoenix6", "commandsv3"]
+criticality = "C2"
+statement = "A hand fit of all four default-config tests gives kA = 0.106."
+evidence = "CLAUDE.md, 'Lesson 33 §6-§7 rewritten' (0.1063-0.1073 in the tool's regression form; 0.1060-0.1063 in the batch 3 form)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "kA 0.106"
+unit = "V per rot/s^2"
+range = [0.1055, 0.1065]
+measured = "0.1060-0.1073"
+
+[[claim]]
+id = "l33.hand-fit-ks"
+kind = "number"
+library = ["wpilib", "phoenix6", "commandsv3"]
+criticality = "C2"
+statement = "The same hand fit gives kS under 0.01 V (near zero)."
+evidence = "CLAUDE.md, 'Lesson 33 §6-§7 rewritten': +0.004 to +0.009 V in the tool's form, 0.003-0.006 in the batch 3 form"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "kS under 0.01 V; near zero"
+unit = "V"
+range = [0.0, 0.01]
+measured = "0.003-0.009 V"
+
+[[claim]]
+id = "l33.plateau-forward"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C2"
+statement = "In the 7 V dynamic test the wheel levels off at 59.3 rot/s."
+evidence = "CLAUDE.md, 'Lesson 33 §6-§7 rewritten' (forward 59.271-59.277 rot/s, three runs); data/33-sysid-four-tests.csv max 59.277"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "59.3 rot/s"
+unit = "rot/s"
+range = [59.25, 59.35]
+measured = "59.271-59.277"
+figure = "33-sysid-four-tests.png"
+
+[[claim]]
+id = "l33.plateau-reverse"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C3"
+statement = "In reverse the wheel levels off at -59.2 rot/s."
+evidence = "CLAUDE.md, 'Lesson 33 §6-§7 rewritten' (reverse -59.12 to -59.26); data/33-sysid-four-tests.csv -59.264"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "-59.2"
+unit = "rot/s"
+range = [-59.25, -59.15]
+measured = "-59.12 to -59.26"
+
+[[claim]]
+id = "l33.plateau-per-volt"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C2"
+statement = "The plateau is 8.47 rot/s per volt (59.3 / 7, 1 / kV); steady state about 8.5 rot/s per volt, measured at 1-5 V."
+evidence = "CLAUDE.md, 'Lesson 33 §6-§7 rewritten' (8.468 forward, 8.459 reverse) and batch 3 (steady 8.457-8.465 at 1-5 V, mean 8.46)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "8.47 rot/s per volt; about 8.5"
+unit = "rot/s per V"
+range = [8.465, 8.475]
+measured = "8.468 forward, 8.459 reverse, 8.46 mean steady"
+
+[[claim]]
+id = "l33.settle-5pct"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C3"
+statement = "The forward dynamic run is within 5% of its plateau at 2.2 s."
+evidence = "CLAUDE.md, 'Lesson 33 §6-§7 rewritten' (2.20 s forward)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "2.2 s"
+unit = "s"
+range = [2.15, 2.25]
+measured = "2.20 s"
+figure = "33-sysid-four-tests.png"
+
+[[claim]]
+id = "l33.settle-1pct-forward"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C2"
+statement = "The forward dynamic run is within 1% of its plateau after about 3.6 s."
+evidence = "CLAUDE.md, 'Lesson 33 §6-§7 rewritten' (3.64 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 3.6 s; 3.6 s"
+unit = "s"
+range = [3.55, 3.65]
+measured = "3.64 s"
+figure = "33-sysid-four-tests.png"
+note = "'about 3.6' is [3.5, 3.7]; the figure's bare 3.6 s is the tighter [3.55, 3.65]."
+
+[[claim]]
+id = "l33.settle-1pct-reverse"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C3"
+statement = "The reverse dynamic run, which has to turn around first, is within 1% of its plateau after about 6.8 s."
+evidence = "CLAUDE.md, 'Lesson 33 §6-§7 rewritten' (6.76-6.78 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 6.8"
+unit = "s"
+range = [6.7, 6.9]
+measured = "6.76-6.78 s"
+
+[[claim]]
+id = "l33.dip-speed"
+kind = "number"
+library = ["wpilib", "phoenix6", "commandsv3"]
+criticality = "C2"
+statement = "A default-config forward quasistatic run starting from the 30 rot/s idle first coasts down to 13 rot/s."
+evidence = "CLAUDE.md, 'Lesson 33 (batch 3)' (dips to 13.1 rot/s at 1.56 s, 1.53 V); data/33-sysid-four-tests.csv min 13.07"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "13 rot/s"
+unit = "rot/s"
+range = [12.5, 13.5]
+measured = "13.07-13.1 rot/s"
+figure = "33-sysid-four-tests.png"
+
+[[claim]]
+id = "l33.dip-time"
+kind = "number"
+library = ["wpilib", "phoenix6", "commandsv3"]
+criticality = "C2"
+statement = "The coast-down bottoms out at 1.56 s (the lesson also says 1.6 seconds)."
+evidence = "CLAUDE.md, 'Lesson 33 (batch 3)': dip to 13.1 rot/s at 1.56 s, back at 30.4 at 4.50 s"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "1.56 s; 1.6 seconds"
+unit = "s"
+range = [1.555, 1.565]
+measured = "1.56 s"
+figure = "33-sysid-four-tests.png"
+
+[[claim]]
+id = "l33.dip-voltage"
+kind = "number"
+library = ["wpilib", "phoenix6", "commandsv3"]
+criticality = "C3"
+statement = "At the bottom of the dip the ramp is at 1.5 V."
+evidence = "CLAUDE.md, 'Lesson 33 (batch 3)': 1.53 V at 1.56 s"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "1.5 V"
+unit = "V"
+range = [1.45, 1.55]
+measured = "1.53 V"
+
+[[claim]]
+id = "l33.ramp-top-speed"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C3"
+statement = "At the end of the default 1 V/s ramp (10 V) the wheel is at about 77 rot/s."
+evidence = "tools/figures/data/33-sysid-four-tests.csv (76.6-77.1 rot/s at 9.95-9.99 V); not separately recorded in CLAUDE.md"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 77 rot/s"
+unit = "rot/s"
+range = [76.0, 78.0]
+measured = "76.6-77.1 rot/s"
+figure = "33-sysid-four-tests.png"
+
+[[claim]]
+id = "l33.reverse-ramp-time"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C3"
+statement = "In the reverse dynamic test the applied voltage takes about four seconds to reach -7 V."
+evidence = "tools/figures/data/33-sysid-four-tests.csv (-6.91 V at 3.88 s); CLAUDE.md, 'Lesson 33 §6-§7 rewritten' (5.7-7.0 V forward and -0.76 to 1.8 V in reverse in the first 60 ticks, stator limit inferred)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about four seconds"
+unit = "s"
+range = [3.6, 4.4]
+measured = "about 3.9 s"
+
+[[claim]]
+id = "l33.pct-steady-1vps"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C2"
+statement = "Starting from a standstill, the default 1 V/s ramp reaches 38-82% of steady-state speed across 1-5 V (38, 59, 71, 77, 82% at 1-5 V); under 40% at 1 V."
+evidence = "CLAUDE.md, 'Lesson 33 (batch 3)': 38.5 / 59.2 / 70.6 / 77.5 / 81.8 (commanded-voltage convention; 1-1.5 points higher keyed to the logged voltage)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "38%-82%; 38, 59, 71, 77, 82%; under 40%"
+unit = "%"
+range = [37.5, 82.5]
+measured = "38.5 / 59.2 / 70.6 / 77.5 / 81.8"
+figure = "33-ramp-vs-steady-state.png"
+note = "38.5 and 77.5 sit exactly on the rounding edges of 38 and 77."
+
+[[claim]]
+id = "l33.pct-steady-025"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C2"
+statement = "At 0.25 V/s the ramp reads 77-95% of steady state."
+evidence = "CLAUDE.md, 'Lesson 33 (batch 3)': 77.0 / 88.4 / 92.2 / 94.2 / 95.4"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "77%-95%"
+unit = "%"
+range = [76.5, 95.5]
+measured = "77.0 to 95.4"
+
+[[claim]]
+id = "l33.response-time"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C3"
+statement = "The wheel responds in about a second: kA / kV = 0.106 / 0.118 = 0.9 s."
+evidence = "Arithmetic from the hand fit (CLAUDE.md, 'Lesson 33 §6-§7 rewritten'): 0.898 s; the 63% time from the idle start is 1.00-1.02 s forward"
+measured_on = "alpha-8"
+method = "ARITHMETIC"
+wording = "about a second; 0.9 s"
+unit = "s"
+range = [0.85, 0.95]
+measured = "0.898 s"
+
+[[claim]]
+id = "l33.gap-at-5v"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C3"
+statement = "By 5 V the 1 V/s ramp's gap to steady state has shrunk to about a fifth."
+evidence = "CLAUDE.md, 'Lesson 33 (batch 3)': 81.8% at 5 V, a gap of 18%"
+measured_on = "alpha-8"
+method = "ARITHMETIC"
+wording = "about a fifth"
+unit = "fraction"
+range = [0.16, 0.24]
+measured = "0.18"
+
+[[claim]]
+id = "l33.ramp-fit-ks"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C2"
+statement = "A two-term hand fit of the two ramps alone (coast-down trimmed) gives kS = 0.90 V with kV 0.118 at 1 V/s; kA x ramp rate / kV = 0.106 x 8.5 = 0.90."
+evidence = "CLAUDE.md, 'Lesson 33 batch 3': 0.898 / 0.901 / 0.905 at 1 V/s, kV 0.1179-0.1180"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "0.90 V"
+unit = "V"
+range = [0.895, 0.905]
+measured = "0.898 / 0.901 / 0.905"
+
+[[claim]]
+id = "l33.fig-ramp-fit-1vps"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C3"
+statement = "Figure 33.3: a two-term fit of the 1 V/s standstill ramp over 4-6 V meets the voltage axis near 0.88 V."
+evidence = "CLAUDE.md, 'Batch 3 found', Lesson 33 (0.88 V at 1 V/s over 4-6 V; 0.74 over 1-6 V)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "0.88 V; near 0.9 V up the side"
+unit = "V"
+range = [0.875, 0.885]
+measured = "0.88 V"
+figure = "33-ramp-vs-steady-state.png"
+
+[[claim]]
+id = "l33.fig-ramp-fit-025"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C3"
+statement = "Figure 33.3: the 0.25 V/s standstill ramp fit meets the voltage axis near 0.23 V (about 0.23 V at 0.25 V/s)."
+evidence = "CLAUDE.md, 'Batch 3 found', Lesson 33 (0.23 V at 0.25 V/s); 'Lesson 33 batch 3' (0.234-0.235)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "0.23 V; near 0.2 V (prose, one sentence)"
+unit = "V"
+range = [0.225, 0.235]
+measured = "0.23 V (0.234-0.235 in run fits)"
+figure = "33-ramp-vs-steady-state.png"
+note = "One prose sentence says 'near 0.2 V' ([0.18, 0.22] under the about rule), which 0.23 does not satisfy."
+
+[[claim]]
+id = "l33.hold-1s"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C3"
+statement = "Holding 0.05 V from the idle speed, the wheel is at about 13 rot/s after one second (13.5 in Figure 33.2's alt text)."
+evidence = "CLAUDE.md, 'Lesson 33 §6-§7 rewritten' (13.45 rot/s at 1 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 13 rot/s; 13.5 rot/s"
+unit = "rot/s"
+range = [13.45, 13.55]
+measured = "13.45 rot/s"
+figure = "33-ks-hold-005v.png"
+
+[[claim]]
+id = "l33.hold-2s"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C3"
+statement = "Holding 0.05 V from idle, the wheel is at 4.67 rot/s after two seconds."
+evidence = "CLAUDE.md, 'Lesson 33 §6-§7 rewritten' (4.66 at 2 s); 'Batch 3 found' (4.67)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "4.67 rot/s (alt text)"
+unit = "rot/s"
+range = [4.665, 4.675]
+measured = "4.66-4.67 rot/s"
+figure = "33-ks-hold-005v.png"
+
+[[claim]]
+id = "l33.hold-3s"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C3"
+statement = "Holding 0.05 V from idle, the wheel is under 2 rot/s after three seconds (1.80)."
+evidence = "CLAUDE.md, 'Lesson 33 §6-§7 rewritten' (1.80 rot/s at 3 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "under 2; 1.80 rot/s (alt text)"
+unit = "rot/s"
+range = [0.0, 1.805]
+measured = "1.80 rot/s"
+figure = "33-ks-hold-005v.png"
+
+[[claim]]
+id = "l33.hold-5s"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C3"
+statement = "Holding 0.05 V from idle, the wheel is at 0.56 rot/s at five seconds."
+evidence = "CLAUDE.md, 'Lesson 33 §6-§7 rewritten' (0.561 rot/s at 5 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "0.56 rot/s"
+unit = "rot/s"
+range = [0.555, 0.565]
+measured = "0.561 rot/s"
+figure = "33-ks-hold-005v.png"
+
+[[claim]]
+id = "l33.hold-settle"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C2"
+statement = "Holding 0.05 V from idle, the wheel settles at 0.41 rot/s by about nine seconds and stays there (0.05 x 8.47 = 0.42)."
+evidence = "CLAUDE.md, 'Lesson 33 §6-§7 rewritten' (0.420 at 8 s, 0.414 from 9 s on); the same 0.414 is in phoenix6.sim-no-static-friction"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "0.41 rot/s by about nine seconds; 0.42 predicted"
+unit = "rot/s"
+range = [0.405, 0.415]
+measured = "0.414 rot/s from 9 s on"
+figure = "33-ks-hold-005v.png"
+
+[[claim]]
+id = "l33.hold-voltage-settle"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C3"
+statement = "Holding 0.05 V, the applied voltage starts near 3.6 V and takes about 0.8 s to come down to 0.05 V."
+evidence = "CLAUDE.md, 'Batch 3 found', Lesson 33's 0.05 V hold (first reads 0.05 V at 0.82 s); 'Lesson 33 §6-§7 rewritten' (0.75 V at 0.5 s, 0.05 V from 1 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 0.8 s"
+unit = "s"
+range = [0.72, 0.88]
+measured = "0.82 s (the other recording: 0.05 V from 1 s)"
+figure = "33-ks-hold-005v.png"
+
+[[claim]]
+id = "l33.soft-limit-off-height"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "Open loop at 6 V for 4 s with the forward soft limit off, the widened-physics elevator ends at 2.599 m."
+evidence = "CLAUDE.md, 'Lesson 33 batch 3' elevator rows (alpha-7 2.569)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "2.599 m"
+unit = "m"
+range = [2.5985, 2.5995]
+measured = "2.599 m, two reps"
+
+[[claim]]
+id = "l33.soft-limit-on-height"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "The same run with the forward soft limit on ends at 1.503 m with applied volts 0.000."
+evidence = "CLAUDE.md, 'Lesson 33 batch 3' elevator rows (peaks 1.511)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "1.503 m"
+unit = "m"
+range = [1.5025, 1.5035]
+measured = "1.503 m"
+
+[[claim]]
+id = "l33.homing-time"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "Homing from the 0.35 m boot height finishes in about 3.5 seconds."
+evidence = "CLAUDE.md, 'Lesson 33 batch 3' (3.52 s; alpha-7 3.54; the old 3.68 did not reproduce)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "about 3.5 seconds"
+unit = "s"
+range = [3.4, 3.6]
+measured = "3.52 s"
+
+[[claim]]
+id = "l33.homing-limited-time"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With a reverse soft limit at kMinHeight, homing takes 17.3 s."
+evidence = "CLAUDE.md, 'Lesson 33 batch 3' (17.32 s)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "17.3"
+unit = "s"
+range = [17.25, 17.35]
+measured = "17.32 s"
+
+[[claim]]
+id = "l33.homing-limited-speed"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "With the reverse soft limit the carriage creeps down at about 2 cm/s."
+evidence = "CLAUDE.md, 'Lesson 33 batch 3' (1.96 cm/s, the unpowered sink rate)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "about 2 cm/s"
+unit = "cm/s"
+range = [1.8, 2.2]
+measured = "1.96 cm/s"
+
+[[claim]]
+id = "l33.homing-speed"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "Normal homing descends at 9.7 cm/s."
+evidence = "CLAUDE.md, 'Lesson 33 batch 3' (9.72 cm/s); same quantity as l21.homing-speed"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "9.7"
+unit = "cm/s"
+range = [9.65, 9.75]
+measured = "9.72 cm/s"
+
+[[claim]]
+id = "l33.ramp-distance-1"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "A 1 V/s ramp to 6 V travels 1.885 m on the widened elevator (more than the 1.5 m of travel; 1.9 m in the alt text)."
+evidence = "CLAUDE.md, 'Lesson 33 batch 3' (1.885 m) and 'Lesson 33 §6-§7 rewritten' (raw probe lines 1.888, 'not traced'); 'Batch 2 found' figure run 1.884 m"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "1.885 m; more than 1.5 m; 1.9 m"
+unit = "m"
+range = [1.8845, 1.8855]
+measured = "1.885 (batch 3); 1.888 (raw probe); 1.884 (figure run)"
+figure = "33-ramp-room-elevator.png"
+
+[[claim]]
+id = "l33.ramp-distance-05"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "A 0.5 V/s ramp to 6 V travels 3.794 m."
+evidence = "CLAUDE.md, 'Lesson 33 batch 3' (3.794 m); raw probe lines 3.795-3.797; figure run 3.787"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "3.794 m; 3.8 m"
+unit = "m"
+range = [3.7935, 3.7945]
+measured = "3.794 (batch 3); 3.795-3.797 (raw); 3.787 (figure run)"
+figure = "33-ramp-room-elevator.png"
+
+[[claim]]
+id = "l33.ramp-distance-025"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "A 0.25 V/s ramp to 6 V travels 7.605 m (over 7 metres)."
+evidence = "CLAUDE.md, 'Lesson 33 batch 3' (7.605 m); raw probe 7.608; figure run 7.597"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "7.605 m; over 7 metres; 7.6 m"
+unit = "m"
+range = [7.6045, 7.6055]
+measured = "7.605 (batch 3); 7.608 (raw); 7.597 (figure run)"
+figure = "33-ramp-room-elevator.png"
+
+[[claim]]
+id = "l33.ramp-doubling"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "Halving the ramp rate doubles the distance travelled to 6 V."
+evidence = "CLAUDE.md, 'Lesson 33 batch 3': 1.885 / 3.794 / 7.605 m (ratios 2.01 and 2.00)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "double; about twice the height"
+unit = "ratio"
+range = [1.8, 2.2]
+measured = "2.01, 2.00"
+
+[[claim]]
+id = "l33.ramp-3v-distance"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "At 1 V/s the carriage has covered 0.44 m when the ramp reaches 3 V."
+evidence = "CLAUDE.md, 'Lesson 33 §6-§7 rewritten' (0.437-0.438 m); 'Batch 2 found' (0.436)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "0.44 m; about 0.44 m"
+unit = "m"
+range = [0.435, 0.445]
+measured = "0.436-0.438 m"
+figure = "33-ramp-room-elevator.png"
+
+[[claim]]
+id = "l33.ramp-45v-distance"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "At 1 V/s the carriage has covered 1.04 m (about 1 m) when the ramp reaches 4.5 V."
+evidence = "CLAUDE.md, 'Lesson 33 §6-§7 rewritten' (1.036 m); 'Batch 2 found' (1.033 m)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "1.04 m; about 1 m"
+unit = "m"
+range = [1.035, 1.045]
+measured = "1.036 m (1.033 m in the figure run)"
+figure = "33-ramp-room-elevator.png"
+
+[[claim]]
+id = "l33.ramp-cross-1p5"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "At 1 V/s the carriage crosses 1.5 m of travel at about 5.4 V."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 33 (crosses 1.5 m at about 5.4 V)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "about 5.4 V"
+unit = "V"
+range = [5.3, 5.5]
+measured = "about 5.4 V"
+figure = "33-ramp-room-elevator.png"
+
+[[claim]]
+id = "l33.ramp-025-crossing"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "The 0.25 V/s ramp crosses 1.5 m before it reaches 3 V."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 33 (at 0.25 V/s it crosses 1.5 m before 3 V)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "before it reaches 3 V"
+unit = "V"
+range = [0.0, 3.0]
+measured = "before 3 V"
+figure = "33-ramp-room-elevator.png"
+
+[[claim]]
+id = "l33.step-7v"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "A 7 V step for 1.5 s travels 1.08-1.10 m on the widened elevator."
+evidence = "CLAUDE.md, 'Lesson 33 batch 3' (1.076-1.100 m; the routine's timeout is wall-clock so the last tick moves it by 2 cm)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "1.08 to 1.10 m"
+unit = "m"
+range = [1.075, 1.105]
+measured = "1.076-1.100 m"
+figure = "33-ramp-room-elevator.png"
+
+[[claim]]
+id = "l33.step-4v"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "A 4 V step for 1.5 s travels 0.62-0.63 m."
+evidence = "CLAUDE.md, 'Lesson 33 batch 3' (0.623-0.632 m)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "0.62 to 0.63 m"
+unit = "m"
+range = [0.615, 0.635]
+measured = "0.623-0.632 m"
+figure = "33-ramp-room-elevator.png"
+
+[[claim]]
+id = "l33.step-2v"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "A 2 V step for 1.5 s travels 0.30 m."
+evidence = "CLAUDE.md, 'Lesson 33 batch 3' (0.304 m)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "0.30 m"
+unit = "m"
+range = [0.295, 0.305]
+measured = "0.304 m"
+figure = "33-ramp-room-elevator.png"
+
+[[claim]]
+id = "l33.step-7v-fraction"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "The default 7 V step eats nearly three-quarters of the elevator's 1.5 m of travel in 1.5 s."
+evidence = "Arithmetic from l33.step-7v: 1.076-1.100 m over 1.5 m = 0.72-0.73"
+measured_on = "alpha-8"
+method = "ARITHMETIC"
+wording = "nearly three-quarters"
+unit = "fraction"
+range = [0.70, 0.75]
+measured = "0.717-0.733"

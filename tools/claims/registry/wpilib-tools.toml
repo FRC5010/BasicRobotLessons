@@ -145,3 +145,22 @@ criticality = "C3"
 statement = "On a real robot, alerts are shown by the 2027 Driver Station app (WPILib's Systemcore testing notes list Alerts among the features only available in it)."
 evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson, which quotes WPILib's Systemcore testing notes"
 measured_on = "unverified"
+
+[[claim]]
+id = "wpilib-tools.sysid-tool-fits-four-tests"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C2"
+statement = "The SysId analysis tool fits all four tests (slow and fast, forward and backward) in one least-squares regression with an acceleration term, V = kS*sgn(v) + kV*v + kA*a (written in the source as acceleration against speed, voltage and sign of speed, then divided), requires at least 2 steady-state velocity events and 1 acceleration event, and filters and trims the data its own way."
+evidence = "CLAUDE.md, 'v3 Lesson 33 §6-§7 rewritten as checking a characterization result': read from allwpilib tools/sysid/.../FeedforwardAnalysis.cpp and FilteringUtils.cpp at v2027.0.0-alpha-8. The tool itself has never been run here."
+measured_on = "alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "wpilib-tools.sysid-tool-ui"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C3"
+statement = "The SysId tool is opened from the WPILib extension's tool launcher, reads a .wpilog in log-file mode (not live), and offers the 'flywheel' mechanism to fit kS/kV/kA to."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson (CLAUDE.md says the tool was never run here)"
+measured_on = "unverified"

@@ -350,3 +350,23 @@ criticality = "C3"
 statement = "A bare simulated TalonFX on a CAN ID above 62 (the lesson's example is 70) fails silently, with no output at all."
 evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson (the classic-track notes only say 'per-test CAN IDs (<= 62)')"
 measured_on = "unverified"
+
+[[claim]]
+id = "phoenix6.soft-limit-holds-open-loop"
+kind = "behaviour"
+library = ["phoenix6", "wpilib"]
+criticality = "C1"
+statement = "A firmware forward soft limit holds in any control mode: the real ElevatorIOTalonFX driven open loop at 6 V for 4 s on a physics model widened to +-20 m ends at 2.599 m without it and 1.503 m with it (applied 0 V). In the course's own sim it never fires, because ElevatorSim is already a hard wall at 1.5 m and the encoder, started at the 0.35 m boot height, reads 1.15 m there."
+evidence = "CLAUDE.md, 'v3 Lesson 33 rebuilt on WPILib's SysIdRoutine and re-measured on alpha-8' (elevator rows, RIG); Lesson 21 notes for the 1.15 m stall; thresholds in mechanism rotations via SensorToMechanismRatio"
+measured_on = "alpha-8"
+method = "RIG"
+
+[[claim]]
+id = "phoenix6.reverse-soft-limit-fights-homing"
+kind = "behaviour"
+library = ["phoenix6", "wpilib"]
+criticality = "C1"
+statement = "A reverse soft limit at kMinHeight (0) is measured from the relative encoder's untrusted boot-time zero, so it engages immediately and makes home() crawl down at the unpowered sink rate (about 2 cm/s, 17.3 s) instead of 9.7 cm/s (3.5 s); it fails by making the mechanism look weak."
+evidence = "CLAUDE.md, 'v3 Lesson 33 rebuilt on WPILib's SysIdRoutine and re-measured on alpha-8': 3.52 s at 9.72 cm/s without a reverse soft limit, 17.32 s at 1.96 cm/s with one (alpha-7 3.54 s; the old 3.68 s did not reproduce)"
+measured_on = "alpha-8"
+method = "RIG"

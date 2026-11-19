@@ -2347,12 +2347,15 @@ simulation, are listed in `tools/claims/registry/*.toml`. A lesson points at one
 comment at the end of the sentence that relies on it: `<!-- claim: l18.kv-zeroed-lag -->`. The
 format, the marker rules and how a number's range is set are in
 [tools/claims/README.md](tools/claims/README.md); the plan is
-[docs/lesson-plan-v3-claims-tests.md](docs/lesson-plan-v3-claims-tests.md) (Phase 0, the
-inventory, started 2026-11-19).
+[docs/lesson-plan-v3-claims-tests.md](docs/lesson-plan-v3-claims-tests.md). **Phase 0, the
+inventory, finished on 2026-11-19:** 604 claims and 995 markers across Lessons 0–33 and the setup
+and debugger asides (Lesson 34 joins when it's migrated). The lesson errors it found are listed
+for the user in the plan's §5a, not fixed.
 
 - **Every agent commit runs `tools/githooks/pre-commit`**, which checks the staged registry and
-  markers with `tools/claims/check_claims.py`. `.claude/settings.json`'s SessionStart hook turns it
-  on (`git config core.hooksPath tools/githooks`). **Never commit with `--no-verify`**; fix what it
+  markers with `tools/claims/check_claims.py --strict` (a claim no lesson marks is an error).
+  `.claude/settings.json`'s SessionStart hook turns it on (`git config core.hooksPath
+  tools/githooks`). **Never commit with `--no-verify`**; fix what it
   reports.
 - **Editing a marked sentence:** re-read the claim it names, and update the claim (or the
   sentence) if they no longer agree.
