@@ -3,15 +3,19 @@
 # The repo's Claude Code SessionStart hook (.claude/settings.json) sets that, so it runs
 # before every commit an agent makes; people committing by hand opt in the same way.
 #
-# It checks what is being committed, not the working tree: the staged lessons and tools are
-# checked out into a temporary folder first. So another agent's unfinished, unstaged work in
-# the same checkout can't block this commit, and `git commit -a` or `git commit <paths>`
+# It checks what is being committed, not the working tree: the staged lessons, tools and
+# code are checked out into a temporary folder first. So another agent's unfinished, unstaged
+# work in the same checkout can't block this commit, and `git commit -a` or `git commit <paths>`
 # (which commit through a temporary index) are checked as committed.
 #
 # What it runs (docs/lesson-plan-v3-claims-tests.md, section 3.5, says what comes later):
 #   - tools/claims/check_claims.py --strict: the claims registry against the lessons' claim
 #     markers; since Phase 0 finished (2026-11-19) a claim no lesson marks is an error too.
-#   - its unit tests, when the commit changes the checker or its tests.
+#   - tools/check-lesson-code-v3.py: the "type this" Java blocks of every lesson the commit can
+#     affect, against the code after that lesson. A staged lesson file affects that lesson; a
+#     staged code/v3/lesson-K file affects K and every later lesson up to the cut-off; the
+#     template, the shared roll-forward rules, the checker or its exceptions affect them all.
+#   - the unit tests of either checker, when the commit changes that checker or its tests.
 # Don't skip it with --no-verify; fix what it reports.
 set -eu
 
@@ -20,18 +24,58 @@ tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT INT TERM
 
 cd "$top"
-git ls-files -z -- docs/lessons/v3 tools | xargs -0 -r git checkout-index --prefix="$tmp/" --
+git ls-files -z -- docs/lessons/v3 tools code/v3 code/OpModeV3Robot |
+  xargs -0 -r git checkout-index --prefix="$tmp/" --
 
 py=${PYTHON:-python3}
-if ! "$py" "$tmp/tools/claims/check_claims.py" --root "$tmp" --strict --quiet; then
-  echo "pre-commit: the claims check failed (tools/claims/check_claims.py). Fix the markers or the registry, then commit again." >&2
-  exit 1
-fi
+fail() { echo "pre-commit: $*" >&2; exit 1; }
 
-if git diff --cached --name-only -- tools/claims tools/tests/test_check_claims.py | grep -q .; then
-  if ! out=$(cd "$tmp" && "$py" -m unittest -q tools.tests.test_check_claims 2>&1); then
-    printf '%s\n' "$out" | tail -20 >&2
-    echo "pre-commit: tools/tests/test_check_claims.py failed." >&2
-    exit 1
+unit_tests() {  # module, then the paths whose change runs it
+  mod=$1; shift
+  if git diff --cached --name-only -- "$@" | grep -q .; then
+    if ! out=$(cd "$tmp" && "$py" -m unittest -q "$mod" 2>&1); then
+      printf '%s\n' "$out" | tail -20 >&2
+      fail "the unit tests in $mod failed."
+    fi
+  fi
+}
+
+"$py" "$tmp/tools/claims/check_claims.py" --root "$tmp" --strict --quiet ||
+  fail "the claims check failed (tools/claims/check_claims.py). Fix the markers or the registry, then commit again."
+unit_tests tools.tests.test_check_claims tools/claims tools/tests/test_check_claims.py
+
+# Which lessons' code blocks to check. --no-renames lists both ends of a rename.
+all=no from= lessons=
+for f in $(git diff --cached --name-only --no-renames); do
+  case $f in
+    code/OpModeV3Robot/*|tools/lib/v3-lessons.sh|tools/check-lesson-code-v3.py|\
+    tools/check-lesson-markers-v3.py|tools/lesson-code-exceptions-v3.toml)
+      all=yes ;;
+    code/v3/lesson-*/*)
+      k=${f#code/v3/lesson-}; k=${k%%/*}
+      case $k in *[!0-9]*|'') continue ;; esac
+      if [ -z "$from" ] || [ "$k" -lt "$from" ]; then from=$k; fi ;;
+    docs/lessons/v3/[0-9][0-9]-*.md)
+      n=${f#docs/lessons/v3/}; n=${n%%-*}; n=${n#0}
+      [ -e "$tmp/$f" ] && lessons="$lessons $n" ;;
+  esac
+done
+if [ "$all" = yes ]; then
+  set --
+elif [ -n "$from" ]; then
+  # shellcheck disable=SC2086
+  set -- $lessons --from "$from"
+elif [ -n "$lessons" ]; then
+  # shellcheck disable=SC2086
+  set -- $lessons
+else
+  set -- skip
+fi
+if [ "${1:-}" != skip ]; then
+  if ! out=$("$py" "$tmp/tools/check-lesson-code-v3.py" "$@" 2>&1); then
+    printf '%s\n' "$out" | grep -v '^ok ' | tail -30 >&2
+    fail "a lesson's \"type this\" code no longer matches the code after it (tools/check-lesson-code-v3.py). Fix the lesson or the snapshot, or list a deliberate difference in tools/lesson-code-exceptions-v3.toml."
   fi
 fi
+unit_tests tools.tests.test_check_lesson_code tools/check-lesson-code-v3.py tools/check-lesson-markers-v3.py \
+  tools/lib/v3-lessons.sh tools/tests/test_check_lesson_code.py

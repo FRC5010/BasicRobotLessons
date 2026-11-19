@@ -2349,14 +2349,27 @@ format, the marker rules and how a number's range is set are in
 [tools/claims/README.md](tools/claims/README.md); the plan is
 [docs/lesson-plan-v3-claims-tests.md](docs/lesson-plan-v3-claims-tests.md). **Phase 0, the
 inventory, finished on 2026-11-19:** 604 claims and 995 markers across Lessons 0–33 and the setup
-and debugger asides (Lesson 34 joins when it's migrated). The lesson errors it found are listed
-for the user in the plan's §5a, not fixed.
+and debugger asides (Lesson 34 joins when it's migrated). The plan's §5a lists what it found:
+the contradictions were fixed the same day, and the wordings tighter than the runs are left for
+the user.
 
 - **Every agent commit runs `tools/githooks/pre-commit`**, which checks the staged registry and
   markers with `tools/claims/check_claims.py --strict` (a claim no lesson marks is an error).
   `.claude/settings.json`'s SessionStart hook turns it on (`git config core.hooksPath
   tools/githooks`). **Never commit with `--no-verify`**; fix what it
   reports.
+- **The hook also runs `tools/check-lesson-code-v3.py`** (Phase 1a, 2026-11-19) on every lesson
+  the commit can affect: a staged lesson file; a staged `code/v3/lesson-K` file means K up to the
+  cut-off; the template, `tools/lib/v3-lessons.sh`, either checker or the exceptions file mean all
+  of them (about 20 s). It checks that every "type this" Java block (bold lead-in) appears in the
+  code after its lesson, by Java tokens, so comments and whitespace don't matter; a "Delete" block
+  must be gone. Italic illustrations and Try It blocks aren't checked. **Changing a snapshot means
+  changing the lesson's block too, and the other way round.** A block that differs on purpose (a
+  stage the same lesson replaces, an experiment it undoes, a conditional step) goes in
+  `tools/lesson-code-exceptions-v3.toml` with its reason; an exception that matches no block, two
+  blocks, or a block that now passes is an error, so remove it when it stops being needed. Run it
+  by hand with `./tools/check-lesson-code-v3.py [N ...] [--from K] [--show]`; tests in
+  `tools/tests/test_check_lesson_code.py`.
 - **Editing a marked sentence:** re-read the claim it names, and update the claim (or the
   sentence) if they no longer agree.
 - **Writing a sentence that relies on library behaviour or a measured number:** mark it, and add a

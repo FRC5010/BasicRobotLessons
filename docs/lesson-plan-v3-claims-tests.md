@@ -9,7 +9,9 @@ lessons.
 604 claims are registered (73 API, 151 behaviour, 380 numbers). 995 hidden markers tie them to
 every lesson from 0 to 33 and to the setup and debugger asides. The pre-commit check is strict, so
 a claim no lesson marks is an error. Lesson 34 joins when it's migrated. The findings for the user
-are in section 5a. Phase 1 is next.
+are in section 5a. **Phase 1a, the code-block check, is built** (section 5): all 396 "type this"
+Java blocks in Lessons 0–33 match the code after their lesson, with 15 listed exceptions, and the
+hook runs it. Phase 1b, the absence tests, is next.
 
 ## 1. What a "claim" is
 
@@ -100,7 +102,7 @@ Phase 0 is finished. 29 unit tests, each rule checked by removing it and watchin
 
 | Tier | What | Runs on | Cost |
 |---|---|---|---|
-| **A: API shape** | (1) `verify-lessons-v3.sh` compiles 0–33, as today. (2) **New:** `tools/check-lesson-code-v3.py` extracts every bold-lead-in Java block from each lesson and checks that it appears in that lesson's rolled-forward snapshot. The match is whitespace-normalized, and `// ...` anchor lines split a block into fragments that must appear in order. Known staged blocks are listed as exceptions. (3) **New:** reflection tests for "absence" claims (no `MathUtil.clamp`, no `onlyIf`, `simulateJava` removed). | Before an agent commit that touches a lesson, `code/` or a pin (section 3.5) | Seconds for the code-block check; minutes for the compile |
+| **A: API shape** | (1) `verify-lessons-v3.sh` compiles 0–33, as today. (2) **Built (Phase 1a):** `tools/check-lesson-code-v3.py` extracts every bold-lead-in Java block from each lesson and checks that it appears in the code after that lesson (the marker checker's `build_state`). It compares Java tokens, so comments and whitespace don't matter. A block is split into statements, which must appear in order in one file with other code allowed between them; a block's top-level members (imports, fields, methods) may also match separately, in any order. A "Delete" block must be gone. Known staged, temporary and conditional blocks are listed in `tools/lesson-code-exceptions-v3.toml`. (3) **New:** reflection tests for "absence" claims (no `MathUtil.clamp`, no `onlyIf`, `simulateJava` removed). | Before an agent commit that touches a lesson, `code/` or a pin (section 3.5) | Seconds for the code-block check; minutes for the compile |
 | **B: Behaviour** | **New:** JUnit tests under `tools/claims/java/`, one assertion per behaviour claim. Most run in one sandbox at the Lesson 33 state, which has every vendordep. A few need an earlier state, e.g. the opmode lifecycle at Lesson 1, and run there. | Before an agent commit that touches `code/` or a pin (section 3.5) | Estimate 10–20 min (LOOP tests run in real time) |
 | **C: Numbers** | **New:** each C2 number gets a check. The 31 figure probes already produce the data, so their generators gain a `--check` mode that compares their printed summary with the registry's ranges. Numbers with no kept probe get one rebuilt from the method CLAUDE.md records. | Before an agent commit that touches that lesson's code, or a pin its numbers depend on (section 3.5) | Estimate 1–2 h for all; per lesson, minutes |
 | **S: Screens** | **New:** re-shoot the SimGUI screenshots with the existing Xvfb scripts and diff them against the committed images. A real difference is flagged for a person to look at, not failed: menus and window layouts change in ways a pixel diff can't judge. | WPILib version bumps only | Estimate 30 min |
@@ -160,12 +162,15 @@ GitHub Actions workflow, and `pages.yml` stays as it is.
   can't block a commit, and `git commit -a` is checked as committed. Tested in a scratch clone: a
   staged bad marker is refused, an unstaged one doesn't block an unrelated commit, `commit -a` that
   picks it up is refused, and a sabotaged checker is refused by its own tests.
-- **What it runs now:** the claims checker, and its unit tests when the commit changes them.
+- **What it runs now:** the claims checker; the code-block check for the lessons the commit can
+  affect (a staged lesson; `code/v3/lesson-K` means K up to the cut-off; the template, the shared
+  rules, the checker or its exceptions mean every lesson, about 20 s); and each checker's unit
+  tests when the commit changes it.
 - **What later phases add,** chosen by what the commit stages:
 
   | The commit stages | The hook adds | Time (estimate) |
   |---|---|---|
-  | a lesson's `.md` | the code-block check for that lesson (Phase 1) | seconds |
+  | a lesson's `.md` | the code-block check for that lesson (built, Phase 1a) | about a second |
   | `code/v3/lesson-N/` | compile Lesson N and 33; Tier B at those states; Tier C for Lesson N | minutes to tens of minutes |
   | a pin (`V3_VENDORDEPS`, GradleRIO) | everything that depends on that library | the upgrade loop |
   | `tools/` | the changed tool's unit tests | seconds |
@@ -271,7 +276,7 @@ and the lesson tables in Lessons 5, 18, 20, 28, 29, 31 and 33.
 | Phase | Work | Done when |
 |---|---|---|
 | **0. Inventory** | The checker, its tests, the pre-commit hook, and the library claims from section 4 (built 2026-11-19). Then a pass over every lesson: markers for the library claims it relies on, and `lesson-NN.toml` entries for its numbers, from its "measured" lines, tables and figures, with ranges per section 3.6 | `check_claims.py --strict` passes; the hook then uses `--strict`. **Done 2026-11-19**: seven agent shares plus the Lesson 18 pilot, each reviewed (markers only, checked by stripping them; ranges against the README rules) |
-| **1. Cheap guards** | `check-lesson-code-v3.py` (in the hook for staged lessons); the absence tests | Both run green on today's lessons, and a deliberately stale block or absence makes them fail |
+| **1. Cheap guards** | `check-lesson-code-v3.py` (in the hook for staged lessons); the absence tests | Both run green on today's lessons, and a deliberately stale block or absence makes them fail. **1a done 2026-11-19:** 396 blocks in 0–33 pass, with 15 exceptions (section 5a's last item); 21 unit tests, each rule mutation-checked; a staged stale Lesson 18 block is refused by the hook |
 | **2. Tier B** | Port the C1 behaviour claims into JUnit, starting with the ones that reach the most lessons (Kraken constants, opmode lifecycle, command hooks, disable behaviour, scheduler order) | Each C1 behaviour claim has a passing test, and breaking it (a mutated expectation) fails that test by name |
 | **3. Tier C** | `--check` mode for the 59 generators; new probes for the C2 numbers whose probes weren't kept | Every C2 number has a check with a range, and the generator summaries agree with the lesson text |
 | **4. Orchestration** | `check-claims-v3.sh`, the report format, and an "upgrade procedure" section in CLAUDE.md | One command runs any tier and lists failures with lesson lines |
@@ -450,6 +455,30 @@ The wording stretches the measurement [measured]:
 runs), and 46 claims nothing has measured (`measured_on = "unverified"`), the first candidates
 for the Phase 2 and 3 tests. A rule learned on the way: let a lesson word a run-to-run number as a
 range or with "about", and keep bare digits for numbers that repeat exactly.
+
+**Phase 1a, the code-block check (2026-11-19).** Every "type this" Java block in Lessons 0–33
+matches the code after its lesson. The first run reported 66 blocks. 51 of them were the
+checker's own limits (blocks that a later section of the same lesson extends, methods listed in
+another order, lambda bodies, test files, a `// DELETE` first line), fixed in the checker. The
+other 15 are deliberate differences, listed with reasons in `tools/lesson-code-exceptions-v3.toml`:
+
+- **Staged (8):** a block that a later step of the same lesson replaces, so the reference holds
+  only the final version (Lesson 1's CAN ID before it moves into `DriveConstants`, Lesson 7's two
+  `SwerveModule` stages, Lesson 9's first `driveTurnDrive`, Lesson 10's `drive` default command,
+  and three Lesson 25 recipes).
+- **Temporary (4):** an experiment the lesson undoes (Lesson 13's `REPLAY` and `* 1.1`, Lesson 29's
+  tired battery, Lesson 32's typo).
+- **Conditional (1):** Lesson 7's `Clockwise_Positive`, only if step 5 read −90°.
+- **Try It (1):** Lesson 8's gyro ID, which the reference moves into `kGyroPort` as Try It #4
+  does.
+- **Arranged differently (1), for the user:** Lesson 5's `simulationPeriodic` has the student add
+  the steer motor's four sim steps *after* the drive motor's, while `code/v3/lesson-5` interleaves
+  the two motors' steps and keeps the steer voltage in a `steerVolts` local. The behaviour is the
+  same; the lesson or the snapshot could be changed to match. Left as it is.
+
+No block named an API the reference code doesn't use. So for now the check guards against future
+drift (a snapshot changed and its lesson not, or the other way round) rather than finding old
+errors.
 
 ## 6. What this doesn't cover
 
