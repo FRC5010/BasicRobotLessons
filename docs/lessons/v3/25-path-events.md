@@ -265,6 +265,21 @@ A coroutine with no requirements doesn't have that problem. It holds nothing
 itself; each command it `await`s holds its own mechanisms only while it runs. Once
 `home()` finishes, the elevator is free again, and the superstructure can have it.
 
+<a id="figure-25-1"></a>
+![Two timelines. With Command.sequence, one block holds the elevator from the start, so when home() finishes and the state turns IDLE the IDLE motion cancels the whole sequence and the auto never runs. With the coroutine, home() holds the elevator only while it runs, the IDLE motion then takes it, and the wait and the auto carry on](images/25-sequence-vs-coroutine.svg)
+
+*Figure 25.1 — Who holds the elevator, and what happens when the state turns `IDLE`. Block widths are not to scale.*
+
+Figure 25.1 puts the two versions side by side. In each half, the top row shows who
+holds the elevator and the bottom row shows the get-ready command itself, with the
+dashed line marking the moment `home()` finishes and the state turns `IDLE`. In the
+sequence (top half), the orange block is the sequence itself holding the elevator
+from the first step to the last; when the `IDLE` motion asks for the same elevator,
+the sequence loses, and its remaining steps (dashed, grey) never run. In the
+coroutine (bottom half), the elevator is held by `home()` alone, and the moment
+`home()` ends the `IDLE` motion is free to take it, while the coroutine, which holds
+nothing, carries on to the wait and the auto.
+
 **Add to `Autos.java`, below `followPath`:**
 
 ```java
@@ -448,12 +463,12 @@ y ≈ 6.7, the roller is running by y ≈ 4.5, and the piece goes in at y ≈ 4.
 the marker to 0.2 and the roller doesn't start until y ≈ 3.9 — by which point the
 piece is already under the bumper, and the robot drives straight over it.
 
-<a id="figure-25-1"></a>
+<a id="figure-25-2"></a>
 ![Three top-down maps of the Pick Up path, one per marker position, with the hub beside it and the piece on it: with the marker at 0.1 the roller starts at y 4.5 and the piece goes in at 4.4; at 0.15 the roller starts at 4.2 and the piece goes in at 4.2; at 0.2 the roller starts at 3.9, with the piece already under the bumper, and it is never caught](images/25-marker-position.png)
 
-*Figure 25.1 — Where the roller starts on Pick Up's leg for three marker positions. The robot drives down the page along x = 6. One run of each, on a fresh launch.*
+*Figure 25.2 — Where the roller starts on Pick Up's leg for three marker positions. The robot drives down the page along x = 6. One run of each, on a fresh launch.*
 
-Figure 25.1 shows that arithmetic as a map. Each panel is the same path, with the
+Figure 25.2 shows that arithmetic as a map. Each panel is the same path, with the
 hub drawn beside it, the piece as the star, and the dashed line at y = 4.4, the
 point where the piece comes within 0.6 m of the robot's center. Find the dashed
 line first, then the orange square, where the roller starts.
@@ -849,7 +864,7 @@ and `FollowPath/remainingPathDistanceMeters`. (B-Line's `FollowPath/` keys are u
 LED strip, because it tells the whole story.
 
 Here's what happens in this course's sim, timed from when the drive starts, about
-4.1 s after you enable (homing, then the stow). Figure 25.2, just below the table,
+4.1 s after you enable (homing, then the stow). Figure 25.3, just below the table,
 plots the same run:
 
 | When | What |
@@ -862,12 +877,12 @@ plots the same run:
 | 3.2 s, 0.48 m left | The score request: `SCORING`, the piece leaves, and the next loop is `IDLE` |
 | 3.4 s | The path finishes at (6, 1), with the elevator already on its way down |
 
-<a id="figure-25-2"></a>
+<a id="figure-25-3"></a>
 ![A four-panel timeline of one Pick Up run, from the start of the drive: the robot's y falls steadily from 7.4 to about 1; below it the superstructure state runs IDLE, INTAKING, HANDOFF, HOLDING, a brief SCORING and IDLE; the arm swings from 90 degrees down to -20 and back up; the elevator rises from 0 to 0.75 m and starts back down. Dashed lines mark the intake event, the roller start, HOLDING, the score request and the end of the path](images/25-pick-up-timeline.png)
 
-*Figure 25.2 — One Pick Up run on a fresh launch, from the moment the drive starts. All four panels share the time axis. One run (three recorded for this figure agreed to within a tick).*
+*Figure 25.3 — One Pick Up run on a fresh launch, from the moment the drive starts. All four panels share the time axis. One run (three recorded for this figure agreed to within a tick).*
 
-Figure 25.2 puts the same events on a time axis, and what to look for is overlap. Read it from the top.
+Figure 25.3 puts the same events on a time axis, and what to look for is overlap. Read it from the top.
 The first panel is the robot's `y`, and it is the one thing the whole run hangs on. It's a straight, steady
 slope from 7.4 down to about 1, flattening only in the last 0.2 s as the path ends. The dotted
 horizontal line is where the piece goes into the intake, 0.6 m ahead of the robot's center. Nothing

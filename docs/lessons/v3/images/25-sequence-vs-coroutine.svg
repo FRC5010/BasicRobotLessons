@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 580" width="800" height="580" font-family="sans-serif">
+<defs></defs>
+<rect x="0" y="0" width="800" height="580" fill="#ffffff"/>
+<text x="30.0" y="36.0" font-size="20" fill="#000000" text-anchor="start" font-weight="bold">Command.sequence(home(), wait, auto)</text>
+<text x="30.0" y="60.0" font-size="15" fill="#777777" text-anchor="start" font-weight="normal">A sequence holds every step's mechanisms for as long as it runs.</text>
+<text x="30.0" y="96.0" font-size="15" fill="#777777" text-anchor="start" font-weight="bold">Who holds the Elevator</text>
+<rect x="30" y="106" width="206" height="44" rx="8" fill="#FBE9DF" stroke="#D55E00" stroke-width="2"/>
+<text x="133.0" y="123.5" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">the sequence</text>
+<text x="133.0" y="142.2" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">holds it, all of it</text>
+<rect x="236" y="106" width="534" height="44" rx="8" fill="#F6E6EF" stroke="#CC79A7" stroke-width="2"/>
+<text x="503.0" y="123.5" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">the IDLE motion wants it: the newer</text>
+<text x="503.0" y="142.2" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">command wins, the sequence is canceled</text>
+<text x="30.0" y="180.0" font-size="15" fill="#777777" text-anchor="start" font-weight="bold">Get Ready, Then ... runs</text>
+<rect x="30" y="190" width="200" height="44" rx="8" fill="#E3F0FA" stroke="#0072B2" stroke-width="2"/>
+<text x="130.0" y="216.9" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">home()</text>
+<rect x="230" y="190" width="250" height="44" rx="8" fill="#EEEEEE" stroke="#777777" stroke-width="2" stroke-dasharray="7 5"/>
+<text x="355.0" y="216.6" font-size="14" fill="#000000" text-anchor="middle" font-weight="normal">Wait Until Settled</text>
+<rect x="480" y="190" width="290" height="44" rx="8" fill="#EEEEEE" stroke="#777777" stroke-width="2" stroke-dasharray="7 5"/>
+<text x="625.0" y="216.6" font-size="14" fill="#000000" text-anchor="middle" font-weight="normal">auto: never runs</text>
+<text x="500.0" y="256.0" font-size="15" fill="#CC79A7" text-anchor="middle" font-weight="bold">canceled on the tick the state turns IDLE: the robot never drives</text>
+<text x="240.0" y="180.0" font-size="14" fill="#000000" text-anchor="start" font-weight="bold">home() finishes: the state turns IDLE</text>
+<line x1="230.0" y1="110.0" x2="230.0" y2="238.0" stroke="#000000" stroke-width="2" stroke-dasharray="7 5"/>
+<line x1="30.0" y1="270.0" x2="770.0" y2="270.0" stroke="#777777" stroke-width="1"/>
+<text x="30.0" y="310.0" font-size="20" fill="#000000" text-anchor="start" font-weight="bold">Command.noRequirements(...) with await, as getReadyThen is</text>
+<text x="30.0" y="334.0" font-size="15" fill="#777777" text-anchor="start" font-weight="normal">Each awaited command holds its own mechanisms only while it runs.</text>
+<text x="30.0" y="370.0" font-size="15" fill="#777777" text-anchor="start" font-weight="bold">Who holds the Elevator</text>
+<rect x="30" y="380" width="200" height="44" rx="8" fill="#E3F0FA" stroke="#0072B2" stroke-width="2"/>
+<text x="130.0" y="406.9" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">home()</text>
+<rect x="230" y="380" width="540" height="44" rx="8" fill="#DDF3EB" stroke="#009E73" stroke-width="2"/>
+<text x="500.0" y="397.5" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">the IDLE motion holds it while it stows</text>
+<text x="500.0" y="416.2" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">(the auto never asked for the elevator)</text>
+<text x="30.0" y="454.0" font-size="15" fill="#777777" text-anchor="start" font-weight="bold">Get Ready, Then ... runs</text>
+<rect x="30" y="464" width="200" height="44" rx="8" fill="#E3F0FA" stroke="#0072B2" stroke-width="2"/>
+<text x="130.0" y="490.9" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">home()</text>
+<rect x="230" y="464" width="250" height="44" rx="8" fill="#DDF3EB" stroke="#009E73" stroke-width="2"/>
+<text x="355.0" y="490.6" font-size="14" fill="#000000" text-anchor="middle" font-weight="normal">Wait Until Settled</text>
+<rect x="480" y="464" width="290" height="44" rx="8" fill="#DDF3EB" stroke="#009E73" stroke-width="2"/>
+<text x="625.0" y="490.6" font-size="14" fill="#000000" text-anchor="middle" font-weight="normal">await(auto): the robot drives</text>
+<text x="500.0" y="530.0" font-size="15" fill="#009E73" text-anchor="middle" font-weight="bold">holds no mechanism itself, so nothing evicts it</text>
+<text x="240.0" y="454.0" font-size="14" fill="#000000" text-anchor="start" font-weight="bold">home() finishes: the state turns IDLE</text>
+<line x1="230.0" y1="384.0" x2="230.0" y2="512.0" stroke="#000000" stroke-width="2" stroke-dasharray="7 5"/>
+</svg>

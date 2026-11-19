@@ -2733,7 +2733,8 @@ at least twice.
   - The piece is within reach from y 4.4 to 4.1, under the bumper below
     that, so §4 now gives the window, not "by y ≈ 4.4". The 0.2 text says
     y ≈ 3.9 (was 3.8).
-  - Lesson 25's Pick Up timeline is now Figure 25.2.
+  - Lesson 25's Pick Up timeline is now Figure 25.3, and the marker map 25.2
+    (batch 3's sequence diagram is 25.1).
 - **Lesson 29, fresh battery, four runs per configuration** (Figure 29.1,
   `Fig29TiredBattery` unchanged; the defaults run is
   `tools/figures/29-fresh-battery-defaults.sh`):
@@ -2780,6 +2781,18 @@ at least twice.
   user's planned screenshot (working ID D.1) will push it to D.2. The git
   aside's new fast-forward/diamond figure is G.2, so the rebase figure is G.3.
   No other lesson links into either aside.
+- **Batch 3 (2026-11-19):**
+  - **Lesson 20 hold sweep** (Figure 20.2, RIG, alpha-8): 23 goals from
+    −20° to 180°, swept up and back down, each held 5 s with the mean of the
+    last 0.5 s. Every reading lies on `kArmKG × cos θ` (0.25) within about
+    0.002 V, mostly 0.001–0.002 V above it (not looked into). Up and down
+    agree. The table's five points read +0.251 / +0.178 / −0.000 / −0.178 /
+    −0.250, and the −20° stop reads +0.237. The arm settles 0.05–0.25°
+    short of its goal.
+  - **Renumbered by batch 3:** Lesson 10: 10.2 → 10.3. Lesson 12: 12.1 →
+    12.2 and 12.2 → 12.3. Lesson 17: 17.1–17.4 → 17.2–17.5. Lesson 25:
+    25.1 → 25.2 and 25.2 → 25.3. Links from Lessons 11, 18, 25 and 26
+    follow them.
 - **SimGUI's addressable LED strip** is under **Hardware → Addressable
   LEDs** ("LEDs[5]", 40 pixels). It opens as 10 columns × 4 rows, and Lesson
   23 tells the student to set Columns to 40.

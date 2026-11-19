@@ -808,6 +808,22 @@ rest of this table, measured in this simulation:
 | 135° | −0.18 | −0.18 |
 | 180° (horizontal, other side) | −0.25 | −0.25 |
 
+<a id="figure-20-2"></a>
+![Holding voltage against arm angle from -20 to 180 degrees: 23 measured points on the dashed curve kArmKG times cosine of the angle, positive and falling to zero at 90 degrees, then negative to -0.25 at 180](images/20-hold-voltage-cosine.png)
+
+*Figure 20.2 — Applied volts while holding, at 23 angles from −20° to 180°, against the curve `kArmKG × cos θ`. The arm was swept up and then back down.*
+
+Figure 20.2 plots the same readings, with eighteen more angles filled in. The
+dashed curve is `kG × cos θ` with your `kArmKG` of 0.25, drawn from the formula,
+not fitted to anything. Each orange mark is what the simulated motor was actually
+applying after the arm had sat at that angle for five seconds. Read the shape
+first: the curve starts at about `+0.25` with the arm level, falls through zero
+at vertical, and bottoms out at `−0.25` level on the far side. Then check the
+marks against it: they sit on the curve at every angle, to within about
+two-thousandths of a volt, and the sweep down lands where the sweep up did, so
+how the arm got there doesn't matter. The five angles from the table are
+labeled, and the `−20°` stop reads `+0.24`.
+
 **Read that table twice.** The holding voltage isn't a constant like the
 elevator's was — it's a cosine, exactly the curve section 2 derived. At
 vertical it is *zero*: the arm is balanced over its own pivot and the

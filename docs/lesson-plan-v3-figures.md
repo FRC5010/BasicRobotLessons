@@ -86,13 +86,13 @@ Type: a = sim plot, b = SimGUI screenshot, c = SVG diagram, d = needs the user. 
 | 19.1 | Canvas, anchor and a chain of segments | 19 | c | medium | 2 (built) |
 | 19.2 | SimGUI: the Mechanism drawing | 19 | b | medium | 2 (built) |
 | 20.1 | Arm angle convention and the drawing angle | 20 | c | high | 1 (built) |
-| 20.2 | Holding voltage is a cosine | 20 | a | medium | 3 |
+| 20.2 | Holding voltage is a cosine | 20 | a | medium | 3 (built) |
 | 21.1 | Encoder belief against carriage truth | 21 | a | high | 1 (built) |
 | 22.1 | The intake box in the robot's frame | 22 | c | medium | 2 (built) |
 | 23.1 | SimGUI: the LED strip | 23 | b | medium | 2 (built) |
 | 24.1 | Six states and their transitions | 24 | c | high | 1 (built) |
 | 24.2 | One capture cycle on a timeline | 24 | a | medium | 2 (built) |
-| 25.1 | Sequence holds the elevator, coroutine doesn't | 25 | c | low | 3 |
+| 25.1 | Sequence holds the elevator, coroutine doesn't | 25 | c | low | 3 (built) |
 | 25.2 | Marker position against roller start | 25 | a | medium | 2 (built) |
 | 25.3 | Pick Up timeline | 25 | a | high | 1 (built) |
 | 26.1 | The line's frame and the two stages | 26 | c | medium | 2 (built) |
