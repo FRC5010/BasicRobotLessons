@@ -602,6 +602,13 @@ the other way, so −50% lands on 0° and points straight right. Positive on
 the left, negative on the right, exactly as intended, out of one minus
 sign.
 
+<a id="figure-28-1"></a>
+![A circular dial with five needles from the hub: 0 rot/s points straight down at −90°, 30 rot/s (idle) points down and left at −143°, 60 rot/s points up and left at −197°, 101.08 rot/s points straight up at −270° where a mark shows the clamp, and −50% points straight right at 0°, where the unclamped 150% needle would also land](images/28-dial-needle.svg)
+
+*Figure 28.1 — The speedometer needle at five speeds, drawn from the constants in `FlywheelConstants`. The dial is 2 m across and the needle 0.8 m long. Angles are the formula's, measured the way `LoggedMechanismLigament2d` measures them: 0° is straight right and positive turns counterclockwise.*
+
+Figure 28.1 marks the needle at rest, at idle, at shooting speed and at full scale, and at one more place the formula can send it. Start at the bottom: **0 rot/s is −90°, straight down.** Idle, 30 rot/s, is 30 ÷ 101.08 = 30% of the way round, which is −143°, down and to the left. Shooting speed, 60 rot/s, is 59.4% of the way, −197°, just above the horizontal on the left. Full scale is −270°, straight up, and the black tick there is where the clamp stops the needle. The pink needle is the negative side: −50% lands on 0°, pointing right. The grey dashed line carries on past it to the rim, and it marks where a speed of 150% of full scale would land if nothing clamped it: the same place, looking like a modest negative speed.
+
 The clamp matters more than it looks. Without it, a wheel commanded past
 its free speed would carry the needle round past vertical and back down
 the right-hand side, where it would sit looking like a modest negative
@@ -638,7 +645,7 @@ kP × (goal − ω)  =  kV × ω
 ω                =  42.96 rot/s
 ```
 
-Measured here: 43.40 (Figure 28.1, just below, shows that run beside the full
+Measured here: 43.40 (Figure 28.2, just below, shows that run beside the full
 model's). Close enough to confirm the arithmetic, not exact —
 the small remaining gap is this simulator's own motor model, not a flaw in
 the reasoning. (Zero both gains, hold the request for five seconds on a
@@ -653,12 +660,12 @@ With the model in place, the same request settles at **60.47 rot/s** —
 comfortably inside the 1.5 rot/s tolerance — holding **7.14 V**, matching
 `kV × 60 = 7.1 V` almost exactly.
 
-<a id="figure-28-1"></a>
+<a id="figure-28-2"></a>
 ![Flywheel speed and applied volts after a request for 60 rot/s from a stopped wheel: with the full model the speed climbs on a straight line, eases in and settles at 60.47; with kV and kA zeroed it follows the same line for 1.3 seconds, then bends over and flattens at 43.40, and the applied volts settle at 7.14 against 5.12](images/28-hold-with-without-model.png)
 
-*Figure 28.1 — The same request for 60 rot/s from a stopped wheel, with the full model (orange) and with `kFlywheelKV` and `kFlywheelKA` zeroed (green). One run each: this simulation gives the same settled numbers every time.*
+*Figure 28.2 — The same request for 60 rot/s from a stopped wheel, with the full model (orange) and with `kFlywheelKV` and `kFlywheelKA` zeroed (green). One run each: this simulation gives the same settled numbers every time.*
 
-Figure 28.1 puts the two runs on one set of axes, and it's worth a slow read.
+Figure 28.2 puts the two runs on one set of axes, and it's worth a slow read.
 Start with the top panel. The dashed black line is the goal, 60 rot/s. The orange
 line is the flywheel as you've built it, and the green line is the same flywheel
 with `kFlywheelKV` and `kFlywheelKA` set to zero, so `kP` is doing everything.
@@ -713,12 +720,12 @@ sits while it's waiting.
 | 30 rot/s | 1.22 s |
 | 45 rot/s | 0.70 s |
 
-<a id="figure-28-2"></a>
+<a id="figure-28-3"></a>
 ![Flywheel speed against time for four requests for 60 rot/s, from idle speeds of 0, 15, 30 and 45 rot/s: four parallel climbs, each entering the AtSpeed band at 2.26, 1.72, 1.22 and 0.70 seconds; below, the applied volts for the 30 rot/s start jump to about 6.7, peak at 9.05 and settle at 7.14](images/28-spin-up-from-idle.png)
 
-*Figure 28.2 — Spin-up to 60 rot/s from four idle speeds. The shaded band is `AtSpeed` (within 1.5 rot/s of 60); each dot is where a curve enters it. Below: the applied volts for the 30 rot/s start. One run per idle speed.*
+*Figure 28.3 — Spin-up to 60 rot/s from four idle speeds. The shaded band is `AtSpeed` (within 1.5 rot/s of 60); each dot is where a curve enters it. Below: the applied volts for the 30 rot/s start. One run per idle speed.*
 
-Figure 28.2 shows why. Read the top panel first: four requests for 60 rot/s, each
+Figure 28.3 shows why. Read the top panel first: four requests for 60 rot/s, each
 from a wheel that had been idling at a different speed (the darker the line, the
 faster the idle). The shaded band is what `atSpeed()` accepts, and each dot marks
 where a curve gets into it, at the four times in the table.
@@ -794,7 +801,7 @@ drops back to idle. Add `Flywheel/AppliedVolts` to the graph and you'll
 see it jump to about 7 V, climb towards 9 V as the wheel speeds up, and
 settle around 7.1 — which is `kV × 60`, exactly as computed in section 3.
 Your `Flywheel/AppliedVolts` should have the shape of the lower panel of
-[Figure 28.2](#figure-28-2).
+[Figure 28.3](#figure-28-3).
 
 Worth doing deliberately:
 

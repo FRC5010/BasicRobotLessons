@@ -521,6 +521,17 @@ ticks long, and a 20 ms sample catches some of them and misses others, so
 the same moves read differently from run to run. That's why most of these
 are ranges.)*
 
+<a id="figure-29-1"></a>
+![Total current and battery voltage over a 10-second run on a fresh battery for no limits, Phoenix defaults and the budget: each draws a bump while the flywheel spins up to idle in the first second or two, then nothing until the moves at 6 seconds, where no limits jumps to 200 A and drops the rail to 8.0 V, the defaults peak near 111 A and 9.8 V, and the budget near 78 A and 10.4 V; the rail never gets near the dashed 6.3 V line](images/29-fresh-battery-runs.png)
+
+*Figure 29.1 — The same moves on the fresh battery, one run for each configuration (no limits in green, Phoenix defaults in blue, the budget in orange). Each run is a middling one of several, and the peaks vary from run to run as the table says. The dips below zero and bumps above 12 V after 6 s are the battery model's accounting while the motors slow down; ignore them.*
+
+Figure 29.1 shows one run of each row of the table, with the moves identical and only the limits different. The top panel is `Power/TotalCurrentAmps`, the bottom is `Power/BatteryVolts`, and the dashed line is the 6.3 V brownout threshold. Read the quiet stretch first. Between about 2 s and 6 s nothing is asking for current, and all three runs sit at 12 V, so the difference you're about to see comes only from what each configuration lets the motors take.
+
+The first bump, in the first second or two, is the flywheel spinning up to its idle speed. The limits show up here already: the green line, with no limits, peaks near 160 A and pulls the rail down to about 8.9 V, the blue line peaks near 64 A, and the orange line near 36 A, and each bump ends when the wheel gets up to speed.
+
+Then the moves at 6 s. Green jumps to its **200 A** peak and the rail drops to **8.0 V** in the same tick: that's the bottom row of the table. Blue peaks near **111 A** and bottoms out near 9.8 V, and orange peaks near **78 A** and 10.4 V. Then look at the dashed line. Even the green run, the worst of the three, stays almost 2 V above it. That's what "sags, survives" means: a real dip, a real distance from the brownout line, and no brownout.
+
 Three mechanism motors, even unlimited, can't pull a fresh battery under
 6.3 V. That's honest, and it's the same thing section 3 said: this robot has
 only three mechanism motors in the sum. The drivetrain's eight are what
@@ -560,12 +571,12 @@ The other two rows need one piece of arithmetic. On this battery the rail is
 11 V minus 40 mΩ times the current, so **6.3 V is 117.5 A**. A brownout here
 means the total draw reached 117.5 A on a single tick, and nothing more.
 
-<a id="figure-29-1"></a>
+<a id="figure-29-2"></a>
 ![Total current and battery voltage over a 10-second run on the tired battery, for no limits and for the budget: with no limits the current passes the 117.5 A line within the first 0.2 seconds and the rail drops under 6.3 V, recovers, then swings violently between about 0 and 11 V once the moves start at 6 seconds; with the budget the current stays well under the line and the rail never gets near 6.3 V](images/29-tired-battery-brownout.png)
 
-*Figure 29.1 — The same moves on the tired battery, no limits (green) against the budget (orange). One run of each: the no-limits run is a typical collapse (eight of its ten runs looked like this), and the budget run is a typical one of its thirty, so it doesn't show the rare brownout described below.*
+*Figure 29.2 — The same moves on the tired battery, no limits (green) against the budget (orange). One run of each: the no-limits run is a typical collapse (eight of its ten runs looked like this), and the budget run is a typical one of its thirty, so it doesn't show the rare brownout described below.*
 
-Figure 29.1 shows the line. The top panel is `Power/TotalCurrentAmps` and the bottom is
+Figure 29.2 shows the line. The top panel is `Power/TotalCurrentAmps` and the bottom is
 `Power/BatteryVolts`, over the same ten seconds. The two dashed lines are one line
 seen from two sides: on this battery the rail is 11 V minus 40 mΩ times the current,
 so 117.5 A on the top panel is 6.3 V on the bottom one. When the current is above

@@ -274,6 +274,13 @@ it's moving overall. Drive straight at a tag and the bearing doesn't change
 at all. Drive sideways past it and it swings quickly. Do it twice as far
 away and it swings half as fast.
 
+<a id="figure-27-1"></a>
+![Two top-down views of a robot and tag 20: the robot's velocity is split into a part along the line to the tag, which does not turn the bearing, and a part across it, v-perp of 3 metres per second; at 3 metres the bearing swings at 3 divided by 3, 1 radian per second, and at 6 metres with the same velocity at 0.5 radians per second, drawn as a smaller swing of the sight line after the same sideways step](images/27-bearing-rate.svg)
+
+*Figure 27.1 — Why the bearing's turn rate depends on the sideways speed and the distance. The robot's velocity (2 m/s toward the tag, 3 m/s across) is split into its two parts. The dashed square is the robot after a sideways step of 0.3 s, and the purple arc is how far the sight line to the tag turned.*
+
+Figure 27.1 draws it. The robot's velocity has two parts. The part along the line to the tag, the blue arrow, only moves the robot closer or farther, so the sight line keeps pointing the same way. The part across the line, the orange arrow, is the one that makes the bearing swing, and it's the only one that counts. Compare the two panels: the same sideways step turns the sight line through a big angle at 3 m and a small one at 6 m, which is the "twice as far, half as fast" of the paragraph above. The rate is **v⊥ ÷ r**: 3 ÷ 3 = 1.0 rad/s at 3 m (the number from section 4) and 3 ÷ 6 = 0.5 rad/s at 6 m.
+
 That's the cross product of the robot's velocity with the direction to the
 target, divided by the distance squared.
 
@@ -368,12 +375,12 @@ chassis's true pose the same runs read 13.5° and 1.2°, because the estimate
 and the truth disagree by about a degree of heading. Either way, the term did
 what the arithmetic said it would.
 
-<a id="figure-27-1"></a>
+<a id="figure-27-2"></a>
 ![Aim error in degrees over a 9-second orbit of tag 20, at 3 m/s above and 2 m/s below: with P only the error climbs in the first 0.7 seconds to a flat shelf just above the predicted line, 14.6 degrees and 9.7 degrees, and stays there; with feedforward it bumps to about 4 and 3 degrees in the first half second and then sits on zero](images/27-orbit-aim-error.png)
 
-*Figure 27.1 — `Aim/ErrorDegrees` for one orbit of tag 20 at 3 m, P only against P plus feedforward, at 3 m/s (top) and 2 m/s (bottom). One run of each, read from the pose estimate. Feedforward runs sometimes catch a camera correction and show a bump later in the run (one of the three 3 m/s runs recorded for this figure had a 0.3° one); these are clean runs.*
+*Figure 27.2 — `Aim/ErrorDegrees` for one orbit of tag 20 at 3 m, P only against P plus feedforward, at 3 m/s (top) and 2 m/s (bottom). One run of each, read from the pose estimate. Feedforward runs sometimes catch a camera correction and show a bump later in the run (one of the three 3 m/s runs recorded for this figure had a 0.3° one); these are clean runs.*
 
-Figure 27.1 shows the table as curves. Read the top panel first: the robot circles the tag at 3 m/s,
+Figure 27.2 shows the table as curves. Read the top panel first: the robot circles the tag at 3 m/s,
 three metres out, and the line is the aim error against time. The dashed grey line is the 14.32° from
 section 4's arithmetic, `1.0 ÷ kAimP`.
 
