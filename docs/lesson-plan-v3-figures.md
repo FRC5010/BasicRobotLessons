@@ -74,10 +74,10 @@ Type: a = sim plot, b = SimGUI screenshot, c = SVG diagram, d = needs the user. 
 | 15.3 | SimGUI: AdvantageKit menu for a camera | 15 | b | medium | 2 (built) |
 | 15.4 | A parked robot still drifts | 15 | a | medium | 2 (built) |
 | 16.1 | The estimate creeps ahead and stays there | 16 | a | high | 1 (built) |
-| 16.2 | Truth and estimate are different loops | 16 | c | medium | 2 |
-| 16.3 | The grip limit | 16 | a | medium | 2 |
+| 16.2 | Truth and estimate are different loops | 16 | c | medium | 2 (built) |
+| 16.3 | The grip limit | 16 | a | medium | 2 (built) |
 | 17.1 | Three loops at once | 17 | c | low | 3 |
-| 17.2 | Can it stop in time? | 17 | a | medium | 2 |
+| 17.2 | Can it stop in time? | 17 | a | medium | 2 (built) |
 | 17.3 | SimGUI: DS window for an auto | 17 | b | high | 1 (built) |
 | 17.4 | Two Corners, drawn and driven | 17 | a | high | 1 (built) |
 | 17.5 | Cross-track error at the corner | 17 | a | high | 1 (built) |
@@ -1092,3 +1092,12 @@ Built two agents at a time, in lesson groups, to stay inside the usage window.
   - Lesson 9 §5 describes what the module arrows show.
   - Lesson 25 credits `Command.parallel` to Lesson 9.
 - **Not linked yet:** Figure 0.1 from Lesson 1 §6, until the user decides on that section's constructor rationale.
+- **Round 2 (built):** 11.1, 13.3, 14.2, 15.3, 15.4, 16.2, 16.3, 17.2.
+  - Working ID 17.2 ("Can it stop in time?") is **Figure 17.1** in the lesson. Batch 1's 17.1–17.3 are now **17.2–17.4**, and their links from Lessons 25 and 26 follow.
+  - The others kept their working numbers.
+  - Back-links were added from Lessons 14, 15, 16 and 26.
+- **Text fixes found in round 2:**
+  - Lessons 1 and 15 now point to SimGUI's NetworkTables View window for plain values. The menu lists only widgets.
+  - Lesson 15 Try It #3's drift range is now "15 to 50 cm".
+  - Lesson 11 warns that the Robot State window can hide the robot.
+  - Lesson 17 reports that one of six 3 m/s runs stopped short.

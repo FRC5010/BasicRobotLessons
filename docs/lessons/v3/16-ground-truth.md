@@ -35,7 +35,7 @@ You've been getting away with it because everything downstream of the
 encoder can't tell the difference — that was Lesson 4's whole promise, and
 it held. But look at what the course has had to fake as a result. Lesson
 15's Try It asked you to give the simulated camera a shaky hand, and the
-estimate drifted off with nothing to pull it back, because there was no
+estimate drifted off with nothing to pull it back ([Figure 15.4](15-limelight.md#figure-15-4)), because there was no
 independent truth for vision to be right about. There's a deeper version of
 the same gap: every wheel spins exactly as fast as it's told, so odometry has never
 once been *wrong* in simulation — it's just been a very precise record of
@@ -460,6 +460,28 @@ That's the whole fix — `drivetrain::getSimulatedPose` in place of
 chassis *actually* is, so a correction it computes pulls the estimate
 toward something real, not toward itself.
 
+Figure 16.2 draws the wiring before and after, and it's worth reading top to
+bottom. In the top half, Lesson 15's, the simulated camera looks out from
+`Localizer.getPose()`, and whatever it sees goes straight back into
+`addVisionMeasurement` on the same `Localizer`: one orange loop, the estimate
+checking itself against a picture it drew. In the bottom half, Lesson 16's,
+there are two loops. The blue one is the truth: the modules' *measured* wheel
+speeds and angles go through `simulateChassis` and `toChassisVelocities`, into
+`ChassisSimulation`, where the grip limit applies, and out as
+`getSimulatedPose()`. (It follows the wheels, not the command, like a real
+chassis.) The orange one is the estimate: odometry from the same wheel
+encoders, with a heading from `GyroIOSim`, which reports what the chassis
+did, the way a real gyro would. The estimate never reads the truth. The
+truth reaches it by exactly one road, the green one: the camera renders from
+`getSimulatedPose()` and hands the result to `addVisionMeasurement`. Cut that
+road and you have Lesson 15's drift with a separate truth to measure it
+against; keep it and the cameras become a real check.
+
+<a id="figure-16-2"></a>
+![Two wiring diagrams. Lesson 15: the Localizer's getPose feeds the simulated camera, and the camera's measurement goes back into the same Localizer, a closed loop. Lesson 16: measured wheel states feed simulateChassis and ChassisSimulation (the grip limit), which gives getSimulatedPose and the gyro heading; the Localizer uses encoders and gyro; the only link from truth to estimate is the camera](images/16-truth-vs-estimate-wiring.svg)
+
+*Figure 16.2 — Lesson 15's camera loop, and Lesson 16's two loops joined only by the camera.*
+
 One loose end. The chassis sim starts at `kSimStartingPose`, but
 `Localizer` still starts at `(0, 0, 0°)`, because odometry has no idea
 where it was switched on. Left alone, you'd watch two robots in different
@@ -531,11 +553,29 @@ built, and that tick holds what the constructor recorded.
 Now run the robot in simulation → **RobotTeleop**. The first thing
 you'll feel is the grip limit: push the stick to full and the robot doesn't
 reach speed instantly — it ramps, the way a real chassis with real tires
-does, and letting go coasts it back down instead of stopping dead. Drive
+does, and letting go coasts it back down instead of stopping dead. Figure 16.3
+plots one start and one release.
+
+<a id="figure-16-3"></a>
+![Speed against time for a full-stick start from a stop and a release 1.5 seconds later: the requested speed is a step up to 4.8 m/s and back to zero; the true chassis speed climbs in a straight line at 11.77 m/s² to the top in under half a second, holds, and falls at the same slope after the release](images/16-grip-limit.png)
+
+*Figure 16.3 — Full stick from a stop, then let go. The dashed line is what you asked for; the orange line is what the chassis did.*
+
+The dashed line is the stick: a jump to full speed (about 4.8 m/s) at time
+zero, and a jump back to zero at 1.5 s. The orange line is
+`ChassisSimulation`'s speed, and the thing to notice is that it's a straight
+line. The chassis can't change speed faster than the tires can push, so every
+tick it takes the same small step toward the request, and a steady step per
+tick is a constant slope. Measured, that slope is 11.77 m/s², the
+`kMaxAccelMps2` you computed in section 2 (1.2 × 9.81). It reaches the top
+about 0.45 s after the stick moves, and on release it comes back down at the
+same slope, because the limit doesn't care which direction the change goes.
+Drive
 hard enough to make `Localizer/Pose` and `Drivetrain/SimulatedPose`
 separate, the way section 6 showed you, then park somewhere a tag is
 visible. Watch `Localizer/Pose` get pulled back toward
-`Drivetrain/SimulatedPose` — odometry for smoothness, vision for truth,
+`Drivetrain/SimulatedPose` (the same pull as [Figure 14.2](14-pose-estimator.md#figure-14-2), toward
+the truth this time) — odometry for smoothness, vision for truth,
 with, for the first time, a truth to compare against instead of a guess
 checking itself.
 

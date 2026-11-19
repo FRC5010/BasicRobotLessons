@@ -365,11 +365,46 @@ to two lines of arithmetic:
 
 0.33 m of stopping fits inside 0.4 m of warning, so the robot arrives. At 3 m/s
 it wouldn't: slowing starts 0.6 m out, and stopping takes 3² ÷ (2 × 6) = 0.75 m.
-That's what Try It #2 has you watch. The same limit governs corners — turning
+That's what Try It #2 has you watch.
+
+Figure 17.1 plots both cases, which is easier to see than to read. The
+horizontal axis is the distance left to the end of the path, running backwards
+so that time goes left to right and the end is the dashed line at 0. The
+vertical axis is speed toward the end. Start with the dotted grey curve. It's
+the fastest speed the robot could be doing at each distance and still stop in
+time at 6 m/s², the square root in `√(2 × 6 × d)`, and it's the line the two
+cases are measured against. Anything above it is too fast to stop.
+
+The blue lines are what the translation loop asks for: the top speed, until
+`5.0 × distance left` drops below it, and then a straight slope down to zero at
+the end. The 2 m/s request (solid) turns downward at 0.4 m and stays under the
+grey curve all the way in, so braking along it is possible. The 3 m/s request
+(dashed) turns at 0.6 m, and for a stretch just after that it runs *above*
+the grey curve: the loop is asking for speeds the robot can't shed in the
+distance left. That's the 0.75 m against 0.6 m from the arithmetic, drawn.
+
+The orange and green lines are what the simulated robot really did, with the
+simulated truth's speed measured along the last leg of Two Corners. Orange (2
+m/s) rides the grey curve down, braking about as hard as 6 m/s² allows. It's
+still doing about 0.8 m/s when it reaches the end, since the wheels follow a
+request a little late, and it rolls about 6 cm past before settling. That's
+what "arrives" looks like. Green (3 m/s) is the other story. The last leg is
+only 3 m long, so it peaks at about 2.9 m/s rather than 3, and it's still doing
+nearly 2 m/s at the end. It slides on to about 36 cm past, stops, and drives
+back. (Five of six runs agreed with each other to a centimeter or two; the
+sixth stopped short, and its cause wasn't tracked down. Try It #2 asks you
+to reproduce this one.)
+
+<a id="figure-17-1"></a>
+![Speed against distance left on Two Corners' last leg. A dotted curve shows the fastest speed from which 6 m/s² can still stop. The 2 m/s request starts falling at 0.4 m and stays below the curve; the robot's measured speed follows the curve and ends about 6 cm past the end. The 3 m/s request starts falling at 0.6 m and crosses above the curve; the measured speed is still near 2 m/s at the end, overshoots by about 36 cm, and comes back](images/17-can-it-stop.png)
+
+*Figure 17.1 — Can it stop in time? The dotted curve is the best braking at 6 m/s²; the blue lines are what the loop asks for; the orange and green lines are what the simulated robot did at 2 and 3 m/s.*
+
+The same limit governs corners — turning
 2 m/s of "east" into 2 m/s of "north" is a change in velocity like any other,
 and it can't happen faster than 6 m/s² allows. With these numbers the robot
 swings roughly 14–16 cm past this path's first corner before it's heading up the
-second leg ([Figure 17.2](#figure-17-2) draws it). (Measured in this course's sim over several runs; it varies a
+second leg ([Figure 17.3](#figure-17-3) draws it). (Measured in this course's sim over several runs; it varies a
 little, because vision nudges the estimate a little differently each time.)
 
 And now the `deploy` folder, which you've had since Lesson 0 and never used.
@@ -890,12 +925,12 @@ can only change it while Robot State says *Disconnected*, which it does when
 SimGUI first opens, and it starts on Red 1 every time. (Red works too now —
 that's Try It #6 — but the numbers below are for blue.)
 
-<a id="figure-17-1"></a>
+<a id="figure-17-2"></a>
 ![SimGUI's Robot State and DS windows at two moments. Left: Disconnected, with the DS window's Alliance Station drop-down set to Blue 1, badge 1. Right: Autonomous picked, badge 2, Two Corners chosen on the opmode selector, badge 3, and the Enable button below it, badge 4; the DS window now shows the alliance station as plain text.](images/17-simgui-ds-window.png)
 
-*Figure 17.1 — The four things you'll click. The DS window's Alliance Station is a drop-down only while Robot State says Disconnected; once you pick a mode it turns into plain text.*
+*Figure 17.2 — The four things you'll click. The DS window's Alliance Station is a drop-down only while Robot State says Disconnected; once you pick a mode it turns into plain text.*
 
-Figure 17.1 labels the four things you'll click, in order. Set the Alliance
+Figure 17.2 labels the four things you'll click, in order. Set the Alliance
 Station (1) while everything still says Disconnected. Then click
 **Autonomous** (2) and pick **Two Corners** on the opmode selector (3).
 Before you enable anything, look at the console: the line
@@ -916,12 +951,12 @@ event runs on the loop after the follower passes the marker. The robot finishes
 within the tolerances in `config.json` — within 5 cm and 2°, so don't be
 surprised to read 178.8° rather than 180°.
 
-<a id="figure-17-2"></a>
+<a id="figure-17-3"></a>
 ![Top-down view of the field from x 2.4 to 7.6 and y 2.3 to 6.9 meters. A dashed black line is the drawn path from (3, 3) east to the corner at (6, 3), then north to (6, 6). An orange line is the track the robot drove: it follows the first leg, swings about 16 centimeters past x = 6 inside a dotted half-meter circle round the corner, and comes back to the line on the second leg, ending at (6, 6). Blue arrows show the robot's heading turning from 0 degrees to about 180 degrees along the way. A diamond marks the rotation target and a star marks where the shoot event fired.](images/17-two-corners-track.png)
 
-*Figure 17.2 — Two Corners, drawn and driven: the path in the file, and where the simulated robot really went (Drivetrain/SimulatedPose, one run; three runs gave 15–16 cm past the corner).*
+*Figure 17.3 — Two Corners, drawn and driven: the path in the file, and where the simulated robot really went (Drivetrain/SimulatedPose, one run; three runs gave 15–16 cm past the corner).*
 
-Figure 17.2 is that run drawn from above. The dashed line is your path file; the
+Figure 17.3 is that run drawn from above. The dashed line is your path file; the
 orange line is where the robot went. Look at the corner first: the robot enters the dotted circle, which is the 0.5 m
 handoff radius, and then swings about 16 cm wide before it's heading up the
 second leg. That's section 5's arithmetic made visible. Then follow the blue
@@ -945,12 +980,12 @@ starts measuring against the second's. Then watch it shrink back toward zero as
 the robot settles onto the second leg. Nothing told the
 follower it was off the line. Correcting is the only thing it ever does.
 
-<a id="figure-17-3"></a>
+<a id="figure-17-4"></a>
 ![Two stacked graphs of one run, time from 0 to 4.5 seconds. Top: crossTrackError sits at a few centimeters, jumps to 0.47 meters at 1.44 seconds, falls back through zero at about 1.7 seconds, reaches minus 0.16 meters at about 2 seconds, then settles near plus 0.03 meters. Bottom: remainingPathDistanceMeters falls steadily from 6 meters, drops from 3.5 to 3.0 meters at the same 1.44 seconds, and reaches zero at about 3.3 seconds. A vertical dotted line marks the jump and a dashed one marks when the shoot event fires.](images/17-cross-track-error.png)
 
-*Figure 17.3 — B-Line's two signals through Two Corners. Both jump at the same tick, when the robot enters the 0.5 m handoff radius and the follower starts measuring against the second leg.*
+*Figure 17.4 — B-Line's two signals through Two Corners. Both jump at the same tick, when the robot enters the 0.5 m handoff radius and the follower starts measuring against the second leg.*
 
-Figure 17.3 shows both signals from one run, and it's worth reading slowly,
+Figure 17.4 shows both signals from one run, and it's worth reading slowly,
 because the jump in it looks like a mistake and isn't. Start with the top
 panel, `crossTrackError`: how far the robot is from the line the follower is
 chasing right now, positive here when the robot is to the left of that line.
@@ -974,7 +1009,7 @@ through zero about 0.28 s after the jump. But the robot was heading east at
 2 m/s and can only change its velocity so fast (the acceleration limit in
 `config.json`), so it doesn't stop at the line: it sails through, and the curve
 bottoms out at −0.16 m, the robot 16 cm past the line on the far side. That's
-the same 16 cm you can see at the corner in Figure 17.2. Then the loop pulls it
+the same 16 cm you can see at the corner in Figure 17.3. Then the loop pulls it
 back, and it's within a few centimeters for the rest of the run, settling at
 about 0.03 m, inside the 5 cm tolerance. The dashed line is the `shoot` event,
 well after all that has settled.
@@ -1006,7 +1041,7 @@ without restarting.
    second longer. A later handoff means the robot drives into the corner at full
    speed before it starts turning.) Put it back, then raise
    `default_max_velocity_meters_per_sec` to `3.0`. Section 5's arithmetic says
-   the robot can't stop in time from 3 m/s; watch it sail roughly 35 cm past the
+   the robot can't stop in time from 3 m/s ([Figure 17.1](#figure-17-1) draws it); watch it sail roughly 35 cm past the
    end and come back, and about 70 cm past the first corner. Then change the
    acceleration so the arithmetic works again, and check that it does.
 3. **Code — mistune the cross-track gain.** Set `kCrossTrackP` to `30.0` and run the

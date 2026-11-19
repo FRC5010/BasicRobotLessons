@@ -2699,6 +2699,20 @@ at least twice.
 - **SimGUI Field pane:** only the field's outline, no image. The default
   **Robot State** window covers the field's bottom-left corner, where the
   robot starts; Lesson 11 now says to drag it aside.
+- **Lesson 16, the grip limit** (Figure 16.3, from batch 1's full-stick-start
+  data): the true chassis speed ramps at 11.77 m/s² both ways. It tops out at
+  4.793 m/s against `kMaxSpeed`'s 4.780 (the 0.3% wasn't looked into) and
+  reaches 90% at 0.42 s.
+- **Lesson 17, Two Corners at 3 m/s** (Figure 17.1, six runs with
+  `Fig17TwoCorners` and the config edited):
+  - Five runs went 36–37 cm past the end and 70–72 cm past the corner. They
+    peaked at 2.87 m/s (the last leg is only 3 m) and crossed the end at
+    about 1.9 m/s.
+  - The first run went only 27 cm past the corner and 0 past the end; the
+    cause isn't known. The lesson says so.
+  - At 2 m/s the robot crosses the end at about 0.8 m/s and rolls 6–7 cm
+    past (5 cm tolerance), settling about 2 cm past.
+  - Lesson 17's batch 1 figures are now 17.2–17.4.
 - SimGUI tips (b2g3): keyboard 0 drives with W/S (left Y), A/D (left X) and
   E/R (right X). The axes ramp at about 1.2/s and decay slowly, so tap for
   0.3–1 s; longer holds run the robot off the field.

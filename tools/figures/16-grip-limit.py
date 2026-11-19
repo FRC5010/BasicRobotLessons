@@ -51,10 +51,10 @@ def main():
     # the lesson's number, drawn through the start of the ramp and the end of it
     t0 = 0.30 - np.interp(0.30, tv, v) / GRIP
     g = np.array([t0, t0 + K_MAX_SPEED / GRIP])
-    ax.plot(g, [0, K_MAX_SPEED], color=figstyle.NEUTRAL, linestyle=":", linewidth=1.6)
+    ax.plot(g, [0, K_MAX_SPEED], color=figstyle.NEUTRAL, linestyle=":", linewidth=1.6, zorder=5)
     t1 = tv[(tv > 1.0) & (v > 0.999 * v.max())].max()  # last tick at top speed
     t_stop = t1 + K_MAX_SPEED / GRIP
-    ax.plot([t1, t_stop], [K_MAX_SPEED, 0], color=figstyle.NEUTRAL, linestyle=":", linewidth=1.6)
+    ax.plot([t1, t_stop], [K_MAX_SPEED, 0], color=figstyle.NEUTRAL, linestyle=":", linewidth=1.6, zorder=5)
     ax.annotate("slope 11.77 m/s²\n(1.2 × 9.81)", xy=(0.19, 2.2), xytext=(0.55, 3.3),
                 color="#555555", va="center", arrowprops=dict(arrowstyle="-", color="#777777"))
     ax.annotate("same slope on the way down", xy=(1.72, 2.4), xytext=(1.95, 3.2),

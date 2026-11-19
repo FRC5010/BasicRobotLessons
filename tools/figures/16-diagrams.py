@@ -21,7 +21,7 @@ Svg, BLUE, ORANGE, GREEN, GREY, BLACK = d.Svg, d.BLUE, d.ORANGE, d.GREEN, d.GREY
 
 
 def fig_16_2():
-    s = Svg(800, 1330)
+    s = Svg(800, 1240)
 
     # ------------------------------------------------ Lesson 15
     s.text(400, 34, "Lesson 15: the camera looks out from the estimate", 18, weight="bold")
@@ -31,8 +31,8 @@ def fig_16_2():
     s.line(220, 120, 290, 120, BLACK, 2)
     s.line(410, 170, 410, 235, ORANGE, 4)
     s.text(402, 208, "looks out from here", 14, ORANGE, "end")
-    s.path("M530,275 L640,275 L640,120 L530,120", ORANGE, 4)
-    s.text(650, 190, ["addVisionMeasurement", "corrects the estimate"], 14, ORANGE, "start")
+    s.path("M530,275 L600,275 L600,120 L530,120", ORANGE, 4)
+    s.text(612, 190, ["addVisionMeasurement", "corrects the estimate"], 14, ORANGE, "start")
     s.text(400, 352, "A closed loop: the estimate is corrected toward a picture it drew itself.", 15, ORANGE, weight="bold")
     s.add('<line x1="20" y1="385" x2="780" y2="385" stroke="#bbbbbb" stroke-width="2" stroke-dasharray="7 5"/>')
 
@@ -52,8 +52,8 @@ def fig_16_2():
     # arrows
     s.line(300, o + 124, 195, o + 190, BLACK, 2)
     s.line(500, o + 124, 600, o + 190, BLACK, 2)
-    s.text(150, o + 168, "follows the wheels,", 14, BLUE, "middle")
-    s.text(150, o + 168 + 18, "not the command", 14, BLUE, "middle")
+    s.text(100, o + 140, "follows the wheels,", 14, BLUE, "middle")
+    s.text(100, o + 158, "not the command", 14, BLUE, "middle")
     s.line(195, o + 274, 195, o + 330, BLUE, 3)
     s.line(195, o + 440, 195, o + 500, BLUE, 3)
     s.line(370, o + 385, 420, o + 385, BLUE, 3)       # truth heading into the sim gyro
@@ -64,8 +64,8 @@ def fig_16_2():
     s.path(f"M195,{o + 566} L195,{o + 692} L240,{o + 692}", BLUE, 3)
     s.path(f"M560,{o + 692} L760,{o + 692} L760,{o + 240} L780,{o + 240}", GREEN, 4)
     s.text(660, o + 678, "addVisionMeasurement", 14, GREEN, "middle")
-    s.text(400, o + 772, "The estimate and the truth never read each other.", 15, GREEN, weight="bold")
-    s.text(400, o + 794, "Only the camera carries news from one to the other.", 15, GREEN, weight="bold")
+    s.text(400, o + 772, "The estimate never reads the truth, only sensors do (the gyro too).", 15, GREEN, weight="bold")
+    s.text(400, o + 794, "Only the camera lets the truth correct the estimate.", 15, GREEN, weight="bold")
     s.save("16-truth-vs-estimate-wiring.svg")
 
 
