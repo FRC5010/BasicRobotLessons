@@ -110,6 +110,7 @@ statement = "A finished Command object can be scheduled again, so one instance r
 evidence = "CLAUDE.md, 'v3 Lesson 25 (path events)', Event markers"
 measured_on = "alpha-7"
 method = "LOOP"
+note = "Lesson 25 relies on it in code (one requestIntake() instance registered for every run of the path); the marker is on the sentence that introduces that call."
 
 [[claim]]
 id = "commandsv3.mechanism-no-default-command"
@@ -366,4 +367,24 @@ criticality = "C1"
 statement = "Trigger has debounce(Time), and(Trigger or BooleanSupplier) (a method reference such as robot.arm::hasGamePiece works), and negate(); each and(...) builds a new Trigger the scheduler polls like any other, so a command bound with whileTrue runs while every part holds and stops when any one stops."
 evidence = "CLAUDE.md, 'v3 Lesson 22 (beam breaks) is hand-built' (Trigger.debounce(Time) takes the measure directly) and the Lesson 24 notes (inState(X).and(RobotState::isEnabled).whileTrue(...) measured on alpha-8); the Lesson 22 snapshot compiles on alpha-8 with zero warnings"
 measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.scheduler-default-api"
+kind = "api"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "Scheduler.getDefault() returns the scheduler; .run() is one robot tick, .schedule(command) schedules a command, and .cancelAll() cancels everything, the roles CommandScheduler.getInstance() had in older WPILib."
+evidence = "CLAUDE.md, 'v3 Lesson 31 (testing) on alpha-7' and the probe recipe in the Lesson 25 notes (Scheduler.getDefault().addPeriodic); Lesson 33's tests pass on alpha-8."
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.disabled-scheduler-refuses-commands"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "While the robot is disabled the scheduler refuses to run a mechanism's command, so a test that never enables the DriverStationSim ends with the elevator not homed."
+evidence = "CLAUDE.md, 'v3 Lesson 31 (testing) on alpha-7' (with setEnabled(true) removed the test dies at its own isDisabled() assertion; with that removed too, at assertTrue(isHomed())), and the Lesson 24 alpha-8 notes (a schedule attempted while disabled is refused, RequiresUnsafeMechanisms, read from source)."
+measured_on = "alpha-7, listed unchanged on alpha-8"
 method = "LOOP"

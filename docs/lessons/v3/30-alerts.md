@@ -332,7 +332,7 @@ but it would also mean you can never see this alert fire before the day it
 fires for real. Better to give the simulation something a real gyro has: a
 cable you can pull.
 
-**Create `subsystems/UnplugSwitch.java`:**
+**Create `subsystems/UnplugSwitch.java`:** <!-- claim: wpilib.simdevice-duplicate-returns-null -->
 
 ```java
 package first.robot.subsystems;

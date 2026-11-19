@@ -62,6 +62,7 @@ statement = "SimDevice.create returns null for a name already in use, so the unp
 evidence = "CLAUDE.md, 'v3 Lesson 30 (alerts) on alpha-7', The unplug switch"
 measured_on = "alpha-7, listed unchanged on alpha-8"
 method = "LOOP"
+note = "Lesson 30 states it only in a code comment (UnplugSwitch), so the marker is on that code block's lead-in."
 
 [[claim]]
 id = "wpilib.alert-duplicate-throws"
@@ -624,3 +625,23 @@ criticality = "C3"
 statement = "BatterySim.calculateDefaultBatteryLoadedVoltage models a nominal 12 V battery with 20 milliohms of internal resistance, so 100 A costs 2 V and 300 A costs 6 V."
 evidence = "No record found in CLAUDE.md or tools/figures/data of the 12 V / 20 mOhm figures themselves (CLAUDE.md only says the motor-count rig closes the battery through this call); stated by the lesson"
 measured_on = "unverified"
+
+[[claim]]
+id = "wpilib.hal-initialize-needed-in-tests"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "In a unit test, HAL.initialize() (no arguments) must run before anything that touches hardware is constructed; without it construction fails."
+evidence = "CLAUDE.md, 'v3 Lesson 31 (testing) on alpha-7' (HAL.initialize() takes no arguments in alpha-7); the 'fails without it' sentence is stated by the lesson and also seen in CLAUDE.md's probe traps (GamepadSim built before HAL.initialize crashes the JVM)."
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib.dio-channel-held-for-jvm"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "A DigitalInput holds its DIO channel for the life of the JVM, HAL.shutdown() does not release it, and a second Elevator in a second test method throws AllocationException (Code -1029, 'DIO 0 previously allocated')."
+evidence = "2026/CLAUDE.md, Lesson 32 (testing) notes: measured on the classic track; CLAUDE.md's Lesson 31 elevator test comment repeats it. Not re-recorded for alpha-8 in CLAUDE.md."
+measured_on = "unverified"
+note = "Measured on the classic track (WPILib 2026); the v3 lesson's test file says the same. No alpha-8 record."

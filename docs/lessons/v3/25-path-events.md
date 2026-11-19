@@ -374,7 +374,7 @@ single motor. It just asks.
 ```
 
 Lesson 17 mentioned that `registerEventTrigger` also takes a `Command`, and
-`requestIntake()` is one. <!-- claim: bline.register-event-trigger --> Everything after the request is Lesson 24's machinery ([Figure 24.1](24-superstructure.md#figure-24-1) draws it,
+`requestIntake()` is one. <!-- claim: bline.register-event-trigger, commandsv3.finished-command-reschedulable --> Everything after the request is Lesson 24's machinery ([Figure 24.1](24-superstructure.md#figure-24-1) draws it,
 and [Figure 24.2](24-superstructure.md#figure-24-2) times one cycle),
 running unchanged: `INTAKING` drops the arm and starts the roller; the beam break
 moves the state to `HANDOFF`, which tucks the arm and raises the elevator; and once
