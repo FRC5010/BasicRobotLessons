@@ -111,12 +111,12 @@ teleop, you'd never know.
 > single tick and the command ended at 1.42 s. Ten times tighter again, 2
 > micrometres, the same tick still passed. A too-tight tolerance can pass by
 > luck of where the ticks fall. At 0.2 micrometres the luck runs out: the
-> command was still running after fifteen seconds, every time.
+> command was still running after fifteen seconds, every time. <!-- claim: l32.lucky-tick-fraction, l32.lucky-tick-time, l32.lucky-tick-gap, l32.typo-never-ends, l32.overshoot -->
 
 Drive around for ten or fifteen seconds — hit the scoring binding a
 couple of times — then close the sim. You now have an `akit_….wpilog` in
 your project's `logs/` folder that looks, at a glance, like a robot
-working perfectly.
+working perfectly. <!-- claim: advantagekit.data-receivers-and-files -->
 
 ---
 
@@ -143,10 +143,10 @@ this fast.
 Zoom the graph to a few seconds either side of that jump. Add
 `Elevator/HeightMeters` to the same graph, right beside `GoalMeters` —
 it's a reading, so it's with the inputs at the top level, not under
-`RealOutputs`.
+`RealOutputs`. <!-- claim: advantagekit.autolog-key-names -->
 Watch them converge — the height climbs, slows, and settles in against
 the goal inside about a second and a half, a clean Motion Magic profile
-arriving exactly where you'd expect from Lesson 18 ([Figure 18.2](18-elevator.md#figure-18-2)).
+arriving exactly where you'd expect from Lesson 18 ([Figure 18.2](18-elevator.md#figure-18-2)). <!-- claim: l32.height-settle -->
 
 Now add one more trace to the same graph: `RealOutputs/Elevator/AtGoal` —
 the one you added in section 2. This is where reading one trace at a time would
@@ -163,7 +163,7 @@ question*.
 Figure 32.1 stacks the three traces the way you'd see them in AdvantageScope,
 from a recording made the way section 3 describes. Read the top panel first.
 The dashed line is `GoalMeters`, a step to 0.75 m, and the orange line is
-`HeightMeters` climbing to meet it and settling in by about 1.3 s. That is a
+`HeightMeters` climbing to meet it and settling in by about 1.3 s. <!-- claim: l32.height-settle --> That is a
 mechanism doing its job. The middle panel is `AtGoal` over the same seconds,
 and it's a flat line on *false*. It doesn't flicker while the carriage is
 climbing and it doesn't change when the carriage has been sitting at the goal
@@ -177,12 +177,12 @@ climb of three quarters of a metre, runs off the bottom of the panel. What's
 left is the part you couldn't see up top: a brief overshoot at 1.2 s, then a
 height that sits a hair below the goal and stays there. Next to that hair, the
 band `AtGoal` was asking the height to land in is thinner than the zero line
-drawn on the panel.
+drawn on the panel. <!-- claim: l32.overshoot-time, l32.settled-error-range -->
 
 <a id="figure-32-1"></a>
 ![Three stacked panels over the same seconds. Top: the goal steps to 0.75 m and the height climbs to it and settles by about 1.3 seconds. Middle: AtGoal is flat on false the whole time. Bottom: height minus goal zoomed to millimetres, showing a 1.2 mm overshoot, then a settled error between 0.15 and 0.19 mm below the goal, against a tolerance band of 0.0002 mm](images/32-at-goal-never-true.png)
 
-*Figure 32.1 — The height arrives, and `AtGoal` never says so. Height minus goal in the bottom panel is computed by hand; section 7 logs it.*
+*Figure 32.1 — The height arrives, and `AtGoal` never says so. Height minus goal in the bottom panel is computed by hand; section 7 logs it.* <!-- claim: l32.height-settle, l32.overshoot, l32.settled-error-range -->
 
 That's the move this lesson is teaching: **put the measurement and the
 decision built from it on the same graph, and read where they stop
@@ -209,17 +209,17 @@ You don't need to open the source to get most of the way there, either
 the target. Subtract them. On a real run of this bug you'll get
 something on the order of a **fifth of a millimetre** — the elevator is
 not missing by much, it's missing by an amount too small to see on a
-graph zoomed out far enough to show the whole climb. Measured in this
+graph zoomed out far enough to show the whole climb. <!-- claim: l32.settled-error-fifth --> Measured in this
 course's simulator, holding at `kScoreMid`: the carriage settles a stable
 **0.15–0.19 mm** short of the goal, flat for as long as you let it sit — a
-real floor, not something still converging.
+real floor, not something still converging. <!-- claim: l32.settled-error-range -->
 
 That number is the hypothesis, stated without even reading `atGoal()`'s
 source: *whatever the elevator is being asked to get within, it's
 smaller than the elevator can actually achieve.* Reading the actual line
 confirms it — `kTolerance` compared against a gap of a fifth of a
 millimetre is comparing a real mechanism's precision against a number
-nobody's mechanism hits. The fix isn't a gain, a motor, or a sensor.
+nobody's mechanism hits. <!-- claim: l32.settled-error-fifth --> The fix isn't a gain, a motor, or a sensor.
 It's the one constant this whole investigation has been circling.
 
 **Fix `kTolerance` to something a real mechanism can actually hit:**
@@ -231,13 +231,13 @@ public static final Distance kTolerance = Centimeters.of(0.1); // 1 mm — comfo
 Not the `0.2` the story's mentor meant to type — a value re-derived from
 what you just measured, with margin: 1 mm is roughly five times the
 0.19 mm floor, so it trips reliably without also being a number nobody
-checked.
+checked. <!-- claim: l32.tolerance-margin -->
 
 Now, instead of trusting that this fixes it, *prove* it against the exact
 match you already have. This is what Lesson 13 built replay for.
 
 **Replay the recording through the fixed code.** Set `kSimMode` in
-`Constants.java` to `Mode.REPLAY`, then name your recording and run:
+`Constants.java` to `Mode.REPLAY`, then name your recording and run: <!-- claim: advantagekit.find-replay-log-sources -->
 
 ```powershell
 $env:AKIT_LOG_PATH = "logs\akit_26-10-29_01-12-37.wpilog"   # your file's name
@@ -245,7 +245,7 @@ $env:AKIT_LOG_PATH = "logs\akit_26-10-29_01-12-37.wpilog"   # your file's name
 ```
 
 It works through the session in a few seconds and exits, leaving a new
-file next to the recording, ending in `_sim.wpilog`.
+file next to the recording, ending in `_sim.wpilog`. <!-- claim: advantagekit.data-receivers-and-files -->
 
 **Then put both switches back:**
 
@@ -264,16 +264,16 @@ entire recorded session — that's what actually happened, on the day, with
 the buggy code. In `ReplayOutputs`, computed just now for that exact same
 session through the fixed code, it flips true 1.2 s after `GoalMeters`
 steps to 0.75, as the climbing carriage comes within a millimetre of the
-goal. It drops back for a tick or two while the carriage overshoots by
+goal. <!-- claim: l32.replay-first-true, advantagekit.replay-file-layout, advantagekit.replay-matches-recording --> It drops back for a tick or two while the carriage overshoots by
 about 1.2 mm, and it's true for good from 1.26 s (measured, on a
-recording made the way section 3 describes). Nothing about the match
+recording made the way section 3 describes). <!-- claim: l32.overshoot, l32.replay-dropout, l32.replay-true-for-good --> Nothing about the match
 changed. The button presses, the timing, the heights the carriage reached:
 all of that is the recording, replayed verbatim. The only difference
 between the two outputs is which line of code decided what to do with the
 same evidence. That's the idea Lesson 13 introduced ([Figure 13.2](13-io-replay.md#figure-13-2)) — "a replay is your
 code, today's version, fed the readings of a run that already happened" —
 and here it's not a demonstration. It's the proof that your fix works,
-checked against a session that already happened instead of a fresh guess.
+checked against a session that already happened instead of a fresh guess. <!-- claim: advantagekit.replay-matches-recording -->
 
 Figure 32.2 is what you should see in the `_sim` file, from a replay of the
 same recording as Figure 32.1. The top panel is the recorded `HeightMeters`
@@ -282,21 +282,21 @@ change, because replay feeds the code the recorded readings. The middle panel
 is height minus goal in millimetres with the new tolerance drawn as a green
 band, ±1 mm. Follow the orange line: it climbs into the band at 1.2 s,
 overshoots to a little over 1 mm, which leaves the band for a tick, then
-settles in and stays inside by a margin of about 0.8 mm. The bottom panel is
+settles in and stays inside by a margin of about 0.8 mm. <!-- claim: l32.band-margin, l32.replay-first-true, l32.overshoot --> The bottom panel is
 the payoff. The lower trace is `RealOutputs/Elevator/AtGoal`, what the
 recorded code decided: false, all of it. The upper trace is
 `ReplayOutputs/Elevator/AtGoal`, what today's code decides about those same
 readings: true at 1.20 s, false for the one tick of overshoot, true for good
-from 1.26 s. One constant changed, and the decision flipped.
+from 1.26 s. One constant changed, and the decision flipped. <!-- claim: l32.replay-first-true, l32.replay-dropout, l32.replay-true-for-good -->
 
 <a id="figure-32-2"></a>
 ![Three stacked panels over seconds 0.5 to 3. Top: the recorded height settling on the goal. Middle: height minus goal in millimetres with a green band of plus and minus 1 mm; the line enters the band at 1.2 seconds, overshoots to about 1.2 mm, drops back in and stays at about minus 0.2 mm. Bottom: the recorded AtGoal flat on false, and the replayed AtGoal true from 1.2 seconds with a one-tick drop at 1.24 seconds, true for good from 1.26 seconds](images/32-replay-fixed-code.png)
 
-*Figure 32.2 — The same recorded match through the fixed code: the readings are identical, the replayed `AtGoal` is true from 1.26 s.*
+*Figure 32.2 — The same recorded match through the fixed code: the readings are identical, the replayed `AtGoal` is true from 1.26 s.* <!-- claim: l32.replay-first-true, l32.replay-dropout, l32.replay-true-for-good, l32.overshoot, l32.settled-error-fifth, l32.band-margin -->
 
 > **Trying more than one fix?** `./gradlew replayWatch` (Lesson 13)
 > replays the log AdvantageScope has open every time you save a change,
-> so you can try one tolerance after another against the same match.
+> so you can try one tolerance after another against the same match. <!-- claim: advantagekit.replay-needs-no-sim-gui -->
 
 ---
 
@@ -337,7 +337,7 @@ Say a mentor updates `PathConstants.kAimTagId` for a new field
 calibration — Lesson 27's aim-assist target — and fat-fingers it: the 2
 key sticks, and `20` becomes `220`. Nobody touched a line of drivetrain
 code, and the field only has 32 tags, so `220` is silently, harmlessly
-invalid.
+invalid. <!-- claim: wpilib.field-default-layout -->
 
 *Nothing to add — this is the kind of edit that causes it, not something to type:*
 
@@ -350,7 +350,7 @@ this field, which is what a typo looks like."* `Aim.omegaTowardTag`
 reads that: *"Zero when the tag isn't on this field — a robot that can't
 find its target should sit still rather than pick a direction."* No
 exception, no console warning either — unlike BLine's `lib_key` lookup,
-`Aim` doesn't log anything when it comes up empty. The **Aim While
+`Aim` doesn't log anything when it comes up empty. <!-- claim: bline.unregistered-key-logs --> The **Aim While
 Driving** auto from Lesson 25 hands the spin to `Aim.omegaTowardTag` at
 its `aim` marker. With the typo, that spin rate is always `0.0`. The
 robot drives the path with its nose pointing wherever it was. From the
@@ -362,12 +362,14 @@ This one needs the other file each run leaves in `logs/`. B-Line's
 It saves everything that went out over NetworkTables: B-Line's values
 under `Telemetry/FollowPath`, and AdvantageKit's outputs under
 `AdvantageKit/RealOutputs`, so `Localizer/Pose` and the `Aim/` keys are in
-it too.
+it too. <!-- claim: bline.telemetry-signals, advantagekit.wpilib-log-saves-telemetry -->
 
 Find the moment the same way you did in section 4 — this time the moment
 is `FollowPath/rotationOverrideActive` going `true`, about 0.6 s into the
-drive. Put it on the same graph as `Localizer/Pose`'s heading. Measured in
+drive. Put it on the same graph as `Localizer/Pose`'s heading. <!-- claim: l32.aim-override-on --> Measured in
 the simulator, the two runs look like this:
+
+<!-- claim: l32.aim-override-length, l32.aim-heading-release, l32.aim-typo-heading -->
 
 | | override active | heading while it is |
 |---|---|---|
@@ -378,22 +380,22 @@ Figure 32.3 draws both runs on one time axis, zero being the moment the
 drive starts. Start with the top panel. The grey band is
 `FollowPath/rotationOverrideActive`, true from about 0.6 s to 4.2 s, and it is
 the same band in both runs, which is the first clue that the path itself did
-nothing wrong. The green line is the heading with the right tag: it swings
+nothing wrong. <!-- claim: l32.aim-override-on, l32.aim-override-end --> The green line is the heading with the right tag: it swings
 round and is at about −124° when the band ends (the nose is on the tag), then
-turns back to the path's own heading after `release`. The orange line is the
-typo run, and it is a flat line at 0.0° under the whole band. Override on,
+turns back to the path's own heading after `release`. <!-- claim: l32.aim-heading-release --> The orange line is the
+typo run, and it is a flat line at 0.0° under the whole band. <!-- claim: l32.aim-typo-heading --> Override on,
 nobody turning.
 
 Then look down at the bottom panel, because it holds the odd part. With the
 right tag, `Aim/ErrorDegrees` is a trace: it starts near 27° and settles to
-nearly zero inside the band. With the typo there is no trace to draw. The
+nearly zero inside the band. <!-- claim: l32.aim-error-start --> With the typo there is no trace to draw. The
 panel is empty on purpose, because the log has no samples of that key at
 all.
 
 <a id="figure-32-3"></a>
 ![Two panels over one drive. Top: the heading with tag 20 swings to about minus 124 degrees by the end of the shaded rotation-override window, while the heading with tag 220 stays flat at zero. Bottom: Aim/ErrorDegrees is a curve falling from about 27 degrees to zero with tag 20 and has no samples with tag 220](images/32-aim-typo-heading.png)
 
-*Figure 32.3 — Aim While Driving with `kAimTagId` 20 and 220: the override window is identical, the heading follows only with the right tag, and `Aim/ErrorDegrees` is absent with the typo.*
+*Figure 32.3 — Aim While Driving with `kAimTagId` 20 and 220: the override window is identical, the heading follows only with the right tag, and `Aim/ErrorDegrees` is absent with the typo.* <!-- claim: l32.aim-override-on, l32.aim-override-end, l32.aim-heading-release, l32.aim-typo-heading, l32.aim-error-start -->
 
 Read them *together*, as in section 5: the override says the aiming code
 has the wheel, and the heading says nobody is turning it. Neither trace
@@ -402,7 +404,7 @@ window. It isn't there. Not zero, not flat — **absent**: in the fixed
 run the log has `Aim/ErrorDegrees`, `Aim/FeedforwardRadPerSec` and
 `Aim/IsAimed`, and in the typo run it has none of the three, in either
 file, because `Aim.omegaToward` is the only place those keys get
-recorded, and with an invalid tag ID it's never called at all. That's the whole diagnosis,
+recorded, and with an invalid tag ID it's never called at all. <!-- claim: advantagekit.wpilib-log-saves-telemetry --> That's the whole diagnosis,
 found in a trace that never showed up when you went looking for it: the
 path executed perfectly, and the aim assist riding on top of it never ran
 a single tick. The fix isn't a gain or a gearbox — it's one `int` a Java
@@ -435,7 +437,7 @@ not a lucky guess.
    `Elevator/AtGoal` disagree between `RealOutputs` and `ReplayOutputs`.
    Then put the typo back and replay the same recording once more: this
    time the two agree, false the whole way, because the replay reproduces
-   the bug as faithfully as it proved the fix. Reading about it and doing
+   the bug as faithfully as it proved the fix. <!-- claim: advantagekit.replay-matches-recording --> Reading about it and doing
    it are different things.
 4. **Try the toy sequence.** Bind a spare button to
    `Command.sequence(robot.elevator.goToHeight(ElevatorConstants.kScoreMid),
@@ -469,7 +471,7 @@ glance instead of a hypothesis.
 
 None of this required the bug to be dramatic. A fifth of a millimetre
 and a fat-fingered tag ID both cost a team an entire autonomous run, and
-both were sitting in a log the whole time, waiting to be read.
+both were sitting in a log the whole time, waiting to be read. <!-- claim: l32.settled-error-fifth -->
 
 Every gain this reading skill has ever pointed at came from a spec
 sheet, not a real motor. The next lesson is where that finally changes.
