@@ -367,6 +367,17 @@ between calls that are actually adjacent — on a real robot that's
 impossible, and −0.34 m looks precisely like a broken homing routine, which
 is where you'll spend the evening.
 
+<a id="figure-31-1"></a>
+![Two pairs of timelines. With Thread.sleep(20), the physics model's 20 ms steps line up with the firmware's wall-clock ticks. With Thread.sleep(0), the model takes many 20 ms steps while the firmware's clock has barely moved, and the final height reads minus 0.34 metres](images/31-two-clocks.svg)
+
+*Figure 31.1 — Two clocks: the model steps, the firmware runs on the wall.*
+
+Figure 31.1 draws the two clocks. In the top half, each `step` is followed by
+a real 20 ms sleep, so the model's tick and the firmware's tick line up. In
+the bottom half there's no sleep, so the model takes many 20 ms steps while
+the firmware's clock has barely moved, and the model ends up far ahead of
+the controller that's supposed to be steering it.
+
 **If a test involves physics, sleep the full tick.** A slow correct test
 is worth more than a fast one that lies — and "slightly shortened"
 isn't a safe middle ground just because it happened not to break this

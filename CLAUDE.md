@@ -2752,6 +2752,15 @@ at least twice.
 - Renumbered in round 4: Lessons 26, 27 and 29's batch 1 figures moved up
   one, and Lesson 28's two moved to 28.2 and 28.3. Lesson 28's callout link
   follows the aim-error plot to 27.2.
+- **Lesson 30, the ungated low-battery dips** (Figure 30.3; LOOP, five
+  runs, identical): 34 ticks (0.68 s) below 11.5 V to 11.26–11.27 V after
+  enable, and 78 ticks (1.56 s) to 11.19 V on a shot. The rail jumps to
+  12.78 V when the trigger is released, which the lesson doesn't discuss.
+- **SimGUI Unplug switches** (Figure 30.2) are at the bottom of **Other
+  Devices**, below every expanded Talon FX node, so scroll there (xdotool
+  click 5). `simgui.json` can open a widget window at startup:
+  `"NTProvider": {"/AdvantageKit/RealOutputs/Alerts": {"window": {"visible":
+  true}}}`.
 - **SimGUI's addressable LED strip** is under **Hardware → Addressable
   LEDs** ("LEDs[5]", 40 pixels). It opens as 10 columns × 4 rows, and Lesson
   23 tells the student to set Columns to 40.

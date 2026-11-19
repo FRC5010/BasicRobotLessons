@@ -106,9 +106,9 @@ Type: a = sim plot, b = SimGUI screenshot, c = SVG diagram, d = needs the user. 
 | 29.1 | Fresh battery, one run per configuration | 29 | a | medium | 2 (built) |
 | 29.2 | Tired battery: budget and no limits | 29 | a | high | 1 (built) |
 | 30.1 | SimGUI: the Alerts panel | 30 | b | high | 1 (built) |
-| 30.2 | SimGUI: Unplug Gyro | 30 | b | medium | 2 |
-| 30.3 | Why the low-battery alert only looks while disabled | 30 | a | medium | 2 |
-| 31.1 | Two clocks | 31 | c | medium | 2 |
+| 30.2 | SimGUI: Unplug Gyro | 30 | b | medium | 2 (built) |
+| 30.3 | Why the low-battery alert only looks while disabled | 30 | a | medium | 2 (built) |
+| 31.1 | Two clocks | 31 | c | medium | 2 (built) |
 | 31.2 | Homing test height with and without the sleep | 31 | a | medium | 3 |
 | 32.1 | The height arrives; `AtGoal` never says so | 32 | a | high | 1 (built) |
 | 32.2 | The same match through the fixed code | 32 | a | high | 1 (built) |
@@ -1105,3 +1105,7 @@ Built two agents at a time, in lesson groups, to stay inside the usage window.
   - Working ID 25.2 is **Figure 25.1** in the lesson, and batch 1's Pick Up timeline (25.1) is now **25.2**. No other lesson linked to it.
   - Back-links were added from Lessons 20 and 25.
   - Lesson 25 §4 now gives the catch window, y 4.4 to 4.1, instead of a single deadline.
+- **Round 4 (built):** 26.1, 27.1, 28.1, 29.1, 30.2, 30.3, 31.1.
+  - Each of Lessons 26, 27 and 29 gains its new figure as N.1, and its batch 1 figure becomes N.2. Lesson 28's two become 28.2 and 28.3.
+  - Lesson 30's link to the tired-battery plot follows it to 29.2, and Lesson 28's callout link follows the aim-error plot to 27.2.
+  - Lessons 30 and 31 kept their numbers.

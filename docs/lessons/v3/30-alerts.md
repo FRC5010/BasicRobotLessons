@@ -389,10 +389,17 @@ SimGUI lets you change it.
 
 **Run it.** The gyro alert is gone. In the **Other Devices** window,
 scroll past Phoenix's motors to **Unplug Gyro** and expand it. Its
-**Unplugged** value is a false/true drop-down. Set it to **true**, and
+**Unplugged** value is a false/true drop-down. Figure 30.2 shows what
+you're looking for: Phoenix's motors fill most of the window, and the
+switches sit below them, in alphabetical order. Set it to **true**, and
 `Gyro is not on the CAN bus` appears in the alerts panel with a red mark.
 Set it back to **false** and the alert goes away. Measured, both happen
 within one tick.
+
+<a id="figure-30-2"></a>
+![SimGUI's Other Devices window scrolled to the Unplug switches, with Unplug Gyro expanded and its Unplugged drop-down set to true, above the alerts panel, which now lists Gyro is not on the CAN bus in red under High](images/30-simgui-unplug-gyro.png)
+
+*Figure 30.2 — The Unplug Gyro switch set to true (1), and the alert it raises (2).*
 
 > Notice what *didn't* happen: the robot still knows which way it's
 > facing. The switch changes the gyro's answer to "are you there?" and
@@ -650,6 +657,23 @@ there for another 1.6 s, down to 11.2 V. Without that half, the alert would
 go off both times. A low-battery warning that flickers every time you press
 the trigger teaches everyone to ignore it.
 
+<a id="figure-30-3"></a>
+![Battery voltage through an enable and a shot: it rests at 12 volts while disabled, sags below the 11.5 volt line for 0.68 seconds after enable and for 1.56 seconds after the left trigger is pressed, and recovers each time; both dips are shaded](images/30-low-battery-gate.png)
+
+*Figure 30.3 — The battery voltage through an enable and a shot, with the 11.5 V line.*
+
+Figure 30.3 shows where the voltage goes when you enable the robot and when
+you shoot. Read it left to right. The grey stretch is the robot disabled,
+the rail resting at 12.0 V, well above the line. At zero the robot enables
+and the voltage drops at once, then slides down as the flywheel spins up to
+idle, crossing 11.5 V at about 0.7 s and bottoming out at 11.27 V before
+it recovers; the shaded part is the time an alert without the gate would have
+been up, 0.68 s. The second dip is a shot: the left trigger is pressed at
+4 s, the voltage falls to 11.19 V and sits there for 1.56 s while the wheel
+climbs to shooting speed. Both dips happen while the robot is enabled, and
+neither says anything about the battery's charge. That's the job of the
+`RobotState.isDisabled()` half.
+
 A sagging rail under load is Lesson 29's problem. *A flat battery* is this
 alert's problem, and a battery's resting voltage is what tells you that.
 The queue line is exactly where the robot sits disabled, so that's where
@@ -660,7 +684,7 @@ job.** 11.5 V is deliberately generous. The useful threshold is the one that
 gives you time to fetch a charged battery, not the one that's technically
 correct.
 
-To watch it fire, bring back Lesson 29's tired battery ([Figure 29.1](29-current-limits.md#figure-29-1)): 11 V, with twice
+To watch it fire, bring back Lesson 29's tired battery ([Figure 29.2](29-current-limits.md#figure-29-2)): 11 V, with twice
 the internal resistance.
 
 *Nothing to add — an experiment to run and undo, in `Robot.simulationPeriodic()`:*
