@@ -643,7 +643,7 @@ Run the robot in simulation. Select **Drive To Pose** and run autonomous with
 the robot starting well away from the target. This opmode doesn't set the
 simulated robot down anywhere the way **Paths** does, so a second run starts
 where the first one ended: on the pose. Drive away in teleop first (or hold
-the left bumper from somewhere else).
+the left bumper, **M** on the keyboard, from somewhere else).
 
 Here's what was measured driving from (1, 1) facing 0° to (5, 4) facing 90°,
 with a throwaway test that ran the real `Robot` loop in simulation, three

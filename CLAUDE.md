@@ -190,6 +190,13 @@ which fails every lesson with `invalid source release: 25` — set
 `Drivetrain` briefly went back to literal CAN IDs in the module array while
 Lesson 7 and 13+ used the per-corner `DriveConstants`; they now all use the
 constants (same values), so no lesson's diff "undoes" another's.
+**The module's sim steps stay the way the lessons have the student write
+them** (user, 2026-11-20: "don't interleave once written"): snapshots 4–6 run
+the drive motor's four steps with Lesson 4's `appliedVolts` local, then the
+steer motor's, and 7–12 keep that local (they had folded it into one line,
+which Lesson 7 never asks for). Lesson 13's `ModuleIOSim` is a new file and
+uses the folded form, as its block shows. A probe driving both motors at once
+differed before and after no more than two runs of the old code did.
 
 **v3 `Drivetrain`'s once-a-tick method is `periodic()` from Lesson 13 on.**
 It's `logTelemetry()` in Lessons 3–12, while it only logs. Lesson 13 renames
@@ -885,6 +892,12 @@ measured where it matters:
   default), reading `WPI_GetAlerts()`; on a fresh Lesson 30 launch it lists
   "Elevator has never been homed", and **Unplug Gyro** adds the gyro error.
   Lesson 30 §4 mentions it. Other Devices is now a nested tree.
+- **SystemCore has six SmartIO ports, 0 to 5** (`PortsJNI.getNumSmartIo()`
+  is 6, measured in sim 2026-11-20): an `AddressableLED` on 6 or above throws
+  `AllocationException` "Invalid Index for AddressableLED … Maximum: 5", and
+  an LED strip can't take a channel a `DigitalInput` holds. `DigitalInput`
+  still allocates on 6–9 in sim (hardware not checked). Lesson 23's channel
+  callout says the numbers stop at 5; the course uses 0, 1 and 5.
 - **`./gradlew simulateJava` now fails** ("The simulateJava task has been
   removed. Use run instead."); `simulateExternalJava` still writes VS Code's
   `java.json`. GradleRIO no longer bundles cscore/cameraserver/opencv/
@@ -2872,9 +2885,24 @@ at least twice.
   window** (checked 2026-11-19): **DS → Keyboard 0 Settings → Buttons**, `+`
   to raise Count, then click a button's **(None)** box and press a key.
   SimGUI's keyboard Button N is `Gamepad` button N (`Gamepad$Button` in the
-  alpha-8 jar: Back 4, D-pad up/down/left/right 11–14). Lesson 6 now
-  teaches this for the D-pad (I/K/J/L). The bumpers (Lesson 7), Start (14),
-  Back (21) and the trigger axes (22, 27) still have no keyboard line.
+  alpha-8 jar: Back 4, D-pad up/down/left/right 11–14). **Since 2026-11-20
+  Lesson 6 maps every control the course uses, in one visit** (user
+  decisions: bottom-row keys in number order, all at once in Lesson 6):
+  Back **B** (4), Start **N** (6), left bumper **M** (9), right bumper
+  **comma** (10), D-pad **I/K/J/L** (11–14), and under **Axes** (Count 6) the
+  left trigger **period** (axis 4) and right trigger **slash** (axis 5), as
+  Increase keys. SimGUI shows them as Comma, Period, Slash. Lesson 2's Try It
+  #1 maps just the right bumper early; later lessons name the key at the
+  first press of each control. Checked under Xvfb with a logger of the
+  robot's own readings: the buttons read true while held, and a trigger key
+  ramps its axis past 0.5 in 0.10–0.14 s and back under it 0.12–0.14 s after
+  release (Key Rate and Decay Rate are 0.05 per GUI frame and Xvfb drew about
+  150 frames a second, so a 60 Hz screen is probably slower; not measured).
+  **The robot reads nothing from the keyboard while Robot State shows
+  Disconnected**, even though SimGUI's own Joystick[0] squares light; picking
+  **Teleoperated** fixes it. Lessons 20, 22 and 23 had written face buttons
+  with Xbox letters, "(X)", and the keyboard's X key is the right face button
+  (button 1); they now give both.
 - SimGUI tips (b2g6):
   - Seed `simgui-window.json` (`userScaling` "200"), `simgui.json` and
     `simgui-ds.json` before the first run.

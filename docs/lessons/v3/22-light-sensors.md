@@ -502,8 +502,8 @@ Arm**).
 eighteen seconds it takes to land on its switch by itself. <!-- claim: l22.land-time, wpilib.elevator-sim-sinks-unpowered --> A catch is about to
 send the elevator to a height, and that height should mean something.
 
-First, prove the point. Press the left face button (X) to drop the arm to the
-floor, then hold the **right bumper** and just sit there in open field. The roller
+First, prove the point. Press the left face button (X on an Xbox pad, **C** on the keyboard) to drop the arm to the
+floor, then hold the **right bumper** (**,**) and just sit there in open field. The roller
 trace climbs to about sixty rotations a second. <!-- claim: l22.roller-speed --> `HasGamePiece` stays flat
 `false`. Spinning is not holding, and now the robot agrees.
 
@@ -525,7 +525,7 @@ Watch it happen on the **Mechanism** tab from Lesson 19 while you're at it
 (`/AdvantageKit/RealOutputs/Elevator/Mechanism`). Both segments of the stick figure move at once,
 off a boolean.
 
-Then pull the **right trigger**. The piece is ejected and lands back on the field
+Then pull the **right trigger** (hold **/** on the keyboard). The piece is ejected and lands back on the field
 0.8 m in front of the robot's center, `HasGamePiece` goes false, the roller stops
 the instant it does, and you can go and collect the piece again. Pull the trigger
 with an empty intake and nothing happens at all — the `.and(...)` chain simply

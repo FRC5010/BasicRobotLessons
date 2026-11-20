@@ -811,11 +811,11 @@ before — `UNHOMED` still carries a blinking red.
    not to the arm, not to `m_state`. Check `Superstructure/Rejected`
    (under **AdvantageKit → RealOutputs**): `UNHOMED -> INTAKING`. Try the right trigger and the top face button
    too; each is refused and logged the same way. <!-- claim: advantagekit.data-receivers-and-files -->
-2. **Enable and press Back.** The elevator homes. The instant
+2. **Enable and press Back** (**B** on the keyboard). The elevator homes. The instant
    `elevator.isHomed()` goes true, `periodic()` moves `m_state` to `IDLE`
    on its own — nobody pressed anything for that part — the strip settles
    to a dim blue, and the idle motion stows everything.
-3. **Press the left face button.** `Superstructure/State` reads
+3. **Press the left face button** (**C**). `Superstructure/State` reads
    `INTAKING`, the arm swings down to `kIntake`, and once it arrives the
    roller starts. The strip goes solid yellow. Drive over a game piece.
 4. **Watch the handoff.** The instant the beam break debounces true, the
@@ -823,7 +823,7 @@ before — `UNHOMED` still carries a blinking red.
    stows and the elevator rises to `kScoreMid`. When both arrive it
    settles to `HOLDING` and solid green.
 5. **Try to break it.** Press the left face button while `HOLDING` —
-   refused, logged as `HOLDING -> INTAKING`. Pull the right trigger while
+   refused, logged as `HOLDING -> INTAKING`. Pull the right trigger (**/**) while
    `IDLE` — refused too.
 6. **Pull the right trigger while `HOLDING`.** State becomes `SCORING`
    and the roller reverses. The piece leaves almost at once, so the state

@@ -565,7 +565,7 @@ That needs `import first.robot.Constants.ElevatorConstants;` up top,
 alongside the `DriveConstants` import already there.
 
 Run the robot in simulation, open AdvantageScope (Lesson 3), expand
-**NetworkTables → AdvantageKit → Elevator**, tap the D-pad, and watch
+**NetworkTables → AdvantageKit → Elevator**, tap the D-pad (**I**, **K** or **L** on the keyboard), and watch
 `HeightMeters` climb toward whichever preset you asked for and stay there.
 
 ---

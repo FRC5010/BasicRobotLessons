@@ -96,6 +96,9 @@ import org.wpilib.units.measure.Time;
 > exception, not a silent bug, but it's still worth choosing on purpose
 > rather than finding out at boot: `kPwmPort = 5` clears every DIO
 > channel this robot has claimed so far. <!-- claim: wpilib.addressable-led-duplicate-channel-throws -->
+> The numbers stop at 5, too: there are six of these ports, 0 to 5, so
+> asking for port 9 fails at boot with an `AllocationException` that says
+> `Maximum: 5`. <!-- claim: wpilib.led-port-range -->
 
 ---
 
@@ -409,18 +412,18 @@ once, and the one you actually need to act on is the one that wins.
 
 Now walk it through the chain:
 
-1. **Enable, then press Back.** (Homing drives an actual motor, so it
+1. **Enable, then press Back** (**B** on the keyboard). (Homing drives an actual motor, so it
    needs the robot enabled — the same reason Lesson 21's `home()` never
    moved anything while disabled.) <!-- claim: phoenix6.talonfx-no-output-when-disabled --> The elevator homes, and the moment it
    finishes the strip stops blinking and settles to a dim alliance color
    — condition 1 stopped being true, and the robot is enabled with an
    empty intake, so condition 4 took over.
-2. **Drop the arm with the left face button (X), hold the right bumper,
-   and drive into a game piece.** The instant the beam breaks, the strip
+2. **Drop the arm with the left face button (X on an Xbox pad, C on the
+   keyboard), hold the right bumper (comma), and drive into a game piece.** The instant the beam breaks, the strip
    goes **solid green**.
 3. **Disable the robot.** The strip stays green: holding a piece
    outranks being disabled.
-4. **Enable again and hold the left bumper** to eject the piece. The
+4. **Enable again and hold the left bumper** (**M**) to eject the piece. The
    strip drops back to the dim alliance color. **Disable once more** and
    it breathes.
 

@@ -342,9 +342,9 @@ Run the robot in simulation. In SimGUI's Robot State panel, pick **Utility**,
 then **RobotUtility** from the OpMode drop-down — the same moves as
 **Teleoperated** and **MyTeleop** back in Lesson 0 ([Figure 0.2](00-orientation.md#figure-0-2)), just a different mode and
 opmode — then click **Enable**. <!-- claim: wpilib-tools.simgui-robot-state-panel, wpilib.opmode-annotation-class-name --> Hold **Back + the top
-face button** for a few seconds — the applied voltage climbs steadily, and the
+face button** (**B** and **V** on the keyboard) for a few seconds — the applied voltage climbs steadily, and the
 wheel, after a dip (see the note below), spins up slowly and smoothly.
-Let go, let it coast, then hold **Start + the top face button** for the whole
+Let go, let it coast, then hold **Start + the top face button** (**N** and **V**) for the whole
 ten seconds — this time it should snap forward hard and then level off. Both
 directions work the same in reverse with the bottom face button instead. A
 test ends by itself when its timeout runs out (10 seconds at the defaults)
@@ -537,7 +537,7 @@ The four tests have two buttons each because they drive the wheel up to 7 V or
 more. 0.05 V can't spin anything up, so one button is enough.
 
 Run the robot in simulation, select **RobotUtility**, enable it, and hold the
-**right bumper** for ten seconds while you watch `Flywheel/VelocityRps`. The
+**right bumper** (**,** on the keyboard) for ten seconds while you watch `Flywheel/VelocityRps`. The
 wheel starts at its idle speed, so it coasts down first: about 13 rot/s after
 one second, under 2 after three, 0.56 at five. <!-- claim: l33.hold-1s, l33.hold-3s, l33.hold-5s --> Then it settles at
 **0.41 rot/s** by about nine seconds, and stays there. <!-- claim: l33.hold-settle, phoenix6.sim-no-static-friction --> It's still turning.

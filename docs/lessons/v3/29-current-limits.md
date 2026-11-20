@@ -485,9 +485,10 @@ the total is an output, at `/AdvantageKit/RealOutputs/Power`. <!-- claim: advant
 you'll see the voltage twitch and recover — that's the sag every robot has
 all the time.
 
-Now ask for everything at once. Enable Teleoperated, press **Back** and wait
-for the elevator to home, then press **D-pad up**, hold the **left trigger**,
-and press the **intake button** (the left face button), all together. The
+Now ask for everything at once. Enable Teleoperated, press **Back** (**B**) and wait
+for the elevator to home, then press **D-pad up** (**I**), hold the **left
+trigger** (**.**), and press the **intake button** (the left face button,
+**C**), all together. The
 elevator climbs, the flywheel spins up, and the arm swings down with the
 roller running.
 

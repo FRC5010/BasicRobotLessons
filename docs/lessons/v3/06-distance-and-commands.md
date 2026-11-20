@@ -278,19 +278,47 @@ buttons fill up. <!-- claim: commandsv3.command-gamepad-api -->
 robot.driverController.dpadUp().onTrue(robot.module.driveDistance(1.0, 0.4));
 ```
 
-**Give SimGUI's keyboard a D-pad.** Keyboard 0 starts with four buttons (Z,
-X, C and V are buttons 0 to 3), and on a gamepad the D-pad is buttons 11 to
-14, so the keyboard can't press it yet. If you drive with a real controller,
-skip this; otherwise, once:
+**Give SimGUI's keyboard the rest of the controller.** Keyboard 0 starts with
+four buttons (Z, X, C and V are buttons 0 to 3) and three axes for the sticks.
+On a gamepad the D-pad is buttons 11 to 14, so the keyboard can't press it yet,
+and later lessons use Back, Start, both bumpers and both triggers too. Give
+them all keys now, in one visit. If you drive with a real controller, skip
+this; otherwise, once:
 
-1. Open **DS → Keyboard 0 Settings** and find **Buttons**.
-2. Press **+** until **Count** reads 15.
-3. Click the **(None)** box beside **Button 11** and press **I**. Do the same
-   for **Button 12** (**K**), **Button 13** (**J**) and **Button 14** (**L**):
-   D-pad up, down, left and right, laid out like arrow keys.
+1. Open **DS → Keyboard 0 Settings**. The window opens small, so drag its
+   bottom-right corner to make room.
+2. Under **Buttons**, press **+** until **Count** reads 15.
+3. For each button in the table below, click the **(None)** box beside it and
+   press its key.
+4. Under **Axes**, press **+** until **Count** reads 6. Under **Axis 4**, click
+   the **(None)** box beside **Increase** and press **.** (period). Do the same
+   under **Axis 5** with **/** (slash). Leave **Decrease** as it is.
 
-SimGUI saves this in your project's `simgui-ds.json`, so it's still there next
-time, and later lessons give other buttons keys the same way. <!-- claim: wpilib-tools.simgui-keyboard-dpad -->
+| Control | Gamepad number | Key |
+|---|---|---|
+| Back | Button 4 | **B** |
+| Start | Button 6 | **N** |
+| Left bumper | Button 9 | **M** |
+| Right bumper | Button 10 | **,** (comma) |
+| D-pad up, down, left, right | Buttons 11, 12, 13, 14 | **I**, **K**, **J**, **L** |
+| Left trigger | Axis 4 | **.** (period) |
+| Right trigger | Axis 5 | **/** (slash) |
+
+The bottom row carries on where Z, X, C and V left off, in number order: B, N,
+M and comma are the next buttons the course uses, and period and slash are the
+two triggers. SimGUI shows those last three as **Comma**, **Period** and
+**Slash**. The D-pad sits on I, K, J and L, laid out like arrow keys. Buttons
+5, 7 and 8 (the middle button and the two stick clicks) stay **(None)**:
+nothing in this course uses them.
+
+A trigger isn't a button: it's an axis that reads from 0 to 1, and the code
+counts it as pulled once it passes halfway. Holding its key ramps it up over a
+fraction of a second, and letting go lets it fall back, a lot like squeezing a
+real trigger. <!-- claim: wpilib-tools.simgui-keyboard-trigger-axis -->
+
+SimGUI saves all of this in your project's `simgui-ds.json`, so it's still
+there next time. The robot only reads the keyboard once **Robot State** has
+left **Disconnected**, so pick **Teleoperated** before you try a key. <!-- claim: wpilib-tools.simgui-keyboard-keys -->
 
 Run in sim, plot `DriveModule/DistanceMeters` in AdvantageScope, and tap D-pad
 up (**I** on the keyboard). The trace should climb to about 1.0 and flatten as

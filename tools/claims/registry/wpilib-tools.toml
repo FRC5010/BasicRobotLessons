@@ -22,14 +22,25 @@ measured_on = "alpha-8"
 method = "LOOP"
 
 [[claim]]
-id = "wpilib-tools.simgui-keyboard-dpad"
+id = "wpilib-tools.simgui-keyboard-keys"
 kind = "behaviour"
 library = ["wpilib-tools"]
 criticality = "C2"
-statement = "SimGUI's default Keyboard 0 has four buttons (0-3) and a POV, so it can't press the Gamepad D-pad (buttons 11-14) until DS -> Keyboard 0 Settings -> Buttons -> Count is raised to 15 and keys are given (click a button's (None) box, press a key); SimGUI's keyboard Button N is Gamepad button N, and the settings are saved in the project's simgui-ds.json."
-evidence = "Checked in SimGUI on alpha-8 under Xvfb, 2026-11-19 (the Count + button and key assignment); Gamepad$Button values read from wpilibj-java-2027.0.0-alpha-8 (BACK 4, DPAD_UP 11, DPAD_DOWN 12, DPAD_LEFT 13, DPAD_RIGHT 14); CLAUDE.md, Batch 2 found (a keyboard with keys at buttons 11 and 14 pressed D-pad up and right in the running robot)"
+statement = "SimGUI's default Keyboard 0 has four buttons (0-3, Z X C V), three axes and a POV. In DS -> Keyboard 0 Settings, + under Buttons raises Count (to 15 for the D-pad) and + under Axes raises Count (to 6 for the triggers); clicking a button's (None) box, or an axis's Increase box, and pressing a key assigns it, and the comma, period and slash keys work (shown as Comma, Period, Slash). Keyboard Button N is Gamepad button N (Back 4, Start 6, left bumper 9, right bumper 10, D-pad 11-14) and Axis N is Gamepad axis N (left trigger 4, right trigger 5). The settings save to the project's simgui-ds.json as the sim runs and survive a restart. The robot reads nothing from the keyboard while Robot State shows Disconnected, though SimGUI's own Joystick[0] squares still light."
+evidence = "Checked in SimGUI on alpha-8 under Xvfb, 2026-11-20, Lesson 1 state with a sandbox-only logger of the robot's own Gamepad readings: B, N, M, Comma and I read true while held and false after (44-47 samples each), axes 4 and 5 rose to 1.000 on Period and Slash, simgui-ds.json held buttonCount 15, axisCount 6 and the keys after a restart, and every reading was 0 until Teleoperated was picked. Gamepad$Button and Gamepad$Axis values read from wpilibj-java-2027.0.0-alpha-8. Earlier: the D-pad keys checked on 2026-11-19."
 measured_on = "alpha-8"
 method = "LOOP"
+
+[[claim]]
+id = "wpilib-tools.simgui-keyboard-trigger-axis"
+kind = "behaviour"
+library = ["wpilib-tools", "commandsv3"]
+criticality = "C2"
+statement = "A Keyboard 0 axis given only an Increase key ramps from 0 to 1 while the key is held and decays back to 0 after release (Key Rate and Decay Rate default to 0.05 per GUI frame, Max Absolute Value 1.0), and CommandGamepad.leftTrigger()/rightTrigger() are axisGreaterThan(4 or 5, 0.5), so a held key counts as a pulled trigger within a fraction of a second."
+evidence = "Checked in SimGUI on alpha-8 under Xvfb, 2026-11-20 (robot's own reading, three 1.5 s holds and a 0.2 s tap per key): past 0.5 in 0.10-0.14 s, 1.000 every time including the tap, back under 0.5 0.12-0.14 s after release and 0 at about 0.2 s. CommandGamepad.leftTrigger() read with javap: leftTrigger(0.5) -> axisGreaterThan(LEFT_TRIGGER.value, 0.5)."
+measured_on = "alpha-8"
+method = "LOOP"
+note = "The rates are per GUI frame and Xvfb drew about 150 frames a second, so on a 60 Hz screen the ramp is likely about 2.5 times slower (inferred, not measured), which is why the lesson says only 'a fraction of a second'. Setting Key Rate to 1.0 made the axis reach 1 in one tick (measured once)."
 
 [[claim]]
 id = "wpilib-tools.simgui-other-devices-talonfx"

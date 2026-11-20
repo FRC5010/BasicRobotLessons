@@ -288,7 +288,7 @@ the two lines in section 5 that move the carriage won't change at all.
 
 ## 7. Watch it
 
-Run the robot in simulation, go **Teleoperated**, and press D-pad up.
+Run the robot in simulation, go **Teleoperated**, and press D-pad up (**I** on the keyboard).
 
 In **AdvantageScope** (Lesson 3), add a **Mechanism** tab and select
 `/AdvantageKit/RealOutputs/Elevator/Mechanism` as its source. <!-- claim: advantagekit.simgui-mechanism-menu --> You get a vertical
@@ -296,8 +296,8 @@ orange line that grows out of the floor when you press D-pad up, with a
 short stub sticking out sideways at the top, riding along. When the
 carriage settles on the goal, the line turns green.
 
-Press D-pad down and it shrinks back toward the floor. Press D-pad right
-and it stops halfway. The picture is `Elevator/HeightMeters` — the same
+Press D-pad down (**K**) and it shrinks back toward the floor. Press D-pad
+right (**L**) and it stops halfway. The picture is `Elevator/HeightMeters` — the same
 number as the graph, drawn instead of printed.
 
 You can also find it inside SimGUI without opening a second tool: menu

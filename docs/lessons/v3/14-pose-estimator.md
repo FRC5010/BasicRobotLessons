@@ -432,7 +432,7 @@ with nothing to sequence. <!-- claim: commandsv3.noyield-command-finishes-same-t
 
 Now run it. Sim up, watch the **Field** widget in SimGUI ([Figure 11.1](11-odometry-field.md#figure-11-1)
 shows where it is). Drive somewhere,
-then press Start. The robot on the field slides toward (2, 5) — not a
+then press Start (**N** on the keyboard). The robot on the field slides toward (2, 5) — not a
 teleport, a real pull. Press it again and it slides a little further; the
 first press doesn't finish the job on its own. That's the estimator's
 default trust settings at work: each reported sighting nudges the estimate,

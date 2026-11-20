@@ -496,7 +496,7 @@ Now make homing do the same thing on purpose. **Restart the simulation,
 and this time be quick:** pick **Teleoperated** and enable within ten
 seconds or so, before the carriage lands.
 
-Press **D-pad up** first. The elevator climbs toward what it calls
+Press **D-pad up** (**I** on the keyboard) first. The elevator climbs toward what it calls
 1.45 m — and stops. `HeightMeters` reads **1.15**, because the carriage
 has hit the top of its 1.5 m frame and the encoder started 35 cm short. <!-- claim: l21.top-stall-height, wpilib.elevator-sim-sinks-unpowered -->
 It never arrives: `AppliedVolts` sits at 3.00 and
@@ -505,7 +505,7 @@ carriage into the frame with everything it's allowed. <!-- claim: l21.stall-volt
 unless you happen to be graphing current, which is section 9's whole
 idea.
 
-Now press **Back**. Three things happen in order, and all three are
+Now press **Back** (**B** on the keyboard). Three things happen in order, and all three are
 visible:
 
 1. `Elevator/AppliedVolts` drops to −0.7 and stays there. The carriage
@@ -518,8 +518,8 @@ visible:
    0.01 m**. That jump is 35 centimeters of accumulated wrongness being
    deleted in one tick. <!-- claim: l21.homing-time, l21.snap -->
 
-From then on the elevator is honest. Press D-pad right and it goes to
-0.75 m and *is* at 0.75 m. Press D-pad down and it settles at its stowed
+From then on the elevator is honest. Press D-pad right (**L**) and it goes to
+0.75 m and *is* at 0.75 m. Press D-pad down (**K**) and it settles at its stowed
 2 cm, a centimeter above the switch, so `AtBottomLimit` stays false. The
 switch only speaks when the carriage really reaches the bottom, and the
 encoder has been right since homing anyway.

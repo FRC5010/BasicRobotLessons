@@ -2,6 +2,7 @@ package claims;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.wpilib.units.Units.MetersPerSecond;
 
@@ -9,7 +10,10 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.wpilib.hardware.discrete.DigitalInput;
 import org.wpilib.hardware.hal.HAL;
+import org.wpilib.hardware.hal.PortsJNI;
+import org.wpilib.hardware.hal.util.AllocationException;
 import org.wpilib.hardware.led.AddressableLED;
 import org.wpilib.hardware.led.AddressableLEDBuffer;
 import org.wpilib.math.geometry.Rotation2d;
@@ -128,6 +132,31 @@ class WpilibApiTest {
       assertArrayEquals(handed, sim.getData());
       strip.setData(buffer);
       assertEquals((byte) 255, sim.getData()[4]);
+    }
+  }
+
+  @Test
+  @DisplayName("wpilib.led-port-range")
+  void ledPortsStopAtFive() {
+    assertEquals(6, PortsJNI.getNumSmartIo(), "SystemCore's SmartIO port count");
+    try (var highest = new AddressableLED(5)) {
+      assertEquals(5, highest.getChannel());
+    }
+    var e = assertThrows(AllocationException.class, () -> new AddressableLED(6),
+        "an LED strip on port 6 should fail; the ports are 0 to 5");
+    assertTrue(e.getMessage().contains("Maximum: 5"), e.getMessage());
+  }
+
+  @Test
+  @DisplayName("wpilib.addressable-led-duplicate-channel-throws")
+  void ledSharesChannelNumbersWithOtherPorts() {
+    try (var input = new DigitalInput(3)) {
+      assertThrows(AllocationException.class, () -> new AddressableLED(3),
+          "an LED strip took channel 3 while a DigitalInput held it");
+    }
+    try (var strip = new AddressableLED(3)) { // free again once the input is closed
+      assertThrows(AllocationException.class, () -> new AddressableLED(3),
+          "a second LED strip took channel 3");
     }
   }
 }

@@ -10,17 +10,11 @@
 #   conditional - the lesson asks for it only in some cases.
 #   try-it      - the reference applies a Try It that changes this code (by design, so the
 #                 update script keeps robot-specific values in Constants.java).
-#   arranged    - the reference does the same thing, arranged differently.
 
 [[exception]]
 lesson = 1
 block = "new TalonFX(1, new CANBus(CANPort.CAN_S0));"
 reason = "staged: section 9 moves the CAN ID into DriveConstants.kDriveMotorPort"
-
-[[exception]]
-lesson = 5
-block = "m_steerModel.setInputVoltage(m_steerSim.getMotorVoltage());"
-reason = "arranged: the reference interleaves the drive and steer steps with a steerVolts local; the lesson adds the steer motor's four steps after the drive motor's. Same behaviour."
 
 [[exception]]
 lesson = 7

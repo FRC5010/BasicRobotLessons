@@ -226,7 +226,10 @@ programmers every season.
 1. **Code — slow mode.** Make a method `driveWithJoystick(DoubleSupplier
    speed, double scale)` that multiplies the speed by `scale`. Bind the
    right bumper so that while held, the module drives at `scale = 0.25` for
-   fine control.
+   fine control. SimGUI's keyboard has no right bumper yet: open **DS →
+   Keyboard 0 Settings**, press **+** under **Buttons** until **Count** reads
+   11, then click the **(None)** box beside **Button 10** and press **,**
+   (comma). <!-- claim: wpilib-tools.simgui-keyboard-keys --> Lesson 6 gives the rest of the controller keys.
 2. **Code — square the input** for finer low-speed control: `speed *
    Math.abs(speed)`. Feel the difference. Why does keeping `Math.abs`
    matter here? (Hint: what happens to the sign if you just do `speed *

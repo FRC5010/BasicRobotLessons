@@ -795,7 +795,7 @@ Run the robot in simulation. Enable teleop and watch `Flywheel/GoalRps` and
 30 rot/s on its own and sit there — that's `idle()`, the default command
 the constructor installed. <!-- claim: commandsv3.mechanism-idle-overridable -->
 
-Hold the left trigger. The goal jumps to 60, the wheel climbs, and
+Hold the left trigger (**.** on the keyboard). The goal jumps to 60, the wheel climbs, and
 `Flywheel/AtSpeed` goes true a bit over a second later. <!-- claim: l28.press-to-atspeed --> Let go and it
 drops back to idle. Add `Flywheel/AppliedVolts` to the graph and you'll
 see it jump to about 7 V, climb towards 9 V as the wheel speeds up, and

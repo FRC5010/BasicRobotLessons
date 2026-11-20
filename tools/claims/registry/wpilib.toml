@@ -491,8 +491,22 @@ kind = "behaviour"
 library = ["wpilib"]
 criticality = "C3"
 statement = "Two constructors claiming the same channel number on one peripheral type is a startup exception, not a silent bug; an LED strip's PWM port numbers are not a separate space from other channels in this respect."
-evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson"
-measured_on = "unverified"
+evidence = "tools/claims/java/claims/WpilibApiTest.java on alpha-8 (2026-11-20): with a DigitalInput holding channel 3, new AddressableLED(3) throws AllocationException; once the input is closed the strip gets channel 3, and a second AddressableLED(3) throws too"
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/WpilibApiTest.java"
+
+[[claim]]
+id = "wpilib.led-port-range"
+kind = "api"
+library = ["wpilib"]
+criticality = "C2"
+statement = "SystemCore has six SmartIO ports, 0 to 5 (PortsJNI.getNumSmartIo() is 6), and an AddressableLED on port 6 or above fails at construction with an AllocationException whose message says 'Invalid Index for AddressableLED ... Maximum: 5'."
+evidence = "tools/claims/java/claims/WpilibApiTest.java on alpha-8 (2026-11-20); a probe the same day allocated AddressableLED and DigitalInput on channels 0-9: the LED failed on 6-9 with that message, DigitalInput allocated on all ten"
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/WpilibApiTest.java"
+note = "Measured in simulation, where WPILib's HAL is built for SystemCore; a real SystemCore wasn't checked. DigitalInput accepting channels 6-9 in simulation isn't claimed by any lesson, and wasn't checked on hardware either."
 
 [[claim]]
 id = "wpilib.led-pattern-combinators"

@@ -607,7 +607,7 @@ commands.** `Aim` is a handful of static methods with no state, and that's exact
 why a driver binding and an autonomous routine can both use it. A command
 would have served one caller and forced the other to duplicate the maths.
 
-Hold that left trigger and drive a few loops around the tag. Watching the
+Hold that left trigger (**.** on the keyboard) and drive a few loops around the tag. Watching the
 nose stay locked on while the chassis slides around underneath it is the
 most satisfying thing on this robot.
 

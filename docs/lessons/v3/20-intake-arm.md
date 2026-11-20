@@ -783,12 +783,12 @@ import first.robot.Constants.ArmConstants;
 
 Run the robot in simulation and go **Teleoperated**. Open AdvantageScope, put the
 **Mechanism** tab on `/AdvantageKit/RealOutputs/Elevator/Mechanism`, and press the top
-face button (Y). <!-- claim: advantagekit.simgui-mechanism-menu -->
+face button (Y on an Xbox pad, **V** on the keyboard). <!-- claim: advantagekit.simgui-mechanism-menu -->
 
-The arm swings up to vertical. Now press **D-pad up** and watch the whole
+The arm swings up to vertical. Now press **D-pad up** (**I**) and watch the whole
 assembly rise — arm still at its angle, riding the carriage, from code
 that never once mentions the elevator's height. Press the left face
-button (X) and it drops back down to the floor while staying up high.
+button (X on an Xbox pad, **C** on the keyboard) and it drops back down to the floor while staying up high.
 That is the scene graph from Lesson 19 doing exactly what it promised.
 
 Then go find the physics. The arm's readings are under **NetworkTables →
@@ -850,7 +850,7 @@ gives you a bonus: because `kG` is scaled by `cos θ`, you can check it at
 **five different angles** instead of one, and the table above is exactly
 that check. An elevator only ever offers you a single number to verify.
 
-Finally, hold **right bumper** and watch `Arm/RollerVelocityRotPerSec`
+Finally, hold **right bumper** (**,** on the keyboard) and watch `Arm/RollerVelocityRotPerSec`
 climb to around 60 rotations per second, then let go and watch it spin
 down to zero in about half a second. <!-- claim: l20.roller-speed, l20.roller-stop-time --> No profile, no goal, no gains — a
 motor and a number.

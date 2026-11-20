@@ -135,7 +135,8 @@ public class SwerveModule {
   public void simulatePeriodic() {
     // Drive motor: model reports wheel motion, convert back to rotor-side.
     m_driveSim.setSupplyVoltage(RobotController.getBatteryVoltage());
-    m_driveModel.setInputVoltage(m_driveSim.getMotorVoltage());
+    double appliedVolts = m_driveSim.getMotorVoltage();
+    m_driveModel.setInputVoltage(appliedVolts);
     m_driveModel.update(0.020);
     m_driveSim.setRawRotorPosition(
         m_driveModel.getAngularPosition() / (2 * Math.PI) * DriveConstants.kDriveGearRatio);

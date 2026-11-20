@@ -9,9 +9,9 @@ lessons.
 604 claims are registered (73 API, 151 behaviour, 380 numbers). 995 hidden markers tie them to
 every lesson from 0 to 33 and to the setup and debugger asides. The pre-commit check is strict, so
 a claim no lesson marks is an error. Lesson 34 joins when it's migrated. The findings for the user
-are in section 5a. **Phase 1a, the code-block check, is built** (section 5): all 396 "type this"
-Java blocks in Lessons 0–33 match the code after their lesson, with 15 listed exceptions, and the
-hook runs it. **Phase 1b, the Tier A Java tests, is built too:** 11 claims (the six absences, and
+are in section 5a. **Phase 1a, the code-block check, is built** (section 5): all 397 "type this"
+Java blocks in Lessons 0–33 match the code after their lesson, with 14 listed exceptions, and the
+hook runs it. **Phase 1b, the Tier A Java tests, is built too:** 13 claims (the six absences, and
 five API claims that compiling the lessons doesn't prove) have JUnit tests in `tools/claims/java/`,
 run by `tools/claims/run-java-tests.sh` and by the hook when a pin changes. **Phase 1 is
 finished**; Phase 2 is next.
@@ -281,7 +281,7 @@ and the lesson tables in Lessons 5, 18, 20, 28, 29, 31 and 33.
 | Phase | Work | Done when |
 |---|---|---|
 | **0. Inventory** | The checker, its tests, the pre-commit hook, and the library claims from section 4 (built 2026-11-19). Then a pass over every lesson: markers for the library claims it relies on, and `lesson-NN.toml` entries for its numbers, from its "measured" lines, tables and figures, with ranges per section 3.6 | `check_claims.py --strict` passes; the hook then uses `--strict`. **Done 2026-11-19**: seven agent shares plus the Lesson 18 pilot, each reviewed (markers only, checked by stripping them; ranges against the README rules) |
-| **1. Cheap guards** | `check-lesson-code-v3.py` (in the hook for staged lessons); the absence tests | Both run green on today's lessons, and a deliberately stale block or absence makes them fail. **1a done 2026-11-19:** 396 blocks in 0–33 pass, with 15 exceptions (section 5a's last item); 21 unit tests, each rule mutation-checked; a staged stale Lesson 18 block is refused by the hook. **1b done 2026-11-19:** 11 claims tested (section 5a), each test mutation-checked (flipping what it expects fails exactly that test, by claim id); a staged broken test is refused by the hook |
+| **1. Cheap guards** | `check-lesson-code-v3.py` (in the hook for staged lessons); the absence tests | Both run green on today's lessons, and a deliberately stale block or absence makes them fail. **1a done 2026-11-19:** 396 blocks in 0–33 pass, with 15 exceptions (section 5a's last item; 397 and 14 since 2026-11-20); 21 unit tests, each rule mutation-checked; a staged stale Lesson 18 block is refused by the hook. **1b done 2026-11-19:** 11 claims tested (section 5a; 13 since 2026-11-20), each test mutation-checked (flipping what it expects fails exactly that test, by claim id); a staged broken test is refused by the hook |
 | **2. Tier B** | Port the C1 behaviour claims into JUnit, starting with the ones that reach the most lessons (Kraken constants, opmode lifecycle, command hooks, disable behaviour, scheduler order) | Each C1 behaviour claim has a passing test, and breaking it (a mutated expectation) fails that test by name |
 | **3. Tier C** | `--check` mode for the 59 generators; new probes for the C2 numbers whose probes weren't kept | Every C2 number has a check with a range, and the generator summaries agree with the lesson text |
 | **4. Orchestration** | `check-claims-v3.sh`, the report format, and an "upgrade procedure" section in CLAUDE.md | One command runs any tier and lists failures with lesson lines |
@@ -307,7 +307,14 @@ lesson is right. The wording items (8–13, 15–18, 24–27, 30–32) are uncha
 binds. Those are the bumpers (from Lesson 7), Start (14), Back (21) and the triggers (22 and 27,
 which are axes, beyond the keyboard's three). Each of those lessons needs a line giving that button
 or axis a key, the way Lesson 6 now does for the D-pad. The gamepad's axis numbers for the
-triggers haven't been checked.
+triggers haven't been checked. **Done 2026-11-20 (user decisions: the bottom-row keys, in
+number order, all set up at once in Lesson 6):** Back B (button 4), Start N (6), left bumper M
+(9), right bumper comma (10), left trigger period (axis 4), right trigger slash (axis 5); the
+D-pad stays on I/K/J/L. Lesson 2's Try It #1 gives the right bumper its key early, and each later
+lesson names the key at its first press of each control. Checked in SimGUI under Xvfb
+(`wpilib-tools.simgui-keyboard-keys`, `wpilib-tools.simgui-keyboard-trigger-axis`). Also fixed:
+Lessons 20, 22 and 23 wrote face buttons with their Xbox letters, "(X)" and "(Y)", and the
+keyboard's X key is the *right* face button; they now give both.
 
 **Wave 1 (the asides and Lessons 0–16, 2026-11-19): 360 markers, about 100 new library claims.**
 
@@ -479,7 +486,12 @@ other 15 are deliberate differences, listed with reasons in `tools/lesson-code-e
 - **Arranged differently (1), for the user:** Lesson 5's `simulationPeriodic` has the student add
   the steer motor's four sim steps *after* the drive motor's, while `code/v3/lesson-5` interleaves
   the two motors' steps and keeps the steer voltage in a `steerVolts` local. The behaviour is the
-  same; the lesson or the snapshot could be changed to match. Left as it is.
+  same; the lesson or the snapshot could be changed to match. **Resolved 2026-11-20 (user
+  decision: don't interleave once written):** snapshots 5 and 6 now run the drive motor's four
+  steps, then the steer motor's, and the exception is gone (14 left). Snapshots 7–12 had also
+  folded the drive motor's `appliedVolts` local into one line, which Lesson 7 never asks for; they
+  keep the local now. A probe driving both motors at once differed before and after by no more
+  than two runs of the unchanged code differ from each other.
 
 No block named an API the reference code doesn't use. So for now the check guards against future
 drift (a snapshot changed and its lesson not, or the other way round) rather than finding old
@@ -502,8 +514,10 @@ is installed:
 | `commandsv3.mechanism-no-periodic` | `Mechanism` is an interface with no `periodic()`; `Scheduler.addPeriodic(Runnable)` exists (was unverified) |
 | `commandsv3.andthen-builder` | `andThen` gives a builder that isn't a `Command`; `.named` gives one, which runs the two in order (was unverified) |
 | `phoenix6.get-value-in-units` | `getPosition`, `getVelocity`, `getMotorVoltage` are `StatusSignal<Angle>`, `<AngularVelocity>`, `<Voltage>`; `getValueAsDouble()` exists |
+| `wpilib.led-port-range` (added 2026-11-20) | six SmartIO ports; an LED strip on 5 works and on 6 fails with "Maximum: 5" |
+| `wpilib.addressable-led-duplicate-channel-throws` (added 2026-11-20) | an LED strip can't take a channel a `DigitalInput` or another strip holds (was unverified) |
 
-That leaves 42 unverified claims, all behaviour or numbers (Phases 2 and 3), plus one API claim,
+That left 42 unverified claims (41 after 2026-11-20), all behaviour or numbers (Phases 2 and 3), plus one API claim,
 `phoenix6.velocity-voltage-acceleration`: `withAcceleration` exists (read from the jar), but that
 the firmware scales it by `kA` is behaviour, so the claim stays unverified until Phase 2.
 
@@ -514,7 +528,10 @@ assumptions in the tests, not library changes:
   times `Timer.getTimestamp()`, so it looks like nanoseconds. That wasn't confirmed from the
   source, and no lesson says either way. The test checks "seconds" against the wall clock instead.
 - **An `AddressableLED` on PWM port 9 fails to allocate** (`AllocationException`, code −1030).
-  Port 5, Lesson 23's `kPwmPort`, works. Why 9 fails wasn't looked into; no lesson uses it.
+  Port 5, Lesson 23's `kPwmPort`, works. **Explained 2026-11-20:** SystemCore has six SmartIO
+  ports, 0 to 5 (`PortsJNI.getNumSmartIo()` is 6, and the exception says "Maximum: 5"; the user
+  recalls ten on the roboRIO, not checked here). `DigitalInput` still allocates on 6–9 in simulation. Lesson 23's channel
+  callout now says the numbers stop at 5 (`wpilib.led-port-range`).
 
 ## 6. What this doesn't cover
 

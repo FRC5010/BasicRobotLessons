@@ -272,7 +272,7 @@ opens three levels deep, and the panel that appears when you click **Alerts**. <
 
 The panel groups alerts by level and says `Elevator has never been homed`
 under **Medium**, with a yellow warning sign, which is correct. Enable
-Teleoperated and press **Back** to home it, and watch the line disappear on
+Teleoperated and press **Back** (**B** on the keyboard) to home it, and watch the line disappear on
 its own. Nothing clears it explicitly:
 `set(false)` runs every tick once `m_homed` is true.
 
