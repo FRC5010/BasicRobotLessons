@@ -54,7 +54,7 @@ Type: a = sim plot, b = SimGUI screenshot, c = SVG diagram, d = needs the user. 
 | 7.2 | AdvantageScope: Swerve tab, Sources list | 7 | d | medium | user (built) |
 | 7.3 | Steering 90 degrees through 25:1, two gains | 7 | a | high | 1 (built) |
 | 8.1 | `turnToHeading(90)`: heading, command, band | 8 | a | high | 1 (built) |
-| 8.2 | AdvantageScope: Swerve tab, Rotation slot | 8 | d | low | needs user |
+| 8.2 | AdvantageScope: Swerve tab, Rotation slot | 8 | d | low | user (built) |
 | 9.1 | Why scale drive by cosine | 9 | a | medium | 2 (built) |
 | 9.2 | Sequence, parallel, race, optional | 9 | c | medium | 2 (built) |
 | 10.1 | Translation plus rotation at each corner | 10 | c | high | 1 (built) |
@@ -119,7 +119,7 @@ Type: a = sim plot, b = SimGUI screenshot, c = SVG diagram, d = needs the user. 
 | 33.4 | A ramp costs room: elevator travel | 33 | a | medium | 2 (built) |
 | 34.1 | Two angles and a floor | 34 | c | high | after L34 migration |
 | 34.2 | Why `HasTarget` flickers | 34 | c | medium | after L34 migration |
-| D.1 | The debugger window | Debugger aside | d | high | needs user |
+| D.1 | The debugger window | Debugger aside | d | high | user (built) |
 | D.2 | A stack trace, two passes | Debugger aside | c | medium | 2 (built) |
 | G.1 | A branch is a label on a commit | Git aside | c | high | 1 (built) |
 | G.2 | Fast-forward, and the diamond | Git aside | c | medium | 2 (built) |
@@ -266,7 +266,7 @@ No figure proposed: lambdas, suppliers and a deadband; a transfer-curve plot wou
 - Linked from: Lesson 8 §1 ("positive is CCW"); Lesson 9 §5 (pinwheel angle); Lessons 10 (10.1 and 10.3 reuse its look and axes), 11 (frames), and any Swerve-tab explanation.
 
 **Figure 7.2 — AdvantageScope: Swerve tab, Sources list** · medium · (d) · user (built 2026-11-21) · `07-advantagescope-swerve-tab.png`
-- **Built 2026-11-21** from the user's screenshots (Lesson 7 state, Windows, dark): Tabs → New Tab → Swerve (top panel) and the Swerve tab while driving forward (bottom), by `tools/figures/07-advantagescope-swerve-tab.py` through the shared `screenshots.py`; 1600 x 1485 px, 150 KB. **Found:** there's no **States** slot; `ModuleStates` goes into the tab's **Sources** list, where it reads **Module Velocities**, and its path starts at **Telemetry** (claim `wpilib-tools.advantagescope-swerve-tab`). Lessons 7 and 8 fixed. No pinwheel shot yet (left bumper held); it could be a third panel. Lesson 8's **Rotation** slot is still unchecked (Figure 8.2). Links from Lessons 10, 11, 12 and 16 not added yet.
+- **Built 2026-11-21** from the user's screenshots (Lesson 7 state, Windows, dark): Tabs → New Tab → Swerve (top panel) and the Swerve tab while driving forward (bottom), by `tools/figures/07-advantagescope-swerve-tab.py` through the shared `screenshots.py`; 1600 x 1485 px, 150 KB. **Found:** there's no **States** slot; `ModuleStates` goes into the tab's **Sources** list, where it reads **Module Velocities**, and its path starts at **Telemetry** (claim `wpilib-tools.advantagescope-swerve-tab`). Lessons 7 and 8 fixed. The pinwheel (left bumper held) is the third panel. Lesson 8's **Rotation** slot doesn't exist either: `Heading` goes into the same Sources list and reads **Rotation** (Figure 8.2, built the same day). Links from Lessons 10, 11, 12 and 16 not added yet.
 - Where: §7, after "drag `NetworkTables/Telemetry/Drivetrain/ModuleStates` into its **States** slot" (before "Watch a wheel chase...").
 - Shows: Swerve tab with `ModuleStates` in States, Max Speed 5, arrows parallel while driving and the pinwheel while holding the left bumper (two shots side by side).
 - Why: "about to become your main debugging view for everything swerve"; the tab, slot and Max Speed field have to be found.
@@ -1132,7 +1132,7 @@ All 8 batch 3 figures are built: 10.2, 12.1, 17.1, 20.2, 25.1, 26.3, 31.2 and 33
 - **Left:** the figures that need the user (7.2, 8.2, and the debugger screenshot D.1; 3.1 was built from the user's screenshots on 2026-11-21), and Lesson 34's figures after its migration.
 - **Screenshots asked of the user (2026-11-21), in order:**
   1. AdvantageScope's File menu at Connect to Simulator: done, Figure 3.1's top panel.
-  2. Figure 7.2, the Swerve tab on the Lesson 7 state: done with the stick forward (2026-11-21); a left-bumper (pinwheel) shot is still welcome.
-  3. Not a figure: the top of the sidebar on a Lesson 13+ project (Lesson 18 ideal) with AdvantageKit expanded, and which Connect to Simulator item was picked, to fix the **NetworkTables → AdvantageKit → …** paths in Lessons 18, 20 and 21.
-  4. Figure 8.2 (optional): the Swerve tab on the Lesson 8 state with `Heading` in **Rotation**.
-  5. Figure D.1: VS Code paused at the `double error = …` line in `steerToAngle`, and whether F5 works on the alpha project.
+  2. Figure 7.2, the Swerve tab on the Lesson 7 state, driving and pinwheel: done.
+  3. The sidebar on a Lesson 18 project: done, and made Figure 18.3 (at the end of §10, so 18.1 and 18.2 keep their numbers). AdvantageScope lists **AdvantageKit** at the top beside Telemetry, so Lessons 18, 20 and 21 now say **AdvantageKit → …** (claim `wpilib-tools.advantagescope-advantagekit-tree`). Taken with Default: NetworkTables; the NetworkTables (AdvantageKit) source wasn't tried.
+  4. Figure 8.2: done.
+  5. Figure D.1: done, from VS Code paused at line 147 after the worked example's sixth step. The WPILib Desktop Debug launch works on the alpha project, so the aside's "not verified" caveat is gone. The old stack-trace figure is now D.2. The bottom of the screenshot (terminal and status bar, which show the user's account and folder names) is cropped off.

@@ -791,8 +791,8 @@ that never once mentions the elevator's height. Press the left face
 button (X on an Xbox pad, **C** on the keyboard) and it drops back down to the floor while staying up high.
 That is the scene graph from Lesson 19 doing exactly what it promised.
 
-Then go find the physics. The arm's readings are under **NetworkTables →
-AdvantageKit → Arm**, and its goal and `AtGoal` under **AdvantageKit →
+Then go find the physics. The arm's readings are under **AdvantageKit →
+Arm**, and its goal and `AtGoal` under **AdvantageKit →
 RealOutputs → Arm**. <!-- claim: advantagekit.data-receivers-and-files --> Put `Arm/AngleDegrees` and `Arm/AppliedVolts` on
 one graph and watch what the voltage settles at once the arm stops. Your
 two presets give you two readings: about `+0.24` at the floor (`−20°`,

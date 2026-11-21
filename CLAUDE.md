@@ -2784,8 +2784,17 @@ at least twice.
   screenshots, Lesson 7 state, Figure 7.2): `ModuleStates` dragged there
   reads **Module Velocities**; the tab opens from **Tabs → New Tab →
   Swerve** (Alt+D) and has Max Speed (m/s), Frame Size and Orientation
-  (claim `wpilib-tools.advantagescope-swerve-tab`). Lessons 7 and 8 fixed;
-  Lesson 8's **Rotation** slot is still unchecked. Figures made from the
+  (claim `wpilib-tools.advantagescope-swerve-tab`). Lesson 8's `Heading`
+  goes into the same Sources list and reads **Rotation** (Figure 8.2), so
+  there's no Rotation slot either. **AdvantageKit's tree** (Lesson 18 state,
+  Default: NetworkTables, Figure 18.3) is **AdvantageKit → Elevator** for
+  inputs and **AdvantageKit → RealOutputs → Elevator** for outputs, beside
+  Telemetry at the top; Lessons 18, 20 and 21 fixed (claim
+  `wpilib-tools.advantagescope-advantagekit-tree`). **VS Code's WPILib
+  Desktop Debug launch works on the alpha OpMode project** (Figure D.1, the
+  user's Lesson 5 project; the old stack-trace figure is D.2). Crop the
+  user's screenshots clear of their account and folder names (VS Code's
+  terminal and status bar). Figures made from the
   user's screenshots share `tools/figures/screenshots.py`, which crops,
   numbers and stacks panels like Figure 17.3.
   The figure's generator, `tools/figures/03-advantagescope-tree-graph.py`,

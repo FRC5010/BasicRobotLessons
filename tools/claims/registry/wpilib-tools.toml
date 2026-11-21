@@ -124,8 +124,8 @@ kind = "behaviour"
 library = ["wpilib-tools"]
 criticality = "C3"
 statement = "In WPILib VS Code, 'WPILib: Simulate Robot Code' (with the debugger option) or F5 launches the simulation with the debugger attached, 'Debug Robot Code' deploys with it attached to a SystemCore, and a paused breakpoint freezes the whole robot loop and sim time."
-evidence = "No record found in CLAUDE.md or tools/figures/data; the lesson itself says the launch configs are unverified on a 2027-alpha OpMode project"
-measured_on = "unverified"
+evidence = "Figure D.1: the user's screenshot (2026-11-21, Windows, tools/figures/data/aside-debugger-window.png) shows the WPILib Desktop Debug launch paused at a breakpoint in their Lesson 5 project, with Variables, Watch and Call Stack filled in. Not shown: which of the palette command or F5 started it, Debug Robot Code on a SystemCore, and sim time freezing (the screenshot can't show time)."
+measured_on = "the user's WPILib install, version not recorded (its JDK folder is 2027_alpha7, a name alpha-8 keeps too)"
 
 [[claim]]
 id = "wpilib-tools.simgui-alliance-station"
@@ -201,7 +201,17 @@ id = "wpilib-tools.advantagescope-swerve-tab"
 kind = "behaviour"
 library = ["wpilib-tools"]
 criticality = "C1"
-statement = "AdvantageScope opens a Swerve tab from Tabs > New Tab > Swerve (Alt+D); a SwerveModuleVelocity array (Lesson 7's ModuleStates, listed in the sidebar under Telemetry > Drivetrain) dragged into its Sources list shows as Module Velocities and draws one arrow per module; the tab has Max Speed (m/s), Frame Size (m) and Orientation settings."
-evidence = "Figure 7.2: screenshots the user took on 2026-11-21 in their own AdvantageScope on Windows (version not recorded), connected to the simulation of the Lesson 7 state (tools/figures/data/07-advantagescope-new-tab.png, 07-advantagescope-swerve-tab.png), and a third of the drop itself (not kept). The lessons' old 'NetworkTables/Telemetry/Drivetrain/ModuleStates into its States slot' was wrong on both counts. Whether Max Speed starts at 5 or was typed in isn't known. Lesson 8's Rotation slot isn't shown."
+statement = "AdvantageScope opens a Swerve tab from Tabs > New Tab > Swerve (Alt+D); a SwerveModuleVelocity array (Lesson 7's ModuleStates, listed in the sidebar under Telemetry > Drivetrain) dragged into its Sources list shows as Module Velocities and draws one arrow per module, and a Rotation2d (Lesson 8's Heading) dragged into the same list shows as Rotation and turns the chassis drawing; the tab has Max Speed (m/s), Frame Size (m) and Orientation settings."
+evidence = "Figure 7.2: screenshots the user took on 2026-11-21 in their own AdvantageScope on Windows (version not recorded), connected to the simulation of the Lesson 7 state (tools/figures/data/07-advantagescope-new-tab.png, 07-advantagescope-swerve-tab.png, 07-advantagescope-pinwheel.png), a shot of the drop itself (not kept), and Figure 8.2's on the Lesson 8 state (08-advantagescope-swerve-rotation.png). The lessons' old 'NetworkTables/Telemetry/Drivetrain/ModuleStates into its States slot' and Lesson 8's 'Rotation slot' were wrong: everything goes in the Sources list. Whether Max Speed starts at 5 or was typed in isn't known."
 measured_on = "alpha-8 (the user's AdvantageScope, version not recorded)"
 figure = "07-advantagescope-swerve-tab.png"
+
+[[claim]]
+id = "wpilib-tools.advantagescope-advantagekit-tree"
+kind = "behaviour"
+library = ["wpilib-tools", "advantagekit"]
+criticality = "C2"
+statement = "Connected live with Default: NetworkTables to a robot running AdvantageKit's NT4Publisher, AdvantageScope's sidebar has an AdvantageKit folder at the top (beside Telemetry), with each input under AdvantageKit > <key> (AdvantageKit > Elevator > HeightMeters) and each output under AdvantageKit > RealOutputs > <key>; a field on a graph is named NT:/AdvantageKit/... ."
+evidence = "Figure 18.3: a screenshot the user took on 2026-11-21 in their own AdvantageScope on Windows (version not recorded), connected to the simulation of the Lesson 18 state (tools/figures/data/18-advantagescope-elevator-graph.png). The Arm folder of Lesson 20 isn't in it, but it's the same publisher. The NetworkTables (AdvantageKit) source wasn't tried. Lessons 18, 20 and 21 had said 'NetworkTables > AdvantageKit > ...'."
+measured_on = "alpha-8 (the user's AdvantageScope, version not recorded)"
+figure = "18-advantagescope-elevator-graph.png"

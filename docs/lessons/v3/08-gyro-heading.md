@@ -341,12 +341,18 @@ simulated gyro's reading catching up (we didn't dig into it); it doesn't change 
 shape of anything after it. <!-- claim: l08.gyro-zero-delay, l08.gyro-first-jump -->
 
 Then watch the same thing as a picture: open the **Swerve** tab from Lesson 7
-(with `ModuleStates` in its **Sources** list, as in [Figure 7.2](07-four-modules.md#figure-7-2)) <!-- claim: wpilib-tools.advantagescope-swerve-tab --> and drop
-`Heading`, from **Telemetry → Drivetrain** in the sidebar, into the **Rotation** slot. Press the
+(with `ModuleStates` in its **Sources** list, as in [Figure 7.2](07-four-modules.md#figure-7-2)) and drag
+`Heading`, from **Telemetry → Drivetrain** in the sidebar, into the same
+**Sources** list, where it shows up as **Rotation** (Figure 8.2). <!-- claim: wpilib-tools.advantagescope-swerve-tab --> Press the
 bottom button again — the four wheels snap into the pinwheel, and the whole
 chassis diagram rotates to 90° as the fake gyro integrates, easing in exactly
 like the plot does. One glance now tells you what the wheels are doing *and*
 which way the robot thinks it's facing.
+
+<a id="figure-8-2"></a>
+![AdvantageScope's Swerve tab. In the sidebar, Telemetry and Drivetrain are open, showing CurrentCommand, Heading (a Rotation2d, badge 1), HeadingDegrees, the four Module folders and ModuleStates. The Sources list under the diagram holds Module Velocities: NT:/Telemetry/Drivetrain/ModuleStates and below it Rotation: NT:/Telemetry/Drivetrain/Heading (badge 2). The chassis square is drawn turned about a third of the way to a right angle, its center arrow pointing up and to the left, with the four wheel arrows in the pinwheel.](images/08-advantagescope-swerve-rotation.png)
+
+*Figure 8.2 — The Swerve tab with `Heading` (1) added to its Sources list as Rotation (2). The chassis is drawn turned to whatever heading the gyro reports.* <!-- claim: wpilib-tools.advantagescope-swerve-tab -->
 
 Tune `kP` the same way as Lesson 5 — the symptoms haven't changed, only the
 thing that's oscillating:

@@ -1,4 +1,4 @@
-"""Debugger aside, Figure D.1: the stack trace from section 4 marked up for its two passes.
+"""Debugger aside, Figure D.2: the stack trace from section 4 marked up for its two passes.
 Drawn from the trace the aside prints (its top three frames as printed, the bottom two as the
 aside relabels them); no measurement, so no data file.
 

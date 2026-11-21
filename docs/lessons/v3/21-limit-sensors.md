@@ -446,7 +446,7 @@ anywhere.
 
 Run the robot in simulation. Before you touch anything — before you even
 pick an opmode — put `Elevator/HeightMeters` and `Elevator/AtBottomLimit`
-(both readings, so under **NetworkTables → AdvantageKit → Elevator**) on a
+(both readings, so under **AdvantageKit → Elevator**) on a
 graph and watch.
 
 It starts at **0.00**, with the simulated carriage 35 cm in the air. Then

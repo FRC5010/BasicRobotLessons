@@ -565,7 +565,7 @@ That needs `import first.robot.Constants.ElevatorConstants;` up top,
 alongside the `DriveConstants` import already there.
 
 Run the robot in simulation, open AdvantageScope (Lesson 3), expand
-**NetworkTables → AdvantageKit → Elevator**, tap the D-pad (**I**, **K** or **L** on the keyboard), and watch
+**AdvantageKit → Elevator**, tap the D-pad (**I**, **K** or **L** on the keyboard), and watch
 `HeightMeters` climb toward whichever preset you asked for and stay there.
 
 ---
@@ -576,7 +576,7 @@ Every gain here was computed, not guessed — but "computed" still means
 "worth checking against what the robot actually does." Open
 AdvantageScope (Lesson 3), connect to the simulator, and drag
 `SetpointMeters` and `HeightMeters` from
-**NetworkTables → AdvantageKit → Elevator**, and `GoalMeters` from
+**AdvantageKit → Elevator**, and `GoalMeters` from
 **AdvantageKit → RealOutputs → Elevator** (it's an output), onto the same
 **Line Graph** tab. Three curves, and
 each one answers a different question: the goal is a step (what you
@@ -653,6 +653,17 @@ possible trim.
   orange line in Figure 18.1's lower panel) — if
   you find yourself raising `kP` to chase a bigger gap than that, the
   actual bug is almost always upstream, in `kG`, `kV`, or `kA`. <!-- claim: l18.model-hold-gap -->
+
+When you set the graph up yourself, it should look like Figure 18.3: the
+readings come from **AdvantageKit → Elevator** in the sidebar, the goal from
+**AdvantageKit → RealOutputs → Elevator**, and all three go in the **Left
+Axis** list. That screen also has `VelocityMetersPerSec` on the right axis,
+which you can add if you like. <!-- claim: wpilib-tools.advantagescope-advantagekit-tree -->
+
+<a id="figure-18-3"></a>
+![AdvantageScope connected to the simulator. The sidebar lists Telemetry and AdvantageKit at the top; under AdvantageKit, Elevator (badge 1) holds AppliedVolts, HeightMeters, SetpointMeters and VelocityMetersPerSec, and RealOutputs, Elevator (badge 2) holds CurrentCommand and GoalMeters. A line graph shows a minute of D-pad presses: the goal steps between 0, 0.75 and 1.45 m, the setpoint and height ramp after it almost on top of each other, and the velocity on the right axis jumps to about 1 m/s and back with each move. The Left Axis list (badge 3) holds NT:/AdvantageKit/Elevator/SetpointMeters, NT:/AdvantageKit/Elevator/HeightMeters and the RealOutputs GoalMeters; the Right Axis list holds VelocityMetersPerSec.](images/18-advantagescope-elevator-graph.png)
+
+*Figure 18.3 — This section's graph in AdvantageScope, after a few D-pad presses: the readings from AdvantageKit → Elevator (1), the goal from AdvantageKit → RealOutputs → Elevator (2), all three on the Left Axis (3).* <!-- claim: wpilib-tools.advantagescope-advantagekit-tree -->
 
 > **On real hardware:** don't skip straight to full-height moves while
 > tuning. Start with `kScoreMid` from a stop, watch it settle, then try a

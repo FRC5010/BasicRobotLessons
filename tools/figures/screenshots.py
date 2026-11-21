@@ -1,6 +1,6 @@
 """Stack screenshots into one numbered figure, the way Figure 17.3 marks SimGUI: a heading over each
 panel on a dark background, Okabe-Ito orange outlines and numbered circles with a black outline
-and digit. Used by the generators of the figures made from the user's screenshots (3.1, 7.2).
+and digit. Used by the generators of the figures made from the user's screenshots (3.1, 7.2, 8.2, 18.3, D.1).
 
 A panel is a dict:
     shot     the screenshot's path
@@ -8,7 +8,7 @@ A panel is a dict:
     scale    how much to scale the crop (the figure is WIDTH px wide; a panel can be narrower)
     boxes    [(x0, y0, x1, y1), ...] orange outlines, in the screenshot's pixels
     circles  [(number, x, y), ...] numbered circles, centred there, in the screenshot's pixels
-    heading  the text over the panel
+    heading  the text over the panel (optional; a one-panel figure needs none)
 """
 
 import os
@@ -49,11 +49,12 @@ def compose(panels, out_path, repo):
     heading_font = ImageFont.truetype(FONT, HEADING_SIZE * SS)
     digit_font = ImageFont.truetype(FONT, round(RADIUS * 1.35 * SS))
 
-    placed, y = [], MARGIN * SS // 2
+    placed, y = [], (MARGIN * SS // 2) if panels[0].get("heading") else MARGIN * SS
     for p in panels:
         im = _panel_image(p)
         heading_y = y
-        y += round(HEADING_SIZE * 1.6) * SS
+        if p.get("heading"):
+            y += round(HEADING_SIZE * 1.6) * SS
         placed.append((p, im, MARGIN * SS, y, heading_y))
         y += im.height + GAP * SS
     height = y - GAP * SS + MARGIN * SS
@@ -61,7 +62,8 @@ def compose(panels, out_path, repo):
     canvas = Image.new("RGB", (WIDTH * SS, height), BACKGROUND)
     draw = ImageDraw.Draw(canvas)
     for p, im, x, y, heading_y in placed:
-        draw.text((x, heading_y), p["heading"], fill=HEADING, font=heading_font)
+        if p.get("heading"):
+            draw.text((x, heading_y), p["heading"], fill=HEADING, font=heading_font)
         canvas.paste(im, (x, y))
         k = p["scale"] * SS
         for number, sx, sy in p.get("circles", []):
