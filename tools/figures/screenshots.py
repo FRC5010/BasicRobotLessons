@@ -1,6 +1,6 @@
 """Stack screenshots into one numbered figure, the way Figure 17.3 marks SimGUI: a heading over each
 panel on a dark background, Okabe-Ito orange outlines and numbered circles with a black outline
-and digit. Used by the generators of the figures made from the user's screenshots (3.1, 7.2, 8.2, 18.3, D.1).
+and digit. Used by the generators of the figures made from the user's screenshots (3.1, 7.2, 8.2, 11.1, 11.2, 13.3, 13.5, 16.2, 18.3, D.1, R.1).
 
 A panel is a dict:
     shot     the screenshot's path
@@ -45,7 +45,8 @@ def _panel_image(p):
     return crop.resize((round(crop.width * k), round(crop.height * k)), Image.Resampling.LANCZOS)
 
 
-def compose(panels, out_path, repo):
+def compose(panels, out_path, repo, method=None):
+    """method: Pillow's quantize method; the default median cut can merge small colour swatches."""
     heading_font = ImageFont.truetype(FONT, HEADING_SIZE * SS)
     digit_font = ImageFont.truetype(FONT, round(RADIUS * 1.35 * SS))
 
@@ -74,6 +75,6 @@ def compose(panels, out_path, repo):
 
     out = canvas.resize((WIDTH, round(height / SS)), Image.Resampling.LANCZOS)
     # Screenshots have few colours, so a 256-colour palette keeps them sharp and small.
-    out = out.quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
+    out = out.quantize(colors=256, method=method if method is not None else Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
     out.save(out_path, optimize=True)
     print(f"wrote {os.path.relpath(out_path, repo)}: {out.width} x {out.height}, {os.path.getsize(out_path) // 1024} KB")

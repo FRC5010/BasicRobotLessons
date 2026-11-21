@@ -85,7 +85,21 @@ your project is a git repository with everything committed. Commit first
 what changed. If you want your old version back, `git checkout .` restores
 every file it changed or deleted, and `git clean -fd` removes the ones it
 added. It works up to the last lesson migrated to the current alpha, Lesson
-20 today.
+33 today.
+
+**After every update, clean VS Code's Java workspace.** The Java
+extension keeps its own cached picture of your project, and an update
+that swaps dozens of files at once can leave that picture stale: red
+squiggles in files that are fine, or errors from files that are gone.
+Press **Ctrl+Shift+P**, type `Clean`, pick **Java: Clean Java Language
+Server Workspace** (1 in Figure R.1), then **Reload and delete** (2). It
+throws away only VS Code's cache, not your code, and VS Code reloads and
+rebuilds the cache from the files that are really there. <!-- claim: wpilib-tools.vscode-clean-java-workspace -->
+
+<a id="figure-r-1"></a>
+![Two VS Code panels. Top: the Command Palette with Clean typed, and Java: Clean Java Language Server Workspace highlighted at the top of the list (badge 1). Bottom: the confirmation, Are you sure you want to clean the Java language server workspace?, from Language Support for Java, with Cancel and Reload and delete (badge 2).](images/readme-vscode-clean-java-workspace.png)
+
+*Figure R.1 — Cleaning the Java workspace after an update: the command (1), then Reload and delete (2).*
 
 **It goes backwards too.** Ask for an earlier lesson than the one you're on
 — to redo one, say — and it also deletes the files that only later lessons

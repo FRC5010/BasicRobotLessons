@@ -2527,7 +2527,8 @@ plan is [docs/lesson-plan-v3-figures.md](docs/lesson-plan-v3-figures.md).
 - Figures are **Figure N.k**: N is the lesson number (no leading zero) and k
   counts from 1 in order of first appearance in that lesson.
 - An aside uses a letter for N: `S` for the setup aside, `D` for the
-  debugger aside, `G` for git-branching. So the first debugger figure is
+  debugger aside, `G` for git-branching, `R` for the track's README
+  (`docs/lessons/v3/README.md`; files `readme-<name>.png`). So the first debugger figure is
   Figure D.1, its anchor `figure-d-1`, and its file
   `aside-debugger-<name>.png`.
 - Inserting a figure renumbers the later ones in that lesson. When you do it,
@@ -2808,7 +2809,12 @@ at least twice.
   named a live key. The ×1.1 replay figure is now 13.4. Lesson 16's
   truth-and-estimate screenshot is Figure 16.2 (the user coloured the
   estimate blue; how isn't recorded), so the wiring and grip-limit figures
-  are 16.3 and 16.4. Figures made from the
+  are 16.3 and 16.4. Figure 16.2's second panel is the menu from the icon
+  beside a Poses entry (colour; Robot, Ghost, Heatmap, Arrow); its swatches
+  need `compose(..., method=Image.Quantize.FASTOCTREE)`, since the default
+  median cut turned Green grey. Figure R.1 (the README) is VS Code's **Java:
+  Clean Java Language Server Workspace** → **Reload and delete**, which the
+  user runs after every lesson update. Figures made from the
   user's screenshots share `tools/figures/screenshots.py`, which crops,
   numbers and stacks panels like Figure 17.3.
   The figure's generator, `tools/figures/03-advantagescope-tree-graph.py`,

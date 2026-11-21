@@ -442,11 +442,16 @@ truth, `Drivetrain/SimulatedPose` (1), and the estimate, `Localizer/Pose`
 (2), drawn as two robots (3). Here the estimate is coloured blue and the
 truth left red, and in this shot their numbers (4) are about 15 cm
 apart. <!-- claim: wpilib-tools.advantagescope-field-tabs, advantagekit.data-receivers-and-files -->
+Both start out red, so give one a colour of its own: **click the small
+icon at the left of its entry in the Poses list** (5) and pick a colour
+(6). The same menu changes how it's drawn (7): a solid **Robot**, a
+see-through **Ghost**, a **Heatmap** of where it's been, or an
+**Arrow**. <!-- claim: wpilib-tools.advantagescope-pose-style-menu -->
 
 <a id="figure-16-2"></a>
-![An AdvantageScope 2D Field tab, connected live. In the sidebar, under AdvantageKit and RealOutputs, Drivetrain holds SimulatedPose (badge 1) and Localizer holds Pose (badge 2). On the field two robot squares overlap near the red hub with a trail behind them, one outlined red and one blue, the blue one shifted slightly down (badge 3). The Poses list reads Robot: NT:/AdvantageKit/RealOutputs/Drivetrain/SimulatedPose at X 11.326 m, Y 2.618 m, 135.97 degrees, and Robot: NT:/AdvantageKit/RealOutputs/Localizer/Pose at X 11.331 m, Y 2.765 m, 135.97 degrees (badge 4).](images/16-advantagescope-truth-vs-estimate.png)
+![An AdvantageScope 2D Field tab, connected live. In the sidebar, under AdvantageKit and RealOutputs, Drivetrain holds SimulatedPose (badge 1) and Localizer holds Pose (badge 2). On the field two robot squares overlap near the red hub with a trail behind them, one outlined red and one blue, the blue one shifted slightly down (badge 3). The Poses list reads Robot: NT:/AdvantageKit/RealOutputs/Drivetrain/SimulatedPose at X 11.326 m, Y 2.618 m, 135.97 degrees, and Robot: NT:/AdvantageKit/RealOutputs/Localizer/Pose at X 11.331 m, Y 2.765 m, 135.97 degrees (badge 4). A second panel shows the menu that opens from the small icon at the left of a Poses entry (badge 5): Alliance Color, then Green, Red, Blue (ticked), Orange, Cyan, Yellow and Magenta (badge 6), then Robot (ticked), Ghost, Heatmap and Arrow (badge 7), with Ghost's own submenu of the same seven colours open.](images/16-advantagescope-truth-vs-estimate.png)
 
-*Figure 16.2 — The truth (1, red) and the estimate (2, blue) on one 2D Field tab (3). Here their positions (4) differ by about 15 cm; the headings agree.* <!-- claim: wpilib-tools.advantagescope-field-tabs -->
+*Figure 16.2 — The truth (1, red) and the estimate (2, blue) on one 2D Field tab (3). Here their positions (4) differ by about 15 cm; the headings agree. The icon beside a pose (5) opens its colour (6) and style (7).* <!-- claim: wpilib-tools.advantagescope-field-tabs -->
 
 ---
 

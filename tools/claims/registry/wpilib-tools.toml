@@ -235,3 +235,21 @@ statement = "With a log file open, AdvantageScope names its fields without the N
 evidence = "Figure 13.3: the user's screenshot (2026-11-21, Windows, Lesson 13 project, AdvantageScope version not recorded), tools/figures/data/13-advantagescope-replay-file.png. How the second pose came to be drawn as a Ghost (chosen, or AdvantageScope's default for a second source) isn't known, so the lesson doesn't say."
 measured_on = "alpha-8 (the user's AdvantageScope, version not recorded)"
 figure = "13-advantagescope-replay-file.png"
+
+[[claim]]
+id = "wpilib-tools.advantagescope-pose-style-menu"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C3"
+statement = "In an AdvantageScope 2D Field tab, the small icon at the left of a Poses entry opens a menu: Alliance Color, Green, Red, Blue, Orange, Cyan, Yellow, Magenta, then the styles Robot, Ghost, Heatmap and Arrow (the last three with colour submenus), and Help. A new pose is drawn as a red Robot."
+evidence = "Figure 16.2's second panel: a screenshot the user took on 2026-11-21 in their own AdvantageScope on Windows (version not recorded), live on the Lesson 16 state (tools/figures/data/16-advantagescope-pose-style-menu.png); the user described opening it by clicking the icon. 'Starts out red' is from Figures 11.1 and 16.2 (both poses red until the user changed one); whether Red here means Alliance Color on a red alliance wasn't checked."
+measured_on = "alpha-8 (the user's AdvantageScope, version not recorded)"
+
+[[claim]]
+id = "wpilib-tools.vscode-clean-java-workspace"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C3"
+statement = "VS Code's Command Palette (Ctrl+Shift+P) has 'Java: Clean Java Language Server Workspace', from the Language Support for Java extension; it asks for confirmation with Cancel and 'Reload and delete', and deletes the extension's cached workspace data (not the project's files), then reloads the window."
+evidence = "Figure R.1: screenshots the user took on 2026-11-21 in their own VS Code with WPILib on Windows (versions not recorded): tools/figures/data/readme-vscode-clean-java-command.png and readme-vscode-clean-java-confirm.png. The user runs it after every lesson update. That it removes only the extension's cache, not project files, is the command's documented purpose as recalled, not checked here; that it fixes stale errors after an update is the user's experience, not measured."
+measured_on = "the user's WPILib VS Code, version not recorded"
