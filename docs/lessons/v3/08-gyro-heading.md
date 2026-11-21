@@ -22,7 +22,7 @@ control from Lesson 5 to make the chassis **turn to a target heading and stop**
 An encoder tells you how far a *motor* turned. A **gyro** tells you how far the
 *whole robot* has rotated. The Pigeon 2 reports **yaw** — rotation about the
 vertical axis, i.e. heading — in degrees. `0°` is wherever the robot was pointing
-when the gyro zeroed, and positive is CCW (the convention from Lesson 7, holding
+when the gyro zeroed, and positive is CCW (the convention from Lesson 7, drawn in [Figure 7.1](07-four-modules.md#figure-7-1), holding
 as promised).
 
 Where should it live? Heading is a *chassis* fact — no single module knows it,
@@ -67,7 +67,7 @@ import static org.wpilib.units.Units.Degrees;
 ```
 
 Reading yaw has the same shape as reading motor position: `getYaw()` returns a
-signal, `.getValue().in(Degrees)` pulls the number out in the unit you want.
+signal, `.getValue().in(Degrees)` pulls the number out in the unit you want. <!-- claim: phoenix6.get-value-in-units -->
 Sensors all feel alike once you've read one.
 
 Finally, log it — the same two audiences as the module states from Lesson 7.
@@ -85,7 +85,7 @@ slot — same fact, packaged for a tool that draws instead of plots.
 `Telemetry.log` has a single-value overload for exactly this, the same idea
 as the module-states array from Lesson 7: hand it the value plus
 **`Rotation2d.struct`**, and it publishes the structured type instead of a
-bare number. (`Rotation2d` is already imported from Lesson 7.)
+bare number. <!-- claim: wpilib.telemetry-log-overloads --> (`Rotation2d` is already imported from Lesson 7.)
 
 ---
 
@@ -152,7 +152,8 @@ Lesson 5 promised its five moves would come back — measure, subtract, multiply
 clamp, command — and here they are, pointed at the whole robot. Two things
 differ from `steerToAngle`: which sensor gets measured, and that headings
 **wrap** around a circle, so the subtract step needs the wrap trick baked in
-(`-170°` to `170°` should turn `20°`, not `340°`).
+(`-170°` to `170°` should turn `20°`, not `340°`; [Figure 5.3](05-steering-p-control.md#figure-5-3)
+draws it).
 
 The wrap logic goes in its own little question-method, because the finish
 condition is about to need it too.
@@ -202,12 +203,12 @@ fresh `omega` from the current error, hands it to `commandRotation`, then
 out by hand because this loop has real work to do on every pass, not just a
 condition to poll. The moment the error drops under 2°, the loop exits and the
 coroutine body is out of code — finished, the same way `driveDistance`
-finished in Lesson 6.
+finished in Lesson 6. <!-- claim: commandsv3.coroutine-await-yield-wait -->
 
-And because Lesson 6's rule about endings hasn't gone anywhere:
+And because Lesson 6's rule about endings ([Figure 6.1](06-distance-and-commands.md#figure-6-1)) hasn't gone anywhere:
 `.whenExited(() -> commandRotation(0.0))` stops the turn whether the loop
 finished or something interrupted this command first. Two endings, one stop,
-same as `driveDistance`. The clamp
+same as `driveDistance`. <!-- claim: commandsv3.when-exited-on-cancel --> The clamp
 is tighter than Lesson 5's `±1.0` on purpose: full-power spins are violent,
 and a heading turn never needs more than half throttle. And because the
 finish condition calls the *same* `headingError` the loop body used, "done"
@@ -217,7 +218,7 @@ itself.
 **Add a private `clamp` helper to `Drivetrain`** — this alpha's WPILib has no
 `MathUtil.clamp` (Lesson 7 already found that out), and `Drivetrain` needs
 its own copy; it's a different class from `SwerveModule`, so it can't reach
-that one's private helper:
+that one's private helper: <!-- claim: wpilib.no-mathutil-clamp -->
 
 ```java
 /** Keeps 'value' between 'min' and 'max'. */
@@ -260,7 +261,7 @@ robot.driverController.faceRight().onTrue(robot.drivetrain.turnToHeading(0));
 
 Because `turnToHeading` requires the Drivetrain, pressing the bottom button
 cancels the default translate command; when it finishes (or is interrupted by
-the right button), the default resumes automatically. Unlike Lesson 5's
+the right button), the default resumes automatically. <!-- claim: commandsv3.default-command-resumes --> Unlike Lesson 5's
 `steerToAngle`, this command *finishes* — so the stick comes back to life on
 its own the moment the robot faces 90°.
 
@@ -296,7 +297,7 @@ That `+=` line is doing something with a fancy name — **integrating** — and 
 plain meaning: every tick, add "rate × time" to a running total. Rotating at
 180°/s for one 20 ms tick adds 3.6°; do that fifty times a second and the
 total *is* the heading. This is the same **command → model → fake sensor →
-your reads** loop as Lesson 4, with a one-line model. It's an honest stand-in
+your reads** loop as Lesson 4 ([Figure 4.1](04-simulation.md#figure-4-1)), with a one-line model. It's an honest stand-in
 that lets you develop `turnToHeading` on your laptop today; when Lesson 10
 adds `SwerveDriveKinematics`, we can replace it with a physics-driven
 simulation of the *actual* modules pushing the chassis around.
@@ -305,23 +306,53 @@ simulation of the *actual* modules pushing the chassis around.
 
 ## 6. Run it
 
-Run the robot in simulation → **My Teleop** → **Enabled**. In AdvantageScope, plot
+Run the robot in simulation, pick **Teleoperated** and **MyTeleop**, then
+**Enable**. In AdvantageScope, plot
 `Drivetrain/HeadingDegrees`. Press the bottom face button — heading sweeps
 toward `90°`, slows as it approaches, settles inside the ±2° band, and the
 command ends. Press the right face button — it comes back to `0°`. That's P
 control on a whole-robot quantity, closing the loop through a real chassis
 rotation command. Verified against this model: from a standing start,
-`turnToHeading(90)` settles inside the band in well under a second — no
+`turnToHeading(90)` gets inside the band in about 0.7 seconds — no
 overshoot, no oscillation, because integrating a commanded rate has no
-momentum to fight, unlike the geared motors from Lesson 7.
+momentum to fight, unlike the bare motor that rang in Lesson 5's
+[Figure 5.2](05-steering-p-control.md#figure-5-2). <!-- claim: l08.turn-exit-time -->
+
+<a id="figure-8-1"></a>
+![Two stacked graphs of turnToHeading(90). Top: the heading rises in a straight line, then curves in and levels off at 88.2 degrees, inside the grey 2 degree band around the 90 degree target; the loop exits at 0.70 seconds. Bottom: the commanded omega is flat at the 0.5 limit until about 0.38 seconds, then falls in steps towards zero and drops to zero when the loop exits](images/08-turn-to-heading.png)
+
+*Figure 8.1 — `turnToHeading(90)`: the heading, the `omega` the command sends, and where the loop stops.* <!-- claim: l08.turn-exit-time, l08.turn-exit-heading, l08.clamp-release-time -->
+
+Figure 8.1 shows the saturated start and the P tail. Read the bottom panel
+first, because it explains the top one. For the first 0.38 seconds `omega`
+is flat at 0.5: the error is more than 25°, so `kP × error` would ask for
+more than the `±0.5` clamp allows, and the clamp wins. <!-- claim: l08.clamp-release-time --> The heading in the
+top panel is a straight line for the same stretch, because turning at a
+constant rate is a straight line. Once the error falls under 25° (`0.5 ÷
+0.02`) the clamp lets go and `omega` becomes `kP × error`, shrinking with
+the gap — it's Lesson 5's fading push again — and the heading curves in
+like the tail of Figure 5.1's first swing, with no ringing. At 0.70 seconds the error is under 2°, the loop
+exits, and `.whenExited` commands zero. <!-- claim: l08.turn-exit-time --> The heading sits at 88.2°: inside the grey band, not on
+the target, and that is exactly what "within 2°" means. <!-- claim: l08.turn-exit-heading -->
+
+One small oddity: the heading reads 0° for the first 0.12 seconds even
+though `omega` is already 0.5, then jumps to 25°. That looks like the
+simulated gyro's reading catching up (we didn't dig into it); it doesn't change the
+shape of anything after it. <!-- claim: l08.gyro-zero-delay, l08.gyro-first-jump -->
 
 Then watch the same thing as a picture: open the **Swerve** tab from Lesson 7
-(with `NetworkTables/Telemetry/Drivetrain/ModuleStates` in its **States** slot) and drop
-`NetworkTables/Telemetry/Drivetrain/Heading` into the **Rotation** slot. Press the
+(with `ModuleStates` in its **Sources** list, as in [Figure 7.2](07-four-modules.md#figure-7-2)) and drag
+`Heading`, from **Telemetry → Drivetrain** in the sidebar, into the same
+**Sources** list, where it shows up as **Rotation** (Figure 8.2). <!-- claim: wpilib-tools.advantagescope-swerve-tab --> Press the
 bottom button again — the four wheels snap into the pinwheel, and the whole
 chassis diagram rotates to 90° as the fake gyro integrates, easing in exactly
 like the plot does. One glance now tells you what the wheels are doing *and*
 which way the robot thinks it's facing.
+
+<a id="figure-8-2"></a>
+![AdvantageScope's Swerve tab. In the sidebar, Telemetry and Drivetrain are open, showing CurrentCommand, Heading (a Rotation2d, badge 1), HeadingDegrees, the four Module folders and ModuleStates. The Sources list under the diagram holds Module Velocities: NT:/Telemetry/Drivetrain/ModuleStates and below it Rotation: NT:/Telemetry/Drivetrain/Heading (badge 2). The chassis square is drawn turned about a third of the way to a right angle, its center arrow pointing up and to the left, with the four wheel arrows in the pinwheel.](images/08-advantagescope-swerve-rotation.png)
+
+*Figure 8.2 — The Swerve tab with `Heading` (1) added to its Sources list as Rotation (2). The chassis is drawn turned to whatever heading the gyro reports.* <!-- claim: wpilib-tools.advantagescope-swerve-tab -->
 
 Tune `kP` the same way as Lesson 5 — the symptoms haven't changed, only the
 thing that's oscillating:

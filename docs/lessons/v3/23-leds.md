@@ -55,7 +55,7 @@ lesson.
 Addressable LEDs are a chain of individually-controlled pixels on a
 single data wire. In WPILib that's two objects: an **`AddressableLED`**
 for the port, and an **`AddressableLEDBuffer`** holding the color of
-every pixel.
+every pixel. <!-- claim: wpilib.addressable-led-api -->
 
 You write colors into the buffer, then hand the whole buffer to the
 strip. Same rhythm as Lesson 19's drawing — build it once, mutate it
@@ -95,7 +95,10 @@ import org.wpilib.units.measure.Time;
 > constructors quietly claiming the same channel number is a startup
 > exception, not a silent bug, but it's still worth choosing on purpose
 > rather than finding out at boot: `kPwmPort = 5` clears every DIO
-> channel this robot has claimed so far.
+> channel this robot has claimed so far. <!-- claim: wpilib.addressable-led-duplicate-channel-throws -->
+> The numbers stop at 5, too: there are six of these ports, 0 to 5, so
+> asking for port 9 fails at boot with an `AllocationException` that says
+> `Maximum: 5`. <!-- claim: wpilib.led-port-range -->
 
 ---
 
@@ -121,7 +124,7 @@ LEDPattern.solid(Color.RED).blink(Seconds.of(0.15))
 ```
 
 `blink` doesn't blink anything. It returns a **new pattern** that happens
-to be the old one, blinking. `solid(...)` is untouched, and you could
+to be the old one, blinking. <!-- claim: wpilib.led-pattern-combinators --> `solid(...)` is untouched, and you could
 hand it to a different strip on the next line. That's why these live in
 `Constants.java` alongside the colors: they're constants in the ordinary
 sense, not machinery.
@@ -137,7 +140,7 @@ more often than it has any right to be.
 
 The measure arguments are the Lesson 10 habit still paying off:
 `blink(Seconds.of(0.15))` and `atBrightness(Percent.of(25))` say what
-they mean without a comment.
+they mean without a comment. <!-- claim: wpilib.led-pattern-combinators -->
 
 ---
 
@@ -173,7 +176,7 @@ three identical arms.
 What the strip *does* get is a log line, because "what was the robot
 showing at 14:32?" is a real question after a match. It's an output — the
 strip's choice is something your code works out — so it goes through
-`Logger.recordOutput`, and a replay works the choice out again.
+`Logger.recordOutput`, and a replay works the choice out again. <!-- claim: advantagekit.replay-matches-recording -->
 
 ---
 
@@ -216,7 +219,7 @@ memory of which side of that line it's on.
 ```
 
 It's an output, not a reading: no sensor says "homed". Your code decided
-it, the moment homing finished, so a replay decides it again.
+it, the moment homing finished, so a replay decides it again. <!-- claim: advantagekit.replay-matches-recording -->
 
 Three lines and an accessor, for something the robot already knew and
 had no way to say. That's usually how this goes: the sensor work was
@@ -252,7 +255,7 @@ That decision has to live somewhere. Writing it as an ordered chain —
 first match wins, read top to bottom — makes it something you can point
 at in a design review.
 
-**Create `subsystems/Leds.java`:**
+**Create `subsystems/Leds.java`:** <!-- claim: wpilib.match-state-alliance-optional -->
 
 ```java
 package first.robot.subsystems;
@@ -343,19 +346,19 @@ in this robot has one.
 `AddressableLED` before, you may be reaching for one — it doesn't exist
 on this platform. `setLength(...)` once and `setData(...)` every tick is
 the whole lifecycle; the strip outputs whatever it was last handed, with
-no separate arm-and-start step.
+no separate arm-and-start step. <!-- claim: wpilib.addressable-led-api -->
 
 **`applyTo` then `setData`, every tick.** The pattern writes colors into
 the buffer; the buffer goes to the strip. Both happen every time, because
 a blinking pattern is only blinking if you keep asking it what it looks
-like *now*.
+like *now*. <!-- claim: wpilib.led-pattern-combinators -->
 
 **`allianceColor()` uses `Optional`.** `MatchState.getAlliance()` returns
 `Optional<Alliance>` because before the driver station connects, the
 robot genuinely does not know which side it's on. `Optional` showed up in
 Lesson 15 for a camera that might not see a tag; this is the same idea
 about a different unknown, and `.map(...).orElse(...)` is how you answer
-anyway.
+anyway. <!-- claim: wpilib.match-state-alliance-optional -->
 
 **The chain is going to get worse.** Four conditions read fine. Eight
 won't, and some of what you'll want to say next can't be phrased as "is
@@ -390,6 +393,18 @@ Run the robot in simulation. Before you enable anything, find the LED view
 in **SimGUI** — the strip shows up as a row of colored pixels you can
 watch change.
 
+<a id="figure-23-1"></a>
+![SimGUI's Hardware menu with Addressable LEDs, then the Addressable LEDs window twice: a strip of 40 bright red squares before homing, and the same strip dim red after homing](images/23-simgui-led-strip.png)
+
+*Figure 23.1 — SimGUI's Addressable LEDs window, before and after homing.* <!-- claim: wpilib-tools.simgui-addressable-leds -->
+
+Figure 23.1 shows what you're looking for: open the **Hardware** menu and
+pick **Addressable LEDs**. The window starts with the 40 pixels folded into
+rows of 10; the figure has **Columns** set to 40 so they sit in one line,
+like the real strip. A screenshot catches only one phase of a blink, so the
+strip you see may be dark at the moment you look. SimGUI starts every launch
+on Red 1, so the dim color after homing is dim red. <!-- claim: wpilib-tools.simgui-addressable-leds, wpilib-tools.simgui-alliance-station -->
+
 It's **blinking red**, because nothing has homed the elevator yet — and
 notice it's blinking red even though the robot is *also* currently
 disabled. That's the priority chain working: two conditions are true at
@@ -397,18 +412,18 @@ once, and the one you actually need to act on is the one that wins.
 
 Now walk it through the chain:
 
-1. **Enable, then press Back.** (Homing drives an actual motor, so it
+1. **Enable, then press Back** (**B** on the keyboard). (Homing drives an actual motor, so it
    needs the robot enabled — the same reason Lesson 21's `home()` never
-   moved anything while disabled.) The elevator homes, and the moment it
+   moved anything while disabled.) <!-- claim: phoenix6.talonfx-no-output-when-disabled --> The elevator homes, and the moment it
    finishes the strip stops blinking and settles to a dim alliance color
    — condition 1 stopped being true, and the robot is enabled with an
    empty intake, so condition 4 took over.
-2. **Drop the arm with the left face button (X), hold the right bumper,
-   and drive into a game piece.** The instant the beam breaks, the strip
+2. **Drop the arm with the left face button (X on an Xbox pad, C on the
+   keyboard), hold the right bumper (comma), and drive into a game piece.** The instant the beam breaks, the strip
    goes **solid green**.
 3. **Disable the robot.** The strip stays green: holding a piece
    outranks being disabled.
-4. **Enable again and hold the left bumper** to eject the piece. The
+4. **Enable again and hold the left bumper** (**M**) to eject the piece. The
    strip drops back to the dim alliance color. **Disable once more** and
    it breathes.
 
@@ -425,19 +440,19 @@ decided after the fact rather than squinting at a strip. A replay works
 the choice out again, too: AdvantageKit records the driver station along
 with everything else (enabled or not, the alliance, the opmode), so
 `RobotState.isDisabled()` and the alliance give a replay the same answers
-they gave the robot.
+they gave the robot. <!-- claim: advantagekit.logged-opmode-robot-captures-ds, wpilib.robot-state-api -->
 
 ---
 
 ## Try it
 
 1. **Switch alliances.** `DriverStationSim.setAllianceStationId(...)` in
-   SimGUI's driver station panel lets you set the alliance. Set it to
+   SimGUI's driver station panel lets you set the alliance. <!-- claim: wpilib-tools.simgui-alliance-station --> Set it to
    red, disable, and confirm the breathing color follows. Then think
    about what the strip showed *before* you set it, and whether
    `orElse(Color.BLUE)` was the right default or just a convenient one.
 2. **Show the elevator's height as a bar.** `LEDPattern.progressMaskLayer(DoubleSupplier)`
-   masks one pattern by a 0–1 fraction. Feed it the elevator's height
+   masks one pattern by a 0–1 fraction. <!-- claim: wpilib.led-pattern-combinators --> Feed it the elevator's height
    over its max travel and use it to light part of the strip.
 3. **Reorder the chain and find the damage.** Move the `hasGamePiece`
    check above the `isHomed` check, then reproduce the queue-line
@@ -448,7 +463,7 @@ they gave the robot.
    than you designed it to.
 4. **Split the strip.** `m_buffer.createView(int, int)` returns a view of
    part of the buffer, and a pattern applied to a view only touches those
-   pixels. Use it to show homed-state on one half and disabled-state on
+   pixels. <!-- claim: wpilib.led-pattern-combinators --> Use it to show homed-state on one half and disabled-state on
    the other. Then decide whether that's genuinely better than one clear
    answer.
 

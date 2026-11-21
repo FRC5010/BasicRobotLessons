@@ -45,7 +45,7 @@ WPILib's version is called `Mechanism2d`, and it lives next to `Field2d`.
 You'll use AdvantageKit's copy of it instead, `LoggedMechanism2d`: the same
 canvas, the same calls, with one difference that matters to you. AdvantageKit
 can record it, so the picture goes in the log as an output and a replay
-draws it again from the replayed readings.
+draws it again from the replayed readings. <!-- claim: advantagekit.logged-mechanism-recorded-each-tick -->
 
 By the end of this lesson you'll press D-pad up and watch a line grow.
 
@@ -82,13 +82,13 @@ LoggedMechanismLigament2d segment =
 
 Angles are measured counter-clockwise from "pointing right" — the same
 CCW-positive convention you've been holding since Lesson 7. So straight up
-is 90°.
+is 90°. <!-- claim: advantagekit.logged-mechanism-api -->
 
 All three take measures — a `Distance` for every size and position, an
 `Angle` for every angle — so the habit you've had since Lesson 10 holds:
 pass `ElevatorConstants.kDisplayWidth` straight in, and write a bare number
 as `Meters.of(0)` or `Degrees.of(90)`. (Each one also has a version that
-takes plain `double`s, in meters and degrees, if you ever need it.)
+takes plain `double`s, in meters and degrees, if you ever need it.) <!-- claim: advantagekit.logged-mechanism-api -->
 
 ---
 
@@ -125,7 +125,7 @@ one in the other is the normal way to get from a name to a usable color.
 > Reach for `Color.ORANGE` and `Color.LIME_GREEN`, not `Color.kOrange` or
 > `Color.kLimeGreen`. Every constant you've written yourself in this course
 > gets a `k` prefix, but this particular library class doesn't follow that
-> convention — its named colors are plain, all-caps constants. Worth
+> convention — its named colors are plain, all-caps constants. <!-- claim: wpilib.color-named-constants --> Worth
 > knowing before the compiler tells you `kOrange` doesn't exist.
 
 Building the two `Color8Bit`s once, here, matters slightly more than it
@@ -184,18 +184,37 @@ starts at length zero because the elevator starts stowed. `m_effector`
 attaches to *the carriage* and points at −90°, which is 90° back from its
 parent — so it sticks out sideways from the top of the carriage.
 
+<a id="figure-19-1"></a>
+![The 1 m by 2 m canvas drawn to scale, twice. The Base root is a dot at the middle of the floor edge, the orange carriage rises from it at 90 degrees from the world's x axis, and the blue 25 cm effector leaves the top of the carriage at minus 90 degrees from the carriage's own direction, so it points right. In the second canvas the carriage is longer and the effector sits higher, still pointing right.](images/19-mechanism-chain.svg)
+
+*Figure 19.1 — The canvas, the `Base` anchor and the chain of segments, at two carriage lengths.* <!-- claim: advantagekit.logged-mechanism-api -->
+
+Figure 19.1 draws the chain, to scale. Look at the left canvas first. The gray
+rectangle is the `LoggedMechanism2d`: 1 m wide and 2 m tall, the two
+constants you just added. The black dot is `m_base`, at (0.5 m, 0), the
+middle of the bottom edge. The orange line is `m_carriage`; its 90° is
+measured from the world's +x direction (along the floor, to the right), so it
+points straight up, and the length you give it is how far up it reaches. The
+blue line is `m_effector`. Follow the dashed line that continues the
+carriage past its top: that is the direction the effector's angle is measured
+from, and −90° is a quarter turn clockwise from it, which lands on "right".
+Now look at the right canvas, where the carriage is longer. Nothing about the
+effector changed: it is still 25 cm long and still at −90°, and it rides up
+with the carriage because its anchor is the carriage's tip. That is the
+whole payoff of measuring a child's angle from its parent.
+
 Two details in there are worth stopping on.
 
 **`append` hands you back the thing you appended.** That's why
 `m_carriage = m_base.append(new LoggedMechanismLigament2d(...))` works as one
 statement: you construct the ligament, hand it to its parent, and get a
-reference to it in return so you can move it later. Without that, you'd
+reference to it in return so you can move it later. <!-- claim: advantagekit.logged-mechanism-api --> Without that, you'd
 need two lines and a temporary variable every time.
 
 **A child's angle is measured relative to its parent, not to the world.**
 The effector's −90° doesn't mean "pointing down." It means "90° clockwise
 from whatever direction the carriage is pointing." The carriage points up,
-so the effector points right. This is the same idea as Lesson 15's
+so the effector points right. <!-- claim: advantagekit.logged-mechanism-api --> This is the same idea as Lesson 15's
 `Transform3d` for the cameras — an offset measured relative to the thing
 it's mounted on, not to the field — arriving in a new place.
 
@@ -206,7 +225,7 @@ it's mounted on, not to the field — arriving in a new place.
 The drawing changes every tick, and it gets logged every tick — the same
 order as Lesson 11's field: change it, then log it.
 
-**Update `periodic()` — add this after the `processInputs` and `recordOutput` lines:**
+**Update `periodic()` — add this after the `processInputs` and `recordOutput` lines:** <!-- claim: advantagekit.logged-mechanism-recorded-each-tick -->
 
 ```java
     // The picture is built once and changed every tick; only the carriage
@@ -221,7 +240,7 @@ order as Lesson 11's field: change it, then log it.
 `recordOutput` treats the drawing the way `Telemetry.log` treats Lesson
 11's field: it records what the drawing looks like *at that moment*. Record
 it once, in the constructor, and the viewer would show a carriage frozen at
-zero forever. So it goes in `periodic()`, right after the two lines that
+zero forever. <!-- claim: advantagekit.mechanism-record-once-freezes, advantagekit.logged-mechanism-recorded-each-tick --> So it goes in `periodic()`, right after the two lines that
 change it, and the constructor doesn't change at all.
 
 And it's an output, like `GoalMeters` a few lines up, because it's
@@ -229,7 +248,7 @@ something your code worked out: a length from the height reading, a color
 from `atGoal()`. That's the whole reason for AdvantageKit's version of the
 classes. In a replay, the code redraws the picture from the replayed
 readings and records the new one beside the old, so you can watch a
-replayed match as a moving mechanism, not just as numbers.
+replayed match as a moving mechanism, not just as numbers. <!-- claim: advantagekit.logged-mechanism-recorded-each-tick -->
 
 `setColor` is the other new call, and it's carrying information rather than
 decoration: `atGoal()` already exists, for `goToHeight`, so feeding it into
@@ -269,22 +288,32 @@ the two lines in section 5 that move the carriage won't change at all.
 
 ## 7. Watch it
 
-Run the robot in simulation, go **Teleoperated**, and press D-pad up.
+Run the robot in simulation, go **Teleoperated**, and press D-pad up (**I** on the keyboard).
 
 In **AdvantageScope** (Lesson 3), add a **Mechanism** tab and select
-`/AdvantageKit/RealOutputs/Elevator/Mechanism` as its source. You get a vertical
+`/AdvantageKit/RealOutputs/Elevator/Mechanism` as its source. <!-- claim: advantagekit.simgui-mechanism-menu --> You get a vertical
 orange line that grows out of the floor when you press D-pad up, with a
 short stub sticking out sideways at the top, riding along. When the
 carriage settles on the goal, the line turns green.
 
-Press D-pad down and it shrinks back toward the floor. Press D-pad right
-and it stops halfway. The picture is `Elevator/HeightMeters` — the same
+Press D-pad down (**K**) and it shrinks back toward the floor. Press D-pad
+right (**L**) and it stops halfway. The picture is `Elevator/HeightMeters` — the same
 number as the graph, drawn instead of printed.
 
 You can also find it inside SimGUI without opening a second tool: menu
 **NetworkTables → AdvantageKit → RealOutputs → Elevator → Mechanism**. Same
 drawing, same two viewers as the field view in Lesson 11 — the quick glance while
-sim is already open, and the full tool for anything careful.
+sim is already open, and the full tool for anything careful. <!-- claim: advantagekit.simgui-mechanism-menu -->
+
+<a id="figure-19-2"></a>
+![SimGUI's NetworkTables menu opened down to AdvantageKit, RealOutputs, Elevator and Mechanism, and below it the Mechanism window showing a tall dark canvas with an orange vertical line and a short orange stub at its top](images/19-simgui-mechanism.png)
+
+*Figure 19.2 — SimGUI: the Mechanism drawing, mid-move.*
+
+Figure 19.2 shows where to find it: each menu level opens the next, and
+clicking **Mechanism** opens a window you can drag and resize. <!-- claim: advantagekit.simgui-mechanism-menu --> The orange line
+in the second picture was caught while the carriage was still rising. Once it
+settles, it turns green.
 
 Now do the thing that makes it worth having. Put the Mechanism tab and the
 `HeightMeters` graph on screen at the same time and press a preset. The
@@ -305,7 +334,7 @@ one from the other.
    long, straight up, in gray. It never changes, so it costs two lines in
    the field block and zero in `periodic()` — a static ruler you can read
    the carriage against. (`LoggedMechanismLigament2d` has a five-argument
-   form that also takes a line weight and a `Color8Bit`.)
+   form that also takes a line weight and a `Color8Bit`.) <!-- claim: advantagekit.logged-mechanism-api -->
 3. **Code — wiggle the effector.** In `periodic()`, call
    `m_effector.setAngle(45 * Math.sin(Timer.getTimestamp()))` and run it.
    The stub waves back and forth while the carriage does whatever the
@@ -313,12 +342,12 @@ one from the other.
    effector's angle is its own, and its *position* is entirely the
    carriage's business. (`org.wpilib.system.Timer` — and take it back out
    when you're done, since Lesson 20 replaces that ligament with a real
-   arm.)
+   arm.) <!-- claim: wpilib.timer-get-timestamp -->
 4. **Code — break it on purpose.** Move the `Logger.recordOutput("Elevator/Mechanism", ...)`
    line out of `periodic()` and into the constructor, so it runs once.
    Watch the drawing freeze where it started while the graph keeps moving.
    That's what "the log is a snapshot" means, and it's a bug worth having
-   seen once — the same mistake would freeze Lesson 11's field.
+   seen once — the same mistake would freeze Lesson 11's field. <!-- claim: advantagekit.mechanism-record-once-freezes, wpilib.telemetry-log-is-a-snapshot -->
 
 ---
 
@@ -345,7 +374,7 @@ with a picture attached, which is a much easier place to learn it.
 The rest was familiar on purpose, once you saw where it pointed: the
 drawing is recorded every tick, right after you change it, like every
 number — it's an output, so a replay draws it again — the rule Lesson 11's
-field already follows.
+field already follows. <!-- claim: advantagekit.logged-mechanism-recorded-each-tick -->
 
 Next up, that placeholder stub on top of the carriage stops being a
 placeholder.

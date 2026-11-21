@@ -1,0 +1,141 @@
+# Numbers Lesson 13 (IO layers and replay) quotes that a library change could move.
+# Format: tools/claims/README.md. Measured by recording a sim run with the real Robot and
+# replaying it with AKIT_LOG_PATH (REPLAY); figure data in tools/figures/data/13-replay-scaled-pose.csv.
+
+[[claim]]
+id = "l13.replay-scaled-ratio"
+kind = "number"
+library = ["advantagekit", "wpilib"]
+criticality = "C2"
+statement = "Replaying a clean recording with getPosition() multiplied by 1.1 puts the replayed pose exactly 1.1 times as far from the start as the recording."
+evidence = "CLAUDE.md, 'v3 Lesson 13 records with AdvantageKit and replays', Lesson demos, measured; 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 13 ('ends 1.0999 times as far'); Figure 13.4 data (x1.1000)"
+measured_on = "alpha-8"
+method = "REPLAY"
+wording = "exactly 1.1 times as far; 1.1 times as long"
+unit = "ratio"
+range = [1.0995, 1.1005]
+measured = "1.0999 (Lesson 13 re-measure); x1.1000 (Figure 13.4 drive)"
+test = "tools/figures/probes/Fig13ReplayScaled.java"
+figure = "13-replay-scaled-pose.png"
+
+[[claim]]
+id = "l13.fig-recording-distance"
+kind = "number"
+library = ["advantagekit", "wpilib"]
+criticality = "C2"
+statement = "In Figure 13.4's drive (quarter stick: forward 3 s, left 3 s, forward and right 3 s) the recording, and a clean replay of it, end 4.78 m from the start."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 13, Figure 13.4's drive (the recording ends 4.78 m from the start; the clean replay matches it on all 470 poses)"
+measured_on = "alpha-8"
+method = "REPLAY"
+wording = "4.78 m"
+unit = "m"
+range = [4.775, 4.785]
+measured = "4.78 m"
+test = "tools/figures/probes/Fig13ReplayScaled.java"
+figure = "13-replay-scaled-pose.png"
+
+[[claim]]
+id = "l13.fig-scaled-distance"
+kind = "number"
+library = ["advantagekit", "wpilib"]
+criticality = "C2"
+statement = "The same drive replayed with getPosition() times 1.1 ends 5.26 m from the start."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 13, Figure 13.4's drive (the * 1.1 replay ends 5.26 m out)"
+measured_on = "alpha-8"
+method = "REPLAY"
+wording = "5.26 m"
+unit = "m"
+range = [5.255, 5.265]
+measured = "5.26 m"
+test = "tools/figures/probes/Fig13ReplayScaled.java"
+figure = "13-replay-scaled-pose.png"
+
+[[claim]]
+id = "l13.fig-scaled-gap"
+kind = "number"
+library = ["advantagekit", "wpilib"]
+criticality = "C2"
+statement = "In Figure 13.4 the x1.1 replay's end point is 0.48 m farther from the start than the recording's."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 13 (5.26 m against 4.78 m, 0.48 m beyond the recording)"
+measured_on = "alpha-8"
+method = "REPLAY"
+wording = "0.48 m apart"
+unit = "m"
+range = [0.475, 0.485]
+measured = "0.48 m"
+test = "tools/figures/probes/Fig13ReplayScaled.java"
+figure = "13-replay-scaled-pose.png"
+note = "The difference of the two distance claims; a half-stick drive gave 1.25 m, so it scales with distance."
+
+[[claim]]
+id = "l13.getposition-replay-gap"
+kind = "number"
+library = ["advantagekit", "wpilib"]
+criticality = "C2"
+statement = "A drive recorded with * 1.1 in SwerveModule.getPosition() and replayed without it lands 0.66 m from the recorded pose."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 13 (0.660 and 0.657 m; the 0.618 m in the alpha-7 note came from a shorter drive)"
+measured_on = "alpha-8"
+method = "REPLAY"
+wording = "0.66 m away from the recorded pose"
+unit = "m"
+range = [0.655, 0.665]
+measured = "0.660 and 0.657 m (three drives each)"
+note = "Depends on how far the recorded drive goes (the gap is 10% of the distance travelled); the measured drive is CLAUDE.md's longer one."
+
+[[claim]]
+id = "l13.iolayer-bug-pose-shift"
+kind = "number"
+library = ["advantagekit"]
+criticality = "C2"
+statement = "A * 1.1 placed in ModuleIOTalonFX.updateInputs is recorded into the inputs, so replaying the recording without it moves the pose by 0.000 m."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 13 (In ModuleIOTalonFX: 0.000 m)"
+measured_on = "alpha-8"
+method = "REPLAY"
+wording = "didn't move by a millimetre"
+unit = "m"
+range = [0.0, 0.001]
+measured = "0.000 m"
+
+[[claim]]
+id = "l13.kp-quarter-desired-ticks"
+kind = "number"
+library = ["advantagekit"]
+criticality = "C2"
+statement = "Replaying a turn-button recording with HeadingConstants.kP divided by four makes DesiredModuleStates differ from the recording on 37 ticks."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 13 (differs on 37 ticks in all three runs)"
+measured_on = "alpha-8"
+method = "REPLAY"
+wording = "differed on 37 ticks"
+unit = "ticks"
+range = [36.5, 37.5]
+measured = "37 ticks in all three runs (alpha-7: 38 ticks)"
+note = "Depends on how long the recorded turn lasts, so a student's own recording will differ; a check should use the course's scripted drive."
+
+[[claim]]
+id = "l13.kp-quarter-pose-ticks"
+kind = "number"
+library = ["advantagekit"]
+criticality = "C2"
+statement = "In the same kP-divided-by-four replay, Pose differs from the recording on no tick."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 13 (Pose on none)"
+measured_on = "alpha-8"
+method = "REPLAY"
+wording = "the pose didn't differ on any"
+unit = "ticks"
+range = [0.0, 0.0]
+measured = "0 ticks in all three runs"
+
+[[claim]]
+id = "l13.replay-wall-time"
+kind = "number"
+library = ["advantagekit", "gradlerio"]
+criticality = "C3"
+statement = "A replay of a ten-second recording takes a few seconds of wall time, most of it Gradle starting."
+evidence = "CLAUDE.md, 'v3 Lesson 13 records with AdvantageKit and replays' (a ~7 s drive replays in ~5 s wall, mostly Gradle)"
+measured_on = "alpha-7"
+method = "REPLAY"
+wording = "a few seconds"
+unit = "s"
+range = [2.0, 10.0]
+measured = "about 5 s for a 7 s drive"
+note = "'A few' is vague; the range is a judgement. Measured only on alpha-7."

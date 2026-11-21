@@ -1,0 +1,487 @@
+# Numbers Lesson 25 (path events) quotes that a library change could move.
+# Format: tools/claims/README.md. Real Robot loop, Blue 1, fresh launch, enabled about 2.2 s after launch unless noted.
+
+[[claim]]
+id = "l25.red-strip-time"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "On a fresh launch, enabling a couple of seconds after launch, the strip blinks red for about 3.1 s while the carriage drives down to its switch."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 25 (fresh launch, from the first enabled tick: IDLE 3.06 s, alpha-7 3.10 s, identical for all three autos)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 3.1 s"
+unit = "s"
+range = [3.0, 3.2]
+measured = "3.06 s (153 ticks) alpha-8; 3.10 s alpha-7"
+note = "Red time is (0.34 - 0.0196 d) / 0.0972 s for d seconds between launch and enable: d = 1 gives 3.3 s, d = 2.2 gives 3.06, d = 5 gives 2.5, ten seconds about 1.5. The lesson says 'less if you wait longer'."
+
+[[claim]]
+id = "l25.stow-time"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "After the state turns IDLE the arm swings up from its -20 degree stop, which takes about another second."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 25 (the superstructure settled 4.10 s, IDLE 3.06 s: the stow held 1.04 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about another second"
+unit = "s"
+range = [0.9, 1.1]
+measured = "1.04 s"
+note = "Range from the README's rule for 'about 1' (one unit, so 0 to 2); the wording is loose. Depends on how long the student waits between launch and enable (the carriage keeps sinking); measured with enable 2.2 s after launch."
+
+[[claim]]
+id = "l25.drive-start-time"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "On a fresh launch the robot sets off about 4.1 s after enabling (homing, then the stow); Figure 25.3 and the table are timed from that moment."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 25 (follow command starts 4.12 s, alpha-7 4.16 s, identical for all three autos)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 4.1 s"
+unit = "s"
+range = [4.0, 4.2]
+measured = "4.12 s alpha-8; 4.16 s alpha-7"
+note = "Depends on how long the student waits between launch and enable (the carriage keeps sinking); measured with enable 2.2 s after launch."
+
+[[claim]]
+id = "l25.arm-below-horizontal-delay"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "From tucked, the arm takes about 0.8 s after the intake request to swing below horizontal."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 25 (arm below horizontal 1.40-1.42 s into the drive, 0.80-0.82 s after the request); 'v3 Lesson 25': 0.80 s from stowed"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 0.8 s"
+unit = "s"
+range = [0.72, 0.88]
+measured = "0.80-0.82 s"
+
+[[claim]]
+id = "l25.roller-delay"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "The roller starts about 1.1 s after the intake request, because intakeMotion swings first and spins second."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 25 (roller's first non-zero reading 1.66-1.68 s into the drive, 1.06-1.08 s after the request; alpha-7 the same)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 1.1 s"
+unit = "s"
+range = [1.0, 1.2]
+measured = "1.06-1.08 s"
+
+[[claim]]
+id = "l25.marker-fire-time"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With the intake marker at t_ratio 0.1, the marker fires 0.6 s into the drive."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 25 (marker one loop before INTAKING, which comes 0.60 s in)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "0.6 s (prose and table)"
+unit = "s"
+range = [0.55, 0.65]
+measured = "0.60 s"
+figure = "25-pick-up-timeline.png"
+
+[[claim]]
+id = "l25.marker-fire-y"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With the intake marker at t_ratio 0.1, the marker fires with the robot at y of about 6.7 m."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 25 (INTAKING at y 6.69-6.70); Batch 2 found, Lesson 25 markers (fires at y 6.69)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "y of about 6.7 (the prose, the table, Figure 25.2's text and caption)"
+unit = "m"
+range = [6.6, 6.8]
+measured = "6.69-6.70 m"
+figure = "25-marker-position.png"
+
+[[claim]]
+id = "l25.arm-horizontal-time"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "In Pick Up the arm passes below horizontal 1.4 s into the drive."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 25 (arm below horizontal 1.40-1.42 s, y 5.0-5.05)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "1.4 s (table and Figure 25.3's prose)"
+unit = "s"
+range = [1.35, 1.45]
+measured = "1.40-1.42 s"
+figure = "25-pick-up-timeline.png"
+
+[[claim]]
+id = "l25.roller-start-time"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "In Pick Up the roller starts 1.7 s into the drive."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 25 (roller's first non-zero reading 1.66-1.68 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "1.7 s (table and Figure 25.3's prose)"
+unit = "s"
+range = [1.65, 1.75]
+measured = "1.66-1.68 s"
+figure = "25-pick-up-timeline.png"
+
+[[claim]]
+id = "l25.roller-start-y"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With marker 0.1, the roller is running by y of about 4.5 m."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 25 (roller's first reading at y 4.48-4.53; alpha-7 4.52-4.56); Batch 2 found, Lesson 25 markers (4.49)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "y of about 4.5 (table, prose and Figure 25.2)"
+unit = "m"
+range = [4.4, 4.6]
+measured = "4.48-4.53 m"
+figure = "25-marker-position.png"
+
+[[claim]]
+id = "l25.beam-break-time"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "The piece goes into the intake (raw beam break) 1.7 s into the drive."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 25 (raw beam break 1.72-1.74 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "1.7 s (table)"
+unit = "s"
+range = [1.65, 1.75]
+measured = "1.72-1.74 s"
+figure = "25-pick-up-timeline.png"
+
+[[claim]]
+id = "l25.beam-break-y"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With marker 0.1, the piece goes into the intake with the robot's centre at y of about 4.4 m."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 25 (raw beam break at y 4.37-4.40); Batch 2 found (4.37)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "y of about 4.4 (table, prose, Figure 25.2)"
+unit = "m"
+range = [4.3, 4.5]
+measured = "4.37-4.40 m"
+figure = "25-marker-position.png"
+
+[[claim]]
+id = "l25.piece-under-bumper-y"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "The piece comes within reach at y of about 4.4 m and slips under the bumper at y of about 4.1 m."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 25 markers: the piece is within reach from y 4.4 to 4.1, under the bumper below that"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "y of about 4.1 (the window's far end)"
+unit = "m"
+range = [4.0, 4.2]
+measured = "4.1 m (from the marker 0.1, 0.15 and 0.2 runs)"
+figure = "25-marker-position.png"
+
+[[claim]]
+id = "l25.handoff-lag"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "After the beam break the debounce adds about a tenth of a second before the state becomes HANDOFF."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 25 (HANDOFF 4-5 ticks after the raw beam break, 1.80-1.84 s into the drive)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "a tenth of a second later"
+unit = "s"
+range = [0.09, 0.11]
+measured = "4-5 ticks (0.08-0.10 s)"
+note = "The debounce is the course's own kBeamDebounce, 0.1 s; at 4 ticks the measurement is 0.08 s, just under the wording's range."
+
+[[claim]]
+id = "l25.holding-time"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "In Pick Up the superstructure reaches HOLDING 2.9 s into the drive."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 25 (HOLDING 2.92-2.96 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "2.9 s (table, Figure 25.3's prose)"
+unit = "s"
+range = [2.85, 2.95]
+measured = "2.92-2.96 s (alpha-7 2.94 s)"
+figure = "25-pick-up-timeline.png"
+
+[[claim]]
+id = "l25.holding-remaining"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "At HOLDING there is about 1.0 m of path left."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 25 (0.96-1.04 m of path left; alpha-7 1.057 m)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "1.0 m left"
+unit = "m"
+range = [0.95, 1.05]
+measured = "0.96-1.04 m"
+
+[[claim]]
+id = "l25.holding-elevator"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "At HOLDING in Pick Up the elevator is at 0.73 m."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 25 (elevator 0.732-0.734 m)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "0.73 m"
+unit = "m"
+range = [0.725, 0.735]
+measured = "0.732-0.734 m"
+
+[[claim]]
+id = "l25.score-time"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "The Pick Up score request comes 3.2 s into the drive, 0.48 m before the end of the path, and the next loop is IDLE."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 25 (SCORING 3.20 s with 0.477-0.483 m left at y 1.435-1.442; alpha-7 3.24 s, 0.462 m)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "3.2 s, 0.48 m left (table); 3.2 s (Figure 25.3's prose and the 1 m/s comparison)"
+unit = "s"
+range = [3.15, 3.25]
+measured = "3.20 s; 0.477-0.483 m left"
+figure = "25-pick-up-timeline.png"
+note = "The distance wording 0.48 m is [0.475, 0.485]; kScoreDistance 0.5 m is the course's constant."
+
+[[claim]]
+id = "l25.score-y"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "At the default 2 m/s the score request goes out at y of about 1.44 m."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 25 (y 1.435-1.442)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "y of about 1.44 (the 1 m/s comparison)"
+unit = "m"
+range = [1.435, 1.445]
+measured = "1.435-1.442 m"
+
+[[claim]]
+id = "l25.path-end-time"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "The Pick Up path finishes 3.4 s into the drive at (6, 1)."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 25 (the path ends 3.44 s in at (6.00, 1.02); alpha-7 3.48 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "3.4 s (table, Figure 25.3's prose)"
+unit = "s"
+range = [3.35, 3.45]
+measured = "3.44 s"
+figure = "25-pick-up-timeline.png"
+
+[[claim]]
+id = "l25.slow-score-time-and-y"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With default_max_velocity_meters_per_sec at 1.0 the pickup still works, and the score request goes out at y of about 1.48 m, 6.1 s into the drive."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 25 (default_max_velocity_meters_per_sec 1.0, 2 runs: INTAKING 0.84 s, HOLDING 4.34 s, SCORING 6.06-6.08 s at y 1.479 / 1.461, path ends 6.54 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "y of 1.48, 6.1 s into the drive"
+unit = "s"
+range = [6.05, 6.15]
+measured = "6.06-6.08 s; y 1.479 and 1.461"
+note = "The time is 6.1 s [6.05, 6.15]. The y wording 1.48 is [1.475, 1.485]; one of two runs read 1.461, outside it."
+
+[[claim]]
+id = "l25.marker-0.15-roller-y"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With the intake marker at 0.15 the roller starts at y of about 4.2 m and the piece goes in at about 4.2 m, still in time."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 25 markers: marker 0.15 fires at y 6.37, roller at 4.16, beam break at 4.20; 'Lessons 24-27 re-measured', marker 0.15 (roller 1.82 s at y 4.21, caught at y 4.25)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "y of about 4.2 (roller and piece, Figure 25.2's middle panel)"
+unit = "m"
+range = [4.1, 4.3]
+measured = "roller 4.16 and 4.21; piece 4.20 and 4.25 (one run each)"
+figure = "25-marker-position.png"
+
+[[claim]]
+id = "l25.marker-0.2-roller-y"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With the intake marker at 0.2 the roller does not start until y of about 3.9 m, by which point the piece is under the bumper and is never caught."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 25 (marker 0.2, 2 runs: roller 2.00 s at y 3.84, the piece never caught); Batch 2 found (roller at 3.88)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "y of about 3.9 (prose, Figure 25.2); the lesson also says the piece is never caught"
+unit = "m"
+range = [3.8, 4.0]
+measured = "3.84 and 3.88 m"
+figure = "25-marker-position.png"
+
+[[claim]]
+id = "l25.override-on-time"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "In Aim While Driving the rotation override goes on about 0.6 s into the drive."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 25 (override on 0.58 s in all 5 runs); Batch 2 found, Lesson 32 Figure 32.3 (0.56 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 0.6 s (the log-key table)"
+unit = "s"
+range = [0.54, 0.66]
+measured = "0.58 s"
+
+[[claim]]
+id = "l25.override-off-time"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "In Aim While Driving the override goes off at the release marker, about 4.2 s into the drive."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 25 (off at 4.22 s in all 5 runs; alpha-7 4.26 s); Lesson 27 runs 4.24-4.28 s"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 4.2 s"
+unit = "s"
+range = [4.1, 4.3]
+measured = "4.22 s; 4.24-4.28 s in the Lesson 27 state"
+
+[[claim]]
+id = "l25.aim-finish-time"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "Aim While Driving finishes about 5.3 s into the drive at (8, 7) facing within a couple of degrees of 0 degrees."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 25 (path ends 5.32 s in at (8.006-8.012, 7.021-7.024, -1.6 degrees); alpha-7 5.38 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 5.3 s into the drive (section 8); 'a normal 5.3' (Try It #1)"
+unit = "s"
+range = [5.25, 5.35]
+measured = "5.32 s alpha-8; 5.38 s alpha-7"
+note = "Try It #1's bare 5.3 is [5.25, 5.35]; section 8's 'about 5.3' alone would be [5.2, 5.4]. The Lesson 27 state's runs read 5.52-5.58 s for the same auto; not explained in CLAUDE.md. Heading: 'within a couple of degrees of 0' holds at -1.6 degrees."
+
+[[claim]]
+id = "l25.aim-lag"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "While aiming at (8, 4) with P only, the nose trails the bearing by about 6 degrees on average and a little more at worst."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 25 (estimate heading against the bearing after the first second of override: mean 6.55 degrees, worst 8.45; alpha-7 6.51 / 8.40)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 6 degrees, and a little more at worst"
+unit = "deg"
+range = [5.4, 6.6]
+measured = "mean 6.55 degrees, worst 8.45 degrees"
+note = "'A little more at worst' is read as the worst running up to about 3 degrees above the mean."
+
+[[claim]]
+id = "l25.override-bypass-rate"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With the target behind the robot, the one-argument overrideRotation (BYPASS_CONSTRAINTS) spins the robot at 11.6 rad/s."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 25 (target at (0, 2), robot at (2, 2): 11.638 rad/s, a 166 degree worst error)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "11.6 rad/s"
+unit = "rad/s"
+range = [11.55, 11.65]
+measured = "11.638 rad/s"
+note = "Placement-dependent: it is 4 x the 2.91 rad error; no motor model in it."
+
+[[claim]]
+id = "l25.override-respect-rate"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With RESPECT_CONSTRAINTS the same override tops out at exactly 6.28 rad/s, the 360 degrees per second in config.json."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 25 (RESPECT_CONSTRAINTS 6.283 rad/s exactly)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "6.28 rad/s"
+unit = "rad/s"
+range = [6.275, 6.285]
+measured = "6.283 rad/s"
+
+[[claim]]
+id = "l25.no-release-run-time"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With the release marker deleted, Aim While Driving never finishes: it is still running 12 s later, against a normal 5.3 s."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 25 (without release: never finishes, 17.9 s watched, ends at (8.031, 6.982, -90.8 degrees))"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "still running twelve seconds later"
+unit = "s"
+range = [11.5, inf]
+measured = "never finishes; watched 17.9 s"
+
+[[claim]]
+id = "l25.wrong-require-stop-y"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "An intake marker that requires the drivetrain cancels the path on the next loop; the robot stops at about (6.0, 6.5)."
+evidence = "CLAUDE.md, 'v3 Lesson 25 (path events) was written on alpha-7' (stops about (6.0, 6.5), Drivetrain/CurrentCommand = Turn To Heading)"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "LOOP"
+wording = "about (6.0, 6.5)"
+unit = "m"
+range = [6.4, 6.6]
+measured = "about (6.0, 6.5)"
+note = "Range is for y. The marker itself fires at y 6.7, so the stop point is the robot rolling to a stop after the cancel."
+
+[[claim]]
+id = "l25.sim-arm-boot-angle"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C2"
+statement = "The simulated arm boots resting on its lower stop at -20 degrees, where gravity leaves an unpowered arm."
+evidence = "CLAUDE.md, 'v3 Lesson 25 (path events)' (the sim arm boots at its -20 degree stop); tools/figures/data/25-pick-up-timeline.csv (arm_deg -20.039 at the first tick)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "-20 degrees"
+unit = "deg"
+range = [-20.5, -19.5]
+measured = "-20.039 degrees"
+
+[[claim]]
+id = "l25.second-run-pickup-distance"
+kind = "number"
+library = ["bline", "commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "On a second run of Pick Up, with the score refused, the intake that is still running picks up the piece scored last time within the last quarter metre of the path."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson (CLAUDE.md only records that the running intake catches the piece the first run dropped 0.8 m ahead, alpha-7)"
+measured_on = "unverified"
+method = "LOOP"
+wording = "in the last quarter meter"
+unit = "m"
+range = [0.0, 0.275]
+measured = "not recorded"

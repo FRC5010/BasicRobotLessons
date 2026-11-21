@@ -1,0 +1,77 @@
+# Numbers Lesson 5 (steering P control) quotes that a library change could move. Format: tools/claims/README.md.
+# Method: the lesson's own 1:1 steering plant, a 90 degree tap (CLAUDE.md, 'Batch 1 found'); data in tools/figures/data/05-steer-kp-*.csv.
+
+[[claim]]
+id = "l05.kp-0005-overshoot"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With kP = 0.0005 a 90 degree move overshoots to 158 degrees."
+evidence = "CLAUDE.md, 'Batch 1 found', user decision 2026-11-19 table (kP 5e-4 peaks at 158 deg); data/05-steer-kp-0.0005.csv max 158.03"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "158 degrees / 158° (Figure 5.1's text and alt text, Figure 5.2's alt text)"
+unit = "deg"
+range = [157.5, 158.5]
+measured = "158.03 deg"
+figure = "05-steer-kp-0.0005.png"
+
+[[claim]]
+id = "l05.kp-0005-first-arrival"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With kP = 0.0005 the angle first reaches 90 degrees at 0.26 s."
+evidence = "tools/figures/data/05-steer-kp-0.0005.csv (first sample at or above 90 deg is t = 0.26 s); no CLAUDE.md block records it"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "0.26 seconds"
+unit = "s"
+range = [0.255, 0.265]
+measured = "0.26 s"
+figure = "05-steer-kp-0.0005.png"
+
+[[claim]]
+id = "l05.kp-0005-settle"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With kP = 0.0005 the wheel rings and settles inside one degree of 90 only after about seven seconds."
+evidence = "CLAUDE.md, 'Batch 1 found', user decision 2026-11-19 table (within 1 deg only from 6.9 s); data/05-steer-kp-0.0005.csv reads 6.94 s"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "about seven seconds"
+unit = "s"
+range = [6.0, 8.0]
+measured = "6.9-6.94 s"
+figure = "05-kp-three-gains.png"
+
+[[claim]]
+id = "l05.kp-3e-5-settle"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With kP = 0.00003 the wheel climbs without overshoot and is within one degree of 90 at 2.7 s."
+evidence = "CLAUDE.md, 'Batch 1 found', user decision 2026-11-19 table (3e-5: within 1 deg at 2.72 s, no overshoot); data/05-steer-kp-0.00003.csv reads 2.72 s and a maximum of 89.65"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "about 2.7 seconds; 2.7 seconds (Figure 5.2's alt text)"
+unit = "s"
+range = [2.65, 2.75]
+measured = "2.72 s"
+figure = "05-kp-three-gains.png"
+
+[[claim]]
+id = "l05.kp-1e-5-stall"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With kP = 0.00001 the wheel stalls at 79 degrees, short of 90, because the voltage rounds down to zero in the simulated motor."
+evidence = "CLAUDE.md, 'Batch 1 found', user decision 2026-11-19 table (1e-5 stalls at 78.6 deg: applied volts quantize to 0); data/05-steer-kp-0.00001.csv ends at 78.57"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "79°; 79 degrees (Figure 5.2's alt text)"
+unit = "deg"
+range = [78.5, 79.5]
+measured = "78.57-78.6 deg"
+figure = "05-kp-three-gains.png"

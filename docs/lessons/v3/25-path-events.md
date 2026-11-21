@@ -12,7 +12,7 @@ it. Along the way, every path auto becomes one line instead of one class.
   something back. You've passed suppliers around since Lesson 2; this is the
   same idea with an argument.
 - Everything else is command composition you already know — coroutines and
-  `waitUntil` from Lesson 6, `Command.parallel` from Lesson 24, `Optional` from
+  `waitUntil` from Lesson 6, `Command.parallel` from Lesson 9, `Optional` from
   Lesson 15 — pointed at a problem you haven't solved yet. The hard part of this
   lesson is the design, not the syntax.
 
@@ -30,7 +30,7 @@ it. Along the way, every path auto becomes one line instead of one class.
 
 ## 1. The dead time, and the guess
 
-Pull up Lesson 17's **Two Corners** auto and run it again, with Lesson 22's game
+Pull up Lesson 17's **Two Corners** auto ([Figure 17.4](17-bline-autos.md#figure-17-4) draws its track) and run it again, with Lesson 22's game
 pieces on the field and the LED strip open in SimGUI.
 
 Two things are wrong, and neither one looks like a bug.
@@ -60,7 +60,8 @@ goal. Nothing waits for anything else unless it genuinely has to.
 
 Here's the thing worth naming, because it's the whole lesson: **you already know
 how to run two commands at once.** Lesson 24's `handoffMotion` runs the arm and
-the elevator together with `Command.parallel(...)`. What you don't have yet is a
+the elevator together with `Command.parallel(...)` (when a group like that ends is
+[Figure 9.2](09-autonomous.md#figure-9-2)). What you don't have yet is a
 way to say *when* — a way to start the second thing partway through the first.
 That, and a robot that checks before it moves, is all this lesson adds.
 
@@ -133,12 +134,12 @@ The new type is **`Function<Path, Command>`**. Lesson 2's `DoubleSupplier` was
 `Function<Path, Command>` is "something I can hand a `Path` and get a `Command`
 back", and `recipe.apply(path)` is how you hand it one. It has to be a function,
 not a finished command, because the path doesn't exist until this constructor
-reads the file — at selection time, as Lesson 17 showed. The recipe says what to
+reads the file — at selection time, as Lesson 17 showed. <!-- claim: bline.bad-path-name-throws, wpilib.opmode-lifecycle --> The recipe says what to
 build; the opmode decides when.
 
 There's no `@Autonomous` on this class, on purpose. The framework's scan only
 offers annotated classes, and it couldn't build this one anyway: it has no way to
-know which path name to pass. So you register each auto yourself.
+know which path name to pass. So you register each auto yourself. <!-- claim: wpilib.add-opmode-needs-second-publish -->
 
 **In `Robot`'s constructor, add at the very end, after the starting-placement
 `resetPose` block:**
@@ -179,7 +180,7 @@ the group are what the `@Autonomous(name = ..., group = ...)` annotation used to
 say. The last argument is two lambdas, one inside the other. The outer one,
 `() -> new PathAuto(...)`, takes nothing and builds an opmode; the framework calls
 it when the auto is selected, the same moment it would have built an annotated
-class. The inner one, `path -> Autos.followPath(pathBuilder, path)`, is the recipe.
+class. <!-- claim: wpilib.opmode-lifecycle --> The inner one, `path -> Autos.followPath(pathBuilder, path)`, is the recipe.
 
 Then `publishOpModes()`, which is easy to forget. `OpModeRobot`'s own constructor
 runs before yours — it's the parent class — and it finds every annotated class and
@@ -188,12 +189,12 @@ on the list until you send it again. Measured in this course's sim: without that
 line, the selector offers **Drive Turn Drive**, **Do Nothing** and the teleop
 opmode, and none of the path autos. That's also why the registrations go at the end
 of the constructor. The one rule is that `publishOpModes()` comes after the last
-`addOpMode`, and finishing boot by announcing the autos keeps that easy to see.
+`addOpMode`, and finishing boot by announcing the autos keeps that easy to see. <!-- claim: wpilib.add-opmode-needs-second-publish -->
 
 If you skip the deletion, the robot won't start at all. The scan registers the old
 class as **Two Corners**, and then your `addOpMode` asks for a second one with
 the same name, which stops the program with
-`IllegalArgumentException: OpMode Two Corners already exists for mode AUTONOMOUS`.
+`IllegalArgumentException: OpMode Two Corners already exists for mode AUTONOMOUS`. <!-- claim: wpilib.add-opmode-needs-second-publish -->
 
 Run it. The opmode selector looks exactly as it did before, and both autos drive
 exactly as they did before. That's the point: nothing changed but where the
@@ -211,11 +212,11 @@ right not to: Lesson 21 showed that until homing, the encoder's idea of the
 carriage's height is a guess. So an auto that wants the superstructure has to home
 first. And once it's homed, the superstructure turns `IDLE`, and Lesson 24's
 binding for `IDLE` stows the arm and settles the elevator. Because that binding is
-made in `Robot`, not in an opmode, it runs in autonomous too.
+made in `Robot`, not in an opmode, it runs in autonomous too. <!-- claim: wpilib.opmode-id-zero-in-robot-constructor -->
 
 That stow matters more in the simulator than you'd expect. The simulated arm
 boots resting on its lower stop, at −20°, which is where gravity leaves an arm
-with no power. A real robot starts every match with its arm tucked inside the
+with no power. <!-- claim: l25.sim-arm-boot-angle --> A real robot starts every match with its arm tucked inside the
 frame. Either way, the honest move is the same: **check, don't assume.** Home, let
 `IDLE` put everything where it belongs, and only then drive.
 
@@ -258,11 +259,26 @@ can't risk losing them between steps. So this one holds the elevator from start 
 finish — through the wait, through the drive. When the state turns `IDLE`, Lesson
 24's binding schedules the `IDLE` motion, which needs the elevator too. Two
 commands want one mechanism, the newer one wins, and what loses is the entire
-auto.
+auto. <!-- claim: commandsv3.sequence-requires-union -->
 
 A coroutine with no requirements doesn't have that problem. It holds nothing
 itself; each command it `await`s holds its own mechanisms only while it runs. Once
-`home()` finishes, the elevator is free again, and the superstructure can have it.
+`home()` finishes, the elevator is free again, and the superstructure can have it. <!-- claim: commandsv3.no-requirements-exists -->
+
+<a id="figure-25-1"></a>
+![Two timelines. With Command.sequence, one block holds the elevator from the start, so when home() finishes and the state turns IDLE the IDLE motion cancels the whole sequence and the auto never runs. With the coroutine, home() holds the elevator only while it runs, the IDLE motion then takes it, and the wait and the auto carry on](images/25-sequence-vs-coroutine.svg)
+
+*Figure 25.1 — Who holds the elevator, and what happens when the state turns `IDLE`. Block widths are not to scale.* <!-- claim: commandsv3.sequence-requires-union -->
+
+Figure 25.1 puts the two versions side by side. In each half, the top row shows who
+holds the elevator and the bottom row shows the get-ready command itself, with the
+dashed line marking the moment `home()` finishes and the state turns `IDLE`. In the
+sequence (top half), the orange block is the sequence itself holding the elevator
+from the first step to the last; when the `IDLE` motion asks for the same elevator,
+the sequence loses, and its remaining steps (dashed, grey) never run. In the
+coroutine (bottom half), the elevator is held by `home()` alone, and the moment
+`home()` ends the `IDLE` motion is free to take it, while the coroutine, which holds
+nothing, carries on to the wait and the auto.
 
 **Add to `Autos.java`, below `followPath`:**
 
@@ -294,7 +310,7 @@ import first.robot.subsystems.Superstructure;
 > **A sequence holds everything its steps will ever need. A coroutine that awaits
 > them holds only what's running right now.** Most of the time that difference
 > doesn't show. It shows the moment something else needs one of those mechanisms
-> partway through.
+> partway through. <!-- claim: commandsv3.sequence-requires-union -->
 
 Every path auto should get ready, so the place to say it is the one class they all
 share.
@@ -313,8 +329,8 @@ Run Two Corners on a fresh launch. In this course's sim, enabling a couple of
 seconds after launch, the strip blinks red for about 3.1 s while the carriage
 drives down to its switch (less if you wait longer to enable, because the
 un-homed carriage has been sinking toward the switch the whole time), then turns blue as the
-state becomes `IDLE`. The arm swings up from its stop, which takes about another
-second, and the robot sets off about 4.1 s after you enabled. Disable, select it
+state becomes `IDLE`. <!-- claim: l25.red-strip-time --> The arm swings up from its stop, which takes about another
+second, and the robot sets off about 4.1 s after you enabled. <!-- claim: l25.stow-time, l25.drive-start-time --> Disable, select it
 again, and run it a second time: now it sets off at once. The carriage is already
 on the switch, so `home()` is done the moment it starts, and everything is
 already where `IDLE` wants it.
@@ -358,7 +374,8 @@ single motor. It just asks.
 ```
 
 Lesson 17 mentioned that `registerEventTrigger` also takes a `Command`, and
-`requestIntake()` is one. Everything after the request is Lesson 24's machinery,
+`requestIntake()` is one. <!-- claim: bline.register-event-trigger, commandsv3.finished-command-reschedulable --> Everything after the request is Lesson 24's machinery ([Figure 24.1](24-superstructure.md#figure-24-1) draws it,
+and [Figure 24.2](24-superstructure.md#figure-24-2) times one cycle),
 running unchanged: `INTAKING` drops the arm and starts the roller; the beam break
 moves the state to `HANDOFF`, which tucks the arm and raises the elevator; and once
 both arrive, it's `HOLDING`. The auto never mentions the arm, the roller or the
@@ -392,7 +409,7 @@ The intake needs a path that goes somewhere useful: straight at a game piece, wi
 some room to get going first. The piece at (6.0, 3.8) is the one to aim for. A
 straight run at it along the field would cross the hub — on the 2026 field it fills
 x 4.0 to 5.2 and y 3.4 to 4.6 — so this path comes down the field from above
-instead, facing the way it drives.
+instead, facing the way it drives. <!-- claim: wpilib.field-blue-hub-extent -->
 
 **Create `src/main/deploy/autos/paths/PickUp.json`:**
 
@@ -433,16 +450,37 @@ the two waypoints, so it's on the only leg, and `t_ratio` is a fraction of that 
 0.1 of the 6.4 m from y = 7.4 to y = 1.0 puts it at y ≈ 6.8.
 
 **Placing a marker is arithmetic, not taste.** The piece goes into the intake when
-it's about 0.6 m ahead of the robot's center: the bumper is 0.3 m out, and the
-intake reaches another 30 cm past it. So the roller has to be running by the time
-the robot's center reaches y ≈ 4.4. And the arm starts tucked in — the get-ready
+it's about 0.6 m ahead of the robot's center ([Figure 22.1](22-light-sensors.md#figure-22-1)): the bumper is 0.3 m out, and the
+intake reaches another 30 cm past it. So the piece comes within reach when the
+robot's center reaches y ≈ 4.4, and it slips under the bumper 30 cm later, at
+y ≈ 4.1: the roller has to be running somewhere in that window, and the earlier
+the better. <!-- claim: l25.piece-under-bumper-y, l25.beam-break-y --> And the arm starts tucked in — the get-ready
 step made sure of that — so the request isn't instant. In this course's sim the arm
 takes about 0.8 s to swing below horizontal, and the roller starts about 1.1 s after
-the request, because `intakeMotion` swings first and spins second. At 2 m/s, a
+the request, because `intakeMotion` swings first and spins second. <!-- claim: l25.arm-below-horizontal-delay, l25.roller-delay --> At 2 m/s, a
 second is two meters of path. Measured, the marker fires 0.6 s into the drive at
-y ≈ 6.7, the roller is running by y ≈ 4.5, and the piece goes in at y ≈ 4.37. Move
-the marker to 0.2 and the roller doesn't start until y ≈ 3.8 — by which point the
-piece is already under the bumper, and the robot drives straight over it.
+y ≈ 6.7, the roller is running by y ≈ 4.5, and the piece goes in at y ≈ 4.4. <!-- claim: l25.marker-fire-time, l25.marker-fire-y, l25.roller-start-y, l25.beam-break-y --> Move
+the marker to 0.2 and the roller doesn't start until y ≈ 3.9 — by which point the
+piece is already under the bumper, and the robot drives straight over it. <!-- claim: l25.marker-0.2-roller-y -->
+
+<a id="figure-25-2"></a>
+![Three top-down maps of the Pick Up path, one per marker position, with the hub beside it and the piece on it: with the marker at 0.1 the roller starts at y 4.5 and the piece goes in at 4.4; at 0.15 the roller starts at 4.2 and the piece goes in at 4.2; at 0.2 the roller starts at 3.9, with the piece already under the bumper, and it is never caught](images/25-marker-position.png)
+
+*Figure 25.2 — Where the roller starts on Pick Up's leg for three marker positions. The robot drives down the page along x = 6. One run of each, on a fresh launch.* <!-- claim: l25.marker-fire-y, l25.roller-start-y, l25.beam-break-y, l25.marker-0.15-roller-y, l25.marker-0.2-roller-y -->
+
+Figure 25.2 shows that arithmetic as a map. Each panel is the same path, with the
+hub drawn beside it, the piece as the star, and the dashed line at y = 4.4, the
+point where the piece comes within 0.6 m of the robot's center. Find the dashed
+line first, then the orange square, where the roller starts.
+In the left panel the marker fires at y ≈ 6.7, the roller is running by
+y ≈ 4.5, just before the line, and the piece goes in at 4.4. <!-- claim: l25.marker-fire-y, l25.roller-start-y, l25.beam-break-y --> In the middle panel
+the marker is 0.05 of the leg later (about 0.3 m of path), the roller starts at
+4.2 and the piece goes in at 4.2: a little past the line, and still in time. <!-- claim: l25.marker-0.15-roller-y --> In
+the right panel the marker is another 0.05 later, and the roller starts at
+y ≈ 3.9, beside the star. The piece is under the bumper before anything can
+pick it up. <!-- claim: l25.marker-0.2-roller-y --> Each 0.05 you move the marker moves the roller about a third of a
+meter down the leg, because the delay between the marker and the roller stays
+the same.
 
 ---
 
@@ -452,7 +490,7 @@ Now the part that will bite you if nobody says it first.
 
 When BLine fires a marker, it hands your command to the scheduler on its own — on
 the loop after the robot passes the marker, the same as if you'd pressed a button.
-It does not run "inside" the path. The two run side by side.
+It does not run "inside" the path. <!-- claim: bline.events-next-poll --> The two run side by side.
 
 Which means the rule about requirements applies with full force, and the
 consequences here are worse. **A `FollowPath` requires the drivetrain** — that's
@@ -472,7 +510,7 @@ In this course's sim, on Pick Up, that marker fires at y ≈ 6.7, and on the ver
 next loop the path is gone: the robot rolls to a stop, turns around to face 90°,
 and sits at about (6.0, 6.5) for the rest of autonomous. It isn't a crash, there's
 no stack trace, and the log just shows `Drivetrain/CurrentCommand` changing from
-`FollowPath` to `Turn To Heading`.
+`FollowPath` to `Turn To Heading`. <!-- claim: bline.events-next-poll, l25.wrong-require-stop-y -->
 
 So: **an event command may require any mechanism except the one the path is
 driving.** The arm, the elevator, all fine. The drivetrain, never.
@@ -489,7 +527,7 @@ by Lesson 24's bindings, and that motion needs only the arm and the elevator.
 > piece, it's still `INTAKING` when the path ends, and since the motion is bound in
 > `Robot`, it stays that way into teleop, roller and all, until someone asks for
 > something else. In this course's sim, a second run of Pick Up with the piece
-> already gone ended exactly like that. It's the state machine being honest — the
+> already gone ended exactly like that. <!-- claim: wpilib.opmode-id-zero-in-robot-constructor --> It's the state machine being honest — the
 > robot really is still trying to intake — but it's a decision worth making on
 > purpose. Try It #5 has you make it.
 
@@ -519,15 +557,15 @@ Wait until there's less than half a meter left, then ask to score. Run Pick Up w
 that and look at `Superstructure/Rejected`: `IDLE -> SCORING`, logged on the
 drive's very first loop. The pickup still happens, the elevator still rises, and
 the robot arrives at the end holding its piece — and never scores, because the
-one request it was going to make was spent and refused before the robot had moved.
+one request it was going to make was spent and refused before the robot had moved. <!-- claim: bline.remaining-distance-zero-before-run -->
 
 Here's why. **Before a path has run once, `getRemainingPathDistanceMeters()`
 returns `0.0`** — not "unknown", not an error, just zero. BLine's own
 documentation says so: "or zero before initialization." Read that literally and
-"less than half a meter left" is *true* before the robot has moved a centimeter.
+"less than half a meter left" is *true* before the robot has moved a centimeter. <!-- claim: bline.remaining-distance-zero-before-run -->
 And a parallel group doesn't promise which of its commands gets to run first. In
 this framework, the score request happens to get its first look before the path
-has started.
+has started. <!-- claim: commandsv3.commands-run-in-reverse-order -->
 
 So the trigger has to wait for a real answer before it asks the real question.
 
@@ -585,7 +623,7 @@ Three things in that recipe are worth slowing down for.
 **The local variable is load-bearing.** `pathBuilder.build(...)` gives you a
 `FollowPath`, and `getRemainingPathDistanceMeters()` lives on `FollowPath` — not on
 `Command`. The moment you hand it to something that only knows it's a `Command`,
-that method is gone. So you hold the `FollowPath` in a variable, use it in the
+that method is gone. <!-- claim: bline.follow-path-class-methods --> So you hold the `FollowPath` in a variable, use it in the
 condition, and put *it* into the parallel.
 
 **`coroutine.waitUntil` is the "when" you were missing.** You met it in Lesson 6,
@@ -613,7 +651,7 @@ for.
 
 > **When a library hands you a number, find out what it says when it has nothing
 > to say.** `0.0` before the start is indistinguishable from "you've arrived"
-> unless you go looking. It didn't take an exotic setup to hit it, either — just
+> unless you go looking. <!-- claim: bline.remaining-distance-zero-before-run --> It didn't take an exotic setup to hit it, either — just
 > the first thing you'd write.
 
 ---
@@ -655,7 +693,7 @@ the single most important sentence in this section. Most path libraries take a
 target angle and run their own controller to reach it; BLine takes an angular
 velocity and uses it directly. Hand it a heading in radians and the robot will spin
 at a speed that happens to equal your target angle, which is a genuinely baffling
-thing to watch.
+thing to watch. <!-- claim: bline.override-rotation -->
 
 So the loop is yours — and you've written it before. Work out where you want to
 face, subtract where you're facing, multiply by a gain. That's Lesson 8's
@@ -665,7 +703,7 @@ Two details in there. `getAngle()` hands back an `Optional`, the same box Lesson
 used for a tag that might not be in view: an arrow with no length has no direction,
 so when the robot is standing exactly on the target there is no answer to give, and
 the method says so instead of making one up. And `Rotation2d.minus` wraps the
-result to ±180° for you, so there's no `MathUtil.inputModulus` here.
+result to ±180° for you, so there's no `MathUtil.inputModulus` here. <!-- claim: wpilib.translation-angle-optional, wpilib.rotation2d-minus-wraps -->
 
 **Add the other two triggers to `registerEventTriggers`, after the `intake` one:**
 
@@ -699,7 +737,7 @@ straight to the wheels, past the rotation limits in `config.json`. Measured in t
 course's sim with the target placed behind the robot, the one-argument form spun it
 at 11.6 rad/s — nearly twice the 360°/s (6.28 rad/s) every path is supposed to
 obey. With `RESPECT_CONSTRAINTS` it topped out at exactly 6.28. Lesson 17 said
-speed limits are physics; that's just as true of spinning.
+speed limits are physics; that's just as true of spinning. <!-- claim: bline.override-rotation, l25.override-bypass-rate, l25.override-respect-rate -->
 
 **Create `src/main/deploy/autos/paths/AimWhileDriving.json`:**
 
@@ -748,17 +786,17 @@ Now the part that will cost you an afternoon if you skip it.
 path from ever finishing.** A `FollowPath` isn't done until it's both in the right
 place *and* pointing the right way. Leave something else in charge of pointing and
 that second condition is never met, so the command runs forever, the auto never
-advances, and the robot sits on the last waypoint looking like it's working.
+advances, and the robot sits on the last waypoint looking like it's working. <!-- claim: bline.finish-needs-position-and-rotation -->
 
 That's why there's a `release` marker. But markers only fire if the robot actually
 gets that far, and an auto that's interrupted — disabled, or cut off at the end of
 autonomous — never reaches its last marker. The override is a **static** setting:
 it outlives the command that set it. Without something that always hands rotation
-back, one interrupted auto leaves the *next* one unable to finish. Measured in this
+back, one interrupted auto leaves the *next* one unable to finish. <!-- claim: bline.override-rotation --> Measured in this
 course's sim, before adding the code below: with the `release` marker removed, an
 interrupted **Aim While Driving** left the override on, and the next **Two
 Corners** parked at the end of its path with its nose still pointed at (8, 4),
-unable to finish.
+unable to finish. <!-- claim: bline.override-rotation, bline.finish-needs-position-and-rotation -->
 
 Lesson 6 gave you the tool for "however it ends": `.whenExited(...)`. This
 command can end by finishing (the path ran out) or by being canceled (disabled,
@@ -766,7 +804,7 @@ or cut off at the end of autonomous). A canceled coroutine is simply never
 resumed — none of the code after the line it was waiting on ever runs, not even
 a `finally` block — so a line after the `await` would only cover the finish, and
 `.whenCanceled(...)` would only cover the cancel. `.whenExited(...)` runs for
-both, so the hand-back is written once.
+both, so the hand-back is written once. <!-- claim: commandsv3.when-exited-on-cancel, commandsv3.cancelled-coroutine-not-resumed -->
 
 **Add to `Autos.java`, below `getReadyThen`:**
 
@@ -802,7 +840,7 @@ Then put every path auto through it.
 
 Cancel the wrapper and the path it's awaiting is canceled with it, so the robot
 still stops when autonomous ends; the wrapper just makes sure rotation is given
-back on the way out.
+back on the way out. <!-- claim: commandsv3.cancel-parent-cancels-awaited-child -->
 
 The `release` marker is the plan; `handingRotationBack` is the guarantee.
 
@@ -816,44 +854,101 @@ The `release` marker is the plan; `handingRotationBack` is the guarantee.
 ## 8. Run it
 
 **Run the robot in simulation.** Set the DS window's **Alliance Station**
-to **Blue 1** first, the way you did in Lesson 17 — the numbers below are for blue.
+to **Blue 1** first, the way you did in Lesson 17 ([Figure 17.3](17-bline-autos.md#figure-17-3)) — the numbers below are for blue. <!-- claim: wpilib-tools.simgui-alliance-station -->
 
 **Run Pick Up first, on a fresh launch,** while the piece at (6.0, 3.8) is still
 on the field. Put `Sim/GamePieces` and `Drivetrain/SimulatedPose` on
 AdvantageScope's field, and graph `Superstructure/State`, `Elevator/HeightMeters`
 and `FollowPath/remainingPathDistanceMeters`. (B-Line's `FollowPath/` keys are under
-**Telemetry**; everything else here is under **AdvantageKit**.) Keep an eye on the
+**Telemetry**; everything else here is under **AdvantageKit**.) <!-- claim: bline.telemetry-signals, advantagekit.telemetry-log-not-recorded --> Keep an eye on the
 LED strip, because it tells the whole story.
 
 Here's what happens in this course's sim, timed from when the drive starts, about
-4.1 s after you enable (homing, then the stow):
+4.1 s after you enable (homing, then the stow). <!-- claim: l25.drive-start-time --> Figure 25.3, just below the table,
+plots the same run:
 
 | When | What |
 |---|---|
-| 0.6 s, y ≈ 6.7 | The `intake` marker fires; next loop the state is `INTAKING` and the strip goes yellow |
-| 1.4 s | The arm swings below horizontal |
-| 1.7 s, y ≈ 4.5 | The roller starts |
-| 1.7 s, y ≈ 4.37 | The piece goes in; a tenth of a second later the debounced beam break makes it `HANDOFF` |
-| 2.9 s, 1.0 m left | Arm tucked and elevator at 0.73 m: `HOLDING`, solid green |
-| 3.2 s, 0.48 m left | The score request: `SCORING`, the piece leaves, and the next loop is `IDLE` |
-| 3.4 s | The path finishes at (6, 1), with the elevator already on its way down |
+| 0.6 s, y ≈ 6.7 | The `intake` marker fires; next loop the state is `INTAKING` and the strip goes yellow <!-- claim: l25.marker-fire-time, l25.marker-fire-y, bline.events-next-poll --> |
+| 1.4 s | The arm swings below horizontal <!-- claim: l25.arm-horizontal-time --> |
+| 1.7 s, y ≈ 4.5 | The roller starts <!-- claim: l25.roller-start-time, l25.roller-start-y --> |
+| 1.7 s, y ≈ 4.4 | The piece goes in; a tenth of a second later the debounced beam break makes it `HANDOFF` <!-- claim: l25.beam-break-time, l25.beam-break-y, l25.handoff-lag --> |
+| 2.9 s, 1.0 m left | Arm tucked and elevator at 0.73 m: `HOLDING`, solid green <!-- claim: l25.holding-time, l25.holding-remaining, l25.holding-elevator --> |
+| 3.2 s, 0.48 m left | The score request: `SCORING`, the piece leaves, and the next loop is `IDLE` <!-- claim: l25.score-time --> |
+| 3.4 s | The path finishes at (6, 1), with the elevator already on its way down <!-- claim: l25.path-end-time --> |
+
+<a id="figure-25-3"></a>
+![A four-panel timeline of one Pick Up run, from the start of the drive: the robot's y falls steadily from 7.4 to about 1; below it the superstructure state runs IDLE, INTAKING, HANDOFF, HOLDING, a brief SCORING and IDLE; the arm swings from 90 degrees down to -20 and back up; the elevator rises from 0 to 0.75 m and starts back down. Dashed lines mark the intake event, the roller start, HOLDING, the score request and the end of the path](images/25-pick-up-timeline.png)
+
+*Figure 25.3 — One Pick Up run on a fresh launch, from the moment the drive starts. All four panels share the time axis. One run (three recorded for this figure agreed to within a tick).* <!-- claim: l25.marker-fire-time, l25.arm-horizontal-time, l25.roller-start-time, l25.beam-break-time, l25.holding-time, l25.score-time, l25.path-end-time -->
+
+Figure 25.3 puts the same events on a time axis, and what to look for is overlap. Read it from the top.
+The first panel is the robot's `y`, and it is the one thing the whole run hangs on. It's a straight, steady
+slope from 7.4 down to about 1, flattening only in the last 0.2 s as the path ends. The dotted
+horizontal line is where the piece goes into the intake, 0.6 m ahead of the robot's center. Nothing
+below this panel ever bends it.
+
+The strip under it is `Superstructure/State`, and the dashed vertical lines tie it to everything else. At 0.6 s the
+`intake` marker fires and the state goes to `INTAKING`. <!-- claim: l25.marker-fire-time --> In the third panel the arm, which had been
+tucked at 90°, swings down, passes horizontal at 1.4 s and settles at −20° just
+as the roller starts at 1.7 s. <!-- claim: l25.arm-horizontal-time, l25.roller-start-time --> The piece goes in right then, the beam break trips, and the state moves to
+`HANDOFF`, so the arm comes back up to 90° and the elevator, in the bottom panel, starts to rise. All of that
+is happening in the first panel's straight slope: the robot is still driving at full speed while the arm swings
+and the elevator climbs. `HOLDING` arrives at 2.9 s, with both mechanisms in place. <!-- claim: l25.holding-time --> The score request at 3.2 s sends
+the state to `SCORING` for a tick or two, visible as the blue sliver, then back to `IDLE`, and the elevator
+starts down while the path is still finishing at 3.4 s. <!-- claim: l25.score-time, l25.path-end-time -->
 
 The robot never slowed down. The intake ran, the arm tucked and the elevator rose
 while it drove, and the score happened on the way in. Nothing waited for anything
 that didn't need it — which was the whole point.
+
+Figure 25.4 is a run like that in AdvantageScope, the way section 8 asked
+you to set it up. On the field, the robot (1) has finished at (6, 0.96)
+facing −90°, and the piece it scored lies just ahead of it, under the
+ghost box. The other two ghosts (2) are the pieces Pick Up never goes near,
+and the Poses list (3) gives their numbers. <!-- claim: wpilib-tools.advantagescope-field-tabs, wpilib-tools.advantagescope-pose-style-menu -->
+
+The graph is the same story with your own launch in front of it. The
+elevator's height (4) reads below zero and sinks slowly for the first 13
+seconds. The encoder started at zero with the carriage 0.35 m up, and the
+un-homed carriage sinks until you enable. This run waited about twelve
+seconds, so homing took about a second, not three. Then the reading
+snaps to 0.01 m on the switch, the stow follows, and the path (5) starts
+about 2.2 s after enabling rather than 4.1. <!-- claim: l25.red-strip-time, l25.drive-start-time --> From there it matches the
+table: the remaining distance falls from about 6.4 m to 0 in about 3.4 s,
+the height climbs to 0.75 m and comes back down, and the state strip (6)
+reads `INTAKING`, `HANDOFF`, then `IDLE`. `HOLDING` and the one-tick
+`SCORING` are the dark sliver between them, too short to carry a label. <!-- claim: l25.path-end-time, l25.score-time, wpilib-tools.advantagescope-line-graph-discrete -->
+
+<a id="figure-25-4"></a>
+![Two AdvantageScope panels from Pick Up runs on Blue 1. Top: a 2D Field tab. The simulated robot sits at the end of its path, X 6.000 m, Y 0.956 m, minus 90.05 degrees (badge 1), with a yellow ghost box over its front, the scored piece at (6.001, 0.645). Two more yellow ghost boxes mark pieces at (4.5, 3.2) and (2.0, 1.5) (badge 2). The Poses list shows Robot: SimulatedPose and Ghost: Sim/GamePieces with 3 values (badge 3). Bottom: a Line Graph over 22 seconds. The elevator's HeightMeters on the left axis falls slowly from 0 to about minus 0.25 m, then faster to minus 0.34 m, snaps to 0.01 at about 14.4 s, and later rises to 0.75 m and back (badge 4). FollowPath remainingPathDistanceMeters on the right axis falls from about 6.4 m to 0 between about 15.6 and 19 s (badge 5). A discrete strip for Superstructure/State reads UNHOMED, IDLE, INTAKING, HANDOFF, a short unlabeled sliver, then IDLE (badge 6).](images/25-advantagescope-pick-up.png)
+
+*Figure 25.4 — Pick Up in AdvantageScope (two runs, one per panel): where the robot and the pieces end up (1–3), and the elevator, the path left and the state over the whole session (4–6).*
+
+You don't have to flip between the two tabs. AdvantageScope can pop a tab
+out into a window of its own with the overlapping-squares button at the top
+right of its window, and Figure 25.5 is one run watched that way:
+the Line Graph in its own window (1) beside the main window's 2D Field (2).
+Seeing the elevator climb on the left while the robot is still driving on
+the right is the whole lesson in one glance. <!-- claim: wpilib-tools.advantagescope-popout -->
+
+<a id="figure-25-5"></a>
+![Two AdvantageScope windows side by side during one Pick Up run on Blue 1. Left, a window titled Line Graph — AdvantageScope (badge 1) with the elevator height, the remaining path distance and the state strip, as in Figure 25.4. Right, the main AdvantageScope window on its 2D Field tab (badge 2), the robot at the end of the path at X 6.000 m, Y 0.957 m, minus 90.00 degrees, with the scored piece just ahead of it and two other pieces as ghost boxes.](images/25-advantagescope-side-by-side.png)
+
+*Figure 25.5 — One run, two windows: the Line Graph popped out (1) next to the field (2).*
 
 The field doesn't put itself back. Run Pick Up again and the getting ready takes
 no time at all, but the piece is gone. When the score request comes, half a meter
 from the end, the robot is still `INTAKING`, so it's refused: `INTAKING -> SCORING`
 in `Superstructure/Rejected`. Then, in the last quarter meter, the intake that's
 still running picks up the piece you scored last time, which is lying on the floor
-ahead of the robot. To put the field back, restart the simulator.
+ahead of the robot. To put the field back, restart the simulator. <!-- claim: l25.second-run-pickup-distance -->
 
 Now slow everything down. Change `default_max_velocity_meters_per_sec` in
 `config.json` to `1.0` and run Pick Up on a fresh launch. The pickup still works
 — the marker fires at the same place, and the slower robot gives the arm more
 time. The score happens in the same *place*, at y ≈ 1.48 instead of 1.44, but 6.1 s
-into the drive instead of 3.2 s. That's the difference between triggering on
+into the drive instead of 3.2 s. <!-- claim: l25.slow-score-time-and-y, l25.score-y, l25.score-time --> That's the difference between triggering on
 distance and triggering on a clock. Put it back to `2.0`.
 
 Finally **Aim While Driving**. Put the robot's pose on the field view and watch it
@@ -862,7 +957,7 @@ tell the story:
 
 | Log key | What it shows |
 |---|---|
-| `FollowPath/rotationOverrideActive` | goes true at the `aim` marker (about 0.6 s into the drive), false at `release` (about 4.2 s) |
+| `FollowPath/rotationOverrideActive` | goes true at the `aim` marker (about 0.6 s into the drive), false at `release` (about 4.2 s) <!-- claim: l25.override-on-time, l25.override-off-time, bline.telemetry-signals --> |
 | `FollowPath/targetRotationDeg` | what the path *wanted* — still computed, and ignored |
 | `FollowPath/outputOmegaRadPerSec` | what actually got sent |
 
@@ -870,10 +965,10 @@ That middle row is worth a moment. The path never stops having an opinion about
 rotation; the override just wins. Once `release` fires, the path's opinion takes
 effect again and the robot swings back to the heading its final waypoint asked for
 — which is exactly why it can finish, at (8, 7) facing within a couple of degrees
-of 0°, about 5.3 s into the drive.
+of 0°, about 5.3 s into the drive. <!-- claim: l25.aim-finish-time -->
 
 Look closely and the nose isn't *exactly* on the target: it trails by about 6°,
-and a little more at worst. A P loop can only make a turning rate out of an error,
+and a little more at worst. <!-- claim: l25.aim-lag --> A P loop can only make a turning rate out of an error,
 and the target's direction keeps moving as the robot drives past it. Lesson 27 is
 about that lag.
 
@@ -883,10 +978,10 @@ about that lag.
 
 1. **Break it on purpose.** Delete the `release` marker from `AimWhileDriving.json`
    and run the auto. It drives the whole path and then sits there — in this
-   course's sim it was still running twelve seconds later, against a normal 5.3.
+   course's sim it was still running twelve seconds later, against a normal 5.3. <!-- claim: l25.no-release-run-time, l25.aim-finish-time -->
    Before you put the marker back, find the log keys that would have told you
    why; `FollowPath/rotationOverrideActive` and
-   `FollowPath/finishedRotationAtSetpoint` say it plainly. Then disable, pick Two
+   `FollowPath/finishedRotationAtSetpoint` say it plainly. <!-- claim: bline.telemetry-signals --> Then disable, pick Two
    Corners, and confirm it finishes normally — that's `handingRotationBack`
    earning its keep.
 2. **Find the edge.** Move Pick Up's `intake` marker to `0.2` and watch the robot
@@ -906,7 +1001,7 @@ about that lag.
    holding its piece.) A request is checked when it's made, not saved for later.
    Then try `0.0`, and explain why the auto never ends. (Hint: graph
    `FollowPath/remainingPathDistanceMeters` right at the end, and look up
-   `default_end_translation_tolerance_meters`.)
+   `default_end_translation_tolerance_meters`.) <!-- claim: bline.finish-needs-position-and-rotation -->
 5. **Decide what a miss means.** Section 5's callout: a missed pickup leaves the
    robot `INTAKING` into teleop. Make Pick Up ask for `IDLE` at the end of its
    path if it's still `INTAKING`, and only then. Then argue the other side: when
@@ -946,9 +1041,9 @@ less time, than a sequence does.
 **Read what a library says when it has nothing to say.**
 `getRemainingPathDistanceMeters()` returns `0.0` before the path starts, which is
 indistinguishable from "you've arrived" — and it bit the very first version you'd
-write, inside a perfectly ordinary parallel. `getAngle()` went the other way: it
+write, inside a perfectly ordinary parallel. <!-- claim: bline.remaining-distance-zero-before-run, commandsv3.commands-run-in-reverse-order --> `getAngle()` went the other way: it
 returns an empty `Optional` rather than invent a direction for an arrow with no
-length. The habit worth building is testing the edges of an API rather than the
+length. <!-- claim: wpilib.translation-angle-optional --> The habit worth building is testing the edges of an API rather than the
 middle.
 
 And the one to carry furthest: **a global switch needs an unconditional off.** The
@@ -965,6 +1060,6 @@ robot to find them.
 While you're timing them, watch where each path actually stops. BLine calls it
 arrived when it's within five centimeters and a couple of degrees, which is
 plenty for driving across a field and nowhere near enough to place a game piece
-on something. The next lesson is about that last five centimeters.
+on something. <!-- claim: bline.finish-needs-position-and-rotation --> The next lesson is about that last five centimeters.
 
 Next: [Lesson 26 — Getting there exactly](26-drive-to-pose.md).

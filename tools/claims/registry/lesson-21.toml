@@ -1,0 +1,135 @@
+# Numbers Lesson 21 (homing) quotes that a library change could move.
+# Format: tools/claims/README.md. Real Elevator and Robot loop, 20 ms ticks, alpha-8.
+
+[[claim]]
+id = "l21.sink-rate"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C2"
+statement = "An unpowered simulated carriage sinks at just under 2 cm/s (about two centimeters every second)."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 21 (the unpowered sink 1.958 cm/s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about two centimeters every second; just under 2 cm/s"
+unit = "cm/s"
+range = [1.0, 2.0]
+measured = "1.958 cm/s"
+note = "'About two' allows 1-3 and 'just under 2' allows 1-2; the intersection is used."
+
+[[claim]]
+id = "l21.land-time"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C2"
+statement = "Left alone, the carriage reaches the bottom and AtBottomLimit flips true about 18 seconds after launch."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 21 (17.9, 18.1 and 18.4 s after launch)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 18 seconds after launch"
+unit = "s"
+range = [17.0, 19.0]
+measured = "17.9, 18.1 and 18.4 s after launch"
+note = "Time from launch; Figure 21.1's own axis counts from the program's first loop (see l21.fig-land-time)."
+
+[[claim]]
+id = "l21.fig-land-time"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C3"
+statement = "In Figure 21.1's runs AtBottomLimit first reads true 17.4 s after the robot program's first loop."
+evidence = "tools/figures/data/21-belief-vs-truth-run1.csv and run2.csv, read 2026-11-19 (17.38 s in both)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 17.4 seconds"
+unit = "s"
+range = [16.4, 18.4]
+measured = "17.38 s in both runs"
+test = "tools/figures/probes/Fig21Homing.java"
+figure = "21-belief-vs-truth.png"
+
+[[claim]]
+id = "l21.top-stall-height"
+kind = "number"
+library = ["wpilib", "phoenix6"]
+criticality = "C2"
+statement = "Pressing D-pad up before homing, the encoder reads 1.15 m at the top of the frame (the carriage has hit the 1.5 m frame and the encoder started 35 cm short)."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 21 (D-pad up before homing reads 1.1499 m)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "HeightMeters reads 1.15"
+unit = "m"
+range = [1.145, 1.155]
+measured = "1.1499 m"
+
+[[claim]]
+id = "l21.stall-volts"
+kind = "number"
+library = ["phoenix6"]
+criticality = "C2"
+statement = "Pushed into the frame top, AppliedVolts sits at 3.00 V."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 21 (3.000 V and 119.0 A at the top stall)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "AppliedVolts sits at 3.00"
+unit = "V"
+range = [2.995, 3.005]
+measured = "3.000 V"
+
+[[claim]]
+id = "l21.stall-amps"
+kind = "number"
+library = ["phoenix6"]
+criticality = "C2"
+statement = "Stalled against the frame top (3 V) or the bottom stop (-3 V), Elevator/StatorCurrentAmps reads about 119 A, with the speed at 0.000 m/s."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 21 (top stall 119.0 A; -3 V against the bottom draws 118.98 A at 0.00000 m/s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 119; 119 amps (bottom stop) at 0.000 m/s"
+unit = "A"
+range = [118.0, 120.0]
+measured = "119.0 A at the top, 118.98 A at the bottom, speed 0.00000 m/s"
+note = "'0.000 m/s' is a bare number with range [-0.0005, 0.0005]; measured 0.00000."
+
+[[claim]]
+id = "l21.homing-speed"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "Homing at -0.7 V descends at about 10 cm/s."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 21 (homing descends at 9.719 cm/s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 10 cm/s"
+unit = "cm/s"
+range = [9.0, 11.0]
+measured = "9.719 cm/s"
+note = "Whole number ending in zero: a unit is ten, so [0, 20] by the README rule. Very loose for a speed; reported as UNSURE."
+
+[[claim]]
+id = "l21.homing-time"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "Homing from the top stall (1.15 m) takes about 15 and a half seconds to trip the switch."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 21 (lands 15.35 s after Back)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 15 and a half seconds"
+unit = "s"
+range = [15.0, 16.0]
+measured = "15.35 and 15.36 s"
+
+[[claim]]
+id = "l21.snap"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "When the switch trips, HeightMeters snaps from about -0.34 m to 0.01 m."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 21 (the snap -0.3400 to 0.0100; -0.3387 to 0.0100 on a homing run)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "from about -0.34 m to 0.01 m"
+unit = "m"
+range = [-0.35, -0.33]
+measured = "-0.3400 and -0.3387 m before the snap; 0.0100 m after"
+note = "The range is on the 'about -0.34' value; the 0.01 m after the snap is the course's kBottomLimitHeight, not a measurement."

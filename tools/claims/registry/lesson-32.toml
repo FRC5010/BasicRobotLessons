@@ -1,0 +1,301 @@
+# Numbers Lesson 32 (reading a log) quotes that a library change could move.
+# Measured with the real Elevator homed and ticked at 20 ms (RIG) and by replaying a recording
+# of the real Robot loop (REPLAY). CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 32.
+
+[[claim]]
+id = "l32.settled-error-range"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "At kScoreMid the carriage settles a stable 0.15-0.19 mm short of the goal."
+evidence = "CLAUDE.md, 'Lessons 28-32 re-measured on alpha-8', Lesson 32: 0.1549 or 0.1939 mm short (three readings 0.039 mm apart; a run sits on one and can step to the other); data/32-at-goal-match.csv ends at -0.194 mm"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "0.15-0.19 mm (section 6; Figure 32.1's alt text 'between 0.15 and 0.19 mm')"
+unit = "mm"
+range = [0.145, 0.195]
+measured = "0.1549 or 0.1939 mm; figure data -0.194 mm"
+figure = "32-at-goal-never-true.png"
+
+[[claim]]
+id = "l32.settled-error-fifth"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "The settled gap is about a fifth of a millimetre (about minus 0.2 mm in Figure 32.2)."
+evidence = "CLAUDE.md, 'Lessons 28-32 re-measured on alpha-8', Lesson 32 (0.1549 or 0.1939 mm; the lesson says 'a fifth of a millimetre' where alpha-7 had 'a tenth'); replay: error over the last second -0.173 to -0.176 mm"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "a fifth of a millimetre; about minus 0.2 mm (Figure 32.2's alt text)"
+unit = "mm"
+range = [0.18, 0.22]
+measured = "0.1549 or 0.1939 mm (RIG); -0.173 to -0.176 mm in the replay; -0.194 mm at the end of the figure data"
+figure = "32-replay-fixed-code.png"
+note = "A fraction in words gets +-10%. Two of the measured values (0.1549 and the replay's -0.173 to -0.176) fall just outside it."
+
+[[claim]]
+id = "l32.tolerance-margin"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "A 1 mm tolerance is roughly five times the 0.19 mm settled-error floor."
+evidence = "CLAUDE.md, 'Lessons 28-32 re-measured on alpha-8', Lesson 32: the 1 mm margin is 5.2 times the larger floor and 6.5 times the smaller"
+measured_on = "alpha-8"
+method = "ARITHMETIC"
+wording = "roughly five times the 0.19 mm floor"
+unit = "ratio"
+range = [4.5, 5.5]
+measured = "5.2 (against 0.1939 mm), 6.5 (against 0.1549 mm)"
+
+[[claim]]
+id = "l32.overshoot"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "Going to kScoreMid, the carriage overshoots the goal by about 1.2 mm."
+evidence = "CLAUDE.md, 'Lessons 28-32 re-measured on alpha-8', Lesson 32: overshoot 1.21-1.25 mm (once 1.29, once 0.90) in the RIG; replay peak 1.13-1.17 mm; data/32-at-goal-match.csv peaks at 1.13-1.17 mm"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "about 1.2 mm (section 3 callout, section 6, Figure 32.1 and 32.2 alt text); a little over 1 mm"
+unit = "mm"
+range = [1.1, 1.3]
+measured = "1.21-1.25 mm (RIG; 1.29 once, 0.90 once); 1.13-1.17 mm in the replay and figure data"
+figure = "32-replay-fixed-code.png"
+
+[[claim]]
+id = "l32.overshoot-time"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "In Figure 32.1 the brief overshoot happens at 1.2 s."
+evidence = "tools/figures/data/32-at-goal-match.csv: the height peaks 1.24 s after the goal steps"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "a brief overshoot at 1.2 s"
+unit = "s"
+range = [1.15, 1.25]
+measured = "peak at 1.24 s in all four steps of the figure data"
+figure = "32-at-goal-never-true.png"
+
+[[claim]]
+id = "l32.height-settle"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "After the goal steps to 0.75 m the height settles in by about 1.3 s (inside about a second and a half)."
+evidence = "tools/figures/data/32-at-goal-match.csv: within 1 mm from 1.20 s, last tick more than 0.3 mm from the goal at 1.30 s; CLAUDE.md records the 1.26 s replay figure only"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "about 1.3 s (section 5 prose, Figure 32.1's alt text); inside about a second and a half"
+unit = "s"
+range = [1.2, 1.4]
+measured = "within 1 mm at 1.20 s; last tick over 0.3 mm off at 1.30 s"
+figure = "32-at-goal-never-true.png"
+
+[[claim]]
+id = "l32.replay-first-true"
+kind = "number"
+library = ["phoenix6", "wpilib", "advantagekit"]
+criticality = "C2"
+statement = "In the replay through the fixed tolerance, AtGoal first reads true 1.2 s after GoalMeters steps to 0.75."
+evidence = "CLAUDE.md, 'Lessons 28-32 re-measured on alpha-8', Lesson 32 (replay: ReplayOutputs flips true 1.20 s after each step, two recordings, two steps each); data/32-at-goal-match*.csv"
+measured_on = "alpha-8"
+method = "REPLAY"
+wording = "1.2 s; climbs into the band at 1.2 s; true at 1.20 s"
+unit = "s"
+range = [1.195, 1.205]
+measured = "1.20 s in all four steps"
+figure = "32-replay-fixed-code.png"
+note = "Written as 1.20 s in one sentence, so the range is the tighter one."
+
+[[claim]]
+id = "l32.replay-dropout"
+kind = "number"
+library = ["phoenix6", "wpilib", "advantagekit"]
+criticality = "C3"
+statement = "After AtGoal first reads true in the replay, it drops back to false for about one tick (1.24 s) while the carriage overshoots."
+evidence = "CLAUDE.md, 'Lessons 28-32 re-measured on alpha-8', Lesson 32 (false for one tick, at 1.22 or 1.24 s); data/32-at-goal-match.csv"
+measured_on = "alpha-8"
+method = "REPLAY"
+wording = "false for the one tick of overshoot; one-tick drop at 1.24 seconds (alt text); 'a tick or two' (section 6)"
+unit = "ticks"
+range = [1.0, 1.0]
+measured = "one tick (1.24 s) in step 1 of the figure data, two ticks (1.22 and 1.24 s) in step 2"
+figure = "32-replay-fixed-code.png"
+note = "The figure's own data has two ticks in one of its two steps, so 'the one tick' is exact only for the other."
+
+[[claim]]
+id = "l32.replay-true-for-good"
+kind = "number"
+library = ["phoenix6", "wpilib", "advantagekit"]
+criticality = "C2"
+statement = "In the replay AtGoal is true for good from 1.26 s after the goal step."
+evidence = "CLAUDE.md, 'Lessons 28-32 re-measured on alpha-8', Lesson 32 (true for good from 1.26 s; the RIG run without replay is true for good from 1.32 s); data/32-at-goal-match*.csv"
+measured_on = "alpha-8"
+method = "REPLAY"
+wording = "true for good from 1.26 s"
+unit = "s"
+range = [1.255, 1.265]
+measured = "1.26 s in all four steps of the replay data (RIG without replay: 1.32 s)"
+figure = "32-replay-fixed-code.png"
+
+[[claim]]
+id = "l32.band-margin"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "After settling, the height error stays inside the 1 mm band by a margin of about 0.8 mm."
+evidence = "Arithmetic from the settled error (CLAUDE.md, 'Lessons 28-32 re-measured on alpha-8', Lesson 32): 1 mm minus 0.155-0.194 mm; data/32-at-goal-match.csv ends at -0.194 mm"
+measured_on = "alpha-8"
+method = "ARITHMETIC"
+wording = "about 0.8 mm"
+unit = "mm"
+range = [0.72, 0.88]
+measured = "0.81-0.85 mm"
+
+[[claim]]
+id = "l32.lucky-tick-fraction"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With a slightly-too-tight tolerance (0.02 mm, 0.002 mm), in roughly one run in ten one tick lands within 0.001 mm of the goal, so atGoal() reads true for it and the command ends."
+evidence = "CLAUDE.md, 'Lessons 28-32 re-measured on alpha-8', Lesson 32: 8 of 50 runs crossed the goal within 0.00094 mm on tick 71 (a ninth came that close once); at 0.002 cm 1 of 12 runs ended, at 0.0002 cm 1 of 16"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "roughly one run in ten"
+unit = "fraction of runs"
+range = [0.05, 0.2]
+measured = "8 of 50 (0.16); 1 of 12; 1 of 16"
+note = "A count of random outcomes: the callout's conclusion (it passes by luck, not reliably) holds for about one in twenty to one in five; 8 of 50 is 16%, within it."
+
+[[claim]]
+id = "l32.lucky-tick-time"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "When the slightly-too-tight tolerance passes by luck, the command ends at 1.42 s."
+evidence = "CLAUDE.md, 'Lessons 28-32 re-measured on alpha-8', Lesson 32: 1.42 s (alpha-7 1.44-1.46)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "1.42 s"
+unit = "s"
+range = [1.415, 1.425]
+measured = "1.42 s at 0.002 cm and at 0.0002 cm"
+
+[[claim]]
+id = "l32.lucky-tick-gap"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "On the lucky tick the carriage is within 0.001 mm of the goal."
+evidence = "CLAUDE.md, 'Lessons 28-32 re-measured on alpha-8', Lesson 32: 0.00094 mm on tick 71 (1.42 s), otherwise never nearer than 0.038 mm"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "within 0.001 mm"
+unit = "mm"
+range = [0.0, 0.001]
+measured = "0.00094 mm"
+
+[[claim]]
+id = "l32.typo-never-ends"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With the tolerance typo (0.2 micrometres) the command is still running after fifteen seconds in every run."
+evidence = "CLAUDE.md, 'Lessons 28-32 re-measured on alpha-8', Lesson 32: 0 of 16 runs ended at Centimeters.of(0.00002) (the nearest tick is 0.94 micrometres away); alpha-7: never ends (15 s). The alpha-8 run length is not recorded."
+measured_on = "alpha-8"
+method = "RIG"
+wording = "still running after fifteen seconds, every time"
+unit = "runs that ended"
+range = [0.0, 0.0]
+measured = "0 of 16 runs ended"
+note = "A count of random outcomes, but the conclusion is 'never'. The fifteen seconds comes from the alpha-7 probe."
+
+[[claim]]
+id = "l32.aim-override-on"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C3"
+statement = "In Aim While Driving the rotation override goes on about 0.6 s into the drive."
+evidence = "CLAUDE.md, 'Lessons 28-32 re-measured on alpha-8', Lesson 32 (override on 0.58 s, both tags); Batch 2 found (0.56 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 0.6 s"
+unit = "s"
+range = [0.54, 0.66]
+measured = "0.58 s (tag 20 and 220); 0.56 s in the figure run"
+figure = "32-aim-typo-heading.png"
+
+[[claim]]
+id = "l32.aim-override-end"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C3"
+statement = "The override window ends at about 4.2 s into the drive."
+evidence = "CLAUDE.md, 'Lessons 28-32 re-measured on alpha-8', Lesson 32 (off 4.24 s with tag 20, 4.22 s with 220); Batch 2 found (4.22 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 4.2 s"
+unit = "s"
+range = [4.1, 4.3]
+measured = "4.22-4.24 s"
+figure = "32-aim-typo-heading.png"
+
+[[claim]]
+id = "l32.aim-override-length"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C2"
+statement = "The override stays active for about 3.7 s in both the tag 20 and tag 220 runs."
+evidence = "CLAUDE.md, 'Lessons 28-32 re-measured on alpha-8', Lesson 32: 3.66 s (tag 20) and 3.64 s (tag 220); AdvantageKit alpha-7 run 3.72 / 3.70 s"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 3.7 s"
+unit = "s"
+range = [3.6, 3.8]
+measured = "3.66 s and 3.64 s"
+
+[[claim]]
+id = "l32.aim-heading-release"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C2"
+statement = "With the right tag the heading has followed the bearing round to about -124 degrees by release."
+evidence = "CLAUDE.md, 'Lessons 28-32 re-measured on alpha-8', Lesson 32 (truth heading at release -124.3 / -124.4 degrees); Batch 2 found (estimate -123.8, truth -124.3)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about -124 degrees"
+unit = "deg"
+range = [-125.0, -123.0]
+measured = "-124.3 / -124.4 (truth); -123.8 (estimate)"
+figure = "32-aim-typo-heading.png"
+
+[[claim]]
+id = "l32.aim-typo-heading"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C2"
+statement = "With kAimTagId = 220 the heading stays at 0.0 degrees the whole time the override is active."
+evidence = "CLAUDE.md, 'Lessons 28-32 re-measured on alpha-8', Lesson 32 (outputOmega exactly 0.000, heading 0.0 at release); Batch 2 found (0.00 throughout)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "0.0 degrees; flat at zero"
+unit = "deg"
+range = [-0.05, 0.05]
+measured = "0.00 throughout"
+figure = "32-aim-typo-heading.png"
+
+[[claim]]
+id = "l32.aim-error-start"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C3"
+statement = "With the right tag Aim/ErrorDegrees starts near 27 degrees and settles to nearly zero inside the override window."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 32 (Aim/ErrorDegrees falls from 27 degrees to about 0 over 183 samples); data/32-aim-tag20.csv"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "near 27 degrees; about 27 degrees"
+unit = "deg"
+range = [26.0, 28.0]
+measured = "27 degrees"
+figure = "32-aim-typo-heading.png"

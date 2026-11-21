@@ -115,10 +115,10 @@ Leave the class open — the rest arrives in section 5.
 Both of those methods lean on a box you've met. `getTagPose` hands back an
 `Optional`, the same box Lesson 15 used for a tag that might not be in view: an ID
 that isn't in the layout comes back empty, and `map` only runs when there's
-something inside. And `getAngle()` hands back an `Optional` too: an arrow with no
+something inside. <!-- claim: wpilib.field-tag-20-position --> And `getAngle()` hands back an `Optional` too: an arrow with no
 length has no direction, so when the robot is
 standing exactly on the target, `headingToward` answers with the way the robot is
-already facing, which makes the error zero instead of inventing a direction.
+already facing, which makes the error zero instead of inventing a direction. <!-- claim: wpilib.translation-angle-optional -->
 
 **This is the design decision of the lesson, and it's in the signatures.**
 There is no camera in any of those methods. Aiming does not use a sighting;
@@ -147,11 +147,11 @@ look.
 
 `kAimTarget` from Lesson 25 is gone — that was a made-up point on the field, and
 the whole idea now is that the target is a real thing at a known place. Tag 20
-sits at (5.23, 4.03) on this season's field.
+sits at (5.23, 4.03) on this season's field. <!-- claim: wpilib.field-tag-20-position -->
 
 > **A tag ID is not a guess.** `tagPosition` returns an `Optional` because
 > tag 47 is not on the field, and the day you mistype one you want an empty
-> `Optional` rather than a robot spinning towards the origin.
+> `Optional` rather than a robot spinning towards the origin. <!-- claim: wpilib.field-tag-20-position -->
 
 ---
 
@@ -249,14 +249,14 @@ millisecond or every 20 ms. The real drivetrain does a little worse. Driving it
 around tag 20 through the scheduler, three metres out at three metres a second,
 with only the P term aiming, the worst `Aim/ErrorDegrees` once it settled was
 **14.6°**: the wheels take a moment to follow what's commanded, and that lag
-adds about a third of a degree. At two metres a second the arithmetic says
+adds about a third of a degree. <!-- claim: l27.orbit-p-3, l27.wheel-lag --> At two metres a second the arithmetic says
 `0.667 ÷ 4 = 0.167 rad = 9.55°`, and the robot sat at **9.7°**. Same physics
-either way.
+either way. <!-- claim: l27.orbit-p-2 -->
 
 **If this feels familiar, it should.** Lesson 18 said it about the
 elevator: *a pure feedback loop can only make output by first allowing
 error.* The elevator needed 9 V to hold its cruise speed, and `kP = 20`
-could only produce that from 7 centimetres of deliberate lag. Same
+could only produce that from 7 centimetres of deliberate lag ([Figure 18.2](18-elevator.md#figure-18-2) plots it). Same
 sentence, different mechanism. A P controller does not track a moving
 target; it *chases* one, and it chases from a fixed distance behind.
 
@@ -274,8 +274,15 @@ it's moving overall. Drive straight at a tag and the bearing doesn't change
 at all. Drive sideways past it and it swings quickly. Do it twice as far
 away and it swings half as fast.
 
-That's the cross product of the robot's velocity with the direction to the
-target, divided by the distance squared.
+<a id="figure-27-1"></a>
+![Two top-down views of a robot and tag 20: the robot's velocity is split into a part along the line to the tag, which does not turn the bearing, and a part across it, v-perp of 3 metres per second; at 3 metres the bearing swings at 3 divided by 3, 1 radian per second, and at 6 metres with the same velocity at 0.5 radians per second, drawn as a smaller swing of the sight line after the same sideways step](images/27-bearing-rate.svg)
+
+*Figure 27.1 — Why the bearing's turn rate depends on the sideways speed and the distance. The robot's velocity (2 m/s toward the tag, 3 m/s across) is split into its two parts. The dashed square is the robot after a sideways step of 0.3 s, and the purple arc is how far the sight line to the tag turned.*
+
+Figure 27.1 draws it. The robot's velocity has two parts. The part along the line to the tag, the blue arrow, only moves the robot closer or farther, so the sight line keeps pointing the same way. The part across the line, the orange arrow, is the one that makes the bearing swing, and it's the only one that counts. Compare the two panels: the same sideways step turns the sight line through a big angle at 3 m and a small one at 6 m, which is the "twice as far, half as fast" of the paragraph above. The rate is **v⊥ ÷ r**: 3 ÷ 3 = 1.0 rad/s at 3 m (the number from section 4) and 3 ÷ 6 = 0.5 rad/s at 6 m.
+
+In code, that's the cross product of the robot's velocity with the direction to
+the target, divided by the distance squared.
 
 **Add to `Aim`, below `error`:**
 
@@ -356,17 +363,44 @@ The same two orbits, measured again on the real drivetrain, reading
 
 | | 2 m/s | 3 m/s |
 |---|---|---|
-| P control only | 9.7° | 14.6° |
-| **P + feedforward** | **0.1°** | **0.1°** |
+| P control only | 9.7° | 14.6° <!-- claim: l27.orbit-p-3, l27.orbit-p-2 --> |
+| **P + feedforward** | **0.1°** | **0.1°** <!-- claim: l27.orbit-ff-error --> |
 
 Over a hundred times better at 3 m/s, from one added term, with the gain
-untouched. Now and then a camera correction nudges the pose estimate, and
+untouched. <!-- claim: l27.ff-factor --> Now and then a camera correction nudges the pose estimate, and
 the error jumps to as much as a degree for a moment before settling back:
 the aim is chasing a bearing worked out from that estimate, so it moves
-when the estimate does. The log shows you the estimate's opinion. Against the simulated
+when the estimate does. <!-- claim: l27.camera-bump --> The log shows you the estimate's opinion. Against the simulated
 chassis's true pose the same runs read 13.5° and 1.2°, because the estimate
-and the truth disagree by about a degree of heading. Either way, the term did
+and the truth disagree by about a degree of heading. <!-- claim: l27.truth-p-3, l27.truth-ff-3 --> Either way, the term did
 what the arithmetic said it would.
+
+<a id="figure-27-2"></a>
+![Aim error in degrees over a 9-second orbit of tag 20, at 3 m/s above and 2 m/s below: with P only the error climbs in the first 0.7 seconds to a flat shelf just above the predicted line, 14.6 degrees and 9.7 degrees, and stays there; with feedforward it bumps to about 4 and 3 degrees in the first half second and then sits on zero](images/27-orbit-aim-error.png)
+
+*Figure 27.2 — `Aim/ErrorDegrees` for one orbit of tag 20 at 3 m, P only against P plus feedforward, at 3 m/s (top) and 2 m/s (bottom). One run of each, read from the pose estimate. Feedforward runs sometimes catch a camera correction and show a bump later in the run (one of the three 3 m/s runs recorded for this figure had a 0.3° one); these are clean runs.* <!-- claim: l27.orbit-p-3, l27.orbit-p-2, l27.orbit-ff-error, l27.ff-bump-3, l27.ff-bump-2, l27.p-shelf-time, l27.camera-bump -->
+
+Figure 27.2 shows the table as curves. Read the top panel first: the robot circles the tag at 3 m/s,
+three metres out, and the line is the aim error against time. The dashed grey line is the 14.32° from
+section 4's arithmetic, `1.0 ÷ kAimP`.
+
+Start with the orange line, P only. The robot has just started moving, the bearing starts swinging,
+and the error opens up from zero. Watch what it does next: it doesn't keep growing and it doesn't come
+back. In under a second it climbs to a shelf just above the dashed line, 14.6°, and sits there for the
+other eight seconds, about a lap and a half of the tag. <!-- claim: l27.orbit-p-3, l27.p-shelf-time --> That flat shelf is the picture of
+"chases from a fixed distance behind". The controller isn't failing to converge. It has converged,
+on exactly the error it needs in order to make 1.0 rad/s. The gap above the dashed line is the third of
+a degree of wheel lag from section 4. <!-- claim: l27.wheel-lag -->
+
+Now the green line, P plus feedforward. It has a bump of its own in the first half second, up to about
+4°: the orbit begins at full speed from a standstill, and the wheels take a moment to start the
+robot turning. Then it's back on zero by about a second and stays there. <!-- claim: l27.ff-bump-3, l27.ff-settle-time --> The feedforward is
+supplying the 1.0 rad/s, so the P term has almost nothing left to do, and the error it sits on
+is almost none.
+
+The bottom panel is the same pair at 2 m/s, where the dashed line is 9.55° and the shelf 9.7°. <!-- claim: l27.orbit-p-2 --> Same
+shapes, smaller numbers, because the bearing is swinging two thirds as fast. Notice that the
+orange shelf is set by the speed and the gain, and nothing else: wait longer and you'd see the same flat line, not a better one.
 
 > **The general rule, stated for the third time in this course.** If a
 > controller has to keep producing output just to stay where it is, work
@@ -494,8 +528,8 @@ speed. Put the feedforward back.
 
 With the feedforward in, the numbers from a scripted run look like this. Placed
 34° off the tag with the trigger held, the robot was within 2° in 0.5 s and held
-0.1°. Strafing at half stick, the error stayed under 1° after the first second,
-and it was back under 0.1° half a second after the stick came back to centre.
+0.1°. <!-- claim: l27.stand-settle, l27.stand-hold --> Strafing at half stick, the error stayed under 1° after the first second,
+and it was back under 0.1° half a second after the stick came back to centre. <!-- claim: l27.strafe-error, l27.strafe-recover -->
 
 Three signals tell the whole story:
 
@@ -510,8 +544,8 @@ first, like every path auto, and then drives. It now points at tag 20 instead of
 a made-up coordinate. From the `aim` marker, the nose swings round in about 0.4 s
 and then stays within 2° of the tag (0.8° on average) until the `release` marker,
 about 4.3 s in, when the path takes the rotation back and the robot finishes at
-(8.01, 7.02), facing 0°. Watch `FollowPath/rotationOverrideActive` go true and
-false around it.
+(8.01, 7.02), facing 0°. <!-- claim: l27.awd-swing-time, l27.awd-mean-error, l27.awd-release-time, l27.awd-end-x, l27.awd-end-y, l27.awd-end-heading --> Watch `FollowPath/rotationOverrideActive` go true and
+false around it. <!-- claim: bline.telemetry-signals -->
 
 ---
 
@@ -573,7 +607,7 @@ commands.** `Aim` is a handful of static methods with no state, and that's exact
 why a driver binding and an autonomous routine can both use it. A command
 would have served one caller and forced the other to duplicate the maths.
 
-Hold that left trigger and drive a few loops around the tag. Watching the
+Hold that left trigger (**.** on the keyboard) and drive a few loops around the tag. Watching the
 nose stay locked on while the chassis slides around underneath it is the
 most satisfying thing on this robot.
 

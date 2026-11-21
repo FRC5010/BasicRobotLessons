@@ -46,6 +46,19 @@ So creating a branch is not copying your project. It's putting a second sticky
 note on the commit you're standing on. It's instant no matter how big the repo
 is, because nothing gets copied.
 
+Figure G.1 draws it, using the two commits you'll meet in a minute. In the top
+half you've just created `lesson-01`: two sticky notes on the same commit, and
+`HEAD`, the note that says *you are standing here*, on `lesson-01`. In the
+bottom half you've made one commit. The new commit points back at the old one,
+and the `lesson-01` label (the one `HEAD` is on) slid forward to it. The `main`
+label didn't move, so `main` still says "the last version that worked." Nothing
+was copied in either half.
+
+<a id="figure-g-1"></a>
+![Two states of a Git history. Top: main and lesson-01 are two labels on the same commit, 3cf14a0, with HEAD on lesson-01. Bottom: after one commit, lesson-01 has slid forward to the new commit 79bf90a, while main still labels 3cf14a0](images/aside-git-branching-branch-label.svg)
+
+*Figure G.1 — A branch is a label on a commit. Committing slides your branch's label forward and leaves the others where they were.*
+
 What *does* change when you switch branches is your working folder: Git rewrites
 the files on disk to match whatever commit the new label points at. Your editor
 will notice. That's the part that feels like magic and isn't — the files for
@@ -199,7 +212,23 @@ block to `Constants.java`: `ElevatorConstants.kElevatorKG = 0.17` and
 `ArmConstants.kArmKG = 0.25`. The walkthrough below reads the same whichever
 two lessons you picture.
 
-Say both branched from `main` after Lesson 17. Merge the first one:
+Say both branched from `main` after Lesson 17. Figure G.2 draws what's about
+to happen, one merge at a time. In the top panel both lesson branches start
+from `6af60ff`, and `main` is still sitting there. Merging `lesson-18` is the
+fast-forward you saw in section 3: the middle panel shows the `main` label
+sliding up to `d79e9ea` with no new commit. Then look at the bottom panel,
+which is the merge you haven't done yet. `lesson-20` still hangs off
+`6af60ff`, and `main` is no longer there, so there's no label to slide: the
+only way to get both lines into `main` is a new commit with two parents.
+That's the merge commit, and it's where the conflict below comes from: this
+is the first merge where Git has to combine two sets of edits.
+
+<a id="figure-g-2"></a>
+![Three histories. Top: main, lesson-18 (d79e9ea) and lesson-20 (cd93da0) all branch from 6af60ff. Middle: after merging lesson-18, the main label has slid from 6af60ff up to d79e9ea with no new commit, and lesson-20 still hangs off 6af60ff. Bottom: merging lesson-20 adds a merge commit, 50c8826, with two parents, d79e9ea and cd93da0, and main labels it](images/aside-git-branching-fast-forward-diamond.svg)
+
+*Figure G.2 — Two lessons branched from one commit. The first merge is a fast-forward (the `main` label slides); the second needs a merge commit joining both lines.*
+
+Merge the first one:
 
 **Run:**
 
@@ -405,6 +434,23 @@ aside, moves your branch's starting point up to the tip of `main`, and replays
 your commits on top.** Same end result in the files; a straight line in the
 history instead of a knot.
 
+Figure G.3 shows what happens to your commit. In the top panel `main` has
+moved on, to `5a9421b`, and your commit `5adaa87` still hangs off the old
+base, `15f7610`. In the middle panel, after the rebase, there's a commit
+sitting on top of `5a9421b` carrying your Lesson 21 change, and it has a
+different hash, `c7a003a`. That's because it's a *copy*: Git can't move a
+commit, since a commit's identity includes what it points back at. So it makes
+a new one with the same change and the same message on the new base, and moves
+the `lesson-21` label onto it. The original, dashed, is still in there but
+nothing labels it any more. The bottom panel is what `git merge main` would
+have drawn instead: your commit stays put, and a merge commit ties the two
+lines together.
+
+<a id="figure-g-3"></a>
+![Three histories. Top: main has a teammate's commit 5a9421b, and your commit 5adaa87 branches from the older 15f7610. Middle: after git rebase main, a new commit c7a003a sits on top of 5a9421b with the lesson-21 label, and the old 5adaa87 is dashed with no label. Bottom: git merge main instead leaves 5adaa87 where it is and adds a merge commit joining both lines](images/aside-git-branching-rebase.svg)
+
+*Figure G.3 — Rebase replays your commit onto the new base as a new commit (solid), and leaves the old one (dashed) behind. Merge would have added a merge commit instead.*
+
 **Run, from your lesson branch:**
 
 ```powershell
@@ -484,7 +530,7 @@ git log --oneline --graph
 Straight line. Your lesson now sits cleanly on top of your teammate's, as though
 you'd waited and started after them.
 
-Notice the commit hash changed — it was `5adaa87` before the rebase and
+Notice the commit hash changed (the dashed commit in Figure G.3 against the solid one) — it was `5adaa87` before the rebase and
 `c7a003a` after. That's not cosmetic, and it leads directly to the one rule:
 
 > **Never rebase commits you've already pushed and someone else has pulled.**

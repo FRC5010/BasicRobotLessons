@@ -1,0 +1,257 @@
+# Numbers Lesson 20 (the intake arm) quotes that a library change could move.
+# Format: tools/claims/README.md. Real Arm and Elevator on a fixed 20 ms schedule (RIG), alpha-8.
+
+[[claim]]
+id = "l20.hold-horizontal"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "Holding the arm horizontal (0 degrees) the applied voltage settles at +0.25 V, and at -0.25 V at 180 degrees."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 20 (+0.25 / -0.25); Batch 3 sweep (+0.251 / -0.250)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "+0.25 V at 0 degrees; -0.25 V at 180 degrees (table); about +0.25 with the arm level (Figure 20.2's text)"
+unit = "V"
+range = [0.245, 0.255]
+measured = "+0.251 at 0 degrees, -0.250 at 180 degrees (magnitude)"
+test = "tools/figures/probes/Fig20HoldVoltage.java"
+figure = "20-hold-voltage-cosine.png"
+note = "The range is on the magnitude; the sign flips past vertical."
+
+[[claim]]
+id = "l20.hold-45"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "Holding the arm at 45 degrees the applied voltage settles at +0.18 V, and -0.18 V at 135 degrees."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 20 (+0.18 / -0.18); Batch 3 sweep (+0.178 / -0.178)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "+0.18 V at 45 degrees; -0.18 V at 135 degrees"
+unit = "V"
+range = [0.175, 0.185]
+measured = "+0.178 at 45 degrees, -0.178 at 135 degrees (magnitude)"
+test = "tools/figures/probes/Fig20HoldVoltage.java"
+figure = "20-hold-voltage-cosine.png"
+note = "The range is on the magnitude."
+
+[[claim]]
+id = "l20.hold-vertical"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "Holding the arm straight up (stowed, 90 degrees) the applied voltage settles at 0.00 V."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 20 (0.00); Batch 3 sweep (-0.000)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "0.00 V at vertical"
+unit = "V"
+range = [-0.005, 0.005]
+measured = "0.000 V"
+test = "tools/figures/probes/Fig20HoldVoltage.java"
+figure = "20-hold-voltage-cosine.png"
+
+[[claim]]
+id = "l20.floor-hold"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "Holding the arm at the -20 degree intake stop the applied voltage is about +0.24 V (kG x cos(-20 degrees) is 0.235)."
+evidence = "CLAUDE.md, 'Batch 3 (2026-11-19)', Lesson 20 hold sweep (the -20 degree stop reads +0.237)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "about +0.24 at the floor; the -20 degree stop reads +0.24 (Figure 20.2's text)"
+unit = "V"
+range = [0.235, 0.245]
+measured = "+0.237 V"
+test = "tools/figures/probes/Fig20HoldVoltage.java"
+figure = "20-hold-voltage-cosine.png"
+note = "The bare +0.24 in Figure 20.2's text allows 0.235-0.245, tighter than the about-+0.24 of section 9."
+
+[[claim]]
+id = "l20.hold-fit-error"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "At every one of 23 angles, the held applied voltage sits on kG x cos(angle) to within about two-thousandths of a volt, sweeping up or down."
+evidence = "CLAUDE.md, 'Batch 3 (2026-11-19)', Lesson 20 hold sweep (every reading within about 0.002 V, mostly 0.001-0.002 above)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "to within about two-thousandths of a volt"
+unit = "V"
+range = [0.001, 0.003]
+measured = "within about 0.002 V; mostly 0.001-0.002 V above the curve"
+test = "tools/figures/probes/Fig20HoldVoltage.java"
+figure = "20-hold-voltage-cosine.png"
+note = "Read as an upper bound on the largest difference; a smaller difference also satisfies the lesson."
+
+[[claim]]
+id = "l20.hold-error-horizontal"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "With the full model, held out horizontal the arm settles about a tenth of a degree from its goal."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 20 (a 0.09 degree gap at 0 degrees)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "a tenth of a degree"
+unit = "deg"
+range = [0.09, 0.11]
+measured = "0.09 degrees"
+note = "The Batch 3 sweep records the arm settling 0.05-0.25 degrees short across angles."
+
+[[claim]]
+id = "l20.model-lag"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With the full model, intake to stow, the angle trails the profile's setpoint by two to four degrees at the peak, worst during the acceleration ramp."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 20 (peak lag bimodal with sampling phase: 2.2 degrees in 4 of 5 runs, 3.9 in 1; alpha-7 build 2.2 and 3.65)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "two to four at its peak; a few degrees"
+unit = "deg"
+range = [1.5, 4.5]
+measured = "2.2 degrees in 4 of 5 runs, 3.9 in one"
+
+[[claim]]
+id = "l20.kv-zeroed-lag"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With kArmKV zeroed, intake to stow, the angle trails the setpoint by about 20 degrees."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 20 (19.6-19.9 degrees; alpha-7 build 20.4-20.7)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "about 20 degrees"
+unit = "deg"
+range = [18.0, 22.0]
+measured = "19.6-19.9 degrees"
+note = "Whole number ending in zero: a unit is ten, so [10, 30] by the README rule. The text also calls it the 18 degrees predicted plus a little more, so a reader means about 19-21; reported as UNSURE."
+
+[[claim]]
+id = "l20.kg-negative-sag"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With kArmKG negative, held out horizontal the arm sits about 3 degrees below its goal."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 20 (held at 0 degrees it sags 3.08 degrees)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "about 3 degrees below its goal"
+unit = "deg"
+range = [2.7, 3.3]
+measured = "3.08 degrees"
+
+[[claim]]
+id = "l20.kg-negative-lag"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With kArmKG negative, mid-swing the arm trails its setpoint by 5 to 7 degrees instead of 2 to 4."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 20 (negative kG 5.1 degrees in 3 of 4 runs, 6.9 in one)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "5 to 7 degrees"
+unit = "deg"
+range = [4.5, 7.5]
+measured = "5.1 degrees in 3 of 4 runs, 6.9 degrees in one"
+
+[[claim]]
+id = "l20.roller-speed"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With the roller commanded at 0.6, Arm/RollerVelocityRotPerSec climbs to around 60 rotations per second."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 20 (roller 60.94 rot/s at 0.6; alpha-7 60.3)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "around 60 rotations per second"
+unit = "rot/s"
+range = [54.0, 66.0]
+measured = "60.94 rot/s"
+
+[[claim]]
+id = "l20.roller-stop-time"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "After the roller button is released, the roller spins down to zero in about half a second."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 20 (under 1 rot/s 0.40-0.42 s after release)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "about half a second"
+unit = "s"
+range = [0.4, 0.6]
+measured = "0.40-0.42 s to under 1 rot/s"
+
+[[claim]]
+id = "l20.softlimit-on-volts"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With the clamp bypassed and the soft limit on, a 270 degree request leaves the setpoint at 180 and Arm/AppliedVolts near -0.25 V (just kG holding the arm)."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 20, Try It #3 (the setpoint stops at 180 and the voltage at -0.25 V)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "settles near -0.25"
+unit = "V"
+range = [-0.30, -0.20]
+measured = "-0.25 V (about 10 A)"
+note = "'Near' has no rule in the README; read as 0.05 V either way."
+
+[[claim]]
+id = "l20.softlimit-off-volts"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With the clamp bypassed and ForwardSoftLimitEnable off, the setpoint runs on to 270 and the voltage jumps to +3 V."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 20, Try It #3 (runs to 270 at +3.0000 V)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "+3"
+unit = "V"
+range = [2.5, 3.5]
+measured = "+3.0000 V"
+
+[[claim]]
+id = "l20.softlimit-off-amps"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "With the soft limit off, the stalled motor draws about 120 A, the default stator limit."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 20, Try It #3 (119.02 A)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "about 120 amps"
+unit = "A"
+range = [110.0, 130.0]
+measured = "119.02 A"
+
+[[claim]]
+id = "l20.hard-stop-angle"
+kind = "number"
+library = ["wpilib"]
+criticality = "C3"
+statement = "A 270 degree request settles with Arm/AngleDegrees at about 180, with the soft limit on or off, because the arm model has its own hard stops."
+evidence = "CLAUDE.md, 'v3 Lesson 20 (intake arm) on alpha-7' (settles at 179.82 with the limits on or off)"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "RIG"
+wording = "reads 180 both times"
+unit = "deg"
+range = [179.5, 180.5]
+measured = "179.82 degrees"
+
+[[claim]]
+id = "l20.drawing-lag"
+kind = "number"
+library = ["commandsv3", "advantagekit"]
+criticality = "C3"
+statement = "Because Elevator's periodic runs before Arm's, the arm in the drawing is a tick (20 ms) behind, about 3.5 degrees at full swing speed."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 20 (3.69 degrees per tick at cruise, 3.87 once, against the lesson's 3.5); 'v3 Lessons 18-22 record with AdvantageKit', Lesson 20 (3.69 degrees mid-swing)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 3.5 degrees"
+unit = "deg"
+range = [2.5, 4.5]
+measured = "3.69 degrees per tick at cruise (3.87 once)"

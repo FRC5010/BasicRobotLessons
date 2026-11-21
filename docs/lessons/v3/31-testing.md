@@ -60,7 +60,7 @@ been since Lesson 0.
 The template ships JUnit 5, a configured `test` task, and
 `wpi.java.configureTestTasks(test)` — which is the line that makes the
 HAL and the simulation libraries available to tests. There is nothing to
-install and nothing to configure.
+install and nothing to configure. <!-- claim: gradlerio.test-task-config -->
 
 > Look just above that line in your `build.gradle` and you'll find two
 > `jvmArgs '--add-opens', ...` entries already sitting in the `test`
@@ -69,7 +69,7 @@ install and nothing to configure.
 > through a `Mechanism`, the way this lesson's tests both do — needs that
 > module access or it fails before your test logic even runs. It's
 > already there; you don't need to add it, only to know why it's there
-> if you ever go looking.
+> if you ever go looking. <!-- claim: gradlerio.test-task-config -->
 
 The only thing missing is the folder.
 
@@ -185,23 +185,23 @@ Three things have to happen before a subsystem will do anything:
 ```
 
 **`HAL.initialize`** starts the hardware abstraction layer in simulation
-mode. Without it, constructing anything that touches hardware fails.
+mode. Without it, constructing anything that touches hardware fails. <!-- claim: wpilib.hal-initialize-needed-in-tests -->
 
 **`DriverStationSim.setEnabled(true)`** is the one people miss. A
 disabled robot's motors output nothing and `Scheduler.run()` cancels
 every command it sees — so without this, a test can run for a thousand
-ticks, assert nothing happened, and pass for entirely the wrong reason.
+ticks, assert nothing happened, and pass for entirely the wrong reason. <!-- claim: commandsv3.disable-cancels-mechanism-commands, commandsv3.disabled-scheduler-refuses-commands -->
 
 **`Scheduler.getDefault().run()`** is one robot tick. Nothing in this
 project moves on its own; `Robot.robotPeriodic()` normally calls that
-fifty times a second, and in a test *you* are `Robot`.
+fifty times a second, and in a test *you* are `Robot`. <!-- claim: commandsv3.scheduler-default-api -->
 
 ---
 
 ## 5. The test that checks Lesson 21
 
 Now a real one. Lesson 21 made a specific claim: a relative encoder reads
-zero at power-on wherever the carriage actually is, and homing is what
+zero at power-on wherever the carriage actually is ([Figure 21.1](21-limit-sensors.md#figure-21-1)), and homing is what
 replaces that guess with a fact. That's exactly the kind of thing worth
 pinning down — it's a behaviour, not a value, and it stops being true the
 moment somebody edits the homing routine.
@@ -222,7 +222,7 @@ testing is a small sign the design is honest about its own state.
 > leaves it alone. But it means `Elevator/GoalMeters` exists nowhere a test
 > could read it back, not in a log file and not in NetworkTables. Ask the
 > object instead: its getters, and the inputs behind them, work exactly as
-> they do on the robot.
+> they do on the robot. <!-- claim: advantagekit.logger-noop-when-not-started -->
 
 **Create `src/test/java/first/robot/ElevatorHomingTest.java`:**
 
@@ -328,7 +328,7 @@ lives on `RobotState.isDisabled()`/`isEnabled()` in this alpha, not on a
 `org.wpilib.driverstation.DriverStation` in this alpha is a much smaller
 class (just data-log wiring), and the query methods moved to
 `RobotState`. `Scheduler.getDefault().schedule(...)`/`.cancelAll()` play
-the same role `CommandScheduler.getInstance()` used to.
+the same role `CommandScheduler.getInstance()` used to. <!-- claim: wpilib.robot-state-api, commandsv3.scheduler-default-api -->
 
 ---
 
@@ -346,6 +346,8 @@ Shorten it and the test starts lying to you — though *how much* you have
 to shorten it turns out to matter, so measure rather than assume. On this
 exact test (eight runs at each setting):
 
+<!-- claim: l31.sleep20-height, l31.sleep4-height, l31.sleep0-fail -->
+
 | `Thread.sleep(...)` | Final height | |
 |---|---|---|
 | 20 ms (correct) | 0.0090 m | within tolerance of 0.01 m |
@@ -357,7 +359,7 @@ the number here, and even the zero-sleep row sometimes passes. The physics
 model only diverges from the firmware once the mismatch is severe enough,
 and how severe depends on how the threads happened to interleave that run.
 So the trap has a cliff and not a slope, and **it can be intermittent**,
-which is worse: a test that fails one run in five gets blamed on the robot.
+which is worse: a test that fails one run in five gets blamed on the robot. <!-- claim: l31.sleep0-fail -->
 
 The mechanism: the physics model advances a fixed 20 ms of simulated time
 every time you step it, while Phoenix's simulated firmware, running the
@@ -365,12 +367,46 @@ closed loop, advances on the **wall clock**. Remove the sleep and the
 mechanism computes as if a full tick's worth of firmware response happened
 between calls that are actually adjacent — on a real robot that's
 impossible, and −0.34 m looks precisely like a broken homing routine, which
-is where you'll spend the evening.
+is where you'll spend the evening. <!-- claim: phoenix6.sim-firmware-wall-clock, l31.sleep0-fail -->
+
+<a id="figure-31-1"></a>
+![Two pairs of timelines. With Thread.sleep(20), the physics model's 20 ms steps line up with the firmware's wall-clock ticks. With Thread.sleep(0), the model takes many 20 ms steps while the firmware's clock has barely moved, and the final height reads minus 0.34 metres](images/31-two-clocks.svg)
+
+*Figure 31.1 — Two clocks: the model steps, the firmware runs on the wall.* <!-- claim: phoenix6.sim-firmware-wall-clock, l31.sleep0-fail -->
+
+Figure 31.1 draws the two clocks. In the top half, each `step` is followed by
+a real 20 ms sleep, so the model's tick and the firmware's tick line up. In
+the bottom half there's no sleep, so the model takes many 20 ms steps while
+the firmware's clock has barely moved, and the model ends up far ahead of
+the controller that's supposed to be steering it. <!-- claim: phoenix6.sim-firmware-wall-clock -->
+
+<a id="figure-31-2"></a>
+![Left: the elevator's height reading against the tick of the test. With a 20 ms sleep it falls smoothly from 0 to about minus 0.34 m, then jumps to 0.009 m on tick 181. The two no-sleep runs fall in steps, the reading staying flat for several ticks at a time; the passing run jumps to 0.006 m on tick 181, the failing one stays at minus 0.34 m. Right: a zoom on the last ticks. A grey band marks the test's tolerance around 0.01 m](images/31-homing-test-height.png)
+
+*Figure 31.2 — The homing test's height reading, tick by tick: a 20 ms sleep, and two runs with no sleep, one that passes and one that fails. Three runs, each in a fresh JVM.* <!-- claim: l31.sleep20-height, l31.tick-181, l31.sleep0-fail, l31.pass-run-height, l31.test-wall-time -->
+
+The table gave you only the final heights. Figure 31.2 plots the reading on
+every tick of the same test, from the first tick to the last. The black line
+is the correct test, with its 20 ms sleep: the height reading slides down
+smoothly as the carriage sinks toward the switch, then jumps up to 0.009 m
+once homing re-zeroes the encoder, which is exactly what the test expects. <!-- claim: l31.sleep20-height, l31.tick-181 -->
+The grey band is the test's tolerance around 0.01 m.
+
+Now the two no-sleep runs. They don't slide: they fall in steps, the reading
+sitting flat for several ticks and then jumping to catch up. Every tick of
+the test took no time at all, which fits the picture above: the firmware's
+clock barely moves between ticks, so its reading is stale for several of them. The whole test took 0.23 s of wall clock where the
+correct one took 4.1 s. <!-- claim: l31.test-wall-time --> The steps are the evidence you'd have missed in a
+single number. Then look at the right-hand panel, which zooms in on the
+last ticks. The green run lands its re-zero just like the black one, and
+passes. The orange run never reads the new zero: it ends where the sinking
+carriage left it, at −0.34 m. Same test, same code, two outcomes, and the only
+difference between them is a race you can't see. <!-- claim: l31.sleep0-fail -->
 
 **If a test involves physics, sleep the full tick.** A slow correct test
 is worth more than a fast one that lies — and "slightly shortened"
 isn't a safe middle ground just because it happened not to break this
-particular test.
+particular test. <!-- claim: l31.sleep4-height -->
 
 ### Simulated devices outlive their test
 
@@ -388,7 +424,7 @@ DIO 0 previously allocated.
 ```
 
 That's the DIO channel for the bottom limit switch, still held by the
-first elevator. `HAL.shutdown()` does not release it.
+first elevator. `HAL.shutdown()` does not release it. <!-- claim: wpilib.dio-channel-held-for-jvm -->
 
 Two ways out, and this course uses both:
 
@@ -397,7 +433,7 @@ Two ways out, and this course uses both:
   about it.
 - **Give each test its own CAN IDs** when you're building bare motors
   rather than whole subsystems. Note that IDs must be **62 or lower** —
-  a rig on ID 70 fails silently, with no output at all.
+  a rig on ID 70 fails silently, with no output at all. <!-- claim: phoenix6.can-id-limit-62 -->
 
 ---
 
@@ -442,7 +478,7 @@ tells you *which claim* before you've opened a single file.
 
 Now break something on purpose. Change `SuperstructureState.canGoTo` so
 `IDLE` can reach `SCORING`, and run the tests again — measured directly:
-`scoringRequiresSomethingToScore` fails, by name, in about a second.
+`scoringRequiresSomethingToScore` fails, by name, in about a second. <!-- claim: l31.mutation-fail-time -->
 That's the whole point: you found out immediately, from a machine,
 instead of at an event, from a driver.
 
@@ -469,7 +505,7 @@ instead of at an event, from a driver.
    at the `assertFalse(RobotState.isDisabled(), ...)` line, because that
    assertion exists to catch exactly this. Delete that line too and it
    fails later, at `assertTrue(elevator.isHomed(), ...)`, because a
-   disabled scheduler refuses to run the command at all. Now work out whether a *differently written*
+   disabled scheduler refuses to run the command at all. <!-- claim: commandsv3.disabled-scheduler-refuses-commands --> Now work out whether a *differently written*
    test might have passed instead, and what that tells you about
    assertions that only check for absence.
 
@@ -495,7 +531,7 @@ checks less than you think.
 much more quietly than you'd expect.** A 4 ms sleep and a 20 ms sleep
 produced nearly the same number on this test; only removing the sleep
 entirely revealed the trap, a third of a metre below the floor, with no
-error anywhere. The lesson isn't "shave a little and you'll notice" —
+error anywhere. <!-- claim: l31.sleep4-height, l31.sleep20-height, l31.sleep0-fail --> The lesson isn't "shave a little and you'll notice" —
 it's that you can't tell how much slack a real-time simulation will
 tolerate without measuring it, so don't cut the corner at all. Simulated
 devices are claimed for the life of the JVM, so tests are not as isolated

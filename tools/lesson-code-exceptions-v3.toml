@@ -1,0 +1,82 @@
+# "Type this" Java blocks that tools/check-lesson-code-v3.py should not expect to find in the code
+# after their lesson. `block` is text that appears in that one block (and no other checked block of
+# the lesson). The checker fails on an exception that matches no block, more than one block, or a
+# block that now checks out, so remove an entry as soon as it stops being needed.
+#
+# Kinds of reason:
+#   staged      - a later step of the same lesson replaces this code; the reference holds the
+#                 lesson's final version.
+#   temporary   - the lesson has the student make this change for an experiment and undo it.
+#   conditional - the lesson asks for it only in some cases.
+#   try-it      - the reference applies a Try It that changes this code (by design, so the
+#                 update script keeps robot-specific values in Constants.java).
+
+[[exception]]
+lesson = 1
+block = "new TalonFX(1, new CANBus(CANPort.CAN_S0));"
+reason = "staged: section 9 moves the CAN ID into DriveConstants.kDriveMotorPort"
+
+[[exception]]
+lesson = 7
+block = "public class SwerveModule {"
+reason = "staged: 'Pay off Lesson 5's IOU' then multiplies the priming position by kSteerGearRatio"
+
+[[exception]]
+lesson = 7
+block = "package first.robot.subsystems;\n\nimport java.util.function.DoubleSupplier;"
+reason = "staged: the checklist later moves each module's CAN IDs into per-corner DriveConstants"
+
+[[exception]]
+lesson = 7
+block = "InvertedValue.Clockwise_Positive"
+reason = "conditional: only if step 5 read -90 degrees; the reference keeps the default"
+
+[[exception]]
+lesson = 8
+block = "new Pigeon2(0, new CANBus(CANPort.CAN_S0));"
+reason = "try-it: the reference applies Try It #4, the gyro ID in DriveConstants.kGyroPort"
+
+[[exception]]
+lesson = 9
+block = "package first.robot.commands;"
+reason = "staged: the lesson then rewrites driveTurnDrive as a coroutine"
+
+[[exception]]
+lesson = 10
+block = "robot.drivetrain.drive("
+reason = "staged: the lesson then switches the default command to driveFieldRelative"
+
+[[exception]]
+lesson = 13
+block = "Mode.REPLAY;"
+reason = "temporary: flipped for the replay demonstration, then set back"
+
+[[exception]]
+lesson = 13
+block = "m_inputs.drivePositionMeters * 1.1"
+reason = "temporary: 'for this experiment only', a bug planted to replay"
+
+[[exception]]
+lesson = 25
+block = "package first.robot.opmode;"
+reason = "staged: the lesson then wraps the recipe in Autos.getReadyThen"
+
+[[exception]]
+lesson = 25
+block = "new PathAuto(this, \"PickUp\", path -> Autos.followPath(pathBuilder, path))"
+reason = "staged: the lesson then switches Pick Up to Autos.followPathAndScore"
+
+[[exception]]
+lesson = 25
+block = "The same path, asking to score over the last stretch of it."
+reason = "staged: the aiming section then wraps it in handingRotationBack"
+
+[[exception]]
+lesson = 29
+block = "calculateLoadedBatteryVoltage(11.0, 0.04"
+reason = "temporary: the tired battery, 'put it back after'"
+
+[[exception]]
+lesson = 32
+block = "Centimeters.of(0.00002)"
+reason = "temporary: the planted typo the lesson then finds in the log and fixes"

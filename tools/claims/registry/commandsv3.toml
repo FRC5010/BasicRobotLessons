@@ -1,0 +1,405 @@
+# Claims about Commands V3 (org.wpilib.command3): the scheduler, commands, triggers, mechanisms.
+# Format: tools/claims/README.md.
+
+[[claim]]
+id = "commandsv3.periodic-before-commands"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "Scheduler.run() runs every addPeriodic callback, in registration order, before any command, so subsystem readings are fresh when commands and later periodics read them."
+evidence = "CLAUDE.md, 'Facts from the alpha-7 jars' (bytecode); 'v3 Lesson 24 (superstructure) on alpha-7', No premature HOLDING"
+measured_on = "alpha-7 (bytecode), relied on in alpha-8 measurements"
+method = "BYTECODE"
+
+[[claim]]
+id = "commandsv3.commands-run-in-reverse-order"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "Scheduler.runCommands runs the running commands in reverse insertion order, so in a parallel group the later command's first check can come before the earlier one's first run (why Lesson 25 waits for the remaining distance to go above 0)."
+evidence = "CLAUDE.md, 'v3 Lesson 25 (path events)', getRemainingPathDistanceMeters() is 0.0 before the path's first run"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.disable-cancels-mechanism-commands"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "On disable the scheduler cancels every command that requires a mechanism not controllableDuringDisabled (the default), and queues no default commands while disabled; default commands come back on enable."
+evidence = "CLAUDE.md, the alpha-8 block, Mechanism commands are cancelled on disable (#9417); 'Batch 1 found', Lessons 1 and 2 crashed at boot"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.whiletrue-edge-and-enable"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "whileTrue schedules only on a rising edge and a schedule while disabled is refused, so inState(X).whileTrue(motion) never restarts after a disable; inState(X).and(RobotState::isEnabled).whileTrue(motion) restarts it on enable."
+evidence = "CLAUDE.md, 'v3 Lesson 24 (superstructure) on alpha-7', Alpha-8: the bindings are inState(X).and(RobotState::isEnabled) (Check24Probe)"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.when-exited-on-cancel"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "whenExited runs when a command finishes, is cancelled, is interrupted, or is cancelled by a disable; whenCanceled runs only when it doesn't finish by itself. On a cancel the order is exit, then cancel, and .until(...) ends its inner command by cancelling it."
+evidence = "CLAUDE.md, the alpha-8 block, New Commands V3 API (hook probe, 2026-11-12)"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.sequence-requires-union"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "A SequentialGroup (Command.sequence) requires the union of its steps' mechanisms for its whole run, so a sequence that homes the elevator holds the elevator and is evicted by the IDLE motion."
+evidence = "CLAUDE.md, 'v3 Lesson 25 (path events)', Every path auto gets ready first"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.debounce-rising"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "Trigger.debounce(Time) takes the measure directly and debounces the RISING edge by default, so a sensor flickering every other tick never passes a 0.1 s debounce."
+evidence = "CLAUDE.md, 'v3 Lesson 22 (beam breaks)'"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "BYTECODE"
+
+[[claim]]
+id = "commandsv3.opmode-bindings-dropped"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "A Trigger binding made while an opmode is being built belongs to that opmode and is torn down when another opmode is selected."
+evidence = "CLAUDE.md, 'v3 Lesson 24 (superstructure) on alpha-7', The four state-motion bindings live in Robot's constructor"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.trigger-cache-fixed"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "Plain controller triggers (driverController.back()) in a second opmode fire after another opmode bound the same buttons, in every selection order (the alpha-7 Trigger-cache bug is fixed)."
+evidence = "CLAUDE.md, 'v3 Lesson 33 rebuilt on WPILib's SysIdRoutine', Plain triggers on the final code (T,U,T,U,U,T)"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.no-requirements-exists"
+kind = "api"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "Command.noRequirements() builds a command that requires no mechanism, and there is no onlyIf."
+evidence = "tools/claims/java/claims/CommandsV3ApiTest.java on alpha-8 (2026-11-19): Command.noRequirements(...).named(...) requires nothing, and none of the classes in the Commands V3 jar's org.wpilib.command3 packages has an onlyIf method"
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/CommandsV3ApiTest.java"
+
+[[claim]]
+id = "commandsv3.finished-command-reschedulable"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "A finished Command object can be scheduled again, so one instance registered in Robot's constructor serves every run of a path event."
+evidence = "CLAUDE.md, 'v3 Lesson 25 (path events)', Event markers"
+measured_on = "alpha-7"
+method = "LOOP"
+note = "Lesson 25 relies on it in code (one requestIntake() instance registered for every run of the path); the marker is on the sentence that introduces that call."
+
+[[claim]]
+id = "commandsv3.mechanism-no-default-command"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "Mechanism is an interface, and getDefaultCommand() is null until setDefaultCommand is called; nothing installs an idle command for you."
+evidence = "CLAUDE.md, 'v3 Lesson 28 (flywheel) on alpha-7'; 'Batch 1 found', no idle command ever runs in Lesson 1"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.sysid-routine"
+kind = "api"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "org.wpilib.command3.sysid.SysIdRoutine(Config, SysIdMechanism): Config.defaults() is 1 V/s, 7 V and 10 s; Direction.FORWARD/REVERSE; the commands are named sysid-quasistatic-forward-<mechanism> and so on, and the SysId signals go to WPILib's DataLogManager log (the WPILIB_ file), not AdvantageKit's."
+evidence = "CLAUDE.md, 'v3 Lesson 33 rebuilt on WPILib's SysIdRoutine', The real API"
+measured_on = "alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "commandsv3.default-command-resumes"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "When a command that requires a mechanism finishes or is cancelled, the mechanism's default command is scheduled again, so a driver's stick command takes over without any code."
+evidence = "CLAUDE.md, 'Batch 1 found', Lesson 2 boot test reads [none, Drive With Joystick, Drive At Speed, Drive With Joystick]; 'v3 Lesson 28', Flywheel falls back to idle on release"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.coroutine-await-yield-wait"
+kind = "api"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "In a coroutine body, coroutine.yield() suspends until the next tick, coroutine.waitUntil(condition) polls it each tick, coroutine.wait(Time) pauses, and coroutine.await(command) schedules the command and suspends until it finishes; a coroutine written this way ends when its body runs out of code."
+evidence = "Lessons 6, 8 and 9 compile and run on alpha-8 (verify-lessons-v3.sh; Figure 8.1's probe); no source reading recorded in CLAUDE.md"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.parallel-race-optional"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C2"
+statement = "Command.parallel(a, b) finishes when all its commands finish, Command.race(a, b) finishes when any one does and cancels the rest, and .optional(...) adds a command that rides along and is cancelled when the required ones finish."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by Lesson 9 (Figure 9.2 is a diagram, not a measurement)"
+measured_on = "unverified"
+method = "SOURCE"
+
+[[claim]]
+id = "commandsv3.parallel-shared-requirements-throws"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "Building Command.parallel(...) with two required commands that share a mechanism throws IllegalArgumentException (\"Commands running in parallel cannot share requirements\") at construction."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by Lesson 9"
+measured_on = "unverified"
+method = "SOURCE"
+
+[[claim]]
+id = "commandsv3.robot-mode-triggers-autonomous"
+kind = "api"
+library = ["commandsv3", "wpilib"]
+criticality = "C1"
+statement = "RobotModeTriggers.autonomous() is a Trigger true while the Driver Station is in Autonomous and enabled, so .onTrue(command) schedules once per enable."
+evidence = "Lesson 9 compiles and its auto runs on alpha-8 (verify-lessons-v3.sh); no source reading recorded in CLAUDE.md"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.command-requirements-and-mechanism-name"
+kind = "api"
+library = ["commandsv3"]
+criticality = "C2"
+statement = "Command.requirements() returns the set of mechanisms a command needs, and Mechanism.getName() returns the mechanism's name (\"Drivetrain\")."
+evidence = "Lesson 7 compiles on alpha-8 (verify-lessons-v3.sh); no source reading recorded in CLAUDE.md"
+measured_on = "alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "commandsv3.mechanism-no-periodic"
+kind = "api"
+library = ["commandsv3"]
+criticality = "C3"
+statement = "Mechanism has no periodic() method, so a mechanism that must run every tick registers a callback with Scheduler.getDefault().addPeriodic."
+evidence = "tools/claims/java/claims/CommandsV3ApiTest.java on alpha-8 (2026-11-19): Mechanism is an interface with no periodic() method; Scheduler has addPeriodic(Runnable)"
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/CommandsV3ApiTest.java"
+
+[[claim]]
+id = "commandsv3.noyield-command-finishes-same-tick"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C3"
+statement = "A Command.noRequirements coroutine with no yield in its body runs once and finishes on the same tick, claiming no mechanism and interrupting nothing."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson (Lesson 14's Start-button command ran in the Batch 2 five-sighting measurement, which doesn't test the tick)"
+measured_on = "unverified"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.coroutine-command-api"
+kind = "api"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "On a Mechanism, run(coroutine -> ...), runRepeatedly(Runnable), coroutine.park(), coroutine.waitUntil(BooleanSupplier), and the builder's whenCanceled, whenExited and named exist; a command whose body runs out finishes, and park() suspends it until something cancels it."
+evidence = "CLAUDE.md, 'v3 Lesson 17' and the Lesson 28-33 notes (whenExited/whenCanceled probed on the real scheduler, 2026-11-12); Lessons 1-6 compile on alpha-8; 'Batch 2 found' (Lesson 6 RIG, waitUntil returns at 0.62 s and the command ends)"
+measured_on = "alpha-8"
+method = "RIG"
+
+[[claim]]
+id = "commandsv3.command-gamepad-api"
+kind = "api"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "org.wpilib.command3.button.CommandGamepad(port) has getLeftY() and the button methods faceDown(), faceLeft(), faceRight(), faceUp(), leftBumper() and dpadUp() (faceDown is the bottom face button), each returning a Trigger with whileTrue and onTrue."
+evidence = "CLAUDE.md, 'Batch 1 found' (Keyboard 0's bottom face button is the Z key) and 'Lesson 24' notes (Gamepad D-pad is buttons 11-14); Lessons 1-6 compile on alpha-8"
+measured_on = "alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "commandsv3.running-commands-for"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "Scheduler.getDefault().getRunningCommandsFor(mechanism) returns a List<Command> of what runs on that mechanism now, updated when the scheduler ticks; it is empty while nothing runs (on alpha-8, every disabled tick), and get(0) on the empty list throws ArrayIndexOutOfBoundsException."
+evidence = "CLAUDE.md, 'Batch 1 found', Fixed 2026-11-19: Lessons 1 and 2 crashed at boot on alpha-8 (running.get(0) on an empty list); the boot test reads [none, none, Drive At Speed, none]"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.mechanism-registers-with-scheduler"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C2"
+statement = "A class that implements Mechanism is known to Scheduler.getDefault() from construction on (no registration call), so Scheduler.run() runs its commands and getRunningCommandsFor(module) answers for it."
+evidence = "CLAUDE.md, 'Batch 1 found' (the Lesson 1 boot test drove DriveModule through only Scheduler.getDefault().run()); registration itself was not read from source"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.default-command-runs-when-idle"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "A mechanism's default command (setDefaultCommand) runs whenever no other command requires the mechanism and resumes by itself when that command ends; scheduling another command on the mechanism ends the running one (the later one wins at equal priority)."
+evidence = "CLAUDE.md, 'v3 Lesson 24 ... on alpha-7' (a new command preempts a conflicting running one of equal priority; default commands come back on enable) and the Lesson 28 notes (Flywheel idles through a default command)"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.scheduler-events"
+kind = "api"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "Scheduler.getDefault().addEventListener(Consumer<SchedulerEvent>) hears every scheduler event; SchedulerEvent.Scheduled has command(), SchedulerEvent.Completed, Canceled and Interrupted also exist, and command.requires(mechanism) and command.name() work."
+evidence = "The Lesson 3 snapshot compiles on alpha-8 (verify-lessons-v3.sh, CLAUDE.md 'Use it instead of reasoning about whether a snippet compiles'); no source reading of SchedulerEvent is recorded in CLAUDE.md"
+measured_on = "alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "commandsv3.short-command-invisible-to-poll"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C3"
+statement = "A command that finishes the instant it is scheduled can start and end inside one scheduler tick, so a once-a-tick poll of getRunningCommandsFor never sees it, while an event listener does."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson"
+measured_on = "unverified"
+
+[[claim]]
+id = "commandsv3.andthen-builder"
+kind = "api"
+library = ["commandsv3"]
+criticality = "C3"
+statement = "Command has an andThen(Command) decorator that sequences two commands, and the result needs its own .named(...) before it is ready to schedule."
+evidence = "tools/claims/java/claims/CommandsV3ApiTest.java on alpha-8 (2026-11-19): Command.andThen(Command) returns a SequentialGroupBuilder, which is not a Command; its named(String) gives the Command, and on an independent scheduler two two-tick commands run one after the other"
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/CommandsV3ApiTest.java"
+
+[[claim]]
+id = "commandsv3.command-trace-helper"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C3"
+statement = "Commands V3 rewrites an exception's stack trace through CommandTraceHelper: it strips the internal Coroutine/Continuation/Scheduler frames and splices in the trace captured when the command was scheduled, after a marker frame '=== Command Binding Trace ==='."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson (it says it was confirmed by decompiling the class and forcing a NullPointerException; the trace in the lesson is from a bare test harness)"
+measured_on = "unverified"
+
+[[claim]]
+id = "commandsv3.whiletrue-schedules-and-cancels"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "Trigger.whileTrue(command) schedules the command the tick the trigger turns true and cancels it the tick the trigger turns false; the next command bound to a different trigger that turns true in the same tick is picked up the same tick."
+evidence = "CLAUDE.md, 'The v3 track builds on WPILib 2027 alpha-8' (candidates from alpha-8's Trigger.java: whileTrue = rising edge, cancels on false) and 'v3 Lesson 24 ... alpha-8' (Scheduler.run()/Trigger.poll() read at the tag, Pick Up and capture runs measured)"
+measured_on = "alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "commandsv3.cancelled-coroutine-not-resumed"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "A coroutine command that is cancelled is simply never resumed, so no code after the line it was waiting on runs, not even a finally block; a finishing coroutine runs its trailing code, so cleanup after an await covers only the finish."
+evidence = "CLAUDE.md, 'v3 Lesson 25 (path events)', 'There was no finallyDo on alpha-7' (independent scheduler: a finishing coroutine runs its trailing code and finally, a canceled one runs whenCanceled only, never its finally)"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "RIG"
+
+[[claim]]
+id = "commandsv3.cancel-parent-cancels-awaited-child"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "Cancelling a coroutine command also cancels the child command it is awaiting (a cancelled parent runs its own exit and cancel hooks, then the child's), so a wrapper around a path's command still stops the robot."
+evidence = "CLAUDE.md, 'v3 Lesson 25 (path events)' ('Canceling a parent cancels the child it awaits') and the alpha-8 whenExited hook probe ('a cancelled parent runs its own EXIT, CANCEL, then the awaited child's EXIT, CANCEL')"
+measured_on = "alpha-8"
+method = "RIG"
+
+[[claim]]
+id = "commandsv3.mechanism-idle-overridable"
+kind = "api"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "Every Mechanism has a built-in do-nothing idle() command, which a class can override; setDefaultCommand(idle()) in the constructor then installs the override (the flywheel's spinUp(kIdleSpeed)), so the wheel idles in every opmode."
+evidence = "CLAUDE.md, 'v3 Lesson 28 (flywheel) on alpha-7' (Flywheel's constructor calls setDefaultCommand(idle()), overridden to spinUp(kIdleSpeed); measured 30.4 rot/s within 1.5 s of enabling)"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.conflicting-command-interrupts"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "Scheduling a command that requires a mechanism another running command requires cancels the running one (equal priority), so pressing the arm button while the roller runs cancels the roller, and a roller command cancels a pivot command mid-swing."
+evidence = "CLAUDE.md, 'v3 Lesson 22 (beam breaks)' (pressing the arm button while the roller runs cancels the roller, because both are the arm's mechanism) and the alpha-8 block, 'Scheduling a running command is a no-op, and a new command preempts a conflicting running one of equal priority'"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.trigger-from-supplier-runs-disabled"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "new Trigger(BooleanSupplier) builds a trigger out of any boolean; onTrue/whileTrue/onFalse behave as for buttons. A Trigger-bound Command.noRequirements command fires and runs while the robot is disabled (it needs no ignoringDisable), and a trigger bound after its condition is already true (the opmode picked after the switch is pressed) fires at once."
+evidence = "CLAUDE.md, 'v3 Lesson 21 (homing) on alpha-7' (the Trigger re-zeroes the carriage when it lands while disabled, or at the moment Teleoperated is selected if that comes later) and 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 21 (AtBottomLimit flips true 17.9-18.4 s after launch with the snap -0.3400 to 0.0100); the alpha-8 block (only commands requiring mechanisms that aren't controllableDuringDisabled are cancelled on disable)"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.trigger-combinators"
+kind = "api"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "Trigger has debounce(Time), and(Trigger or BooleanSupplier) (a method reference such as robot.arm::hasGamePiece works), and negate(); each and(...) builds a new Trigger the scheduler polls like any other, so a command bound with whileTrue runs while every part holds and stops when any one stops."
+evidence = "CLAUDE.md, 'v3 Lesson 22 (beam breaks) is hand-built' (Trigger.debounce(Time) takes the measure directly) and the Lesson 24 notes (inState(X).and(RobotState::isEnabled).whileTrue(...) measured on alpha-8); the Lesson 22 snapshot compiles on alpha-8 with zero warnings"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.scheduler-default-api"
+kind = "api"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "Scheduler.getDefault() returns the scheduler; .run() is one robot tick, .schedule(command) schedules a command, and .cancelAll() cancels everything, the roles CommandScheduler.getInstance() had in older WPILib."
+evidence = "CLAUDE.md, 'v3 Lesson 31 (testing) on alpha-7' and the probe recipe in the Lesson 25 notes (Scheduler.getDefault().addPeriodic); Lesson 33's tests pass on alpha-8."
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.disabled-scheduler-refuses-commands"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C1"
+statement = "While the robot is disabled the scheduler refuses to run a mechanism's command, so a test that never enables the DriverStationSim ends with the elevator not homed."
+evidence = "CLAUDE.md, 'v3 Lesson 31 (testing) on alpha-7' (with setEnabled(true) removed the test dies at its own isDisabled() assertion; with that removed too, at assertTrue(isHomed())), and the Lesson 24 alpha-8 notes (a schedule attempted while disabled is refused, RequiresUnsafeMechanisms, read from source)."
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "commandsv3.sysid-log-keys"
+kind = "behaviour"
+library = ["commandsv3", "wpilib"]
+criticality = "C2"
+statement = "A SysIdRoutine run writes sysid-test-state-<name>, voltage-<motor>-<name> and velocity-<motor>-<name> through DataLogManager, so they are in the WPILIB_*.wpilog and never in the akit_ file; every test, finished by timeout or cancelled by letting go, leaves a 'none' state entry to mark its end."
+evidence = "CLAUDE.md, 'v3 Lesson 33 rebuilt on WPILib's SysIdRoutine and re-measured on alpha-8' (six runs: state entries = iterations + one none per test, 3502 = 3498 + 4)"
+measured_on = "alpha-8"
+method = "LOOP"
+note = "The SysId analysis tool itself was never run here."

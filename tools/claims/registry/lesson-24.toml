@@ -1,0 +1,93 @@
+# Numbers Lesson 24 (the superstructure) quotes that a library change could move.
+# Format: tools/claims/README.md. Measured in the real Robot loop at 20 ms with GamepadSim, Blue 1.
+
+[[claim]]
+id = "l24.homing-ticks"
+kind = "number"
+library = ["commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "Pressing Back to reach IDLE takes 125 to 155 ticks (2.5 to 3.1 s) after the press, quicker the later it is pressed, because the unpowered carriage sinks toward the switch meanwhile."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 24 (homing, Back to IDLE; 12 fresh launches, 3 more on alpha-7)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "125 to 155 ticks (2.5 to 3.1 s)"
+unit = "ticks"
+range = [124.5, 155.5]
+measured = "154 ticks pressed 5 ticks after enable (3 of 3), 149 at 30, 143 at 60, 135 at 100, 125 at 150, 95 at 300 ticks (8.1 s after launch); alpha-7 156 and 145"
+note = "Depends on how long after launch Back is pressed. In seconds the wording is [2.45, 3.15]. A press at 300 ticks (95 ticks) is below the range; the lesson's 'the later you press it, the quicker' covers it."
+
+[[claim]]
+id = "l24.handoff-after-drive"
+kind = "number"
+library = ["commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With the arm down and a quarter-stick drive at a piece, the debounced beam break trips HANDOFF about 34 ticks after the drive starts."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 24 (HANDOFF 33 ticks in 5 of 12 runs, 34 in 7); Batch 2 found, Lesson 24 capture cycle (Figure 24.2)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 34 ticks (Figure 24.2: 0.68 s, 34 ticks after the drive started)"
+unit = "ticks"
+range = [33.0, 35.0]
+measured = "33 in 5 of 12 runs, 34 in 7; alpha-7 34 in 3 of 3; Figure 24.2's data 34 (drive start tick 388, HANDOFF tick 422)"
+figure = "24-capture-cycle.png"
+
+[[claim]]
+id = "l24.raw-beam-break"
+kind = "number"
+library = ["commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "In Figure 24.2's run the raw beam break reads the piece 29 ticks (0.58 s) after the drive starts, five ticks (0.1 s of debounce) before HANDOFF."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 24, one capture cycle (raw beam break 29 ticks after the drive starts, debounce adds 5); tools/figures/data/24-capture-cycle.csv (beam_break first 1 at tick 417, drive start 388)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "0.58 s (Figure 24.2's prose); 'the tenth of a second between the two is the debounce'"
+unit = "s"
+range = [0.575, 0.585]
+measured = "29 ticks = 0.58 s in the figure's run; four fresh runs agreed except one HANDOFF a tick sooner"
+figure = "24-capture-cycle.png"
+note = "The tenth of a second is the course's own kBeamDebounce (0.1 s), so only the 0.58 s is measured."
+
+[[claim]]
+id = "l24.holding-after-handoff"
+kind = "number"
+library = ["commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "HOLDING arrives about 56 ticks (1.1 s, 1.12 s in Figure 24.2) after HANDOFF, when the elevator and arm are both at goal, on the Lesson 24 state."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 24 (HOLDING 56 ticks after HANDOFF in 12 of 12, alpha-7 3 of 3); Batch 2 found, Lesson 24 capture cycle"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 56 ticks (1.1 s); 1.12 s (56 ticks) in Figure 24.2's prose"
+unit = "ticks"
+range = [55.0, 57.0]
+measured = "56 ticks in 12 of 12 runs; Figure 24.2's data tick 422 to 478 = 56"
+figure = "24-capture-cycle.png"
+note = "Lesson 29's current limits slow the climb: at the Lesson 33 state it is 60-61 ticks, so this is the Lesson 24 state's number. In seconds: 1.1 s is [1.05, 1.15], 1.12 s is [1.115, 1.125]; both hold at 56 ticks."
+
+[[claim]]
+id = "l24.holding-elevator-height"
+kind = "number"
+library = ["commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "At HOLDING the elevator is at 0.73 m, inside its 2 cm tolerance of 0.75 m, and the arm is at its goal."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 24 (elevator 0.7317-0.7344 m, arm 90.2 degrees at HOLDING)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "0.73 m (prose, Figure 24.2's alt text and prose)"
+unit = "m"
+range = [0.725, 0.735]
+measured = "0.7317-0.7344 m over 12 runs; 0.73438 m in Figure 24.2's data"
+figure = "24-capture-cycle.png"
+
+[[claim]]
+id = "l24.scoring-ticks"
+kind = "number"
+library = ["commandsv3", "phoenix6", "wpilib"]
+criticality = "C2"
+statement = "SCORING lasts one or two ticks: the sim drops the piece the instant the roller reverses, so the state goes SCORING then IDLE on the next tick."
+evidence = "CLAUDE.md, 'v3 Lessons 24-27 re-measured on alpha-8 with the committed Kraken constants', Lesson 24 (SCORING one tick after the trigger, IDLE one tick later); 'v3 Lesson 24 (superstructure) on alpha-7' (SCORING lasts one or two ticks)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "a one-or-two-tick flicker; the next tick is SCORING, and the tick after that is IDLE"
+unit = "ticks"
+range = [1.0, 2.0]
+measured = "1 tick in Figure 24.2's data (tick 529 SCORING, 530 IDLE) and in the 12 runs"

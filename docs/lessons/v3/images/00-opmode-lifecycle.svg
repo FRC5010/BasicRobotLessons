@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 430" width="800" height="430" font-family="sans-serif">
+<defs><marker id="a777777" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="17" markerHeight="17" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#777777"/></marker></defs>
+<rect x="0" y="0" width="800" height="430" fill="#ffffff"/>
+<rect x="30" y="220" width="200" height="70" rx="0" fill="#EEEEEE" stroke="#777777" stroke-width="2"/>
+<text x="130.0" y="246.0" font-size="16" fill="#000000" text-anchor="middle" font-weight="bold">disabled</text>
+<rect x="230" y="220" width="310" height="70" rx="0" fill="#DDF3EB" stroke="#009E73" stroke-width="2"/>
+<text x="385.0" y="246.0" font-size="16" fill="#000000" text-anchor="middle" font-weight="bold">enabled</text>
+<rect x="560" y="220" width="210" height="70" rx="0" fill="#EEEEEE" stroke="#777777" stroke-width="2"/>
+<text x="665.0" y="246.0" font-size="16" fill="#000000" text-anchor="middle" font-weight="bold">disabled (new one)</text>
+<line x1="44" y1="260" x2="44" y2="280" stroke="#777777" stroke-width="3"/>
+<line x1="72" y1="260" x2="72" y2="280" stroke="#777777" stroke-width="3"/>
+<line x1="100" y1="260" x2="100" y2="280" stroke="#777777" stroke-width="3"/>
+<line x1="128" y1="260" x2="128" y2="280" stroke="#777777" stroke-width="3"/>
+<line x1="156" y1="260" x2="156" y2="280" stroke="#777777" stroke-width="3"/>
+<line x1="184" y1="260" x2="184" y2="280" stroke="#777777" stroke-width="3"/>
+<line x1="212" y1="260" x2="212" y2="280" stroke="#777777" stroke-width="3"/>
+<line x1="244" y1="260" x2="244" y2="280" stroke="#009E73" stroke-width="3"/>
+<line x1="258" y1="260" x2="258" y2="280" stroke="#009E73" stroke-width="3"/>
+<line x1="272" y1="260" x2="272" y2="280" stroke="#009E73" stroke-width="3"/>
+<line x1="286" y1="260" x2="286" y2="280" stroke="#009E73" stroke-width="3"/>
+<line x1="300" y1="260" x2="300" y2="280" stroke="#009E73" stroke-width="3"/>
+<line x1="314" y1="260" x2="314" y2="280" stroke="#009E73" stroke-width="3"/>
+<line x1="328" y1="260" x2="328" y2="280" stroke="#009E73" stroke-width="3"/>
+<line x1="342" y1="260" x2="342" y2="280" stroke="#009E73" stroke-width="3"/>
+<line x1="356" y1="260" x2="356" y2="280" stroke="#009E73" stroke-width="3"/>
+<line x1="370" y1="260" x2="370" y2="280" stroke="#009E73" stroke-width="3"/>
+<line x1="384" y1="260" x2="384" y2="280" stroke="#009E73" stroke-width="3"/>
+<line x1="398" y1="260" x2="398" y2="280" stroke="#009E73" stroke-width="3"/>
+<line x1="412" y1="260" x2="412" y2="280" stroke="#009E73" stroke-width="3"/>
+<line x1="426" y1="260" x2="426" y2="280" stroke="#009E73" stroke-width="3"/>
+<line x1="440" y1="260" x2="440" y2="280" stroke="#009E73" stroke-width="3"/>
+<line x1="454" y1="260" x2="454" y2="280" stroke="#009E73" stroke-width="3"/>
+<line x1="468" y1="260" x2="468" y2="280" stroke="#009E73" stroke-width="3"/>
+<line x1="482" y1="260" x2="482" y2="280" stroke="#009E73" stroke-width="3"/>
+<line x1="496" y1="260" x2="496" y2="280" stroke="#009E73" stroke-width="3"/>
+<line x1="510" y1="260" x2="510" y2="280" stroke="#009E73" stroke-width="3"/>
+<line x1="524" y1="260" x2="524" y2="280" stroke="#009E73" stroke-width="3"/>
+<line x1="574" y1="260" x2="574" y2="280" stroke="#777777" stroke-width="3"/>
+<line x1="602" y1="260" x2="602" y2="280" stroke="#777777" stroke-width="3"/>
+<line x1="630" y1="260" x2="630" y2="280" stroke="#777777" stroke-width="3"/>
+<line x1="658" y1="260" x2="658" y2="280" stroke="#777777" stroke-width="3"/>
+<line x1="686" y1="260" x2="686" y2="280" stroke="#777777" stroke-width="3"/>
+<line x1="714" y1="260" x2="714" y2="280" stroke="#777777" stroke-width="3"/>
+<line x1="742" y1="260" x2="742" y2="280" stroke="#777777" stroke-width="3"/>
+<text x="130.0" y="316.0" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">disabledPeriodic()</text>
+<text x="130.0" y="334.8" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">keeps ticking</text>
+<text x="385.0" y="316.0" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">periodic() ticks</text>
+<text x="385.0" y="334.8" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">about every 20 ms</text>
+<text x="665.0" y="316.0" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">the new one ticks</text>
+<text x="665.0" y="334.8" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">disabledPeriodic()</text>
+<line x1="30.0" y1="150.0" x2="30.0" y2="220.0" stroke="#0072B2" stroke-width="3"/>
+<text x="30.0" y="80.0" font-size="15" fill="#0072B2" text-anchor="start" font-weight="bold">constructor:</text>
+<text x="30.0" y="98.8" font-size="15" fill="#0072B2" text-anchor="start" font-weight="bold">MyTeleop(robot),</text>
+<text x="30.0" y="117.5" font-size="15" fill="#0072B2" text-anchor="start" font-weight="bold">when you pick it</text>
+<line x1="230.0" y1="150.0" x2="230.0" y2="220.0" stroke="#009E73" stroke-width="3"/>
+<text x="238.0" y="80.0" font-size="15" fill="#009E73" text-anchor="start" font-weight="bold">start()</text>
+<text x="238.0" y="98.8" font-size="15" fill="#009E73" text-anchor="start" font-weight="bold">on Enable</text>
+<line x1="540.0" y1="150.0" x2="540.0" y2="220.0" stroke="#009E73" stroke-width="3"/>
+<text x="532.0" y="80.0" font-size="15" fill="#009E73" text-anchor="end" font-weight="bold">end(), then close()</text>
+<text x="532.0" y="98.8" font-size="15" fill="#009E73" text-anchor="end" font-weight="bold">on Disable</text>
+<line x1="560.0" y1="150.0" x2="560.0" y2="220.0" stroke="#0072B2" stroke-width="3"/>
+<text x="568.0" y="80.0" font-size="15" fill="#0072B2" text-anchor="start" font-weight="bold">constructor again:</text>
+<text x="568.0" y="98.8" font-size="15" fill="#0072B2" text-anchor="start" font-weight="bold">a fresh MyTeleop(robot)</text>
+<text x="30.0" y="372.0" font-size="15" fill="#777777" text-anchor="start" font-weight="normal">Picking a different opmode also runs close() on the one you leave.</text>
+<text x="30.0" y="412.0" font-size="15" fill="#777777" text-anchor="start" font-weight="normal">time, left to right</text>
+<line x1="190.0" y1="407.0" x2="770.0" y2="407.0" stroke="#777777" stroke-width="2" marker-end="url(#a777777)"/>
+</svg>

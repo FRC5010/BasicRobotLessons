@@ -1,0 +1,282 @@
+# Claims about WPILib's tools: the installer, VS Code extension, SimGUI, AdvantageScope.
+# Format: tools/claims/README.md.
+
+[[claim]]
+id = "wpilib-tools.simgui-robot-state-panel"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C1"
+statement = "SimGUI's Robot State panel has a list of modes (Teleoperated, Autonomous, Utility), an OpMode drop-down that lists only the opmodes of the picked mode, and Enable/Disable; picking a mode attaches the simulated Driver Station."
+evidence = "CLAUDE.md, 'Batch 1 found', Fixed 2026-11-19: the SimGUI wording; 'v3 Lesson 17' (the DS window is Disconnected until attached). That the panel starts on 'Disconnected' is not separately recorded."
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib-tools.simgui-joystick-slots"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C1"
+statement = "SimGUI has no controller until one is dragged from System Joysticks (real devices and Keyboard 0, 1, ...) onto the Joystick[0] heading of the Joysticks panel; slot N is what CommandGamepad(N) reads, and Keyboard 0's bottom face button is the Z key."
+evidence = "CLAUDE.md, 'Batch 1 found' (Keyboard 0's bottom face button is the Z key; the Joysticks panel's button squares are indicators only) and 'Batch 3' SimGUI tips (W/S, A/D, E/R; drag onto the Joystick[N] header)"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib-tools.simgui-keyboard-keys"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C2"
+statement = "SimGUI's default Keyboard 0 has four buttons (0-3, Z X C V), three axes and a POV. In DS -> Keyboard 0 Settings, + under Buttons raises Count (to 15 for the D-pad) and + under Axes raises Count (to 6 for the triggers); clicking a button's (None) box, or an axis's Increase box, and pressing a key assigns it, and the comma, period and slash keys work (shown as Comma, Period, Slash). Keyboard Button N is Gamepad button N (Back 4, Start 6, left bumper 9, right bumper 10, D-pad 11-14) and Axis N is Gamepad axis N (left trigger 4, right trigger 5). The settings save to the project's simgui-ds.json as the sim runs and survive a restart. The robot reads nothing from the keyboard while Robot State shows Disconnected, though SimGUI's own Joystick[0] squares still light."
+evidence = "Checked in SimGUI on alpha-8 under Xvfb, 2026-11-20, Lesson 1 state with a sandbox-only logger of the robot's own Gamepad readings: B, N, M, Comma and I read true while held and false after (44-47 samples each), axes 4 and 5 rose to 1.000 on Period and Slash, simgui-ds.json held buttonCount 15, axisCount 6 and the keys after a restart, and every reading was 0 until Teleoperated was picked. Gamepad$Button and Gamepad$Axis values read from wpilibj-java-2027.0.0-alpha-8. Earlier: the D-pad keys checked on 2026-11-19."
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib-tools.simgui-keyboard-trigger-axis"
+kind = "behaviour"
+library = ["wpilib-tools", "commandsv3"]
+criticality = "C2"
+statement = "A Keyboard 0 axis given only an Increase key ramps from 0 to 1 while the key is held and decays back to 0 after release (Key Rate and Decay Rate default to 0.05 per GUI frame, Max Absolute Value 1.0), and CommandGamepad.leftTrigger()/rightTrigger() are axisGreaterThan(4 or 5, 0.5), so a held key counts as a pulled trigger within a fraction of a second."
+evidence = "Checked in SimGUI on alpha-8 under Xvfb, 2026-11-20 (robot's own reading, three 1.5 s holds and a 0.2 s tap per key): past 0.5 in 0.10-0.14 s, 1.000 every time including the tap, back under 0.5 0.12-0.14 s after release and 0 at about 0.2 s. CommandGamepad.leftTrigger() read with javap: leftTrigger(0.5) -> axisGreaterThan(LEFT_TRIGGER.value, 0.5)."
+measured_on = "alpha-8"
+method = "LOOP"
+note = "The rates are per GUI frame and Xvfb drew about 150 frames a second, so on a 60 Hz screen the ramp is likely about 2.5 times slower (inferred, not measured), which is why the lesson says only 'a fraction of a second'. Setting Key Rate to 1.0 made the axis reach 1 in one tick (measured once)."
+
+[[claim]]
+id = "wpilib-tools.simgui-other-devices-talonfx"
+kind = "behaviour"
+library = ["wpilib-tools", "phoenix6"]
+criticality = "C2"
+statement = "SimGUI's Other Devices panel lists the simulated TalonFX as 'Talon FX (v6)[ID]' with rows supplyVoltage, dutyCycle, motorVoltage, torqueCurrent and supplyCurrent."
+evidence = "CLAUDE.md, 'Batch 1 found', Lesson 1 and 'v3 Lesson 30' (Phoenix 6's sim devices are in Other Devices: Talon FX (v6)[1]); Figure 1.1's capture. The five row names are read from the lesson, not from a recorded listing."
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib-tools.simgui-networktables-view"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C2"
+statement = "SimGUI's NetworkTables menu lists only widgets; plain values such as Telemetry/DriveModule/CurrentCommand are in the NetworkTables View window (opened from that menu), under the Telemetry folder."
+evidence = "CLAUDE.md, 'Batch 2 found' (SimGUI's NetworkTables menu lists only widgets; plain values and AdvantageKit inputs are in the NetworkTables View window; Lessons 1 and 15 now say so)"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib-tools.simgui-map-gamepad"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C3"
+statement = "SimGUI's Joysticks panel has a 'Map gamepad' toggle, off by default, which the real Driver Station does implicitly so every gamepad reports its buttons in the same order."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson"
+measured_on = "unverified"
+
+[[claim]]
+id = "wpilib-tools.vscode-simulate-and-vendor-manager"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C2"
+statement = "In WPILib VS Code the WPILib icon / 'WPILib: Simulate Robot Code' builds and starts the simulation (asking Sim GUI or Real Driverstation), 'WPILib: Manage Vendor Libraries' lists Phoenix 6 and installs its vendordep, and 'WPILib: Build Robot Code' builds."
+evidence = "CLAUDE.md, 'v3 Lesson 30 (alerts) on alpha-7': 'VS Code's button is still unverified on alpha-7'; the vendor manager and build commands are not recorded at all"
+measured_on = "unverified"
+
+[[claim]]
+id = "wpilib-tools.advantagescope-connect"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C2"
+statement = "AdvantageScope ships in the WPILib installer, starts from the command palette's Start Tool, connects to a real robot with File > Connect to Robot and the team number, and opens a .wpilog file with File > Open Log(s)."
+evidence = "Stated by the lesson; nothing records checking it (CLAUDE.md: AdvantageScope isn't installed in the container). The menu items exist (wpilib-tools.advantagescope-file-menu, the user's screenshot), but nothing shows the installer, the Start Tool path, where the team number goes, or a log being opened. The lesson's old 'choose the default NetworkTables 4' was wrong: there is no such choice (the submenu's first item is Default: NetworkTables)."
+measured_on = "unverified"
+
+[[claim]]
+id = "wpilib-tools.advantagescope-file-menu"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C1"
+statement = "AdvantageScope's File menu has Open Log(s)... (Ctrl+O), Connect to Robot and Connect to Simulator; Connect to Simulator opens a submenu whose first item is Default: NetworkTables (Ctrl+Shift+K), above NetworkTables, NetworkTables (AdvantageKit), Systemcore Diagnostics, Phoenix Diagnostics, RLOG Server and FTC Dashboard; the window has a Line Graph tab."
+evidence = "Figure 3.1's top panel: a screenshot the user took on 2026-11-21 in their own AdvantageScope on Windows (version not recorded), tools/figures/data/03-advantagescope-file-menu.png. That the shortcut does the same as the menu item is the usual meaning of a shortcut shown beside it, not tested."
+measured_on = "alpha-8 (the user's AdvantageScope 27.0.0-alpha-6, WPILib distribution, from its About box on 2026-11-21, taken to be the version in all that day's screenshots)"
+figure = "03-advantagescope-tree-graph.png"
+
+[[claim]]
+id = "wpilib-tools.advantagescope-sidebar"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C2"
+statement = "Connected live to the simulator, AdvantageScope's title bar shows 127.0.0.1 and its sidebar lists each top-level NetworkTables folder at the top (Telemetry beside Robot and DriverStation, with no NetworkTables folder above them); a Line Graph has Left Axis, Discrete Fields and Right Axis lists under the plot, naming each field by its full path with an NT: prefix (NT:/Telemetry/DriveModule/VelocityRotPerSec)."
+evidence = "Figure 3.1's bottom panel: a screenshot the user took on 2026-11-21 in their own AdvantageScope (version not recorded), connected to the simulation of the Lesson 4 state (tools/figures/data/03-advantagescope-screenshot.png). It can't be repeated in this container: AdvantageScope isn't installed, and docs.advantagescope.org doesn't resolve through its proxy (2026-11-21). The lesson's earlier 'NetworkTables > Telemetry > DriveModule' path came from no record and was wrong."
+measured_on = "alpha-8 (the user's AdvantageScope 27.0.0-alpha-6, WPILib distribution, from its About box on 2026-11-21, taken to be the version in all that day's screenshots)"
+figure = "03-advantagescope-tree-graph.png"
+
+[[claim]]
+id = "wpilib-tools.installer-contents"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C3"
+statement = "The WPILib 2027 alpha installer (v2027.0.0-alpha-8 on the allwpilib releases page; .iso, .dmg or .tar.gz) with 'Everything' installs a separate 'WPILib VS Code 2027' with Eclipse Temurin 25, Gradle and the extension; its VS Code step ('Download for this computer only') fetches about 300 MB; its New Project wizard has an OpMode template without Commands V3."
+evidence = "CLAUDE.md, 'The v3 track builds on WPILib 2027 alpha-8' (GradleRIO 2027.0.0-alpha-8 builds the lessons); the installer itself was never run here, so nothing else in this claim is recorded"
+measured_on = "unverified"
+
+[[claim]]
+id = "wpilib-tools.vscode-debugger"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C3"
+statement = "In WPILib VS Code, 'WPILib: Simulate Robot Code' (with the debugger option) or F5 launches the simulation with the debugger attached, 'Debug Robot Code' deploys with it attached to a SystemCore, and a paused breakpoint freezes the whole robot loop and sim time."
+evidence = "Figure D.1: the user's screenshot (2026-11-21, Windows, tools/figures/data/aside-debugger-window.png) shows the WPILib Desktop Debug launch paused at a breakpoint in their Lesson 5 project, with Variables, Watch and Call Stack filled in. Not shown: which of the palette command or F5 started it, Debug Robot Code on a SystemCore, and sim time freezing (the screenshot can't show time)."
+measured_on = "the user's WPILib install, version not recorded (its JDK folder is 2027_alpha7, a name alpha-8 keeps too)"
+
+[[claim]]
+id = "wpilib-tools.simgui-alliance-station"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C1"
+statement = "SimGUI's DS window has an Alliance Station drop-down that is editable only while Robot State says Disconnected (plain text afterwards), and every launch starts on Red 1, which the first mode click pushes to the robot."
+evidence = "CLAUDE.md, 'v3 Lesson 17 runs on BLine', SimGUI starts every launch on Red 1 (alpha-7's DriverStationGui.cpp); Figure 17.3's screenshot"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "SOURCE"
+figure = "17-simgui-ds-window.png"
+
+[[claim]]
+id = "wpilib-tools.simgui-addressable-leds"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C2"
+statement = "SimGUI's Hardware menu has an Addressable LEDs item; the window opens as 10 columns by 4 rows for a 40-pixel strip, has a Columns setting that can be set to 40 for one line, and a screenshot catches only one phase of a blink."
+evidence = "CLAUDE.md, 'Figures in lessons', Batch 3: SimGUI's addressable LED strip is under Hardware -> Addressable LEDs ('LEDs[5]', 40 pixels), opens as 10 columns x 4 rows, and Lesson 23 tells the student to set Columns to 40"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib-tools.simgui-ds-alerts-window"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C3"
+statement = "SimGUI has a native Alerts window under DS -> Alerts, hidden by default, that reads the robot program's alerts directly and lists them sorted by level."
+evidence = "CLAUDE.md, 'The v3 track builds on WPILib 2027 alpha-8' (SimGUI has a native Alerts window, DS -> Alerts, #9353; on a fresh Lesson 30 launch it lists 'Elevator has never been homed')"
+measured_on = "alpha-8"
+method = "LOOP"
+
+[[claim]]
+id = "wpilib-tools.simgui-input-boolean-dropdown"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C2"
+statement = "SimGUI draws a SimDevice boolean created as INPUT as a false/true drop-down the user can change (read-only only for OUTPUT), and lists the Unplug switches at the bottom of the Other Devices window, below every expanded Talon FX node."
+evidence = "CLAUDE.md, 'v3 Lesson 30 (alerts) on alpha-7' (DeviceTree.cpp; clicked by hand: true raised the alert) and 'Batch 2 found' (Unplug switches are at the bottom of Other Devices, so scroll there)"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "wpilib-tools.driverstation-2027-shows-alerts"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C3"
+statement = "On a real robot, alerts are shown by the 2027 Driver Station app (WPILib's Systemcore testing notes list Alerts among the features only available in it)."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson, which quotes WPILib's Systemcore testing notes"
+measured_on = "unverified"
+
+[[claim]]
+id = "wpilib-tools.sysid-tool-fits-four-tests"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C2"
+statement = "The SysId analysis tool fits all four tests (slow and fast, forward and backward) in one least-squares regression with an acceleration term, V = kS*sgn(v) + kV*v + kA*a (written in the source as acceleration against speed, voltage and sign of speed, then divided), requires at least 2 steady-state velocity events and 1 acceleration event, and filters and trims the data its own way."
+evidence = "CLAUDE.md, 'v3 Lesson 33 §6-§7 rewritten as checking a characterization result': read from allwpilib tools/sysid/.../FeedforwardAnalysis.cpp and FilteringUtils.cpp at v2027.0.0-alpha-8. The tool itself has never been run here."
+measured_on = "alpha-8"
+method = "SOURCE"
+
+[[claim]]
+id = "wpilib-tools.sysid-tool-ui"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C3"
+statement = "The SysId tool is opened from the WPILib extension's tool launcher, reads a .wpilog in log-file mode (not live), and offers the 'flywheel' mechanism to fit kS/kV/kA to."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson (CLAUDE.md says the tool was never run here)"
+measured_on = "unverified"
+
+[[claim]]
+id = "wpilib-tools.advantagescope-swerve-tab"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C1"
+statement = "AdvantageScope opens a Swerve tab from Tabs > New Tab > Swerve (Alt+D); a SwerveModuleVelocity array (Lesson 7's ModuleStates, listed in the sidebar under Telemetry > Drivetrain) dragged into its Sources list shows as Module Velocities and draws one arrow per module, and a Rotation2d (Lesson 8's Heading) dragged into the same list shows as Rotation and turns the chassis drawing; the tab has Max Speed (m/s), Frame Size (m) and Orientation settings."
+evidence = "Figure 7.2: screenshots the user took on 2026-11-21 in their own AdvantageScope on Windows (version not recorded), connected to the simulation of the Lesson 7 state (tools/figures/data/07-advantagescope-new-tab.png, 07-advantagescope-swerve-tab.png, 07-advantagescope-pinwheel.png), a shot of the drop itself (not kept), and Figure 8.2's on the Lesson 8 state (08-advantagescope-swerve-rotation.png). The lessons' old 'NetworkTables/Telemetry/Drivetrain/ModuleStates into its States slot' and Lesson 8's 'Rotation slot' were wrong: everything goes in the Sources list. Whether Max Speed starts at 5 or was typed in isn't known."
+measured_on = "alpha-8 (the user's AdvantageScope 27.0.0-alpha-6, WPILib distribution, from its About box on 2026-11-21, taken to be the version in all that day's screenshots)"
+figure = "07-advantagescope-swerve-tab.png"
+
+[[claim]]
+id = "wpilib-tools.advantagescope-advantagekit-tree"
+kind = "behaviour"
+library = ["wpilib-tools", "advantagekit"]
+criticality = "C2"
+statement = "Connected live with Default: NetworkTables to a robot running AdvantageKit's NT4Publisher, AdvantageScope's sidebar has an AdvantageKit folder at the top (beside Telemetry), with each input under AdvantageKit > <key> (AdvantageKit > Elevator > HeightMeters) and each output under AdvantageKit > RealOutputs > <key>; a field on a graph is named NT:/AdvantageKit/... ."
+evidence = "Figure 18.3: a screenshot the user took on 2026-11-21 in their own AdvantageScope on Windows (version not recorded), connected to the simulation of the Lesson 18 state (tools/figures/data/18-advantagescope-elevator-graph.png). The Arm folder of Lesson 20 isn't in it, but it's the same publisher. The NetworkTables (AdvantageKit) source wasn't tried. Lessons 18, 20 and 21 had said 'NetworkTables > AdvantageKit > ...'."
+measured_on = "alpha-8 (the user's AdvantageScope 27.0.0-alpha-6, WPILib distribution, from its About box on 2026-11-21, taken to be the version in all that day's screenshots)"
+figure = "18-advantagescope-elevator-graph.png"
+
+[[claim]]
+id = "wpilib-tools.advantagescope-field-tabs"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C1"
+statement = "AdvantageScope's field tabs are 2D Field (Tabs > New Tab > 2D Field, Alt+2) and 3D Field (Alt+3); there's no tab called Odometry. A Pose2d dragged into a field tab's Poses list shows as Robot on the 2D tab (a red square with an arrow, leaving a trail) and as 2026 KitBot, a robot model, on the 3D tab; a Field drop-down at the bottom right picks the field (2026 Field, earlier FRC fields, Evergreen, Axes, and FTC fields)."
+evidence = "Figures 11.1 and 11.2: screenshots the user took on 2026-11-21 in their own AdvantageScope on Windows (version not recorded), connected to the simulation of the Lesson 11 state (tools/figures/data/11-advantagescope-new-tab.png, 11-advantagescope-2d-field.png, 11-advantagescope-3d-field.png). Lessons 11, 16, 17 and 22 had said 'Odometry tab' and Lesson 11 'the source dropdown'. Whether 2026 Field is the default isn't known."
+measured_on = "alpha-8 (the user's AdvantageScope 27.0.0-alpha-6, WPILib distribution, from its About box on 2026-11-21, taken to be the version in all that day's screenshots)"
+figure = "11-advantagescope-2d-field.png"
+
+[[claim]]
+id = "wpilib-tools.advantagescope-file-sources"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C3"
+statement = "With a log file open, AdvantageScope names its fields without the NT: prefix (/RealOutputs/Drivetrain/Pose, /ReplayOutputs/Drivetrain/Pose), crosses out a tab's source that named a live NetworkTables key the file doesn't have, and draws two poses in one 2D Field tab, one as a Ghost."
+evidence = "Figure 13.3: the user's screenshot (2026-11-21, Windows, Lesson 13 project, AdvantageScope version not recorded), tools/figures/data/13-advantagescope-replay-file.png. How the second pose came to be drawn as a Ghost (chosen, or AdvantageScope's default for a second source) isn't known, so the lesson doesn't say."
+measured_on = "alpha-8 (the user's AdvantageScope 27.0.0-alpha-6, WPILib distribution, from its About box on 2026-11-21, taken to be the version in all that day's screenshots)"
+figure = "13-advantagescope-replay-file.png"
+
+[[claim]]
+id = "wpilib-tools.advantagescope-pose-style-menu"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C3"
+statement = "In an AdvantageScope 2D Field tab, the small icon at the left of a Poses entry opens a menu: Alliance Color, Green, Red, Blue, Orange, Cyan, Yellow, Magenta, then the styles Robot, Ghost, Heatmap and Arrow (the last three with colour submenus), and Help. A new pose is drawn as a red Robot."
+evidence = "Figure 16.2's second panel: a screenshot the user took on 2026-11-21 in their own AdvantageScope on Windows (version not recorded), live on the Lesson 16 state (tools/figures/data/16-advantagescope-pose-style-menu.png); the user described opening it by clicking the icon. 'Starts out red' is from Figures 11.1 and 16.2 (both poses red until the user changed one); the user takes the default to be Alliance Color, red because SimGUI starts every launch on Red 1 (wpilib-tools.simgui-alliance-station), which fits the menu's first entry but wasn't tested on blue."
+measured_on = "alpha-8 (the user's AdvantageScope 27.0.0-alpha-6, WPILib distribution, from its About box on 2026-11-21, taken to be the version in all that day's screenshots)"
+
+[[claim]]
+id = "wpilib-tools.vscode-clean-java-workspace"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C3"
+statement = "VS Code's Command Palette (Ctrl+Shift+P) has 'Java: Clean Java Language Server Workspace', from the Language Support for Java extension; it asks for confirmation with Cancel and 'Reload and delete', and deletes the extension's cached workspace data (not the project's files), then reloads the window."
+evidence = "Figure R.1: screenshots the user took on 2026-11-21 in their own VS Code with WPILib on Windows (versions not recorded): tools/figures/data/readme-vscode-clean-java-command.png and readme-vscode-clean-java-confirm.png. The user runs it after every lesson update. That it removes only the extension's cache, not project files, is the command's documented purpose as recalled, not checked here; that it fixes stale errors after an update is the user's experience, not measured."
+measured_on = "the user's WPILib VS Code, version not recorded"
+
+[[claim]]
+id = "wpilib-tools.advantagescope-line-graph-discrete"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C3"
+statement = "AdvantageScope's Line Graph has Left Axis, Discrete Fields and Right Axis lists; a string such as Superstructure/State goes in Discrete Fields and draws as a coloured strip with each value written in it, and a value too short for its label shows as an unlabeled sliver."
+evidence = "Figure 25.4's bottom panel: a screenshot the user took on 2026-11-21 (Lesson 25 state, Pick Up on Blue 1). HOLDING (about 0.3 s) and SCORING (one tick) appear as one dark unlabeled sliver between HANDOFF and IDLE."
+measured_on = "alpha-8 (the user's AdvantageScope 27.0.0-alpha-6, WPILib distribution)"
+
+[[claim]]
+id = "wpilib-tools.advantagescope-popout"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C3"
+statement = "AdvantageScope can show a tab in a window of its own, from the overlapping-squares button at the top right of its window, (titled with the tab's name, e.g. 'Line Graph — AdvantageScope') beside the main window, both live at once."
+evidence = "Figure 25.5: a screenshot the user took on 2026-11-21 (Lesson 25 state, one Pick Up run on Blue 1). The user pops it out with a button at the top right of the main window (the overlapping squares, picked from a list of options on 2026-11-21); the icon wasn't seen pressed."
+measured_on = "alpha-8 (the user's AdvantageScope 27.0.0-alpha-6, WPILib distribution)"
+
+[[claim]]
+id = "wpilib-tools.advantagescope-field-orientation"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C2"
+statement = "AdvantageScope's 2D Field puts the origin at the blue alliance's corner but draws the 2026 field with that corner at the top right, so +X points left and +Y points down on screen; a future version is expected to move the origin to the field's centre."
+evidence = "The user, 2026-11-21: the blue-corner origin, the drawing turned upside-down from it (+X left, +Y down), 'the standard view', and a future release moving the origin to the centre (so statements should stay general). Consistent with Figures 17.6 (red alliance) and 25.4 and 25.5 (Blue 1), read from where the poses sit. Not checked against AdvantageScope's source or docs, which this container can't reach. Re-check when AdvantageScope changes the origin."
+measured_on = "alpha-8 (the user's AdvantageScope 27.0.0-alpha-6, WPILib distribution)"

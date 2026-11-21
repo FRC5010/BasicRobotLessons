@@ -26,7 +26,7 @@ Lesson 20 gave the arm a roller and a bumper to spin it. Ask yourself what the
 robot knows after the driver holds that bumper for a second.
 
 It knows the roller is turning. `Arm/RollerVelocityRotPerSec` will happily report
-sixty rotations a second whether the intake is full of game piece or full of air.
+sixty rotations a second whether the intake is full of game piece or full of air. <!-- claim: l22.roller-speed -->
 Nothing in the code so far can tell those two apart, which means every decision
 built on "we probably have one by now" is a guess — and a guess made by a driver
 watching from behind a wall, two seconds late.
@@ -52,7 +52,7 @@ What *is* new is which way round to wire it — and the interesting part is that
 Lesson 21's answer is the wrong one here.
 
 Run the same reasoning. Every DIO channel pulls up to high on its own, so a sensor
-that loses its wire reads `true`. Now ask what each stuck reading costs you:
+that loses its wire reads `true`. <!-- claim: wpilib.dio-pullup-high --> Now ask what each stuck reading costs you:
 
 - **Stuck on "there's a piece."** The automatic handoff fires at nothing. The arm
   swings up on its own while the driver is doing something else. The score
@@ -66,7 +66,7 @@ from the limit switch, where the safe stuck-reading was "stop."
 
 Since a disconnected channel reads high, that means high has to mean *no piece*:
 wire or configure the sensor so that a **broken beam pulls the line low**, and
-read it as `!get()`.
+read it as `!get()`. <!-- claim: wpilib.dio-pullup-high -->
 
 > **The rule isn't about the sensor, it's about the consequence.** Ask what
 > happens if this reading gets stuck, pick the direction whose failure you'd
@@ -113,7 +113,7 @@ robot starts, which is on purpose. You'll drive to it in section 8.
 One more input, same as every sensor since Lesson 13. It lands in the log, where
 you can see exactly when the robot believed it was holding something, without a
 line of logging code: `processInputs` records every field of the arm's bundle,
-so a new field shows up as `Arm/HasGamePiece` on its own.
+so a new field shows up as `Arm/HasGamePiece` on its own. <!-- claim: advantagekit.autolog-key-names -->
 
 **Add to `ArmIOInputs` in `ArmIO.java`:**
 
@@ -302,11 +302,11 @@ intake knows:**
 
 The intake holds one piece, so the moment it catches one it stops looking —
 that's what the `break` is for. And the last few lines record where the pieces
-are, as poses, which is the shape AdvantageScope draws on its field. It's an
+are, as poses, which is the shape AdvantageScope draws on its field. <!-- claim: advantagekit.record-output-wpilib-types --> It's an
 output, like Lesson 16's `Drivetrain/SimulatedPose`, and for the same reason it
 only exists in simulation: a replay builds no `ArmIOSim` and has no field, so it
 gets the beam break's answer straight from the log, and the pieces show up only
-under `RealOutputs`.
+under `RealOutputs`. <!-- claim: advantagekit.replay-file-layout -->
 
 **Add two methods to `ArmIOSim`, below `updateInputs`. First, the roller reaching
 into the world:**
@@ -353,8 +353,20 @@ is described from the robot: "just past the front bumper, a foot deep, two feet
 wide." To compare the two, put the piece in the robot's terms — subtract where
 the robot is, so the robot is at the origin, then undo the robot's heading with
 `rotateBy` its opposite, so "ahead of the robot" is the x direction. After that,
-"is it in the box?" is three plain comparisons. You'll meet this exact move again
+"is it in the box?" is three plain comparisons. <!-- claim: wpilib.translation2d-frame-transform --> You'll meet this exact move again
 any time the robot has to reason about something on the field.
+
+<a id="figure-22-1"></a>
+![Top: the field's frame, with the piece at (4.5, 3.2) and a tilted robot and intake box. Middle: two steps, subtract the robot's position, then rotate by the robot's opposite heading. Bottom: the robot's frame, with the robot square at the origin facing right, the intake box just past its front edge, and the piece inside the box.](images/22-intake-box-frames.svg)
+
+*Figure 22.1 — The same piece and intake box, in the field's frame and in the robot's.*
+
+Figure 22.1 shows the two frames. In the top picture the box is tilted
+with the robot, so asking "is the piece inside it?" means working out where a
+slanted rectangle is. After the two steps in the middle, the robot sits
+at the origin facing +x, the box is a plain rectangle, and the piece is at a
+number you can compare directly. (The robot pose in the figure is only an
+example, chosen so the piece lands inside the box.)
 
 The comment in `updateInputs` is the whole section. In simulation you can now hold
 the intake button down in the middle of an empty field for as long as you like and
@@ -390,11 +402,11 @@ someTrigger.debounce(ArmConstants.kBeamDebounce)
 
 It makes a new `Trigger` that only goes true once the original has been true
 *continuously* for that long — and it takes the `Time` constant as it is, no
-unpacking to seconds. Worth knowing exactly what it does at each edge: the
+unpacking to seconds. <!-- claim: commandsv3.trigger-combinators --> Worth knowing exactly what it does at each edge: the
 one-argument version debounces **rising edges only**, so it delays believing
 "yes" while reporting "no" the instant the signal drops. That's the right shape
 here. Be sure before you commit to an automatic sequence; notice a dropped piece
-immediately.
+immediately. <!-- claim: commandsv3.debounce-rising -->
 
 > In this simulation the signal is clean — a captured piece stays captured, so
 > you won't see the debounce do anything at all. That's fine. It costs nothing
@@ -423,10 +435,10 @@ triggerA.and(triggerB).and(triggerC).whileTrue(someCommand)
 Each `.and(...)` builds a new `Trigger` whose boolean is both of its parts, and
 the scheduler polls the whole thing every tick like any other. The command runs
 while all three hold and stops when any one of them stops — and you didn't write a
-single `if`.
+single `if`. <!-- claim: commandsv3.trigger-combinators -->
 
 `.and(...)` takes any `BooleanSupplier`, which means a method reference works just
-as well as another `Trigger`. `robot.arm::hasGamePiece` slots straight in.
+as well as another `Trigger`. `robot.arm::hasGamePiece` slots straight in. <!-- claim: commandsv3.trigger-combinators -->
 
 ---
 
@@ -468,11 +480,11 @@ later, finally doing the thing it was built for.
 
 Parallel is a choice, not a rule. If the arm had to clear the frame before the
 elevator could move, `Command.sequence(...)` would be the answer instead, and
-nothing else about the binding would change.
+nothing else about the binding would change. <!-- claim: commandsv3.parallel-race-optional, commandsv3.sequence-requires-union -->
 
 Notice also what the capture binding does to the driver's roller button. They're
 holding the right bumper, the piece gets caught, and this command takes the arm —
-which interrupts `runRoller`, which stops the roller. That's the behavior you
+which interrupts `runRoller`, which stops the roller. <!-- claim: commandsv3.conflicting-command-interrupts --> That's the behavior you
 want, and you got it for free from the scheduler's requirement rules rather than
 by writing any of it.
 
@@ -480,28 +492,28 @@ by writing any of it.
 
 ## 8. Run it
 
-Run the robot in simulation and go **Teleoperated**. Open AdvantageScope with an
-**Odometry** tab showing `Drivetrain/SimulatedPose` — where the robot really is —
+Run the robot in simulation and go **Teleoperated**. Open AdvantageScope with a
+**2D Field** tab showing `Drivetrain/SimulatedPose` — where the robot really is —
 and `Sim/GamePieces` (both under **AdvantageKit → RealOutputs**), plus a graph of
 `Arm/HasGamePiece` and `Arm/RollerVelocityRotPerSec` (under **AdvantageKit →
 Arm**).
 
 **Home the elevator first** (Back), the way Lesson 21 taught you — or wait the
-eighteen seconds it takes to land on its switch by itself. A catch is about to
+eighteen seconds it takes to land on its switch by itself. <!-- claim: l22.land-time, wpilib.elevator-sim-sinks-unpowered --> A catch is about to
 send the elevator to a height, and that height should mean something.
 
-First, prove the point. Press the left face button (X) to drop the arm to the
-floor, then hold the **right bumper** and just sit there in open field. The roller
-trace climbs to about sixty rotations a second. `HasGamePiece` stays flat
+First, prove the point. Press the left face button (X on an Xbox pad, **C** on the keyboard) to drop the arm to the
+floor, then hold the **right bumper** (**,**) and just sit there in open field. The roller
+trace climbs to about sixty rotations a second. <!-- claim: l22.roller-speed --> `HasGamePiece` stays flat
 `false`. Spinning is not holding, and now the robot agrees.
 
 > Drop the arm *before* you hold the bumper. The arm's motor and the roller belong
 > to the same mechanism, so the arm button takes it over and stops the roller —
-> the same rule that's about to work in your favor.
+> the same rule that's about to work in your favor. <!-- claim: commandsv3.conflicting-command-interrupts -->
 
 Now, with the bumper still held, drive straight ahead toward the piece in front of
 you. The moment it reaches the box just past the bumper — when its center is about
-0.6 m ahead of the robot's:
+0.6 m ahead of the robot's: <!-- claim: l22.catch-distance -->
 
 - `Arm/HasGamePiece` flips to `true`.
 - The arm swings up to 90° and the elevator rises to 0.75 m, together, because one
@@ -513,7 +525,7 @@ Watch it happen on the **Mechanism** tab from Lesson 19 while you're at it
 (`/AdvantageKit/RealOutputs/Elevator/Mechanism`). Both segments of the stick figure move at once,
 off a boolean.
 
-Then pull the **right trigger**. The piece is ejected and lands back on the field
+Then pull the **right trigger** (hold **/** on the keyboard). The piece is ejected and lands back on the field
 0.8 m in front of the robot's center, `HasGamePiece` goes false, the roller stops
 the instant it does, and you can go and collect the piece again. Pull the trigger
 with an empty intake and nothing happens at all — the `.and(...)` chain simply
@@ -540,7 +552,7 @@ bumper again — and it's caught at once.
 2. **Make it twitchy.** In `ArmIOSim`, report `hasGamePiece` as true only on
    every other tick while a piece is held. Watch `HasGamePiece` flicker and the
    capture never happen: the debounce never sees a tenth of a second of steady
-   "yes." Then take the `.debounce(...)` line out and watch the capture fire on
+   "yes." <!-- claim: commandsv3.debounce-rising --> Then take the `.debounce(...)` line out and watch the capture fire on
    the very first flicker. Neither is what you want from a sensor that flickers
    forever — which is the point. A debounce smooths a sensor that settles; one
    that never settles needs its wiring looked at.
@@ -565,7 +577,7 @@ how to read, and the interesting work was everything around it.
 **The safe failure direction is a property of the job.** Lesson 21's limit switch
 wanted to fail toward "stop"; this beam break wants to fail toward "I have
 nothing." Same hardware, same pull-up, opposite wiring, and the way you tell them
-apart is to ask what a stuck reading would make the robot do. That question is
+apart is to ask what a stuck reading would make the robot do. <!-- claim: wpilib.dio-pullup-high --> That question is
 worth asking of every sensor you ever add.
 
 **A simulated sensor has to be able to say no.** It would have been five minutes'

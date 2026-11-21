@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500" font-family="sans-serif">
+<defs><marker id="a000000" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="17" markerHeight="17" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#000000"/></marker><marker id="aD55E00" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="17" markerHeight="17" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#D55E00"/></marker></defs>
+<rect x="0" y="0" width="800" height="500" fill="#ffffff"/>
+<text x="400.0" y="28.0" font-size="18" fill="#000000" text-anchor="middle" font-weight="bold">Steer: the loop reads the CANcoder</text>
+<rect x="20" y="100" width="150" height="70" rx="8" fill="#E3F0FA" stroke="#0072B2" stroke-width="2"/>
+<text x="95.0" y="130.5" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">steer motor</text>
+<text x="95.0" y="149.2" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">rotor</text>
+<rect x="325" y="100" width="150" height="70" rx="8" fill="#DDF3EB" stroke="#009E73" stroke-width="2"/>
+<text x="400.0" y="130.5" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">CANcoder</text>
+<text x="400.0" y="149.2" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">on the wheel</text>
+<rect x="630" y="100" width="150" height="70" rx="8" fill="#EEEEEE" stroke="#777777" stroke-width="2"/>
+<text x="705.0" y="130.5" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">wheel angle</text>
+<text x="705.0" y="149.2" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">(the mechanism)</text>
+<line x1="170.0" y1="135.0" x2="325.0" y2="135.0" stroke="#000000" stroke-width="3" marker-end="url(#a000000)"/>
+<line x1="475.0" y1="135.0" x2="630.0" y2="135.0" stroke="#000000" stroke-width="3" marker-end="url(#a000000)"/>
+<text x="247.0" y="126.0" font-size="17" fill="#000000" text-anchor="middle" font-weight="bold">25 : 1</text>
+<text x="247.0" y="196.0" font-size="14" fill="#000000" text-anchor="middle" font-weight="normal">RotorToSensorRatio</text>
+<text x="552.0" y="126.0" font-size="17" fill="#000000" text-anchor="middle" font-weight="bold">1 : 1</text>
+<text x="552.0" y="196.0" font-size="14" fill="#000000" text-anchor="middle" font-weight="normal">SensorToMechanismRatio</text>
+<path d="M400,98 C400,48 95,48 95,98" fill="none" stroke="#D55E00" stroke-width="3" marker-end="url(#aD55E00)"/>
+<text x="420.0" y="78.0" font-size="15" fill="#D55E00" text-anchor="start" font-weight="bold">the TalonFX's 1 kHz loop reads this sensor</text>
+<text x="400.0" y="222.0" font-size="14" fill="#777777" text-anchor="middle" font-weight="normal">kSteerGearRatio = 25.0 (rotor : CANcoder)</text>
+<text x="400.0" y="275.0" font-size="18" fill="#000000" text-anchor="middle" font-weight="bold">Drive: the loop reads its own rotor</text>
+<rect x="20" y="305" width="150" height="70" rx="8" fill="#E3F0FA" stroke="#0072B2" stroke-width="2"/>
+<text x="95.0" y="335.5" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">drive motor</text>
+<text x="95.0" y="354.2" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">rotor (the sensor)</text>
+<rect x="630" y="305" width="150" height="70" rx="8" fill="#EEEEEE" stroke="#777777" stroke-width="2"/>
+<text x="705.0" y="335.5" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">wheel</text>
+<text x="705.0" y="354.2" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">(the mechanism)</text>
+<line x1="170.0" y1="340.0" x2="630.0" y2="340.0" stroke="#000000" stroke-width="3" marker-end="url(#a000000)"/>
+<text x="400.0" y="331.0" font-size="17" fill="#000000" text-anchor="middle" font-weight="bold">6.75 : 1</text>
+<text x="400.0" y="367.0" font-size="14" fill="#000000" text-anchor="middle" font-weight="normal">SensorToMechanismRatio</text>
+<text x="400.0" y="405.0" font-size="14" fill="#777777" text-anchor="middle" font-weight="normal">kDriveGearRatio = 6.75 (rotor : wheel)</text>
+<rect x="20" y="430" width="760" height="62" rx="8" fill="#FFF8F3" stroke="#D55E00" stroke-width="2"/>
+<text x="400.0" y="455.0" font-size="16" fill="#000000" text-anchor="middle" font-weight="bold">The ratio before the sensor is RotorToSensorRatio.</text>
+<text x="400.0" y="479.0" font-size="16" fill="#000000" text-anchor="middle" font-weight="bold">The ratio after the sensor is SensorToMechanismRatio.</text>
+</svg>

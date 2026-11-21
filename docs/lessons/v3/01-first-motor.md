@@ -9,7 +9,8 @@ spin at a fixed speed while you hold a button.
 - **Constructors** (the setup method that runs when an object is created)
 - **`import`** (borrowing classes from other packages)
 - **`private` / `public`** (encapsulation — who's allowed to touch what)
-- A **`List`**, and asking it for an item by number
+- A **`List`**: asking whether it's empty, and asking it for an item by number
+- **`if` / `else`** (do one thing or the other)
 
 **New robot concepts**
 - Adding a vendor library (Phoenix 6)
@@ -30,12 +31,12 @@ manager for these — all clicking, no downloads, no URLs:
 
 1. Click the **WPILib icon** in VS Code's left sidebar (or open the command
    palette with Ctrl+Shift+P → **WPILib: Manage Vendor Libraries**) to open
-   the vendor dependency manager.
+   the vendor dependency manager. <!-- claim: wpilib-tools.vscode-simulate-and-vendor-manager -->
 2. In the list of available dependencies, find **Phoenix 6** and install it.
 3. Rebuild: `./gradlew build`. (Ctrl-Shift-P **WPILib: Build Robot Code**)
 
 A new file appears under `vendordeps/`. GradleRIO finds it automatically —
-you never edit `build.gradle` for this.
+you never edit `build.gradle` for this. <!-- claim: gradlerio.vendordeps-auto-loaded -->
 
 > **Why isn't this just part of WPILib?** WPILib ships the core robot
 > framework. Hardware makers (CTRE, REV, etc.) ship *their* code separately
@@ -64,7 +65,7 @@ TalonFX driveMotor = new TalonFX(1, new CANBus(CANPort.CAN_S0));
 
 Read it right-to-left: `new TalonFX(1, new CANBus(CANPort.CAN_S0))` builds a
 TalonFX object for the motor at CAN ID 1, on SystemCore's first built-in CAN
-bus. `TalonFX driveMotor` declares a **variable** of type `TalonFX` named
+bus. <!-- claim: phoenix6.talonfx-canbus-constructor --> `TalonFX driveMotor` declares a **variable** of type `TalonFX` named
 `driveMotor` to hold it. From here on, `driveMotor` is your handle to that
 motor — when you want the physical thing to do something, you talk to this
 object.
@@ -72,7 +73,7 @@ object.
 A robot can have more than one CAN bus, so a `TalonFX` needs to be told
 which one to listen on. `CANPort.CAN_S0` names the first one — the one your
 motor is actually wired to — and `new CANBus(...)` builds the bus object
-from that name.
+from that name. <!-- claim: phoenix6.talonfx-canbus-constructor -->
 
 ---
 
@@ -137,7 +138,7 @@ scheduler manage it and hand it commands. This line is what plugs
 `DriveModule` into the heartbeat from Lesson 0. `Mechanism` is an
 **interface** rather than a regular class — that's why the keyword is
 `implements`, not `extends` — but it works the same way for you as a
-student: type it, and your class gets that machinery for free.
+student: type it, and your class gets that machinery for free. <!-- claim: commandsv3.mechanism-no-default-command, commandsv3.mechanism-registers-with-scheduler -->
 
 The second line is a **field**: a variable that belongs to the object
 itself rather than to any one method. The distinction matters. A variable
@@ -208,7 +209,7 @@ command so it can talk back. (You'll meet more of what it can do soon.)
 Inside, `m_driveMotor.setThrottle(fraction)` sets the motor once —
 `setThrottle(0.3)` means "30% power" — and `coroutine.park()` tells the
 scheduler "hold here — don't do anything else, just keep this command alive
-until something cancels it."
+until something cancels it." <!-- claim: commandsv3.coroutine-command-api, phoenix6.talonfx-set-throttle -->
 That's exactly what "spin while the button is held" needs: set the speed
 once, then wait.
 
@@ -217,17 +218,17 @@ cancels this command — releasing the button, another command taking over
 the motor — this runs first, setting the motor back to zero. Why insist on
 that? Because motors **hold** whatever value you last set. Nothing stops
 the wheel unless some code commands `0`, and `.whenCanceled(...)` makes that
-cleanup easy to add and easy to spot.
+cleanup easy to add and easy to spot. <!-- claim: commandsv3.when-exited-on-cancel, phoenix6.control-request-persists -->
 
 Then `.named("Drive At Speed")` gives the command a name. Every command in
 this course gets one — it's how you'll recognize your own commands later,
 in logs and on screen.
 
 > **Watch out:** motors do **not** stop on their own when a command ends.
-> `set(fraction)` writes a value that the motor keeps applying until
+> `setThrottle(fraction)` writes a value that the motor keeps applying until
 > something overwrites it. Leave off `.whenCanceled(...)` and the wheel
 > keeps spinning after you release the button — the scheduler stops
-> *running* the command, but nobody ever commands `0`. Explicit stop, every
+> *running* the command, but nobody ever commands `0`. <!-- claim: phoenix6.control-request-persists --> Explicit stop, every
 > time. If you take one habit from this lesson, take that one.
 
 ### Check your work
@@ -271,7 +272,7 @@ public class DriveModule implements Mechanism {
 > **Why return commands instead of just spinning the motor?** This is where
 > `private` pays off. The motor is hidden, so the *only* way anything
 > outside this class can move it is by asking for a command — and the
-> scheduler guarantees only one command controls a mechanism at a time. If
+> scheduler guarantees only one command controls a mechanism at a time. <!-- claim: commandsv3.default-command-runs-when-idle --> If
 > two things try to drive the module at once, the scheduler sorts it out
 > instead of the motor getting conflicting orders. You get that safety for
 > free.
@@ -291,7 +292,7 @@ thrown away and **rebuilt fresh every time you pick it** on the Driver
 Station — including the ordinary switch from autonomous to teleop in a real
 match. A motor needs to exist exactly once, the same way `Robot` does. So
 the motor — and the controller you're about to add — belong on `Robot`, and
-opmodes just reach in and use them.
+opmodes just reach in and use them. <!-- claim: wpilib.robot-built-once, wpilib.opmode-lifecycle -->
 
 Open `Robot.java`. You're making two small edits.
 
@@ -308,7 +309,7 @@ public class Robot extends OpModeRobot {
 Two new fields, both built with `new`, both handles to a real thing.
 `CommandGamepad(0)` is your handle to the driver's controller — the `0` is a
 **USB port number** on the driver station: controller 0 is the first one
-plugged in. Keep that `0` in mind — you'll need it again in a minute when
+plugged in. <!-- claim: commandsv3.command-gamepad-api --> Keep that `0` in mind — you'll need it again in a minute when
 you tell the simulator which device to feed it. `DriveModule()` is the
 moment your mechanism actually gets built — it runs everything you wrote in
 section 3, including `new TalonFX(...)`, which brings the motor object to
@@ -347,14 +348,14 @@ commands so only one runs a mechanism at a time. Time to meet it directly,
 because it has one job nobody does for it automatically: something has to
 tell it to check its triggers and run its commands, every single tick.
 `implements Mechanism` back in `DriveModule` already registered your module
-with it; that registration doesn't make anything happen by itself.
+with it; that registration doesn't make anything happen by itself. <!-- claim: commandsv3.mechanism-registers-with-scheduler -->
 
 Lesson 0 introduced the **heartbeat**: `OpModeRobot` calls a fixed set of
 your methods on a schedule, forever, whether or not you've overridden them.
 One of those is `robotPeriodic()` — it runs every single tick, no matter
 which opmode is selected and whether the robot is enabled or disabled. That
 makes it exactly the right place for something that has to keep running no
-matter what.
+matter what. <!-- claim: wpilib.robot-periodic-always -->
 
 **Add to `Robot`, below the constructor:**
 
@@ -367,7 +368,7 @@ matter what.
 
 `Scheduler.getDefault()` is the one scheduler every mechanism and every
 trigger plugs into automatically — `DriveModule` joined it the moment
-`implements Mechanism` ran. Calling `.run()` on it is the tick: check every
+`implements Mechanism` ran. <!-- claim: commandsv3.mechanism-registers-with-scheduler --> Calling `.run()` on it is the tick: check every
 trigger, hand out and step every command that should be running right now.
 Skip this line and none of it moves — buttons would sit there fully wired
 and nothing would ever happen when you pressed one.
@@ -378,13 +379,14 @@ and nothing would ever happen when you pressed one.
 import org.wpilib.command3.Scheduler;
 ```
 
-> **Watch out:** this scheduler doesn't check whether the robot is enabled
-> before it runs commands — `robotPeriodic()` fires on every tick,
-> disabled or not, and `Scheduler.run()` doesn't ask. What actually keeps a
-> disabled robot from moving is the motor hardware itself: a TalonFX
-> refuses to apply power while the robot is disabled, no matter what your
-> code commands. Real safety net, just not a software one — worth knowing
-> your code isn't the thing enforcing it.
+> **Watch out:** `robotPeriodic()` fires on every tick, disabled or not, so
+> `Scheduler.run()` runs while the robot is disabled too. That's where the
+> safety comes in: the moment the robot disables, the scheduler cancels
+> every running command that needs a mechanism (`driveAtSpeed` needs
+> `module`), and it won't run one again until you enable. The motor
+> hardware has a safety net of its own underneath: a TalonFX refuses to
+> apply power while the robot is disabled, no matter what your code
+> commands. <!-- claim: commandsv3.disable-cancels-mechanism-commands, commandsv3.disabled-scheduler-refuses-commands, phoenix6.talonfx-no-output-when-disabled -->
 
 ---
 
@@ -396,7 +398,7 @@ that's your way in.
 `CommandGamepad` gives you a method per button — `faceDown()`,
 `faceRight()`, `leftBumper()`, and so on, named by where the button sits on
 the pad rather than by letter. On a standard controller layout,
-`faceDown()` is the bottom face button — the one an Xbox pad labels A.
+`faceDown()` is the bottom face button — the one an Xbox pad labels A. <!-- claim: commandsv3.command-gamepad-api -->
 Each one hands back a **`Trigger`**: an object that knows how to answer "is
 that button down right now?" and, more usefully, lets you attach a command
 to it.
@@ -415,21 +417,28 @@ to it.
 **What that line says:** while the bottom face button is held (`whileTrue`),
 schedule the command that `driveAtSpeed(0.3)` returns. When you let go, the
 scheduler cancels it — and because the command was built with
-`.whenCanceled(...)`, the cleanup fires and the motor stops. One more thing
+`.whenCanceled(...)`, the cleanup fires and the motor stops. <!-- claim: commandsv3.when-exited-on-cancel, commandsv3.command-gamepad-api --> One more thing
 worth noticing: this line runs *once*, when `MyTeleop` is constructed. It
 doesn't press anything — it registers the wiring, and the scheduler does the
 watching from then on, tick after tick, all match long.
 
-**Why the constructor, and not `start()`?** Bindings like this one belong in
-the constructor because the constructor itself only runs once — the instant
-`MyTeleop` is built, when you select it on the Driver Station. `start()`
-runs on a different schedule: every time the robot goes from disabled to
-enabled, which happens more than once per opmode — toggle **Robot State**
-off and back on in SimGUI and watch. Wire a button in `start()` and you'd
-register a fresh binding on top of the old one each time the robot
-re-enables. Put the wiring in the constructor instead, and it's registered
-exactly once, then just sits there working for as long as this opmode stays
-selected.
+**Why the constructor, and not `start()`?** Because they answer different
+questions. The constructor runs when the framework *builds* `MyTeleop`,
+while the robot is still disabled, so it's the place to say what this opmode
+*is*: which button does what. `start()` runs at the moment you click
+**Enable**, so it's for things that should happen right then, like Lesson
+0's hello message. Wiring the buttons in the constructor means they're ready
+before you ever enable, and if a line of it throws an error, you find out
+when you pick the opmode, not when the robot starts moving. <!-- claim: wpilib.opmode-lifecycle -->
+
+One fact about the framework surprises people, so it's worth knowing now:
+**an opmode doesn't live forever.** The framework builds a fresh `MyTeleop`
+when you pick it, and throws it away and builds another every time you click
+**Disable**. Lesson 0's [Figure 0.1](00-orientation.md#figure-0-1) draws the
+whole life. So the constructor runs once for every enable, the same as
+`start()`. <!-- claim: wpilib.opmode-lifecycle --> That's also why the `DriveModule` lives in `Robot` and not in `MyTeleop`:
+`Robot` is built once, when the program starts, and keeps its fields for
+good, while anything you store in a `MyTeleop` field is gone after a Disable. <!-- claim: wpilib.robot-built-once -->
 
 ---
 
@@ -442,33 +451,48 @@ doesn't pick one up on its own, and this is the step everybody misses the
 first time — then spends ten minutes convinced their perfectly good binding
 is broken.
 
-Two panels do the work. **System Joysticks** lists what your laptop
+Two panels do the work, and Figure 1.1 shows where they are and what the
+drag looks like. **System Joysticks** (1 in the figure) lists what your laptop
 currently has attached: any real controllers, plus a few entries named
-**Keyboard 0**, **Keyboard 1**, and so on. **Joysticks** is the panel your
+**Keyboard 0**, **Keyboard 1**, and so on. **Joysticks** (2) is the panel your
 robot code actually reads, and it's a set of numbered slots starting at 0.
 
-**Drag an entry from System Joysticks into slot 0 of the Joysticks panel.**
-If you have a controller plugged in, drag that. If you don't, drag
-**Keyboard 0** and your keyboard will stand in for one — that's how most of
-this course gets driven.
+**Drag an entry from System Joysticks onto the `Joystick[0]` heading of the
+Joysticks panel.** The heading is the slot. If you have a
+controller plugged in, drag that. If you don't, drag **Keyboard 0** and your
+keyboard will stand in for one — that's how most of this course gets driven.
+When it works, the slot fills in with the controller's name and a list of its
+axes, as in the bottom half of the figure. <!-- claim: wpilib-tools.simgui-joystick-slots -->
+
+<a id="figure-1-1"></a>
+![SimGUI's System Joysticks panel with Keyboard 0 marked 1, an arrow from it to the Joystick[0] heading in the Joysticks panel marked 2, the same panel afterwards with slot 0 reading 16: Keyboard 0 and its axes, and the Other Devices panel marked 3 with the Talon FX's dutyCycle reading 0.25](images/01-simgui-joystick-slot.png)
+
+*Figure 1.1 — Drag Keyboard 0 (1) onto the Joystick[0] heading (2); the TalonFX's numbers show up in Other Devices (3).* <!-- claim: wpilib-tools.simgui-joystick-slots, wpilib-tools.simgui-other-devices-talonfx, l01.stalled-duty-cycle -->
 
 Slot 0 isn't an arbitrary choice. It's the `0` you just read in
 `CommandGamepad(0)`: your controller reads whichever slot number it was
 handed, so the field and the panel have to agree. Plug in a second
-controller someday and it goes in slot 1, with a `1` in its constructor.
+controller someday and it goes in slot 1, with a `1` in its constructor. <!-- claim: wpilib-tools.simgui-joystick-slots -->
 
-Pick **My Teleop** on the opmode selector, set **Robot State** to
-**Enabled**, and open the **Other Devices** panel, where the TalonFX turns
-up. Hold the bottom face button — on the controller, on the keyboard, or by
-clicking it in the Joysticks panel — and watch the motor's output jump to
-`0.3` and drop back to `0` when you let go. (On a real robot the wheel would
-spin. We'll get proper motion in the simulation lesson.)
+Pick **Teleoperated** and **MyTeleop** in the Robot State panel and click
+**Enable** (Lesson 0's [Figure 0.2](00-orientation.md#figure-0-2) shows
+where), then open the **Other Devices** panel (3), where the TalonFX turns up
+as **Talon FX (v6)[1]**. Open it, and open the **Talon FX (v6)[1]** inside it:
+its rows are `supplyVoltage`, `dutyCycle`, `motorVoltage`, `torqueCurrent` and
+`supplyCurrent`. <!-- claim: wpilib-tools.simgui-other-devices-talonfx --> Watch `dutyCycle`. Hold the bottom face button — on a
+controller, or on **Keyboard 0** the **Z** key, with the SimGUI window
+selected — and the output jumps from `0` to about `0.25` and drops back to `0`
+when you let go. <!-- claim: wpilib-tools.simgui-joystick-slots, l01.stalled-duty-cycle --> (It reads `0.25`, not the `0.3` your code asks for. The
+simulated motor has nothing to turn yet, so it stalls, and `torqueCurrent`
+pins at 119 A, which looks like Phoenix's default current limit trimming the
+output. Lesson 4 gives the motor something to spin. On a real robot the wheel
+would spin.) <!-- claim: l01.stalled-torque-current, phoenix6.stator-limit-caps-startup-voltage, phoenix6.talonfx-default-current-limits, phoenix6.sim-motor-stalls-without-physics -->
 
 > **Using a real gamepad?** Turn on the **Map gamepad** toggle underneath
 > the Joysticks panel. The real Driver Station quietly remaps gamepads so
 > every controller reports its buttons in the same order; SimGUI doesn't
 > bother unless you ask it to. Without that toggle, your buttons might not
-> land where your code expects.
+> land where your code expects. <!-- claim: wpilib-tools.simgui-map-gamepad -->
 
 A number changing in a panel isn't as satisfying as a wheel spinning. But
 that number *is* your code commanding a motor, because you pressed a
@@ -492,8 +516,12 @@ rule from section 3, and it means the scheduler can just be *asked*.
 ```java
 private void logRunningCommand() {
   List<Command> running = Scheduler.getDefault().getRunningCommandsFor(module);
-  Command current = running.get(0);
-  Telemetry.log("DriveModule/CurrentCommand", current.name());
+  if (running.isEmpty()) {
+    Telemetry.log("DriveModule/CurrentCommand", "none");
+  } else {
+    Command current = running.get(0);
+    Telemetry.log("DriveModule/CurrentCommand", current.name());
+  }
 }
 ```
 
@@ -518,32 +546,46 @@ import org.wpilib.telemetry.Telemetry;
 
 `getRunningCommandsFor(module)` hands back a **`List<Command>`** — a
 numbered collection, holding every command currently running on that
-mechanism. `.get(0)` asks for entry number zero. That only works because a
-mechanism can only ever have *one* command running on it at a time — the
-same rule you already learned in section 3. One owner, so entry zero is
-always the whole list.
+mechanism. A mechanism can only ever have *one* command running on it at a
+time — the same rule you already learned in section 3 — so the list holds
+one command or none. `.get(0)` asks for entry number zero: the one owner. <!-- claim: commandsv3.running-commands-for -->
+
+"None" is the case that matters. While the robot is disabled, nothing runs
+on the module at all, and asking an empty list for entry zero doesn't hand
+back "nothing" — it crashes the whole program. So the method checks first. <!-- claim: commandsv3.running-commands-for, commandsv3.disable-cancels-mechanism-commands -->
+`running.isEmpty()` is `true` when the list has nothing in it, and
+**`if (condition) { ... } else { ... }`** runs the first block when the
+condition is true and the second when it isn't: empty list, log `"none"`;
+otherwise, log the owner's name. You'll put `if` to work again in Lesson 2.
 
 Order matters here, and it's worth being deliberate about: `logRunningCommand()`
 has to run *after* `Scheduler.getDefault().run()`, not before. The scheduler
-doesn't know anything is running until it's actually ticked once — ask
-beforehand, on the very first frame of the whole program, and the list would
-be empty. `robotPeriodic()` already ticks first and reads second here, so
-this just slots in.
+only updates its list when it ticks — ask before the tick and you'd be
+reading what was running on the *previous* one. `robotPeriodic()` already
+ticks first and reads second here, so this just slots in. <!-- claim: commandsv3.running-commands-for -->
 
-Run it again, hold the bottom face button, and open **NetworkTables →
-Telemetry → DriveModule** in SimGUI or AdvantageScope. `CurrentCommand`
-reads `"DriveModule[IDLE]"` at rest — `Mechanism`'s own name for the fallback
-command every mechanism starts with, built from the mechanism's own class
-name — and flips to `"Drive At Speed"` the instant you hold the button, back
-to `"DriveModule[IDLE]"` the instant you let go. That's the payoff of
+Run it again, hold the bottom face button, and find **Telemetry →
+DriveModule** in SimGUI's NetworkTables tree (or AdvantageScope's). `CurrentCommand`
+reads `"none"` while nothing owns the module (before you enable, and at
+rest) and flips to `"Drive At Speed"` the instant you hold the button, back
+to `"none"` the instant you let go. Figure 1.2 shows both readings in SimGUI's
+**NetworkTables View** window (open it from the **NetworkTables** menu if it
+isn't showing): expand **Telemetry**, then **DriveModule**, and `CurrentCommand` is the value on the
+row beneath it. <!-- claim: wpilib-tools.simgui-networktables-view, wpilib.telemetry-log-publishes-under-telemetry --> (In SimGUI the bottom face button is the **Z** key, once
+Keyboard 0 is in slot 0.) That's the payoff of
 `.named(...)`: not decoration, an actual answer to
 "what is this thing doing right now," readable from a laptop instead of a
 debugger.
 
+<a id="figure-1-2"></a>
+![SimGUI's NetworkTables window twice, with Telemetry and DriveModule expanded: CurrentCommand reads "none" with nothing pressed, and "Drive At Speed" while the bottom face button is held](images/01-simgui-telemetry-drivemodule.png)
+
+*Figure 1.2 — `Telemetry/DriveModule/CurrentCommand` at rest, and while the bottom face button is held.* <!-- claim: wpilib.telemetry-log-publishes-under-telemetry, wpilib-tools.simgui-networktables-view -->
+
 > This is a small, direct version of something this course will keep
-> building on. It also has a quiet limitation: it only works because
-> everything you've built so far either parks or loops forever, so there's
-> always something running whenever you ask. Lesson 3 replaces the asking
+> building on. It also has a quiet limitation: it only sees what's
+> running at the moment it asks, once a tick, so a command that starts and
+> finishes between two asks never shows up. Lesson 3 replaces the asking
 > with listening — the scheduler announces what it's doing as it happens,
 > instead of waiting to be polled.
 
@@ -557,7 +599,7 @@ of the course.
 1. **Code — a reverse button.** Add a **second** button
    (`robot.driverController.faceRight()`) that drives at `-0.3` (reverse).
    Confirm both buttons fight for the motor cleanly — press both; the
-   scheduler lets the most-recently-scheduled one win.
+   scheduler lets the most-recently-scheduled one win. <!-- claim: commandsv3.default-command-runs-when-idle -->
 2. Change `m_driveMotor`'s CAN ID and rebuild. Nothing breaks in sim — IDs
    only matter on the real robot, but get in the habit of setting them
    deliberately.
@@ -593,14 +635,14 @@ every file you'll write from here on. On the robot side, mechanisms expose
 behavior as **command factory methods** that *return* commands, so the
 scheduler can manage who controls the hardware, and motors **hold the last
 value** you set — which is why a command that spins a motor pairs a start
-with a `.whenCanceled(...)` cleanup. You also learned where hardware
+with a `.whenCanceled(...)` cleanup. <!-- claim: phoenix6.control-request-persists --> You also learned where hardware
 belongs: on `Robot`, which is built once and lasts the whole time the robot
 runs, not on an opmode like `MyTeleop`, which gets rebuilt fresh every time
-it's selected. Right alongside that, you gave `Robot` one more permanent
+it's selected and after every Disable. <!-- claim: wpilib.robot-built-once --> Right alongside that, you gave `Robot` one more permanent
 job: ticking the **`Scheduler`** from `robotPeriodic()`, the one call that
 makes every trigger and every command actually run. You wired a real button
 to real behavior — in the constructor, not `start()`, because the
-constructor runs once and `start()` runs on every re-enable — and learned
+constructor says what the opmode is and runs before you enable — and learned
 that the simulator needs a joystick dragged into slot 0 before any of it
 responds — worth remembering, because that one bites people every season.
 Last, you cashed in `.named(...)`'s promise: asking the scheduler for a

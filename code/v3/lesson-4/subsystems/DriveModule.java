@@ -122,13 +122,6 @@ public class DriveModule implements Mechanism {
 
   /** Advances the physics model by one tick. Only ever called in simulation. */
   public void simulatePeriodic() {
-    /**
-     * ====== NEXT LESSON: ADD CODE HERE ======
-     * Step the steering motor's physics here too, alongside the drive motor's: the same
-     * four steps — supply voltage in, applied voltage out, advance the model, push the
-     * motion back into the fake encoder — for the second motor.
-     */
-
     // 1. Tell the sim the battery voltage available to the motor.
     m_driveSim.setSupplyVoltage(RobotController.getBatteryVoltage());
 
@@ -142,6 +135,13 @@ public class DriveModule implements Mechanism {
     // 4. Push the model's resulting motion BACK into the TalonFX's fake encoder.
     m_driveSim.setRawRotorPosition(m_driveModel.getAngularPosition() / (2 * Math.PI));
     m_driveSim.setRotorVelocity(m_driveModel.getAngularVelocity() / (2 * Math.PI));
+
+    /**
+     * ====== NEXT LESSON: ADD CODE HERE ======
+     * Step the steering motor's physics here too, after the drive motor's: the same
+     * four steps — supply voltage in, applied voltage out, advance the model, push the
+     * motion back into the fake encoder — for the second motor.
+     */
   }
 
   private void logTelemetry() {

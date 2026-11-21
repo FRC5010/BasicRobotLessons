@@ -243,6 +243,27 @@ class RealUpdate(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(deploy, 'autos')))  # emptied folders go too
         self.assertTrue(os.path.exists(os.path.join(deploy, 'example.txt')))  # the template's stays
 
+    def test_the_simulated_motors_start_fresh(self):
+        # Phoenix's simulation keeps each simulated device's settings in ctre_sim/, which git
+        # ignores. Measured 2026-11-21: after a rollback from Lesson 16, a drive motor that a
+        # later lesson had configured as a steering motor read its position from a CANcoder
+        # Lesson 4 doesn't have, and reported 0. Every update starts the devices fresh.
+        project = make_project(self.tmp)
+        saved = os.path.join(project, 'ctre_sim')
+        os.makedirs(saved)
+        with open(os.path.join(saved, 'Talon FX vers. C - 01 - 0 - ext.dat'), 'wb') as fh:
+            fh.write(b'\0' * 2048)
+        self.assertEqual(git(project, 'status', '--porcelain').stdout, '')  # ignored, so the project is clean
+
+        lines = update(5, project)
+        self.assertFalse(os.path.exists(saved))
+        self.assertIn('  removed ctre_sim/  (the simulated motors\' saved settings; the simulator makes it again)', lines)
+
+        git(project, 'add', '-A')
+        git(project, 'commit', '-qm', 'at lesson 5')
+        lines = update(5, project)  # nothing to remove: say nothing about it
+        self.assertFalse(any('ctre_sim' in line for line in lines), lines)
+
     def test_update_a_project_to_the_start_of_lesson_8(self):
         tmp = tempfile.mkdtemp()
         try:

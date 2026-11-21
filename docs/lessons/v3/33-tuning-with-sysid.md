@@ -33,7 +33,7 @@ Every gain in this course so far came from the motor's published numbers.
 `kV = 0.119` isn't a measurement of your flywheel — it's `12 V ÷ 101.08
 rot/s`, the Kraken X60's 6065 RPM free speed from CTRE's dynamometer data, a
 fact about a Kraken X60 in general, computed the same way for a flywheel, an
-elevator, and an arm since Lesson 18. It has been right *enough* to build this
+elevator, and an arm since Lesson 18. <!-- claim: wpilib.kraken-x60-model --> It has been right *enough* to build this
 entire course in simulation, because the simulated motors are built from the
 same numbers. A real Kraken doesn't know what its own published numbers say.
 It has bearing friction, wiring resistance, a wheel that weighs slightly more
@@ -55,7 +55,7 @@ wrong (the ramp, the step, the cleanup when a run ends) and writes its
 measurements to the log the SysId analysis tool reads. What it can't know is
 how *your* motor takes a voltage and how *your* sensors report back, so the
 work in this lesson is wiring those two things up, and then deciding whether
-to believe what comes out.
+to believe what comes out. <!-- claim: commandsv3.sysid-routine -->
 
 This course can't put a real Kraken in front of you — it's a docs-only repo
 running in simulation. What it *can* do is teach you the tool for real, verify
@@ -167,12 +167,12 @@ per second, 7 volts and 10 seconds. `SysIdRoutine.Config.useDataLog(rampRate,
 stepVoltage, timeout)` is the same thing with your own three numbers, and
 Try It #2 uses it. (There's also a four-argument constructor whose
 last argument sends the test state somewhere other than WPILib's own log. This
-course keeps the log.)
+course keeps the log.) <!-- claim: commandsv3.sysid-routine -->
 
 **A `SysIdRoutine.SysIdMechanism`** says how to reach one particular
 mechanism. The name is the awkward bit: `org.wpilib.command3.Mechanism` is
-already the base class of every subsystem in this course, so WPILib called
-this one `SysIdMechanism`. It takes four things, in this order:
+already the interface every subsystem in this course implements, so WPILib called
+this one `SysIdMechanism`. It takes four things, in this order: <!-- claim: commandsv3.sysid-routine -->
 
 - `drive` — a lambda that receives a `Voltage` and sends it to the motor.
 - `log` — a lambda that receives a `SysIdRoutineLog` and reports what the
@@ -184,7 +184,7 @@ this one `SysIdMechanism`. It takes four things, in this order:
 
 From a routine you get commands, two tests in each of two directions:
 `quasistatic(direction)` and `dynamic(direction)`, where `direction` is
-`SysIdRoutine.Direction.FORWARD` or `SysIdRoutine.Direction.REVERSE`.
+`SysIdRoutine.Direction.FORWARD` or `SysIdRoutine.Direction.REVERSE`. <!-- claim: commandsv3.sysid-routine -->
 
 **`quasistatic`** ramps voltage up slowly — 1 V per second by default — so
 the mechanism is never far from equilibrium; the relationship between volts
@@ -193,14 +193,14 @@ voltage and waited. **`dynamic`** does the opposite on purpose: it snaps to a
 fixed voltage — 7 V by default — and watches the mechanism accelerate hard.
 The ramp is where `kS` and `kV` are easiest to see; the step is where `kA`
 shows. The analysis tool fits all four runs together, and section 7 comes
-back to why it wants both shapes.
+back to why it wants both shapes. <!-- claim: wpilib-tools.sysid-tool-fits-four-tests, commandsv3.sysid-routine -->
 
 Both commands call your `drive` and `log` lambdas once per tick for as long as
 they run. A test ends when its timeout runs out, or when something cancels
 it (letting go of a button will, in the next section). **Either way the
 routine drives zero volts and records that the test has ended**, so there's
 no cleanup for you to remember. Measured: with two tests run to their timeout and two cancelled by letting
-go, each of the four left a `none` in the log to mark its end.
+go, each of the four left a `none` in the log to mark its end. <!-- claim: commandsv3.sysid-routine, commandsv3.when-exited-on-cancel, commandsv3.sysid-log-keys -->
 
 ---
 
@@ -228,7 +228,7 @@ private final SysIdRoutine m_sysId = new SysIdRoutine(
 ```
 
 Read it as the two things from section 4. `Config.defaults()` is the 1 V/s,
-7 V, 10 s routine, and it's what you'll run first (Try It #2 changes it).
+7 V, 10 s routine, and it's what you'll run first (Try It #2 changes it). <!-- claim: commandsv3.sysid-routine -->
 Then the `SysIdMechanism`'s four arguments: the drive lambda sends the `Voltage` it's given straight through
 the door section 3 opened, unpacking it with `.in(Volts)` because
 `setVoltage` takes a plain number; the log lambda names a motor with
@@ -272,7 +272,7 @@ and `RobotAutoBox` back in Lesson 9 was — and Lesson 9's finding carries
 over: bindings belong to the opmode that made them, and selecting a
 different opmode switches them off. Put characterization in its own opmode
 and there is no button combination on `RobotTeleop`, however unlikely, that
-can reach it. You'd have to select "characterize" on purpose first.
+can reach it. You'd have to select "characterize" on purpose first. <!-- claim: commandsv3.opmode-bindings-dropped, wpilib.utility-opmode -->
 
 **Create `src/main/java/first/robot/opmode/RobotUtility.java`:**
 
@@ -320,41 +320,42 @@ there — and, like them, it has to override `periodic()` even when it has
 nothing to say. `@Utility` is annotated bare, no `name`/`group`, because
 there's only one of them, same as `@Teleop` — you'd only need to name it if
 this project grew a second characterization opmode the way Lesson 9 grew a
-second autonomous.
+second autonomous. <!-- claim: wpilib.utility-opmode -->
 
 The opmode is also what makes the guard real. Its bindings exist only while
 it's the selected opmode, so there is nothing for Teleop to trip, however the
 buttons are held. Measured: with Back + the top face button still held down,
 switching from `RobotUtility` to `RobotTeleop` leaves the flywheel at its
-idle speed (3.59 V) and the `sysid-quasistatic-forward-flywheel` command gone.
+idle speed (3.59 V) and the `sysid-quasistatic-forward-flywheel` command gone. <!-- claim: commandsv3.opmode-bindings-dropped, commandsv3.trigger-cache-fixed, l28.idle-hold-volts -->
 
 **`Trigger.and(...)`** is doing real work here too, not just saving buttons.
 In Lesson 22 it stacked a sensor reading onto a button; here it combines two
 buttons into a `Trigger` that's only true while *both* are held. Four two-button combinations, inside an opmode you already
 can't reach by accident, means nobody trips a characterization run without
-clearing two separate hurdles on purpose.
+clearing two separate hurdles on purpose. <!-- claim: commandsv3.trigger-combinators -->
 
 ---
 
 ## 6. Run it, and read what happened
 
-Run the robot in simulation. In SimGUI, pick **RobotUtility** from the opmode
-selector — same move as picking **My Teleop** back in Lesson 1, just a
-different opmode — then set Robot State to enabled. Hold **Back + the top
-face button** for a few seconds — the applied voltage climbs steadily, and the
+Run the robot in simulation. In SimGUI's Robot State panel, pick **Utility**,
+then **RobotUtility** from the OpMode drop-down — the same moves as
+**Teleoperated** and **MyTeleop** back in Lesson 0 ([Figure 0.2](00-orientation.md#figure-0-2)), just a different mode and
+opmode — then click **Enable**. <!-- claim: wpilib-tools.simgui-robot-state-panel, wpilib.opmode-annotation-class-name --> Hold **Back + the top
+face button** (**B** and **V** on the keyboard) for a few seconds — the applied voltage climbs steadily, and the
 wheel, after a dip (see the note below), spins up slowly and smoothly.
-Let go, let it coast, then hold **Start + the top face button** for the whole
+Let go, let it coast, then hold **Start + the top face button** (**N** and **V**) for the whole
 ten seconds — this time it should snap forward hard and then level off. Both
 directions work the same in reverse with the bottom face button instead. A
 test ends by itself when its timeout runs out (10 seconds at the defaults)
-even if you're still holding the buttons. Section 7 reads the level-off, so
+even if you're still holding the buttons. <!-- claim: commandsv3.sysid-routine --> Section 7 reads the level-off, so
 let each dynamic test have its full ten seconds.
 
 Notice what *isn't* happening: nothing about `RobotTeleop` changed, and
 nothing in it needed to know characterization exists. Reselect **My
 Teleop** afterward and drive normally — the flywheel's `idle()` default
 command is still there, untouched, because `RobotUtility` never touched it
-either.
+either. <!-- claim: commandsv3.default-command-runs-when-idle -->
 
 Every run lands in a log file, but not AdvantageKit's, and that's easy to
 trip over. `SysIdRoutine` writes through `SysIdRoutineLog`, which uses WPILib's own
@@ -363,32 +364,61 @@ AdvantageKit's `Logger`. That's the log `DataLogManager.start()` opens in
 `startLogging()`, the line Lesson 13 kept so that everything published
 outside AdvantageKit still gets saved. So every run leaves **two** files in
 `logs/`: AdvantageKit's `akit_….wpilog`, with every input and output, and
-WPILib's `WPILIB_….wpilog`, which is where the characterization data is.
+WPILib's `WPILIB_….wpilog`, which is where the characterization data is. <!-- claim: advantagekit.wpilib-log-saves-telemetry -->
 It has its own keys there: `sysid-test-state-flywheel` for which test is
 running, and `voltage-flywheel-flywheel` / `velocity-flywheel-flywheel` for
 the readings `log.motor("flywheel")` published (the motor name and the
 mechanism's name both happen to be `"flywheel"` here, which is why it
 repeats). All three were read out of the `WPILIB_` file of a real run, and
 none of them is in the `akit_` file beside it. **For the analysis, open the
-`WPILIB_` file.**
+`WPILIB_` file.** <!-- claim: commandsv3.sysid-routine, commandsv3.sysid-log-keys -->
 
 > **The wheel doesn't start from rest.** The `idle()` default command from
 > Lesson 28 is still what the flywheel is doing when you press the buttons,
 > so every run begins with the wheel at the 30 rot/s idle speed, and the
-> routine's first act is to cut its voltage to zero. Measured on a forward
+> routine's first act is to cut its voltage to zero. <!-- claim: commandsv3.default-command-runs-when-idle, commandsv3.sysid-routine --> Measured on a forward
 > quasistatic run at the defaults: the wheel coasts down from 30 rot/s to
 > 13 rot/s over the first 1.6 seconds — by which point the ramp is at 1.5 V —
-> and only then starts to climb. Everything in that stretch describes a wheel
+> and only then starts to climb. <!-- claim: l33.dip-voltage --> Everything in that stretch describes a wheel
 > spinning down, not a wheel being ramped up. Look at the velocity plot
 > before you trust a fit, and ignore the part before speed turns upward.
 > Try It #7 asks what it would take to start from rest.
+
+Figure 33.1 shows the two tests you just ran, plus their reverse twins, from
+one session at these defaults. Voltage is on the top row and speed on the
+bottom, quasistatic on the left and dynamic on the right. The heavy line is
+forward and the light one is reverse. Start with the bottom-left panel,
+because it's the one with the trap in it. The wheel begins at idle speed, falls
+to 13 rot/s at 1.56 s (that's the shaded stretch: ignore it), and only then
+climbs, in an almost straight line, to about 77 rot/s as the ramp reaches 10 V. <!-- claim: l33.dip-speed, l33.dip-time, l33.ramp-top-speed -->
+That straight climb is what "quasistatic" is aiming for: slow enough that the
+speed keeps up with the voltage. The top-left panel is the ramp itself. The
+logged voltage in the shaded first half-second is higher than the ramp would
+give (the wheel is still being slowed from idle), and after that it climbs
+by a volt a second.
+
+The right column is the dynamic test. The top panel is the step to 7 V, and
+the bottom panel is the wheel answering it: a smooth curve that bends over and
+flattens out at 59.3 rot/s. <!-- claim: l33.plateau-forward --> The dashed verticals mark when it is within 5% and
+within 1% of that plateau, 2.2 s and 3.6 s, which is why the lesson has you
+hold the buttons the full ten seconds. <!-- claim: l33.settle-5pct, l33.settle-1pct-forward --> The light reverse curve starts from the
+same +30 rot/s idle, so it has to turn around first and levels off later. The
+light line in the top-right panel also takes about four seconds to reach -7 V
+instead of jumping there. The log records the voltage the motor applied, and
+the likely reason is Lesson 29's current limit holding it back while the wheel
+turns around (an inference from the arithmetic, not something isolated). <!-- claim: l33.reverse-ramp-time, phoenix6.stator-limit-caps-startup-voltage -->
+
+<a id="figure-33-1"></a>
+![Four panels. Left column, the quasistatic test: voltage ramps up at 1 volt per second to 10 V, and speed first falls from the 30 rot/s idle to 13 rot/s at 1.56 s in a shaded stretch to ignore, then climbs almost straight to 77 rot/s. Right column, the dynamic test: voltage steps to 7 V, and speed curves up to a plateau of 59.3 rot/s, within 5% at 2.2 s and within 1% at 3.6 s. Reverse tests are drawn lighter, mirrored below zero](images/33-sysid-four-tests.png)
+
+*Figure 33.1 — The four tests at `Config.defaults()`: voltage (top) and flywheel speed (bottom), forward heavy and reverse light.* <!-- claim: l33.dip-speed, l33.dip-time, l33.ramp-top-speed, l33.plateau-forward, l33.settle-5pct, l33.settle-1pct-forward -->
 
 **Analyze it:** open the SysId tool from the WPILib extension's tool
 launcher, point it at the `WPILIB_….wpilog` you just recorded (log-file
 mode, not live), select the `flywheel` mechanism, and let it fit `kS`/`kV`/`kA` to the
 four runs. (Menus drift between seasons more than APIs do — if what you see
 doesn't match what's described here, the tool's own help is the current
-source of truth, not this paragraph.)
+source of truth, not this paragraph.) <!-- claim: wpilib-tools.sysid-tool-ui -->
 
 Compare what it hands back to `FlywheelConstants`.
 
@@ -403,11 +433,11 @@ kFlywheelKA = 0.105  // volts per rotation/sec²
 For a rough idea of what to expect, this course's own simulated run (the
 four tests at the defaults) can be fit by hand with the model the tool's
 source uses: one fit over all four tests together, with a term for
-acceleration, `V = kS·sign(v) + kV·v + kA·a`. That gives `kV` 0.118, `kA`
-0.106 and `kS` under 0.01 V. Those numbers come from a hand fit, not from the
+acceleration, `V = kS·sign(v) + kV·v + kA·a`. <!-- claim: wpilib-tools.sysid-tool-fits-four-tests --> That gives `kV` 0.118, `kA`
+0.106 and `kS` under 0.01 V. <!-- claim: l33.hand-fit-kv, l33.hand-fit-ka, l33.hand-fit-ks --> Those numbers come from a hand fit, not from the
 tool: this repo's checks can't run the SysId tool, and the tool filters and
 trims the data its own way, so expect its numbers to land near these, not on
-them. If your `kS` comes back nowhere near the 0.15 the course has carried
+them. <!-- claim: wpilib-tools.sysid-tool-fits-four-tests --> If your `kS` comes back nowhere near the 0.15 the course has carried
 since Lesson 28, that's the number to look at hardest.
 
 **Don't paste any of them into `Constants` yet.** The tool will hand you a
@@ -433,7 +463,7 @@ are the hand fit from section 6, not the tool's.
 **Free speed.** `kV` is volts per rotation per second, so 12 V ÷ `kV` is the
 speed at which the wheel runs out of voltage. That should land near the
 motor's free speed, the 101.08 rot/s (6065 RPM) that `kFreeSpeed` and Lesson
-28's arithmetic already use: 12 ÷ 0.118 = 101.7. A real wheel comes in a
+28's arithmetic already use: 12 ÷ 0.118 = 101.7. <!-- claim: l33.hand-fit-kv, wpilib.kraken-x60-model --> A real wheel comes in a
 little under its datasheet, from friction and belts, but a factor of two
 means the fit or the log is wrong, not the motor. (If a gearbox sits between
 the motor and whatever the log measures, divide the free speed by the gear
@@ -446,9 +476,9 @@ friction levels off a little lower, by a fraction `kS` ÷ 7.) Open the
 `WPILIB_` log, find the end of a forward dynamic run — the last
 `velocity-flywheel-flywheel` values before `sysid-test-state-flywheel` goes
 back to `none` — and divide. This course's wheel levels off at 59.3 rot/s;
-59.3 ÷ 7 = 8.47 rot/s per volt, and 1 ÷ 0.118 = 8.47. The reverse run levels
+59.3 ÷ 7 = 8.47 rot/s per volt, and 1 ÷ 0.118 = 8.47. <!-- claim: l33.plateau-forward, l33.plateau-per-volt, l33.hand-fit-kv --> The reverse run levels
 off at −59.2. Forward, the wheel is within 1% of that after about 3.6 seconds;
-in reverse it takes about 6.8, because it has to turn around first. Hold the
+in reverse it takes about 6.8, because it has to turn around first. <!-- claim: l33.plateau-reverse, l33.settle-1pct-forward, l33.settle-1pct-reverse --> Hold the
 buttons for the whole ten seconds.
 
 ### `kA`: it has to match the wheel's inertia
@@ -456,7 +486,7 @@ buttons for the whole ten seconds.
 `kA` is the voltage it takes to speed the wheel up: volts per rotation per
 second squared. You computed it in Lesson 28 from the wheel's inertia, so that
 arithmetic is your check. `J × 2π × 1.677` with `J` = 0.01 kg·m² is 0.105, and
-the hand fit says 0.106. On a real robot `J` comes from CAD, which is a guess of
+the hand fit says 0.106. <!-- claim: l33.hand-fit-ka, wpilib.kraken-x60-model --> On a real robot `J` comes from CAD, which is a guess of
 its own, so expect rough agreement rather than three digits. A factor of two
 between the tool's `kA` and the CAD number means one of them is wrong, and
 that's worth finding out before you size a shooter around it.
@@ -507,17 +537,36 @@ The four tests have two buttons each because they drive the wheel up to 7 V or
 more. 0.05 V can't spin anything up, so one button is enough.
 
 Run the robot in simulation, select **RobotUtility**, enable it, and hold the
-**right bumper** for ten seconds while you watch `Flywheel/VelocityRps`. The
+**right bumper** (**,** on the keyboard) for ten seconds while you watch `Flywheel/VelocityRps`. The
 wheel starts at its idle speed, so it coasts down first: about 13 rot/s after
-one second, under 2 after three, 0.56 at five. Then it settles at
-**0.41 rot/s** by about nine seconds, and stays there. It's still turning.
-0.05 V × 8.47 rot/s per volt = 0.42.
+one second, under 2 after three, 0.56 at five. <!-- claim: l33.hold-1s, l33.hold-3s, l33.hold-5s --> Then it settles at
+**0.41 rot/s** by about nine seconds, and stays there. <!-- claim: l33.hold-settle, phoenix6.sim-no-static-friction --> It's still turning.
+0.05 V × 8.47 rot/s per volt = 0.42. <!-- claim: l33.hold-settle -->
+
+<a id="figure-33-2"></a>
+![Three stacked panels over the ten seconds after the right bumper goes down. Top: wheel speed falls from the idle 30.4 rot/s through 13.5, 4.67, 1.80 and 0.56 rot/s. Middle: the same curve zoomed to 0 to 3 rot/s, flattening onto a dashed line at the predicted 0.42 rot/s, well above zero. Bottom: the applied voltage steps down from 3.6 V and reaches 0.05 V at about 0.8 s](images/33-ks-hold-005v.png)
+
+*Figure 33.2 — Holding 0.05 V from the idle speed: the wheel coasts down and settles at 0.41 rot/s, not at zero.* <!-- claim: l33.hold-settle, l33.hold-1s, l33.hold-2s, l33.hold-3s, l33.hold-5s, l33.hold-voltage-settle -->
+
+Figure 33.2 shows the ten seconds you're watching. Start with the top panel:
+the orange line is the wheel's speed, and it falls like any coasting wheel,
+steeply at first and then flatter, passing the labelled points at 1, 2, 3 and
+5 seconds. It looks as if it's heading for zero. The middle panel is the
+same curve with the speed axis stretched to 0–3 rot/s, and it says otherwise:
+the curve flattens onto the dashed line at 0.42, the prediction, and the
+solid grey line at zero stays clear of it. That gap, small as it is, is
+the whole check: the wheel is still turning on 0.05 V. The bottom panel shows
+the voltage actually applied. It isn't 0.05 V at once: it starts well above
+and takes about 0.8 s to come down to it (most likely the stator current
+limit from Lesson 29 holding it up while the wheel is still fast, though this
+wasn't isolated), so the first second of the top panel isn't a pure 0.05 V
+response. From then on it is. <!-- claim: l33.hold-voltage-settle, phoenix6.stator-limit-caps-startup-voltage -->
 
 A wheel that turns on 0.05 V doesn't have 0.9 V of friction in it. For this
 simulation that's also the right answer, not a warning: `FlywheelSim` has no
 friction (Lesson 28 said so), so a fit that finds `kS` near zero is agreeing
 with the wheel, and the 0.15 in `FlywheelConstants` is a hardware value the
-simulation never uses. On a real wheel the same check runs the other way:
+simulation never uses. <!-- claim: phoenix6.sim-no-static-friction --> On a real wheel the same check runs the other way:
 creep the voltage up from zero until the wheel *just* starts to turn, and that
 voltage should be close to the `kS` the tool gave you. (A quasistatic ramp
 from a standstill, Try It #7, is that creep.)
@@ -530,7 +579,7 @@ speed is close to what that voltage would hold if you simply set it and
 waited. There's a yardstick for that, and it needs no fitting: the percent of
 steady-state speed the wheel has reached when the ramp passes a given voltage.
 Steady state is the plateau from the `kV` check, about 8.5 rot/s per volt
-(measured at 1–5 V). A truly quasistatic ramp would read close to 100% at
+(measured at 1–5 V). <!-- claim: l33.plateau-per-volt --> A truly quasistatic ramp would read close to 100% at
 every voltage.
 
 Starting from a standstill, the default 1 V/s ramp reaches only **38%–82%** of
@@ -538,7 +587,7 @@ steady-state speed across 1–5 V (38, 59, 71, 77 and 82% at 1, 2, 3, 4 and 5 V)
 By the yardstick, that ramp was never quasistatic for this wheel. It's light
 and direct-drive, it responds in about a second (`kA` ÷ `kV` = 0.106 ÷ 0.118 =
 0.9 s), and a ramp that climbs a volt every second is always running ahead of
-it.
+it. <!-- claim: l33.response-time, l33.hand-fit-kv, l33.hand-fit-ka -->
 
 That's a failed check, and it's fine, because the tool doesn't treat the ramp
 as though it were steady. It fits all four tests together in one model that
@@ -547,26 +596,51 @@ writes it the other way round, as acceleration against speed, voltage and the
 sign of speed, then divides the coefficients to get the gains. It's the same
 model rearranged.) The ramp's own acceleration goes into the `kA` term, and the
 dynamic test, which accelerates as hard as the routine can make it, is what pins
-`kA` down. Nothing is left over to land in `kS`.
+`kA` down. Nothing is left over to land in `kS`. <!-- claim: wpilib-tools.sysid-tool-fits-four-tests -->
+
+Figure 33.3 plots exactly this. Read it as speed along the bottom and the
+logged voltage up the side. The dashed black line is steady state: the voltage
+that would hold each speed if you set it and waited, `speed ÷ 8.47`, and it
+passes through zero because a frictionless wheel needs no voltage to start.
+The orange curve is the 1 V/s ramp, from a standstill. It runs well above the
+dashed line the whole way: the voltage is always ahead of the speed, and the
+horizontal gap at 1 V (a wheel at under 40% of its steady speed) is the
+percentage the yardstick reports. <!-- claim: l33.pct-steady-1vps --> By 5 V the gap has shrunk to about a fifth. <!-- claim: l33.gap-at-5v -->
+The green curve is the 0.25 V/s ramp, which hugs the dashed line much more
+closely. Now do what a fit with no acceleration term does: draw the straight
+line through the orange curve's upper part and read where it hits zero
+speed. The dotted orange line does, and it lands near 0.9 V up the side. <!-- claim: l33.fig-ramp-fit-1vps --> The
+green fit lands near 0.23 V. <!-- claim: l33.fig-ramp-fit-025 --> Neither is friction. Both are the gap between the
+curve and the dashed line, and it's the ramp's lag, not the wheel, that put it
+there. (The figure fits a ramp started from a true standstill, over 4 to 6 V,
+which gives 0.88 V and 0.23 V; the 0.90 below fits both slow tests of a real
+run, which start from idle. The exact digit depends on which stretch you fit.) <!-- claim: l33.fig-ramp-fit-1vps, l33.fig-ramp-fit-025, l33.ramp-fit-ks -->
+
+<a id="figure-33-3"></a>
+![Speed on the horizontal axis and logged voltage on the vertical. A dashed black steady-state line through zero; the 1 V per second ramp curve well above it with a dotted straight fit meeting the voltage axis near 0.88 V; the 0.25 V per second ramp close to the dashed line with a fit meeting the axis near 0.23 V; horizontal arrows at 1 V and 5 V show the 1 V per second ramp's lag](images/33-ramp-vs-steady-state.png)
+
+*Figure 33.3 — A ramp's speed against its voltage, from a standstill. The distance above the steady-state line is lag, and a fit without an acceleration term reads it as `kS`. Hand fit, not the tool's.* <!-- claim: l33.fig-ramp-fit-1vps, l33.fig-ramp-fit-025, l33.pct-steady-1vps -->
 
 **The 0.90 V is what you get without that term.** Fit just the two ramps,
 voltage against speed with nothing else (with the coast-down at the start
-trimmed away), and this course's run gives `kS` = 0.90 V with `kV` still 0.118.
+trimmed away), and this course's run gives `kS` = 0.90 V with `kV` still 0.118. <!-- claim: l33.ramp-fit-ks, l33.hand-fit-kv -->
 That's a hand fit again, not the tool's. It looks like friction. It isn't, and
 the arithmetic shows where it comes from: a 1 V/s ramp makes the wheel gain
 1 ÷ 0.118 = 8.5 rot/s every second just to keep pace, and `kA` charges 0.106 V
-for each rot/s² of that. 0.106 × 8.5 ≈ 0.90 V. A fit with no acceleration term
+for each rot/s² of that. 0.106 × 8.5 ≈ 0.90 V. <!-- claim: l33.ramp-fit-ks, l33.hand-fit-kv, l33.hand-fit-ka --> A fit with no acceleration term
 has nowhere to put that voltage except the constant, so it reports it as `kS`. In general the leftover is `kA × ramp rate ÷ kV`, which
-shrinks in proportion to the ramp rate: about 0.23 V at 0.25 V/s.
+shrinks in proportion to the ramp rate: about 0.23 V at 0.25 V/s. <!-- claim: l33.fig-ramp-fit-025 -->
 
 That 0.90 is exactly the kind of number the checks are for. It looks like a
 reasonable friction value, and it fails the one-button test: 0.9 V of friction
 would mean 0.05 V can't turn the wheel, and it does. It's also why the tool
 asks for both test shapes and fits them together. Its own data check, in its
 source, lists "at least 1 acceleration event to find Ka" among what the data
-has to hold.
+has to hold. <!-- claim: wpilib-tools.sysid-tool-fits-four-tests -->
 
 Here are the checks in one place, with this course's run beside each:
+
+<!-- claim: l33.hand-fit-kv, l33.hand-fit-ka, l33.plateau-per-volt, l33.hold-settle, l33.pct-steady-1vps, wpilib.kraken-x60-model -->
 
 | Gain | Check | This course's run |
 |---|---|---|
@@ -608,11 +682,11 @@ the path.
 **A firmware soft limit, on the other hand, holds.** It's a
 `SoftwareLimitSwitchConfigs` value set once at construction, enforced where
 output leaves the motor controller, so it doesn't care which control mode
-asked. Driving the real `ElevatorIOTalonFX` open loop at 6 V for four seconds, over
+asked. <!-- claim: phoenix6.soft-limit-holds-open-loop --> Driving the real `ElevatorIOTalonFX` open loop at 6 V for four seconds, over
 a physics model widened to ±20 m so nothing but the limit can stop it, first
 with the forward soft limit off and then on:
 
-*Nothing to add — measured, not asserted:*
+*Nothing to add — measured, not asserted:* <!-- claim: l33.soft-limit-off-height, l33.soft-limit-on-height -->
 
 ```
 no soft limit   : ended at 2.599 m  (well past the top)
@@ -622,7 +696,7 @@ with soft limit : ended at 1.503 m, applied volts 0.000
 That is exactly the distinction Lesson 20 drew when it added soft limits to
 the arm — *the clamp is your code's opinion, the soft limit sits below your
 code and holds when the logic is wrong* — and a SysId run is the case where
-your code's opinion is never consulted at all.
+your code's opinion is never consulted at all. <!-- claim: phoenix6.soft-limit-holds-open-loop -->
 
 > **Your simulator will not show you this, and that's worth knowing before
 > you trust a clean sim run.** `ElevatorIOSim` builds its `ElevatorSim` with
@@ -631,8 +705,8 @@ your code's opinion is never consulted at all.
 > carriage stops at exactly the physics wall — and because the encoder
 > started at the carriage's 0.35 m boot height, it only reads 1.15 m there,
 > short of the soft limit's 1.5 m threshold, so the limit never gets a reason
-> to fire. Add the soft limit and sim behaves
-> identically, because it was already refusing to go past travel. A real
+> to fire. <!-- claim: l21.top-stall-height, wpilib.elevator-sim-sinks-unpowered --> Add the soft limit and sim behaves
+> identically, because it was already refusing to go past travel. <!-- claim: wpilib.elevator-sim-sinks-unpowered --> A real
 > elevator has no such courtesy; it has a hard stop and a gearbox. This is
 > the same lesson section 9 is about, arriving early: **the simulation is
 > not where you find out whether your guards work.**
@@ -654,7 +728,7 @@ config.SoftwareLimitSwitch.ForwardSoftLimitThreshold =
 Thresholds are in *mechanism* rotations, and `SensorToMechanismRatio =
 kGearRatio` already made those drum rotations — so `metersToRotations` is the
 same conversion Motion Magic's own limits use, which is why it was
-`protected` rather than `private` all along.
+`protected` rather than `private` all along. <!-- claim: phoenix6.sensor-to-mechanism-ratio, phoenix6.soft-limit-holds-open-loop -->
 
 That comment is worth reading twice, because the missing half of this guard
 isn't an oversight — it's a measured trap this lesson walked into and is
@@ -662,7 +736,7 @@ handing you the way out of. A first pass at this section added a matching
 *reverse* soft limit, at `kMinHeight`, the mirror image of the forward one
 above. It broke Lesson 31's already-passing `ElevatorHomingTest` — homing,
 which finishes in about 3.5 seconds, took 17.3, the carriage creeping
-down at about 2 cm/s instead of its usual 9.7. Not
+down at about 2 cm/s instead of its usual 9.7. <!-- claim: l33.homing-time, l33.homing-limited-time, l33.homing-limited-speed, l33.homing-speed, phoenix6.reverse-soft-limit-fights-homing --> Not
 refused outright — just slower, in a way that looked exactly like a weak
 motor rather than a limit doing its job. **That's the actual danger of a
 misconfigured limit: it doesn't fail loud, it fails by making the mechanism
@@ -685,7 +759,7 @@ homed, so a boot-time zero it might be measured against never comes into
 play. Home the elevator first, every time, before any open-loop run near the
 bottom — the bottom limit switch is still there to catch you if you don't,
 but a soft limit that fights your own homing routine is worse than no soft
-limit at all, because it looks like protection.
+limit at all, because it looks like protection. <!-- claim: phoenix6.reverse-soft-limit-fights-homing -->
 
 ### Now the awkward part: a ramp costs room
 
@@ -693,7 +767,7 @@ A quasistatic ramp is an expensive test for a mechanism that can run out of
 room, and it's worth seeing the size of it. Same widened rig, measuring how far
 the carriage travels before the ramp reaches 6 V:
 
-*Nothing to add — measured, not asserted:*
+*Nothing to add — measured, not asserted:* <!-- claim: l33.ramp-distance-1, l33.ramp-distance-05, l33.ramp-distance-025 -->
 
 ```
 ramp 1.00 V/s  ->  6 V after 6.0 s,   travelled 1.885 m
@@ -702,27 +776,45 @@ ramp 0.25 V/s  ->  6 V after 24.0 s,  travelled 7.605 m
 ```
 
 The default ramp, 1 V/s, already needs more than the elevator's whole 1.5 m to
-reach 6 V. **Halve the ramp rate and you double the distance.** The mechanism
+reach 6 V. <!-- claim: l33.ramp-distance-1 --> **Halve the ramp rate and you double the distance.** <!-- claim: l33.ramp-doubling --> The mechanism
 spends twice as long at every voltage on the way up, so it covers twice the
 ground getting there. A slower ramp is what you'd reach for to make a run
 more quasistatic (Try It #2), and on this elevator a 0.25 V/s ramp would need
-over **7 metres** to reach 6 V. You have 1.5 m.
+over **7 metres** to reach 6 V. <!-- claim: l33.ramp-distance-025 --> You have 1.5 m.
 
 So a slower ramp is the wrong direction here, and even the default one has to
 be cut short. What you give up is voltage range. A ramp's voltage is its rate
 times how long it has run, so you stop it at a lower voltage. Same rig at the
 default 1 V/s: the carriage has covered 0.44 m by the time the ramp reaches
-3 V, and 1.04 m by 4.5 V. Let go of the buttons at the voltage that fits
+3 V, and 1.04 m by 4.5 V. <!-- claim: l33.ramp-3v-distance, l33.ramp-45v-distance --> Let go of the buttons at the voltage that fits
 (letting go ends the test cleanly, as section 4 said), and fit the gains over
 the span of voltage you actually covered. A short honest run beats a long one
 that spent its last second driving into a hard stop.
 
+Figure 33.4 draws those numbers. In the top panel, the bottom axis is the
+voltage the ramp has reached and the side axis is how far the carriage has
+travelled by then. The three curves are the three ramp rates, and the dashed
+line is the elevator's 1.5 m of travel. Look first at the line you'll actually
+run, the 1 V/s curve: it crosses 1.5 m at about 5.4 V, so the end of the ramp
+is already past the top. <!-- claim: l33.ramp-cross-1p5 --> Then compare the curves with each other. Each one
+bends upward, because the faster the carriage goes the more ground every
+extra second covers, and halving the rate lifts the whole curve to about twice
+the height. <!-- claim: l33.ramp-doubling --> The 0.25 V/s curve crosses the dashed line before it reaches 3 V. <!-- claim: l33.ramp-025-crossing -->
+The two dots on the 1 V/s curve are the stopping voltages above: 3 V is about
+0.44 m, and 4.5 V is about 1 m, still inside the travel. <!-- claim: l33.ramp-3v-distance, l33.ramp-45v-distance --> The bottom panel is
+the step test, which the next heading covers.
+
+<a id="figure-33-4"></a>
+![Top panel: distance travelled against voltage reached for three ramp rates, with a dashed line at the elevator's 1.5 m of travel. The 1 volt per second curve ends at 1.9 m and crosses 1.5 m near 5.4 volts, the 0.5 curve ends at 3.8 m, the 0.25 curve at 7.6 m; dots mark 0.44 m at 3 volts and 1.0 m at 4.5 volts on the first. Bottom panel: bars for the 1.5 second step test, 1.10 m at 7 volts, 0.63 m at 4 and 0.30 m at 2, all left of the 1.5 m line](images/33-ramp-room-elevator.png)
+
+*Figure 33.4 — How far the elevator travels under a ramp (top) and a step (bottom), against its 1.5 m of travel. Open loop, physics widened so nothing stops it.* <!-- claim: l33.ramp-distance-1, l33.ramp-distance-05, l33.ramp-distance-025, l33.ramp-cross-1p5, l33.ramp-3v-distance, l33.ramp-45v-distance, l33.step-7v, l33.step-4v, l33.step-2v -->
+
 ### And lower the step voltage
 
 The dynamic test has the same problem in a more concentrated form, since it
-jumps straight to full step voltage and stays there. Same widened rig, 1.5 seconds:
+jumps straight to full step voltage and stays there. Same widened rig, 1.5 seconds (the bottom panel of Figure 33.4 draws these three bars):
 
-*Nothing to add — measured, not asserted:*
+*Nothing to add — measured, not asserted:* <!-- claim: l33.step-7v, l33.step-4v, l33.step-2v -->
 
 ```
 step 7.0 V  ->  travelled 1.08 to 1.10 m
@@ -731,7 +823,7 @@ step 2.0 V  ->  travelled 0.30 m
 ```
 
 The default 7 V step eats **nearly three-quarters of the elevator's entire
-travel in a second and a half** — and `Config`'s default timeout is ten seconds. Drop the
+travel in a second and a half** — and `Config`'s default timeout is ten seconds. <!-- claim: l33.step-7v-fraction, commandsv3.sysid-routine --> Drop the
 step voltage until the run fits: 2–4 V is a reasonable starting point for this
 elevator, and you can raise it once you've watched one run finish safely.
 
@@ -767,20 +859,20 @@ Here's the honest part, and it's worth sitting with rather than skating past.
 `FlywheelSim`, underneath everything in this course, has never modeled
 friction, and Lesson 28 told you so. Section 7's `kS` check already showed it:
 0.05 V, far below what would break any real wheel free, leaves the simulated
-wheel turning at 0.41 rot/s, where a real one wouldn't have twitched. So the
+wheel turning at 0.41 rot/s, where a real one wouldn't have twitched. <!-- claim: l33.hold-settle, phoenix6.sim-no-static-friction --> So the
 right `kS` for this simulation is zero, and a fit that finds it (under 0.01 V
-here) isn't measuring hardware friction. It's agreeing with a wheel that never
+here) isn't measuring hardware friction. <!-- claim: l33.hand-fit-ks --> It's agreeing with a wheel that never
 had any.
 
 That's not a failure of the exercise. It's the same thing Lesson 28 told you
 about `kS`, confirmed a second way: **a simulation can only teach you what it
 models.** `kV` and `kA` came back honest (0.118 and 0.106 against the 0.119 and 0.105
 the course computed) because `FlywheelSim`'s physics genuinely has a back-EMF
-term and genuinely has inertia — those measurements mean something. `kS`
+term and genuinely has inertia — those measurements mean something. <!-- claim: l33.hand-fit-kv, l33.hand-fit-ka, wpilib.kraken-x60-model --> `kS`
 came back near zero because there was never a real friction number underneath
 it to find. The checks are what let you tell those two kinds of answer apart:
 `kV` and `kA` agreed with arithmetic you trust, and `kS` agreed with a wheel
-you could watch turn on 0.05 V.
+you could watch turn on 0.05 V. <!-- claim: l33.hold-settle -->
 
 On your actual robot, this section reads differently, and better. The
 friction in a real Kraken's bearings is real. The efficiency loss in a real
@@ -817,8 +909,8 @@ just guessing at.
    percent of steady state, and compare the tool's three numbers with the
    ones from the default ramp. This course's own run reads **77%–95%** at
    0.25 V/s, up from 38%–82%, and the hand fit of all four tests still gives
-   `kS` near zero. (A hand fit of the ramps alone gives about 0.23 V instead
-   of 0.90 V, which is `kA × ramp rate ÷ kV` again.) This course's checks
+   `kS` near zero. <!-- claim: l33.pct-steady-025, l33.pct-steady-1vps, l33.hand-fit-ks --> (A hand fit of the ramps alone gives about 0.23 V instead
+   of 0.90 V, which is `kA × ramp rate ÷ kV` again.) <!-- claim: l33.fig-ramp-fit-025, l33.ramp-fit-ks --> This course's checks
    can't run the SysId tool, so what it prints is better evidence than the
    hand fit. Then try 0.5 V/s and 0.1 V/s: is the gap between the yardstick
    and 100% proportional to the ramp rate? At what point does going slower
@@ -841,12 +933,12 @@ just guessing at.
    apply(...)` can be called more than once — it isn't limited to
    construction time.)
 6. **Watch the opmode guard actually work.** Start a `sysIdQuasistatic` run
-   in `RobotUtility`, then switch back to **My Teleop** (disabling first, if
+   in `RobotUtility`, then switch back to **Teleoperated** and **RobotTeleop** (disabling first, if
    your driver station's UI insists on that before it lets you switch).
    Confirm the wheel drops back to its idle speed once you re-enable in
    Teleop — there's no `sysIdQuasistatic` command left running to fight your
    normal driving. That's the same opmode-scoping Lesson 9 found protecting
-   `RobotAuto`'s plan, doing the identical job here.
+   `RobotAuto`'s plan, doing the identical job here. <!-- claim: commandsv3.opmode-bindings-dropped -->
 7. **Start from rest.** The callout in section 6 says every run begins with
    the wheel at its idle speed. Work out how you'd make a run start from a
    standstill, and what it would cost: where is the idle default installed,
@@ -881,7 +973,7 @@ yardstick. The default ramp failed that last one, and it didn't matter,
 because the tool fits the ramp and the step together with a term for
 acceleration. The 0.90 V you get from fitting the ramps alone is the
 cautionary tale: a number that looks like friction and fails the one-button
-test. Check the number against something you already know before you doubt
+test. <!-- claim: l33.ramp-fit-ks --> Check the number against something you already know before you doubt
 the model, and before you trust it.
 
 Section 8 then took that away again, at least partly, and added a second
@@ -892,12 +984,12 @@ wrong and a guard doesn't fail loud — it fails by making the mechanism look
 weak, the same shape of trap this course keeps returning to. Past that, even
 the default ramp needs more room than the elevator has, and a slower one needs
 more still — **halve the rate, double the distance** — so you trade voltage
-range for safety and fit the gains over whatever span you actually survived. **The guard that survives your logic
+range for safety and fit the gains over whatever span you actually survived. <!-- claim: l33.ramp-doubling --> **The guard that survives your logic
 being absent is the only one that was ever really a guard**, worth
 remembering as a general shape, not just a SysId detail. And the most honest
 lesson sat in section 9: simulation measured `kV` and `kA` faithfully because
 it actually models the physics behind them, and `kS` came back near zero,
-because there was never real friction in it to measure.
+because there was never real friction in it to measure. <!-- claim: phoenix6.sim-no-static-friction, l33.hand-fit-ks -->
 Your real robot doesn't have that excuse, which is exactly why this tool is
 worth having learned before build team hands you one.
 

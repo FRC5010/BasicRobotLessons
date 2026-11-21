@@ -68,7 +68,7 @@ The library doing this is **B-Line**, and it makes one choice
 worth understanding up front: its paths are made of **straight segments**, not
 curves. Most path libraries fit smooth splines through your points. B-Line
 connects them with lines and rounds the corners by handing off to the next
-segment early. That's less theoretically elegant and much easier to reason
+segment early. <!-- claim: bline.handoff-radius --> That's less theoretically elegant and much easier to reason
 about — you can look at a drawn path and know what the robot will do.
 
 ---
@@ -87,11 +87,11 @@ Rebuild to confirm: `./gradlew build`.
 
 That long URL names one exact commit, the one BLine tagged as its
 `2027.0.0-beta.1` release, for the same reason as Lesson 15's: BLine's own
-docs hand out a shorter link that follows whatever they publish next. The
+docs hand out a shorter link that follows whatever they publish next. <!-- claim: bline.vendordep-and-packages --> The
 file it installs is `BLine-Lib-2027.json` — the 2027 build, written for this
 framework's Commands V3. (BLine's 2026 build is a different file for a
 different command framework. If you ever see a `BLine-Lib.json` in your
-`vendordeps` folder, it's the wrong one for this course — remove it.)
+`vendordeps` folder, it's the wrong one for this course — remove it.) <!-- claim: bline.vendordep-and-packages -->
 
 One thing that will look wrong later, so here it is now: BLine's classes live
 in packages under **`frc.robot.lib.BLine`** — `frc.robot.lib.BLine.commands`,
@@ -100,7 +100,7 @@ installed announced itself with a vendor's name (`com.ctre.phoenix6`,
 `com.limelightvision`). So when you type
 `import frc.robot.lib.BLine.path.Path;` and it resolves to something you never
 wrote — in a package that isn't even your `first.robot` — that's not a
-mistake. It's just an unusual packaging choice, and it still comes from the jar.
+mistake. It's just an unusual packaging choice, and it still comes from the jar. <!-- claim: bline.vendordep-and-packages -->
 
 ---
 
@@ -195,9 +195,9 @@ PIDController controller = new PIDController(5.0, 0.0, 0.0);
 double output = controller.calculate(measured, target);
 ```
 
-`calculate(measured, target)` is your two lines, and the constructor's three
+`calculate(measured, target)` is your two lines ([Figure 5.1](05-steering-p-control.md#figure-5-1) draws them), and the constructor's three
 numbers are the **P**, **I**, and **D** gains — proportional, integral, and
-derivative. You've only ever used the first. Leave the other two at zero; a plain
+derivative. You've only ever used the first. <!-- claim: wpilib.pid-controller-api --> Leave the other two at zero; a plain
 P loop is genuinely the right answer for path following, and I and D are a
 different lesson's problem.
 
@@ -219,6 +219,25 @@ in different directions:
   half a meter to the left of the line. Nothing above notices that. This loop
   pushes you sideways back onto it. Error is meters off the line, output is
   meters per second.
+
+Figure 17.1 draws all three at once on a robot that's off its line, facing the
+wrong way.
+
+<a id="figure-17-1"></a>
+![Top-down view of a robot above a dashed path that ends at a dot. A blue arrow points along the path (translation), an orange arrow points straight down onto the path (cross-track), and a green curved arrow turns the robot's nose toward the path's heading (rotation). A dashed black arrow, the sum, points down and along the path. Three boxes below give each loop's error, output and gain: kTranslationP 5.0, kRotationP 3.0, kCrossTrackP 2.0.](images/17-three-loops.svg)
+
+*Figure 17.1 — The three loops on one tick. Each looks at its own error, and the follower adds up what they ask for.*
+
+Take the boxes along the bottom one at a time, since each is a separate loop
+with its own error. Blue, translation: the robot is far from the end of the
+path, so it asks for a long arrow along the line. Orange, cross-track: it's off
+the line, so a shorter arrow pushes it straight back onto it, at right angles to
+the path. Green, rotation: the nose points somewhere other than the heading the
+path wants, so the loop asks for a spin, and that one is an angular velocity
+rather than an arrow on the floor. The dashed black arrow is what the follower
+actually sends to `driveRobotRelative`: translation and cross-track added
+together as one velocity, and the spin riding along with it. Three jobs, three
+gains, one command.
 
 Every one of those gains has the same units — output per unit of error, per
 second, so `1/s` — which is why the numbers are all in the same ballpark
@@ -309,17 +328,17 @@ Read it as a sentence: start at (3, 3) facing 0°, drive through (6, 3), be faci
 90° by halfway up the next leg, and end at (6, 6) facing 180°. That `t_ratio` of
 `0.5` is "halfway along this segment" — rotations get placed by
 fraction-of-segment rather than by coordinate, since they don't have a position
-of their own. The `event_trigger` element is for section 9; leave it in for now.
+of their own. <!-- claim: bline.path-json-format --> The `event_trigger` element is for section 9; leave it in for now.
 
 **`"profiled_rotation": true`** is what makes "by halfway up the next leg" true.
 With it, the heading the path asks for turns *gradually*, in step with how far
 along the path you are. Leave it out and the robot turns to face the next
 heading as fast as it can, the moment that target becomes the next one — on this
-path, that means it's already facing 90° before it reaches the first corner.
+path, that means it's already facing 90° before it reaches the first corner. <!-- claim: bline.profiled-rotation-default-false -->
 
 Angles here are **radians**, not degrees. The editor writes them for you; this is
 mostly a warning for when you hand-edit and wonder why `90` sent the robot
-somewhere strange.
+somewhere strange. <!-- claim: bline.path-json-format -->
 
 > **The simulated field is empty.** Lesson 16's chassis has no walls and nothing
 > to bump into, so a path can cross places a real robot couldn't. When you draw
@@ -345,19 +364,19 @@ shared by every path.
 ```
 
 > **`config.json` is not optional.** B-Line reads it every time it loads a path,
-> so a missing file is an error the moment the path loads, not a quiet default.
+> so a missing file is an error the moment the path loads, not a quiet default. <!-- claim: bline.config-json-required -->
 
 The last of those numbers is the cornering knob. **Handoff radius** is how close
 the robot has to get to a point before it gives up on it and starts driving to
 the next one — so `0.5` means the robot starts turning up the second leg half a
-meter before it reaches the corner, instead of driving all the way in.
+meter before it reaches the corner, instead of driving all the way in. <!-- claim: bline.handoff-radius -->
 
 The first two numbers deserve more than a glance, because they're not taste.
 **B-Line never slows down for a corner or a stop by planning ahead.** The
 translation loop just asks for `kTranslationP` × distance left, capped at the
 max speed, and the acceleration limit decides how fast the robot is allowed to
 change what it's doing. So whether the robot can stop where you asked comes down
-to two lines of arithmetic:
+to two lines of arithmetic: <!-- claim: bline.no-lookahead-planning -->
 
 - The loop starts slowing the robot when `5.0 × distance left` drops below the
   top speed. At 2 m/s, that's 2.0 ÷ 5.0 = **0.4 m** from the end.
@@ -365,19 +384,54 @@ to two lines of arithmetic:
 
 0.33 m of stopping fits inside 0.4 m of warning, so the robot arrives. At 3 m/s
 it wouldn't: slowing starts 0.6 m out, and stopping takes 3² ÷ (2 × 6) = 0.75 m.
-That's what Try It #2 has you watch. The same limit governs corners — turning
+That's what Try It #2 has you watch.
+
+Figure 17.2 plots both cases, which is easier to see than to read. The
+horizontal axis is the distance left to the end of the path, running backwards
+so that time goes left to right and the end is the dashed line at 0. The
+vertical axis is speed toward the end. Start with the dotted grey curve. It's
+the fastest speed the robot could be doing at each distance and still stop in
+time at 6 m/s², the square root in `√(2 × 6 × d)`, and it's the line the two
+cases are measured against. Anything above it is too fast to stop.
+
+The blue lines are what the translation loop asks for: the top speed, until
+`5.0 × distance left` drops below it, and then a straight slope down to zero at
+the end. The 2 m/s request (solid) turns downward at 0.4 m and stays under the
+grey curve all the way in, so braking along it is possible. The 3 m/s request
+(dashed) turns at 0.6 m, and for a stretch just after that it runs *above*
+the grey curve: the loop is asking for speeds the robot can't shed in the
+distance left. That's the 0.75 m against 0.6 m from the arithmetic, drawn.
+
+The orange and green lines are what the simulated robot really did, with the
+simulated truth's speed measured along the last leg of Two Corners. Orange (2
+m/s) rides the grey curve down, braking about as hard as 6 m/s² allows. It's
+still doing about 0.8 m/s when it reaches the end, since the wheels follow a
+request a little late, and it rolls about 6 cm past before settling. <!-- claim: l17.stop-2mps-end-speed, l17.stop-2mps-past-end --> That's
+what "arrives" looks like. Green (3 m/s) is the other story. The last leg is
+only 3 m long, so it peaks at about 2.9 m/s rather than 3, and it's still doing
+nearly 2 m/s at the end. <!-- claim: l17.stop-3mps-peak-speed, l17.stop-3mps-end-speed --> It slides on to about 36 cm past, stops, and drives
+back. <!-- claim: l17.stop-3mps-past-end --> (Five of six runs agreed with each other to a centimeter or two; the
+sixth stopped short, and its cause wasn't tracked down. Try It #2 asks you
+to reproduce this one.)
+
+<a id="figure-17-2"></a>
+![Speed against distance left on Two Corners' last leg. A dotted curve shows the fastest speed from which 6 m/s² can still stop. The 2 m/s request starts falling at 0.4 m and stays below the curve; the robot's measured speed follows the curve and ends about 6 cm past the end. The 3 m/s request starts falling at 0.6 m and crosses above the curve; the measured speed is still near 2 m/s at the end, overshoots by about 36 cm, and comes back](images/17-can-it-stop.png)
+
+*Figure 17.2 — Can it stop in time? The dotted curve is the best braking at 6 m/s²; the blue lines are what the loop asks for; the orange and green lines are what the simulated robot did at 2 and 3 m/s.* <!-- claim: l17.stop-2mps-end-speed, l17.stop-2mps-past-end, l17.stop-3mps-peak-speed, l17.stop-3mps-end-speed, l17.stop-3mps-past-end -->
+
+The same limit governs corners — turning
 2 m/s of "east" into 2 m/s of "north" is a change in velocity like any other,
 and it can't happen faster than 6 m/s² allows. With these numbers the robot
 swings roughly 14–16 cm past this path's first corner before it's heading up the
-second leg. (Measured in this course's sim over several runs; it varies a
-little, because vision nudges the estimate a little differently each time.)
+second leg ([Figure 17.4](#figure-17-4) draws it). (Measured in this course's sim over several runs; it varies a
+little, because vision nudges the estimate a little differently each time.) <!-- claim: l17.corner-overshoot, bline.handoff-radius -->
 
 And now the `deploy` folder, which you've had since Lesson 0 and never used.
 Anything under `src/main/deploy/` gets copied onto the robot next to your
 program when you deploy — it's for the files your code needs to *read* rather
 than compile. Paths are the classic case: you want to redraw one between matches
 without recompiling anything. The simulator reads from the same folder, so a
-path you drop in works in sim immediately.
+path you drop in works in sim immediately. <!-- claim: gradlerio.deploy-folder-read-by-sim -->
 
 Make a second path too. Real robots carry several autos, and having two here
 makes something visible in section 7 that one path would hide.
@@ -452,7 +506,7 @@ import frc.robot.lib.BLine.commands.FollowPath;
 import frc.robot.lib.BLine.following.DriveType;
 ```
 
-Nine arguments, and you've already met every idea in them.
+Nine arguments, and you've already met every idea in them. <!-- claim: bline.builder-distinct-pids -->
 
 The first says what kind of drivetrain this is — B-Line can drive tank and
 mecanum robots too, and it follows a path differently for each. The second is
@@ -472,15 +526,15 @@ not handing over a value, or even a way to get one. You're handing over a
 Then the three `PIDController`s from section 4, in the order the builder expects
 them: translation, rotation, cross-track. They have to be three separate
 objects — hand the builder the same controller twice and it throws an error
-the moment it's made.
+the moment it's made. <!-- claim: bline.builder-distinct-pids -->
 
 Two more settings are chained onto the end. `withDefaultShouldFlip()` mirrors the
 whole path to the far side of the field when the Driver Station reports you're on
-the red alliance — draw once, works on both. `withTelemetry(Telemetry.getTable())`
+the red alliance — draw once, works on both. <!-- claim: bline.flip-for-alliance --> `withTelemetry(Telemetry.getTable())`
 tells B-Line to log what it's doing — cross-track error, distance left, which
 point it's heading for — under `FollowPath/` in **Telemetry**. B-Line logs
 those itself, so they aren't AdvantageKit outputs: you see them live, and
-they're saved in the `WPILIB_` log, but not in the `akit_` one a replay reads.
+they're saved in the `WPILIB_` log, but not in the `akit_` one a replay reads. <!-- claim: bline.telemetry-signals, advantagekit.wpilib-log-saves-telemetry, advantagekit.telemetry-log-not-recorded -->
 Section 10 uses those.
 
 Alright — one thing to notice about that list, because it explains the shape of
@@ -493,7 +547,7 @@ ever draw.
 > **One builder means one set of controllers for every auto. Is that safe?** Yes.
 > Every command the builder makes requires the drivetrain, so the scheduler
 > guarantees only one of them is ever running. And B-Line resets the controllers
-> each time a path starts, so each run starts clean.
+> each time a path starts, so each run starts clean. <!-- claim: bline.controllers-reset-per-path -->
 
 With that in place, turning a path into something you can schedule is one short
 method.
@@ -519,7 +573,7 @@ happens. `withPoseReset()` asks B-Line to call `localizer::resetPose` with the
 path's starting pose the moment the path starts: "we're at the start of the
 path, trust me." On a real field that's true because a person put the robot
 there, which is exactly why it's worth doing — the estimate starts the auto
-knowing where the robot is instead of guessing. Hold on to that "because a
+knowing where the robot is instead of guessing. <!-- claim: bline.path-class-api --> Hold on to that "because a
 person put it there"; section 8 is about what happens when nobody did.
 
 The builder needs a home that's built once and reachable from every autonomous
@@ -545,7 +599,7 @@ import frc.robot.lib.BLine.commands.FollowPath;
 
 It goes in `Robot` for the same reason the drivetrain does: opmodes are rebuilt
 every time they're selected, and `Robot` is the thing that lives for the whole
-program. It's a field initializer that uses `drivetrain` and `localizer`, so it
+program. <!-- claim: wpilib.robot-built-once, wpilib.opmode-lifecycle --> It's a field initializer that uses `drivetrain` and `localizer`, so it
 has to come after both — it does, since they're declared above it.
 
 ---
@@ -603,10 +657,10 @@ The `group = "Paths"` sorts both into a group of their own, apart from
 Lesson 9's two.
 
 `new Path("TwoCorners")` opens `deploy/autos/paths/TwoCorners.json`, reads it,
-and reads `config.json` alongside it — the `.json` is added for you.
+and reads `config.json` alongside it — the `.json` is added for you. <!-- claim: bline.path-class-api -->
 
 Now the part worth understanding. **An opmode's constructor runs the moment it's
-selected on the Driver Station** — not when you enable. That's how Lesson 9's
+selected on the Driver Station** — not when you enable. <!-- claim: wpilib.opmode-lifecycle --> That's how Lesson 9's
 binding got scoped to its opmode, and it has a second consequence here: the
 `new Path(...)` line runs at selection time too. So the path file is opened,
 parsed and checked while the robot is still sitting disabled, minutes before
@@ -618,7 +672,7 @@ start of autonomous is the one moment you can't afford to spend on setup. It als
 means a mistake shows up early. Misspell the path name — `"TwoCorner"` — and
 `new Path(...)` throws an `IllegalArgumentException` that names the missing
 file the moment you select the auto, in the pits, instead of when the match
-starts.
+starts. <!-- claim: bline.bad-path-name-throws -->
 
 > **Why not one opmode with a menu inside it?** Because the Driver Station
 > already *is* the menu. Each extra auto is one small file and no chooser code —
@@ -636,17 +690,17 @@ fresh launch, or wherever the last run ended.
 
 Break that promise and the robot gets told a pose it isn't at. The cameras
 still see where it really is, so within about a second they drag the
-estimate's *position* back to the truth. They don't fix its *heading*, so the
+estimate's *position* back to the truth. <!-- claim: l17.camera-fix-time --> They don't fix its *heading*, so the
 robot goes on believing it faces the wrong way and drives off in strange
-directions. That's what happens the second time you run an auto without
+directions. <!-- claim: bline.pose-reset-estimate-only --> That's what happens the second time you run an auto without
 restarting the sim.
 
 It also happens the very first time, for a reason you'd never guess: **SimGUI
 starts out on the red alliance.** Its **DS** window says *Red 1*, and the first
-time you click Autonomous it tells the robot so. `withDefaultShouldFlip()` from
+time you click Autonomous it tells the robot so. <!-- claim: wpilib-tools.simgui-alliance-station --> `withDefaultShouldFlip()` from
 section 6 does exactly its job — it mirrors the path to the red end of the field
 and resets the estimate there — while the simulated robot is still sitting at
-the blue start, most of a field away.
+the blue start, most of a field away. <!-- claim: bline.flip-for-alliance -->
 
 So do the person's job in the simulator: when an auto is selected, set the
 simulated robot down where that auto starts. It takes three small pieces.
@@ -712,11 +766,11 @@ is one because a path could begin with a bare rotation and have no starting
 spot of its own. Yours all begin with a waypoint, so `.get()` is safe, and if
 you ever draw one that doesn't, it crashes right there, which is what you'd
 want. `MatchState.getAlliance()` is the other: until the Driver Station says,
-there is no alliance. **`.orElse(Alliance.BLUE)`** takes what's in the box, or
+there is no alliance. <!-- claim: wpilib.match-state-alliance-optional --> **`.orElse(Alliance.BLUE)`** takes what's in the box, or
 blue if it's empty, the same rule B-Line's flip follows. Then
 `FlippingUtil.flipFieldPose`, from B-Line, mirrors the pose the same way B-Line
 mirrors the path, so the robot is set down exactly where the flipped path
-starts.
+starts. <!-- claim: bline.path-class-api -->
 
 **Then add the placement to both auto opmodes' constructors, between the two lines you have:**
 
@@ -740,7 +794,7 @@ The constructor is exactly the right moment, for the same reason it's the right
 moment to read the file: it runs when the auto is selected, while the robot is
 disabled — when, on a real field, someone is setting the robot down. And it
 runs again every time you disable after an auto has run, because the framework
-rebuilds the opmode then. So every run starts from the start, on whichever side
+rebuilds the opmode then. <!-- claim: wpilib.opmode-lifecycle --> So every run starts from the start, on whichever side
 of the field you're playing.
 
 ---
@@ -754,7 +808,7 @@ the path that fires an action as the robot passes it.
 The name is the link. A path file refers to a marker by `lib_key`, and your code
 registers what that key should do. Registration is `static` — B-Line keeps one table
 for the whole program, not one per path — so it happens once, and every path that
-mentions `"shoot"` gets it.
+mentions `"shoot"` gets it. <!-- claim: bline.register-event-trigger -->
 
 **Add to `Autos`, below `startPose`:**
 
@@ -768,9 +822,9 @@ mentions `"shoot"` gets it.
 
 The second argument is a lambda that takes nothing and returns nothing — a plain
 action, which Java calls a `Runnable`. B-Line runs it once, on the loop after the
-robot passes the marker. It has to be quick: it runs inside the robot's loop, so
+robot passes the marker. <!-- claim: bline.register-event-trigger, bline.events-next-poll --> It has to be quick: it runs inside the robot's loop, so
 anything slow stalls the whole robot. (`registerEventTrigger` also accepts a
-`Command`, for an event that needs to keep running for a while.)
+`Command`, for an event that needs to keep running for a while.) <!-- claim: bline.register-event-trigger -->
 
 Once for the whole program means the constructor of the thing that lives for the
 whole program.
@@ -806,7 +860,7 @@ leg, from (6, 3) to (6, 6) — the same fraction-of-segment idea rotations use.
 > reaches the marker, not when the path loads, and an unknown key just logs
 > `FollowPath: Unregistered event trigger key: Shoot` and keeps driving. So if a
 > marker never seems to fire, check the console for that line before you go
-> hunting in the geometry.
+> hunting in the geometry. <!-- claim: bline.unregistered-key-logs -->
 
 That's the last piece of `Autos`.
 
@@ -884,33 +938,56 @@ public final class Autos {
 
 ## 10. Run it
 
-Run the robot in simulation. Before you click anything in **Robot State**,
+Run the robot in simulation. Before you click anything in **Robot State** (Lesson 0's [Figure 0.2](00-orientation.md#figure-0-2)),
 find SimGUI's **DS** window and set **Alliance Station** to **Blue 1**. You
 can only change it while Robot State says *Disconnected*, which it does when
-SimGUI first opens, and it starts on Red 1 every time. (Red works too now —
+SimGUI first opens, and it starts on Red 1 every time. <!-- claim: wpilib-tools.simgui-alliance-station --> (Red works too now —
 that's Try It #6 — but the numbers below are for blue.)
 
-Then click **Autonomous** and pick **Two Corners** on the opmode selector.
+<a id="figure-17-3"></a>
+![SimGUI's Robot State and DS windows at two moments. Left: Disconnected, with the DS window's Alliance Station drop-down set to Blue 1, badge 1. Right: Autonomous picked, badge 2, Two Corners chosen on the opmode selector, badge 3, and the Enable button below it, badge 4; the DS window now shows the alliance station as plain text.](images/17-simgui-ds-window.png)
+
+*Figure 17.3 — The four things you'll click. The DS window's Alliance Station is a drop-down only while Robot State says Disconnected; once you pick a mode it turns into plain text.* <!-- claim: wpilib-tools.simgui-alliance-station, wpilib-tools.simgui-robot-state-panel -->
+
+Figure 17.3 labels the four things you'll click, in order. Set the Alliance
+Station (1) while everything still says Disconnected. Then click
+**Autonomous** (2) and pick **Two Corners** on the opmode selector (3).
 Before you enable anything, look at the console: the line
 `********** Creating OpMode Two Corners **********` just printed, and that's the
-moment your path file was read and the robot was set down at (3, 3). Pick
-**Far Side** and it prints again for that one. Pick **Two Corners** back, then
-set state to **Enabled**.
+moment your path file was read and the robot was set down at (3, 3). <!-- claim: wpilib.opmode-creation-console-line, wpilib.opmode-lifecycle --> Pick
+**Far Side** and it prints again for that one. <!-- claim: wpilib.opmode-creation-console-line --> Pick **Two Corners** back, then
+click **Enable** (4).
 
 Then watch it the way you've watched every closed-loop lesson since Lesson 5 —
-asked-for against measured. Open AdvantageScope's **Odometry** tab, put
+asked-for against measured. Open an AdvantageScope **2D Field** tab, put
 `Localizer/Pose` (under **AdvantageKit → RealOutputs**) on the field, and look
 for the robot tracing an actual shape:
 out along X, turning up the second leg just before the corner, coming around to
 90° partway up, settling at (6, 6) facing 180°. In this course's sim that takes
-about 4 seconds, and `Event: shoot!` shows up in the console about 80% of the way
-up the second leg. The robot finishes within the tolerances in `config.json`
-— within 5 cm and 2°, so don't be surprised to read 178.3° rather than 180°.
+about 4 seconds, and `Event: shoot!` shows up in the console about 82% of the way
+up the second leg — a touch past the 80% you wrote in the file, because the
+event runs on the loop after the follower passes the marker. <!-- claim: l17.follow-duration, l17.shoot-fraction, bline.events-next-poll --> The robot finishes
+within the tolerances in `config.json` — within 5 cm and 2°, so don't be
+surprised to read 178.8° rather than 180°. <!-- claim: l17.finish-heading -->
+
+<a id="figure-17-4"></a>
+![Top-down view of the field from x 2.4 to 7.6 and y 2.3 to 6.9 meters. A dashed black line is the drawn path from (3, 3) east to the corner at (6, 3), then north to (6, 6). An orange line is the track the robot drove: it follows the first leg, swings about 16 centimeters past x = 6 inside a dotted half-meter circle round the corner, and comes back to the line on the second leg, ending at (6, 6). Blue arrows show the robot's heading turning from 0 degrees to about 180 degrees along the way. A diamond marks the rotation target and a star marks where the shoot event fired.](images/17-two-corners-track.png)
+
+*Figure 17.4 — Two Corners, drawn and driven: the path in the file, and where the simulated robot really went (Drivetrain/SimulatedPose, one run; three runs gave 15–16 cm past the corner).* <!-- claim: l17.fig-corner-overshoot -->
+
+Figure 17.4 is that run drawn from above. The dashed line is your path file; the
+orange line is where the robot went. Look at the corner first: the robot enters the dotted circle, which is the 0.5 m
+handoff radius, and then swings about 16 cm wide before it's heading up the
+second leg. That's section 5's arithmetic made visible. <!-- claim: l17.fig-corner-overshoot, bline.handoff-radius --> Then follow the blue
+arrows: the robot faces east on the first leg, is at about 66° partway up the
+second, and has passed 90° (97° in the figure) a little further on, so the turn
+to 90° "by halfway up the leg" finishes a bit after the halfway mark. <!-- claim: l17.fig-heading-partway, l17.fig-heading-past-90 --> It
+keeps turning, to about 180° at the end, because the last waypoint asks for it.
 
 Add `Drivetrain/SimulatedPose` — Lesson 16's ground truth — to the same field.
 Now you can see the whole story at once: the line you drew, where the robot
 thinks it is, and where it actually is. They should sit within a couple of
-centimeters of each other the whole way.
+centimeters of each other the whole way (with the cameras on; [Figure 16.1](16-ground-truth.md#figure-16-1) shows how far the wheels alone creep). <!-- claim: l17.estimate-truth-gap -->
 
 Then plot B-Line's own view of the job, under **Telemetry**.
 `FollowPath/crossTrackError` is the cross-track loop's error — how far off
@@ -918,13 +995,52 @@ the line the robot is — and
 `FollowPath/remainingPathDistanceMeters` is the translation loop's. Watch the
 cross-track error jump to about half a meter right at the corner: that's the
 0.5 m handoff radius, since the robot is still on the first leg's line when it
-starts measuring against the second's. Then watch it shrink back toward zero as
+starts measuring against the second's. <!-- claim: l17.crosstrack-jump, bline.handoff-radius, bline.telemetry-signals --> Then watch it shrink back toward zero as
 the robot settles onto the second leg. Nothing told the
 follower it was off the line. Correcting is the only thing it ever does.
 
-To run it again, set state to **Disabled**. The console shows the opmode
+<a id="figure-17-5"></a>
+![Two stacked graphs of one run, time from 0 to 4.5 seconds. Top: crossTrackError sits at a few centimeters, jumps to 0.47 meters at 1.44 seconds, falls back through zero at about 1.7 seconds, reaches minus 0.16 meters at about 2 seconds, then settles near plus 0.03 meters. Bottom: remainingPathDistanceMeters falls steadily from 6 meters, drops from 3.5 to 3.0 meters at the same 1.44 seconds, and reaches zero at about 3.3 seconds. A vertical dotted line marks the jump and a dashed one marks when the shoot event fires.](images/17-cross-track-error.png)
+
+*Figure 17.5 — B-Line's two signals through Two Corners. Both jump at the same tick, when the robot enters the 0.5 m handoff radius and the follower starts measuring against the second leg.* <!-- claim: l17.fig-crosstrack-jump, l17.fig-jump-time, l17.fig-zero-delay, l17.fig-settle, l17.fig-remaining-zero, l17.fig-corner-overshoot, bline.handoff-radius -->
+
+Figure 17.5 shows both signals from one run, and it's worth reading slowly,
+because the jump in it looks like a mistake and isn't. Start with the top
+panel, `crossTrackError`: how far the robot is from the line the follower is
+chasing right now, positive here when the robot is to the left of that line.
+Along the first leg it sits at a few centimeters, the robot hardly off the line.
+Then, at 1.44 s, it leaps to 0.47 m in a single tick. <!-- claim: l17.fig-crosstrack-jump, l17.fig-jump-time --> The robot didn't move
+that much in 20 milliseconds: it entered the handoff radius, and the follower
+swapped its line from the first leg to the second. The robot is at about
+x = 5.58 and the second leg is the line x = 6, so it really is about half a
+meter from the line it's now chasing. <!-- claim: l17.fig-jump-x, l17.crosstrack-jump -->
+
+The bottom panel says the same thing a second way.
+`remainingPathDistanceMeters` falls steadily, then drops from 3.5 to 3.0 m in
+that same tick: the follower stopped measuring to the end through the corner
+and started measuring along the second leg. <!-- claim: bline.handoff-radius --> A dotted line marks the tick in
+both panels, so you can see the two signals change together.
+
+Now follow the top curve down from the jump. The cross-track loop is a P loop
+like the ones you've been tuning since Lesson 5: it asks for sideways speed in
+proportion to the error, so a big error is cut quickly, and the curve drops
+through zero about 0.28 s after the jump. <!-- claim: l17.fig-zero-delay --> But the robot was heading east at
+2 m/s and can only change its velocity so fast (the acceleration limit in
+`config.json`), so it doesn't stop at the line: it sails through, and the curve
+bottoms out at −0.16 m, the robot 16 cm past the line on the far side. <!-- claim: l17.fig-corner-overshoot --> That's
+the same 16 cm you can see at the corner in Figure 17.4. Then the loop pulls it
+back, and it's within a few centimeters for the rest of the run, settling at
+about 0.03 m, inside the 5 cm tolerance. <!-- claim: l17.fig-settle --> The dashed line is the `shoot` event,
+well after all that has settled.
+
+So the picture to keep is jump, cut, overshoot, settle: a step in the error
+that comes from changing which line you're measuring against, then an ordinary
+P loop doing what P loops do. These two signals are saved in the `WPILIB_` log
+file, not the `akit_` one (Try It #7 comes back to this). <!-- claim: advantagekit.wpilib-log-saves-telemetry, bline.telemetry-signals -->
+
+To run it again, click **Disable**. The console shows the opmode
 closing and being created again — which reads the path and sets the robot back
-down at (3, 3) — so just **Enable** again. If you want to watch section 8's
+down at (3, 3) — so just **Enable** again. <!-- claim: wpilib.opmode-lifecycle, wpilib.opmode-creation-console-line --> If you want to watch section 8's
 problem happen, comment out the `placeSimulatedRobot` line and run twice
 without restarting.
 
@@ -942,16 +1058,16 @@ without restarting.
    tighter, or wider? Run it and see. (In this course's sim the robot swings
    about half a meter past the first corner instead of 14–16 cm, and takes half a
    second longer. A later handoff means the robot drives into the corner at full
-   speed before it starts turning.) Put it back, then raise
+   speed before it starts turning.) <!-- claim: l17.handoff-005-corner, l17.handoff-005-time, l17.corner-overshoot, bline.handoff-radius --> Put it back, then raise
    `default_max_velocity_meters_per_sec` to `3.0`. Section 5's arithmetic says
-   the robot can't stop in time from 3 m/s; watch it sail roughly 35 cm past the
-   end and come back, and about 70 cm past the first corner. Then change the
+   the robot can't stop in time from 3 m/s ([Figure 17.2](#figure-17-2) draws it); watch it sail roughly 35 cm past the
+   end and come back, and about 70 cm past the first corner. <!-- claim: l17.stop-3mps-past-end, l17.stop-3mps-past-corner, bline.no-lookahead-planning --> Then change the
    acceleration so the arithmetic works again, and check that it does.
 3. **Code — mistune the cross-track gain.** Set `kCrossTrackP` to `30.0` and run the
    path, with `FollowPath/crossTrackError` plotted. The first leg and the corner look
    much like before. Then the robot starts swinging back and forth across the
    second leg, about 40 cm each way, a full swing a little under every two
-   seconds, and it never finishes: it's still swinging 40 seconds later.
+   seconds, and it never finishes: it's still swinging 40 seconds later. <!-- claim: l17.kp30-swing, l17.kp30-period, l17.kp30-never-finishes -->
    Translation and rotation are fine the whole time; one loop with too much gain
    keeps the whole path from ending. Put it back to `2.0` when you're done.
 4. **Code — compose a path with a script.** Make an auto that follows `TwoCorners` and
@@ -967,20 +1083,34 @@ without restarting.
 6. **Run it on red.** Click **Disconnected**, set the DS window's Alliance
    Station to **Red 1**, click **Autonomous**, and pick **Two Corners** again.
    The robot is set down at the red end, (13.54, 5.07) facing 180°, and runs
-   the same shape rotated half a turn, finishing near (10.54, 2.07) facing 0°.
+   the same shape rotated half a turn, finishing near (10.54, 2.07) facing 0°. <!-- claim: wpilib.field-default-layout, bline.flip-for-alliance -->
    Nothing in your code changed: `withDefaultShouldFlip()` and `startPose`
    agree about which side of the field you're on. Predict before you run it:
    what would happen on red if `startPose` didn't flip?
+
+   Figure 17.6 is a red run on a 2D Field tab, a moment before the end. The
+   trail (1) comes along the first leg, swings past the corner and turns up
+   the second. The truth and the estimate (2) are at about (10.62, 2.43) and
+   (10.61, 2.40), within 4 cm of each other, still turning at −58°;
+   `CurrentCommand` (3) still says `FollowPath`, and the last console line
+   (4) is `Event: shoot!`. AdvantageScope draws the field its own way round
+   (Lesson 11), not the way Figure 17.4 does, so read the numbers rather than
+   the picture's directions. <!-- claim: bline.flip-for-alliance, wpilib-tools.advantagescope-field-orientation -->
+
+   <a id="figure-17-6"></a>
+   ![An AdvantageScope 2D Field tab during Two Corners on the red alliance. A robot square sits just left of centre in the upper half of the field, near the red hub; behind it a thin trail runs horizontally from the left, bends upward past the corner and leads to the robot (badge 1). The Poses list reads Robot: NT:/AdvantageKit/RealOutputs/Drivetrain/SimulatedPose at X 10.622 m, Y 2.434 m, minus 57.86 degrees, and Robot: NT:/AdvantageKit/RealOutputs/Localizer/Pose at X 10.613 m, Y 2.396 m, minus 57.86 degrees (badge 2). In the sidebar, under AdvantageKit and RealOutputs, Drivetrain's CurrentCommand reads FollowPath (badge 3) and Console reads Event: sh... (badge 4).](images/17-advantagescope-two-corners-red.png)
+
+   *Figure 17.6 — Two Corners on red, near the end: the trail (1), the truth and the estimate (2), the command still following (3), and the shoot event in the console (4).*
 7. **Replay an auto.** Record a run of Two Corners, then replay it the way
-   Lesson 13 did (`REPLAY`, `$env:AKIT_LOG_PATH`, `./gradlew run`). The
+   Lesson 13 did ([Figure 13.2](13-io-replay.md#figure-13-2); `REPLAY`, `$env:AKIT_LOG_PATH`, `./gradlew run`). The
    replay builds the opmode, reads the path, and follows it again, so
    `Event: shoot!` prints in the replay's console too. B-Line times every step with the
    robot's clock, and AdvantageKit replays the clock along with everything
    else, so the follower decides exactly what it decided before: measured,
    `ReplayOutputs/Localizer/Pose` and `ReplayOutputs/Drivetrain/DesiredModuleStates`
-   matched their `RealOutputs` twins on every tick. Look for
+   matched their `RealOutputs` twins on every tick. <!-- claim: advantagekit.replay-clock, advantagekit.replay-matches-recording --> Look for
    `FollowPath/crossTrackError` in the replay's file, though, and it isn't
-   there: B-Line logs through Telemetry, not AdvantageKit (section 6). Put
+   there: B-Line logs through Telemetry, not AdvantageKit (section 6). <!-- claim: advantagekit.telemetry-log-not-recorded, bline.telemetry-signals --> Put
    both switches back when you're done.
 
 ---

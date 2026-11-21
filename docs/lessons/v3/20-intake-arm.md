@@ -90,20 +90,35 @@ arm straight up, no effort. And `cos(180°) = −1` — the arm out sideways
 Phoenix has that model built in. Where the elevator used
 `GravityTypeValue.Elevator_Static` — a constant push, same at every
 height — the arm uses `GravityTypeValue.Arm_Cosine`, and the firmware
-multiplies your `kG` by `cos θ` every time it runs the loop.
+multiplies your `kG` by `cos θ` every time it runs the loop. <!-- claim: phoenix6.arm-cosine-gravity -->
 
 > **This is the part that will bite you.** For the firmware to compute
 > `cos θ`, it has to know what `θ` is — and it assumes the sensor reads
 > **zero when the arm is horizontal**. That's not a convention you get to
 > pick. Get the zero wrong by 90° and `kG` fights the arm instead of
-> helping it, hardest exactly when the arm most needs the help. On a real
+> helping it, hardest exactly when the arm most needs the help. <!-- claim: phoenix6.arm-cosine-gravity --> On a real
 > robot this means calibrating the encoder against a horizontal arm, and
 > it is worth doing carefully.
 
 The good news: WPILib's arm simulator measures angles the same way — zero
 at horizontal, positive counter-clockwise, the same convention as
 `Rotation2d` and Lesson 19's ligaments. Everything in this lesson agrees on
-where zero is.
+where zero is. <!-- claim: wpilib.single-jointed-arm-sim-api -->
+
+<a id="figure-20-1"></a>
+![Two drawings. Top: a side view from the arm's pivot. Zero degrees points horizontally out the front, 90 degrees straight up, 180 degrees straight back. The sweep from minus 20 degrees to 180 degrees is shaded as travel and the rest as no travel. The arm is drawn at 0, 45 and 90 degrees with its center of mass as a dot, and a dashed horizontal line from the pivot's vertical to each dot reads 0.254, 0.180 and 0 meters. Bottom: two carriage-and-arm drawings. With the arm horizontal in the world (0 degrees) the drawing angle is minus 90 degrees; with the arm stowed (90 degrees) it is 0 degrees.](images/20-arm-angle-convention.svg)
+
+*Figure 20.1 — The arm's angle convention: zero is horizontal, the stops are at −20° and 180°, gravity's lever arm is 0.254 m × cos θ, and a drawing angle is the world angle minus the carriage's 90°.* <!-- claim: wpilib.single-jointed-arm-sim-api, advantagekit.logged-mechanism-api -->
+
+Figure 20.1 draws all of that at once. In the top drawing, find the 0° line: that
+is the one the firmware assumes the sensor reads zero on. The shaded wedge is
+the arm's travel, from `kMinAngle` at −20° up and over the top to `kMaxAngle` at
+180°, so it can reach a little below horizontal to pick things up, but can't go
+past straight back. The dashed lines are the `cos θ` from above, as distances:
+the arm's center of mass is half its 0.508 m away from the pivot, so out
+horizontal gravity pulls from 0.254 m out, at 45° from 0.180 m, and straight
+up from 0. The bottom drawing is a different question, how the picture
+draws the arm, and it comes back in section 7.
 
 ---
 
@@ -175,10 +190,10 @@ The four gains are the same four the elevator has, describing the same
 three costs plus the trim. They come out of the same three steps — what
 does the *mechanism* need, divide by the gear ratio for what the *rotor*
 needs, then `× 0.1187` for a speed or `× 1.677` for a torque — with this
-arm's numbers substituted in.
+arm's numbers substituted in. <!-- claim: wpilib.kraken-x60-model -->
 
 **`kArmKV = 5.94`** — one arm rotation per second is 50 rotor rotations per
-second through the gearbox.
+second through the gearbox. <!-- claim: wpilib.kraken-x60-model -->
 
 *Nothing to add — the arithmetic, not code:*
 
@@ -188,7 +203,7 @@ second through the gearbox.
 
 **`kArmKG = 0.25`** — the torque to hold the arm out horizontal. A
 uniform arm's weight acts at its middle, so the lever arm is half its
-length, `0.508 / 2 = 0.254 m`.
+length, `0.508 / 2 = 0.254 m`. <!-- claim: wpilib.kraken-x60-model -->
 
 *Nothing to add — the arithmetic, not code:*
 
@@ -202,7 +217,7 @@ volts        0.149 N·m × 1.677        = 0.25 V
 **`kArmKA = 0.054`** — the torque to speed the arm up. Rotating things
 resist acceleration by their **moment of inertia**, and for a uniform rod
 pivoting about one end that's `⅓ m L² = ⅓ × 3 × 0.508² = 0.258 kg·m²`. One
-arm rotation per second squared is `2π = 6.28 rad/s²`.
+arm rotation per second squared is `2π = 6.28 rad/s²`. <!-- claim: wpilib.kraken-x60-model -->
 
 *Nothing to add — the arithmetic, not code:*
 
@@ -365,7 +380,7 @@ public class ArmIOTalonFX implements ArmIO {
 
 > **`setThrottle`, not `set`.** You met this back in Lesson 1: this
 > Phoenix 6 alpha has no `TalonFX.set(double)` at all. `setThrottle(double)`
-> is the −1..1 open-loop call you already know, just under its real name.
+> is the −1..1 open-loop call you already know, just under its real name. <!-- claim: phoenix6.talonfx-set-throttle -->
 
 Notice what **isn't** here: a pair of conversion helpers. The elevator
 needed `metersToRotations` because a drum turns rotations into meters, and
@@ -374,16 +389,16 @@ rotation, so once `SensorToMechanismRatio` has made positions arm-side,
 going from degrees to rotations is a unit conversion and nothing else —
 `ArmConstants.kMaxVelocity.in(RotationsPerSecond)` and
 `m_request.withPosition(Degrees.of(angleDegrees))` hand the whole job to
-the Units library. The same is true reading back: `getPosition()` gives a
+the Units library. <!-- claim: phoenix6.control-request-measures, phoenix6.sensor-to-mechanism-ratio --> The same is true reading back: `getPosition()` gives a
 Phoenix `Angle`, and `.getValue().in(Degrees)` is the entire conversion —
 the same unit-carrying read every Phoenix value in this course has gone
-through.
+through. <!-- claim: phoenix6.get-value-in-units -->
 
 Everything about the gains transfers from the elevator unchanged except
 one thing, and it's the one this lesson is about: `kG` stopped being a
 constant. The `GravityType` line is what tells the firmware to scale it by
 `cos θ` rather than apply it flat. `kV`, `kA`, and `kP` don't care that the
-mechanism rotates.
+mechanism rotates. <!-- claim: phoenix6.arm-cosine-gravity -->
 
 **The soft limits are new, and they're a different kind of protection from
 the clamp Lesson 18 wrote.** `clampToTravel` is *your code's* opinion
@@ -391,8 +406,8 @@ about what counts as a valid request, and it only helps if every request
 goes through it. A soft limit lives underneath your code entirely: the
 motor controller compares its own encoder against the threshold and
 refuses to drive any further that way — no matter which line of your
-program asked, or whether you remembered to clamp. With Motion Magic you
-can watch it happen: the profile's own setpoint stops at the threshold.
+program asked, or whether you remembered to clamp. <!-- claim: phoenix6.soft-limit-stops-motion-magic --> With Motion Magic you
+can watch it happen: the profile's own setpoint stops at the threshold. <!-- claim: phoenix6.soft-limit-stops-motion-magic -->
 Both belong. The clamp keeps bad numbers out of your logic; the soft limit
 keeps the mechanism off its hard stops when your logic is wrong.
 
@@ -411,7 +426,7 @@ gets `SingleJointedArmSim`, in the slot `ElevatorSim` filled last lesson.
 The roller gets a plain `DCMotorSim` — the same generic two-state motor
 model `ModuleIOSim` has been using for the drive and steer motors since
 Lesson 4, because a roller is exactly that: a motor with some spinning
-inertia and nothing else to it.
+inertia and nothing else to it. <!-- claim: wpilib.sim-model-api -->
 
 **Create `subsystems/ArmIOSim.java`:**
 
@@ -494,19 +509,19 @@ inertia** is rotation's version of mass — how hard a thing is to get
 spinning — and it depends on how the mass is spread out, which normally
 means asking CAD. `estimateMOI` assumes a uniform rod pivoting about one
 end, which is close enough for an arm made of tube, and saves you from
-inventing a number you can't check.
+inventing a number you can't check. <!-- claim: wpilib.single-jointed-arm-sim-api -->
 
 The arm starts at `kMinAngle`, resting on its lower stop. That's what a
 real one does: switch the robot off and the arm falls until something
 catches it. The model's two limits, `kMinAngle` and `kMaxAngle`, are its
 **hard stops** — the simulated arm physically can't swing past them, the
-same way a real one hits metal.
+same way a real one hits metal. <!-- claim: wpilib.single-jointed-arm-sim-api -->
 
 > `Models.singleJointedArmFromPhysicalConstants` builds the roller's model
 > too, despite the name — it's the same generic "motor with inertia
 > `J` through gear ratio `g`" system regardless of what's spinning. A
 > roller has no gravity term to add, which is exactly what an arm system
-> with `J` alone (no separate gravity input) already gives you.
+> with `J` alone (no separate gravity input) already gives you. <!-- claim: wpilib.sim-model-api -->
 
 ---
 
@@ -674,13 +689,15 @@ public class Arm implements Mechanism {
 The logging is the elevator's again. `processInputs` records all five
 readings, the roller's speed included, under `Arm/`, one key per field,
 and fills them from the log in a replay. The goal and the "am I there?"
-answer are the arm's own decisions, so they're outputs.
+answer are the arm's own decisions, so they're outputs. <!-- claim: advantagekit.autolog-key-names -->
 
-`toDrawingAngle` is Lesson 19's rule applied rather than explained: a
+`toDrawingAngle` is Lesson 19's rule applied rather than explained
+([Figure 19.1](19-mechanism2d.md#figure-19-1) draws it): a
 child's angle is measured from its parent, the carriage points straight up
 at 90°, so an arm that is horizontal in the world is at −90° in the
 drawing. Get that subtraction backwards and the picture will tell you
-immediately.
+immediately. The bottom half of [Figure 20.1](#figure-20-1) is this rule: horizontal
+in the world is −90° in the drawing, and stowed (90°) is 0°.
 
 Notice how little `Arm` says about the elevator otherwise. It asks for the
 mount point once, in the constructor, and then never mentions the
@@ -693,7 +710,7 @@ line.
 > elevator registered first. So the arm you see is the arm from one tick
 > earlier — 20 milliseconds, which at full swing speed is about 3.5° — the
 > one place in the drawing where "change it, then log it" runs the other
-> way round. That's far below anything you can see. If it ever mattered,
+> way round. <!-- claim: commandsv3.periodic-before-commands, l20.drawing-lag --> That's far below anything you can see. If it ever mattered,
 > the fix would be to log the drawing once, after both have moved it.
 
 **`runRoller` is the first command in this course that doesn't drive
@@ -704,7 +721,7 @@ Lesson 10. `.whenCanceled(...)` stops the motor when it ends, however it
 ends — button released, command interrupted, or another command taking
 the mechanism. That matters here specifically: unlike the pivot, whose
 Phoenix control request holds position on its own once the command is
-gone, a roller left spinning stays spinning until someone tells it not to.
+gone, a roller left spinning stays spinning until someone tells it not to. <!-- claim: phoenix6.control-request-persists, phoenix6.talonfx-set-throttle, commandsv3.when-exited-on-cancel -->
 
 ---
 
@@ -745,7 +762,7 @@ same rule Lesson 14 relied on to get `drivetrain` ticking before
 
 On an Xbox pad the left face button is X and the top one is Y —
 `CommandGamepad` names buttons by where they sit, not by what's printed on
-them, so the same code works on any gamepad. `faceDown()` and
+them, so the same code works on any gamepad. <!-- claim: commandsv3.command-gamepad-api --> `faceDown()` and
 `faceRight()` are already spoken for by the heading bindings from
 Lesson 8.
 
@@ -766,22 +783,22 @@ import first.robot.Constants.ArmConstants;
 
 Run the robot in simulation and go **Teleoperated**. Open AdvantageScope, put the
 **Mechanism** tab on `/AdvantageKit/RealOutputs/Elevator/Mechanism`, and press the top
-face button (Y).
+face button (Y on an Xbox pad, **V** on the keyboard). <!-- claim: advantagekit.simgui-mechanism-menu -->
 
-The arm swings up to vertical. Now press **D-pad up** and watch the whole
+The arm swings up to vertical. Now press **D-pad up** (**I**) and watch the whole
 assembly rise — arm still at its angle, riding the carriage, from code
 that never once mentions the elevator's height. Press the left face
-button (X) and it drops back down to the floor while staying up high.
+button (X on an Xbox pad, **C** on the keyboard) and it drops back down to the floor while staying up high.
 That is the scene graph from Lesson 19 doing exactly what it promised.
 
-Then go find the physics. The arm's readings are under **NetworkTables →
-AdvantageKit → Arm**, and its goal and `AtGoal` under **AdvantageKit →
-RealOutputs → Arm**. Put `Arm/AngleDegrees` and `Arm/AppliedVolts` on
+Then go find the physics. The arm's readings are under **AdvantageKit →
+Arm**, and its goal and `AtGoal` under **AdvantageKit →
+RealOutputs → Arm**. <!-- claim: advantagekit.data-receivers-and-files --> Put `Arm/AngleDegrees` and `Arm/AppliedVolts` on
 one graph and watch what the voltage settles at once the arm stops. Your
 two presets give you two readings: about `+0.24` at the floor (`−20°`,
-where `kG × cos θ` is `0.235`), and `0.00` stowed straight up. Send the
+where `kG × cos θ` is `0.235`), and `0.00` stowed straight up. <!-- claim: l20.floor-hold, l20.hold-vertical, phoenix6.arm-cosine-gravity --> Send the
 arm to more angles — Try It #1 shows you how to add one — and you get the
-rest of this table, measured in this simulation:
+rest of this table, measured in this simulation: <!-- claim: l20.hold-horizontal, l20.hold-45, l20.hold-vertical -->
 
 | Arm angle | Applied volts | `kG × cos θ` |
 |---|---|---|
@@ -791,12 +808,28 @@ rest of this table, measured in this simulation:
 | 135° | −0.18 | −0.18 |
 | 180° (horizontal, other side) | −0.25 | −0.25 |
 
+<a id="figure-20-2"></a>
+![Holding voltage against arm angle from -20 to 180 degrees: 23 measured points on the dashed curve kArmKG times cosine of the angle, positive and falling to zero at 90 degrees, then negative to -0.25 at 180](images/20-hold-voltage-cosine.png)
+
+*Figure 20.2 — Applied volts while holding, at 23 angles from −20° to 180°, against the curve `kArmKG × cos θ`. The arm was swept up and then back down.* <!-- claim: l20.hold-horizontal, l20.hold-45, l20.hold-vertical, l20.floor-hold, phoenix6.arm-cosine-gravity -->
+
+Figure 20.2 plots the same readings, with eighteen more angles filled in. The
+dashed curve is `kG × cos θ` with your `kArmKG` of 0.25, drawn from the formula,
+not fitted to anything. Each orange mark is what the simulated motor was actually
+applying after the arm had sat at that angle for five seconds. Read the shape
+first: the curve starts at about `+0.25` with the arm level, falls through zero
+at vertical, and bottoms out at `−0.25` level on the far side. <!-- claim: l20.hold-horizontal --> Then check the
+marks against it: they sit on the curve at every angle, to within about
+two-thousandths of a volt, and the sweep down lands where the sweep up did, so
+how the arm got there doesn't matter. <!-- claim: l20.hold-fit-error --> The five angles from the table are
+labeled, and the `−20°` stop reads `+0.24`. <!-- claim: l20.floor-hold -->
+
 **Read that table twice.** The holding voltage isn't a constant like the
 elevator's was — it's a cosine, exactly the curve section 2 derived. At
 vertical it is *zero*: the arm is balanced over its own pivot and the
 motor is doing nothing at all. And past vertical the sign **flips**,
 because holding the arm up from the far side means pushing the other way.
-One constant and one enum bought all of that.
+One constant and one enum bought all of that. <!-- claim: phoenix6.arm-cosine-gravity -->
 
 It also tells you `kArmKG` is right. If the applied voltage matches
 `kG × cos θ` at every angle, the feedforward is carrying the whole load
@@ -806,19 +839,20 @@ feedforward looks like.
 Two more traces are worth a look before you move on.
 
 Add `Arm/SetpointDegrees` alongside `Arm/AngleDegrees` and swing between
-the presets. Same story as the elevator: the goal steps, the setpoint
+the presets. Same story as the elevator, and the same three curves as
+[Figure 18.2](18-elevator.md#figure-18-2): the goal steps, the setpoint
 slides, and the angle trails the setpoint by a few degrees — worst during
 the acceleration ramp, two to four at its peak — rather than the eighteen
-it would take to buy that voltage out of error. Lesson 18's
+it would take to buy that voltage out of error. <!-- claim: l20.model-lag, phoenix6.closed-loop-reference-is-profile-setpoint --> Lesson 18's
 tuning order — `kG` from the steady hold, `kV` from the flat cruise, `kA`
 from the ramps, `kP` last and small — works here unchanged. The arm just
 gives you a bonus: because `kG` is scaled by `cos θ`, you can check it at
 **five different angles** instead of one, and the table above is exactly
 that check. An elevator only ever offers you a single number to verify.
 
-Finally, hold **right bumper** and watch `Arm/RollerVelocityRotPerSec`
+Finally, hold **right bumper** (**,** on the keyboard) and watch `Arm/RollerVelocityRotPerSec`
 climb to around 60 rotations per second, then let go and watch it spin
-down to zero in about half a second. No profile, no goal, no gains — a
+down to zero in about half a second. <!-- claim: l20.roller-speed, l20.roller-stop-time --> No profile, no goal, no gains — a
 motor and a number.
 
 ---
@@ -842,26 +876,26 @@ motor and a number.
    `Arm/GoalDegrees` now reads `270` — but `Arm/SetpointDegrees` stops at
    `180`: the soft limit cut the firmware's own profile off at the
    threshold, and `Arm/AppliedVolts` settles near `−0.25`, just `kG`
-   holding the arm up. Now set `ForwardSoftLimitEnable` to `false` as well,
+   holding the arm up. <!-- claim: l20.softlimit-on-volts, phoenix6.soft-limit-stops-motion-magic --> Now set `ForwardSoftLimitEnable` to `false` as well,
    run it again, and press the button. The setpoint runs on to `270` and
    the voltage jumps to `+3` — on a stalled motor that's about 120 amps,
    as much as the controller allows by default, shoving the arm into its
-   stop. `Arm/AngleDegrees` reads 180 both times, because `ArmIOSim`'s
+   stop. <!-- claim: l20.softlimit-off-volts, l20.softlimit-off-amps, phoenix6.talonfx-default-current-limits --> `Arm/AngleDegrees` reads 180 both times, because `ArmIOSim`'s
    model has hard stops of its own; on a real arm that stop is metal, and
-   the soft limit is the only thing keeping the motor off it. Put both
+   the soft limit is the only thing keeping the motor off it. <!-- claim: l20.hard-stop-angle, wpilib.single-jointed-arm-sim-api --> Put both
    back.
 4. **Code — take the model away.** Set `kArmKV` to `0.0` and swing the arm
    from intake to stow, watching `Arm/AngleDegrees` against
    `Arm/SetpointDegrees`. It gets there, but it now trails its own plan by
    about 20 degrees — the 18 section 3 predicted, plus a little more while
    the profile speeds up — because error is the only thing `kP` has to make
-   voltage out of. Put it back.
+   voltage out of. <!-- claim: l20.kv-zeroed-lag --> Put it back.
 5. **Code — break the zero.** Change `kArmKG` to a negative number and run
    it again. That's what a 180°-wrong encoder calibration does: the
    feedforward pulls the arm down exactly when it should be holding it up.
    Watch how much harder `kP` has to work: held out horizontal, the arm now
    sits about 3° below its goal instead of a tenth of a degree, and
-   mid-swing it trails its setpoint by 5° to 7° instead of 2° to 4°. That gap
+   mid-swing it trails its setpoint by 5° to 7° instead of 2° to 4°. <!-- claim: l20.kg-negative-sag, l20.hold-error-horizontal, l20.kg-negative-lag, phoenix6.arm-cosine-gravity --> That gap
    between `Arm/SetpointDegrees` and `Arm/AngleDegrees` is what this
    failure looks like on a plot when you meet it for real. Put it back.
    (On actual hardware this experiment drives the arm into its own hard
@@ -870,7 +904,7 @@ motor and a number.
    roller command takes the mechanism and interrupts the pivot command —
    but the arm keeps going anyway, because the pivot command's last act
    was to hand Motion Magic a goal, and the firmware doesn't need a
-   command alive to finish the job. Lesson 18's "a control request
+   command alive to finish the job. <!-- claim: phoenix6.control-request-persists, commandsv3.conflicting-command-interrupts --> Lesson 18's "a control request
    persists until replaced," now something you can see.
 
 ---
@@ -891,8 +925,8 @@ to speed up, and an apology for the rest — but **gravity on a rotating
 thing depends on the angle**, so `kG` alone had to change shape.
 `Arm_Cosine` encodes that in one enum value, with a string attached: the
 firmware can only compute `cos θ` if you have promised it that zero means
-horizontal. **Soft limits** sit below your code rather than inside it, so
-they hold even when your logic doesn't. And **not every motor wants a
+horizontal. <!-- claim: phoenix6.arm-cosine-gravity --> **Soft limits** sit below your code rather than inside it, so
+they hold even when your logic doesn't. <!-- claim: phoenix6.soft-limit-stops-motion-magic --> And **not every motor wants a
 control loop**: the roller runs on the same plain `setThrottle(fraction)`
 call as the very first motor in this course, because "spin while I hold
 this" has no setpoint to aim at.

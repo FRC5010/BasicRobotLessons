@@ -30,7 +30,7 @@ software P ever did.
 
 Here's a fact hiding in plain sight since Lesson 1: every TalonFX *is a
 computer*. Not a metaphor — there's a processor inside each motor
-controller, running its own control code about **1000 times per second**.
+controller, running its own control code about **1000 times per second**. <!-- claim: phoenix6.onboard-loop-1khz -->
 The mental model to correct is "my code is the robot's only brain." Your
 code is the *coach*: it decides what each motor should be doing. The motor
 controller is the *player*: it can chase that goal twenty times faster than
@@ -39,13 +39,28 @@ your 50 Hz loop can even look.
 Think about what your steering P control has been doing: once every 20 ms
 it checks the angle, computes an output, and commands it — then goes blind
 until the next tick. The TalonFX can run the *same* P loop at 1 kHz, right
-next to the sensor, with no CAN-bus delay in the middle. Tighter control,
+next to the sensor, with no CAN-bus delay in the middle. <!-- claim: phoenix6.onboard-loop-1khz --> Tighter control,
 and your code gets simpler at the same time: instead of computing *efforts*
 every tick, it states *targets* and lets the firmware close the loop.
 
 That's the whole lesson: teach the firmware about your mechanism (gearing,
 wrap-around, gains), then change `setDesiredState` — the method every
 command calls each tick — from "do the math" to "state the goal."
+
+Figure 12.1 puts the two rates side by side.
+
+<a id="figure-12-1"></a>
+![Two timelines covering the same 60 milliseconds. The top one, in blue, has a tick every 20 milliseconds, labelled as your 50 hertz code stating a target. Green arrows carry each new target down to the bottom timeline, in orange, which has a tick every millisecond: the TalonFX closing the loop about 1000 times per second.](images/12-coach-and-player.svg)
+
+*Figure 12.1 — The same 60 ms, seen by each computer. Your code states a target every 20 ms; the TalonFX closes the loop itself about 1000 times per second.* <!-- claim: phoenix6.onboard-loop-1khz -->
+
+Start with the blue line, the coach. Three ticks, 20 ms apart, and at each one
+your code says what it wants and goes quiet. The orange line underneath is the
+player, over the very same stretch of time: its ticks are 1 ms apart, so it
+gets about twenty looks at the sensor and twenty chances to adjust the output
+between one target and the next. The green arrows are the only things that
+cross from your code to the firmware, and that's the shape the rest of the
+lesson builds: you send goals, the firmware does the chasing.
 
 ---
 
@@ -132,7 +147,7 @@ constructor's *signature* changes today, only what happens inside it.
 
 Keep that `Inverted` line. Applying a configuration sets *every* setting
 it holds, including the ones you never mention, so leaving the line out
-would quietly put a flipped steering motor back to Phoenix's default. And
+would quietly put a flipped steering motor back to Phoenix's default. <!-- claim: phoenix6.steer-inverted-default --> And
 from today it matters more than it did: the loop reads the CANcoder, so a
 motor that counts the opposite way from its sensor makes the loop push the
 wrong way.
@@ -144,7 +159,7 @@ handoff: together they tell the steering TalonFX "don't trust your own
 rotor for position and velocity — read this CANcoder instead, every tick,
 not just once at boot." Once that's set, every `getPosition()`/`getVelocity()`
 call on the steer motor — and the closed loop itself — transparently
-reflects the CANcoder, continuously, not the rotor.
+reflects the CANcoder, continuously, not the rotor. <!-- claim: phoenix6.remote-cancoder-feedback -->
 
 **`RotorToSensorRatio`** replaces `SensorToMechanismRatio` for the *steer*
 motor specifically, because the ratio it describes moved: it's no longer
@@ -157,13 +172,24 @@ already the default, so the ratio chain is visible in the code instead of
 implied. The drive motor never picked up a remote sensor, so its
 `SensorToMechanismRatio` keeps doing exactly what it always did: "rotor
 turns per wheel turn," `6.75 : 1`, converting `getPosition()`/`getVelocity()`
-from rotor units to wheel units directly.
+from rotor units to wheel units directly. Figure 12.2 shows the two
+chains. <!-- claim: phoenix6.rotor-to-sensor-ratio, phoenix6.sensor-to-mechanism-ratio -->
+
+<a id="figure-12-2"></a>
+![Two gear chains. Steering: the steer motor's rotor connects through a 25 to 1 ratio called RotorToSensorRatio to the CANcoder on the wheel, then through a 1 to 1 ratio called SensorToMechanismRatio to the wheel angle, and the motor's closed loop reads the CANcoder. Drive: the drive motor's rotor, which is its own sensor, connects through a 6.75 to 1 SensorToMechanismRatio to the wheel.](images/12-sensor-gear-chain.svg)
+
+*Figure 12.2 — The ratio before the sensor is `RotorToSensorRatio`; the ratio after it is `SensorToMechanismRatio`.* <!-- claim: phoenix6.rotor-to-sensor-ratio, phoenix6.sensor-to-mechanism-ratio -->
+
+The same `25 : 1` that used to sit between the rotor and the wheel now
+sits between the rotor and the CANcoder, and that's why it changed names.
+On the drive side the sensor *is* the rotor, so there's nothing before it
+and the whole `6.75 : 1` comes after it.
 
 **`ContinuousWrap`** tells the steering closed loop that its mechanism is a
 circle: position `0.9` rotations and position `-0.1` are one small step
-apart, not most of a revolution. That's the Lesson 5 wrap trick — the two
+apart, not most of a revolution. That's the Lesson 5 wrap trick ([Figure 5.3](05-steering-p-control.md#figure-5-3)) — the two
 `while` loops, then `MathUtil.inputModulus` from Lesson 10 — implemented in
-silicon. (This part doesn't care which sensor feeds the loop — wrap-around
+silicon. <!-- claim: phoenix6.continuous-wrap --> (This part doesn't care which sensor feeds the loop — wrap-around
 is about the *mechanism*, not the sensor.)
 
 **`Slot0`** holds the gains the onboard loop will use, same as before. The
@@ -225,12 +251,12 @@ public double getDriveVelocityMetersPerSec() {
 
 The `/ kSteerGearRatio` and `/ kDriveGearRatio` steps didn't disappear —
 they moved into the firmware, steering's via `RotorToSensorRatio` and
-drive's via `SensorToMechanismRatio`. One source of truth for the ratio
+drive's via `SensorToMechanismRatio`. <!-- claim: phoenix6.rotor-to-sensor-ratio, phoenix6.sensor-to-mechanism-ratio --> One source of truth for the ratio
 beats two, because two can disagree. Notice `getSteerAngleDegrees()`
 didn't need a single line changed to start reading the CANcoder instead of
 the rotor, either — that's the section 3 config swap paying for itself.
 The method only ever asked the steer motor for its position; what answers
-that question moved, and the method never noticed.
+that question moved, and the method never noticed. <!-- claim: phoenix6.remote-cancoder-feedback -->
 
 ---
 
@@ -275,7 +301,7 @@ Look at what `withPosition(state.angle.getMeasure())` replaced: measure,
 subtract, wrap, multiply, clamp, command — the whole Lesson 5 ritual — now
 happens inside the motor at 1 kHz, and you didn't even convert the angle,
 because Phoenix's control requests take `Angle`/`AngularVelocity` measures
-the same way WPILib does. (The drive side still divides by circumference
+the same way WPILib does. <!-- claim: phoenix6.control-request-measures --> (The drive side still divides by circumference
 to get wheel rev/s, then wraps that in `RotationsPerSecond.of(...)` for
 `withVelocity` — you already have that import, from
 `getDriveVelocityMetersPerSec()`'s own unpack a few lines up.) The cosine
@@ -294,9 +320,11 @@ Now the drive gains, because they're where "model-based" earns its name.
 wheel rotation per second cost?" Ours is about `0.8` — at 12 volts that
 predicts ~15 wheel rps, which is the free-speed math from Lesson 10 read
 backwards (the motor's 101.08 rotations/sec ÷ 6.75 turns per wheel turn =
-14.97 wheel rps, and 12 V ÷ 14.97 = 0.80 V for each). When you request 10
-rps, the firmware *immediately* applies `10 × 0.8 = 8` volts because the
-model says that's what 10 rps costs — no waiting for error to build up.
+14.97 wheel rps, and 12 V ÷ 14.97 = 0.80 V for each). <!-- claim: wpilib.kraken-x60-model --> When you request 10
+rps, the firmware asks for `10 × 0.8 = 8` volts on the very first tick,
+because the model says that's what 10 rps costs — no waiting for error to
+build up. (From a standstill the motor's current limit holds the actual
+voltage a little lower for the first tick or two; Figure 12.3 shows it.) <!-- claim: phoenix6.stator-limit-caps-startup-voltage -->
 Then `kP` handles only the leftover: friction, battery sag, carpet. The
 model does most of the work by prediction; feedback trims the rest by
 reaction. That division of labor — predict with a model, correct with
@@ -366,7 +394,7 @@ That `/ (2 * Math.PI)` is the same radians-to-rotations conversion the
 rotor feed already uses two lines up — `DCMotorSim` speaks radians, and Phoenix
 sim states speak rotations. WPILib does have a helper for it,
 `Units.radiansToRotations(...)`, but it's one division, so it's spelled out
-here exactly like everywhere else in this file.
+here exactly like everywhere else in this file. <!-- claim: wpilib.mathutil-helpers -->
 
 The physics itself doesn't change — the same voltage still turns the same
 motor through the same gearbox. What changed is *which sensor's sim state
@@ -388,11 +416,55 @@ wheel speeds land on their targets instead of drifting near them.
 
 Tuning still works the way Lesson 5 taught you, just with new knobs:
 `kSteerKP` too low and steering lags; too high and it buzzes around the
-target. `kDriveKV` is the interesting one — get it right and `kDriveKP`
+target ([Figure 5.2](05-steering-p-control.md#figure-5-2) drew both). `kDriveKV` is the interesting one — get it right and `kDriveKP`
 barely has anything to do. Which suggests a way to tune: set `kDriveKP =
 0`, adjust `kV` until measured speed roughly matches requested speed,
 *then* bring in a little `kP` for the residue. Model first, feedback
 second.
+
+Figure 12.3 is what the first two Try It items let you see for yourself.
+It's one step on one module: the wheel points straight ahead and sits at
+rest, and at time zero we ask for 2 m/s, which is 6.27 wheel rotations per
+second. The orange line is the code you wrote today, with `kDriveKV =
+0.8` and `kDriveKP = 0.1`.
+
+<a id="figure-12-3"></a>
+![Two stacked graphs over the first second after a step to 2 meters per second. Top, wheel speed: with the full model the wheel reaches 2 m/s in about a third of a second and stays there; with half the model it levels off at 1.11 m/s; with no model, kP alone, it levels off at 0.22 m/s. Bottom, applied voltage: the full model ends at 5.01 volts, half the model at 2.78 volts, kP alone at 0.55 volts.](images/12-feedforward-step.png)
+
+*Figure 12.3 — A step to 2 m/s with the full model, half the model, and no model at all.* <!-- claim: l12.step-full-voltage, l12.step-full-speed, l12.step-rise-time, l12.step-half-model-speed, l12.step-half-model-voltage, l12.step-no-model-speed, l12.step-no-model-voltage, phoenix6.stator-limit-caps-startup-voltage -->
+
+Read the bottom panel first, because it's what the firmware actually does
+with your request. With the model right (orange) the voltage lands on
+**5.01 V**, which is exactly `kV` times the requested speed, 0.8 × 6.27. <!-- claim: l12.step-full-voltage -->
+Nothing had to go wrong first for it to get there: the model said "this
+speed costs about 5 V" and the firmware paid it. Now the top panel. The
+wheel follows the voltage up and settles on **2.006 m/s**, a few
+millimeters per second over the request. That sliver is all `kP` was left
+to correct, and with `kDriveKP = 0` the wheel settles at the same 2.006,
+so here `kP` has almost nothing to do. <!-- claim: l12.step-full-speed -->
+
+Then look at what happens as the model gets worse. With half a model
+(green, `kDriveKV = 0.4`) the firmware starts out paying only about half
+the voltage, the wheel can't get past **1.11 m/s**, and the voltage
+settles at 2.78 V. <!-- claim: l12.step-half-model-speed, l12.step-half-model-voltage --> `kP` is trying: the wheel is about 2.8 rotations per
+second short, so it adds 0.1 V for each of them, 0.28 V on top of the
+2.51 V the model gave. <!-- claim: l12.step-half-model-shortfall --> But that is a small push for a big gap, and the
+wheel settles where the push and the motor's own back-pressure balance,
+well short of 2 m/s. With no model at all (the dotted grey line, `kDriveKV
+= 0`) only `kP` is left, and it can't do anything until an error exists:
+the wheel levels off at **0.22 m/s**, about a tenth of what you asked for,
+on just 0.55 V. <!-- claim: l12.step-no-model-speed, l12.step-no-model-voltage --> A gain of 0.1 volt per rps was only ever meant to nudge. If you
+ask it to do the model's job, it falls short. That's the whole case for
+feedforward: it supplies nearly all of the voltage up front, and `kP` is
+left to correct what's left.
+
+Two small things you may notice. The first tick or two read **3 V**
+rather than 5 V: a TalonFX caps the current it will push into a wheel
+that hasn't started turning, and in the simulation that cap holds the
+voltage down until the wheel moves (with that limit switched off, the
+first reading was about 4.6 V). <!-- claim: phoenix6.stator-limit-caps-startup-voltage, l12.startup-voltage-unlimited --> And the exact tick where the orange line
+climbs differs by one or two ticks from run to run, so yours won't be
+identical to the figure.
 
 ---
 
@@ -400,23 +472,25 @@ second.
 
 1. **Code — watch the model work.** Log the drive motor's applied voltage
    (`m_driveMotor.getMotorVoltage().getValue().in(Volts)`) next to
-   requested and measured wheel speed. Command a step — the voltage jumps
-   *instantly* to `kV × requested` before any error exists. That instant
-   jump is feedforward; the small corrections after it are feedback.
+   requested and measured wheel speed. Command a step from a standstill:
+   within about a tenth of a second the voltage is at `kV × requested`,
+   long before error could have built it up. <!-- claim: l12.voltage-reaches-model-time --> (The first tick or two read
+   lower; that's the current limit from Figure 12.3's note.) <!-- claim: phoenix6.stator-limit-caps-startup-voltage --> That jump is
+   feedforward; the small corrections after it are feedback.
 2. **Break the model on purpose.** Set `kDriveKV = 0.4` (half right) and
-   watch `kP` struggle to make up the difference — speed settles low or
-   oscillates. Restore `0.8`. A good model makes feedback's job easy; a
+   watch `kP` struggle to make up the difference — speed settles well
+   short of the request. <!-- claim: l12.step-half-model-speed --> Restore `0.8`. A good model makes feedback's job easy; a
    bad one makes it impossible.
 3. **Turn off `ContinuousWrap`** (set it `false`), ask for a steer target
    across the ±180° boundary, and watch the wheel take the long way
    around — Lesson 5's bug, resurrected in firmware. Turn it back on and
-   watch it vanish.
+   watch it vanish. <!-- claim: phoenix6.continuous-wrap -->
 4. **Code — prove priming is really dead.** Add the deleted
    `m_steerMotor.setPosition(...)` line back into the constructor, right
    where it used to live. The constructor now sets it and then
    immediately hands control to `FeedbackSensorSource`, which means
    `getPosition()` never consults the rotor's own counter again. Run it
-   and confirm nothing changes — same behavior with or without that line.
+   and confirm nothing changes — same behavior with or without that line. <!-- claim: phoenix6.remote-cancoder-feedback -->
    Delete it again once you've watched it do nothing; code you've
    *proven* is dead is satisfying to remove.
 
@@ -431,11 +505,11 @@ gear-ratio divisions, `ContinuousWrap` retiring the wrap trick,
 `Slot0` holding gains in engineering units), and reusable **control
 requests** turn `setDesiredState` from computing efforts into stating
 targets — `PositionVoltage` for steering, `VelocityVoltage` for drive —
-closed at 1 kHz next to the sensor. And the CANcoder you've been priming
+closed at 1 kHz next to the sensor. <!-- claim: phoenix6.continuous-wrap, phoenix6.sensor-to-mechanism-ratio, phoenix6.onboard-loop-1khz --> And the CANcoder you've been priming
 from since Lesson 5 finally got read the way it deserved all along: not a
 one-time correction at boot, but a live source the firmware trusts every
 tick, so "where the wheel is" and "what the sensor says" can't quietly
-drift apart mid-match.
+drift apart mid-match. <!-- claim: phoenix6.remote-cancoder-feedback -->
 
 Two ideas are worth keeping from this lesson. First, the division of
 labor in the drive gains: **`kV` is a model** that predicts the voltage a

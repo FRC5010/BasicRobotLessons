@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 700" width="800" height="700" font-family="sans-serif">
+<defs><marker id="a0072B2" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="17" markerHeight="17" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0072B2"/></marker><marker id="aD55E00" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="17" markerHeight="17" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#D55E00"/></marker></defs>
+<rect x="0" y="0" width="800" height="700" fill="#ffffff"/>
+<text x="400.0" y="42.0" font-size="18" fill="#000000" text-anchor="middle" font-weight="bold">3 m from the tag</text>
+<line x1="50.0" y1="204.0" x2="50.0" y2="84.0" stroke="#D55E00" stroke-width="4" marker-end="url(#aD55E00)"/>
+<line x1="50.0" y1="204.0" x2="130.0" y2="204.0" stroke="#0072B2" stroke-width="4" marker-end="url(#a0072B2)"/>
+<text x="62.0" y="100.0" font-size="15" fill="#D55E00" text-anchor="start" font-weight="bold">v⊥ = 3 m/s</text>
+<text x="62.0" y="118.8" font-size="15" fill="#D55E00" text-anchor="start" font-weight="bold">across the line</text>
+<text x="50.0" y="228.0" font-size="15" fill="#0072B2" text-anchor="start" font-weight="bold">v∥ = 2 m/s, along the line: no swing</text>
+<line x1="560.0" y1="210.0" x2="726.0" y2="210.0" stroke="#777777" stroke-width="3" stroke-dasharray="7 5"/>
+<text x="650.0" y="238.0" font-size="16" fill="#777777" text-anchor="middle" font-weight="bold">r = 3 m</text>
+<rect x="728.0" y="198.0" width="24" height="24" fill="#000000"/>
+<text x="740.0" y="246.0" font-size="14" fill="#000000" text-anchor="middle" font-weight="normal">tag 20</text>
+<text x="740.0" y="263.5" font-size="14" fill="#000000" text-anchor="middle" font-weight="normal">(5.229, 4.035)</text>
+<rect x="540.0" y="190.0" width="40" height="40" rx="4" fill="#F7F7F7" stroke="#000000" stroke-width="3"/>
+<text x="560.0" y="254.0" font-size="14" fill="#000000" text-anchor="middle" font-weight="normal">robot</text>
+<rect x="540.0" y="136.0" width="40" height="40" rx="4" fill="none" stroke="#777777" stroke-width="2" stroke-dasharray="4 3"/>
+<line x1="580.0" y1="156.0" x2="730.0" y2="206.0" stroke="#777777" stroke-width="2"/>
+<path d="M640.0,210.0 A100,100 0 0 1 645.3,178.0" fill="none" stroke="#CC79A7" stroke-width="3"/>
+<text x="680.0" y="126.0" font-size="14" fill="#CC79A7" text-anchor="end" font-weight="bold">the bearing swings</text>
+<text x="740.0" y="90.0" font-size="17" fill="#CC79A7" text-anchor="end" font-weight="bold">ω = v⊥ ÷ r = 3 ÷ 3 = 1 rad/s</text>
+<text x="400.0" y="332.0" font-size="18" fill="#000000" text-anchor="middle" font-weight="bold">6 m from the tag, the same velocity</text>
+<line x1="50.0" y1="494.0" x2="50.0" y2="374.0" stroke="#D55E00" stroke-width="4" marker-end="url(#aD55E00)"/>
+<line x1="50.0" y1="494.0" x2="130.0" y2="494.0" stroke="#0072B2" stroke-width="4" marker-end="url(#a0072B2)"/>
+<text x="62.0" y="390.0" font-size="15" fill="#D55E00" text-anchor="start" font-weight="bold">v⊥ = 3 m/s</text>
+<text x="62.0" y="408.8" font-size="15" fill="#D55E00" text-anchor="start" font-weight="bold">across the line</text>
+<text x="50.0" y="518.0" font-size="15" fill="#0072B2" text-anchor="start" font-weight="bold">v∥ = 2 m/s, along the line: no swing</text>
+<line x1="380.0" y1="500.0" x2="726.0" y2="500.0" stroke="#777777" stroke-width="3" stroke-dasharray="7 5"/>
+<text x="560.0" y="528.0" font-size="16" fill="#777777" text-anchor="middle" font-weight="bold">r = 6 m</text>
+<rect x="728.0" y="488.0" width="24" height="24" fill="#000000"/>
+<text x="740.0" y="536.0" font-size="14" fill="#000000" text-anchor="middle" font-weight="normal">tag 20</text>
+<text x="740.0" y="553.5" font-size="14" fill="#000000" text-anchor="middle" font-weight="normal">(5.229, 4.035)</text>
+<rect x="360.0" y="480.0" width="40" height="40" rx="4" fill="#F7F7F7" stroke="#000000" stroke-width="3"/>
+<text x="380.0" y="544.0" font-size="14" fill="#000000" text-anchor="middle" font-weight="normal">robot</text>
+<rect x="360.0" y="426.0" width="40" height="40" rx="4" fill="none" stroke="#777777" stroke-width="2" stroke-dasharray="4 3"/>
+<line x1="400.0" y1="446.0" x2="730.0" y2="496.0" stroke="#777777" stroke-width="2"/>
+<path d="M640.0,500.0 A100,100 0 0 1 641.2,484.3" fill="none" stroke="#CC79A7" stroke-width="3"/>
+<text x="680.0" y="416.0" font-size="14" fill="#CC79A7" text-anchor="end" font-weight="bold">the bearing swings</text>
+<text x="740.0" y="380.0" font-size="17" fill="#CC79A7" text-anchor="end" font-weight="bold">ω = v⊥ ÷ r = 3 ÷ 6 = 0.5 rad/s</text>
+<text x="400.0" y="670.0" font-size="15" fill="#000000" text-anchor="middle" font-weight="bold">bearingRate = (vx · offsetY − vy · offsetX) ÷ distance², and only v⊥ gets through</text>
+<text x="400.0" y="646.0" font-size="14" fill="#777777" text-anchor="middle" font-weight="normal">dashed square: the robot after a sideways step of 0.3 s</text>
+</svg>

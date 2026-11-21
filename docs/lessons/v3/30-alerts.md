@@ -76,12 +76,12 @@ lowBattery.set(false);  // gone again
 
 The first string is an **id**, and all it has to be is unique: build a
 second alert with the same id and level and the constructor throws
-`AlertException: Alert already allocated`. You already have a scheme for
+`AlertException: Alert already allocated`. <!-- claim: wpilib.alert-duplicate-throws --> You already have a scheme for
 unique names, though. Every log key in this robot is one, so every id in
 this lesson borrows a log key's shape: the subsystem, a slash, what's
 wrong. The second string is the text a human reads.
 
-Three levels, and the difference is what a human should do about it:
+Three levels, and the difference is what a human should do about it: <!-- claim: wpilib.alert-duplicate-throws -->
 
 - **`HIGH`**: this robot is broken. A motor didn't answer. Do not queue.
 - **`MEDIUM`**: this robot works, but something is off. Fix it if there's
@@ -101,11 +101,11 @@ Driver Station** app. WPILib's
 list Alerts among the features that are *"only available in the 2027 Driver
 Station"*. They used to be a dashboard trick riding on NetworkTables. Now
 they're part of the driver station itself, which is a better home for
-"should I be worried right now".
+"should I be worried right now". <!-- claim: wpilib-tools.driverstation-2027-shows-alerts -->
 
-SimGUI can't read them on its own, though. On this version of WPILib,
-alerts are kept inside the robot program, and SimGUI has no way in.
-Something already running in your robot can, which is the next section.
+In simulation you don't need that driver station to see them: something
+already running in your robot collects them every tick, which is the next
+section.
 
 ---
 
@@ -117,20 +117,20 @@ Each tick it collects every active alert and records them as outputs under
 `Alerts`, sorted into three lists of text: `errors`, `warnings` and
 `infos`. It also marks that group with the type `Alerts`, and that's a type
 SimGUI knows how to draw: an **alerts panel**, the red-and-yellow list a
-dashboard shows.
+dashboard shows. <!-- claim: advantagekit.records-wpilib-alerts -->
 
 SimGUI also has an alerts window of its own, under **DS → Alerts**. It
 reads the alerts straight from the robot program instead of from the log,
 and it lists the same ones, sorted by level. Use whichever you like; this
 lesson points at the AdvantageKit copy, because that's the one a replay
-rebuilds.
+rebuilds. <!-- claim: wpilib-tools.simgui-ds-alerts-window -->
 
 It's an output like any other, which means a replay rebuilds it. Every
 alert in this lesson is set from readings the log already has, so a replay
-raises the same alerts on the same ticks the robot did.
+raises the same alerts on the same ticks the robot did. <!-- claim: advantagekit.replay-matches-recording, advantagekit.records-wpilib-alerts -->
 
 The group only appears once the robot has an alert to put in it, so there's
-nothing to look at yet. Section 6 writes the first ones, and you'll open
+nothing to look at yet. <!-- claim: advantagekit.records-wpilib-alerts --> Section 6 writes the first ones, and you'll open
 the panel then.
 
 ---
@@ -141,7 +141,7 @@ Start with the most valuable alert on any robot: a motor that never showed
 up.
 
 Phoenix will tell you. `isConnected()` is true when the device has been
-answering on the CAN bus recently. The question is where to ask it.
+answering on the CAN bus recently. <!-- claim: phoenix6.talonfx-is-connected-boot --> The question is where to ask it.
 
 It goes in the **inputs**. It's a fact read off the hardware once per tick,
 which is the definition the IO layer has used since Lesson 13. Putting it
@@ -189,7 +189,7 @@ connected, as far as anyone can prove.
 That's all it takes to get them into the log. The bundles are `@AutoLog`'d,
 so `processInputs` records the new fields the moment they exist:
 `Elevator/MotorConnected`, `Flywheel/MotorConnected`, `Arm/PivotConnected`
-and `Arm/RollerConnected`.
+and `Arm/RollerConnected`. <!-- claim: advantagekit.autolog-key-names -->
 
 ---
 
@@ -262,16 +262,24 @@ import org.wpilib.util.Alert.Level;
 ```
 
 **Run the robot in simulation.** In SimGUI, open **NetworkTables →
-AdvantageKit → RealOutputs → Alerts**.
-The panel says `Elevator has never been homed`, with a yellow warning sign,
-which is correct. Enable Teleoperated and press **Back** to home it, and
-watch the line disappear on its own. Nothing clears it explicitly:
+AdvantageKit → RealOutputs → Alerts**. Figure 30.1 shows the menu, which
+opens three levels deep, and the panel that appears when you click **Alerts**. <!-- claim: advantagekit.records-wpilib-alerts -->
+
+<a id="figure-30-1"></a>
+![SimGUI's NetworkTables menu opened to AdvantageKit, then RealOutputs, then Alerts, and below it the panel that opens, titled /AdvantageKit/RealOutputs/Alerts, with a Medium group holding one amber warning, Elevator has never been homed](images/30-simgui-alerts-panel.png)
+
+*Figure 30.1 — The path to the alerts panel (1), and the panel (2) on a fresh launch.* <!-- claim: advantagekit.records-wpilib-alerts -->
+
+The panel groups alerts by level and says `Elevator has never been homed`
+under **Medium**, with a yellow warning sign, which is correct. Enable
+Teleoperated and press **Back** (**B** on the keyboard) to home it, and watch the line disappear on
+its own. Nothing clears it explicitly:
 `set(false)` runs every tick once `m_homed` is true.
 
 You may also catch a burst of red the moment the robot starts. It happens on
 every launch: measured over ten fresh launches, on the very first tick the
 elevator, arm and flywheel motors read disconnected every time, and a few
-ticks later, within about a sixth of a second, they were fine. Those motors
+ticks later, within about a sixth of a second, they were fine. <!-- claim: l30.boot-flicker-count, l30.boot-flicker-duration, phoenix6.talonfx-is-connected-boot --> Those motors
 were built only a moment before that first tick, and a device needs a
 moment to come up on a CAN bus, real or simulated. It's the clearest proof
 there is of why alerts are set every tick. An alert raised once on that
@@ -324,7 +332,7 @@ but it would also mean you can never see this alert fire before the day it
 fires for real. Better to give the simulation something a real gyro has: a
 cable you can pull.
 
-**Create `subsystems/UnplugSwitch.java`:**
+**Create `subsystems/UnplugSwitch.java`:** <!-- claim: wpilib.simdevice-duplicate-returns-null -->
 
 ```java
 package first.robot.subsystems;
@@ -364,7 +372,7 @@ that has no real hardware behind it. Phoenix uses the same mechanism for
 its simulated motors, which is why SimGUI's **Other Devices** window has
 been full of `Talon FX (v6)[1]` entries all along. Each device holds named
 values. This one holds a single boolean, and because it's an `INPUT`,
-SimGUI lets you change it.
+SimGUI lets you change it. <!-- claim: wpilib-tools.simgui-input-boolean-dropdown -->
 
 **Add to `GyroIOSim`, below `m_chassisSim`:**
 
@@ -381,10 +389,17 @@ SimGUI lets you change it.
 
 **Run it.** The gyro alert is gone. In the **Other Devices** window,
 scroll past Phoenix's motors to **Unplug Gyro** and expand it. Its
-**Unplugged** value is a false/true drop-down. Set it to **true**, and
+**Unplugged** value is a false/true drop-down. <!-- claim: wpilib-tools.simgui-input-boolean-dropdown, wpilib-tools.simgui-other-devices-talonfx --> Figure 30.2 shows what
+you're looking for: Phoenix's motors fill most of the window, and the
+switches sit below them, in alphabetical order. Set it to **true**, and
 `Gyro is not on the CAN bus` appears in the alerts panel with a red mark.
 Set it back to **false** and the alert goes away. Measured, both happen
-within one tick.
+within one tick. <!-- claim: l30.switch-latency -->
+
+<a id="figure-30-2"></a>
+![SimGUI's Other Devices window scrolled to the Unplug switches, with Unplug Gyro expanded and its Unplugged drop-down set to true, above the alerts panel, which now lists Gyro is not on the CAN bus in red under High](images/30-simgui-unplug-gyro.png)
+
+*Figure 30.2 — The Unplug Gyro switch set to true (1), and the alert it raises (2).* <!-- claim: wpilib-tools.simgui-input-boolean-dropdown, advantagekit.records-wpilib-alerts -->
 
 > Notice what *didn't* happen: the robot still knows which way it's
 > facing. The switch changes the gyro's answer to "are you there?" and
@@ -410,7 +425,7 @@ again and the panel still says it isn't, and nothing in that code can ever
 change its mind: the only call left says `true`. Measured, it was still up
 at the end of the run. A replay of that log raises it on the same tick and
 keeps it up just the same, because the mistake is in the code, not the
-readings.
+readings. <!-- claim: advantagekit.replay-matches-recording -->
 
 **Put the one-line `m_gyroDisconnected.set(!m_gyroInputs.connected);` back**,
 and the same flip clears it within a tick.
@@ -530,7 +545,7 @@ the outside.
 A Limelight isn't on the CAN bus, so "connected" means something slightly
 different. LimelightLib counts a camera as connected while its frames keep
 arriving. One that has sent nothing yet, or has gone quiet for more than a
-quarter of a second, doesn't count.
+quarter of a second, doesn't count. <!-- claim: limelightlib.telemetry-status -->
 
 **Add to `LimelightPoseProvider`, below `m_logKey`:**
 
@@ -580,10 +595,10 @@ The simulated camera gets a switch the same way the CANcoder did.
 Two more things to notice. First, that burst of red at startup now
 includes both cameras, because on the first tick no frame has arrived yet:
 Lesson 15's simulated camera publishes each frame one loop after it
-captures it. Second, with the front camera "unplugged", the
+captures it. <!-- claim: limelightlib.sim-camera-frame-one-loop-late --> Second, with the front camera "unplugged", the
 robot keeps using it. Measured with the robot parked 3 m in front of tag
 20: the front camera delivered a pose on every single tick while its alert
-said it wasn't connected. Same reason as the gyro. The switch tests the
+said it wasn't connected. <!-- claim: l30.unplugged-camera-pose-ticks --> Same reason as the gyro. The switch tests the
 alert, not the robot.
 
 ---
@@ -624,7 +639,7 @@ Lesson 29 made about the current total, so it goes where the robot lives.
 ```
 
 It reads `power.batteryVolts`, Lesson 29's recorded reading, not
-`RobotController`, so a replay judges the battery the robot really had.
+`RobotController`, so a replay judges the battery the robot really had. <!-- claim: advantagekit.battery-voltage-not-replayed -->
 
 **Add the imports** (`Robot` already imports `RobotState`, from Lesson 24's
 state bindings):
@@ -638,9 +653,26 @@ The `RobotState.isDisabled()` half earns its place, and the numbers show
 why. Measured on a fresh simulated battery that rests at 12.0 V: enabling
 the robot pulls the rail below 11.5 V for about 0.7 s, down to 11.3 V, as
 the flywheel spins up to idle. Spinning it up to shooting speed holds it
-there for another 1.6 s, down to 11.2 V. Without that half, the alert would
+there for another 1.6 s, down to 11.2 V. <!-- claim: l30.enable-dip-time, l30.enable-dip-low, l30.shot-dip-time, l30.shot-dip-low, wpilib.sim-battery-rests-at-12v --> Without that half, the alert would
 go off both times. A low-battery warning that flickers every time you press
 the trigger teaches everyone to ignore it.
+
+<a id="figure-30-3"></a>
+![Battery voltage through an enable and a shot: it rests at 12 volts while disabled, sags below the 11.5 volt line for 0.68 seconds after enable and for 1.56 seconds after the left trigger is pressed, and recovers each time; both dips are shaded](images/30-low-battery-gate.png)
+
+*Figure 30.3 — The battery voltage through an enable and a shot, with the 11.5 V line.* <!-- claim: l30.enable-dip-time, l30.enable-dip-low, l30.shot-dip-time, l30.shot-dip-low -->
+
+Figure 30.3 shows where the voltage goes when you enable the robot and when
+you shoot. Read it left to right. The grey stretch is the robot disabled,
+the rail resting at 12.0 V, well above the line. <!-- claim: wpilib.sim-battery-rests-at-12v --> At zero the robot enables
+and the voltage drops at once, then slides down as the flywheel spins up to
+idle, crossing 11.5 V at about 0.7 s and bottoming out at 11.27 V before
+it recovers; the shaded part is the time an alert without the gate would have
+been up, 0.68 s. <!-- claim: l30.enable-dip-time, l30.enable-dip-low --> The second dip is a shot: the left trigger is pressed at
+4 s, the voltage falls to 11.19 V and sits there for 1.56 s while the wheel
+climbs to shooting speed. <!-- claim: l30.shot-dip-time, l30.shot-dip-low --> Both dips happen while the robot is enabled, and
+neither says anything about the battery's charge. That's the job of the
+`RobotState.isDisabled()` half.
 
 A sagging rail under load is Lesson 29's problem. *A flat battery* is this
 alert's problem, and a battery's resting voltage is what tells you that.
@@ -652,7 +684,7 @@ job.** 11.5 V is deliberately generous. The useful threshold is the one that
 gives you time to fetch a charged battery, not the one that's technically
 correct.
 
-To watch it fire, bring back Lesson 29's tired battery: 11 V, with twice
+To watch it fire, bring back Lesson 29's tired battery ([Figure 29.2](29-current-limits.md#figure-29-2)): 11 V, with twice
 the internal resistance.
 
 *Nothing to add — an experiment to run and undo, in `Robot.simulationPeriodic()`:*
@@ -664,7 +696,7 @@ the internal resistance.
 The warning appears in the panel almost immediately (measured: on the
 second tick after boot), while the robot is disabled. Enable it and the warning goes away, because under load the
 reading is answering a different question. Disable it again and the warning
-is back.
+is back. <!-- claim: l30.tired-warning-tick -->
 
 **Put the original battery line back when you're done.**
 
@@ -706,7 +738,7 @@ is back.
    Lesson 29's tired battery in, and do the everything-at-once run again:
    measured, `BrownedOut` switched between true and false dozens of times
    in a few seconds (more than a hundred in most runs), and read false at
-   the end with the battery back at 11 V. Build an alert that says the battery has browned out *since
+   the end with the battery back at 11 V. <!-- claim: l30.brownedout-flips --> Build an alert that says the battery has browned out *since
    boot*. It's the one alert on this robot that should be raised once and
    never cleared, so write it the way section 7 told you not to, and say in
    a comment why this one is different. Then put the limits and the battery
@@ -718,7 +750,7 @@ is back.
 
 The robot can now answer "is this thing going to work?" without a laptop.
 On a real robot the 2027 Driver Station shows the answer; in simulation,
-SimGUI draws the panel AdvantageKit records, and a replay rebuilds it.
+SimGUI draws the panel AdvantageKit records, and a replay rebuilds it. <!-- claim: advantagekit.records-wpilib-alerts, advantagekit.replay-matches-recording -->
 
 **Recording and reporting are different jobs.** Thirty lessons of logging
 built a complete record of everything the robot does, and none of it helps

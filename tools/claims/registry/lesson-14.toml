@@ -1,0 +1,116 @@
+# Numbers Lesson 14 (the pose estimator) quotes that a library change could move.
+# Format: tools/claims/README.md. Measured in the real Robot loop (LOOP), robot parked at the
+# origin, Start pressed once a second; data in tools/figures/data/14-sighting-nudges-*.csv.
+
+[[claim]]
+id = "l14.default-nudge-fraction"
+kind = "number"
+library = ["wpilib"]
+criticality = "C2"
+statement = "At default trust each fake sighting closes about a tenth of the distance still left to the sighting."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 14 (each press closes exactly a tenth of the gap, along the straight line); data/14-sighting-nudges-default.csv"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about a tenth of the distance that's left"
+unit = "fraction"
+range = [0.08, 0.12]
+measured = "0.100 on every press (5.385, 4.847, 4.362, 3.926, 3.533, 3.180 m)"
+test = "tools/figures/probes/Fig14SightingNudges.java"
+figure = "14-sighting-nudges.png"
+note = "README's rule for 'about' gives [0, 0.2] for one digit, which is meaningless; the range is the judgement of what 'about a tenth' still describes."
+
+[[claim]]
+id = "l14.first-press-step"
+kind = "number"
+library = ["wpilib"]
+criticality = "C2"
+statement = "The first press at default trust moves the estimate 0.54 m closer to (2, 5)."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 14; data/14-sighting-nudges-default.csv"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "the first press is 0.54 m"
+unit = "m"
+range = [0.535, 0.545]
+measured = "0.538 m"
+test = "tools/figures/probes/Fig14SightingNudges.java"
+figure = "14-sighting-nudges.png"
+
+[[claim]]
+id = "l14.fifth-press-step"
+kind = "number"
+library = ["wpilib"]
+criticality = "C2"
+statement = "The fifth press at default trust moves the estimate 0.35 m closer."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 14; data/14-sighting-nudges-default.csv"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "the fifth is 0.35 m"
+unit = "m"
+range = [0.345, 0.355]
+measured = "0.353 m"
+test = "tools/figures/probes/Fig14SightingNudges.java"
+figure = "14-sighting-nudges.png"
+
+[[claim]]
+id = "l14.five-press-distance"
+kind = "number"
+library = ["wpilib"]
+criticality = "C2"
+statement = "After five presses at default trust the estimate is still 3.18 m from (2, 5)."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 14 (5.385 -> 3.180 m); data/14-sighting-nudges-default.csv"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "3.18 m"
+unit = "m"
+range = [3.175, 3.185]
+measured = "3.180 m"
+test = "tools/figures/probes/Fig14SightingNudges.java"
+figure = "14-sighting-nudges.png"
+
+[[claim]]
+id = "l14.heading-nudge-fraction"
+kind = "number"
+library = ["wpilib"]
+criticality = "C3"
+statement = "At default trust the estimate's heading also turns about a tenth of the remaining way toward the sighting's 90 degrees on each press."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 14 (the heading turns a tenth of the way to 90 degrees each time); data/14-sighting-nudges-default.csv (0, 9.0, 17.1, 24.4, 31.0, 36.9 degrees)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "turns toward the sighting's 90 degrees by the same tenth each time"
+unit = "fraction"
+range = [0.08, 0.12]
+measured = "0.100 of the remaining angle on every press"
+figure = "14-sighting-nudges.png"
+
+[[claim]]
+id = "l14.knob-nudge-fraction"
+kind = "number"
+library = ["wpilib"]
+criticality = "C2"
+statement = "With setVisionMeasurementStdDevs(0.5, 0.5, 999999) each press closes about a sixth of the remaining distance, and the heading never moves."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 14 (a sixth per press, heading never moves); data/14-sighting-nudges-knob.csv"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about a sixth of the remaining distance"
+unit = "fraction"
+range = [0.133, 0.2]
+measured = "0.1667 per press (5.385, 4.488, 3.740, 3.116, 2.597, 2.164 m); heading 0.000 degrees throughout"
+test = "tools/figures/probes/Fig14SightingNudges.java"
+figure = "14-sighting-nudges.png"
+note = "Judgement range for 'about a sixth'. Range per the README fraction rule (about a sixth: 20% either way), 2026-11-19."
+
+[[claim]]
+id = "l14.knob-five-press-distance"
+kind = "number"
+library = ["wpilib"]
+criticality = "C2"
+statement = "With the trust knob set, five presses leave the estimate 2.16 m from (2, 5)."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 14 (-> 2.164 m); data/14-sighting-nudges-knob.csv"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "falls ... to 2.16 m (Figure 14.2's alt text)"
+unit = "m"
+range = [2.155, 2.165]
+measured = "2.164 m"
+test = "tools/figures/probes/Fig14SightingNudges.java"
+figure = "14-sighting-nudges.png"

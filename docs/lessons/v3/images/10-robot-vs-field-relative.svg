@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" width="800" height="520" font-family="sans-serif">
+<defs><marker id="a000000" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="17" markerHeight="17" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#000000"/></marker><marker id="a0072B2" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="17" markerHeight="17" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0072B2"/></marker><marker id="aD55E00" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="17" markerHeight="17" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#D55E00"/></marker></defs>
+<rect x="0" y="0" width="800" height="520" fill="#ffffff"/>
+<rect x="15" y="20" width="370" height="480" rx="6" fill="#FAFAFA" stroke="#777777" stroke-width="2"/>
+<text x="200.0" y="52.0" font-size="19" fill="#000000" text-anchor="middle" font-weight="bold">Robot-relative</text>
+<text x="200.0" y="76.0" font-size="15" fill="#777777" text-anchor="middle" font-weight="normal">stick forward drives toward the nose</text>
+<rect x="15" y="462" width="370" height="38" rx="2" fill="#DDDDDD" stroke="#777777" stroke-width="2"/>
+<text x="200.0" y="487.0" font-size="15" fill="#777777" text-anchor="middle" font-weight="normal">driver station</text>
+<rect x="155" y="235" width="90" height="90" rx="8" fill="#FFFFFF" stroke="#000000" stroke-width="2"/>
+<path d="M155,325 L200,358 L245,325 z" fill="#DDDDDD" stroke="#000000" stroke-width="2"/>
+<text x="200.0" y="286.0" font-size="15" fill="#777777" text-anchor="middle" font-weight="normal">robot</text>
+<text x="258.0" y="344.0" font-size="14" fill="#777777" text-anchor="start" font-weight="normal">nose</text>
+<line x1="200.0" y1="366.0" x2="200.0" y2="446.0" stroke="#D55E00" stroke-width="6" marker-end="url(#aD55E00)"/>
+<text x="216.0" y="400.0" font-size="15" fill="#D55E00" text-anchor="start" font-weight="bold">moves toward</text>
+<text x="216.0" y="418.8" font-size="15" fill="#D55E00" text-anchor="start" font-weight="bold">the driver</text>
+<circle cx="70" cy="130" r="30" fill="#fff" stroke="#0072B2" stroke-width="2"/>
+<line x1="70.0" y1="140.0" x2="70.0" y2="112.0" stroke="#0072B2" stroke-width="4" marker-end="url(#a0072B2)"/>
+<text x="70.0" y="182.0" font-size="14" fill="#0072B2" text-anchor="middle" font-weight="normal">same stick</text>
+<text x="70.0" y="199.5" font-size="14" fill="#0072B2" text-anchor="middle" font-weight="normal">push: forward</text>
+<rect x="415" y="20" width="370" height="480" rx="6" fill="#FAFAFA" stroke="#777777" stroke-width="2"/>
+<text x="600.0" y="52.0" font-size="19" fill="#000000" text-anchor="middle" font-weight="bold">Field-relative</text>
+<text x="600.0" y="76.0" font-size="15" fill="#777777" text-anchor="middle" font-weight="normal">stick forward drives away from the driver</text>
+<rect x="415" y="462" width="370" height="38" rx="2" fill="#DDDDDD" stroke="#777777" stroke-width="2"/>
+<text x="600.0" y="487.0" font-size="15" fill="#777777" text-anchor="middle" font-weight="normal">driver station</text>
+<rect x="555" y="235" width="90" height="90" rx="8" fill="#FFFFFF" stroke="#000000" stroke-width="2"/>
+<path d="M555,325 L600,358 L645,325 z" fill="#DDDDDD" stroke="#000000" stroke-width="2"/>
+<text x="600.0" y="286.0" font-size="15" fill="#777777" text-anchor="middle" font-weight="normal">robot</text>
+<text x="658.0" y="344.0" font-size="14" fill="#777777" text-anchor="start" font-weight="normal">nose</text>
+<line x1="600.0" y1="230.0" x2="600.0" y2="120.0" stroke="#D55E00" stroke-width="6" marker-end="url(#aD55E00)"/>
+<text x="614.0" y="150.0" font-size="15" fill="#D55E00" text-anchor="start" font-weight="bold">moves +X,</text>
+<text x="614.0" y="168.8" font-size="15" fill="#D55E00" text-anchor="start" font-weight="bold">nose still down</text>
+<circle cx="470" cy="130" r="30" fill="#fff" stroke="#0072B2" stroke-width="2"/>
+<line x1="470.0" y1="140.0" x2="470.0" y2="112.0" stroke="#0072B2" stroke-width="4" marker-end="url(#a0072B2)"/>
+<text x="470.0" y="182.0" font-size="14" fill="#0072B2" text-anchor="middle" font-weight="normal">same stick</text>
+<text x="470.0" y="199.5" font-size="14" fill="#0072B2" text-anchor="middle" font-weight="normal">push: forward</text>
+<line x1="445.0" y1="330.0" x2="445.0" y2="250.0" stroke="#000000" stroke-width="2" marker-end="url(#a000000)"/>
+<text x="445.0" y="240.0" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">+X</text>
+<text x="445.0" y="350.0" font-size="14" fill="#777777" text-anchor="start" font-weight="normal">away from the driver</text>
+<text x="432.0" y="400.0" font-size="14" fill="#CC79A7" text-anchor="start" font-weight="normal">toRobotRelative(heading = 180°)</text>
+<text x="432.0" y="417.5" font-size="14" fill="#CC79A7" text-anchor="start" font-weight="normal">turns field forward into</text>
+<text x="432.0" y="435.0" font-size="14" fill="#CC79A7" text-anchor="start" font-weight="normal">robot backward</text>
+</svg>

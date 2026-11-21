@@ -1,0 +1,79 @@
+# Numbers Lesson 8 quotes that a library change could move. Format: tools/claims/README.md.
+
+[[claim]]
+id = "l08.turn-exit-time"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "turnToHeading(90) from a standing start ends (the loop sees the error under 2 degrees) at 0.70 s."
+evidence = "CLAUDE.md, 'Batch 1 found', Lesson 8; data/08-turn-to-heading.csv"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 0.7 seconds (prose); 0.70 seconds (Figure 8.1)"
+unit = "s"
+range = [0.695, 0.705]
+measured = "0.70 s; exits at 88.2 degrees"
+figure = "08-turn-to-heading.png"
+note = "The sim gyro integrates the commanded turn rate (course code), but the reading comes through Phoenix, so a Phoenix change can move the time."
+
+[[claim]]
+id = "l08.turn-exit-heading"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "turnToHeading(90) leaves the heading at 88.2 degrees, inside the 2 degree band but not on the target."
+evidence = "CLAUDE.md, 'Batch 1 found', Lesson 8; data/08-turn-to-heading.csv"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "88.2 degrees"
+unit = "degrees"
+range = [88.15, 88.25]
+measured = "88.20 degrees (csv: 88.20374)"
+figure = "08-turn-to-heading.png"
+
+[[claim]]
+id = "l08.clamp-release-time"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "The 0.5 omega clamp holds for the first 0.38 s of turnToHeading(90), then lets go and omega shrinks with the error."
+evidence = "CLAUDE.md, 'Batch 1 found', Lesson 8; data/08-turn-to-heading.csv"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "first 0.38 seconds"
+unit = "s"
+range = [0.375, 0.385]
+measured = "about 0.38 s (csv: omega 0.50 through 0.36 s, 0.43 at 0.38 s)"
+figure = "08-turn-to-heading.png"
+note = "The 25 degree figure (0.5 / 0.02) is arithmetic from the course gain and clamp, not a claim."
+
+[[claim]]
+id = "l08.gyro-zero-delay"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "The simulated heading reads 0 for the first 0.12 s of the turn although omega is already 0.5."
+evidence = "CLAUDE.md, 'Batch 1 found', Lesson 8; data/08-turn-to-heading.csv"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "for the first 0.12 seconds"
+unit = "s"
+range = [0.115, 0.125]
+measured = "0.00 degrees through 0.12 s (csv)"
+figure = "08-turn-to-heading.png"
+note = "The lesson says it did not dig into the cause."
+
+[[claim]]
+id = "l08.gyro-first-jump"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C3"
+statement = "After the delay the heading jumps to 25 degrees on the first tick it moves."
+evidence = "CLAUDE.md, 'Batch 1 found', Lesson 8; data/08-turn-to-heading.csv"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "then jumps to 25 degrees"
+unit = "degrees"
+range = [24.5, 25.5]
+measured = "25.2 degrees at 0.14 s (csv)"
+figure = "08-turn-to-heading.png"

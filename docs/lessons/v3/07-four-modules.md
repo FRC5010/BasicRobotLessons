@@ -126,7 +126,7 @@ Hardware like `m_driveMotor` stays `private`, same as always.
 import org.wpilib.math.geometry.Translation2d;
 ```
 
-Now the methods. Because the module no longer extends `Mechanism`, the
+Now the methods. Because the module no longer implements `Mechanism`, the
 command factories are literally gone — `run`, `runRepeatedly`, and friends were
 *inherited* from `Mechanism`, so `driveAtSpeed`, `driveWithJoystick`,
 `steerToAngle`, and `driveDistance` don't compile anymore. That's fine: commands
@@ -166,7 +166,7 @@ schedule.
 
 **Keep `SwerveModule`'s private `clamp` helper from Lesson 5, unchanged** —
 this alpha's WPILib doesn't ship a `MathUtil.clamp` to replace it with, so the
-one you wrote is still the tool for the job.
+one you wrote is still the tool for the job. <!-- claim: wpilib.no-mathutil-clamp -->
 
 ### Pay off Lesson 5's IOU: real steering gearing
 
@@ -284,10 +284,10 @@ m_steerSim.setRotorVelocity(
 
 Heads up: the steering now turns at a believable speed instead of a bare
 rotor's instant snap, so your Lesson 5 `kP` is now tuned for the wrong plant.
-Measured against this model: the same `kP = 0.0005` that converged cleanly in
-Lesson 5 now crawls — a 90° turn takes about 6 simulated seconds to get
+Measured against this model: the same `kP = 0.0005` that rang in Lesson 5's
+[Figure 5.2](05-steering-p-control.md#figure-5-2) now crawls — a 90° turn takes about 6 simulated seconds to get
 within a degree, and about 9 to get within a third of one, decaying smoothly
-with no overshoot at all. That's not a
+with no overshoot at all (Figure 7.3 plots it). <!-- claim: l07.kp-0005-within-1deg, l07.kp-0005-within-third --> That's not a
 bug; the thing being controlled changed, and a 25:1 reduction resists motion
 harder than a bare rotor did. You can't retune yet (nothing runs until the
 wiring in section 6), so sit tight — section 7 comes back to this the moment
@@ -337,6 +337,19 @@ Those signs follow WPILib's convention, and it's one to memorize now because
 every WPILib class assumes it: **+X is forward, +Y is left, yaw is
 CCW-positive.** Front-left is "forward and left," so both coordinates are
 positive; back-right flips both signs.
+
+<a id="figure-7-1"></a>
+![Three top-down drawings of the chassis. Left: the axes, with +X pointing up the page as forward and +Y pointing left, a counterclockwise arrow for positive yaw, and the four corners labelled FL 0, FR 1, BL 2, BR 3 with coordinates plus or minus 0.3. Middle: translate, all four wheels pointing the same way, forward and left at 45 degrees. Right: rotate, the four wheels in a pinwheel at 135, 45, minus 135 and minus 45 degrees](images/07-chassis-frame-corners.svg)
+
+*Figure 7.1 — The chassis frame, the four corners, and the two moves.*
+
+Figure 7.1 draws all of that. The left panel is the frame: the robot seen
+from above with its front at the top, +X up the page, +Y to the left, and
+positive yaw swinging counterclockwise. Each corner sits at ±0.3 m, in the
+order the array will use: front-left is slot 0, then front-right, back-left,
+back-right. The other two panels are the two moves you're about to build.
+Keep an eye on the middle one in section 4 and the right-hand one in
+section 5.
 
 **One field on `DriveConstants` no longer makes sense and has to go:**
 `kDriveMotorPort`, `kSteerMotorPort`, and `kCancoderPort` described *one*
@@ -425,13 +438,13 @@ single number, logged one at a time with `Telemetry.log(name, value)`.
 **`SwerveModuleVelocity`** is different: a WPILib data-carrier bundling one
 wheel's speed (in m/s — which is why you wrote
 `getDriveVelocityMetersPerSec`) with its angle as a **`Rotation2d`**,
-WPILib's angle type (`Rotation2d.fromDegrees(...)` builds one).
+WPILib's angle type (`Rotation2d.fromDegrees(...)` builds one). <!-- claim: wpilib.swerve-kinematics-api -->
 `Telemetry.log` has an overload for exactly this: hand it a whole array
 plus the type's **`.struct`** — a value `SwerveModuleVelocity` ships that
 knows how to turn one into bytes and back — and one call publishes all four
 modules' speed and angle together, as one labeled topic AdvantageScope's
 Swerve tab knows how to draw, instead of four separate numbers it would
-have no way to know belong to the same picture.
+have no way to know belong to the same picture. <!-- claim: wpilib.telemetry-log-overloads -->
 
 Step back and look at the division of labor, because this is the lesson's
 real idea. The periodic callback registered in the constructor runs rain or
@@ -439,7 +452,7 @@ shine — every tick, even while the robot is disabled — so it holds the
 *watching*: reading and logging what the four corners are doing. The *acting*
 lives in commands, which the next two sections build: each one calls
 `setDesiredState` on every module, every tick it runs, and commands only run
-while the robot is enabled. The modules themselves never talk to the
+while the robot is enabled. <!-- claim: commandsv3.disable-cancels-mechanism-commands --> The modules themselves never talk to the
 scheduler at all. That's the whole point of dropping `Mechanism` from
 `SwerveModule` — one mechanism, one lock, four workers commanded together.
 
@@ -517,7 +530,7 @@ For a square chassis (`kHalfLength == kHalfWidth`):
 | Back-left   | `-135°` (= `225°`) | back-right |
 | Back-right  | `-45°`  (= `315°`) | front-right |
 
-Sketch the four wheels pointing those ways and imagine them rolling — the whole
+The right-hand panel of Figure 7.1 draws those four wheels. Imagine them rolling — the whole
 robot spins CCW. Neat, isn't it?
 
 Notice neither `translate` nor `rotate` bothers with a `.whenCanceled(...)`
@@ -526,7 +539,7 @@ because `Drivetrain` is never actually idle. `translate` is about to become
 the *default* command in section 6, so the instant `rotate` is canceled (a
 bumper released), the scheduler hands the mechanism straight back to
 `translate`, which immediately commands fresh output. Nothing is ever left
-dangling long enough to matter. Contrast that with `driveDistance` back in
+dangling long enough to matter. <!-- claim: commandsv3.default-command-resumes --> Contrast that with `driveDistance` back in
 Lesson 6, which really could end with nothing else queued up — that's the
 difference that decides whether cleanup is required.
 
@@ -592,11 +605,10 @@ private void logCommandStart(SchedulerEvent event) {
 just one. Every command in this course needs exactly one mechanism, so the
 loop runs once — but the method doesn't need to *know* that, which is the
 point. `mechanism.getName()` reads back the same name every `Mechanism`
-already carries — it's where the `"Drivetrain"` in `"Drivetrain[IDLE]"`
-comes from — so the dashboard key builds itself: `Drivetrain/CurrentCommand`
+already carries (here, `"Drivetrain"`), so the dashboard key builds itself: `Drivetrain/CurrentCommand`
 for a command on `drivetrain`, whatever a future mechanism happens to be
 called for one of its own. Add a second mechanism to `Robot` someday, and
-this method won't need to hear about it.
+this method won't need to hear about it. <!-- claim: commandsv3.command-requirements-and-mechanism-name -->
 
 **Add to `Robot`'s imports:**
 
@@ -637,17 +649,19 @@ coordinate convention: pushing the stick forward reads negative but means +X;
 pushing it left reads negative but means +Y. And because both bumper commands
 and the default translate require the Drivetrain, holding a bumper cancels
 the default (as expected); releasing it hands control back automatically —
-the same pattern from Lesson 2, now moving eight motors' worth of robot. The
+the same pattern from Lesson 2, now moving eight motors' worth of robot. <!-- claim: commandsv3.default-command-resumes --> The
 project should compile clean again.
 
 ---
 
 ## 7. Run it
 
-Run the robot in simulation → **My Teleop** → **Enabled**. In AdvantageScope, connect to
+Run the robot in simulation, pick **Teleoperated** and **MyTeleop**, then
+**Enable**. In AdvantageScope, connect to
 the sim and plot all four `Drivetrain/Module0..3/SteerAngleDegrees` values on
-one graph. Push the stick — all four traces should snap to the same value.
-Hold the left bumper — they should split into the four rotate-in-place angles
+one graph, the way Lesson 3's [Figure 3.1](03-telemetry.md#figure-3-1) shows (they're under
+**Telemetry → Drivetrain** now). <!-- claim: wpilib-tools.advantagescope-sidebar --> Push the stick (the controller in slot 0, as in [Figure 1.1](01-first-motor.md#figure-1-1)) — all four traces should snap to the same value.
+Hold the left bumper (**M** on the keyboard) — they should split into the four rotate-in-place angles
 from the table above.
 
 Notice what you *didn't* have to do first: walk out to the robot and point
@@ -656,15 +670,22 @@ priming, paying off exactly where it matters — four independent modules that
 all agree on zero the instant power comes on, with no ritual and no chance
 to forget it before a match.
 
-Now the payoff for publishing `ModuleStates`: open AdvantageScope's **Swerve**
-tab and drag `NetworkTables/Telemetry/Drivetrain/ModuleStates` into its **States** slot
-(set the tab's *Max Speed* to about `5` — that's roughly what a Kraken-driven
-wheel tops out at in m/s). You get a live diagram of the chassis: one arrow
+Now the payoff for publishing `ModuleStates`: open a **Swerve** tab in
+AdvantageScope (**Tabs → New Tab → Swerve**), and drag `ModuleStates` from
+**Telemetry → Drivetrain** in the sidebar into the tab's **Sources** list,
+where it shows up as **Module Velocities**. <!-- claim: wpilib-tools.advantagescope-swerve-tab --> Set the tab's **Max Speed (m/s)**
+to about `5` — that's roughly what a Kraken-driven wheel tops out at in
+m/s. <!-- claim: wpilib.kraken-x60-model --> Figure 7.2 shows where each of those is. You get a live diagram of the chassis: one arrow
 per module, direction showing steer angle, length showing wheel speed. Push
 the stick and all four arrows swing together and grow with speed; hold the
 left bumper and they snap into the pinwheel — the table above, drawn for you,
 sixty times a second. This diagram is about to become your main debugging
 view for everything swerve.
+
+<a id="figure-7-2"></a>
+![Two AdvantageScope screenshots. Top, step 1: the Tabs menu open at New Tab, whose submenu lists Line Graph, 2D Field, 3D Field, Table, Console, Statistics, Video, Joysticks, Swerve with the shortcut Alt+D (outlined, badge 1), Mechanism, Points and Metadata. Bottom: the Swerve tab, connected to 127.0.0.1. In the sidebar, Telemetry, Drivetrain and ModuleStates are open (badge 2), ModuleStates listed as a SwerveModuleVelocity array of length 4. The Sources list under the diagram reads Module Velocities: NT:/Telemetry/Drivetrain/ModuleStates (badge 3), and Max Speed (m/s) beside it is 5 (badge 4). The diagram is a square chassis with a wheel circle at each corner and a long blue arrow from each wheel, all four pointing forward and a little to the right while the stick is pushed. Third, the diagram alone while the left bumper is held: each arrow at right angles to the line from the chassis center to its wheel, all four turning the chassis the same way, a pinwheel.](images/07-advantagescope-swerve-tab.png)
+
+*Figure 7.2 — Opening a Swerve tab (1) and giving it `ModuleStates` (2, 3), with Max Speed 5 (4). The stick is pushed forward, so all four arrows point the same way; the bottom panel holds the left bumper instead, and they make the pinwheel.* <!-- claim: wpilib-tools.advantagescope-swerve-tab -->
 
 Now that the robot actually runs, cash in the promise from section 2: the
 steering carries a real `25 : 1` reduction, so it turns at a believable speed
@@ -673,10 +694,26 @@ Swerve tab — with `kP` still at Lesson 5's `0.0005`, expect a slow, smooth
 crawl into position, no overshoot, just patient. **Retune it the Lesson 5
 way** now that you can see it move: nudge `kP` up and watch the arrow snap
 into place faster. Verified against this model, `kP = 0.005` — ten times
-Lesson 5's value — settles within about a second with barely any overshoot.
-The gearbox adds real damping, so a bigger gain is both safe and needed here,
+Lesson 5's value — gets within a degree in half a second and never overshoots
+(Figure 7.3 plots both gains). <!-- claim: l07.kp-005-within-1deg --> The gearbox adds real damping, so a bigger gain is both safe and needed here,
 the opposite of Lesson 5's ungeared case. This is the first moment you could
 actually see it and tune it.
+
+<a id="figure-7-3"></a>
+![Two graphs of one steering module turning from 0 to 90 degrees through the 25 to 1 gearbox. Top, ten seconds: with kP 0.0005 the angle creeps up and is within one degree of 90 at 6.3 seconds and within 0.3 degrees at 9.0 seconds; with kP 0.005 it is there in half a second. Bottom, the first 1.5 seconds enlarged: the 0.005 curve climbs steeply and levels off at 90 with no overshoot, while 0.0005 is still at 60 degrees](images/07-steering-geared-two-gains.png)
+
+*Figure 7.3 — One steering module turning 90° through the real 25:1 gearbox, with Lesson 5's gain and with ten times it.* <!-- claim: l07.kp-0005-within-1deg, l07.kp-0005-within-third, l07.kp-005-within-1deg -->
+
+Figure 7.3 is the same tap as Lesson 5's [Figure 5.2](05-steering-p-control.md#figure-5-2), on the geared module.
+The top panel gives the whole ten seconds. The orange line, Lesson 5's
+`0.0005`, climbs slowly and smoothly: within a degree at 6.3 seconds, within
+a third of a degree at 9.0. <!-- claim: l07.kp-0005-within-1deg, l07.kp-0005-within-third --> The green line, ten times the gain, is within a degree
+after half a second, when the orange line is barely a quarter of the way there. <!-- claim: l07.kp-005-within-1deg --> The bottom panel zooms in on the first
+second and a half so you can see green's shape: steep at the start, rounding off
+into 90° with nothing above the setpoint at all. Compare it with Lesson 5's
+orange ring. Same controller, same
+idea; the plant changed, so the same gain changed from too big to too small.
+
 
 The **gyro** still reports zero — the chassis isn't yet closing the loop from
 "commanded rotation" to "reported heading." That's exactly what Lesson 8 wires
@@ -758,7 +795,7 @@ configuration reads the same constant.
 3. **Code — add `driveForwardMeters` to `Drivetrain`.** Add a
    `driveForwardMeters(double meters)` method — read
    `getDistanceMeters()` from `m_modules[0]` after resetting, sequence steps like
-   Lesson 6's `driveDistance`. This is the whole-chassis version we'll formalize
+   Lesson 6's `driveDistance` ([Figure 6.2](06-distance-and-commands.md#figure-6-2)). This is the whole-chassis version we'll formalize
    in Lesson 9.
 4. **Code — move the CAN IDs and offsets into `Constants.java`.** The array above
    bakes them in as literals (`new SwerveModule(1, 2, 9, 0.0, ...)`) — fine to

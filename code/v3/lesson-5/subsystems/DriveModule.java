@@ -175,19 +175,15 @@ public class DriveModule implements Mechanism {
 
   /** Advances the physics model by one tick. Only ever called in simulation. */
   public void simulatePeriodic() {
-    // 1. Tell the sim the battery voltage available to each motor.
+    // 1. Tell the sim the battery voltage available to the motor.
     m_driveSim.setSupplyVoltage(RobotController.getBatteryVoltage());
-    m_steerSim.setSupplyVoltage(RobotController.getBatteryVoltage());
 
-    // 2. Read the voltage each TalonFX is applying (result of your setThrottle() command).
-    double driveVolts = m_driveSim.getMotorVoltage();
-    double steerVolts = m_steerSim.getMotorVoltage();
+    // 2. Read the voltage the TalonFX is applying (result of your setThrottle() command).
+    double appliedVolts = m_driveSim.getMotorVoltage();
 
-    // 3. Feed that into each physics model and advance time by one tick (20 ms).
-    m_driveModel.setInputVoltage(driveVolts);
+    // 3. Feed that into the physics model and advance time by one tick (20 ms).
+    m_driveModel.setInputVoltage(appliedVolts);
     m_driveModel.update(0.020);
-    m_steerModel.setInputVoltage(steerVolts);
-    m_steerModel.update(0.020);
 
     /**
      * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
@@ -196,9 +192,14 @@ public class DriveModule implements Mechanism {
      * readings back up by the gear ratio before pushing them in.
      */
 
-    // 4. Push each model's resulting motion BACK into its TalonFX's fake encoder.
+    // 4. Push the model's resulting motion BACK into the TalonFX's fake encoder.
     m_driveSim.setRawRotorPosition(m_driveModel.getAngularPosition() / (2 * Math.PI));
     m_driveSim.setRotorVelocity(m_driveModel.getAngularVelocity() / (2 * Math.PI));
+
+    // The steering motor: the same four steps, after the drive motor's.
+    m_steerSim.setSupplyVoltage(RobotController.getBatteryVoltage());
+    m_steerModel.setInputVoltage(m_steerSim.getMotorVoltage());
+    m_steerModel.update(0.020);
     m_steerSim.setRawRotorPosition(m_steerModel.getAngularPosition() / (2 * Math.PI));
     m_steerSim.setRotorVelocity(m_steerModel.getAngularVelocity() / (2 * Math.PI));
   }

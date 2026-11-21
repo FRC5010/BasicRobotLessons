@@ -1,0 +1,158 @@
+# Numbers Lesson 30 (alerts) quotes that a library change could move.
+# Format: tools/claims/README.md. CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 30
+# (LOOP: the real Robot, ten fresh launches twice, five battery runs, three camera runs).
+# Figure 30.3 data: tools/figures/data/30-low-battery-gate.csv (tools/figures/probes/Fig30LowBatteryGate.java).
+# Ranges use the README rule current at writing, including "about" = one unit or 10 percent, whichever is smaller.
+
+[[claim]]
+id = "l30.boot-flicker-count"
+kind = "number"
+library = ["phoenix6", "limelightlib"]
+criticality = "C2"
+statement = "On every fresh launch, on the very first tick the elevator, arm and flywheel motors read disconnected."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 30 (boot flicker: motors disconnected on the first tick in 20 of 20 launches)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "measured over ten fresh launches ... every time"
+unit = "launches of 10"
+range = [10, 10]
+measured = "10 of 10 (20 of 20 over two sets of ten)"
+note = "Band [10, 10]: the lesson's point is that the flicker happens on every boot, so a raised-once alert would never clear."
+
+[[claim]]
+id = "l30.boot-flicker-duration"
+kind = "number"
+library = ["phoenix6"]
+criticality = "C2"
+statement = "The motors' disconnected readings clear within about a sixth of a second of the first tick."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 30 (the motors' alerts last 2-7 ticks, the last one showing 0.08-0.16 s after the first tick; alpha-7 cleared on tick 2)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "a few ticks later, within about a sixth of a second"
+unit = "s"
+range = [0.0, 0.2]
+measured = "last disconnected tick 0.08-0.16 s after the first"
+note = "'Within' makes it one-sided; the upper end is the fraction rule's 0.167 plus 20 percent."
+
+[[claim]]
+id = "l30.switch-latency"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "Each unplug switch (gyro, CANcoder 9, limelight-front) raises and clears its alert within one tick of being flipped."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 30 (each switch raised and cleared its alert on the first tick that read it)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "within one tick"
+unit = "ticks"
+range = [0, 1]
+measured = "first tick that read the switch, both directions"
+
+[[claim]]
+id = "l30.unplugged-camera-pose-ticks"
+kind = "number"
+library = ["limelightlib"]
+criticality = "C3"
+statement = "With the front camera 'unplugged' and the robot parked 3 m in front of tag 20, the camera still delivered a pose on every tick."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 30 (observations on 50 of 50 ticks, connected=false, three runs)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "delivered a pose on every single tick"
+unit = "ticks of 50"
+range = [50, 50]
+measured = "50 of 50 ticks in 3 of 3 runs"
+note = "Band [50, 50]: the point is that the switch changes the alert and nothing else."
+
+[[claim]]
+id = "l30.enable-dip-time"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "On a fresh simulated battery, enabling the robot pulls the rail below 11.5 V for 0.68 s as the flywheel spins up to idle."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 30 (34 ticks, 0.68 s, five runs) and 'Batch 2 found' (Figure 30.3: 34 ticks); data/30-low-battery-gate.csv"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 0.7 s (prose); crossing 11.5 V at about 0.7 s and 0.68 s (Figure 30.3's text and alt text)"
+unit = "s"
+range = [0.675, 0.685]
+measured = "0.68 s (34 ticks) in 5 of 5 runs and in the figure's data"
+figure = "30-low-battery-gate.png"
+note = "The tightest wording is the bare 0.68; the prose's 'about 0.7 s' would give [0.63, 0.77] under the current rule."
+
+[[claim]]
+id = "l30.enable-dip-low"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "On enable the fresh battery's rail bottoms out at 11.27 V."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 30 (11.26-11.27 V); data/30-low-battery-gate.csv (11.267 V)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "down to 11.3 V (prose); bottoming out at 11.27 V (Figure 30.3's text)"
+unit = "V"
+range = [11.265, 11.275]
+measured = "11.26-11.27 V; 11.267 V in the figure's data"
+figure = "30-low-battery-gate.png"
+note = "The 11.26 V runs are just outside the bare 11.27. Reported as too precise."
+
+[[claim]]
+id = "l30.shot-dip-time"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "Spinning the flywheel up to shooting speed holds the rail below 11.5 V for 1.56 s."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 30 (77-78 ticks, 1.54-1.56 s, five runs); data/30-low-battery-gate.csv (1.56 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "another 1.6 s (prose); for 1.56 s (Figure 30.3's text and alt text)"
+unit = "s"
+range = [1.555, 1.565]
+measured = "1.54-1.56 s over 5 runs; 1.56 s in the figure's data"
+figure = "30-low-battery-gate.png"
+note = "The 1.54 s runs are outside the bare 1.56. Reported as too precise."
+
+[[claim]]
+id = "l30.shot-dip-low"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "During the shot spin-up the rail sags to 11.19 V."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 30 (11.18-11.19 V); data/30-low-battery-gate.csv (11.188 V)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "down to 11.2 V (prose); 11.19 V (Figure 30.3's text)"
+unit = "V"
+range = [11.185, 11.195]
+measured = "11.18-11.19 V; 11.188 V in the figure's data"
+figure = "30-low-battery-gate.png"
+note = "The 11.18 V runs are just outside the bare 11.19. Reported as too precise."
+
+[[claim]]
+id = "l30.tired-warning-tick"
+kind = "number"
+library = ["wpilib"]
+criticality = "C3"
+statement = "On the tired battery (11 V) the low-battery warning appears on the second tick after boot, while disabled, clears on enable and returns on disable."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 30 (the rail reads 11.0 V from tick 2, the alert is up on tick 3, 'the second tick after boot'; clear one tick after enable, back one tick after disable)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "on the second tick after boot"
+unit = "tick"
+range = [2, 3]
+measured = "alert up on tick 3, the second tick after the first"
+note = "Counting ambiguity between 'second tick' and 'second tick after boot'; range spans both."
+
+[[claim]]
+id = "l30.brownedout-flips"
+kind = "number"
+library = ["wpilib"]
+criticality = "C3"
+statement = "With every limit off on the tired battery, Power/BrownedOut switches between true and false dozens of times in a few seconds (more than a hundred in most runs) and reads false at the end."
+evidence = "CLAUDE.md, 'v3 Lessons 28-32 re-measured on alpha-8', Lesson 29 (Lesson 30 Try It #8: about 110-140 changes in the eight collapsed runs, about 25 in the two that finished)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "dozens of times ... more than a hundred in most runs"
+unit = "changes"
+range = [24, inf]
+measured = "110-140 in 8 of 10 runs, about 25 in the other 2"
+note = "Band: at least dozens (24 or more) in every run, more than 100 in most (a check can require 100 in at least 6 of 10)."

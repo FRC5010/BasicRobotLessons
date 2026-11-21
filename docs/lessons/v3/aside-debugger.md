@@ -32,12 +32,12 @@ they look.
   things are specific to this track, called out inline below: SimGUI has an
   extra opmode-selector step, and the framework rewrites a thrown
   exception's stack trace before Java prints it, which changes what
-  section 4's reading applies to. (This course hasn't verified whether the
-  WPILib VSCode extension's launch configs recognize a 2027-alpha OpMode
-  project yet. If `F5` doesn't do anything, run `./gradlew run` from a
-  terminal instead. It runs the robot in simulation the way every lesson
-  was checked, but without the debugger attached, so breakpoints won't
-  pause it.)
+  section 4's reading applies to. <!-- claim: commandsv3.command-trace-helper, wpilib-tools.simgui-robot-state-panel --> (The WPILib extension's
+  **WPILib Desktop Debug** launch does work on a 2027-alpha OpMode project:
+  Figure D.1 was taken in one, paused at a breakpoint. <!-- claim: wpilib-tools.vscode-debugger --> If `F5` doesn't do
+  anything on yours, run `./gradlew run` from a terminal instead. It runs the
+  robot in simulation the way every lesson was checked, but without the
+  debugger attached, so breakpoints won't pause it.)
 
 ---
 
@@ -46,9 +46,9 @@ they look.
 The WPILib VSCode extension adds a debug launch. Two ways to start it:
 
 - **Command Palette** (`Ctrl+Shift+P`) → search **WPILib: Simulate Robot Code**
-  and pick the option that launches with the debugger attached.
+  and pick the option that launches with the debugger attached. <!-- claim: wpilib-tools.vscode-debugger -->
 - Or just press **`F5`** with a `.java` file open. VSCode will use the WPILib
-  launch config.
+  launch config. <!-- claim: wpilib-tools.vscode-debugger -->
 
 Either way, sim starts up the same way [Lesson 0](00-orientation.md) runs
 the robot in simulation — except VSCode is now watching the JVM and will
@@ -56,7 +56,7 @@ pause it the moment a breakpoint hits.
 
 There's an equivalent **Debug Robot Code** command that deploys with the
 debugger attached to a SystemCore. You'll rarely need it — sim covers 90% of debugging — but
-it's there if a bug only shows up on real hardware.
+it's there if a bug only shows up on real hardware. <!-- claim: wpilib-tools.vscode-debugger -->
 
 If a Java process starts but the SimGUI window never appears, look at the
 **Debug Console** panel at the bottom of VSCode for a stack trace from startup
@@ -68,7 +68,7 @@ If a Java process starts but the SimGUI window never appears, look at the
 
 Click in the **gutter** — the empty strip just left of the line numbers — next
 to any line of Java. A red dot appears. That's a breakpoint. When execution
-reaches that line, the entire robot pauses (the 50 Hz tick freezes with it) and
+reaches that line, the entire robot pauses (the 50 Hz tick freezes with it) <!-- claim: wpilib.opmode-periodic-20ms, wpilib-tools.vscode-debugger --> and
 VSCode shows you:
 
 - **Variables** — every local variable and field currently in scope, with its
@@ -86,14 +86,19 @@ VSCode shows you:
   - **Step Out** (`Shift+F11`) — run until the current method returns.
   - **Stop** — kill the debug session.
 
-That's a lot of panels at once — don't try to memorize them. The worked
-example below touches each one, and after a session or two your hands will
-know where everything is.
+That's a lot of panels at once — don't try to memorize them. Figure D.1
+numbers where each one is, and the worked example below touches each one;
+after a session or two your hands will know where everything is.
+
+<a id="figure-d-1"></a>
+![VS Code paused in DriveModule.java's steerToAngle. Badge 1: a red breakpoint dot in the gutter beside line 144. Badge 2: line 147, highlighted with a yellow arrow in the gutter, the line execution is paused on, with VS Code showing error = 90.000000 beside it. Badge 3: the Variables panel, listing measurement = 0.000000, error = 90.000000 and the module's fields under this. Badge 4: the Watch panel, holding SteerConstants.kP * error = 0.045000. Badge 5: the Call Stack panel, the robot main thread paused on step in DriveModule.lambda. Badge 6: the debug toolbar at the top: Continue, Step Over, Step Into, Step Out, Restart and Stop.](images/aside-debugger-window.png)
+
+*Figure D.1 — VS Code paused in Lesson 5's `steerToAngle`: the breakpoint (1), the paused line (2), Variables (3), Watch (4), Call Stack (5) and the debug toolbar (6). This is where section 3's worked example ends up after its sixth step.* <!-- claim: wpilib-tools.vscode-debugger -->
 
 One thing to internalize now, though: **while paused, nothing on the robot is
 running.** The scheduler isn't ticking, sensors aren't updating, timers aren't
-advancing. In sim that's harmless — sim time stops with everything else. On a
-real robot, motors keep applying their last command until you continue, which
+advancing. In sim that's harmless — sim time stops with everything else. <!-- claim: wpilib-tools.vscode-debugger --> On a
+real robot, motors keep applying their last command until you continue, <!-- claim: phoenix6.control-request-persists --> which
 is exactly why debugging in sim is almost always safer.
 
 ---
@@ -111,12 +116,12 @@ double error = targetDegrees - measurement;
 ```
 
 1. Click the gutter next to that line. Red dot.
-2. Press `F5` to launch the debugger. In SimGUI, drag **Robot State** to
-   **Teleoperated**. Pick the opmode from the selector first (**My Teleop**),
-   *then* set Robot State — there's no code to run until an opmode is
-   actually selected.
+2. Press `F5` to launch the debugger. In SimGUI's **Robot State** panel,
+   pick **Teleoperated**, then **MyTeleop** from the OpMode drop-down, then
+   click **Enable** — there's no code to run until an opmode is actually
+   selected. <!-- claim: wpilib-tools.simgui-robot-state-panel -->
 3. Press **X** on the controller (from Lesson 5, that's `steerToAngle(90)`,
-   bound to `westFace()`).
+   bound to `faceLeft()`).
    Execution hits the breakpoint and VSCode steals focus.
 4. Look at the **Variables** panel:
    - `targetDegrees` = `90.0`
@@ -166,13 +171,13 @@ confirmed by decompiling it, not guessed. It **strips every internal
 `Coroutine`/`Continuation`/`Scheduler` frame out**, and then it **splices in
 a second stack trace**, captured back when the command was originally
 scheduled, so you can see *both* where it broke *and* which button bound
-it — separated by a literal marker frame. Verified by forcing this exact
+it — separated by a literal marker frame. <!-- claim: commandsv3.command-trace-helper --> Verified by forcing this exact
 `m_driveMotor` mistake in a `Mechanism.run(...)` command and reading what
 actually printed:
 
 *Nothing to add — the top three frames are exactly what printed; the bottom
 two are relabeled to show what they'd read in a deployed robot instead of
-the bare test harness that produced this:*
+the bare test harness that produced this:* <!-- claim: commandsv3.command-trace-helper -->
 
 ```
 Exception in thread "main" java.lang.NullPointerException: Cannot invoke
@@ -184,7 +189,13 @@ Exception in thread "main" java.lang.NullPointerException: Cannot invoke
         at first.robot.opmode.RobotTeleop.<init>(RobotTeleop.java:41)
 ```
 
-Read it in two passes.
+Read it in two passes. Figure D.2 is the same trace with each pass marked on
+it, so keep it open while you read the next two paragraphs.
+
+<a id="figure-d-2"></a>
+![The stack trace from this section in a monospaced block. The first three lines, the exception message, are shaded blue and labeled pass one: what went wrong. The first frame, in DriveModule, is shaded orange and labeled pass two: the first frame that is yours. The Mechanism and Robot frames below it are grey, to skim. A boxed line, Command Binding Trace, divides the trace: above is where it broke, below is which binding scheduled it, and the last frame, in RobotTeleop, is shaded green](images/aside-debugger-stack-trace.svg)
+
+*Figure D.2 — The same trace, read in two passes. The `=== Command Binding Trace ===` line splits it in two: where the exception happened above, which binding scheduled the command below. The last two frames are relabeled as in the listing above.* <!-- claim: commandsv3.command-trace-helper -->
 
 **Pass one — the first line.** It says *what* went wrong in almost-plain
 English:
@@ -223,7 +234,7 @@ where the command that threw it was scheduled from." Here that's
 `RobotTeleop.<init>`, meaning the button binding that scheduled
 `driveForward()` in the first place. On a real robot with a dozen bindings,
 that second half is the fast way to answer "which button did this?" without
-guessing.
+guessing. <!-- claim: commandsv3.command-trace-helper -->
 
 ### Other common shapes
 

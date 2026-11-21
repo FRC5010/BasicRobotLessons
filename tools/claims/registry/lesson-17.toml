@@ -1,0 +1,424 @@
+# Numbers Lesson 17 (B-Line autos) quotes that a library change could move.
+# Format: tools/claims/README.md. Two Corners at 2 m/s, 6 m/s^2, 0.5 m handoff, real Robot loop, Blue 1.
+
+[[claim]]
+id = "l17.corner-overshoot"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C2"
+statement = "In Two Corners at 2 m/s and a 0.5 m handoff radius, the robot swings 14-16 cm past the first corner (x = 6.0) before it heads up the second leg."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 17 (six runs, 14-16 cm; alpha-7 13.9-15.3)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "14-16 cm; 14-16 cm again in Try It #2"
+unit = "cm"
+range = [13.5, 16.5]
+measured = "14-16 cm over six runs; 15.5-16.2 cm in the three figure runs (tools/figures/data/17-two-corners-run1..3.csv)"
+
+[[claim]]
+id = "l17.fig-corner-overshoot"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C2"
+statement = "In Figure 17.4's run the robot goes about 16 cm past x = 6, which is also where the cross-track error bottoms out (-0.16 m); three runs gave 15-16 cm."
+evidence = "tools/figures/data/17-two-corners-run1..3.csv, read 2026-11-19; CLAUDE.md, Lesson 17 re-measure"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 16 centimeters; 15-16 cm for three runs; bottoms out at -0.16 m, 16 cm past the line"
+unit = "cm"
+range = [15.5, 16.5]
+measured = "max x minus 6: 15.5, 16.2, 16.1 cm; crossTrackError minimum -0.158, -0.164, -0.163 m"
+test = "tools/figures/probes/Fig17TwoCorners.java"
+figure = "17-two-corners-track.png"
+note = "The 'about 16' in the alt text allows 15-17 and 'three runs gave 15-16' allows 14.5-16.5; the bare -0.16 m and '16 cm' allow 15.5-16.5, the tightest."
+
+[[claim]]
+id = "l17.follow-duration"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C2"
+statement = "Two Corners takes about 4 seconds to follow in the sim."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 17 (following lasts 4.13-4.23 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 4 seconds"
+unit = "s"
+range = [3.6, 4.4]
+measured = "4.13-4.23 s over six runs"
+
+[[claim]]
+id = "l17.shoot-fraction"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C2"
+statement = "Event: shoot! prints about 82% of the way up the second leg, a touch past the 80% in the path file, because the event runs on the loop after the follower passes the marker."
+evidence = "CLAUDE.md, 'Batch 1 found', Lesson 17 (shoot fires at 82% of the second leg, the handler a tick later at 83%)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 82%"
+unit = "%"
+range = [81.0, 83.0]
+measured = "82% (the handler's tick 83%); 83.0-83.3% in the figure runs' data (y 5.496-5.501)"
+
+[[claim]]
+id = "l17.finish-heading"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C2"
+statement = "Two Corners ends within tolerance, reading 178.8 degrees rather than 180."
+evidence = "tools/figures/data/17-two-corners-run1..3.csv; CLAUDE.md, Lesson 17 (178.8; 178.7 replayed; 178.9 on another run)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "178.8 degrees"
+unit = "deg"
+range = [178.75, 178.85]
+measured = "178.83-178.84 in the figure runs; 178.7-178.9 elsewhere in CLAUDE.md"
+note = "Bare 178.8 allows only 178.75-178.85; other recorded runs read 178.7 and 178.9. Reported as too precise."
+
+[[claim]]
+id = "l17.estimate-truth-gap"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C2"
+statement = "With the cameras on, the estimate and the simulated truth stay within a couple of centimeters through Two Corners."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 17 (0.9-2.1 cm); figure runs 0.86-0.87 cm"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "within a couple of centimeters"
+unit = "cm"
+range = [0.0, 3.0]
+measured = "0.9-2.1 cm over six runs; 0.86 cm in the figure runs"
+note = "'A couple of centimeters' read as an upper bound of about 3 cm; the lesson gives no unit-of-digit rule for it."
+
+[[claim]]
+id = "l17.crosstrack-jump"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C2"
+statement = "At the corner the cross-track error jumps to about half a meter, the 0.5 m handoff radius, because the robot is still on the first leg's line when it starts measuring against the second's."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 17 (cross-track peaks 0.46-0.49 m)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about half a meter"
+unit = "m"
+range = [0.4, 0.6]
+measured = "0.46-0.49 m over six runs"
+
+[[claim]]
+id = "l17.fig-crosstrack-jump"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C2"
+statement = "In Figure 17.5's run, crossTrackError leaps to 0.47 m in one tick."
+evidence = "tools/figures/data/17-two-corners-run1..3.csv; CLAUDE.md, 'Batch 2 found', Lesson 17"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "0.47 meters"
+unit = "m"
+range = [0.465, 0.475]
+measured = "0.474, 0.464 and 0.466 m in the three runs"
+test = "tools/figures/probes/Fig17TwoCorners.java"
+figure = "17-cross-track-error.png"
+note = "Bare 0.47 allows 0.465-0.475; run 2 read 0.464 and the six runs of CLAUDE.md 0.46-0.49, so the figure's one run is quoted too precisely for a general claim."
+
+[[claim]]
+id = "l17.fig-jump-time"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C3"
+statement = "In Figure 17.5's run the jump comes 1.44 s after enable, when the robot enters the handoff radius."
+evidence = "tools/figures/data/17-two-corners-run1..3.csv; CLAUDE.md, 'Batch 2 found', Lesson 17"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "1.44 seconds"
+unit = "s"
+range = [1.435, 1.445]
+measured = "1.44, 1.44 and 1.46 s in the three runs"
+test = "tools/figures/probes/Fig17TwoCorners.java"
+figure = "17-cross-track-error.png"
+note = "Tied to the figure's one run; allows only 1.435-1.445."
+
+[[claim]]
+id = "l17.fig-jump-x"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C3"
+statement = "At the jump the robot is at about x = 5.58 m, half a meter short of the second leg's line x = 6."
+evidence = "tools/figures/data/17-two-corners-run1..3.csv"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "x = 5.58"
+unit = "m"
+range = [5.575, 5.585]
+measured = "5.568, 5.577 and 5.576 m in the three runs"
+test = "tools/figures/probes/Fig17TwoCorners.java"
+figure = "17-cross-track-error.png"
+note = "Tied to the figure's one run; the bare 5.58 allows only 5.575-5.585 and run 1 read 5.568."
+
+[[claim]]
+id = "l17.fig-zero-delay"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C3"
+statement = "The cross-track curve drops through zero about 0.28 s after the jump."
+evidence = "tools/figures/data/17-two-corners-run1..3.csv"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 0.28 s"
+unit = "s"
+range = [0.27, 0.29]
+measured = "0.28 s in all three runs"
+test = "tools/figures/probes/Fig17TwoCorners.java"
+figure = "17-cross-track-error.png"
+note = "The lesson's 'about 0.28' allows 0.27-0.29."
+
+[[claim]]
+id = "l17.fig-settle"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C3"
+statement = "After the overshoot the cross-track error settles at about 0.03 m, inside the 5 cm tolerance."
+evidence = "tools/figures/data/17-two-corners-run1..3.csv"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 0.03 m; near plus 0.03 meters"
+unit = "m"
+range = [0.027, 0.033]
+measured = "0.0288, 0.0285 and 0.0253 m"
+test = "tools/figures/probes/Fig17TwoCorners.java"
+figure = "17-cross-track-error.png"
+
+[[claim]]
+id = "l17.fig-remaining-zero"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C3"
+statement = "In Figure 17.5's run the remaining path distance reaches zero (within the 5 cm tolerance) about 3.3 s after enable."
+evidence = "tools/figures/data/17-two-corners-run1.csv, read 2026-11-19 (0.053 m left at 3.28 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "reaches zero at about 3.3 seconds"
+unit = "s"
+range = [3.2, 3.4]
+measured = "3.28 s to 0.053 m in run 1"
+test = "tools/figures/probes/Fig17TwoCorners.java"
+figure = "17-cross-track-error.png"
+note = "The data doesn't hit exactly zero; read as inside the 5 cm tolerance."
+
+[[claim]]
+id = "l17.fig-heading-partway"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C3"
+statement = "In Figure 17.4's run the heading is about 66 degrees partway up the second leg."
+evidence = "tools/figures/data/17-two-corners-run1.csv, read 2026-11-19"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 66 degrees"
+unit = "deg"
+range = [65.0, 67.0]
+measured = "The heading series crosses 66 deg at t = 2.22 s, y = 4.0; the instant the figure's arrow sits at is not recorded"
+test = "tools/figures/probes/Fig17TwoCorners.java"
+figure = "17-two-corners-track.png"
+note = "Partly unverified: the arrow's instant is not recorded in the figure data."
+
+[[claim]]
+id = "l17.fig-heading-past-90"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C3"
+statement = "Further up the second leg the heading passes 90 degrees (97 degrees at the figure's arrow)."
+evidence = "tools/figures/data/17-two-corners-run1.csv, read 2026-11-19"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "97 degrees; passed 90"
+unit = "deg"
+range = [96.5, 97.5]
+measured = "The heading series crosses 90 deg at t = 2.72 s, y = 4.99 and 97 deg at t = 2.82 s, y = 5.18; the arrow's instant is not recorded"
+test = "tools/figures/probes/Fig17TwoCorners.java"
+figure = "17-two-corners-track.png"
+note = "Partly unverified: the arrow's instant is not recorded in the figure data."
+
+[[claim]]
+id = "l17.stop-2mps-end-speed"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C2"
+statement = "At 2 m/s the robot crosses the end of Two Corners at about 0.8 m/s, because the wheels follow a request a little late."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 17 (at 2 m/s the robot crosses the end at about 0.8 m/s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 0.8 m/s"
+unit = "m/s"
+range = [0.72, 0.88]
+measured = "about 0.8 m/s"
+test = "tools/figures/probes/Fig17TwoCorners.java"
+figure = "17-can-it-stop.png"
+
+[[claim]]
+id = "l17.stop-2mps-past-end"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C2"
+statement = "At 2 m/s the robot rolls about 6 cm past the end of Two Corners (5 cm tolerance) and settles about 2 cm past."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8' (6 cm past the end's y) and 'Batch 2 found' (6-7 cm)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 6 cm"
+unit = "cm"
+range = [5.4, 6.6]
+measured = "6-7 cm"
+test = "tools/figures/probes/Fig17TwoCorners.java"
+figure = "17-can-it-stop.png"
+
+[[claim]]
+id = "l17.stop-3mps-peak-speed"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C2"
+statement = "With the 3 m/s limit the last leg is only 3 m long, so the robot peaks at about 2.9 m/s."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 17 (peaked at 2.87 m/s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 2.9 m/s"
+unit = "m/s"
+range = [2.8, 3.0]
+measured = "2.87 m/s"
+test = "tools/figures/probes/Fig17TwoCorners.java"
+figure = "17-can-it-stop.png"
+
+[[claim]]
+id = "l17.stop-3mps-end-speed"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C2"
+statement = "At 3 m/s the robot crosses the end of Two Corners at nearly 2 m/s."
+evidence = "CLAUDE.md, 'Batch 2 found', Lesson 17 (crossed the end at about 1.9 m/s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "nearly 2 m/s; still near 2 m/s at the end"
+unit = "m/s"
+range = [1.0, 2.0]
+measured = "about 1.9 m/s"
+test = "tools/figures/probes/Fig17TwoCorners.java"
+figure = "17-can-it-stop.png"
+
+[[claim]]
+id = "l17.stop-3mps-past-end"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C2"
+statement = "At a 3 m/s limit the robot slides about 35 cm (36 in the figure) past the end of Two Corners, stops and drives back."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 17 Try It #2 (lesson now says 35) and 'Batch 2 found' (36-37 cm in five of six runs)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 36 cm; roughly 35 cm"
+unit = "cm"
+range = [35.0, 36.0]
+measured = "36-37 cm in five of six runs; 27 cm and 0 past the end in the sixth"
+test = "tools/figures/probes/Fig17TwoCorners.java"
+figure = "17-can-it-stop.png"
+note = "'Roughly 35 cm' allows 34-36 and 'about 36 cm' allows 35-37; the intersection is used. The measured 37 cm falls outside; reported."
+
+[[claim]]
+id = "l17.stop-3mps-past-corner"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C2"
+statement = "At a 3 m/s limit the robot goes about 70 cm past the first corner."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 17 Try It #2 (69-74 cm); 'Batch 2 found' (70-72 cm)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 70 cm"
+unit = "cm"
+range = [63.0, 77.0]
+measured = "69-74 cm"
+test = "tools/figures/probes/Fig17TwoCorners.java"
+
+[[claim]]
+id = "l17.handoff-005-corner"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C2"
+statement = "With default_intermediate_handoff_radius_meters set to 0.05 the robot swings about half a meter past the first corner."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 17 Try It #2 (50-52 cm)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about half a meter"
+unit = "cm"
+range = [40.0, 60.0]
+measured = "50-52 cm"
+
+[[claim]]
+id = "l17.handoff-005-time"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C2"
+statement = "With the 0.05 m handoff radius, Two Corners takes about half a second longer."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 17 Try It #2 (4.56-4.69 s, +0.4-0.5 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "half a second longer"
+unit = "s"
+range = [0.45, 0.55]
+measured = "+0.4-0.5 s (4.56-4.69 s against 4.13-4.23 s)"
+note = "A bare fraction in words allows 10% either way; the measured +0.4 s falls just outside. Reported."
+
+[[claim]]
+id = "l17.kp30-swing"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C2"
+statement = "With kCrossTrackP = 30 the robot swings about 40 cm each way across the second leg."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 17 Try It #3 (+-0.41 m, one alpha-8 run; 30, 60 and 120 swing +-0.42, +-0.45 and +-2 m)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "about 40 cm each way"
+unit = "cm"
+range = [36.0, 44.0]
+measured = "+-0.41 m in one run"
+
+[[claim]]
+id = "l17.kp30-period"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C2"
+statement = "With kCrossTrackP = 30 a full swing takes a little under two seconds."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 17 Try It #3 (6 zero crossings in the last 5 s, a full swing about every 1.7 s)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "a little under every two seconds"
+unit = "s"
+range = [1.5, 2.0]
+measured = "about 1.7 s in one run"
+note = "'A little under two' has no rule in the README; read as 1.5-2.0 s."
+
+[[claim]]
+id = "l17.kp30-never-finishes"
+kind = "number"
+library = ["bline", "wpilib"]
+criticality = "C2"
+statement = "With kCrossTrackP = 30 the path never finishes: the robot is still following 40 s later."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 17 Try It #3 (still following at 40 s; 60 and 120 the same)"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "still swinging 40 seconds later"
+unit = "s"
+range = [40.0, inf]
+measured = "still following at 40 s in every run at 30, 60 and 120"
+note = "The quantity is the time the path ends; the runs were stopped at 40 s."
+
+[[claim]]
+id = "l17.camera-fix-time"
+kind = "number"
+library = ["bline", "limelightlib", "wpilib"]
+criticality = "C3"
+statement = "If the estimate is told a pose the simulated robot isn't at, the cameras pull the estimate's position back to the truth within about a second (they never fix the heading)."
+evidence = "CLAUDE.md, 'v3 Lesson 17 runs on BLine', In sim, selecting an auto sets the simulated robot down at its start (the cameras fix the position within about a second but never the heading)"
+measured_on = "alpha-7, listed unchanged on alpha-8"
+method = "LOOP"
+wording = "within about a second"
+unit = "s"
+range = [0.0, 2.0]
+measured = "about a second (no figure recorded)"
+note = "The recorded evidence is a prose summary, not a measurement series."

@@ -40,6 +40,11 @@
 # Constants.java well enough to merge it. --force skips both checks (an
 # unreadable Constants.java is then replaced, with a warning).
 #
+# It also deletes PROJECT_DIR/ctre_sim/, where Phoenix's simulation saves the
+# simulated motors' and sensors' settings, so a later lesson's settings can't
+# follow you to an earlier lesson's code. git ignores that folder, so git
+# can't bring it back, but nothing in it is yours: the simulator makes it again.
+#
 # Lesson 0 starts from the untouched OpMode template, so there is nothing to
 # apply for it; the highest lesson supported is the last one migrated to
 # current WPILib 2027 alpha (V3_ALPHA7_THROUGH in tools/lib/v3-lessons.sh).
@@ -144,6 +149,19 @@ removed="$(v3_remove_later_files "$REPO" "$THROUGH" "$PROJECT")"
 if [ -n "$removed" ]; then
   say "Removing files that Lesson $LESSON and later lessons add"
   echo "$removed"
+fi
+
+# Phoenix's simulation saves each simulated motor's and sensor's settings in
+# ctre_sim/ (git ignores it), the way a real motor keeps its settings, and the
+# code before Lesson 12 never sets the drive motors' settings itself. So a
+# later lesson's settings would carry over: after a rollback from Lesson 16, a
+# drive motor that a later lesson had made a steering motor read its position
+# from a CANcoder Lesson 4 doesn't have, and reported 0 (measured 2026-11-21).
+# Start the simulated devices fresh; the simulator makes the folder again.
+if [ -d "$PROJECT/ctre_sim" ]; then
+  rm -rf "$PROJECT/ctre_sim"
+  say "Resetting the simulated motors"
+  echo "  removed ctre_sim/  (the simulated motors' saved settings; the simulator makes it again)"
 fi
 
 if [ -f "$STAGE/Constants.before.java" ] && [ -f "$CONSTANTS" ]; then

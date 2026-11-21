@@ -3,7 +3,7 @@
 **Goal:** Track where the robot is on the field over time — its **pose** (x, y,
 heading) — by combining the gyro and how far each wheel has rolled. Then log
 that pose and watch the robot drive around a real field in AdvantageScope's
-**Odometry** tab.
+**2D Field** tab.
 
 **New Java concepts**
 - Small data-carrier types that bundle a couple of values
@@ -42,7 +42,7 @@ you know your heading and how far you've traveled each hour, you can plot
 your position on the chart. Our version just samples fifty times a second:
 `SwerveDriveOdometry` combines **wheel motion** (how far each wheel rolled
 and in which direction) with **gyro heading**, integrates the change every
-tick, and answers `getPose()` any time you ask.
+tick, and answers `getPose()` any time you ask. <!-- claim: wpilib.swerve-odometry-api -->
 
 ---
 
@@ -75,7 +75,7 @@ just two values riding together. By now you've met the whole family
 and the pattern behind them should be visible: WPILib bundles related
 numbers into little named types because a `SwerveModulePosition` in a method
 signature says *meters and an angle, in that order* — where two bare
-`double`s say nothing and let you swap them silently.
+`double`s say nothing and let you swap them silently. <!-- claim: wpilib.swerve-odometry-api -->
 
 ---
 
@@ -138,7 +138,7 @@ ever changes.)
 Odometry needs feeding every tick, same as everything else `logTelemetry()`
 already does. There's no separate `periodic()` to hook here — you already
 know why: `Mechanism` doesn't have one, which is exactly why
-`logTelemetry()` exists as a periodic callback in the first place.
+`logTelemetry()` exists as a periodic callback in the first place. <!-- claim: commandsv3.mechanism-no-periodic -->
 
 **Add to `Drivetrain.logTelemetry()`, after the heading log:**
 
@@ -149,7 +149,7 @@ Pose2d pose = m_odometry.update(Rotation2d.fromDegrees(getHeadingDegrees()), mod
 That's the whole loop: `update(newHeading, newPositions)` integrates the
 change since the last call *and* hands back the fresh pose — one call does
 both jobs, which is why you don't see a separate `getPose()` call right
-here.
+here. <!-- claim: wpilib.swerve-odometry-api -->
 
 ---
 
@@ -157,7 +157,7 @@ here.
 
 Here's where the logging discipline you've kept since Lesson 3 pays off in
 full. Drawing the robot on a field takes exactly one more `Telemetry.log`
-call, the same struct-value shape as the heading in Lesson 8.
+call, the same struct-value shape as the heading in Lesson 8. <!-- claim: wpilib.telemetry-log-overloads -->
 
 **Add to `Drivetrain.logTelemetry()`, right after the odometry update:**
 
@@ -169,15 +169,45 @@ Telemetry.log("Drivetrain/Pose", pose, Pose2d.struct);
 AdvantageScope knows how to *draw* a logged pose, not just plot it. Run
 the robot in simulation, then in AdvantageScope:
 
-1. Connect to the sim (**File → Connect to Simulator**).
-2. Add an **📐 Odometry** tab and drag `Telemetry/Drivetrain/Pose` onto it.
-3. Pick a field image (e.g., the current game) from the source dropdown.
-4. Drive with the joysticks. The little robot moves and rotates on the field.
+1. Connect to the sim (**File → Connect to Simulator → Default:
+   NetworkTables**, as in Lesson 3).
+2. Open a **2D Field** tab (**Tabs → New Tab → 2D Field**), and drag `Pose`
+   from **Telemetry → Drivetrain** in the sidebar into the tab's **Poses**
+   list, where it shows up as **Robot**.
+3. Pick the field to draw from the **Field** drop-down at the bottom right
+   (**2026 Field**, say).
+4. Drive with the joysticks. The robot, a red square with an arrow, moves and
+   rotates on the field and leaves a thin trail behind it. <!-- claim: wpilib-tools.advantagescope-field-tabs -->
+
+Figure 11.1 shows each step.
+
+<a id="figure-11-1"></a>
+![Two AdvantageScope screenshots. Top: the Tabs menu open at New Tab, whose submenu lists Line Graph, 2D Field (shortcut Alt+2, outlined, badge 1), 3D Field and the other tab types. Bottom: a 2D Field tab showing a top-down drawing of the 2026 field. The robot is a red square with a white arrow near the blue end, a thin grey trail curving behind it. In the sidebar, Telemetry and Drivetrain are open and Pose, a Pose2d, is marked badge 2. The Poses list under the field reads Robot: NT:/Telemetry/Drivetrain/Pose, with X 6.105 m, Y 6.804 m and a heading of -6.13 degrees below it (badge 3), and the Field drop-down at the bottom right reads 2026 Field (outlined, badge 4).](images/11-advantagescope-2d-field.png)
+
+*Figure 11.1 — A 2D Field tab (1) with `Pose` (2) dragged into its Poses list as Robot (3), and the Field drop-down (4).* <!-- claim: wpilib-tools.advantagescope-field-tabs -->
+
+There's a **3D Field** tab too (**Tabs → New Tab → 3D Field**). Drag the same
+`Pose` into its **Poses** list and it draws a robot model, **2026 KitBot**, on a
+3D field you can orbit around. Figure 11.2 has its **Field** drop-down open:
+that's the list of fields both tabs offer. <!-- claim: wpilib-tools.advantagescope-field-tabs -->
+
+<a id="figure-11-2"></a>
+![An AdvantageScope 3D Field tab: a perspective view of the 2026 field from behind one alliance wall, with red and blue structures and a block of yellow game pieces in the middle. The Poses list reads 2026 KitBot: NT:/Telemetry/Drivetrain/Pose with X, Y, Z, roll, pitch and yaw below it (badge 1). The Field drop-down is open (badge 2), listing FRC fields (2026 Field, 2025 Field (Welded), 2025 Field (AndyMark), 2024 Field, 2023 Field, 2022 Field, Evergreen, Axes) and FTC fields.](images/11-advantagescope-3d-field.png)
+
+*Figure 11.2 — The same pose on a 3D Field tab, as a robot model (1), with the Field drop-down open (2).* <!-- claim: wpilib-tools.advantagescope-field-tabs -->
 
 If everything is wired right, driving forward moves the robot along +X,
 strafing slides it along +Y, and spinning rotates it — the coordinate
-convention you memorized in Lesson 7, now visible as motion on a map.
+convention you memorized in Lesson 7 ([Figure 7.1](07-four-modules.md#figure-7-1)), now visible as motion on a map.
 Driving in the sim officially looks like a game. Take a lap.
+
+Check those directions against the **numbers** under **Robot**, not against
+the picture. AdvantageScope draws the field its own way round, and that
+needn't match Figure 7.1. Its origin, (0, 0), is the blue alliance's corner,
+but the version this course was written with draws that corner at the top
+right, so +X points left on your screen and +Y points down. A future version
+is expected to move the origin to the field's centre. Whatever the drawing
+does, X should grow as you drive forward and Y as you strafe left. <!-- claim: wpilib-tools.advantagescope-field-orientation -->
 
 ### The same view inside SimGUI: `Field2d`
 
@@ -188,7 +218,7 @@ is a dashboard *widget* that does exactly that. Logging it is still a plain
 Lesson 3 — but notice what you're handing it this time: not a number, a
 whole **widget** object, a thing dashboards know how to draw rather than
 just plot. `Telemetry.log` tells the two apart automatically from what you
-pass in.
+pass in. <!-- claim: wpilib.telemetry-log-overloads -->
 
 **Add to `Drivetrain.java`'s imports:**
 
@@ -213,13 +243,23 @@ Order matters: move the robot on the widget first, then log it. Like every
 number you've logged, `Telemetry.log` sends whatever the widget holds *at
 that moment* — log it once in the constructor and the view would show the
 robot where it started, forever. So it goes where the numbers go: in the
-method that runs every tick.
+method that runs every tick. <!-- claim: wpilib.telemetry-log-is-a-snapshot -->
 
-Now in **SimGUI**: menu **NetworkTables → Telemetry → Field**, and a
-top-down field pane opens right in the sim window, robot moving as you
-drive. Same pose, two viewers: `Field2d` for the quick glance while sim is
+Now in **SimGUI** (the sim window itself, not AdvantageScope): menu
+**NetworkTables → Telemetry → Field**, and a top-down field pane opens right in
+the sim window, robot moving as you drive. Figure 11.3 shows where to click
+and what you get: a box for the field, with the robot drawn as a red outline
+and a green arrow for the way it faces, bottom-left until you drive. (If
+you can't see it, SimGUI's **Robot State** window may be sitting on that
+corner of the field; drag it out of the way.) <!-- claim: wpilib.simgui-field-widget -->
+Same pose, two viewers: `Field2d` for the quick glance while sim is
 already open, the logged `Pose2d` for AdvantageScope's field images,
 replays, and everything else.
+
+<a id="figure-11-3"></a>
+![SimGUI's NetworkTables menu open with Telemetry and then Field highlighted, above the Field pane showing the field's outline with the robot drawn after a short drive](images/11-simgui-field-widget.png)
+
+*Figure 11.3 — Where to find the Field widget in SimGUI, and the field pane with the robot after a short drive.* <!-- claim: wpilib.simgui-field-widget -->
 
 ---
 
@@ -296,11 +336,11 @@ into your real robot they belong in `Constants.java` like every other
 tuning number. The heading term needs no wrap helper —
 `Rotation2d.minus` already returns the shortest angle, and there's no
 `MathUtil.clamp` to reach for here either — that's still `Drivetrain`'s own
-private `clamp` from Lesson 5, same as everywhere else in this file.
+private `clamp` from Lesson 5, same as everywhere else in this file. <!-- claim: wpilib.rotation2d-minus-wraps, wpilib.no-mathutil-clamp -->
 
 `vx`/`vy` are computed straight from field-frame position error, so
 they're field-relative speeds — the same shape `driveFieldRelative` builds
-from joystick input in Lesson 10. `fieldSpeeds.toRobotRelative(...)` is
+from joystick input in Lesson 10 ([Figure 10.3](10-kinematics.md#figure-10-3) shows the difference). `fieldSpeeds.toRobotRelative(...)` is
 the identical conversion, just fed by a P controller instead of a stick.
 
 **`.until(...)` is new**, and it's worth being precise about what it does.
@@ -315,14 +355,14 @@ needed `.whenExited(...)` because its body could finish by itself; this
 body is a loop that never finishes, so the only way it ends is a cancel,
 and `.whenCanceled(...)` here covers both "got there" and "got
 interrupted," because as far as the scheduler's concerned, both endings are
-the same kind of ending.
+the same kind of ending. <!-- claim: commandsv3.when-exited-on-cancel -->
 
 > **When you outgrow odometry:** wheels slip, wheels drift, and after a
 > minute of driving the pose can be meters off from reality.
 > **`SwerveDrivePoseEstimator`** is a drop-in replacement that fuses
 > odometry with camera measurements (AprilTags, etc.) to keep the pose
 > honest. Same `update` shape; extra `addVisionMeasurement(...)` calls when
-> you have a camera pose.
+> you have a camera pose. <!-- claim: wpilib.swerve-odometry-api -->
 
 ---
 
@@ -343,7 +383,7 @@ the same kind of ending.
    robot near −170°, and call `driveToPose` with a target facing +170°.
    The logged error should read about **−20°** (turn the short way), not
    +340°. `minus` always hands back the shortest turn, so the pose
-   controller can't take the long way around.
+   controller can't take the long way around. <!-- claim: wpilib.rotation2d-minus-wraps -->
 
 ---
 
@@ -363,7 +403,7 @@ this course has been measure-subtract-multiply-clamp-command wearing
 different sensors. You also picked up **`.until(...)`**, and with it a
 a cleanup story that stays short — `.whenCanceled(...)` covers every way
 `.until(...)` can end a command, because that's the only way it *does* end
-one.
+one. <!-- claim: commandsv3.when-exited-on-cancel -->
 
 The *robot* is now complete — but the *programming* has one more act. Your
 control loops are still 50 Hz software P, your log files can only be

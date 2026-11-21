@@ -104,6 +104,25 @@ After the change:
 - Vendordeps from later lessons are deliberately left installed: an unused
   one costs nothing, and removing it could break an import.
 
+**Every update deletes the project's `ctre_sim/` (2026-11-21).** Phoenix's
+simulation saves each simulated device's settings there, one `.dat` per device
+(`Talon FX vers. C - 01 - 0 - ext.dat`), and loads them on the next run; the
+template's `.gitignore` ignores it ("CTRE Phoenix Sim device config storage").
+Code that never applies a configuration inherits whatever was saved, and the
+course's drive motors get none until Lesson 12 (steering motors from Lesson 7).
+A student rolled back from about Lesson 16 to Lesson 4 saw `PositionRotations`
+and `VelocityRotPerSec` stuck at 0 while SimGUI's Rotor Sensor climbed: their
+CAN ID 1 had been a *steering* motor in later lessons. Reproduced: Lesson 16
+booted with the front-left steer on ID 1, then the Lesson 4 code on that
+`ctre_sim` read 0.0 throughout a half-stick drive, status `OK` on all 250
+readings, with the device reporting `FeedbackSensorSource` `RemoteCANcoder` 9
+and `Fault_RemoteSensorDataInvalid` true (live and sticky). Lesson 16's own
+state (ID 1 a drive motor) made the Lesson 4 readings 6.75 times too small
+(Lesson 12's `SensorToMechanismRatio`). A fresh folder: rotor sensor, no fault,
+45 rot/s. A real Talon FX keeps its settings the same way, so changing CAN IDs
+in code that doesn't apply a full configuration does this on a robot too. Test:
+`RealUpdate.test_the_simulated_motors_start_fresh` (disabling the `rm` fails it).
+
 **From Lesson 13 on, both v3 scripts edit `build.gradle`** the way that
 lesson has the student do it, through
 [`tools/lib/patch_build_gradle.py`](tools/lib/patch_build_gradle.py)
@@ -190,6 +209,13 @@ which fails every lesson with `invalid source release: 25` — set
 `Drivetrain` briefly went back to literal CAN IDs in the module array while
 Lesson 7 and 13+ used the per-corner `DriveConstants`; they now all use the
 constants (same values), so no lesson's diff "undoes" another's.
+**The module's sim steps stay the way the lessons have the student write
+them** (user, 2026-11-20: "don't interleave once written"): snapshots 4–6 run
+the drive motor's four steps with Lesson 4's `appliedVolts` local, then the
+steer motor's, and 7–12 keep that local (they had folded it into one line,
+which Lesson 7 never asks for). Lesson 13's `ModuleIOSim` is a new file and
+uses the folded form, as its block shows. A probe driving both motors at once
+differed before and after no more than two runs of the old code did.
 
 **v3 `Drivetrain`'s once-a-tick method is `periodic()` from Lesson 13 on.**
 It's `logTelemetry()` in Lessons 3–12, while it only logs. Lesson 13 renames
@@ -885,6 +911,12 @@ measured where it matters:
   default), reading `WPI_GetAlerts()`; on a fresh Lesson 30 launch it lists
   "Elevator has never been homed", and **Unplug Gyro** adds the gyro error.
   Lesson 30 §4 mentions it. Other Devices is now a nested tree.
+- **SystemCore has six SmartIO ports, 0 to 5** (`PortsJNI.getNumSmartIo()`
+  is 6, measured in sim 2026-11-20): an `AddressableLED` on 6 or above throws
+  `AllocationException` "Invalid Index for AddressableLED … Maximum: 5", and
+  an LED strip can't take a channel a `DigitalInput` holds. `DigitalInput`
+  still allocates on 6–9 in sim (hardware not checked). Lesson 23's channel
+  callout says the numbers stop at 5; the course uses 0, 1 and 5.
 - **`./gradlew simulateJava` now fails** ("The simulateJava task has been
   removed. Use run instead."); `simulateExternalJava` still writes VS Code's
   `java.json`. GradleRIO no longer bundles cscore/cameraserver/opencv/
@@ -978,6 +1010,27 @@ listed at the end of the working inventory, not kept in the repo.
   0.194 V commanded (`kG + kP × gap`, both ways), on alpha-7 as well. The
   Kraken job's note that the true hold is 0.174 and the floor would shift
   0.03 mm doesn't hold for the integrated sim.
+  **The logged gap is bigger than the controller's error while moving
+  (2026-11-18, Figure 18.2's probe plus a second `TalonFX` handle on ID 20
+  reading `getClosedLoopError()`):** through the cruise the firmware's own
+  error is −0.05 mm with the model (median of two runs; one run showed
+  −4 to +10 mm on 8 of 36 ticks) and 70.7 mm with `kV` zeroed, while
+  `SetpointMeters − HeightMeters` reads 10 or 20 mm and 81 or 91 mm. The
+  extra is 10 or 20 mm in every run, which is 1 m/s × half a tick or a
+  whole one; that is the 11/21 mm bimodality. The applied voltage agrees
+  with the firmware (9.05 V = 20 × 0.444 drum rotations + 0.17), so the
+  "about 7 cm" prediction was right and the old "plus the transient" was
+  wrong: the 91 mm is flat through the cruise. All three signals carry
+  the same timestamp, so the cause isn't established (the 20 ms physics
+  step against the firmware's own clock is a guess). Lesson 18 §10 now
+  says this, and that `kP` has almost nothing to do at cruise with the
+  model. Lesson 20's bimodal arm lag (2.2° / 3.9°) probably has the same
+  extra; not checked. **`kP` alone** (`kG`, `kV`, `kA` zeroed, stowed →
+  `kScoreMid`, Figure 18.1): 82 mm behind at the widest while moving; the
+  hold reads 1.52 or 1.56 mm below the goal (it toggles by the height
+  reading's 0.039 mm step), mean 1.54, so the lesson says **about 1.5 mm**
+  where it said 1.6 (the `kG`-only 1.5576 rounded). The model holds 0.194
+  mm low, as above.
 - **Lesson 20, RIG at Lesson 20:** the hold table is unchanged
   (+0.24 at −20°, +0.25 / +0.18 / 0.00 / −0.18 / −0.25), as is the 0.09° gap
   at 0°. Peak lag intake to stow is **bimodal with the sampling phase**:
@@ -1898,7 +1951,9 @@ move. A probe that sleeps 20 ms after its work and measures the first move
 after startup read 21–31 and 87–112 mm across three runs. These numbers
 replace the lesson's old ≈145/≈34 mm. They match the lesson's arithmetic:
 9 V needed from `kP = 20` means ≈0.45 drum rotations ≈ 7 cm at cruise, plus
-the transient. The classic track measured 94.5/~23 mm independently. The
+the transient. (2026-11-18: there's no transient; the extra 2 cm is in the
+logged gap, not the controller's error. See the Lesson 18 bullet in the
+Lessons 7–22 block.) The classic track measured 94.5/~23 mm independently. The
 `kG`-zeroed sag (1.56 mm) and settled gap (0.117 mm) repeat exactly on every
 run. (alpha-8: the sag is 1.5576 mm again, to four digits, but the settled
 gap with the model is 0.194 mm, because `kElevatorKG` went 0.18 → 0.17.)
@@ -2317,6 +2372,53 @@ Hard-won details worth not rediscovering:
 
 Target platform (assumed by every lesson): **WPILib 2027 alpha**, **Phoenix 6**, **TalonFX** drive/steer motors, **Pigeon 2** gyro, Xbox controller, **AdvantageKit** logging (from Lesson 13 on; Lessons 3–12 use WPILib's `Telemetry`). The classic track's own hard-won details (script deletions, `deploy/` and `tests/` mapping, maple-sim hosting) are in [2026/CLAUDE.md](2026/CLAUDE.md).
 
+## Lesson claims and the pre-commit check
+
+Claims the lessons make about how a library behaves, and the numbers they quote from the
+simulation, are listed in `tools/claims/registry/*.toml`. A lesson points at one with a hidden
+comment at the end of the sentence that relies on it: `<!-- claim: l18.kv-zeroed-lag -->`. The
+format, the marker rules and how a number's range is set are in
+[tools/claims/README.md](tools/claims/README.md); the plan is
+[docs/lesson-plan-v3-claims-tests.md](docs/lesson-plan-v3-claims-tests.md). **Phase 0, the
+inventory, finished on 2026-11-19:** 604 claims and 995 markers across Lessons 0–33 and the setup
+and debugger asides (Lesson 34 joins when it's migrated). The plan's §5a lists what it found:
+the contradictions were fixed the same day, and the wordings tighter than the runs are left for
+the user.
+
+- **Every agent commit runs `tools/githooks/pre-commit`**, which checks the staged registry and
+  markers with `tools/claims/check_claims.py --strict` (a claim no lesson marks is an error).
+  `.claude/settings.json`'s SessionStart hook turns it on (`git config core.hooksPath
+  tools/githooks`). **Never commit with `--no-verify`**; fix what it
+  reports.
+- **The hook also runs `tools/check-lesson-code-v3.py`** (Phase 1a, 2026-11-19) on every lesson
+  the commit can affect: a staged lesson file; a staged `code/v3/lesson-K` file means K up to the
+  cut-off; the template, `tools/lib/v3-lessons.sh`, either checker or the exceptions file mean all
+  of them (about 20 s). It checks that every "type this" Java block (bold lead-in) appears in the
+  code after its lesson, by Java tokens, so comments and whitespace don't matter; a "Delete" block
+  must be gone. Italic illustrations and Try It blocks aren't checked. **Changing a snapshot means
+  changing the lesson's block too, and the other way round.** A block that differs on purpose (a
+  stage the same lesson replaces, an experiment it undoes, a conditional step) goes in
+  `tools/lesson-code-exceptions-v3.toml` with its reason; an exception that matches no block, two
+  blocks, or a block that now passes is an error, so remove it when it stops being needed. Run it
+  by hand with `./tools/check-lesson-code-v3.py [N ...] [--from K] [--show]`; tests in
+  `tools/tests/test_check_lesson_code.py`.
+- **Claims that compiling can't prove have JUnit tests** in `tools/claims/java/claims/` (Phase
+  1b, 2026-11-19): absences (no `MathUtil.clamp`, no `onlyIf`, no `Mechanism.periodic()`, …) and
+  API claims no snapshot uses. Each test's `@DisplayName` is its claim id, and the claim's `test`
+  field names the file. `tools/claims/run-java-tests.sh [--sandbox DIR [--reuse]] [--lesson N]`
+  builds the code after the cut-off lesson and runs them; the hook runs it when the tests, the
+  runner, the pins in `tools/lib/v3-lessons.sh` or the template change. A `FAIL` line names the
+  claim a library change broke: fix the lessons that mark it, then the claim. Write a new test
+  the same way, and break it on purpose once to see it fail by name.
+- **Editing a marked sentence:** re-read the claim it names, and update the claim (or the
+  sentence) if they no longer agree.
+- **Writing a sentence that relies on library behaviour or a measured number:** mark it, and add a
+  claim if none fits. A changed number gets its claim's `measured`, `measured_on` and range updated
+  in the same commit.
+- Markers go inline, or on their own line with a blank line after them, and never inside a code
+  block: an own-line marker directly above a table turns the table into a paragraph (measured with
+  the site's kramdown).
+
 ## Lessons are strictly sequential
 
 Lessons 0–34 form a single build. Each one:
@@ -2406,7 +2508,513 @@ Prose conventions used consistently across lessons:
 - **The real hazard is an instruction buried in a paragraph.** Any *actionable* code step hiding in a wall of explanation — a deletion, a rename, an added import, a re-binding ("bind this instead of that"), a "update every caller" — must be lifted onto its own bold line (or short blockquote), never left mid-sentence where a skimming student sails past it. The test: someone who reads **only** the bold lines and the code blocks, skipping every explanatory paragraph, should still perform every required edit and end up with compiling code. If skipping the prose would make them miss a step, that step is in the wrong place.
 - Blockquote callouts and code comments render gray, but they are still teaching text: write them **to the student**, never about the lesson from the outside. "Watch out: motors don't stop on their own" — not "this is the misconception of the lesson" or other narration about the material.
 - **WPILib Units** (`edu.wpi.first.units`) get peppered in from [Lesson 10](docs/lessons/v3/10-kinematics.md) on — *after* the by-hand math has been taught, never before (Lessons 1–9 keep bare `double`s with unit-suffixed names like `kMaxSpeedMps`, which is the teaching version). Scope is **constants + signatures**: named physical constants (`Distance kWheelDiameter = Inches.of(4)`, `LinearVelocity kMaxSpeed = MetersPerSecond.of(...)`, chassis `Distance`s) and human-authored command parameters (`driveDistance(Distance distance)`, `turnToHeading(Angle target)`). **WPILib's own APIs speak Units — prefer passing measures directly over unpacking.** `ChassisSpeeds(LinearVelocity, LinearVelocity, AngularVelocity)`, `SwerveModuleState(LinearVelocity, Rotation2d)`, `SwerveDriveKinematics.desaturateWheelSpeeds(states, LinearVelocity)`, the geometry/kinematics/estimator classes, and `Rotation2d`/`Angle` interop all take measures, so let a `LinearVelocity`/`Angle` flow straight through them; scale with measure arithmetic (`kMaxSpeed.times(fraction)`, `.plus`, `.div`) rather than converting to a double and back. Only unpack with `.in(Meters)` / `.in(Degrees)` / `.in(MetersPerSecond)` at a *genuine* double-only boundary — chiefly Phoenix `motor.set`/`setControl` (which want a −1..1 fraction or a plain number) and any hand-rolled arithmetic that must stay double for readability. Dimensionless values (gear ratios, `kP`/`kV` gains) stay `double`. **Unpack only when necessary, and convert once:** if you *do* need a bare `double` more than once in a scope (or inside a per-tick lambda), pull it into a local once and reuse it rather than calling `.in(...)` repeatedly in a hot path. But first prefer not unpacking at all — scaling the measure with `.times(fraction)` (as the joystick suppliers do) keeps the unit and sidesteps the conversion entirely. Migrate the unitless constants gradually: a `double` from an earlier lesson becomes typed only when a lesson has reason to touch it, not in a sweep. Imports: `import static edu.wpi.first.units.Units.*;` for the unit singletons, plus the measure types from `edu.wpi.first.units.measure` (`Distance`, `Angle`, `LinearVelocity`, …). Introduce the library with a teaching beat that builds on the unit-in-the-name habit ("you've been writing `Mps` in the name; the type can carry the unit for you").
-- From [Lesson 10](docs/lessons/v3/10-kinematics.md) on, the hand-written angle-wrap `while` loops (`while (error > 180) { error -= 360; } …`) become one call: `MathUtil.inputModulus(error, -180, 180)`. Lessons 5–9 keep the explicit loop as the teaching version, then Lesson 10 swaps to the library call the same way `clamp` became `MathUtil.clamp` in Lesson 7 ("now that you know what it does by hand, here's the one-liner"). By [Lesson 12](docs/lessons/v3/12-model-based-control.md) the steering wrap moves into firmware (`ContinuousWrap`) and the software wrap retires entirely.
+- From [Lesson 10](docs/lessons/v3/10-kinematics.md) on, the hand-written angle-wrap `while` loops (`while (error > 180) { error -= 360; } …`) become one call: `MathUtil.inputModulus(error, -180, 180)`. Lessons 5–9 keep the explicit loop as the teaching version, then Lesson 10 swaps to the library call ("now that you know what it does by hand, here's the one-liner"). `clamp` gets no such swap: this alpha's WPILib has no `MathUtil.clamp`, so Lesson 5's private helper stays, and Lessons 7, 8, 11, 18, 20 and 28 say so (the classic track, on WPILib 2026, did swap to `MathUtil.clamp` in its Lesson 7). By [Lesson 12](docs/lessons/v3/12-model-based-control.md) the steering wrap moves into firmware (`ContinuousWrap`) and the software wrap retires entirely.
+
+## Figures in lessons
+
+Conventions for pictures in the lessons, agreed 2026-11-18. The figure-by-figure
+plan is [docs/lesson-plan-v3-figures.md](docs/lesson-plan-v3-figures.md).
+
+**Files:**
+- **Where they live:** in `docs/lessons/v3/images/`. Only `docs/` is published, so an
+  image anywhere else shows on GitHub but breaks on the website.
+- **Names:** `NN-short-name.png` or `.svg`, where `NN` is the two-digit lesson
+  number, e.g. `18-height-setpoint-goal.png`.
+- **One home per figure:** a figure belongs to the lesson that first shows it.
+  Later lessons link to it rather than copying the file.
+
+**Numbering:**
+- Figures are **Figure N.k**: N is the lesson number (no leading zero) and k
+  counts from 1 in order of first appearance in that lesson.
+- An aside uses a letter for N: `S` for the setup aside, `D` for the
+  debugger aside, `G` for git-branching, `R` for the track's README
+  (`docs/lessons/v3/README.md`; files `readme-<name>.png`). So the first debugger figure is
+  Figure D.1, its anchor `figure-d-1`, and its file
+  `aside-debugger-<name>.png`.
+- Inserting a figure renumbers the later ones in that lesson. When you do it,
+  fix every reference to them, including other lessons' links: grep the whole
+  tree for `Figure N\.` and `#figure-N-`.
+
+**Markup** (each form checked in a local site build on 2026-11-18):
+
+*Nothing to add — this is the pattern for a figure in a lesson file:*
+
+```markdown
+<a id="figure-18-2"></a>
+![Height, setpoint and goal during one move from stowed to the top: the setpoint ramps up, the height trails it by about a centimetre, the goal is a step](images/18-height-setpoint-goal.png)
+
+*Figure 18.2 — Height, setpoint and goal during one move.*
+```
+
+- The anchor is always `figure-N-k`.
+- Leave a blank line before the caption. Without it, the caption joins the
+  image's paragraph and sits beside the image.
+- The image path is relative to the lesson file. The site build rewrites it
+  to the right address, and GitHub renders it as is.
+- To set a size, use `<img src="images/…" alt="…" width="600">`, which works
+  on both. Don't use kramdown's `{: width=…}`: GitHub shows the braces as text
+  (not checked here).
+- The theme sets `max-width: 100%` on images, so a large image shrinks to fit
+  a phone.
+
+**Writing about a figure:**
+- **The alt text says what the reader would see and learn**, not "graph of"
+  or "image". The caption names the figure, and the prose says what to notice
+  in it.
+- **The prose refers to a figure by its number** ("Figure 18.2 shows…"), never
+  "the image below". Every figure is referred to at least once, at the point
+  where the student needs it.
+- **Walk the reader through a graph** (user, 2026-11-18): what each line
+  is, which panel to read first, what shape to notice, and what it means.
+  A paragraph or two per graph is right. Graphs of control behaviour (P,
+  feedforward, profiles) carry the course's control teaching and get the
+  most room. A side explanation, such as a simulator quirk, stays to a
+  sentence or three.
+- **There's no cap on figures per lesson.** Add one wherever it fills in
+  detail the prose can't (user, 2026-11-18, lifting the plan's three).
+- **Link a figure from another lesson** like this:
+  `[Figure 18.2](18-elevator.md#figure-18-2)`. The anchor works on the site
+  (checked). On GitHub's own view it relies on GitHub's `user-content-`
+  anchor handling, which hasn't been checked.
+- **Never name a figure that doesn't exist yet.** The image, its caption and
+  the text that refers to it go in the same commit; otherwise the website
+  shows a broken image.
+
+**Making a figure:**
+- **Dark mode:** give every image an opaque background, plots on white and
+  SVG diagrams with a filled background rectangle, and look at it in both of
+  the site's themes.
+- **Size:** keep PNGs at 1600 px wide or less and compress them (aim for
+  under about 200 KB). Use SVG for line diagrams.
+- **A graph is a measurement.** It follows the same rule as every number in
+  the course:
+  - Plot it from data measured in the course's simulation, at that lesson's
+    state.
+  - Use a generator kept in `tools/figures/`: one script per figure, named
+    `NN-name.py`, with its data in `tools/figures/data/`. Then the figure can
+    be rebuilt when a re-measure changes the numbers.
+  - The numbers a figure shows must match the lesson text.
+  - **Re-measuring a lesson's numbers means regenerating its figures.**
+- **Diagrams** are drawn from the lesson's own constants (geometry, angles,
+  IDs).
+- **Screenshots:**
+  - SimGUI screenshots can be made here with the `Xvfb` recipe in the Lesson
+    30 notes.
+  - AdvantageScope and real-hardware pictures can't be made in this
+    container. The plan lists them for the user to supply.
+
+**The tooling** (first used for Figures 18.1 and 18.2, 2026-11-18; details in
+[tools/figures/README.md](tools/figures/README.md)):
+- `tools/figures/measure.sh LESSON PROBE.java OUT.csv [--replace FILE OLD
+  NEW]...` builds the lesson through `verify-lessons-v3.sh`, makes the
+  one-off constant changes a figure compares (`kElevatorKV = 0.0`, say),
+  and runs one JUnit probe from `tools/figures/probes/`.
+- `figstyle.py` holds the shared look: white background, 1200 px wide, no
+  title, Okabe-Ito colours by role (goal black and dashed, setpoint blue,
+  measured orange, a changed setting green, guides grey).
+- The generators need `matplotlib` and `numpy` at the versions in
+  `tools/figures/requirements.txt`, in a venv.
+- **Look at the figure before writing it into a lesson.** Plotting a
+  series the text only summarised can show the text is wrong. Figure
+  18.2's flat 91 mm plateau contradicted Lesson 18's "plus a little extra
+  while the profile is still speeding up".
+- On 2026-11-18, Maven Central through this container's proxy returned
+  intermittent 404s, about one request in six, a different artifact each
+  time. Gradle caches the misses. With the user's approval, a
+  container-only `~/.gradle/init.d` script pointed Central at Google's
+  mirror (`maven-central.storage-download.googleapis.com/maven2/`) for the
+  run, and was deleted afterwards. It isn't in the repo.
+
+**Batch 1 found (2026-11-18/19; 39 figures, alpha-8; the status and the
+ID-to-number map are in the plan's section 9).** Probes are in
+`tools/figures/probes/`, data in `tools/figures/data/`. Each item was run
+at least twice.
+- **Open, for the user:**
+  - **Fixed 2026-11-19: Lessons 1 and 2 crashed at boot on alpha-8.**
+    `Robot.logRunningCommand()` called `running.get(0)` on an empty list,
+    because alpha-8 queues no default commands while disabled. A boot test
+    (the real `Robot` loop on its own thread: disabled, then `MyTeleop`
+    enabled, then the bottom face button held and released) died with
+    `ArrayIndexOutOfBoundsException` on both snapshots. Both now wrap it in
+    `if (running.isEmpty()) { log "none" } else { … }`, and the test reads
+    Lesson 1 `[none, none, Drive At Speed, none]` and Lesson 2 `[none, Drive
+    With Joystick, Drive At Speed, Drive With Joystick]`. So **no idle
+    command ever runs** in Lesson 1: the old "`DriveModule[IDLE]` at rest" was
+    wrong; Lesson 1 §8 now says `"none"`, introduces `if`/`else` and
+    `isEmpty()` (with no `return`, which Lesson 2 still introduces; Lesson 2's
+    `if` sentence now calls it Lesson 1's). Lesson 3's "flips between
+    `DriveModule[IDLE]`…" now says `Drive With Joystick`, and Lesson 7's
+    `Drivetrain[IDLE]` aside is gone. `verify-lessons-v3.sh` only compiles, so
+    it can't catch a boot crash; the test isn't kept in the repo.
+  - **User decision 2026-11-19: Lesson 5 keeps `kP = 0.0005` and teaches
+    the ringing.** On the lesson's own 1:1 steering plant, a 90° tap:
+
+    | `kP` | Result |
+    |---|---|
+    | 1e-5 | stalls at 78.6° (applied volts quantize to 0) |
+    | 3e-5 | within 1° at 2.72 s, no overshoot |
+    | 5e-5 | overshoots 8.6° |
+    | 1e-4 | overshoots 23.7° |
+    | 5e-4 | peaks at 158°, within 1° only from 6.9 s |
+    | 2e-3 | unstable |
+
+    Figures 5.1 and 5.2 show it; §5's recipe now works from either side
+    (double while it crawls, halve while it rings), says the shipped value is
+    on the ringing side, and asks the student to put `0.0005` back for
+    Lesson 7.
+  - **Fixed 2026-11-19: the SimGUI wording.** SimGUI's **Robot State** panel
+    is a mode list, an OpMode drop-down (listing only that mode's opmodes,
+    by class name: `MyTeleop`) and Disable/Enable; there's no "Disabled to
+    Enabled" toggle. Lessons 2, 3, 4, 7, 8, 9, 17, 33 and the debugger aside
+    now say "pick **Teleoperated** and **MyTeleop**, then **Enable**" (or the
+    Autonomous/Utility equivalent).
+  - **Lesson 12 §5 says "immediately applies 8 volts".** The first one to
+    three ticks of a step read 3.0 V, from the default 120 A stator limit
+    (about 4.6 V with it disabled, measured). A note beside Figure 12.2 says
+    so; §5 and Try It #1 are unchanged.
+- **Measured** (each figure's generator has the method):
+  - **Lesson 1:** a 0.3 request with the wheel held reads `dutyCycle`
+    0.250 (3.0 V, 119 A). It looks like the stator limit; inferred.
+    Keyboard 0's bottom face button is the Z key, and the Joysticks
+    panel's button squares are indicators only.
+  - **Lesson 8:** `turnToHeading(90)` exits at 0.70 s at 88.2°, and the
+    ±0.5 clamp lets go at about 0.38 s. The gyro reads 0 for the first
+    0.12 s, then jumps 25°; not investigated.
+  - **Lesson 12, a 2 m/s step on one module:** the full model gives 5.01 V
+    and 2.006 m/s; `kV` 0.4 gives 1.113 m/s; `kP` alone gives 0.219 m/s on
+    0.55 V.
+  - **Lesson 16, Figure 16.1:** plots distance travelled by the estimate
+    minus by the truth (both unsigned). A full-stick start holds 7.9 cm
+    ahead (31.7 cm worst); forward then reverse holds 78 cm (102 cm worst).
+    A plain x difference reads 65 cm *behind* for forward then reverse.
+  - **Lesson 17, Two Corners:** following ends 3.74–3.80 s after enable;
+    `shoot` fires at 82% of the second leg (the handler a tick later, at
+    83%). The cross-track error jumps to 0.47 m on the tick the robot
+    enters the 0.5 m radius, crosses zero 0.28 s later, reaches −0.16 m and
+    settles near +0.03 m.
+  - **Lesson 21:** the re-zero `Trigger` lives in `RobotTeleop`, so the
+    snap needs Teleoperated picked. The lesson says so now. After the snap
+    the carriage sinks about 1 cm more to its hard stop, which isn't in the
+    text.
+  - **Lesson 26 old design rebuilt:** 11.8 m/s² launch, top speed
+    4.07 m/s, hands over at 0.077 m/s at 3.15 s.
+  - **Lesson 29, tired battery, the `Fig29` probe:** the first tick under
+    6.3 V comes 0.18 s after enable in 6 of 6 runs (the batch 2b probe gave
+    0.31–0.39 s; cause unknown). The lesson now says "within half a second".
+  - **Lesson 33:** a two-term fit of the standstill ramp over 4–6 V gives
+    0.88 V (1 V/s) and 0.23 V (0.25 V/s); over 1–6 V it gives 0.74. The
+    lesson says the digit depends on the stretch fitted.
+- **Probe traps:**
+  - Playwright hangs screenshotting a bare `file://….svg`; wrap it in an
+    HTML `<img>` page.
+  - `measure.sh` rebuilds on every call, so for repeat runs reuse the
+    sandbox with `./gradlew cleanTest test --tests …`.
+  - `--replace` paths are relative to `src/main/java/first/robot/`
+    (`subsystems/SwerveModule.java`).
+  - Run probes and SimGUI sessions under one `flock`: parallel robot
+    programs fight over network ports.
+  - Five parallel Sonnet agents used up a 5-hour usage window in about an
+    hour (300–430k tokens each); run two or three at a time.
+
+**Batch 2 found (2026-11-19, alpha-8; status in the plan's section 9).**
+- **Every Disable throws the opmode away and builds a new one.** Measured on
+  the real Lesson 1 robot (LOOP; `--replace` edits bumped a counter in
+  `MyTeleop`'s constructor, `start()`, `end()` and `close()`): picking
+  `MyTeleop` constructs it on the next tick. Enable runs `start()`. Disable
+  runs `end()` and `close()` on the same tick, and a fresh `MyTeleop` is
+  constructed on the next tick. Over three enable cycles the counts were:
+  constructor 4, `start()` 3, `end()` 3, `close()` 3. One press of the bottom
+  face button ran `driveAtSpeed`'s body once in every cycle. The bytecode
+  agrees: `OpModeRobot.loopFunc`, on enabled → disabled, calls
+  `endCurrentOpMode()` (`end()` if it was started, then `close()`) and sets
+  `m_lastModeId = -1`, which forces a re-create. The template's `close()`
+  comment ("de-selected") leaves this out.
+  - Lesson 0's new paragraph and Figure 0.1 now say so.
+  - **Lesson 1 §6 rewritten (user, 2026-11-19).** It used to say bindings go
+    in the constructor because it "only runs once" while `start()` runs on
+    every enable. Now: the constructor says what the opmode *is* and runs
+    while disabled, so the wiring is ready before Enable, and an error in it
+    shows at selection. `start()` is for the moment of enabling. A second
+    paragraph says the opmode is rebuilt on every Disable (linking Figure
+    0.1), and that's why the `DriveModule` lives in `Robot`. The recap and
+    Lesson 9 §4's "Lesson 1's exact warning" paragraph changed to match.
+- **Through Lesson 12 at least, the simulated gyro integrates the
+  *commanded* turn rate** (`m_simHeadingDegrees += m_lastCommandedOmega × 360
+  × 0.02`), not the wheels. So in sim a turn finishes on schedule wherever
+  the wheels point.
+  - Lesson 9 RIG, `turnToHeading(90)` after `driveDistance(1.0)`: module 0's
+    target is 135°. The command ends at 0.70 s, with the wheel at 54°.
+    - Without the cosine line, the throttle sits at 0.5 for 0.38 s, then
+      tapers.
+    - With it, the throttle goes to −0.30, then shrinks toward 0.
+  - §5's "the wheels settle before the drive effort ramps in" now says what
+    the module arrows show.
+- **Lesson 6 RIG, `driveDistance(1.0, 0.4)`:** `waitUntil` returns at 0.62 s
+  at 1.013 m, and the wheel coasts on to 1.145 m. The first ticks apply 3 V
+  (most likely the stator limit; not checked here). The recap no longer says
+  "exactly 1.0".
+- **Lesson 4 rig, `driveAtSpeed(0.3)`:** steady 30.47 rot/s on 3.598 V.
+  - J = 0.001: 63% at 0.16 s after the press.
+  - J = 0.05: 5.7 rot/s after a 1 s hold; held, 63% at 4.55 s.
+  - The TalonFX velocity reading stays 0 for about 0.12–0.14 s after the
+    press, while the model is already moving. That the cause is status-signal
+    latency is a guess.
+- **SimGUI's NetworkTables *menu* lists only widgets** (`Field`, `Mechanism`,
+  `Alerts`, AdvantageKit's `RealOutputs` ones). Plain values and AdvantageKit
+  inputs are in the **NetworkTables View** window's tree (opened from that
+  menu), under **Transitory Values**. Lessons 1 and 15 now say so; the
+  "NetworkTables → AdvantageKit → …" paths in Lessons 18, 20 and 21 are
+  AdvantageScope's sidebar.
+- **AdvantageScope's sidebar has no NetworkTables folder** (the user's
+  screenshot, 2026-11-21, live NT4 on the Lesson 4 state; Figure 3.1). It
+  lists **Robot**, **Telemetry** and **DriverStation** at the top, and a Line
+  Graph's **Left Axis** / **Right Axis** lists name fields
+  `NT:/Telemetry/DriveModule/…`. Lesson 3's step 2 now says **Telemetry →
+  DriveModule** (claim `wpilib-tools.advantagescope-sidebar`). A second
+  screenshot (the File menu) showed there's no "NetworkTables 4" to choose:
+  **Connect to Simulator** opens a submenu headed **Default: NetworkTables**
+  (Ctrl+Shift+K), then NetworkTables, **NetworkTables (AdvantageKit)**,
+  Systemcore Diagnostics, Phoenix Diagnostics, RLOG Server and FTC
+  Dashboard (claim `wpilib-tools.advantagescope-file-menu`); step 1 says so
+  and Figure 3.1's top panel shows it. So the
+  "NetworkTables → AdvantageKit → …" paths in Lessons 18, 20 and 21 are
+  probably wrong the same way; not changed, because the screenshot doesn't
+  show AdvantageKit's tree. AdvantageScope can't run here, and
+  docs.advantagescope.org doesn't resolve through this container's proxy.
+  **The Swerve tab has a Sources list, not a States slot** (the user's
+  screenshots, Lesson 7 state, Figure 7.2): `ModuleStates` dragged there
+  reads **Module Velocities**; the tab opens from **Tabs → New Tab →
+  Swerve** (Alt+D) and has Max Speed (m/s), Frame Size and Orientation
+  (claim `wpilib-tools.advantagescope-swerve-tab`). Lesson 8's `Heading`
+  goes into the same Sources list and reads **Rotation** (Figure 8.2), so
+  there's no Rotation slot either. **AdvantageKit's tree** (Lesson 18 state,
+  Default: NetworkTables, Figure 18.3) is **AdvantageKit → Elevator** for
+  inputs and **AdvantageKit → RealOutputs → Elevator** for outputs, beside
+  Telemetry at the top; Lessons 18, 20 and 21 fixed (claim
+  `wpilib-tools.advantagescope-advantagekit-tree`). **VS Code's WPILib
+  Desktop Debug launch works on the alpha OpMode project** (Figure D.1, the
+  user's Lesson 5 project; the old stack-trace figure is D.2). Crop the
+  user's screenshots clear of their account and folder names (VS Code's
+  terminal and status bar). **AdvantageScope's field tabs are 2D Field and
+  3D Field** (Tabs → New Tab, Alt+2/Alt+3; Figures 11.1 and 11.2, Lesson 11
+  state): a `Pose2d` dragged into **Poses** reads **Robot** (2D) or **2026
+  KitBot** (3D), and the **Field** drop-down picks the field. There's no
+  "Odometry" tab; Lessons 11, 16, 17 and 22 fixed (claim
+  `wpilib-tools.advantagescope-field-tabs`). **Replaying from VS Code works**
+  (Figure 13.5, the user's Lesson 13 project): recording opened in
+  AdvantageScope, `kSimMode = Mode.REPLAY`, Simulate Robot Code with **Sim
+  GUI** unticked (the prompt lists Sim GUI and Use Real DriverStation); it
+  wrote the `_sim.wpilog` in Figure 13.3. In a file AdvantageScope names
+  fields `/RealOutputs/...` without `NT:`, and crosses out a tab source that
+  named a live key. The ×1.1 replay figure is now 13.4. Lesson 16's
+  truth-and-estimate screenshot is Figure 16.2 (the user coloured the
+  estimate blue; how isn't recorded), so the wiring and grip-limit figures
+  are 16.3 and 16.4. Figure 16.2's second panel is the menu from the icon
+  beside a Poses entry (colour; Robot, Ghost, Heatmap, Arrow); its swatches
+  need `compose(..., method=Image.Quantize.FASTOCTREE)`, since the default
+  median cut turned Green grey. Figure R.1 (the README) is VS Code's **Java:
+  Clean Java Language Server Workspace** → **Reload and delete**, which the
+  user runs after every lesson update. The poses' default red is the
+  alliance colour (user, red because SimGUI starts on Red 1). Figure 17.6
+  is Try It #6's red run. **AdvantageScope's 2D Field draws +X left and
+  +Y down** (the user: origin at the blue corner, the field drawn
+  upside-down from it, its standard view; a future release moves the
+  origin to the centre, so keep orientation statements general or expect
+  to update them). Lesson 11 says so after Figure 11.2, and Lesson 17's
+  Try It #6 points there (claim `wpilib-tools.advantagescope-field-orientation`). **The user's AdvantageScope is 27.0.0-alpha-6**
+  (WPILib distribution, About box, 2026-11-21). **Its Mechanism tab draws
+  nothing from a 2027 `LoggedMechanism2d`** ("0 segments", every value in
+  the tree): AdvantageKit's and WPILib alpha-8's roots publish one
+  `position` array (javap), and that AdvantageScope wants the old `x`/`y` is
+  a guess. Lessons 19, 20 and 28 still send students there; user decision:
+  re-check on a newer AdvantageScope, SimGUI's Mechanism window works.
+  Figure 25.4 (Pick Up, field and Line Graph, two Blue 1 runs) shows
+  `Superstructure/State` in the graph's **Discrete Fields** strip; Figure
+  25.5 is one run with the Line Graph popped out into its own window beside
+  the field (the overlapping-squares button at the top right, the user said). Figures
+  made from the
+  user's screenshots share `tools/figures/screenshots.py`, which crops,
+  numbers and stacks panels like Figure 17.3.
+  The figure's generator, `tools/figures/03-advantagescope-tree-graph.py`,
+  only crops, numbers and stacks the two screenshots (`/usr/bin/python3.12`, which has
+  Pillow; the `python3` on PATH has a broken one).
+- **Lesson 15 Try It #3, re-run** (LOOP, the Try It's scatter applied with
+  `--replace`, three 60 s parked runs): ended 17, 39 and 39 cm from the park
+  point, and the farthest each got was 25, 52 and 50 cm. The text says "15 to
+  50 cm".
+- **Lesson 14, five fake sightings, robot parked at the origin** (LOOP, Start
+  pressed once a second): at default trust each press closes exactly a tenth
+  of the gap to (2, 5) (5.385 → 4.847 → … → 3.180 m), along the straight
+  line, and the heading turns a tenth of the way to 90° each time. With
+  `setVisionMeasurementStdDevs(0.5, 0.5, 999999)` it's a sixth per press
+  (→ 2.164 m), and the heading never moves.
+- **Lesson 13, Figure 13.3's drive** (quarter stick: forward 3 s, left 3 s,
+  forward and right 3 s): the recording ends 4.78 m from the start. The clean
+  replay matches it on all 470 poses, and the `* 1.1` replay ends 5.26 m out
+  (×1.1000, 0.48 m beyond the recording). The gap grows with distance; a
+  half-stick drive gave 1.25 m. Try It's "0.66 m" is CLAUDE.md's earlier
+  drive.
+- **SimGUI Field pane:** only the field's outline, no image. The default
+  **Robot State** window covers the field's bottom-left corner, where the
+  robot starts; Lesson 11 now says to drag it aside.
+- **Lesson 16, the grip limit** (Figure 16.3, from batch 1's full-stick-start
+  data): the true chassis speed ramps at 11.77 m/s² both ways. It tops out at
+  4.793 m/s against `kMaxSpeed`'s 4.780 (the 0.3% wasn't looked into) and
+  reaches 90% at 0.42 s.
+- **Lesson 17, Two Corners at 3 m/s** (Figure 17.1, six runs with
+  `Fig17TwoCorners` and the config edited):
+  - Five runs went 36–37 cm past the end and 70–72 cm past the corner. They
+    peaked at 2.87 m/s (the last leg is only 3 m) and crossed the end at
+    about 1.9 m/s.
+  - The first run went only 27 cm past the corner and 0 past the end; the
+    cause isn't known. The lesson says so.
+  - At 2 m/s the robot crosses the end at about 0.8 m/s and rolls 6–7 cm
+    past (5 cm tolerance), settling about 2 cm past.
+  - Lesson 17's batch 1 figures are now 17.2–17.4.
+- **Lesson 24, one capture cycle** (Figure 24.2; four fresh LOOP runs,
+  quarter stick from (3.5, 3.2)):
+  - The raw beam break comes 29 ticks after the drive starts, and the 0.1 s
+    debounce adds 5, so `HANDOFF` is at 34 ticks (33 in one run).
+  - `HOLDING` follows 56 ticks later, with the elevator at 0.734 m.
+  - `SCORING` lasts one tick.
+- **Lesson 25 markers, one run each:**
+  - Marker 0.1: fires at y 6.69, roller at 4.49, beam break at 4.37.
+  - Marker 0.15: fires at 6.37, roller at 4.16, beam break at 4.20.
+  - Marker 0.2: fires at 6.05, roller at 3.88, never caught.
+  - The sim catches whenever the roller has been *told* to pull in, so at
+    0.15 the beam break comes before the roller's first non-zero reading.
+  - The piece is within reach from y 4.4 to 4.1, under the bumper below
+    that, so §4 now gives the window, not "by y ≈ 4.4". The 0.2 text says
+    y ≈ 3.9 (was 3.8).
+  - Lesson 25's Pick Up timeline is now Figure 25.3, and the marker map 25.2
+    (batch 3's sequence diagram is 25.1).
+- **Lesson 29, fresh battery, four runs per configuration** (Figure 29.1,
+  `Fig29TiredBattery` unchanged; the defaults run is
+  `tools/figures/29-fresh-battery-defaults.sh`):
+  - no limits peaked at 219 / 200 / 199 / 200 A, lows 7.62–8.01 V;
+  - defaults peaked at 130 / 111 / 141 / 124 A, lows 9.17–9.78 V;
+  - the budget peaked at 54 / 96 / 78 / 87 A, lows 10.08–10.93 V.
+  The defaults' 141 A and the budget's 54 A / 10.93 V fall outside the
+  lesson's ranges (from 10–30 runs); taken as spread, the text unchanged. The
+  idle spin-up in the first 1.3 s peaked at 158 A / 8.85 V (no limits), 64 A
+  (defaults) and 36 A (budget). The total goes negative and the rail above
+  12 V when the mechanisms coast down (the battery model's accounting).
+- **Lesson 28's dial at 60 rot/s is −197°**, not the −198° in the Lesson 28
+  notes below: that was measured with `kFreeSpeed` 100. With 101.08 the
+  formula gives −196.9° for the goal and about −197.7° for the speed needle
+  at 60.47 rot/s. The lesson never quoted −198.
+- Renumbered in round 4: Lessons 26, 27 and 29's batch 1 figures moved up
+  one, and Lesson 28's two moved to 28.2 and 28.3. Lesson 28's callout link
+  follows the aim-error plot to 27.2.
+- **Lesson 30, the ungated low-battery dips** (Figure 30.3; LOOP, five
+  runs, identical): 34 ticks (0.68 s) below 11.5 V to 11.26–11.27 V after
+  enable, and 78 ticks (1.56 s) to 11.19 V on a shot. The rail jumps to
+  12.78 V when the trigger is released, which the lesson doesn't discuss.
+- **SimGUI Unplug switches** (Figure 30.2) are at the bottom of **Other
+  Devices**, below every expanded Talon FX node, so scroll there (xdotool
+  click 5). `simgui.json` can open a widget window at startup:
+  `"NTProvider": {"/AdvantageKit/RealOutputs/Alerts": {"window": {"visible":
+  true}}}`.
+- **Lesson 32, Aim While Driving with tag 20 and 220** (Figure 32.3, LOOP,
+  one run each): the override is on from 0.56 s to 4.22 s into the drive.
+  With tag 20 the estimate's heading is −123.8° at release (truth −124.3°),
+  after first swinging to about +14° (not looked into). `Aim/ErrorDegrees`
+  falls from 27° to about 0 over 183 samples. With 220 the heading is 0.00°
+  throughout and the key never exists.
+- **Lesson 33, elevator room** (Figure 33.3, RIG through the real
+  `SysIdRoutine`, `Fig33ElevatorRoom`):
+  - Ramps to 6 V reach 1.884 / 3.787 / 7.597 m.
+  - At 1 V/s the carriage is at 0.436 m by 3 V and 1.033 m by 4.5 V, and
+    crosses 1.5 m at about 5.4 V. At 0.25 V/s it crosses 1.5 m before 3 V.
+  - Steps reach 1.102 / 0.625 / 0.302 m.
+  - Probe trap: the rig's clock leads the routine's own timer by about one
+    tick, so the generator draws the commanded voltage at rate × (t − 0.02 s).
+    Unshifted, the 6 V figure reads 0.5% lower.
+- **Asides:** the debugger aside's stack-trace figure is D.1 for now; the
+  user's planned screenshot (working ID D.1) will push it to D.2. The git
+  aside's new fast-forward/diamond figure is G.2, so the rebase figure is G.3.
+  No other lesson links into either aside.
+- **Batch 3 (2026-11-19):**
+  - **Lesson 20 hold sweep** (Figure 20.2, RIG, alpha-8): 23 goals from
+    −20° to 180°, swept up and back down, each held 5 s with the mean of the
+    last 0.5 s. Every reading lies on `kArmKG × cos θ` (0.25) within about
+    0.002 V, mostly 0.001–0.002 V above it (not looked into). Up and down
+    agree. The table's five points read +0.251 / +0.178 / −0.000 / −0.178 /
+    −0.250, and the −20° stop reads +0.237. The arm settles 0.05–0.25°
+    short of its goal.
+  - **Lesson 26's no-turn trip is about 5 mm off the line, not 11**
+    (Figure 26.3; `Fig26TwoStage` unchanged, `kScoringPose`'s heading set to
+    0 with `--replace`, the simulated truth, four runs): 5.3–5.6 mm at most,
+    early in the launch (0.16 m along). The turning trip bows 264–275 mm,
+    widest about 1.93 m along. The lesson said "about 11 mm" from the
+    2026-10-30 re-measure (10–12 mm, its probe not kept). The original
+    design's log also showed 5.1 mm, so the lesson now says about 5 mm. Why
+    that re-measure read double is unexplained.
+  - **Lesson 31's trap, drawn** (Figure 31.2; `Fig31HomingHeight`, the
+    lesson's own test with `SLEEP_MS` from the environment, a fresh JVM per
+    run): with no sleep the height reading is a staircase of stale firmware
+    readings. Five of six no-sleep runs never read the re-zero and end at
+    −0.3415 m; one passed at 0.0061 m. With the 20 ms sleep the reading
+    slides smoothly and snaps to +0.009 m on tick 181. The whole test takes
+    4.1 s of wall clock with the sleep and 0.23 s without.
+  - **Lesson 33's 0.05 V hold** (Figure 33.2, `Fig33HoldVoltage`, two
+    runs): the speeds match the notes (13.45 / 4.67 / 1.80 / 0.56, 0.414
+    from 9 s). The applied voltage drops from 3.59 V to about 1.5–1.6 V,
+    ramps down, and first reads 0.05 V at 0.82 s. The lesson says "about
+    0.8 s".
+  - **Renumbered by batch 3:** Lesson 10: 10.2 → 10.3. Lesson 12: 12.1 →
+    12.2 and 12.2 → 12.3. Lesson 17: 17.1–17.4 → 17.2–17.5. Lesson 25:
+    25.1 → 25.2 and 25.2 → 25.3. Lesson 33: 33.2 → 33.3 and 33.3 → 33.4.
+    Links from Lessons 11, 18, 25 and 26 follow them.
+- **SimGUI's addressable LED strip** is under **Hardware → Addressable
+  LEDs** ("LEDs[5]", 40 pixels). It opens as 10 columns × 4 rows, and Lesson
+  23 tells the student to set Columns to 40.
+- **The D-pad on SimGUI's keyboard:** the `Gamepad` D-pad is buttons 11–14
+  (`DPAD_UP` 11, `DPAD_RIGHT` 14). Keyboard 0 has only 4 buttons and a POV,
+  so it can't press the D-pad. b2g6 edited `simgui-ds.json`'s
+  `keyboardJoysticks[0]` to `buttonCount` 15, with `buttonKeys`
+  `[571,569,548,567]` plus `551..561` (the keys F..P). Then M is D-pad up, P
+  is D-pad right and F is Back. **SimGUI can do the same from its own
+  window** (checked 2026-11-19): **DS → Keyboard 0 Settings → Buttons**, `+`
+  to raise Count, then click a button's **(None)** box and press a key.
+  SimGUI's keyboard Button N is `Gamepad` button N (`Gamepad$Button` in the
+  alpha-8 jar: Back 4, D-pad up/down/left/right 11–14). **Since 2026-11-20
+  Lesson 6 maps every control the course uses, in one visit** (user
+  decisions: bottom-row keys in number order, all at once in Lesson 6):
+  Back **B** (4), Start **N** (6), left bumper **M** (9), right bumper
+  **comma** (10), D-pad **I/K/J/L** (11–14), and under **Axes** (Count 6) the
+  left trigger **period** (axis 4) and right trigger **slash** (axis 5), as
+  Increase keys. SimGUI shows them as Comma, Period, Slash. Lesson 2's Try It
+  #1 maps just the right bumper early; later lessons name the key at the
+  first press of each control. Checked under Xvfb with a logger of the
+  robot's own readings: the buttons read true while held, and a trigger key
+  ramps its axis past 0.5 in 0.10–0.14 s and back under it 0.12–0.14 s after
+  release (Key Rate and Decay Rate are 0.05 per GUI frame and Xvfb drew about
+  150 frames a second, so a 60 Hz screen is probably slower; not measured).
+  **The robot reads nothing from the keyboard while Robot State shows
+  Disconnected**, even though SimGUI's own Joystick[0] squares light; picking
+  **Teleoperated** fixes it. Lessons 20, 22 and 23 had written face buttons
+  with Xbox letters, "(X)", and the keyboard's X key is the right face button
+  (button 1); they now give both.
+- SimGUI tips (b2g6):
+  - Seed `simgui-window.json` (`userScaling` "200"), `simgui.json` and
+    `simgui-ds.json` before the first run.
+  - ImGui misses a click unless the mouse moves, pauses, moves a little, then
+    presses.
+  - Open menus by hovering along the row.
+  - A Mechanism window opens small; drag its title, then its corner, to
+    enlarge it.
+- SimGUI tips (b2g3): keyboard 0 drives with W/S (left Y), A/D (left X) and
+  E/R (right X). The axes ramp at about 1.2/s and decay slowly, so tap for
+  0.3–1 s; longer holds run the robot off the field.
+- SimGUI tips (b2g4):
+  - Keyboard 0 shows only Axis[0..2], and W holds Axis[1] at −1.0.
+  - Drag a keyboard onto the Joystick[N] header, and wiggle the mouse for
+    about 2 s before releasing (the drop lags the cursor).
+- Lesson 25's concepts line said `Command.parallel` was "from Lesson 24";
+  Lesson 9 introduced it.
+- **Usage:** the window reset at 03:40 UTC on 2026-11-19. Two Sonnet agents
+  used about 230k and 260k tokens for four and five figures.
 
 ## Rewriting lessons in a teacher's voice
 

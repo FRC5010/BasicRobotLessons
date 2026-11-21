@@ -49,7 +49,7 @@ timestamp. `.getValue()` reads the signal's current value — but that value
 isn't a plain number either. It's a measurement that remembers its own
 unit, so it can't be silently misread as the wrong one. `.in(Rotations)`
 is where you say which unit you want it *as*: "give me this as rotations."
-Velocity works the same way, just with `RotationsPerSecond` instead. That's
+Velocity works the same way, just with `RotationsPerSecond` instead. <!-- claim: phoenix6.status-signal-get-value-in --> That's
 the general rule chaining runs on: whatever a method returns, you can
 immediately call methods on it, without parking it in a variable first.
 
@@ -62,7 +62,7 @@ import static org.wpilib.units.Units.RotationsPerSecond;
 
 `Rotations` and `RotationsPerSecond` aren't methods or variables you're
 calling — they're unit constants, and the `static import` is what lets you
-write `Rotations` instead of some longer, fully-qualified name.
+write `Rotations` instead of some longer, fully-qualified name. <!-- claim: wpilib.units-package-and-rotations -->
 
 Which is a good moment to name a pattern you've been using without a name.
 You've already caught values that methods handed back —
@@ -83,7 +83,7 @@ Now the plumbing problem: your code runs on the robot, and you're looking
 at a laptop. The numbers need a way off the robot and onto a screen.
 WPILib's answer is a class called `Telemetry` — sprinkle
 `Telemetry.log("some name", value)` anywhere and the value shows
-up on a dashboard, live.
+up on a dashboard, live. <!-- claim: wpilib.telemetry-log-publishes-under-telemetry -->
 
 This course holds a standard from day one: **the name is the address.**
 Every value goes under an organized name, one branch per mechanism, so a
@@ -98,7 +98,7 @@ guess what a number means later.
 `Telemetry`'s values are live — visible while the robot runs,
 gone the moment it stops, unless something is also saving them. WPILib's
 `DataLogManager` does exactly that: start it once, and every value
-published anywhere gets mirrored into a `.wpilog` file automatically.
+published anywhere gets mirrored into a `.wpilog` file automatically. <!-- claim: wpilib.datalogmanager-mirrors-published-values -->
 
 The logger should be running before anything else gets set up, so it goes
 at the *top* of the `Robot` constructor.
@@ -118,7 +118,7 @@ import org.wpilib.system.DataLogManager;
 ```
 
 On a real robot the file lands on SystemCore (or a USB stick plugged into
-it); in sim it lands in a `logs/` folder inside your project. Recording sim
+it); in sim it lands in a `logs/` folder inside your project. <!-- claim: wpilib.datalogmanager-mirrors-published-values, wpilib.datalogmanager-real-robot-location --> Recording sim
 sessions might sound like overkill — it isn't. A session you can scrub
 through afterward is how you answer "wait, what just happened?" without
 having to make it happen again.
@@ -142,7 +142,7 @@ public DriveModule() {
 ```
 
 `Scheduler.getDefault().addPeriodic(...)` registers a callback that runs
-every tick, forever, for as long as the robot runs — no command required.
+every tick, forever, for as long as the robot runs — no command required. <!-- claim: commandsv3.periodic-before-commands -->
 `this::logTelemetry` is a **method reference**: shorthand for `() ->
 this.logTelemetry()`, pointing at a method below instead of writing a
 lambda around it. It reads naturally once you say it out loud: "add a
@@ -168,7 +168,7 @@ import org.wpilib.telemetry.Telemetry;
 ```
 
 Look at the names. The slash isn't decoration — it builds a folder tree,
-and the dashboard groups everything under `DriveModule/` together. That's
+and the dashboard groups everything under `DriveModule/` together. <!-- claim: wpilib.telemetry-log-publishes-under-telemetry --> That's
 the organization rule of this whole course: **every value a mechanism logs
 starts with the mechanism's name and a slash.** When this robot grows to
 four modules, a gyro, and an arm, the tree is what keeps a hundred values
@@ -189,24 +189,36 @@ WPILib installer, so you already have it. It plots live data, overlays
 signals, scrubs back through time, and opens `.wpilog` flight-recorder
 files.
 
-Run the robot in simulation (pick **My Teleop** → **Enabled**),
+Run the robot in simulation (pick **Teleoperated** and **MyTeleop**, then **Enable**),
 then launch AdvantageScope from the WPILib command palette → **Start
-Tool** → **AdvantageScope**. In AdvantageScope:
+Tool** → **AdvantageScope**. In AdvantageScope (Figure 3.1 numbers where
+steps 1 to 4 happen):
 
-1. **File → Connect to Simulator** (on a real robot it's "Connect to
-   Robot" with team number e.g. 5010). Also choose the default NetworkTables
-   4.
-2. In the sidebar, expand **NetworkTables → Telemetry → DriveModule**
-   — there's your folder tree, with both values ticking.
+1. **File → Connect to Simulator**, then **Default: NetworkTables** at the
+   top of the submenu that opens (**Ctrl+Shift+K** on Windows does the
+   same). <!-- claim: wpilib-tools.advantagescope-file-menu --> On a real
+   robot it's "Connect to Robot" with team number e.g. 5010. <!-- claim: wpilib-tools.advantagescope-connect -->
+2. In the sidebar, expand **Telemetry → DriveModule**. AdvantageScope puts
+   each NetworkTables folder at the top of its sidebar, next to **Robot**
+   and **DriverStation**, so there's no NetworkTables folder to open first.
+   There's your folder tree, with both values ticking. <!-- claim: wpilib-tools.advantagescope-sidebar -->
 3. Drag `VelocityRotPerSec` onto the **📈 Line Graph** tab. A live plot
    appears.
 4. Drag `PositionRotations` onto the same graph, on the *right axis*. Two
-   signals, one time axis.
+   signals, one time axis. The **Left Axis** and **Right Axis** lists under
+   the graph show which signal is on which side, by full name:
+   `NT:/Telemetry/DriveModule/VelocityRotPerSec`, where `NT:` means
+   NetworkTables. <!-- claim: wpilib-tools.advantagescope-sidebar -->
 5. Drive with the stick (or slide the joystick in SimGUI) and watch.
+
+<a id="figure-3-1"></a>
+![Two AdvantageScope screenshots. Top, step 1: the File menu open at Connect to Simulator, whose submenu lists Default: NetworkTables with the shortcut Ctrl+Shift+K, outlined and marked badge 1, then NetworkTables, NetworkTables (AdvantageKit), Systemcore Diagnostics, Phoenix Diagnostics, RLOG Server and FTC Dashboard. Bottom, steps 2 to 4: AdvantageScope connected to 127.0.0.1. The sidebar lists Robot, Telemetry and DriverStation at the top, with Telemetry and DriveModule open to CommandedOutput, CurrentCommand, PositionRotations and VelocityRotPerSec. A line graph plots velocity in rotations per second on the left axis, jumping to about plus or minus 100 during full-stick drives and back to 0, and position in rotations on the right axis, climbing and falling with it. Under the graph, the Left Axis list holds NT:/Telemetry/DriveModule/VelocityRotPerSec and the Right Axis list NT:/Telemetry/DriveModule/PositionRotations. Badge 2 marks the DriveModule folder, 3 the Left Axis list and 4 the Right Axis list.](images/03-advantagescope-tree-graph.png)
+
+*Figure 3.1 — Steps 1 to 4 in AdvantageScope. Top: Connect to Simulator opens a submenu that starts with Default: NetworkTables (1). Bottom: connected, with Telemetry → DriveModule open (2) and the two signals in the Left and Right Axis lists (3, 4). These traces move because the bottom picture was taken with Lesson 4's code, where the simulated wheel really turns. Yours, today, stay flat.* <!-- claim: wpilib-tools.advantagescope-file-menu, wpilib-tools.advantagescope-sidebar -->
 
 Don't be discouraged when the traces sit nearly flat even at full stick —
 in simulation the motor isn't actually turning yet, so there's nothing for
-the encoder to count. **That's exactly what Lesson 4 fixes.** What you
+the encoder to count. <!-- claim: phoenix6.sim-motor-stalls-without-physics --> **That's exactly what Lesson 4 fixes.** What you
 built today is the pipe; next lesson gives it something real to carry.
 
 > On a **real robot**, these plots already work — spin the wheel by hand
@@ -215,7 +227,7 @@ built today is the pipe; next lesson gives it something real to carry.
 And sim or real, `DataLogManager` has been saving every value to a
 `.wpilog` file this whole time — after a sim run, look for the `logs/`
 folder in your project. Open a log with **File → Open Log(s)** in
-AdvantageScope and you can scrub back through the entire session.
+AdvantageScope and you can scrub back through the entire session. <!-- claim: wpilib-tools.advantagescope-file-menu, wpilib-tools.advantagescope-connect -->
 
 You'll come back to AdvantageScope constantly — tuning P control in
 Lesson 5, comparing commanded vs. actual speed, and eventually watching the
@@ -226,25 +238,27 @@ robot drive around a virtual field.
 ## 6. Listening instead of asking
 
 Back in Lesson 1, `Robot` got a `logRunningCommand()` method: ask the
-scheduler what's running on `module` right now, read its name off entry
-zero. It works, and it'll keep working for everything you've built so
-far — `driveAtSpeed` parks until canceled, `driveWithJoystick` loops until
-canceled, so there's always *something* running whenever you ask. Every
-mechanism, every tick, guaranteed non-empty.
+scheduler what's running on `module` right now, and log `"none"` if the
+list is empty or the name of entry zero if it isn't. The empty case is
+real: the list is empty on every disabled tick, because disabling cancels
+the module's command. While you're enabled, though, everything you've
+built so far keeps something running — `driveAtSpeed` parks until
+canceled, `driveWithJoystick` loops until canceled — so whenever you ask,
+you get an answer. <!-- claim: commandsv3.running-commands-for, commandsv3.disable-cancels-mechanism-commands -->
 
-That guarantee won't last forever. Later lessons build commands that
+That won't last forever. Later lessons build commands that
 finish on their own — and some of them can finish the instant they're
 asked to run, before a poll ever gets a chance to see them run at all.
 (Lesson 8 ships a real one: a "turn to heading" command bound to a button,
 already done if the robot happens to be facing that way already when you
 press it. Its entire lifetime — start and finish — can fit inside a single
-scheduler tick.) Ask `getRunningCommandsFor(module).get(0)` on a tick like
-that, at just the wrong moment, and you're not reading a stale answer —
-you're reading past the end of an empty list.
+scheduler tick.) <!-- claim: commandsv3.short-command-invisible-to-poll --> Poll `getRunningCommandsFor(module)` before or after a
+tick like that and the list is empty both times: the log says `"none"`, and
+the command that just ran never shows up at all.
 
 The fix isn't a smarter poll. It's not polling at all. The scheduler
 doesn't just run commands quietly — every time it does something worth
-knowing, it announces it, as a `SchedulerEvent`. Instead of asking "what's
+knowing, it announces it, as a `SchedulerEvent`. <!-- claim: commandsv3.scheduler-events --> Instead of asking "what's
 running right now?" every tick, `Robot` can just listen, and find out the
 instant something changes.
 
@@ -300,7 +314,7 @@ the line once the check on the left has already passed.
 is about actually belongs to your module — the same event stream fires for
 every mechanism on the robot, so without that check you'd catch events for
 mechanisms you don't even have yet. `module` works as the argument here
-for the same reason it always has: `DriveModule implements Mechanism`.
+for the same reason it always has: `DriveModule implements Mechanism`. <!-- claim: commandsv3.scheduler-events -->
 
 **Edit `Robot`'s `robotPeriodic()`, dropping the call to the old method:**
 
@@ -323,7 +337,7 @@ import org.wpilib.command3.SchedulerEvent;
 ```
 
 Run it again and press the button — `DriveModule/CurrentCommand` on the
-dashboard still flips between `"DriveModule[IDLE]"` and `"Drive At Speed"`,
+dashboard (where [Figure 1.2](01-first-motor.md#figure-1-2) found it) still flips between `"Drive With Joystick"` and `"Drive At Speed"`,
 exactly like before. What changed is *how* it knows. The old version
 asked, every tick, and got lucky every time, because nothing could finish
 between one ask and the next. The new version can't get unlucky, because
@@ -334,7 +348,7 @@ matter how briefly "happens" lasts.
 > `Completed` for when a command finishes on its own, `Canceled` and
 > `Interrupted` for the other two ways a command's life can end, and a
 > couple more besides — a whole vocabulary for describing what the
-> scheduler is doing, not just what it's doing right now. You've only
+> scheduler is doing, not just what it's doing right now. <!-- claim: commandsv3.scheduler-events --> You've only
 > reached for one piece of it here.
 
 ---
@@ -377,7 +391,7 @@ code, you set up real, organized **logging**: `DataLogManager.start()`
 turns the flight recorder on once in `Robot.java`, a mechanism registers a
 steady periodic callback with the scheduler using a **method reference**,
 and every value flows through `Telemetry.log("Mechanism/Name",
-value)` from there. That naming discipline feels like overkill for two
+value)` from there. <!-- claim: wpilib.telemetry-log-publishes-under-telemetry --> That naming discipline feels like overkill for two
 values — it stops being overkill around value twenty, and you'll get there
 sooner than you think. You also traded a poll for a listener: Lesson 1's
 `logRunningCommand()` asked the scheduler a question every tick, and it

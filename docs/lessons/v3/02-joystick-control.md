@@ -20,7 +20,7 @@ deadband so the motor doesn't creep when the stick is centered.
 ## 1. A joystick axis is just a number
 
 A controller axis reports a `double` — a number with a decimal point — from
-`-1.0` to `1.0`. Centered is `0.0` (ish — section 3 deals with the "ish").
+`-1.0` to `1.0`. Centered is `0.0` (ish — section 3 deals with the "ish"). <!-- claim: commandsv3.command-gamepad-api -->
 WPILib hands it to you like this:
 
 *Nothing to add — this is just how you read one:*
@@ -106,7 +106,7 @@ public class DriveModule implements Mechanism {
 `runRepeatedly(...)` is built for exactly this: hand it a plain block of
 code and it runs that code once per tick, forever, until the command is
 canceled — no `coroutine.park()` needed this time, since the repeating loop
-itself is what keeps the command alive.
+itself is what keeps the command alive. <!-- claim: commandsv3.coroutine-command-api -->
 
 `DoubleSupplier` is a class from another package, so the file needs an
 import — up top with the others, below the `package` line (or click the red
@@ -150,9 +150,9 @@ private double applyDeadband(double value, double band) {
 }
 ```
 
-Three small pieces of Java arrived in those six lines. **`if (condition) {
-... }`** runs its block only when the condition is true — your first
-conditional, and Lesson 5 leans on these hard. **`Math.abs(value)`**
+Three small pieces of Java are in those six lines. **`if (condition) {
+... }`** is Lesson 1's `if`, this time with no `else`: its block runs only
+when the condition is true, and Lesson 5 leans on these hard. **`Math.abs(value)`**
 returns the absolute value (drops the sign), so one comparison covers both
 forward and reverse. And **`return`** hands a value back to whoever called
 the method and stops the method on the spot — which is why the second
@@ -163,7 +163,7 @@ takes the path you expect.
 > WPILib actually ships `MathUtil.applyDeadband(value, band)` that does
 > this (and rescales smoothly). You wrote your own so you'd know exactly
 > what's inside it. Feel free to swap in `MathUtil.applyDeadband` later —
-> knowing what a library call does beats trusting it blindly.
+> knowing what a library call does beats trusting it blindly. <!-- claim: wpilib.mathutil-apply-deadband -->
 
 ---
 
@@ -195,22 +195,23 @@ Read the new statement inside-out. `() -> -robot.driverController.getLeftY()`
 is a `DoubleSupplier` lambda — and it's re-asked every tick, so it always
 reflects where the stick is *right now*. And that **minus sign** is doing
 real work: on most sticks, pushing *forward* reads *negative*. Negating
-makes "push forward" = "positive speed" = "drive forward." Small detail,
+makes "push forward" = "positive speed" = "drive forward." <!-- claim: commandsv3.command-gamepad-api --> Small detail,
 endless confusion if you forget it — someday a robot will lurch backward
 off the starting line, and the first thing to check will be a sign.
 
 Now the stick always drives the module — unless some other command (like a
 future "drive to distance") temporarily takes over. When that command
 finishes, the default resumes on its own. You never write that hand-off;
-the scheduler does it. That's the quiet payoff of making everything a
+the scheduler does it. <!-- claim: commandsv3.default-command-runs-when-idle --> That's the quiet payoff of making everything a
 command.
 
 ---
 
 ## 5. Run it
 
-Run the robot in simulation → pick **My Teleop** → **Enabled**. Push the left
-stick (or SimGUI's joystick slider). The motor output should track the
+Run the robot in simulation, pick **Teleoperated** and **MyTeleop**, then
+**Enable**. Push the left
+stick (or SimGUI's joystick slider, in the slot you filled in [Figure 1.1](01-first-motor.md#figure-1-1)). <!-- claim: wpilib-tools.simgui-joystick-slots --> The motor output should track the
 stick, snap to zero near center, and reverse when you pull back. If it
 creeps at rest instead, your deadband isn't in the path — check that
 `driveWithJoystick` really calls `applyDeadband`.
@@ -225,7 +226,10 @@ programmers every season.
 1. **Code — slow mode.** Make a method `driveWithJoystick(DoubleSupplier
    speed, double scale)` that multiplies the speed by `scale`. Bind the
    right bumper so that while held, the module drives at `scale = 0.25` for
-   fine control.
+   fine control. SimGUI's keyboard has no right bumper yet: open **DS →
+   Keyboard 0 Settings**, press **+** under **Buttons** until **Count** reads
+   11, then click the **(None)** box beside **Button 10** and press **,**
+   (comma). <!-- claim: wpilib-tools.simgui-keyboard-keys --> Lesson 6 gives the rest of the controller keys.
 2. **Code — square the input** for finer low-speed control: `speed *
    Math.abs(speed)`. Feel the difference. Why does keeping `Math.abs`
    matter here? (Hint: what happens to the sign if you just do `speed *
@@ -245,7 +249,7 @@ you picked up your first **`if`**, plus `Math.abs` and `return`, and used
 all three to build a **deadband** so a resting stick means a resting motor.
 The robot-side idea to carry forward is the **default command**: what a
 mechanism does when nothing else claims it, with the scheduler handing
-control back automatically. If lambdas still feel like strange syntax,
+control back automatically. <!-- claim: commandsv3.default-command-runs-when-idle --> If lambdas still feel like strange syntax,
 that's normal — you'll write so many `() ->`s over the coming lessons that
 the arrow will stop registering as weird. Next, we make the robot's numbers
 visible, because plots beat print statements.

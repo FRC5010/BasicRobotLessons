@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 570" font-family="sans-serif">
+<defs><marker id="head" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#222222"/></marker></defs>
+<rect x="0" y="0" width="800" height="570" fill="#ffffff"/>
+<rect x="30" y="215" width="745" height="185" rx="14" fill="#fdf1e7" stroke="#D55E00" stroke-width="2.5" stroke-dasharray="9 6"/>
+<text x="46" y="376" font-size="14" fill="#777777">(step 1, setSupplyVoltage(), tells the model the battery voltage before step 2)</text>
+<text x="46" y="240" font-size="15" font-weight="bold" fill="#222222">simulatePeriodic(): once per 20 ms tick, simulation only</text>
+<rect x="45" y="60" width="235" height="85" rx="10" fill="#e6f0f9" stroke="#0072B2" stroke-width="2.5"/>
+<text x="162.5" y="88" text-anchor="middle" font-size="16" font-weight="bold" fill="#222222">setThrottle(0.3)</text>
+<text x="162.5" y="133" text-anchor="middle" font-size="14" fill="#222222">your command: 30% power</text>
+<rect x="505" y="60" width="250" height="85" rx="10" fill="#ffffff" stroke="#777777" stroke-width="2.5"/>
+<text x="630.0" y="88" text-anchor="middle" font-size="16" font-weight="bold" fill="#222222">TalonFX applies volts</text>
+<text x="630.0" y="133" text-anchor="middle" font-size="14" fill="#222222">0.3 of the battery: 3.6 V</text>
+<path d="M280,102 L503,102" fill="none" stroke="#222222" stroke-width="3" marker-end="url(#head)"/>
+<rect x="555" y="262" width="200" height="100" rx="10" fill="#ffffff" stroke="#D55E00" stroke-width="2.5"/>
+<text x="655.0" y="290" text-anchor="middle" font-size="16" font-weight="bold" fill="#222222">getMotorVoltage()</text>
+<text x="655.0" y="350" text-anchor="middle" font-size="14" fill="#222222">step 2: read the volts</text>
+<rect x="300" y="262" width="200" height="100" rx="10" fill="#ffffff" stroke="#D55E00" stroke-width="2.5"/>
+<text x="400.0" y="286" text-anchor="middle" font-size="16" font-weight="bold" fill="#222222">DCMotorSim</text>
+<text x="400.0" y="306" text-anchor="middle" font-size="16" font-weight="bold" fill="#222222">update(0.020)</text>
+<text x="400.0" y="350" text-anchor="middle" font-size="14" fill="#222222">step 3: volts → motion</text>
+<rect x="50" y="262" width="205" height="100" rx="10" fill="#ffffff" stroke="#D55E00" stroke-width="2.5"/>
+<text x="152.5" y="286" text-anchor="middle" font-size="16" font-weight="bold" fill="#222222">setRawRotorPosition()</text>
+<text x="152.5" y="306" text-anchor="middle" font-size="16" font-weight="bold" fill="#222222">setRotorVelocity()</text>
+<text x="152.5" y="350" text-anchor="middle" font-size="14" fill="#222222">step 4: ÷ 2π, rad → rot</text>
+<path d="M655,145 L655,260" fill="none" stroke="#222222" stroke-width="3" marker-end="url(#head)"/>
+<path d="M553,312 L502,312" fill="none" stroke="#222222" stroke-width="3" marker-end="url(#head)"/>
+<path d="M298,312 L257,312" fill="none" stroke="#222222" stroke-width="3" marker-end="url(#head)"/>
+<rect x="45" y="455" width="230" height="85" rx="10" fill="#e6f0f9" stroke="#0072B2" stroke-width="2.5"/>
+<text x="160.0" y="479" text-anchor="middle" font-size="16" font-weight="bold" fill="#222222">getPosition()</text>
+<text x="160.0" y="499" text-anchor="middle" font-size="16" font-weight="bold" fill="#222222">getVelocity()</text>
+<text x="160.0" y="528" text-anchor="middle" font-size="14" fill="#222222">your logs, your controllers</text>
+<path d="M152,400 L152,453" fill="none" stroke="#222222" stroke-width="3" marker-end="url(#head)"/>
+<text x="166" y="425" font-size="14" fill="#222222">the fake encoder</text>
+<path d="M45,497 L14,497 L14,102 L43,102" fill="none" stroke="#0072B2" stroke-width="3" marker-end="url(#head)"/>
+<text x="300" y="486" font-size="15" fill="#222222">The reads feed your code, which decides</text>
+<text x="300" y="508" font-size="15" fill="#222222">what to command next tick. That is the loop.</text>
+</svg>

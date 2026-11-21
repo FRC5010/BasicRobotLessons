@@ -1,0 +1,129 @@
+# Numbers Lesson 18 (the elevator) quotes that a library change could move.
+# Format: tools/claims/README.md. All measured with the real Elevator on a fixed 20 ms schedule.
+
+[[claim]]
+id = "l18.kp-alone-lag"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With kP alone (kG, kV and kA zeroed), stowed to kScoreMid, the carriage trails the profile's setpoint by about 8 cm at the widest."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 18, kP alone; data/18-kp-alone.csv"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "about 8 cm behind at the widest; up to 8 cm (Figure 18.1's alt text)"
+unit = "mm"
+range = [70.0, 90.0]
+measured = "82 mm; 82.1 mm in Figure 18.1's data"
+test = "tools/figures/probes/Fig18KpAlone.java"
+figure = "18-kp-alone.png"
+
+[[claim]]
+id = "l18.kp-alone-hold"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With kP alone, the carriage holds about 1.5 mm below kScoreMid and stays there."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 18, kP alone"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "about 1.5 mm low"
+unit = "mm"
+range = [1.4, 1.6]
+measured = "toggles between 1.52 and 1.56 mm (the height reading's 0.039 mm step), mean 1.54"
+test = "tools/figures/probes/Fig18KpAlone.java"
+figure = "18-kp-alone.png"
+note = "Check the mean of the hold, not one tick: the reading alternates between two values."
+
+[[claim]]
+id = "l18.kg-zeroed-sag"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With only kElevatorKG zeroed, the hold sags about 1.5 mm, almost exactly the kP-alone gap."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 18 (zeroing kElevatorKG sags the hold 1.5576 mm, the same to four digits on alpha-7)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "about 1.5 mm (Try It's callout and #2, and the kG bullet in section 10)"
+unit = "mm"
+range = [1.4, 1.6]
+measured = "1.5576 mm"
+
+[[claim]]
+id = "l18.model-hold-gap"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With the full model, the carriage settles a fifth of a millimeter below the goal."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 18 (0.194 mm short); 'v3 Lessons 28-32 re-measured', Lesson 32 (0.1549 or 0.1939 mm at kScoreMid)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "a fifth of a millimeter low; under a quarter of a millimeter; 0.19 mm (Figure 18.1's alt text)"
+unit = "mm"
+range = [0.185, 0.195]
+measured = "0.194 mm in Lesson 18's runs and Figure 18.1's data; Lesson 32's runs also read 0.155 mm"
+test = "tools/figures/probes/Fig18KpAlone.java"
+figure = "18-kp-alone.png"
+note = "The range is the tightest wording, the alt text's bare 0.19. Every Lesson 18 run read 0.194 mm; at the Lesson 32 state the hold can also sit on 0.155 mm, so if a re-measure finds 0.155 here, the wording is too precise."
+
+[[claim]]
+id = "l18.kv-zeroed-lag"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With kElevatorKV zeroed, stowed to the top, the gap between setpoint and height holds at about 91 mm through the cruise."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 18 (90.96-90.98 mm in five moves) and the 2026-11-18 logged-gap note"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "about 9 cm; about 91 mm (Figure 18.2's alt text)"
+unit = "mm"
+range = [90.0, 92.0]
+measured = "90.96-90.98 mm over five moves; 91.0 mm in Figure 18.2's data"
+test = "tools/figures/probes/Fig18HeightSetpointGoal.java"
+figure = "18-height-setpoint-goal.png"
+
+[[claim]]
+id = "l18.model-lag"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "With the full model, stowed to the top, the peak gap between setpoint and height is 1-2 cm, depending on the run."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 18 (11.3 mm in 26 of 30 moves, 20.0-20.2 mm in 4)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "1-2 cm; stays near a centimeter (Figure 18.2's alt text, one run); never gets past about a centimeter (the same run)"
+unit = "mm"
+range = [5.0, 25.0]
+measured = "11.3 mm in 26 of 30 moves, 20.0-20.2 mm in 4; 11.3 mm in Figure 18.2's data"
+test = "tools/figures/probes/Fig18HeightSetpointGoal.java"
+figure = "18-height-setpoint-goal.png"
+note = "The figure's wording describes its own run (11.3 mm); about one run in eight reads 20 mm, which the 1-2 cm text covers."
+
+[[claim]]
+id = "l18.kv-zeroed-firmware-error"
+kind = "number"
+library = ["phoenix6"]
+criticality = "C3"
+statement = "With kElevatorKV zeroed, the TalonFX's own ClosedLoopError reads 7 cm through the cruise, the predicted 9 V / kP; the logged setpoint-minus-height gap runs one or two centimeters bigger."
+evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 18, The logged gap is bigger than the controller's error while moving (2026-11-18)"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "does read 7 cm; a centimeter or two bigger"
+unit = "mm"
+range = [65.0, 75.0]
+measured = "70.7 mm; the extra is 10 or 20 mm in every run"
+
+[[claim]]
+id = "l18.profile-duration"
+kind = "number"
+library = ["phoenix6"]
+criticality = "C3"
+statement = "Motion Magic's setpoint takes about two seconds to ramp from stowed to the 1.5 m goal at the lesson's velocity and acceleration limits."
+evidence = "Figure 18.2's data (tools/figures/data/18-height-setpoint-goal.csv), read 2026-11-19"
+measured_on = "alpha-8"
+method = "RIG"
+wording = "slows into the goal about two seconds later; ramps up to it over about two seconds (alt text)"
+unit = "s"
+range = [1.0, 3.0]
+measured = "1.94 s from leaving 0.02 m to reaching 1.5 m, with and without kV"
+test = "tools/figures/probes/Fig18HeightSetpointGoal.java"
+figure = "18-height-setpoint-goal.png"

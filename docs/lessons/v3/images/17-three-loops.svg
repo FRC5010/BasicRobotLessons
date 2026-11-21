@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600" font-family="sans-serif">
+<defs><marker id="a000000" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="17" markerHeight="17" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#000000"/></marker><marker id="a0072B2" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="17" markerHeight="17" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0072B2"/></marker><marker id="a009E73" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="17" markerHeight="17" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#009E73"/></marker><marker id="aD55E00" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="17" markerHeight="17" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#D55E00"/></marker></defs>
+<rect x="0" y="0" width="800" height="600" fill="#ffffff"/>
+<text x="400.0" y="30.0" font-size="18" fill="#000000" text-anchor="middle" font-weight="bold">One tick of the follower: three loops, one command</text>
+<line x1="60.0" y1="330.0" x2="735.0" y2="330.0" stroke="#777777" stroke-width="4" stroke-dasharray="7 5"/>
+<circle cx="740" cy="330" r="9" fill="#777777"/>
+<text x="740.0" y="362.0" font-size="15" fill="#777777" text-anchor="middle" font-weight="normal">end</text>
+<text x="70.0" y="358.0" font-size="15" fill="#777777" text-anchor="start" font-weight="normal">path</text>
+<g transform="rotate(-28 300 220)"><rect x="270" y="190" width="60" height="60" rx="6" fill="#ffffff" stroke="#000000" stroke-width="3"/><line x1="300" y1="220" x2="348" y2="220" stroke="#000000" stroke-width="4"/></g>
+<path d="M383.9,175.4 A95,95 0 0 1 395,220" fill="none" stroke="#009E73" stroke-width="4" marker-end="url(#a009E73)"/>
+<text x="404.0" y="168.0" font-size="16" fill="#009E73" text-anchor="start" font-weight="bold">rotation</text>
+<line x1="300.0" y1="220.0" x2="500.0" y2="220.0" stroke="#0072B2" stroke-width="5" marker-end="url(#a0072B2)"/>
+<text x="500.0" y="206.0" font-size="16" fill="#0072B2" text-anchor="end" font-weight="bold">translation</text>
+<line x1="300.0" y1="220.0" x2="300.0" y2="322.0" stroke="#D55E00" stroke-width="5" marker-end="url(#aD55E00)"/>
+<text x="286.0" y="290.0" font-size="16" fill="#D55E00" text-anchor="end" font-weight="bold">cross-track</text>
+<line x1="300.0" y1="220.0" x2="500.0" y2="322.0" stroke="#000000" stroke-width="4" marker-end="url(#a000000)" stroke-dasharray="7 5"/>
+<text x="514.0" y="318.0" font-size="15" fill="#000000" text-anchor="start" font-weight="bold">sum → driveRobotRelative</text>
+<rect x="20" y="410" width="245" height="150" rx="8" fill="#E3F0FA" stroke="#0072B2" stroke-width="2"/>
+<text x="142.5" y="452.4" font-size="15" fill="#000000" text-anchor="middle" font-weight="bold">Translation</text>
+<text x="142.5" y="471.1" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">error: meters of path left</text>
+<text x="142.5" y="489.9" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">output: m/s</text>
+<text x="142.5" y="508.6" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">kTranslationP = 5.0</text>
+<text x="142.5" y="527.4" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">slows you as you arrive</text>
+<rect x="277" y="410" width="245" height="150" rx="8" fill="#DDF3EB" stroke="#009E73" stroke-width="2"/>
+<text x="399.5" y="452.4" font-size="15" fill="#000000" text-anchor="middle" font-weight="bold">Rotation</text>
+<text x="399.5" y="471.1" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">error: radians of heading</text>
+<text x="399.5" y="489.9" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">output: rad/s</text>
+<text x="399.5" y="508.6" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">kRotationP = 3.0</text>
+<text x="399.5" y="527.4" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">spins toward the path's heading</text>
+<rect x="534" y="410" width="246" height="150" rx="8" fill="#FBE9DF" stroke="#D55E00" stroke-width="2"/>
+<text x="657.0" y="452.4" font-size="15" fill="#000000" text-anchor="middle" font-weight="bold">Cross-track</text>
+<text x="657.0" y="471.1" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">error: meters off the line</text>
+<text x="657.0" y="489.9" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">output: m/s</text>
+<text x="657.0" y="508.6" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">kCrossTrackP = 2.0</text>
+<text x="657.0" y="527.4" font-size="15" fill="#000000" text-anchor="middle" font-weight="normal">pushes you sideways onto it</text>
+</svg>
