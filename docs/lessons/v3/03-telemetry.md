@@ -194,9 +194,10 @@ then launch AdvantageScope from the WPILib command palette → **Start
 Tool** → **AdvantageScope**. In AdvantageScope (Figure 3.1 numbers where
 steps 1 to 4 happen):
 
-1. **File → Connect to Simulator** (on a real robot it's "Connect to
-   Robot" with team number e.g. 5010). Also choose the default
-   NetworkTables 4. <!-- claim: wpilib-tools.advantagescope-connect -->
+1. **File → Connect to Simulator**, then **Default: NetworkTables** at the
+   top of the submenu that opens (**Ctrl+Shift+K** on Windows does the
+   same). <!-- claim: wpilib-tools.advantagescope-file-menu --> On a real
+   robot it's "Connect to Robot" with team number e.g. 5010. <!-- claim: wpilib-tools.advantagescope-connect -->
 2. In the sidebar, expand **Telemetry → DriveModule**. AdvantageScope puts
    each NetworkTables folder at the top of its sidebar, next to **Robot**
    and **DriverStation**, so there's no NetworkTables folder to open first.
@@ -211,9 +212,9 @@ steps 1 to 4 happen):
 5. Drive with the stick (or slide the joystick in SimGUI) and watch.
 
 <a id="figure-3-1"></a>
-![AdvantageScope connected to 127.0.0.1. The sidebar lists Robot, Telemetry and DriverStation at the top, with Telemetry and DriveModule open to CommandedOutput, CurrentCommand, PositionRotations and VelocityRotPerSec. A line graph plots velocity in rotations per second on the left axis, jumping to about plus or minus 100 during full-stick drives and back to 0, and position in rotations on the right axis, climbing and falling with it. Under the graph, the Left Axis list holds NT:/Telemetry/DriveModule/VelocityRotPerSec and the Right Axis list NT:/Telemetry/DriveModule/PositionRotations. Badge 1 marks the File menu, 2 the DriveModule folder, 3 the Left Axis list and 4 the Right Axis list.](images/03-advantagescope-tree-graph.png)
+![Two AdvantageScope screenshots. Top, step 1: the File menu open at Connect to Simulator, whose submenu lists Default: NetworkTables with the shortcut Ctrl+Shift+K, outlined and marked badge 1, then NetworkTables, NetworkTables (AdvantageKit), Systemcore Diagnostics, Phoenix Diagnostics, RLOG Server and FTC Dashboard. Bottom, steps 2 to 4: AdvantageScope connected to 127.0.0.1. The sidebar lists Robot, Telemetry and DriverStation at the top, with Telemetry and DriveModule open to CommandedOutput, CurrentCommand, PositionRotations and VelocityRotPerSec. A line graph plots velocity in rotations per second on the left axis, jumping to about plus or minus 100 during full-stick drives and back to 0, and position in rotations on the right axis, climbing and falling with it. Under the graph, the Left Axis list holds NT:/Telemetry/DriveModule/VelocityRotPerSec and the Right Axis list NT:/Telemetry/DriveModule/PositionRotations. Badge 2 marks the DriveModule folder, 3 the Left Axis list and 4 the Right Axis list.](images/03-advantagescope-tree-graph.png)
 
-*Figure 3.1 — AdvantageScope connected to the simulator, numbered by step: 1 the File menu, 2 Telemetry → DriveModule, 3 and 4 the Left and Right Axis lists. These traces move because the picture was taken with Lesson 4's code, where the simulated wheel really turns. Yours, today, stay flat.* <!-- claim: wpilib-tools.advantagescope-sidebar -->
+*Figure 3.1 — Steps 1 to 4 in AdvantageScope. Top: Connect to Simulator opens a submenu that starts with Default: NetworkTables (1). Bottom: connected, with Telemetry → DriveModule open (2) and the two signals in the Left and Right Axis lists (3, 4). These traces move because the bottom picture was taken with Lesson 4's code, where the simulated wheel really turns. Yours, today, stay flat.* <!-- claim: wpilib-tools.advantagescope-file-menu, wpilib-tools.advantagescope-sidebar -->
 
 Don't be discouraged when the traces sit nearly flat even at full stick —
 in simulation the motor isn't actually turning yet, so there's nothing for
@@ -226,7 +227,7 @@ built today is the pipe; next lesson gives it something real to carry.
 And sim or real, `DataLogManager` has been saving every value to a
 `.wpilog` file this whole time — after a sim run, look for the `logs/`
 folder in your project. Open a log with **File → Open Log(s)** in
-AdvantageScope and you can scrub back through the entire session. <!-- claim: wpilib-tools.advantagescope-connect -->
+AdvantageScope and you can scrub back through the entire session. <!-- claim: wpilib-tools.advantagescope-file-menu, wpilib-tools.advantagescope-connect -->
 
 You'll come back to AdvantageScope constantly — tuning P control in
 Lesson 5, comparing commanded vs. actual speed, and eventually watching the

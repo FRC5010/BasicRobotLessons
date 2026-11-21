@@ -85,9 +85,19 @@ id = "wpilib-tools.advantagescope-connect"
 kind = "behaviour"
 library = ["wpilib-tools"]
 criticality = "C2"
-statement = "AdvantageScope ships in the WPILib installer, starts from the command palette's Start Tool, connects with File > Connect to Simulator over NetworkTables 4, plots on a Line Graph tab, and opens .wpilog files with File > Open Log(s)."
-evidence = "Stated by the lesson; nothing records checking it (CLAUDE.md: AdvantageScope isn't installed in the container). Figure 3.1's screenshot (the user's, 2026-11-21) shows a File menu and a session connected to 127.0.0.1 with fields on a line graph, but not the menu's items, the Start Tool path, the NetworkTables 4 choice or Open Log(s). The sidebar is wpilib-tools.advantagescope-sidebar."
+statement = "AdvantageScope ships in the WPILib installer, starts from the command palette's Start Tool, connects to a real robot with File > Connect to Robot and the team number, and opens a .wpilog file with File > Open Log(s)."
+evidence = "Stated by the lesson; nothing records checking it (CLAUDE.md: AdvantageScope isn't installed in the container). The menu items exist (wpilib-tools.advantagescope-file-menu, the user's screenshot), but nothing shows the installer, the Start Tool path, where the team number goes, or a log being opened. The lesson's old 'choose the default NetworkTables 4' was wrong: there is no such choice (the submenu's first item is Default: NetworkTables)."
 measured_on = "unverified"
+
+[[claim]]
+id = "wpilib-tools.advantagescope-file-menu"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C1"
+statement = "AdvantageScope's File menu has Open Log(s)... (Ctrl+O), Connect to Robot and Connect to Simulator; Connect to Simulator opens a submenu whose first item is Default: NetworkTables (Ctrl+Shift+K), above NetworkTables, NetworkTables (AdvantageKit), Systemcore Diagnostics, Phoenix Diagnostics, RLOG Server and FTC Dashboard; the window has a Line Graph tab."
+evidence = "Figure 3.1's top panel: a screenshot the user took on 2026-11-21 in their own AdvantageScope on Windows (version not recorded), tools/figures/data/03-advantagescope-file-menu.png. That the shortcut does the same as the menu item is the usual meaning of a shortcut shown beside it, not tested."
+measured_on = "alpha-8 (the user's AdvantageScope, version not recorded)"
+figure = "03-advantagescope-tree-graph.png"
 
 [[claim]]
 id = "wpilib-tools.advantagescope-sidebar"
@@ -95,7 +105,7 @@ kind = "behaviour"
 library = ["wpilib-tools"]
 criticality = "C2"
 statement = "Connected live to the simulator, AdvantageScope's title bar shows 127.0.0.1 and its sidebar lists each top-level NetworkTables folder at the top (Telemetry beside Robot and DriverStation, with no NetworkTables folder above them); a Line Graph has Left Axis, Discrete Fields and Right Axis lists under the plot, naming each field by its full path with an NT: prefix (NT:/Telemetry/DriveModule/VelocityRotPerSec)."
-evidence = "Figure 3.1: a screenshot the user took on 2026-11-21 in their own AdvantageScope (version not recorded), connected to the simulation of the Lesson 4 state (tools/figures/data/03-advantagescope-screenshot.png). It can't be repeated in this container: AdvantageScope isn't installed, and docs.advantagescope.org doesn't resolve through its proxy (2026-11-21). The lesson's earlier 'NetworkTables > Telemetry > DriveModule' path came from no record and was wrong."
+evidence = "Figure 3.1's bottom panel: a screenshot the user took on 2026-11-21 in their own AdvantageScope (version not recorded), connected to the simulation of the Lesson 4 state (tools/figures/data/03-advantagescope-screenshot.png). It can't be repeated in this container: AdvantageScope isn't installed, and docs.advantagescope.org doesn't resolve through its proxy (2026-11-21). The lesson's earlier 'NetworkTables > Telemetry > DriveModule' path came from no record and was wrong."
 measured_on = "alpha-8 (the user's AdvantageScope, version not recorded)"
 figure = "03-advantagescope-tree-graph.png"
 

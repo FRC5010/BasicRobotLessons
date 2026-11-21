@@ -2769,13 +2769,19 @@ at least twice.
   lists **Robot**, **Telemetry** and **DriverStation** at the top, and a Line
   Graph's **Left Axis** / **Right Axis** lists name fields
   `NT:/Telemetry/DriveModule/…`. Lesson 3's step 2 now says **Telemetry →
-  DriveModule** (claim `wpilib-tools.advantagescope-sidebar`). So the
+  DriveModule** (claim `wpilib-tools.advantagescope-sidebar`). A second
+  screenshot (the File menu) showed there's no "NetworkTables 4" to choose:
+  **Connect to Simulator** opens a submenu headed **Default: NetworkTables**
+  (Ctrl+Shift+K), then NetworkTables, **NetworkTables (AdvantageKit)**,
+  Systemcore Diagnostics, Phoenix Diagnostics, RLOG Server and FTC
+  Dashboard (claim `wpilib-tools.advantagescope-file-menu`); step 1 says so
+  and Figure 3.1's top panel shows it. So the
   "NetworkTables → AdvantageKit → …" paths in Lessons 18, 20 and 21 are
   probably wrong the same way; not changed, because the screenshot doesn't
   show AdvantageKit's tree. AdvantageScope can't run here, and
   docs.advantagescope.org doesn't resolve through this container's proxy.
   The figure's generator, `tools/figures/03-advantagescope-tree-graph.py`,
-  only crops and numbers the screenshot (`/usr/bin/python3.12`, which has
+  only crops, numbers and stacks the two screenshots (`/usr/bin/python3.12`, which has
   Pillow; the `python3` on PATH has a broken one).
 - **Lesson 15 Try It #3, re-run** (LOOP, the Try It's scatter applied with
   `--replace`, three 60 s parked runs): ended 17, 39 and 39 cm from the park

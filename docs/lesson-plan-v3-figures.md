@@ -190,8 +190,8 @@ No figure proposed: lambdas, suppliers and a deadband; a transfer-curve plot wou
 - Made from: user's AdvantageScope screenshot, Lesson 3 state (traces flat as the text says) or Lesson 4's (they move; caption "from Lesson 4"). Light and dark variants.
 - Text changes: §5 step 2 + "(Figure 3.1)".
 - Linked from: Lesson 4 §5, Lesson 5 §5, Lesson 7 §7.
-- **Built 2026-11-21** from the user's screenshot (`tools/figures/data/03-advantagescope-screenshot.png`, dark theme only, Lesson 4 state) by `tools/figures/03-advantagescope-tree-graph.py`, which crops the empty panes, numbers steps 1-4 like Figure 17.3 and scales to 1600 px (102 KB). Placed after the step list, not after step 2 (a figure inside the list would restart its numbering); the caption says it's Lesson 4's code. No light variant: the screenshot is opaque, like 17.3, so it reads on both themes.
-  - **Found:** AdvantageScope's sidebar has no **NetworkTables** folder; it lists **Telemetry** at the top beside **Robot** and **DriverStation**, and the axis lists name fields `NT:/Telemetry/DriveModule/…`. Step 2 now says **Telemetry → DriveModule** (new claim `wpilib-tools.advantagescope-sidebar`). Lessons 18, 20 and 21 still give AdvantageScope paths starting **NetworkTables → AdvantageKit → …**; probably wrong the same way, not changed (the screenshot doesn't show AdvantageKit's tree).
+- **Built 2026-11-21** from two of the user's screenshots, dark theme only, by `tools/figures/03-advantagescope-tree-graph.py`: the File menu open at Connect to Simulator (`data/03-advantagescope-file-menu.png`, top panel, step 1) and the connected window on the Lesson 4 state (`data/03-advantagescope-screenshot.png`, bottom panel, steps 2-4). Numbered and headed like Figure 17.3; 1600 x 1310 px, 167 KB. Placed after the step list, not after step 2 (a figure inside the list would restart its numbering); the caption says it's Lesson 4's code. No light variant: the screenshot is opaque, like 17.3, so it reads on both themes.
+  - **Found:** AdvantageScope's sidebar has no **NetworkTables** folder; it lists **Telemetry** at the top beside **Robot** and **DriverStation**, and the axis lists name fields `NT:/Telemetry/DriveModule/…`. Step 2 now says **Telemetry → DriveModule** (new claim `wpilib-tools.advantagescope-sidebar`). There's no "NetworkTables 4" to choose either: **Connect to Simulator** opens a submenu whose first item is **Default: NetworkTables** (Ctrl+Shift+K), so step 1 says that (claim `wpilib-tools.advantagescope-file-menu`). The submenu also offers **NetworkTables (AdvantageKit)**, which matters from Lesson 13 on. Lessons 18, 20 and 21 still give AdvantageScope paths starting **NetworkTables → AdvantageKit → …**; probably wrong the same way, not changed (the screenshot doesn't show AdvantageKit's tree).
 
 ### Lesson 4 — Simulation
 
@@ -1128,4 +1128,10 @@ All 8 batch 3 figures are built: 10.2, 12.1, 17.1, 20.2, 25.1, 26.3, 31.2 and 33
 - **Inbound links:** those from Lessons 11, 18, 25 and 26 follow them.
 - **Plot beside a table:** 20.2 and 31.2 sit beside measured tables. 20.2 shows the cosine shape across 23 angles. 31.2 shows the stale, stepped reading and the missing re-zero.
 - **Text fix:** Lesson 26's no-turn trip is now "about 5 mm" off the line (was 11).
-- **Left:** the figures that need the user (7.2, 8.2, and the debugger screenshot D.1; 3.1 was built from the user's screenshot on 2026-11-21), and Lesson 34's figures after its migration.
+- **Left:** the figures that need the user (7.2, 8.2, and the debugger screenshot D.1; 3.1 was built from the user's screenshots on 2026-11-21), and Lesson 34's figures after its migration.
+- **Screenshots asked of the user (2026-11-21), in order:**
+  1. AdvantageScope's File menu at Connect to Simulator: done, Figure 3.1's top panel.
+  2. Figure 7.2, the Swerve tab on the Lesson 7 state: stick forward (arrows parallel) and left bumper held (pinwheel), with the sidebar in view, to fix Lessons 7 and 8's `NetworkTables/Telemetry/Drivetrain/...` paths.
+  3. Not a figure: the top of the sidebar on a Lesson 13+ project (Lesson 18 ideal) with AdvantageKit expanded, and which Connect to Simulator item was picked, to fix the **NetworkTables → AdvantageKit → …** paths in Lessons 18, 20 and 21.
+  4. Figure 8.2 (optional): the Swerve tab on the Lesson 8 state with `Heading` in **Rotation**.
+  5. Figure D.1: VS Code paused at the `double error = …` line in `steerToAngle`, and whether F5 works on the alpha project.
