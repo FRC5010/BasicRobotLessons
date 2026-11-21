@@ -2799,7 +2799,13 @@ at least twice.
   state): a `Pose2d` dragged into **Poses** reads **Robot** (2D) or **2026
   KitBot** (3D), and the **Field** drop-down picks the field. There's no
   "Odometry" tab; Lessons 11, 16, 17 and 22 fixed (claim
-  `wpilib-tools.advantagescope-field-tabs`). Figures made from the
+  `wpilib-tools.advantagescope-field-tabs`). **Replaying from VS Code works**
+  (Figure 13.5, the user's Lesson 13 project): recording opened in
+  AdvantageScope, `kSimMode = Mode.REPLAY`, Simulate Robot Code with **Sim
+  GUI** unticked (the prompt lists Sim GUI and Use Real DriverStation); it
+  wrote the `_sim.wpilog` in Figure 13.3. In a file AdvantageScope names
+  fields `/RealOutputs/...` without `NT:`, and crosses out a tab source that
+  named a live key. The ×1.1 replay figure is now 13.4. Figures made from the
   user's screenshots share `tools/figures/screenshots.py`, which crops,
   numbers and stacks panels like Figure 17.3.
   The figure's generator, `tools/figures/03-advantagescope-tree-graph.py`,

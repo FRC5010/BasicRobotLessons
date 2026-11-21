@@ -176,9 +176,9 @@ id = "advantagekit.vscode-simulate-extension-prompt"
 kind = "behaviour"
 library = ["advantagekit", "gradlerio"]
 criticality = "C3"
-statement = "VS Code's WPILib: Simulate Robot Code asks which extensions to load, and a replay needs Sim GUI unticked."
-evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson (CLAUDE.md says the popup was not tested)"
-measured_on = "unverified"
+statement = "VS Code's WPILib: Simulate Robot Code asks which extensions to load (Sim GUI, Use Real DriverStation), and a replay needs Sim GUI unticked."
+evidence = "Figure 13.5: the user's screenshots (2026-11-21, Windows, Lesson 13 project) of the prompt and of the recording akit_26-11-21_13-57-41 opened in AdvantageScope; the replay started that way wrote akit_26-11-21_13-57-41_sim.wpilog, shown in Figure 13.3. That a replay with Sim GUI ticked fails rests on AdvantageKit's source (it exits when HALSIM_EXTENSIONS is set), not on a run of this prompt."
+measured_on = "alpha-8 (the user's WPILib extension and AdvantageScope, versions not recorded)"
 method = "SOURCE"
 
 [[claim]]

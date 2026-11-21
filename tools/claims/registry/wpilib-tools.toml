@@ -225,3 +225,13 @@ statement = "AdvantageScope's field tabs are 2D Field (Tabs > New Tab > 2D Field
 evidence = "Figures 11.1 and 11.2: screenshots the user took on 2026-11-21 in their own AdvantageScope on Windows (version not recorded), connected to the simulation of the Lesson 11 state (tools/figures/data/11-advantagescope-new-tab.png, 11-advantagescope-2d-field.png, 11-advantagescope-3d-field.png). Lessons 11, 16, 17 and 22 had said 'Odometry tab' and Lesson 11 'the source dropdown'. Whether 2026 Field is the default isn't known."
 measured_on = "alpha-8 (the user's AdvantageScope, version not recorded)"
 figure = "11-advantagescope-2d-field.png"
+
+[[claim]]
+id = "wpilib-tools.advantagescope-file-sources"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C3"
+statement = "With a log file open, AdvantageScope names its fields without the NT: prefix (/RealOutputs/Drivetrain/Pose, /ReplayOutputs/Drivetrain/Pose), crosses out a tab's source that named a live NetworkTables key the file doesn't have, and draws two poses in one 2D Field tab, one as a Ghost."
+evidence = "Figure 13.3: the user's screenshot (2026-11-21, Windows, Lesson 13 project, AdvantageScope version not recorded), tools/figures/data/13-advantagescope-replay-file.png. How the second pose came to be drawn as a Ghost (chosen, or AdvantageScope's default for a second source) isn't known, so the lesson doesn't say."
+measured_on = "alpha-8 (the user's AdvantageScope, version not recorded)"
+figure = "13-advantagescope-replay-file.png"

@@ -479,7 +479,7 @@ and its heading turns toward the sighting's 90° by the same tenth each time. <!
 1. **Code — drift, then correct.** Resurrect Lesson 13's Try It — multiply
    `drivePositionMeters` by `1.1` in `ModuleIOTalonFX.updateInputs` — drive
    a lap, and watch the pose wander somewhere false (stretched away from the
-   start, like the green track in [Figure 13.3](13-io-replay.md#figure-13-3)). Now press Start a few
+   start, like the green track in [Figure 13.4](13-io-replay.md#figure-13-4)). Now press Start a few
    times. The lie gets pulled back toward the "camera's" truth — the exact
    drama that plays out on a real field, in slow motion. Remove the slip
    after.

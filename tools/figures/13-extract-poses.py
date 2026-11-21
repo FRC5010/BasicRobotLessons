@@ -1,4 +1,4 @@
-"""Lesson 13: turn one recorded drive and its two replays into the CSV Figure 13.3 reads.
+"""Lesson 13: turn one recorded drive and its two replays into the CSV Figure 13.4 reads.
 
 Record, then replay twice (the replays are done by the commands below, with FIGURE_SANDBOX=$SB):
 

@@ -1,4 +1,4 @@
-"""Lesson 13, Figure 13.3: the same recorded drive, replayed with `* 1.1` in getPosition().
+"""Lesson 13, Figure 13.4: the same recorded drive, replayed with `* 1.1` in getPosition().
 
 Data: tools/figures/data/13-replay-scaled-pose.csv. 13-extract-poses.py has the exact
 commands that record the drive (probes/Fig13ReplayScaled.java) and replay it twice, and

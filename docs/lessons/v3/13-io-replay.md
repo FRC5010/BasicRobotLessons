@@ -1063,6 +1063,20 @@ course's simulator: the pose, the heading and the module states matched
 their replayed twins exactly, on every tick, and so did the name of the
 running command. <!-- claim: advantagekit.replay-matches-recording -->
 
+Figure 13.3 is a replay file open on a 2D Field tab ([Figure
+11.1](11-odometry-field.md#figure-11-1)): the inputs at the top level (1),
+`RealOutputs` (2) and `ReplayOutputs` (3) in the sidebar, and both
+`Drivetrain/Pose`s in the **Poses** list (4), drawn on top of each other. If
+you put a pose on that tab while connected live, its entry is crossed out
+now: it names the live key, `NT:/AdvantageKit/RealOutputs/Drivetrain/Pose`,
+which isn't in the file. Drag the file's own `RealOutputs/Drivetrain/Pose`
+in instead. <!-- claim: advantagekit.replay-file-layout, wpilib-tools.advantagescope-file-sources -->
+
+<a id="figure-13-3"></a>
+![AdvantageScope with akit_26-11-21_13-57-41_sim.wpilog open on a 2D Field tab. The sidebar lists Drivetrain, DriverStation and RadioStatus at the top (badge 1), then RealOutputs (badge 2) and ReplayOutputs (badge 3), each holding a Drivetrain folder with CurrentCommand, DesiredModuleStates, Heading, HeadingDegrees, ModuleStates and Pose. On the field a robot drawn as a green ghost sits at the end of a curving trail. The Poses list holds a crossed-out Robot: NT:/AdvantageKit/RealOutputs/Drivetrain/Pose, then Ghost: /ReplayOutputs/Drivetrain/Pose and Robot: /RealOutputs/Drivetrain/Pose, both at X 14.085 m, Y 4.781 m, 128.99 degrees (badge 4).](images/13-advantagescope-replay-file.png)
+
+*Figure 13.3 — A replay's `_sim.wpilog`: the recorded inputs (1), the outputs from the recording (2) and from the replay (3), and both poses on the field (4), the same to the millimetre. The crossed-out line is a live NetworkTables key the file doesn't have.* <!-- claim: advantagekit.replay-file-layout, wpilib-tools.advantagescope-file-sources -->
+
 > In one test, where a program moved the sticks partway through a loop,
 > the replayed *commands* reacted to a stick movement one tick (20 ms)
 > sooner than the live robot had. The pose still matched exactly. <!-- claim: advantagekit.replay-matches-recording -->
@@ -1088,14 +1102,14 @@ The run you're looking at happened before you made this change. Your new
 code just drove it again. In Figure 13.2, `getPosition()` is in the "your
 logic" box, below the line where the inputs come out of the file.
 
-Figure 13.3 plots both replays over the recording. It shows the robot's
+Figure 13.4 plots both replays over the recording. It shows the robot's
 position on the field as seen from above, one line per run, from a drive
 of forward, then left, then forward and right.
 
-<a id="figure-13-3"></a>
+<a id="figure-13-4"></a>
 ![Top-down track of one recorded drive. The recording and the unchanged replay lie exactly on top of each other, ending 4.78 m from the start. The replay with the 1.1 has the same shape, stretched away from the start, ending 5.26 m from it.](images/13-replay-scaled-pose.png)
 
-*Figure 13.3 — One recorded drive, replayed twice: the unchanged code lands on the recording; the code with `* 1.1` draws the same shape, stretched.* <!-- claim: l13.fig-recording-distance, l13.fig-scaled-distance -->
+*Figure 13.4 — One recorded drive, replayed twice: the unchanged code lands on the recording; the code with `* 1.1` draws the same shape, stretched.* <!-- claim: l13.fig-recording-distance, l13.fig-scaled-distance -->
 
 Read the thick orange line first: that's `RealOutputs/Drivetrain/Pose`, the
 drive as the robot saw it while it was recorded. The black dashed line is the
@@ -1126,6 +1140,13 @@ code, replay the match, and see what the change would have done.
 > - **VS Code's Simulate Robot Code** (Ctrl+Shift+P → **WPILib: Simulate
 >   Robot Code**) asks which extensions to load. Untick **Sim GUI**, or
 >   AdvantageKit won't start the replay. <!-- claim: advantagekit.vscode-simulate-extension-prompt, advantagekit.replay-needs-no-sim-gui -->
+
+Figure 13.5 shows the VS Code route, step by step.
+
+<a id="figure-13-5"></a>
+![Three screenshots. 1: AdvantageScope's Select the robot log file(s) to open dialog, in the project's logs folder, with akit_26-11-21_13-57-41.wpilog selected above several WPILIB_ files. 2: Constants.java in VS Code, line 21 reading public static final Mode kSimMode = Mode.REPLAY;. 3: VS Code's Pick extensions to run prompt, listing Sim GUI and Use Real DriverStation, with Sim GUI outlined.](images/13-replay-from-vscode.png)
+
+*Figure 13.5 — Replaying from VS Code: open the recording in AdvantageScope (1), set `kSimMode` to `Mode.REPLAY` (2), then run Simulate Robot Code with **Sim GUI** unticked (3). The replay that wrote Figure 13.3's file was started this way.* <!-- claim: advantagekit.vscode-simulate-extension-prompt -->
 
 ---
 
