@@ -2859,11 +2859,12 @@ at least twice.
   click the title bar's menu button (checked here; the right-click didn't
   open under Xvfb), expand **Field**, and pick from **Image** (2026 FRC
   Rebuilt Welded first); Figure 11.4 shows it. The user says the latest
-  field is usually there by default. SimGUI draws the origin at the
-  bottom-left (+X right, +Y up), unlike AdvantageScope's view. Its 2026
-  image draws the *red* hub about 4.6 m from that corner, where the tag
-  poses put the blue one (and AdvantageScope draws blue); not looked into,
-  and Lesson 11 doesn't mention the colours. The default
+  field is usually there by default. **SimGUI orients the field by the
+  alliance** (the user): SimGUI starts on Red 1, so Figure 11.4 shows the
+  field from red's side, with the robot at (0, 0) in the bottom-left corner
+  and the red hub nearest it, though the tag poses put the blue hub 4.6 m
+  from the origin. Not checked on Blue 1 here, and Lesson 11 (before
+  alliances are taught) doesn't mention it. The default
   **Robot State** window covers the field's bottom-left corner, where the
   robot starts; Lesson 11 now says to drag it aside.
 - **Lesson 16, the grip limit** (Figure 16.3, from batch 1's full-stick-start
