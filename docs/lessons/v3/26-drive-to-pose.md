@@ -66,7 +66,7 @@ finding before someone finds them in a match.
 for 7.5 m/s, which the clamp trims to the robot's top speed. So on tick one,
 standing still, the sketch asks for full speed. The wheels can't deliver
 that instantly. They spin up as hard as the tyres can push, which in this
-simulation measured **11.8 m/s²**, the grip limit itself ([Figure 16.3](16-ground-truth.md#figure-16-3)
+simulation measured **11.8 m/s²**, the grip limit itself ([Figure 16.4](16-ground-truth.md#figure-16-4)
 plots it). <!-- claim: l26.grip-launch-accel --> On a real robot,
 that's tyres on the edge of slipping, a lurch that throws everything on the
 robot forward, and wheel odometry you can't trust while it lasts ([Figure 16.1](16-ground-truth.md#figure-16-1) shows how far it drifts).

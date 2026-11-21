@@ -437,6 +437,17 @@ change of direction, so it climbs twice, to about **100 cm**, and settles at abo
 **78 cm**, again for good. <!-- claim: l16.fwdrev-peak, l16.fwdrev-held --> The harder you ask the tires to work, the further
 ahead of the truth the estimate gets, and it never comes back on its own.
 
+Figure 16.2 is what that looks like on the field: a 2D Field tab with the
+truth, `Drivetrain/SimulatedPose` (1), and the estimate, `Localizer/Pose`
+(2), drawn as two robots (3). Here the estimate is coloured blue and the
+truth left red, and in this shot their numbers (4) are about 15 cm
+apart. <!-- claim: wpilib-tools.advantagescope-field-tabs, advantagekit.data-receivers-and-files -->
+
+<a id="figure-16-2"></a>
+![An AdvantageScope 2D Field tab, connected live. In the sidebar, under AdvantageKit and RealOutputs, Drivetrain holds SimulatedPose (badge 1) and Localizer holds Pose (badge 2). On the field two robot squares overlap near the red hub with a trail behind them, one outlined red and one blue, the blue one shifted slightly down (badge 3). The Poses list reads Robot: NT:/AdvantageKit/RealOutputs/Drivetrain/SimulatedPose at X 11.326 m, Y 2.618 m, 135.97 degrees, and Robot: NT:/AdvantageKit/RealOutputs/Localizer/Pose at X 11.331 m, Y 2.765 m, 135.97 degrees (badge 4).](images/16-advantagescope-truth-vs-estimate.png)
+
+*Figure 16.2 — The truth (1, red) and the estimate (2, blue) on one 2D Field tab (3). Here their positions (4) differ by about 15 cm; the headings agree.* <!-- claim: wpilib-tools.advantagescope-field-tabs -->
+
 ---
 
 ## 7. Closing the loop: vision checks itself against truth
@@ -460,7 +471,7 @@ That's the whole fix — `drivetrain::getSimulatedPose` in place of
 chassis *actually* is, so a correction it computes pulls the estimate
 toward something real, not toward itself.
 
-Figure 16.2 draws the wiring before and after, and it's worth reading top to
+Figure 16.3 draws the wiring before and after, and it's worth reading top to
 bottom. In the top half, Lesson 15's, the simulated camera looks out from
 `Localizer.getPose()`, and whatever it sees goes straight back into
 `addVisionMeasurement` on the same `Localizer`: one orange loop, the estimate
@@ -477,10 +488,10 @@ truth reaches it by exactly one road, the green one: the camera renders from
 road and you have Lesson 15's drift with a separate truth to measure it
 against; keep it and the cameras become a real check.
 
-<a id="figure-16-2"></a>
+<a id="figure-16-3"></a>
 ![Two wiring diagrams. Lesson 15: the Localizer's getPose feeds the simulated camera, and the camera's measurement goes back into the same Localizer, a closed loop. Lesson 16: measured wheel states feed simulateChassis and ChassisSimulation (the grip limit), which gives getSimulatedPose and the gyro heading; the Localizer uses encoders and gyro; the only link from truth to estimate is the camera](images/16-truth-vs-estimate-wiring.svg)
 
-*Figure 16.2 — Lesson 15's camera loop, and Lesson 16's two loops joined only by the camera.*
+*Figure 16.3 — Lesson 15's camera loop, and Lesson 16's two loops joined only by the camera.*
 
 One loose end. The chassis sim starts at `kSimStartingPose`, but
 `Localizer` still starts at `(0, 0, 0°)`, because odometry has no idea
@@ -553,13 +564,13 @@ built, and that tick holds what the constructor recorded. <!-- claim: advantagek
 Now run the robot in simulation → **RobotTeleop**. The first thing
 you'll feel is the grip limit: push the stick to full and the robot doesn't
 reach speed instantly — it ramps, the way a real chassis with real tires
-does, and letting go coasts it back down instead of stopping dead. Figure 16.3
+does, and letting go coasts it back down instead of stopping dead. Figure 16.4
 plots one start and one release.
 
-<a id="figure-16-3"></a>
+<a id="figure-16-4"></a>
 ![Speed against time for a full-stick start from a stop and a release 1.5 seconds later: the requested speed is a step up to 4.8 m/s and back to zero; the true chassis speed climbs in a straight line at 11.77 m/s² to the top in under half a second, holds, and falls at the same slope after the release](images/16-grip-limit.png)
 
-*Figure 16.3 — Full stick from a stop, then let go. The dashed line is what you asked for; the orange line is what the chassis did.* <!-- claim: l16.grip-slope, l16.grip-time-to-top, wpilib.kraken-x60-model -->
+*Figure 16.4 — Full stick from a stop, then let go. The dashed line is what you asked for; the orange line is what the chassis did.* <!-- claim: l16.grip-slope, l16.grip-time-to-top, wpilib.kraken-x60-model -->
 
 The dashed line is the stick: a jump to full speed (about 4.8 m/s) at time
 zero, and a jump back to zero at 1.5 s. <!-- claim: wpilib.kraken-x60-model --> The orange line is

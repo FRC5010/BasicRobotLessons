@@ -2805,7 +2805,10 @@ at least twice.
   GUI** unticked (the prompt lists Sim GUI and Use Real DriverStation); it
   wrote the `_sim.wpilog` in Figure 13.3. In a file AdvantageScope names
   fields `/RealOutputs/...` without `NT:`, and crosses out a tab source that
-  named a live key. The ×1.1 replay figure is now 13.4. Figures made from the
+  named a live key. The ×1.1 replay figure is now 13.4. Lesson 16's
+  truth-and-estimate screenshot is Figure 16.2 (the user coloured the
+  estimate blue; how isn't recorded), so the wiring and grip-limit figures
+  are 16.3 and 16.4. Figures made from the
   user's screenshots share `tools/figures/screenshots.py`, which crops,
   numbers and stacks panels like Figure 17.3.
   The figure's generator, `tools/figures/03-advantagescope-tree-graph.py`,
