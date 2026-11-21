@@ -222,7 +222,7 @@ kind = "behaviour"
 library = ["wpilib-tools"]
 criticality = "C1"
 statement = "AdvantageScope's field tabs are 2D Field (Tabs > New Tab > 2D Field, Alt+2) and 3D Field (Alt+3); there's no tab called Odometry. A Pose2d dragged into a field tab's Poses list shows as Robot on the 2D tab (a red square with an arrow, leaving a trail) and as 2026 KitBot, a robot model, on the 3D tab; a Field drop-down at the bottom right picks the field (2026 Field, earlier FRC fields, Evergreen, Axes, and FTC fields)."
-evidence = "Figures 17.6 (a red run of Two Corners) and 25.4 (Pick Up on Blue 1), 2026-11-21, both draw the 2026 field turned half a turn, x growing left and y down, read from where the poses sit, so it is not the alliance; whether it is AdvantageScope's default or the Orientation buttons wasn't checked. Figures 11.1 and 11.2: screenshots the user took on 2026-11-21 in their own AdvantageScope on Windows (version not recorded), connected to the simulation of the Lesson 11 state (tools/figures/data/11-advantagescope-new-tab.png, 11-advantagescope-2d-field.png, 11-advantagescope-3d-field.png). Lessons 11, 16, 17 and 22 had said 'Odometry tab' and Lesson 11 'the source dropdown'. Whether 2026 Field is the default isn't known."
+evidence = "Figures 11.1 and 11.2: screenshots the user took on 2026-11-21 in their own AdvantageScope on Windows (version not recorded), connected to the simulation of the Lesson 11 state (tools/figures/data/11-advantagescope-new-tab.png, 11-advantagescope-2d-field.png, 11-advantagescope-3d-field.png). Lessons 11, 16, 17 and 22 had said 'Odometry tab' and Lesson 11 'the source dropdown'. Whether 2026 Field is the default isn't known."
 measured_on = "alpha-8 (the user's AdvantageScope 27.0.0-alpha-6, WPILib distribution, from its About box on 2026-11-21, taken to be the version in all that day's screenshots)"
 figure = "11-advantagescope-2d-field.png"
 
@@ -268,6 +268,15 @@ id = "wpilib-tools.advantagescope-popout"
 kind = "behaviour"
 library = ["wpilib-tools"]
 criticality = "C3"
-statement = "AdvantageScope can show a tab in a window of its own (titled with the tab's name, e.g. 'Line Graph — AdvantageScope') beside the main window, both live at once."
-evidence = "Figure 25.5: a screenshot the user took on 2026-11-21 (Lesson 25 state, one Pick Up run on Blue 1). Which control pops a tab out isn't recorded, so the lesson doesn't name one."
+statement = "AdvantageScope can show a tab in a window of its own, from the overlapping-squares button at the top right of its window, (titled with the tab's name, e.g. 'Line Graph — AdvantageScope') beside the main window, both live at once."
+evidence = "Figure 25.5: a screenshot the user took on 2026-11-21 (Lesson 25 state, one Pick Up run on Blue 1). The user pops it out with a button at the top right of the main window (the overlapping squares, picked from a list of options on 2026-11-21); the icon wasn't seen pressed."
+measured_on = "alpha-8 (the user's AdvantageScope 27.0.0-alpha-6, WPILib distribution)"
+
+[[claim]]
+id = "wpilib-tools.advantagescope-field-orientation"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C2"
+statement = "AdvantageScope's 2D Field puts the origin at the blue alliance's corner but draws the 2026 field with that corner at the top right, so +X points left and +Y points down on screen; a future version is expected to move the origin to the field's centre."
+evidence = "The user, 2026-11-21: the blue-corner origin, the drawing turned upside-down from it (+X left, +Y down), 'the standard view', and a future release moving the origin to the centre (so statements should stay general). Consistent with Figures 17.6 (red alliance) and 25.4 and 25.5 (Blue 1), read from where the poses sit. Not checked against AdvantageScope's source or docs, which this container can't reach. Re-check when AdvantageScope changes the origin."
 measured_on = "alpha-8 (the user's AdvantageScope 27.0.0-alpha-6, WPILib distribution)"

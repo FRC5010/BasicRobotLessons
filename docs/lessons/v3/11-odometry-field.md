@@ -201,6 +201,14 @@ strafing slides it along +Y, and spinning rotates it — the coordinate
 convention you memorized in Lesson 7 ([Figure 7.1](07-four-modules.md#figure-7-1)), now visible as motion on a map.
 Driving in the sim officially looks like a game. Take a lap.
 
+Check those directions against the **numbers** under **Robot**, not against
+the picture. AdvantageScope draws the field its own way round, and that
+needn't match Figure 7.1. Its origin, (0, 0), is the blue alliance's corner,
+but the version this course was written with draws that corner at the top
+right, so +X points left on your screen and +Y points down. A future version
+is expected to move the origin to the field's centre. Whatever the drawing
+does, X should grow as you drive forward and Y as you strafe left. <!-- claim: wpilib-tools.advantagescope-field-orientation -->
+
 ### The same view inside SimGUI: `Field2d`
 
 AdvantageScope is the full-featured viewer, but sometimes you just want the

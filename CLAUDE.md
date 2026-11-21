@@ -2816,10 +2816,12 @@ at least twice.
   Clean Java Language Server Workspace** → **Reload and delete**, which the
   user runs after every lesson update. The poses' default red is the
   alliance colour (user, red because SimGUI starts on Red 1). Figure 17.6
-  is Try It #6's red run. AdvantageScope drew that field turned half a turn
-  (x left, y down; deduced from the poses), and Figure 25.4's Blue 1 run
-  is drawn the same way, so it isn't the alliance (default or Orientation
-  buttons, not checked). **The user's AdvantageScope is 27.0.0-alpha-6**
+  is Try It #6's red run. **AdvantageScope's 2D Field draws +X left and
+  +Y down** (the user: origin at the blue corner, the field drawn
+  upside-down from it, its standard view; a future release moves the
+  origin to the centre, so keep orientation statements general or expect
+  to update them). Lesson 11 says so after Figure 11.2, and Lesson 17's
+  Try It #6 points there (claim `wpilib-tools.advantagescope-field-orientation`). **The user's AdvantageScope is 27.0.0-alpha-6**
   (WPILib distribution, About box, 2026-11-21). **Its Mechanism tab draws
   nothing from a 2027 `LoggedMechanism2d`** ("0 segments", every value in
   the tree): AdvantageKit's and WPILib alpha-8's roots publish one
@@ -2829,7 +2831,7 @@ at least twice.
   Figure 25.4 (Pick Up, field and Line Graph, two Blue 1 runs) shows
   `Superstructure/State` in the graph's **Discrete Fields** strip; Figure
   25.5 is one run with the Line Graph popped out into its own window beside
-  the field (which control does that isn't recorded). Figures
+  the field (the overlapping-squares button at the top right, the user said). Figures
   made from the
   user's screenshots share `tools/figures/screenshots.py`, which crops,
   numbers and stacks panels like Figure 17.3.

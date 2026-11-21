@@ -926,7 +926,8 @@ reads `INTAKING`, `HANDOFF`, then `IDLE`. `HOLDING` and the one-tick
 *Figure 25.4 — Pick Up in AdvantageScope (two runs, one per panel): where the robot and the pieces end up (1–3), and the elevator, the path left and the state over the whole session (4–6).*
 
 You don't have to flip between the two tabs. AdvantageScope can pop a tab
-out into a window of its own, and Figure 25.5 is one run watched that way:
+out into a window of its own with the overlapping-squares button at the top
+right of its window, and Figure 25.5 is one run watched that way:
 the Line Graph in its own window (1) beside the main window's 2D Field (2).
 Seeing the elevator climb on the left while the robot is still driving on
 the right is the whole lesson in one glance. <!-- claim: wpilib-tools.advantagescope-popout -->
