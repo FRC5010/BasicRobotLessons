@@ -191,18 +191,29 @@ files.
 
 Run the robot in simulation (pick **Teleoperated** and **MyTeleop**, then **Enable**),
 then launch AdvantageScope from the WPILib command palette → **Start
-Tool** → **AdvantageScope**. In AdvantageScope:
+Tool** → **AdvantageScope**. In AdvantageScope (Figure 3.1 numbers where
+steps 1 to 4 happen):
 
 1. **File → Connect to Simulator** (on a real robot it's "Connect to
-   Robot" with team number e.g. 5010). Also choose the default NetworkTables
-   4.
-2. In the sidebar, expand **NetworkTables → Telemetry → DriveModule**
-   — there's your folder tree, with both values ticking. <!-- claim: wpilib-tools.advantagescope-connect -->
+   Robot" with team number e.g. 5010). Also choose the default
+   NetworkTables 4. <!-- claim: wpilib-tools.advantagescope-connect -->
+2. In the sidebar, expand **Telemetry → DriveModule**. AdvantageScope puts
+   each NetworkTables folder at the top of its sidebar, next to **Robot**
+   and **DriverStation**, so there's no NetworkTables folder to open first.
+   There's your folder tree, with both values ticking. <!-- claim: wpilib-tools.advantagescope-sidebar -->
 3. Drag `VelocityRotPerSec` onto the **📈 Line Graph** tab. A live plot
    appears.
 4. Drag `PositionRotations` onto the same graph, on the *right axis*. Two
-   signals, one time axis.
+   signals, one time axis. The **Left Axis** and **Right Axis** lists under
+   the graph show which signal is on which side, by full name:
+   `NT:/Telemetry/DriveModule/VelocityRotPerSec`, where `NT:` means
+   NetworkTables. <!-- claim: wpilib-tools.advantagescope-sidebar -->
 5. Drive with the stick (or slide the joystick in SimGUI) and watch.
+
+<a id="figure-3-1"></a>
+![AdvantageScope connected to 127.0.0.1. The sidebar lists Robot, Telemetry and DriverStation at the top, with Telemetry and DriveModule open to CommandedOutput, CurrentCommand, PositionRotations and VelocityRotPerSec. A line graph plots velocity in rotations per second on the left axis, jumping to about plus or minus 100 during full-stick drives and back to 0, and position in rotations on the right axis, climbing and falling with it. Under the graph, the Left Axis list holds NT:/Telemetry/DriveModule/VelocityRotPerSec and the Right Axis list NT:/Telemetry/DriveModule/PositionRotations. Badge 1 marks the File menu, 2 the DriveModule folder, 3 the Left Axis list and 4 the Right Axis list.](images/03-advantagescope-tree-graph.png)
+
+*Figure 3.1 — AdvantageScope connected to the simulator, numbered by step: 1 the File menu, 2 Telemetry → DriveModule, 3 and 4 the Left and Right Axis lists. These traces move because the picture was taken with Lesson 4's code, where the simulated wheel really turns. Yours, today, stay flat.* <!-- claim: wpilib-tools.advantagescope-sidebar -->
 
 Don't be discouraged when the traces sit nearly flat even at full stick —
 in simulation the motor isn't actually turning yet, so there's nothing for

@@ -409,7 +409,8 @@ private void logTelemetry() {
 }
 ```
 
-Run in sim, plot `DriveModule/SteerAngleDegrees` in AdvantageScope, and tap
+Run in sim, plot `DriveModule/SteerAngleDegrees` in AdvantageScope (the same
+way as Lesson 3's [Figure 3.1](03-telemetry.md#figure-3-1)), and tap
 the left button:
 
 - **`kP` too small:** it crawls to 90° and takes forever (or never gets there).

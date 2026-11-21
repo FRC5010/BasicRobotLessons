@@ -197,7 +197,8 @@ one line per mechanism, all in one obvious place.
 
 Run the robot in simulation, pick **Teleoperated** and **MyTeleop**, then
 **Enable** (Lesson 0's [Figure 0.2](00-orientation.md#figure-0-2) shows the panel). Push the stick and
-watch the plots from Lesson 3 — this is the payoff Lesson 3 promised:
+watch the plots from Lesson 3 ([Figure 3.1](03-telemetry.md#figure-3-1) was taken with this
+lesson's code) — this is the payoff Lesson 3 promised:
 
 - **Velocity** ramps up to a steady value and back to zero — like a real motor
   accelerating.

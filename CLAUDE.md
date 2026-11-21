@@ -2764,6 +2764,19 @@ at least twice.
   menu), under **Transitory Values**. Lessons 1 and 15 now say so; the
   "NetworkTables → AdvantageKit → …" paths in Lessons 18, 20 and 21 are
   AdvantageScope's sidebar.
+- **AdvantageScope's sidebar has no NetworkTables folder** (the user's
+  screenshot, 2026-11-21, live NT4 on the Lesson 4 state; Figure 3.1). It
+  lists **Robot**, **Telemetry** and **DriverStation** at the top, and a Line
+  Graph's **Left Axis** / **Right Axis** lists name fields
+  `NT:/Telemetry/DriveModule/…`. Lesson 3's step 2 now says **Telemetry →
+  DriveModule** (claim `wpilib-tools.advantagescope-sidebar`). So the
+  "NetworkTables → AdvantageKit → …" paths in Lessons 18, 20 and 21 are
+  probably wrong the same way; not changed, because the screenshot doesn't
+  show AdvantageKit's tree. AdvantageScope can't run here, and
+  docs.advantagescope.org doesn't resolve through this container's proxy.
+  The figure's generator, `tools/figures/03-advantagescope-tree-graph.py`,
+  only crops and numbers the screenshot (`/usr/bin/python3.12`, which has
+  Pillow; the `python3` on PATH has a broken one).
 - **Lesson 15 Try It #3, re-run** (LOOP, the Try It's scatter applied with
   `--replace`, three 60 s parked runs): ended 17, 39 and 39 cm from the park
   point, and the farthest each got was 25, 52 and 50 cm. The text says "15 to

@@ -85,9 +85,19 @@ id = "wpilib-tools.advantagescope-connect"
 kind = "behaviour"
 library = ["wpilib-tools"]
 criticality = "C2"
-statement = "AdvantageScope ships in the WPILib installer, starts from the command palette's Start Tool, connects with File > Connect to Simulator over NetworkTables 4, shows NetworkTables > Telemetry > DriveModule in its sidebar, plots on a Line Graph tab, and opens .wpilog files with File > Open Log(s)."
-evidence = "No record found in CLAUDE.md or tools/figures/data (CLAUDE.md: AdvantageScope isn't installed in the container); stated by the lesson"
+statement = "AdvantageScope ships in the WPILib installer, starts from the command palette's Start Tool, connects with File > Connect to Simulator over NetworkTables 4, plots on a Line Graph tab, and opens .wpilog files with File > Open Log(s)."
+evidence = "Stated by the lesson; nothing records checking it (CLAUDE.md: AdvantageScope isn't installed in the container). Figure 3.1's screenshot (the user's, 2026-11-21) shows a File menu and a session connected to 127.0.0.1 with fields on a line graph, but not the menu's items, the Start Tool path, the NetworkTables 4 choice or Open Log(s). The sidebar is wpilib-tools.advantagescope-sidebar."
 measured_on = "unverified"
+
+[[claim]]
+id = "wpilib-tools.advantagescope-sidebar"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C2"
+statement = "Connected live to the simulator, AdvantageScope's title bar shows 127.0.0.1 and its sidebar lists each top-level NetworkTables folder at the top (Telemetry beside Robot and DriverStation, with no NetworkTables folder above them); a Line Graph has Left Axis, Discrete Fields and Right Axis lists under the plot, naming each field by its full path with an NT: prefix (NT:/Telemetry/DriveModule/VelocityRotPerSec)."
+evidence = "Figure 3.1: a screenshot the user took on 2026-11-21 in their own AdvantageScope (version not recorded), connected to the simulation of the Lesson 4 state (tools/figures/data/03-advantagescope-screenshot.png). It can't be repeated in this container: AdvantageScope isn't installed, and docs.advantagescope.org doesn't resolve through its proxy (2026-11-21). The lesson's earlier 'NetworkTables > Telemetry > DriveModule' path came from no record and was wrong."
+measured_on = "alpha-8 (the user's AdvantageScope, version not recorded)"
+figure = "03-advantagescope-tree-graph.png"
 
 [[claim]]
 id = "wpilib-tools.installer-contents"

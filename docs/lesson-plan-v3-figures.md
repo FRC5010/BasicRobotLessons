@@ -42,7 +42,7 @@ Type: a = sim plot, b = SimGUI screenshot, c = SVG diagram, d = needs the user. 
 | 0.2 | SimGUI: opmode selector and Robot State | 0 | b | high | 1 (built) |
 | 1.1 | SimGUI: dragging a controller into slot 0 | 1 | b | high | 1 (built) |
 | 1.2 | SimGUI: NetworkTables, Telemetry, DriveModule | 1 | b | medium | 2 (built) |
-| 3.1 | AdvantageScope: tree and a two-signal graph | 3 | d | medium | needs user |
+| 3.1 | AdvantageScope: tree and a two-signal graph | 3 | d | medium | user (built) |
 | 4.1 | The simulation loop | 4 | c | high | 1 (built) |
 | 4.2 | Velocity response, two inertias | 4 | a | medium | 2 (built) |
 | 5.1 | Setpoint, measurement and error in one move | 5 | a | high | 1 (built) |
@@ -183,13 +183,15 @@ No figure proposed: lambdas, suppliers and a deadband; a transfer-curve plot wou
 
 ### Lesson 3 — Telemetry
 
-**Figure 3.1 — AdvantageScope: the NetworkTables tree and a two-signal graph** · medium · (d) · needs the user · `03-advantagescope-tree-graph.png`
+**Figure 3.1 — AdvantageScope: the NetworkTables tree and a two-signal graph** · medium · (d) · user (built 2026-11-21) · `03-advantagescope-tree-graph.png`
 - Where: §5, after "expand **NetworkTables → Telemetry → DriveModule**".
 - Shows: sidebar tree open to `NetworkTables/Telemetry/DriveModule` with `PositionRotations` and `VelocityRotPerSec`; Line Graph with velocity on the left axis and position on the right; callouts for steps 1-4.
 - Why: the five-step recipe is purely "find this widget"; the tree also makes "the name is the address" (§2) visible.
 - Made from: user's AdvantageScope screenshot, Lesson 3 state (traces flat as the text says) or Lesson 4's (they move; caption "from Lesson 4"). Light and dark variants.
 - Text changes: §5 step 2 + "(Figure 3.1)".
 - Linked from: Lesson 4 §5, Lesson 5 §5, Lesson 7 §7.
+- **Built 2026-11-21** from the user's screenshot (`tools/figures/data/03-advantagescope-screenshot.png`, dark theme only, Lesson 4 state) by `tools/figures/03-advantagescope-tree-graph.py`, which crops the empty panes, numbers steps 1-4 like Figure 17.3 and scales to 1600 px (102 KB). Placed after the step list, not after step 2 (a figure inside the list would restart its numbering); the caption says it's Lesson 4's code. No light variant: the screenshot is opaque, like 17.3, so it reads on both themes.
+  - **Found:** AdvantageScope's sidebar has no **NetworkTables** folder; it lists **Telemetry** at the top beside **Robot** and **DriverStation**, and the axis lists name fields `NT:/Telemetry/DriveModule/…`. Step 2 now says **Telemetry → DriveModule** (new claim `wpilib-tools.advantagescope-sidebar`). Lessons 18, 20 and 21 still give AdvantageScope paths starting **NetworkTables → AdvantageKit → …**; probably wrong the same way, not changed (the screenshot doesn't show AdvantageKit's tree).
 
 ### Lesson 4 — Simulation
 
@@ -1126,4 +1128,4 @@ All 8 batch 3 figures are built: 10.2, 12.1, 17.1, 20.2, 25.1, 26.3, 31.2 and 33
 - **Inbound links:** those from Lessons 11, 18, 25 and 26 follow them.
 - **Plot beside a table:** 20.2 and 31.2 sit beside measured tables. 20.2 shows the cosine shape across 23 angles. 31.2 shows the stale, stepped reading and the missing re-zero.
 - **Text fix:** Lesson 26's no-turn trip is now "about 5 mm" off the line (was 11).
-- **Left:** the figures that need the user (3.1, 7.2, 8.2, and the debugger screenshot D.1), and Lesson 34's figures after its migration.
+- **Left:** the figures that need the user (7.2, 8.2, and the debugger screenshot D.1; 3.1 was built from the user's screenshot on 2026-11-21), and Lesson 34's figures after its migration.
