@@ -96,7 +96,7 @@ library = ["wpilib-tools"]
 criticality = "C1"
 statement = "AdvantageScope's File menu has Open Log(s)... (Ctrl+O), Connect to Robot and Connect to Simulator; Connect to Simulator opens a submenu whose first item is Default: NetworkTables (Ctrl+Shift+K), above NetworkTables, NetworkTables (AdvantageKit), Systemcore Diagnostics, Phoenix Diagnostics, RLOG Server and FTC Dashboard; the window has a Line Graph tab."
 evidence = "Figure 3.1's top panel: a screenshot the user took on 2026-11-21 in their own AdvantageScope on Windows (version not recorded), tools/figures/data/03-advantagescope-file-menu.png. That the shortcut does the same as the menu item is the usual meaning of a shortcut shown beside it, not tested."
-measured_on = "alpha-8 (the user's AdvantageScope, version not recorded)"
+measured_on = "alpha-8 (the user's AdvantageScope 27.0.0-alpha-6, WPILib distribution, from its About box on 2026-11-21, taken to be the version in all that day's screenshots)"
 figure = "03-advantagescope-tree-graph.png"
 
 [[claim]]
@@ -106,7 +106,7 @@ library = ["wpilib-tools"]
 criticality = "C2"
 statement = "Connected live to the simulator, AdvantageScope's title bar shows 127.0.0.1 and its sidebar lists each top-level NetworkTables folder at the top (Telemetry beside Robot and DriverStation, with no NetworkTables folder above them); a Line Graph has Left Axis, Discrete Fields and Right Axis lists under the plot, naming each field by its full path with an NT: prefix (NT:/Telemetry/DriveModule/VelocityRotPerSec)."
 evidence = "Figure 3.1's bottom panel: a screenshot the user took on 2026-11-21 in their own AdvantageScope (version not recorded), connected to the simulation of the Lesson 4 state (tools/figures/data/03-advantagescope-screenshot.png). It can't be repeated in this container: AdvantageScope isn't installed, and docs.advantagescope.org doesn't resolve through its proxy (2026-11-21). The lesson's earlier 'NetworkTables > Telemetry > DriveModule' path came from no record and was wrong."
-measured_on = "alpha-8 (the user's AdvantageScope, version not recorded)"
+measured_on = "alpha-8 (the user's AdvantageScope 27.0.0-alpha-6, WPILib distribution, from its About box on 2026-11-21, taken to be the version in all that day's screenshots)"
 figure = "03-advantagescope-tree-graph.png"
 
 [[claim]]
@@ -203,7 +203,7 @@ library = ["wpilib-tools"]
 criticality = "C1"
 statement = "AdvantageScope opens a Swerve tab from Tabs > New Tab > Swerve (Alt+D); a SwerveModuleVelocity array (Lesson 7's ModuleStates, listed in the sidebar under Telemetry > Drivetrain) dragged into its Sources list shows as Module Velocities and draws one arrow per module, and a Rotation2d (Lesson 8's Heading) dragged into the same list shows as Rotation and turns the chassis drawing; the tab has Max Speed (m/s), Frame Size (m) and Orientation settings."
 evidence = "Figure 7.2: screenshots the user took on 2026-11-21 in their own AdvantageScope on Windows (version not recorded), connected to the simulation of the Lesson 7 state (tools/figures/data/07-advantagescope-new-tab.png, 07-advantagescope-swerve-tab.png, 07-advantagescope-pinwheel.png), a shot of the drop itself (not kept), and Figure 8.2's on the Lesson 8 state (08-advantagescope-swerve-rotation.png). The lessons' old 'NetworkTables/Telemetry/Drivetrain/ModuleStates into its States slot' and Lesson 8's 'Rotation slot' were wrong: everything goes in the Sources list. Whether Max Speed starts at 5 or was typed in isn't known."
-measured_on = "alpha-8 (the user's AdvantageScope, version not recorded)"
+measured_on = "alpha-8 (the user's AdvantageScope 27.0.0-alpha-6, WPILib distribution, from its About box on 2026-11-21, taken to be the version in all that day's screenshots)"
 figure = "07-advantagescope-swerve-tab.png"
 
 [[claim]]
@@ -213,7 +213,7 @@ library = ["wpilib-tools", "advantagekit"]
 criticality = "C2"
 statement = "Connected live with Default: NetworkTables to a robot running AdvantageKit's NT4Publisher, AdvantageScope's sidebar has an AdvantageKit folder at the top (beside Telemetry), with each input under AdvantageKit > <key> (AdvantageKit > Elevator > HeightMeters) and each output under AdvantageKit > RealOutputs > <key>; a field on a graph is named NT:/AdvantageKit/... ."
 evidence = "Figure 18.3: a screenshot the user took on 2026-11-21 in their own AdvantageScope on Windows (version not recorded), connected to the simulation of the Lesson 18 state (tools/figures/data/18-advantagescope-elevator-graph.png). The Arm folder of Lesson 20 isn't in it, but it's the same publisher. The NetworkTables (AdvantageKit) source wasn't tried. Lessons 18, 20 and 21 had said 'NetworkTables > AdvantageKit > ...'."
-measured_on = "alpha-8 (the user's AdvantageScope, version not recorded)"
+measured_on = "alpha-8 (the user's AdvantageScope 27.0.0-alpha-6, WPILib distribution, from its About box on 2026-11-21, taken to be the version in all that day's screenshots)"
 figure = "18-advantagescope-elevator-graph.png"
 
 [[claim]]
@@ -222,8 +222,8 @@ kind = "behaviour"
 library = ["wpilib-tools"]
 criticality = "C1"
 statement = "AdvantageScope's field tabs are 2D Field (Tabs > New Tab > 2D Field, Alt+2) and 3D Field (Alt+3); there's no tab called Odometry. A Pose2d dragged into a field tab's Poses list shows as Robot on the 2D tab (a red square with an arrow, leaving a trail) and as 2026 KitBot, a robot model, on the 3D tab; a Field drop-down at the bottom right picks the field (2026 Field, earlier FRC fields, Evergreen, Axes, and FTC fields)."
-evidence = "Figure 17.6 (a red run of Two Corners, 2026-11-21) draws the field turned half a turn, x growing left and y down, read from where the poses sit; which setting or default does that wasn't checked. Figures 11.1 and 11.2: screenshots the user took on 2026-11-21 in their own AdvantageScope on Windows (version not recorded), connected to the simulation of the Lesson 11 state (tools/figures/data/11-advantagescope-new-tab.png, 11-advantagescope-2d-field.png, 11-advantagescope-3d-field.png). Lessons 11, 16, 17 and 22 had said 'Odometry tab' and Lesson 11 'the source dropdown'. Whether 2026 Field is the default isn't known."
-measured_on = "alpha-8 (the user's AdvantageScope, version not recorded)"
+evidence = "Figures 17.6 (a red run of Two Corners) and 25.4 (Pick Up on Blue 1), 2026-11-21, both draw the 2026 field turned half a turn, x growing left and y down, read from where the poses sit, so it is not the alliance; whether it is AdvantageScope's default or the Orientation buttons wasn't checked. Figures 11.1 and 11.2: screenshots the user took on 2026-11-21 in their own AdvantageScope on Windows (version not recorded), connected to the simulation of the Lesson 11 state (tools/figures/data/11-advantagescope-new-tab.png, 11-advantagescope-2d-field.png, 11-advantagescope-3d-field.png). Lessons 11, 16, 17 and 22 had said 'Odometry tab' and Lesson 11 'the source dropdown'. Whether 2026 Field is the default isn't known."
+measured_on = "alpha-8 (the user's AdvantageScope 27.0.0-alpha-6, WPILib distribution, from its About box on 2026-11-21, taken to be the version in all that day's screenshots)"
 figure = "11-advantagescope-2d-field.png"
 
 [[claim]]
@@ -233,7 +233,7 @@ library = ["wpilib-tools"]
 criticality = "C3"
 statement = "With a log file open, AdvantageScope names its fields without the NT: prefix (/RealOutputs/Drivetrain/Pose, /ReplayOutputs/Drivetrain/Pose), crosses out a tab's source that named a live NetworkTables key the file doesn't have, and draws two poses in one 2D Field tab, one as a Ghost."
 evidence = "Figure 13.3: the user's screenshot (2026-11-21, Windows, Lesson 13 project, AdvantageScope version not recorded), tools/figures/data/13-advantagescope-replay-file.png. How the second pose came to be drawn as a Ghost (chosen, or AdvantageScope's default for a second source) isn't known, so the lesson doesn't say."
-measured_on = "alpha-8 (the user's AdvantageScope, version not recorded)"
+measured_on = "alpha-8 (the user's AdvantageScope 27.0.0-alpha-6, WPILib distribution, from its About box on 2026-11-21, taken to be the version in all that day's screenshots)"
 figure = "13-advantagescope-replay-file.png"
 
 [[claim]]
@@ -243,7 +243,7 @@ library = ["wpilib-tools"]
 criticality = "C3"
 statement = "In an AdvantageScope 2D Field tab, the small icon at the left of a Poses entry opens a menu: Alliance Color, Green, Red, Blue, Orange, Cyan, Yellow, Magenta, then the styles Robot, Ghost, Heatmap and Arrow (the last three with colour submenus), and Help. A new pose is drawn as a red Robot."
 evidence = "Figure 16.2's second panel: a screenshot the user took on 2026-11-21 in their own AdvantageScope on Windows (version not recorded), live on the Lesson 16 state (tools/figures/data/16-advantagescope-pose-style-menu.png); the user described opening it by clicking the icon. 'Starts out red' is from Figures 11.1 and 16.2 (both poses red until the user changed one); the user takes the default to be Alliance Color, red because SimGUI starts every launch on Red 1 (wpilib-tools.simgui-alliance-station), which fits the menu's first entry but wasn't tested on blue."
-measured_on = "alpha-8 (the user's AdvantageScope, version not recorded)"
+measured_on = "alpha-8 (the user's AdvantageScope 27.0.0-alpha-6, WPILib distribution, from its About box on 2026-11-21, taken to be the version in all that day's screenshots)"
 
 [[claim]]
 id = "wpilib-tools.vscode-clean-java-workspace"
@@ -253,3 +253,12 @@ criticality = "C3"
 statement = "VS Code's Command Palette (Ctrl+Shift+P) has 'Java: Clean Java Language Server Workspace', from the Language Support for Java extension; it asks for confirmation with Cancel and 'Reload and delete', and deletes the extension's cached workspace data (not the project's files), then reloads the window."
 evidence = "Figure R.1: screenshots the user took on 2026-11-21 in their own VS Code with WPILib on Windows (versions not recorded): tools/figures/data/readme-vscode-clean-java-command.png and readme-vscode-clean-java-confirm.png. The user runs it after every lesson update. That it removes only the extension's cache, not project files, is the command's documented purpose as recalled, not checked here; that it fixes stale errors after an update is the user's experience, not measured."
 measured_on = "the user's WPILib VS Code, version not recorded"
+
+[[claim]]
+id = "wpilib-tools.advantagescope-line-graph-discrete"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C3"
+statement = "AdvantageScope's Line Graph has Left Axis, Discrete Fields and Right Axis lists; a string such as Superstructure/State goes in Discrete Fields and draws as a coloured strip with each value written in it, and a value too short for its label shows as an unlabeled sliver."
+evidence = "Figure 25.4's bottom panel: a screenshot the user took on 2026-11-21 (Lesson 25 state, Pick Up on Blue 1). HOLDING (about 0.3 s) and SCORING (one tick) appear as one dark unlabeled sliver between HANDOFF and IDLE."
+measured_on = "alpha-8 (the user's AdvantageScope 27.0.0-alpha-6, WPILib distribution)"

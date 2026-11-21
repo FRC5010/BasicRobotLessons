@@ -2816,8 +2816,18 @@ at least twice.
   Clean Java Language Server Workspace** → **Reload and delete**, which the
   user runs after every lesson update. The poses' default red is the
   alliance colour (user, red because SimGUI starts on Red 1). Figure 17.6
-  is Try It #6's red run: AdvantageScope drew that field turned half a turn
-  (x left, y down; deduced from the poses, the cause not checked). Figures
+  is Try It #6's red run. AdvantageScope drew that field turned half a turn
+  (x left, y down; deduced from the poses), and Figure 25.4's Blue 1 run
+  is drawn the same way, so it isn't the alliance (default or Orientation
+  buttons, not checked). **The user's AdvantageScope is 27.0.0-alpha-6**
+  (WPILib distribution, About box, 2026-11-21). **Its Mechanism tab draws
+  nothing from a 2027 `LoggedMechanism2d`** ("0 segments", every value in
+  the tree): AdvantageKit's and WPILib alpha-8's roots publish one
+  `position` array (javap), and that AdvantageScope wants the old `x`/`y` is
+  a guess. Lessons 19, 20 and 28 still send students there; user decision:
+  re-check on a newer AdvantageScope, SimGUI's Mechanism window works.
+  Figure 25.4 (Pick Up, field and Line Graph, two Blue 1 runs) shows
+  `Superstructure/State` in the graph's **Discrete Fields** strip. Figures
   made from the
   user's screenshots share `tools/figures/screenshots.py`, which crops,
   numbers and stacks panels like Figure 17.3.

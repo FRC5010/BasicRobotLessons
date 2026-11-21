@@ -902,6 +902,29 @@ The robot never slowed down. The intake ran, the arm tucked and the elevator ros
 while it drove, and the score happened on the way in. Nothing waited for anything
 that didn't need it — which was the whole point.
 
+Figure 25.4 is a run like that in AdvantageScope, the way section 8 asked
+you to set it up. On the field, the robot (1) has finished at (6, 0.96)
+facing −90°, and the piece it scored lies just ahead of it, under the
+ghost box. The other two ghosts (2) are the pieces Pick Up never goes near,
+and the Poses list (3) gives their numbers. <!-- claim: wpilib-tools.advantagescope-field-tabs, wpilib-tools.advantagescope-pose-style-menu -->
+
+The graph is the same story with your own launch in front of it. The
+elevator's height (4) reads below zero and sinks slowly for the first 13
+seconds. The encoder started at zero with the carriage 0.35 m up, and the
+un-homed carriage sinks until you enable. This run waited about twelve
+seconds, so homing took about a second, not three. Then the reading
+snaps to 0.01 m on the switch, the stow follows, and the path (5) starts
+about 2.2 s after enabling rather than 4.1. <!-- claim: l25.red-strip-time, l25.drive-start-time --> From there it matches the
+table: the remaining distance falls from about 6.4 m to 0 in about 3.4 s,
+the height climbs to 0.75 m and comes back down, and the state strip (6)
+reads `INTAKING`, `HANDOFF`, then `IDLE`. `HOLDING` and the one-tick
+`SCORING` are the dark sliver between them, too short to carry a label. <!-- claim: l25.path-end-time, l25.score-time, wpilib-tools.advantagescope-line-graph-discrete -->
+
+<a id="figure-25-4"></a>
+![Two AdvantageScope panels from Pick Up runs on Blue 1. Top: a 2D Field tab. The simulated robot sits at the end of its path, X 6.000 m, Y 0.956 m, minus 90.05 degrees (badge 1), with a yellow ghost box over its front, the scored piece at (6.001, 0.645). Two more yellow ghost boxes mark pieces at (4.5, 3.2) and (2.0, 1.5) (badge 2). The Poses list shows Robot: SimulatedPose and Ghost: Sim/GamePieces with 3 values (badge 3). Bottom: a Line Graph over 22 seconds. The elevator's HeightMeters on the left axis falls slowly from 0 to about minus 0.25 m, then faster to minus 0.34 m, snaps to 0.01 at about 14.4 s, and later rises to 0.75 m and back (badge 4). FollowPath remainingPathDistanceMeters on the right axis falls from about 6.4 m to 0 between about 15.6 and 19 s (badge 5). A discrete strip for Superstructure/State reads UNHOMED, IDLE, INTAKING, HANDOFF, a short unlabeled sliver, then IDLE (badge 6).](images/25-advantagescope-pick-up.png)
+
+*Figure 25.4 — Pick Up in AdvantageScope (two runs, one per panel): where the robot and the pieces end up (1–3), and the elevator, the path left and the state over the whole session (4–6).*
+
 The field doesn't put itself back. Run Pick Up again and the getting ready takes
 no time at all, but the piece is gone. When the score request comes, half a meter
 from the end, the robot is still `INTAKING`, so it's refused: `INTAKING -> SCORING`
