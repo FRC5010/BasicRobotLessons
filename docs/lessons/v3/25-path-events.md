@@ -925,6 +925,17 @@ reads `INTAKING`, `HANDOFF`, then `IDLE`. `HOLDING` and the one-tick
 
 *Figure 25.4 — Pick Up in AdvantageScope (two runs, one per panel): where the robot and the pieces end up (1–3), and the elevator, the path left and the state over the whole session (4–6).*
 
+You don't have to flip between the two tabs. AdvantageScope can pop a tab
+out into a window of its own, and Figure 25.5 is one run watched that way:
+the Line Graph in its own window (1) beside the main window's 2D Field (2).
+Seeing the elevator climb on the left while the robot is still driving on
+the right is the whole lesson in one glance. <!-- claim: wpilib-tools.advantagescope-popout -->
+
+<a id="figure-25-5"></a>
+![Two AdvantageScope windows side by side during one Pick Up run on Blue 1. Left, a window titled Line Graph — AdvantageScope (badge 1) with the elevator height, the remaining path distance and the state strip, as in Figure 25.4. Right, the main AdvantageScope window on its 2D Field tab (badge 2), the robot at the end of the path at X 6.000 m, Y 0.957 m, minus 90.00 degrees, with the scored piece just ahead of it and two other pieces as ghost boxes.](images/25-advantagescope-side-by-side.png)
+
+*Figure 25.5 — One run, two windows: the Line Graph popped out (1) next to the field (2).*
+
 The field doesn't put itself back. Run Pick Up again and the getting ready takes
 no time at all, but the piece is gone. When the score request comes, half a meter
 from the end, the robot is still `INTAKING`, so it's refused: `INTAKING -> SCORING`

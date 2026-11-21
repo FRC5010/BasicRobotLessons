@@ -262,3 +262,12 @@ criticality = "C3"
 statement = "AdvantageScope's Line Graph has Left Axis, Discrete Fields and Right Axis lists; a string such as Superstructure/State goes in Discrete Fields and draws as a coloured strip with each value written in it, and a value too short for its label shows as an unlabeled sliver."
 evidence = "Figure 25.4's bottom panel: a screenshot the user took on 2026-11-21 (Lesson 25 state, Pick Up on Blue 1). HOLDING (about 0.3 s) and SCORING (one tick) appear as one dark unlabeled sliver between HANDOFF and IDLE."
 measured_on = "alpha-8 (the user's AdvantageScope 27.0.0-alpha-6, WPILib distribution)"
+
+[[claim]]
+id = "wpilib-tools.advantagescope-popout"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C3"
+statement = "AdvantageScope can show a tab in a window of its own (titled with the tab's name, e.g. 'Line Graph — AdvantageScope') beside the main window, both live at once."
+evidence = "Figure 25.5: a screenshot the user took on 2026-11-21 (Lesson 25 state, one Pick Up run on Blue 1). Which control pops a tab out isn't recorded, so the lesson doesn't name one."
+measured_on = "alpha-8 (the user's AdvantageScope 27.0.0-alpha-6, WPILib distribution)"

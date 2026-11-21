@@ -2827,7 +2827,9 @@ at least twice.
   a guess. Lessons 19, 20 and 28 still send students there; user decision:
   re-check on a newer AdvantageScope, SimGUI's Mechanism window works.
   Figure 25.4 (Pick Up, field and Line Graph, two Blue 1 runs) shows
-  `Superstructure/State` in the graph's **Discrete Fields** strip. Figures
+  `Superstructure/State` in the graph's **Discrete Fields** strip; Figure
+  25.5 is one run with the Line Graph popped out into its own window beside
+  the field (which control does that isn't recorded). Figures
   made from the
   user's screenshots share `tools/figures/screenshots.py`, which crops,
   numbers and stacks panels like Figure 17.3.
