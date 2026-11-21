@@ -2814,7 +2814,11 @@ at least twice.
   need `compose(..., method=Image.Quantize.FASTOCTREE)`, since the default
   median cut turned Green grey. Figure R.1 (the README) is VS Code's **Java:
   Clean Java Language Server Workspace** → **Reload and delete**, which the
-  user runs after every lesson update. Figures made from the
+  user runs after every lesson update. The poses' default red is the
+  alliance colour (user, red because SimGUI starts on Red 1). Figure 17.6
+  is Try It #6's red run: AdvantageScope drew that field turned half a turn
+  (x left, y down; deduced from the poses, the cause not checked). Figures
+  made from the
   user's screenshots share `tools/figures/screenshots.py`, which crops,
   numbers and stacks panels like Figure 17.3.
   The figure's generator, `tools/figures/03-advantagescope-tree-graph.py`,

@@ -1087,6 +1087,21 @@ without restarting.
    Nothing in your code changed: `withDefaultShouldFlip()` and `startPose`
    agree about which side of the field you're on. Predict before you run it:
    what would happen on red if `startPose` didn't flip?
+
+   Figure 17.6 is a red run on a 2D Field tab, a moment before the end. The
+   trail (1) comes along the first leg, swings past the corner and turns up
+   the second. The truth and the estimate (2) are at about (10.62, 2.43) and
+   (10.61, 2.40), within 4 cm of each other, still turning at −58°;
+   `CurrentCommand` (3) still says `FollowPath`, and the last console line
+   (4) is `Event: shoot!`. Mind the drawing: this field is turned half a
+   turn from Figure 17.4, with x growing to the *left* and y downwards
+   (that's where those numbers put the robot), so read the numbers rather
+   than the picture's directions. <!-- claim: bline.flip-for-alliance, wpilib-tools.advantagescope-field-tabs -->
+
+   <a id="figure-17-6"></a>
+   ![An AdvantageScope 2D Field tab during Two Corners on the red alliance. A robot square sits just left of centre in the upper half of the field, near the red hub; behind it a thin trail runs horizontally from the left, bends upward past the corner and leads to the robot (badge 1). The Poses list reads Robot: NT:/AdvantageKit/RealOutputs/Drivetrain/SimulatedPose at X 10.622 m, Y 2.434 m, minus 57.86 degrees, and Robot: NT:/AdvantageKit/RealOutputs/Localizer/Pose at X 10.613 m, Y 2.396 m, minus 57.86 degrees (badge 2). In the sidebar, under AdvantageKit and RealOutputs, Drivetrain's CurrentCommand reads FollowPath (badge 3) and Console reads Event: sh... (badge 4).](images/17-advantagescope-two-corners-red.png)
+
+   *Figure 17.6 — Two Corners on red, near the end: the trail (1), the truth and the estimate (2), the command still following (3), and the shoot event in the console (4).*
 7. **Replay an auto.** Record a run of Two Corners, then replay it the way
    Lesson 13 did ([Figure 13.2](13-io-replay.md#figure-13-2); `REPLAY`, `$env:AKIT_LOG_PATH`, `./gradlew run`). The
    replay builds the opmode, reads the path, and follows it again, so

@@ -442,7 +442,8 @@ truth, `Drivetrain/SimulatedPose` (1), and the estimate, `Localizer/Pose`
 (2), drawn as two robots (3). Here the estimate is coloured blue and the
 truth left red, and in this shot their numbers (4) are about 15 cm
 apart. <!-- claim: wpilib-tools.advantagescope-field-tabs, advantagekit.data-receivers-and-files -->
-Both start out red, so give one a colour of its own: **click the small
+Both start out red, the alliance colour (the simulator starts every
+launch on the red alliance), so give one a colour of its own: **click the small
 icon at the left of its entry in the Poses list** (5) and pick a colour
 (6). The same menu changes how it's drawn (7): a solid **Robot**, a
 see-through **Ghost**, a **Heatmap** of where it's been, or an

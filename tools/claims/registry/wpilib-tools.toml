@@ -222,7 +222,7 @@ kind = "behaviour"
 library = ["wpilib-tools"]
 criticality = "C1"
 statement = "AdvantageScope's field tabs are 2D Field (Tabs > New Tab > 2D Field, Alt+2) and 3D Field (Alt+3); there's no tab called Odometry. A Pose2d dragged into a field tab's Poses list shows as Robot on the 2D tab (a red square with an arrow, leaving a trail) and as 2026 KitBot, a robot model, on the 3D tab; a Field drop-down at the bottom right picks the field (2026 Field, earlier FRC fields, Evergreen, Axes, and FTC fields)."
-evidence = "Figures 11.1 and 11.2: screenshots the user took on 2026-11-21 in their own AdvantageScope on Windows (version not recorded), connected to the simulation of the Lesson 11 state (tools/figures/data/11-advantagescope-new-tab.png, 11-advantagescope-2d-field.png, 11-advantagescope-3d-field.png). Lessons 11, 16, 17 and 22 had said 'Odometry tab' and Lesson 11 'the source dropdown'. Whether 2026 Field is the default isn't known."
+evidence = "Figure 17.6 (a red run of Two Corners, 2026-11-21) draws the field turned half a turn, x growing left and y down, read from where the poses sit; which setting or default does that wasn't checked. Figures 11.1 and 11.2: screenshots the user took on 2026-11-21 in their own AdvantageScope on Windows (version not recorded), connected to the simulation of the Lesson 11 state (tools/figures/data/11-advantagescope-new-tab.png, 11-advantagescope-2d-field.png, 11-advantagescope-3d-field.png). Lessons 11, 16, 17 and 22 had said 'Odometry tab' and Lesson 11 'the source dropdown'. Whether 2026 Field is the default isn't known."
 measured_on = "alpha-8 (the user's AdvantageScope, version not recorded)"
 figure = "11-advantagescope-2d-field.png"
 
@@ -242,7 +242,7 @@ kind = "behaviour"
 library = ["wpilib-tools"]
 criticality = "C3"
 statement = "In an AdvantageScope 2D Field tab, the small icon at the left of a Poses entry opens a menu: Alliance Color, Green, Red, Blue, Orange, Cyan, Yellow, Magenta, then the styles Robot, Ghost, Heatmap and Arrow (the last three with colour submenus), and Help. A new pose is drawn as a red Robot."
-evidence = "Figure 16.2's second panel: a screenshot the user took on 2026-11-21 in their own AdvantageScope on Windows (version not recorded), live on the Lesson 16 state (tools/figures/data/16-advantagescope-pose-style-menu.png); the user described opening it by clicking the icon. 'Starts out red' is from Figures 11.1 and 16.2 (both poses red until the user changed one); whether Red here means Alliance Color on a red alliance wasn't checked."
+evidence = "Figure 16.2's second panel: a screenshot the user took on 2026-11-21 in their own AdvantageScope on Windows (version not recorded), live on the Lesson 16 state (tools/figures/data/16-advantagescope-pose-style-menu.png); the user described opening it by clicking the icon. 'Starts out red' is from Figures 11.1 and 16.2 (both poses red until the user changed one); the user takes the default to be Alliance Color, red because SimGUI starts every launch on Red 1 (wpilib-tools.simgui-alliance-station), which fits the menu's first entry but wasn't tested on blue."
 measured_on = "alpha-8 (the user's AdvantageScope, version not recorded)"
 
 [[claim]]
