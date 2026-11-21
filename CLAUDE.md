@@ -2854,7 +2854,16 @@ at least twice.
   (×1.1000, 0.48 m beyond the recording). The gap grows with distance; a
   half-stick drive gave 1.25 m. Try It's "0.66 m" is CLAUDE.md's earlier
   drive.
-- **SimGUI Field pane:** only the field's outline, no image. The default
+- **SimGUI Field pane:** only the field's outline, no image, because its
+  image was **Custom** on that launch. Right-click the field (the user) or
+  click the title bar's menu button (checked here; the right-click didn't
+  open under Xvfb), expand **Field**, and pick from **Image** (2026 FRC
+  Rebuilt Welded first); Figure 11.4 shows it. The user says the latest
+  field is usually there by default. SimGUI draws the origin at the
+  bottom-left (+X right, +Y up), unlike AdvantageScope's view. Its 2026
+  image draws the *red* hub about 4.6 m from that corner, where the tag
+  poses put the blue one (and AdvantageScope draws blue); not looked into,
+  and Lesson 11 doesn't mention the colours. The default
   **Robot State** window covers the field's bottom-left corner, where the
   robot starts; Lesson 11 now says to drag it aside.
 - **Lesson 16, the grip limit** (Figure 16.3, from batch 1's full-stick-start

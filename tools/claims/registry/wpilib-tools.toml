@@ -280,3 +280,12 @@ criticality = "C2"
 statement = "AdvantageScope's 2D Field puts the origin at the blue alliance's corner but draws the 2026 field with that corner at the top right, so +X points left and +Y points down on screen; a future version is expected to move the origin to the field's centre."
 evidence = "The user, 2026-11-21: the blue-corner origin, the drawing turned upside-down from it (+X left, +Y down), 'the standard view', and a future release moving the origin to the centre (so statements should stay general). Consistent with Figures 17.6 (red alliance) and 25.4 and 25.5 (Blue 1), read from where the poses sit. Not checked against AdvantageScope's source or docs, which this container can't reach. Re-check when AdvantageScope changes the origin."
 measured_on = "alpha-8 (the user's AdvantageScope 27.0.0-alpha-6, WPILib distribution)"
+
+[[claim]]
+id = "wpilib-tools.simgui-field-image"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C3"
+statement = "SimGUI's Field window has settings (a right-click on the field, or the menu button in its title bar) with Edit name, Close, Units, and a Field section whose Image drop-down lists Custom and built-in FRC and FTC fields (2026 FRC Rebuilt Welded and AndyMark first); picking one draws it behind the robot and sets Field Width and Height. With Custom and no file, only the outline is drawn. The choice is kept for the next launch."
+evidence = "Figure 11.4: screenshots taken here on 2026-11-21 under Xvfb on the Lesson 11 state (the title-bar button; a right-click didn't open it under Xvfb, and the user says right-click opens it on their machine). The fresh launch read Custom. The user says the latest field is usually there by default; why this launch had Custom wasn't checked. 'Kept for next time' is that SimGUI saves window settings in simgui.json, as it does for every window; not re-launched to check this one."
+measured_on = "alpha-8 (SimGUI here; the user's SimGUI for the right-click)"
