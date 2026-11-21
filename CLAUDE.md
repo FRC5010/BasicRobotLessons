@@ -3026,6 +3026,35 @@ at least twice.
 - **Usage:** the window reset at 03:40 UTC on 2026-11-19. Two Sonnet agents
   used about 230k and 260k tokens for four and five figures.
 
+**Alliance flipping, checked 2026-11-21 (Lesson 33 state, LOOP probe
+`scratchpad/flip/AllianceCheck.java`, not kept; each auto on Blue 1, Red 1
+and Red 3).** B-Line's `FlippingUtil` is `kRotational` on 16.54 × 8.07 m by
+default, and the 2026 field is rotational (32/32 tags land on a twin under
+rotation, 20/32 under a mirror; WPILib's size 16.541 × 8.069, 1.3 mm worst).
+B-Line decides in `Follower.initialize` (enable), `Autos.startPose` at
+selection; both use `MatchState.getAlliance()` with unknown as blue.
+- **The path autos flip exactly.** Red ends are the blue ends rotated:
+  Two Corners (5.976, 6.016, 178.8°) → (10.563, 2.055, −1.2°), Pick Up
+  (6.000, 0.952, −90°) → (10.540, 7.119, 90°), Aim While Driving
+  (8.010, 7.025, −1.1°) → (8.526, 1.044, 178.8°); Red 3 the same as Red 1;
+  estimate and truth agree to the millimetre at every end.
+- **Drive To Pose ignores the alliance:** it drives to the blue-side
+  `kScoringPose` (5.007, 4.002, 90°) on every station. The aim tag (20)
+  and Lesson 25's aim point (8, 4) aren't flipped either, and the sim's
+  game pieces are blue-side only, so Pick Up on red catches nothing.
+- **Teleop stick-forward is always field +X** (dx +1.87 m in 1 s at half
+  stick on every station). `driveFieldRelative` converts with
+  `getHeadingDegrees()`, the raw gyro yaw. From Lesson 16 the sim gyro
+  reports the chassis's true (field) heading, so in sim a red driver's
+  controls are reversed; in Lessons 13–15 it counts from 0 at boot. A real
+  Pigeon zeroes at boot, so on a real robot "forward" is the boot facing,
+  which is already right for a red driver who boots the robot facing
+  away: a plain red flip on the gyro frame would break a real robot.
+  B-Line and Lesson 26 use the estimate (`localizer::getPose`), not the
+  gyro, so the autos are unaffected. Not fixed; the user is choosing a
+  design (estimate heading plus a red flip and a seed/reset, or a sim gyro
+  that counts from boot like a real one).
+
 ## Rewriting lessons in a teacher's voice
 
 The lessons started in a slightly "AI voice" — clinical, evenly-weighted, with
