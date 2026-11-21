@@ -51,7 +51,7 @@ Type: a = sim plot, b = SimGUI screenshot, c = SVG diagram, d = needs the user. 
 | 6.1 | Two ways a command ends | 6 | c | medium | 2 (built) |
 | 6.2 | `driveDistance(1.0, 0.4)` trace | 6 | a | medium | 2 (built) |
 | 7.1 | Chassis frame, corners and the two moves | 7 | c | high | 1 (built) |
-| 7.2 | AdvantageScope: Swerve tab, States slot | 7 | d | medium | needs user |
+| 7.2 | AdvantageScope: Swerve tab, Sources list | 7 | d | medium | user (built) |
 | 7.3 | Steering 90 degrees through 25:1, two gains | 7 | a | high | 1 (built) |
 | 8.1 | `turnToHeading(90)`: heading, command, band | 8 | a | high | 1 (built) |
 | 8.2 | AdvantageScope: Swerve tab, Rotation slot | 8 | d | low | needs user |
@@ -265,7 +265,8 @@ No figure proposed: lambdas, suppliers and a deadband; a transfer-curve plot wou
 - Text changes: §2 after the convention sentence: "Figure 7.1 draws it." §5 table lead-in: "the right-hand panel of Figure 7.1 draws these". The yaw-CCW arrow belongs here (Lesson 8 depends on it).
 - Linked from: Lesson 8 §1 ("positive is CCW"); Lesson 9 §5 (pinwheel angle); Lessons 10 (10.1 and 10.3 reuse its look and axes), 11 (frames), and any Swerve-tab explanation.
 
-**Figure 7.2 — AdvantageScope: Swerve tab, States slot** · medium · (d) · needs the user · `07-advantagescope-swerve-tab.png`
+**Figure 7.2 — AdvantageScope: Swerve tab, Sources list** · medium · (d) · user (built 2026-11-21) · `07-advantagescope-swerve-tab.png`
+- **Built 2026-11-21** from the user's screenshots (Lesson 7 state, Windows, dark): Tabs → New Tab → Swerve (top panel) and the Swerve tab while driving forward (bottom), by `tools/figures/07-advantagescope-swerve-tab.py` through the shared `screenshots.py`; 1600 x 1485 px, 150 KB. **Found:** there's no **States** slot; `ModuleStates` goes into the tab's **Sources** list, where it reads **Module Velocities**, and its path starts at **Telemetry** (claim `wpilib-tools.advantagescope-swerve-tab`). Lessons 7 and 8 fixed. No pinwheel shot yet (left bumper held); it could be a third panel. Lesson 8's **Rotation** slot is still unchecked (Figure 8.2). Links from Lessons 10, 11, 12 and 16 not added yet.
 - Where: §7, after "drag `NetworkTables/Telemetry/Drivetrain/ModuleStates` into its **States** slot" (before "Watch a wheel chase...").
 - Shows: Swerve tab with `ModuleStates` in States, Max Speed 5, arrows parallel while driving and the pinwheel while holding the left bumper (two shots side by side).
 - Why: "about to become your main debugging view for everything swerve"; the tab, slot and Max Speed field have to be found.
@@ -1131,7 +1132,7 @@ All 8 batch 3 figures are built: 10.2, 12.1, 17.1, 20.2, 25.1, 26.3, 31.2 and 33
 - **Left:** the figures that need the user (7.2, 8.2, and the debugger screenshot D.1; 3.1 was built from the user's screenshots on 2026-11-21), and Lesson 34's figures after its migration.
 - **Screenshots asked of the user (2026-11-21), in order:**
   1. AdvantageScope's File menu at Connect to Simulator: done, Figure 3.1's top panel.
-  2. Figure 7.2, the Swerve tab on the Lesson 7 state: stick forward (arrows parallel) and left bumper held (pinwheel), with the sidebar in view, to fix Lessons 7 and 8's `NetworkTables/Telemetry/Drivetrain/...` paths.
+  2. Figure 7.2, the Swerve tab on the Lesson 7 state: done with the stick forward (2026-11-21); a left-bumper (pinwheel) shot is still welcome.
   3. Not a figure: the top of the sidebar on a Lesson 13+ project (Lesson 18 ideal) with AdvantageKit expanded, and which Connect to Simulator item was picked, to fix the **NetworkTables → AdvantageKit → …** paths in Lessons 18, 20 and 21.
   4. Figure 8.2 (optional): the Swerve tab on the Lesson 8 state with `Heading` in **Rotation**.
   5. Figure D.1: VS Code paused at the `double error = …` line in `steerToAngle`, and whether F5 works on the alpha project.

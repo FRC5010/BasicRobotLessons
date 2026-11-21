@@ -1,4 +1,4 @@
-"""Lesson 7: steering 90 degrees through the real 25:1 gearbox, two gains (Figure 7.2 in the lesson).
+"""Lesson 7: steering 90 degrees through the real 25:1 gearbox, two gains (Figure 7.3 in the lesson).
 
 Data: tools/figures/data/07-steer-geared-kp-0.0005.csv and 07-steer-geared-kp-0.005.csv, from
 probes/Fig07SteerGeared.java on the Lesson 7 state: one SwerveModule told to steer from 0

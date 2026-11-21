@@ -341,8 +341,8 @@ simulated gyro's reading catching up (we didn't dig into it); it doesn't change 
 shape of anything after it. <!-- claim: l08.gyro-zero-delay, l08.gyro-first-jump -->
 
 Then watch the same thing as a picture: open the **Swerve** tab from Lesson 7
-(with `NetworkTables/Telemetry/Drivetrain/ModuleStates` in its **States** slot) and drop
-`NetworkTables/Telemetry/Drivetrain/Heading` into the **Rotation** slot. Press the
+(with `ModuleStates` in its **Sources** list, as in [Figure 7.2](07-four-modules.md#figure-7-2)) <!-- claim: wpilib-tools.advantagescope-swerve-tab --> and drop
+`Heading`, from **Telemetry → Drivetrain** in the sidebar, into the **Rotation** slot. Press the
 bottom button again — the four wheels snap into the pinwheel, and the whole
 chassis diagram rotates to 90° as the fake gyro integrates, easing in exactly
 like the plot does. One glance now tells you what the wheels are doing *and*

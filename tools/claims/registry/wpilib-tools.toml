@@ -195,3 +195,13 @@ criticality = "C3"
 statement = "The SysId tool is opened from the WPILib extension's tool launcher, reads a .wpilog in log-file mode (not live), and offers the 'flywheel' mechanism to fit kS/kV/kA to."
 evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson (CLAUDE.md says the tool was never run here)"
 measured_on = "unverified"
+
+[[claim]]
+id = "wpilib-tools.advantagescope-swerve-tab"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C1"
+statement = "AdvantageScope opens a Swerve tab from Tabs > New Tab > Swerve (Alt+D); a SwerveModuleVelocity array (Lesson 7's ModuleStates, listed in the sidebar under Telemetry > Drivetrain) dragged into its Sources list shows as Module Velocities and draws one arrow per module; the tab has Max Speed (m/s), Frame Size (m) and Orientation settings."
+evidence = "Figure 7.2: screenshots the user took on 2026-11-21 in their own AdvantageScope on Windows (version not recorded), connected to the simulation of the Lesson 7 state (tools/figures/data/07-advantagescope-new-tab.png, 07-advantagescope-swerve-tab.png), and a third of the drop itself (not kept). The lessons' old 'NetworkTables/Telemetry/Drivetrain/ModuleStates into its States slot' was wrong on both counts. Whether Max Speed starts at 5 or was typed in isn't known. Lesson 8's Rotation slot isn't shown."
+measured_on = "alpha-8 (the user's AdvantageScope, version not recorded)"
+figure = "07-advantagescope-swerve-tab.png"

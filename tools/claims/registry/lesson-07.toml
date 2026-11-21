@@ -9,7 +9,7 @@ statement = "With the geared steering module and kP = 0.0005, a 90 degree turn i
 evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 7 (one SwerveModule, 90 degrees at 20 ms, RIG); data/07-steer-geared-kp-*.csv"
 measured_on = "alpha-8"
 method = "RIG"
-wording = "about 6 simulated seconds (prose); 6.3 seconds (Figure 7.2)"
+wording = "about 6 simulated seconds (prose); 6.3 seconds (Figure 7.3)"
 unit = "s"
 range = [6.25, 6.35]
 measured = "6.3 s (alpha-7 build: 6.4 s)"
@@ -25,7 +25,7 @@ statement = "With kP = 0.0005 the geared steering module is within a third of a 
 evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 7 (one SwerveModule, 90 degrees at 20 ms, RIG); data/07-steer-geared-kp-*.csv"
 measured_on = "alpha-8"
 method = "RIG"
-wording = "about 9 [seconds] to get within a third of one; 9.0 seconds (Figure 7.2)"
+wording = "about 9 [seconds] to get within a third of one; 9.0 seconds (Figure 7.3)"
 unit = "s"
 range = [8.95, 9.05]
 measured = "within 0.3 degrees at 9.0 s; stops 0.24 degrees short from 10 s; no overshoot"

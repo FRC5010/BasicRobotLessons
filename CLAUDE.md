@@ -2780,6 +2780,14 @@ at least twice.
   probably wrong the same way; not changed, because the screenshot doesn't
   show AdvantageKit's tree. AdvantageScope can't run here, and
   docs.advantagescope.org doesn't resolve through this container's proxy.
+  **The Swerve tab has a Sources list, not a States slot** (the user's
+  screenshots, Lesson 7 state, Figure 7.2): `ModuleStates` dragged there
+  reads **Module Velocities**; the tab opens from **Tabs → New Tab →
+  Swerve** (Alt+D) and has Max Speed (m/s), Frame Size and Orientation
+  (claim `wpilib-tools.advantagescope-swerve-tab`). Lessons 7 and 8 fixed;
+  Lesson 8's **Rotation** slot is still unchecked. Figures made from the
+  user's screenshots share `tools/figures/screenshots.py`, which crops,
+  numbers and stacks panels like Figure 17.3.
   The figure's generator, `tools/figures/03-advantagescope-tree-graph.py`,
   only crops, numbers and stacks the two screenshots (`/usr/bin/python3.12`, which has
   Pillow; the `python3` on PATH has a broken one).

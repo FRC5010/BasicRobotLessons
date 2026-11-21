@@ -287,7 +287,7 @@ rotor's instant snap, so your Lesson 5 `kP` is now tuned for the wrong plant.
 Measured against this model: the same `kP = 0.0005` that rang in Lesson 5's
 [Figure 5.2](05-steering-p-control.md#figure-5-2) now crawls — a 90° turn takes about 6 simulated seconds to get
 within a degree, and about 9 to get within a third of one, decaying smoothly
-with no overshoot at all (Figure 7.2 plots it). <!-- claim: l07.kp-0005-within-1deg, l07.kp-0005-within-third --> That's not a
+with no overshoot at all (Figure 7.3 plots it). <!-- claim: l07.kp-0005-within-1deg, l07.kp-0005-within-third --> That's not a
 bug; the thing being controlled changed, and a 25:1 reduction resists motion
 harder than a bare rotor did. You can't retune yet (nothing runs until the
 wiring in section 6), so sit tight — section 7 comes back to this the moment
@@ -670,15 +670,22 @@ priming, paying off exactly where it matters — four independent modules that
 all agree on zero the instant power comes on, with no ritual and no chance
 to forget it before a match.
 
-Now the payoff for publishing `ModuleStates`: open AdvantageScope's **Swerve**
-tab and drag `NetworkTables/Telemetry/Drivetrain/ModuleStates` into its **States** slot
-(set the tab's *Max Speed* to about `5` — that's roughly what a Kraken-driven
-wheel tops out at in m/s). <!-- claim: wpilib.kraken-x60-model --> You get a live diagram of the chassis: one arrow
+Now the payoff for publishing `ModuleStates`: open a **Swerve** tab in
+AdvantageScope (**Tabs → New Tab → Swerve**), and drag `ModuleStates` from
+**Telemetry → Drivetrain** in the sidebar into the tab's **Sources** list,
+where it shows up as **Module Velocities**. <!-- claim: wpilib-tools.advantagescope-swerve-tab --> Set the tab's **Max Speed (m/s)**
+to about `5` — that's roughly what a Kraken-driven wheel tops out at in
+m/s. <!-- claim: wpilib.kraken-x60-model --> Figure 7.2 shows where each of those is. You get a live diagram of the chassis: one arrow
 per module, direction showing steer angle, length showing wheel speed. Push
 the stick and all four arrows swing together and grow with speed; hold the
 left bumper and they snap into the pinwheel — the table above, drawn for you,
 sixty times a second. This diagram is about to become your main debugging
 view for everything swerve.
+
+<a id="figure-7-2"></a>
+![Two AdvantageScope screenshots. Top, step 1: the Tabs menu open at New Tab, whose submenu lists Line Graph, 2D Field, 3D Field, Table, Console, Statistics, Video, Joysticks, Swerve with the shortcut Alt+D (outlined, badge 1), Mechanism, Points and Metadata. Bottom: the Swerve tab, connected to 127.0.0.1. In the sidebar, Telemetry, Drivetrain and ModuleStates are open (badge 2), ModuleStates listed as a SwerveModuleVelocity array of length 4. The Sources list under the diagram reads Module Velocities: NT:/Telemetry/Drivetrain/ModuleStates (badge 3), and Max Speed (m/s) beside it is 5 (badge 4). The diagram is a square chassis with a wheel circle at each corner and a long blue arrow from each wheel, all four pointing forward and a little to the right while the stick is pushed.](images/07-advantagescope-swerve-tab.png)
+
+*Figure 7.2 — Opening a Swerve tab (1) and giving it `ModuleStates` (2, 3), with Max Speed 5 (4). The stick is pushed forward, so all four arrows point the same way.* <!-- claim: wpilib-tools.advantagescope-swerve-tab -->
 
 Now that the robot actually runs, cash in the promise from section 2: the
 steering carries a real `25 : 1` reduction, so it turns at a believable speed
@@ -688,16 +695,16 @@ crawl into position, no overshoot, just patient. **Retune it the Lesson 5
 way** now that you can see it move: nudge `kP` up and watch the arrow snap
 into place faster. Verified against this model, `kP = 0.005` — ten times
 Lesson 5's value — gets within a degree in half a second and never overshoots
-(Figure 7.2 plots both gains). <!-- claim: l07.kp-005-within-1deg --> The gearbox adds real damping, so a bigger gain is both safe and needed here,
+(Figure 7.3 plots both gains). <!-- claim: l07.kp-005-within-1deg --> The gearbox adds real damping, so a bigger gain is both safe and needed here,
 the opposite of Lesson 5's ungeared case. This is the first moment you could
 actually see it and tune it.
 
-<a id="figure-7-2"></a>
+<a id="figure-7-3"></a>
 ![Two graphs of one steering module turning from 0 to 90 degrees through the 25 to 1 gearbox. Top, ten seconds: with kP 0.0005 the angle creeps up and is within one degree of 90 at 6.3 seconds and within 0.3 degrees at 9.0 seconds; with kP 0.005 it is there in half a second. Bottom, the first 1.5 seconds enlarged: the 0.005 curve climbs steeply and levels off at 90 with no overshoot, while 0.0005 is still at 60 degrees](images/07-steering-geared-two-gains.png)
 
-*Figure 7.2 — One steering module turning 90° through the real 25:1 gearbox, with Lesson 5's gain and with ten times it.* <!-- claim: l07.kp-0005-within-1deg, l07.kp-0005-within-third, l07.kp-005-within-1deg -->
+*Figure 7.3 — One steering module turning 90° through the real 25:1 gearbox, with Lesson 5's gain and with ten times it.* <!-- claim: l07.kp-0005-within-1deg, l07.kp-0005-within-third, l07.kp-005-within-1deg -->
 
-Figure 7.2 is the same tap as Lesson 5's [Figure 5.2](05-steering-p-control.md#figure-5-2), on the geared module.
+Figure 7.3 is the same tap as Lesson 5's [Figure 5.2](05-steering-p-control.md#figure-5-2), on the geared module.
 The top panel gives the whole ten seconds. The orange line, Lesson 5's
 `0.0005`, climbs slowly and smoothly: within a degree at 6.3 seconds, within
 a third of a degree at 9.0. <!-- claim: l07.kp-0005-within-1deg, l07.kp-0005-within-third --> The green line, ten times the gain, is within a degree
