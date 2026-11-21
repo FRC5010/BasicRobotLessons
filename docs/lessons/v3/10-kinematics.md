@@ -445,7 +445,7 @@ one new line of math and a delegation.
 <a id="figure-10-3"></a>
 ![Two top-down fields with the driver station at the bottom and the robot turned so its nose points toward the driver. On the left, robot-relative: the stick pushed forward moves the robot toward its nose, back toward the driver. On the right, field-relative: the same stick push moves the robot away from the driver station, in +X, with the nose still pointing the other way.](images/10-robot-vs-field-relative.svg)
 
-*Figure 10.3 — The same stick push on a robot turned 180°. +X is away from the driver station, the convention Lesson 11 uses for the field.*
+*Figure 10.3 — The same stick push on a robot turned 180°. +X is away from the driver station, the convention Lesson 11 uses for the field. (That's the blue driver station; Lesson 17 turns it round for red.)*
 
 In both panels the driver does exactly the same thing with the same
 stick, and the robot is turned all the way around, nose toward the driver

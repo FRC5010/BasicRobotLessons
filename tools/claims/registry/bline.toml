@@ -203,3 +203,13 @@ statement = "A FollowPath finishes only when the robot is within the end transla
 evidence = "CLAUDE.md, 'v3 Lesson 25 (path events)': Aim While Driving without release never finishes (17.9 s watched on alpha-8), ends at (8.031, 6.982, -90.8 deg); kScoreDistance 0 leaves the path 0.04 m short of a 5 cm tolerance and the group never ends"
 measured_on = "alpha-8"
 method = "LOOP"
+
+[[claim]]
+id = "bline.flipping-util-api"
+kind = "api"
+library = ["bline"]
+criticality = "C2"
+statement = "frc.robot.lib.BLine.field.FlippingUtil has static flipFieldPosition, flipFieldRotation, flipFieldPose and flipFieldSpeeds that follow a static symmetryType (rotational by default, mirrored the other choice) on fieldSizeX 16.54 by fieldSizeY 8.07; a rotational flip turns a heading by half a turn (r minus PI), a mirrored one gives PI minus r, so it depends on how the field is built."
+evidence = "javap -c on BLine-Lib-v2027.0.0-beta.1.jar, 2026-11-21: flipFieldRotation is PI.minus(r) in one case and r.minus(PI) in the other; flipFieldPosition is (X - x, y) or (X - x, Y - y)"
+measured_on = "BLine v2027.0.0-beta.1 on alpha-8"
+method = "BYTECODE"

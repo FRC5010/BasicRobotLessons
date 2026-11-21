@@ -121,12 +121,16 @@ public class Drivetrain implements Mechanism, PoseProvider {
         .named("Drive");
   }
 
-  /** Same as drive(), but 'forward' always means away from the driver station. */
+  /**
+   * Same as drive(), but 'forward' always means away from the driver. 'heading' is
+   * which way the robot faces, measured from that same 'away'.
+   */
   public Command driveFieldRelative(
-      Supplier<LinearVelocity> vx, Supplier<LinearVelocity> vy, Supplier<AngularVelocity> omega) {
+      Supplier<LinearVelocity> vx, Supplier<LinearVelocity> vy, Supplier<AngularVelocity> omega,
+      Supplier<Rotation2d> heading) {
     return runRepeatedly(() -> {
       ChassisVelocities fieldSpeeds = new ChassisVelocities(vx.get(), vy.get(), omega.get());
-      applyChassisSpeeds(fieldSpeeds.toRobotRelative(Rotation2d.fromDegrees(getHeadingDegrees())));
+      applyChassisSpeeds(fieldSpeeds.toRobotRelative(heading.get()));
     }).named("Drive Field Relative");
   }
 

@@ -3051,9 +3051,43 @@ selection; both use `MatchState.getAlliance()` with unknown as blue.
   which is already right for a red driver who boots the robot facing
   away: a plain red flip on the gyro frame would break a real robot.
   B-Line and Lesson 26 use the estimate (`localizer::getPose`), not the
-  gyro, so the autos are unaffected. Not fixed; the user is choosing a
-  design (estimate heading plus a red flip and a seed/reset, or a sim gyro
-  that counts from boot like a real one).
+  gyro, so the autos are unaffected.
+- **Fixed the same day (user decision: option A, and flip the targets).**
+  - **Lesson 17 §11 "Drive from either end":** `driveFieldRelative` takes a
+    fourth `Supplier<Rotation2d> heading` (Drivetrain 17, 25, 26, 29, 30).
+    `RobotTeleop` 17–28 passes `this::headingFromDriver`: the estimate's
+    heading, minus 180° on red. That's deliberately not
+    `FlippingUtil.flipFieldRotation`, because driver stations face each
+    other on any field and a mirrored flip would give π − θ. Start
+    (`resetHeading()`, keyboard N) sets the estimate's heading to 0° on
+    blue or 180° on red and keeps its position. Lesson 27's aim drive gets
+    the same fourth argument.
+  - **`Autos.onRedAlliance()`** holds the `MatchState…orElse(BLUE) == RED`
+    test, used by `startPose` (Autos 17, 24–27), teleop and the targets.
+  - **Snapshot 16 carries a `RobotTeleop` copy**, unchanged from 15, to hold
+    Lesson 17's markers.
+  - **The targets flip with `FlippingUtil`:**
+    - Lesson 25's `kAimTarget`, in `aimOmega`.
+    - Lesson 26's `kScoringPose`, a local `target` in `driveToScoringPose`.
+    - Lesson 27's aim tag: `omegaTowardTag` maps tag 20's position to its
+      red twin. `tagPosition` still returns the tag's real place, so the
+      typo-220 lesson still reads empty.
+    - Lesson 22's `ArmIOSim` builds `piecesOnBothHalves()`, each constant
+      plus its flipped twin, so `Sim/GamePieces` now lists six pieces.
+  - **Measured** (AllianceCheck, Lesson 33 state, Blue 1 / Red 1 / Red 3):
+    - Blue ends are unchanged to the millimetre: Two Corners (5.976, 6.015),
+      Pick Up (6.000, 0.952), Aim While Driving (8.009, 7.022), Drive To Pose
+      (5.007, 4.003, 90°).
+    - Red Drive To Pose ends (11.547, 4.071, −90°).
+    - Pick Up on red catches its piece.
+    - Teleop half stick for 1 s moves −1.87 m in X on red and +1.87 m on
+      blue. The one exception, 1.62 m after Drive To Pose on Red 3, isn't
+      explained.
+    - Teleop aiming points at tag 20 on blue and at its twin on red.
+    - Start sets 0° or 180°.
+  - **Left alone:** `turnToHeading` (the face buttons) still steers by the
+    gyro in field degrees, so after a Start press on a real robot those
+    buttons and the estimate can disagree. Not raised with the user yet.
 
 ## Rewriting lessons in a teacher's voice
 

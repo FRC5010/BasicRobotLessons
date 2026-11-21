@@ -68,6 +68,7 @@ import first.robot.Constants.PathConstants;
 import first.robot.Constants.VisionConstants;
 import first.robot.subsystems.Drivetrain;
 import first.robot.subsystems.Localizer;
+import frc.robot.lib.BLine.field.FlippingUtil;
 ```
 
 **Then the class and the two questions it can answer about geometry:**
@@ -139,7 +140,7 @@ look.
     // Aiming while the path drives. The rotation override wants an angular
     // velocity, not a heading, so this gain turns heading error into a rate.
     public static final double kAimP = 4.0; // rad/s per radian of heading error
-    /** The tag to point at. Change it to the one your alliance actually scores on. */
+    /** The tag to point at, on the blue hub. On red, Aim points at its twin on the red hub. */
     public static final int kAimTagId = 20;
     /** Close enough to call it aimed. */
     public static final Angle kAimTolerance = Degrees.of(2);
@@ -159,19 +160,22 @@ sits at (5.23, 4.03) on this season's field. <!-- claim: wpilib.field-tag-20-pos
 
 Here's the part where all that groundwork pays off in one line.
 
-`Drivetrain.driveFieldRelative` has taken three suppliers since Lesson 10 —
-an X velocity, a Y velocity, and a rotation rate. Up to now, all three came
-from sticks. Nothing says they have to.
+`Drivetrain.driveFieldRelative` has taken three speed suppliers since Lesson 10 —
+an X velocity, a Y velocity, and a rotation rate — and, since Lesson 17, a
+fourth for the heading. Up to now, all three speeds came from sticks. Nothing
+says they have to.
 
 *Nothing to add — this is code you already have:*
 
 ```java
   public Command driveFieldRelative(
-      Supplier<LinearVelocity> vx, Supplier<LinearVelocity> vy, Supplier<AngularVelocity> omega) {
+      Supplier<LinearVelocity> vx, Supplier<LinearVelocity> vy, Supplier<AngularVelocity> omega,
+      Supplier<Rotation2d> heading) {
 ```
 
 So aim assist needs no new drivetrain code at all. Keep the first two
-suppliers reading the sticks, and hand it a third that computes.
+suppliers reading the sticks, hand it a third that computes, and give it
+Lesson 17's `headingFromDriver` for the fourth, the same as the stick drive.
 
 **Add to `RobotTeleop.java`'s constructor:**
 
@@ -182,7 +186,8 @@ suppliers reading the sticks, and hand it a third that computes.
         robot.drivetrain.driveFieldRelative(
             () -> DriveConstants.kMaxSpeed.times(-robot.driverController.getLeftY()),
             () -> DriveConstants.kMaxSpeed.times(-robot.driverController.getLeftX()),
-            this::aimOmega));
+            this::aimOmega,
+            this::headingFromDriver));
 ```
 
 **Add the helper method, below the constructor:**
@@ -335,6 +340,7 @@ top:**
     Pose2d robot = localizer.getPose();
     ChassisVelocities fieldSpeeds = drivetrain.getChassisVelocities().toFieldRelative(robot.getRotation());
     return tagPosition(tagId)
+        .map(tag -> Autos.onRedAlliance() ? FlippingUtil.flipFieldPosition(tag) : tag) // our side's twin
         .map(target -> omegaToward(robot, fieldSpeeds, target))
         .orElse(0.0);
   }
@@ -345,6 +351,14 @@ top:**
   }
 }
 ```
+
+The first `map` in `omegaTowardTag` is Lesson 17's flip once more. Tag 20 is
+on the blue hub, and the red hub across the field has a tag in the same spot,
+turned round, so on red `FlippingUtil.flipFieldPosition` gives you the red
+hub's twin of tag 20. <!-- claim: wpilib.field-rotational-symmetry --> The tag
+itself hasn't moved: you're choosing which of the two to aim at, and the
+constant names the blue one. And `map` only runs when the box has something in
+it, so a mistyped ID is still empty after it.
 
 `getChassisVelocities()` is the method you wrote in Lesson 17 — kinematics run
 backward, the same idea as building the pose estimate, just for velocity instead

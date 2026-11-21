@@ -205,7 +205,7 @@ public final class Constants {
     // Aiming while the path drives. The rotation override wants an angular
     // velocity, not a heading, so this gain turns heading error into a rate.
     public static final double kAimP = 4.0; // rad/s per radian of heading error
-    /** The tag to point at. Change it to the one your alliance actually scores on. */
+    /** The tag to point at, on the blue hub. On red, Aim points at its twin on the red hub. */
     public static final int kAimTagId = 20;
     /** Close enough to call it aimed. */
     public static final Angle kAimTolerance = Degrees.of(2);
@@ -247,7 +247,7 @@ public final class Constants {
     public static final LinearVelocity kSpeedTolerance = MetersPerSecond.of(0.05);
     public static final Angle kAngleTolerance = Degrees.of(1);
 
-    /** Where the left bumper lines the robot up. */
+    /** Where the left bumper lines the robot up, on blue; red lines up on its twin. */
     public static final Pose2d kScoringPose = new Pose2d(5.0, 4.0, Rotation2d.fromDegrees(90));
   }
 

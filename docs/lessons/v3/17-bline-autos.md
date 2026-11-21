@@ -23,6 +23,8 @@ path.
 - **An opmode is built when it's selected** — so an auto's path file is read,
   and the simulated robot set down at its start, while the robot is still
   disabled
+- **Driving from either end** — the driver's "forward" measured from the fused
+  heading, turned round on the red alliance
 
 ---
 
@@ -743,11 +745,15 @@ the field the robot is playing.
 **Add to `Autos`, below `followPath`:**
 
 ```java
+  /** True on the red alliance. With no alliance yet, blue — the same rule BLine's flip follows. */
+  public static boolean onRedAlliance() {
+    return MatchState.getAlliance().orElse(Alliance.BLUE) == Alliance.RED;
+  }
+
   /** Where a path starts, on this alliance's side of the field — the same flip BLine makes. */
   public static Pose2d startPose(Path path) {
     Pose2d start = path.getAuthoredStartPose().get(); // every path here starts with a waypoint
-    boolean red = MatchState.getAlliance().orElse(Alliance.BLUE) == Alliance.RED;
-    return red ? FlippingUtil.flipFieldPose(start) : start;
+    return onRedAlliance() ? FlippingUtil.flipFieldPose(start) : start;
   }
 ```
 
@@ -767,7 +773,9 @@ spot of its own. Yours all begin with a waypoint, so `.get()` is safe, and if
 you ever draw one that doesn't, it crashes right there, which is what you'd
 want. `MatchState.getAlliance()` is the other: until the Driver Station says,
 there is no alliance. <!-- claim: wpilib.match-state-alliance-optional --> **`.orElse(Alliance.BLUE)`** takes what's in the box, or
-blue if it's empty, the same rule B-Line's flip follows. Then
+blue if it's empty, the same rule B-Line's flip follows. That test gets a
+method of its own, `onRedAlliance`, because it won't be the last thing to ask
+which side you're on: section 11's driving needs it too. Then
 `FlippingUtil.flipFieldPose`, from B-Line, mirrors the pose the same way B-Line
 mirrors the path, so the robot is set down exactly where the flipped path
 starts. <!-- claim: bline.path-class-api -->
@@ -919,11 +927,15 @@ public final class Autos {
         .withPoseReset(); // start by telling the estimate we're at the path's start
   }
 
+  /** True on the red alliance. With no alliance yet, blue — the same rule BLine's flip follows. */
+  public static boolean onRedAlliance() {
+    return MatchState.getAlliance().orElse(Alliance.BLUE) == Alliance.RED;
+  }
+
   /** Where a path starts, on this alliance's side of the field — the same flip BLine makes. */
   public static Pose2d startPose(Path path) {
     Pose2d start = path.getAuthoredStartPose().get(); // every path here starts with a waypoint
-    boolean red = MatchState.getAlliance().orElse(Alliance.BLUE) == Alliance.RED;
-    return red ? FlippingUtil.flipFieldPose(start) : start;
+    return onRedAlliance() ? FlippingUtil.flipFieldPose(start) : start;
   }
 
   /** Names a path file can fire with lib_key. BLine keeps them for the whole program. */
@@ -1046,6 +1058,145 @@ without restarting.
 
 ---
 
+## 11. Drive from either end
+
+Now that autos know which end of the field is yours, teleop is the odd one
+out. Since Lesson 10, `driveFieldRelative` has promised that "forward always
+means away from the driver station", and it has kept that promise only for
+blue. It measures "forward" from the gyro. In this simulator, from Lesson 16
+on, the gyro reads the robot's heading on the field, so forward is +X, away
+from the *blue* end. Play red, push the
+stick forward, and the robot drives straight at you. On a real robot the
+Pigeon counts from wherever the robot faced when it was switched on, which
+is closer to right, but only if somebody happened to point it the right way.
+
+Two changes fix it. The first: measure the heading from the **fused
+estimate**, not the gyro. The estimate's heading is on the field's terms,
+because something told it so: an auto's `withPoseReset()`, or, in the
+simulator, Lesson 16's starting placement. The second: on red, turn
+"away from you" round. You stand at the other end, so your away is the
+field's 180°.
+
+Neither belongs in `Drivetrain`. Which end the driver stands at is a fact
+about the driver, the same as which button does what, so it goes in the
+opmode the driver uses. `Drivetrain` only has to be told the heading instead
+of looking it up.
+
+**Replace `driveFieldRelative` in `Drivetrain` with:**
+
+```java
+  /**
+   * Same as drive(), but 'forward' always means away from the driver. 'heading' is
+   * which way the robot faces, measured from that same 'away'.
+   */
+  public Command driveFieldRelative(
+      Supplier<LinearVelocity> vx, Supplier<LinearVelocity> vy, Supplier<AngularVelocity> omega,
+      Supplier<Rotation2d> heading) {
+    return runRepeatedly(() -> {
+      ChassisVelocities fieldSpeeds = new ChassisVelocities(vx.get(), vy.get(), omega.get());
+      applyChassisSpeeds(fieldSpeeds.toRobotRelative(heading.get()));
+    }).named("Drive Field Relative");
+  }
+```
+
+The only change is the fourth supplier. `toRobotRelative` takes a
+`Rotation2d` already, so the heading goes straight in.
+
+**Add to `RobotTeleop`, below the constructor:**
+
+```java
+  /**
+   * Which way the robot faces, measured from straight away from you. On the red
+   * alliance you stand at the other end of the field, so your "away" is the
+   * field's 180°.
+   */
+  private Rotation2d headingFromDriver() {
+    Rotation2d heading = robot.localizer.getPose().getRotation();
+    return Autos.onRedAlliance() ? heading.minus(Rotation2d.fromDegrees(180)) : heading;
+  }
+```
+
+That's section 8's `onRedAlliance` again. You might expect
+`FlippingUtil.flipFieldRotation` here, since it flips headings. On this
+season's field it gives the same answer, but it answers a different
+question: where something on the blue half lands on the red half, which
+depends on how the field is built. This year it's turned round, and
+`FlippingUtil` also has a mirrored setting for fields built that way. <!-- claim: bline.flipping-util-api -->
+Driver stations face each other however the field is built, so the driver's
+away is always exactly half a turn. Subtract 180°.
+
+**Replace the default command in `RobotTeleop`'s constructor with:**
+
+```java
+    // Classic swerve default: left stick translates (field-relative), right
+    // stick rotates.
+    robot.drivetrain.setDefaultCommand(
+        robot.drivetrain.driveFieldRelative(
+            () -> DriveConstants.kMaxSpeed.times(-robot.driverController.getLeftY()),  // forward = away from you
+            () -> DriveConstants.kMaxSpeed.times(-robot.driverController.getLeftX()),  // left    = your left
+            () -> DriveConstants.kMaxAngularSpeed.times(-robot.driverController.getRightX()),
+            this::headingFromDriver));
+```
+
+`this::headingFromDriver` is a method reference to a method on *this*
+opmode, the same idea as `localizer::getPose`.
+
+One gap is left. The estimate only knows its field heading if something told
+it. Switch a real robot on and drive teleop without running an auto first,
+and the estimate starts at 0° whichever way the robot really faces (Lesson
+14's "until an auto resets it"). So give the driver a way to tell it: point
+the robot's front straight away from you and press a button.
+
+**Add to `RobotTeleop`, below `headingFromDriver`:**
+
+```java
+  /** Tell the estimate the robot is facing straight away from you, wherever it is. */
+  private Command resetHeading() {
+    return Command.noRequirements(coroutine -> {
+          Rotation2d away = Rotation2d.fromDegrees(Autos.onRedAlliance() ? 180 : 0);
+          robot.localizer.resetPose(new Pose2d(robot.localizer.getPose().getTranslation(), away));
+        })
+        .named("Reset Heading");
+  }
+```
+
+It keeps the estimate's position and replaces only its heading. Like
+Lesson 14's fake sighting, it requires nothing, so pressing it doesn't
+interrupt your driving.
+
+**Bind it in `RobotTeleop`'s constructor, below the two `turnToHeading` buttons:**
+
+```java
+    // Press Start with the robot's front facing away from you, to tell the
+    // estimate which way that is.
+    robot.driverController.start().onTrue(resetHeading());
+```
+
+**Add to `RobotTeleop`'s imports:**
+
+```java
+import org.wpilib.command3.Command;
+import org.wpilib.math.geometry.Pose2d;
+import org.wpilib.math.geometry.Rotation2d;
+
+import first.robot.commands.Autos;
+```
+
+> **Watch out: the button is a statement, not a measurement.** Press Start
+> while the robot faces some other way and you've told the estimate
+> something false, and section 8 said what happens then: the cameras fix a
+> wrong position, never a wrong heading. In the simulator, where the robot
+> is set down the right way already, you'll never need it. <!-- claim: bline.pose-reset-estimate-only -->
+
+Try it. Run Two Corners on Red 1 (Try It #6 has the steps), then click
+**Disable**, pick **Teleoperated** and **RobotTeleop**, and **Enable**.
+Disabling rebuilt the auto, so the robot is back at the red start, (13.54,
+5.07) facing 180°. Push the left stick half forward for a second and it
+drives 1.87 m toward −X: away from the red end, which is away from you. On
+Blue 1 the same push drives 1.87 m toward +X. <!-- claim: l17.red-teleop-forward -->
+
+---
+
 ## Try it
 
 1. **Code — add a third path.** Draw or hand-write one, then make it selectable. It
@@ -1153,6 +1304,11 @@ is a promise about the world — "a person put the robot here" — and code that
 makes a promise about the world is only as right as the world is. On a real
 field a person keeps it. In the simulator you had to keep it yourself, and the
 place to do it was the same moment a person would: when the auto is selected.
+
+Section 11 took the same idea into teleop. "Forward" is a fact about where the
+driver stands, so it lives in the driver's opmode, measured from the fused
+heading and turned round on red, and the Start button lets the driver keep
+the estimate's side of that promise when no auto has.
 
 Underneath all of it the old shapes kept holding. Lesson 16's kinematics-backward
 loop got a name and a second caller. `resetPose` from Lesson 14 got called by

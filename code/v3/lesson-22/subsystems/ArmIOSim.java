@@ -23,6 +23,7 @@ import org.littletonrobotics.junction.Logger;
 
 import first.robot.Constants.ArmConstants;
 import first.robot.Constants.DriveConstants;
+import frc.robot.lib.BLine.field.FlippingUtil;
 
 /**
  * The sim implementation: the real TalonFX class (Phoenix simulates its own
@@ -53,13 +54,26 @@ public class ArmIOSim extends ArmIOTalonFX {
   // The game pieces lying on the field. Nothing in the robot's own code reads
   // this list: the only way the robot learns about a piece is the beam break,
   // and only once a piece is really inside the intake.
-  private final List<Translation2d> m_piecesOnField =
-      new ArrayList<>(List.of(ArmConstants.kSimGamePiecePositions));
+  private final List<Translation2d> m_piecesOnField = piecesOnBothHalves();
   private boolean m_holdingPiece = false;
   private double m_rollerOutput = 0.0;
 
   /** Where the robot really is: the simulated chassis, not the estimate. */
   private final Supplier<Pose2d> m_robotPose;
+
+  /**
+   * The spots in Constants are drawn for the blue half of the field. The field
+   * is the same from either end, so the red half has the same pieces, turned
+   * round — the same flip B-Line makes for a path.
+   */
+  private static List<Translation2d> piecesOnBothHalves() {
+    List<Translation2d> pieces = new ArrayList<>();
+    for (Translation2d spot : ArmConstants.kSimGamePiecePositions) {
+      pieces.add(spot);
+      pieces.add(FlippingUtil.flipFieldPosition(spot));
+    }
+    return pieces;
+  }
 
   public ArmIOSim(Supplier<Pose2d> robotPose) {
     super(); // build both motors and apply the real configs

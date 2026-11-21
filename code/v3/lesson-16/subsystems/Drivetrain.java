@@ -109,6 +109,11 @@ public class Drivetrain implements Mechanism, PoseProvider {
         .named("Drive");
   }
 
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * Field-relative driving takes the heading from whoever calls it, so the driver's
+   * command can use the fused estimate and turn it round on the red alliance.
+   */
   /** Same as drive(), but 'forward' always means away from the driver station. */
   public Command driveFieldRelative(
       Supplier<LinearVelocity> vx, Supplier<LinearVelocity> vy, Supplier<AngularVelocity> omega) {

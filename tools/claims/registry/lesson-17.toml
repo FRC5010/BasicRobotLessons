@@ -422,3 +422,17 @@ unit = "s"
 range = [0.0, 2.0]
 measured = "about a second (no figure recorded)"
 note = "The recorded evidence is a prose summary, not a measurement series."
+
+[[claim]]
+id = "l17.red-teleop-forward"
+kind = "number"
+library = ["wpilib"]
+criticality = "C2"
+statement = "After Two Corners, in teleop with the left stick held half forward for one second, the robot drives 1.87 m toward -X on Red 1 (and Red 3), away from the red end, and 1.87 m toward +X on Blue 1."
+evidence = "scratchpad AllianceCheck probe on the Lesson 33 state, 2026-11-21, Blue 1 / Red 1 / Red 3"
+measured_on = "alpha-8"
+method = "LOOP"
+wording = "1.87 m toward -X; 1.87 m toward +X"
+unit = "m"
+range = [1.865, 1.875]
+measured = "dx -1.871 (Red 1, Red 3), +1.871 (Blue 1), dy within 2 mm"
