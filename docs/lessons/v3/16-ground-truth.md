@@ -394,7 +394,7 @@ a truth. A replay of a simulated run still shows the truth from the
 recording under `RealOutputs`; it just has no `ReplayOutputs` twin, because
 nothing in the replay could work it out again. <!-- claim: advantagekit.replay-file-layout -->
 
-Open AdvantageScope's **Odometry** tab and put both `Localizer/Pose` and
+Open an AdvantageScope **2D Field** tab ([Figure 11.1](11-odometry-field.md#figure-11-1)) and put both `Localizer/Pose` and
 `Drivetrain/SimulatedPose` on the field at once. Both are outputs, so live
 they're under **AdvantageKit → RealOutputs**, not under **Telemetry**. <!-- claim: advantagekit.data-receivers-and-files -->
 Drive gently and they sit on top of each other. Then drive like you mean

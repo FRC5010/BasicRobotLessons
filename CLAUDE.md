@@ -2794,7 +2794,12 @@ at least twice.
   Desktop Debug launch works on the alpha OpMode project** (Figure D.1, the
   user's Lesson 5 project; the old stack-trace figure is D.2). Crop the
   user's screenshots clear of their account and folder names (VS Code's
-  terminal and status bar). Figures made from the
+  terminal and status bar). **AdvantageScope's field tabs are 2D Field and
+  3D Field** (Tabs → New Tab, Alt+2/Alt+3; Figures 11.1 and 11.2, Lesson 11
+  state): a `Pose2d` dragged into **Poses** reads **Robot** (2D) or **2026
+  KitBot** (3D), and the **Field** drop-down picks the field. There's no
+  "Odometry" tab; Lessons 11, 16, 17 and 22 fixed (claim
+  `wpilib-tools.advantagescope-field-tabs`). Figures made from the
   user's screenshots share `tools/figures/screenshots.py`, which crops,
   numbers and stacks panels like Figure 17.3.
   The figure's generator, `tools/figures/03-advantagescope-tree-graph.py`,

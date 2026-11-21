@@ -3,7 +3,7 @@
 **Goal:** Track where the robot is on the field over time — its **pose** (x, y,
 heading) — by combining the gyro and how far each wheel has rolled. Then log
 that pose and watch the robot drive around a real field in AdvantageScope's
-**Odometry** tab.
+**2D Field** tab.
 
 **New Java concepts**
 - Small data-carrier types that bundle a couple of values
@@ -169,10 +169,32 @@ Telemetry.log("Drivetrain/Pose", pose, Pose2d.struct);
 AdvantageScope knows how to *draw* a logged pose, not just plot it. Run
 the robot in simulation, then in AdvantageScope:
 
-1. Connect to the sim (**File → Connect to Simulator**).
-2. Add an **📐 Odometry** tab and drag `Telemetry/Drivetrain/Pose` onto it.
-3. Pick a field image (e.g., the current game) from the source dropdown.
-4. Drive with the joysticks. The little robot moves and rotates on the field.
+1. Connect to the sim (**File → Connect to Simulator → Default:
+   NetworkTables**, as in Lesson 3).
+2. Open a **2D Field** tab (**Tabs → New Tab → 2D Field**), and drag `Pose`
+   from **Telemetry → Drivetrain** in the sidebar into the tab's **Poses**
+   list, where it shows up as **Robot**.
+3. Pick the field to draw from the **Field** drop-down at the bottom right
+   (**2026 Field**, say).
+4. Drive with the joysticks. The robot, a red square with an arrow, moves and
+   rotates on the field and leaves a thin trail behind it. <!-- claim: wpilib-tools.advantagescope-field-tabs -->
+
+Figure 11.1 shows each step.
+
+<a id="figure-11-1"></a>
+![Two AdvantageScope screenshots. Top: the Tabs menu open at New Tab, whose submenu lists Line Graph, 2D Field (shortcut Alt+2, outlined, badge 1), 3D Field and the other tab types. Bottom: a 2D Field tab showing a top-down drawing of the 2026 field. The robot is a red square with a white arrow near the blue end, a thin grey trail curving behind it. In the sidebar, Telemetry and Drivetrain are open and Pose, a Pose2d, is marked badge 2. The Poses list under the field reads Robot: NT:/Telemetry/Drivetrain/Pose, with X 6.105 m, Y 6.804 m and a heading of -6.13 degrees below it (badge 3), and the Field drop-down at the bottom right reads 2026 Field (outlined, badge 4).](images/11-advantagescope-2d-field.png)
+
+*Figure 11.1 — A 2D Field tab (1) with `Pose` (2) dragged into its Poses list as Robot (3), and the Field drop-down (4).* <!-- claim: wpilib-tools.advantagescope-field-tabs -->
+
+There's a **3D Field** tab too (**Tabs → New Tab → 3D Field**). Drag the same
+`Pose` into its **Poses** list and it draws a robot model, **2026 KitBot**, on a
+3D field you can orbit around. Figure 11.2 has its **Field** drop-down open:
+that's the list of fields both tabs offer. <!-- claim: wpilib-tools.advantagescope-field-tabs -->
+
+<a id="figure-11-2"></a>
+![An AdvantageScope 3D Field tab: a perspective view of the 2026 field from behind one alliance wall, with red and blue structures and a block of yellow game pieces in the middle. The Poses list reads 2026 KitBot: NT:/Telemetry/Drivetrain/Pose with X, Y, Z, roll, pitch and yaw below it (badge 1). The Field drop-down is open (badge 2), listing FRC fields (2026 Field, 2025 Field (Welded), 2025 Field (AndyMark), 2024 Field, 2023 Field, 2022 Field, Evergreen, Axes) and FTC fields.](images/11-advantagescope-3d-field.png)
+
+*Figure 11.2 — The same pose on a 3D Field tab, as a robot model (1), with the Field drop-down open (2).* <!-- claim: wpilib-tools.advantagescope-field-tabs -->
 
 If everything is wired right, driving forward moves the robot along +X,
 strafing slides it along +Y, and spinning rotates it — the coordinate
@@ -217,7 +239,7 @@ method that runs every tick. <!-- claim: wpilib.telemetry-log-is-a-snapshot -->
 
 Now in **SimGUI** (the sim window itself, not AdvantageScope): menu
 **NetworkTables → Telemetry → Field**, and a top-down field pane opens right in
-the sim window, robot moving as you drive. Figure 11.1 shows where to click
+the sim window, robot moving as you drive. Figure 11.3 shows where to click
 and what you get: a box for the field, with the robot drawn as a red outline
 and a green arrow for the way it faces, bottom-left until you drive. (If
 you can't see it, SimGUI's **Robot State** window may be sitting on that
@@ -226,10 +248,10 @@ Same pose, two viewers: `Field2d` for the quick glance while sim is
 already open, the logged `Pose2d` for AdvantageScope's field images,
 replays, and everything else.
 
-<a id="figure-11-1"></a>
+<a id="figure-11-3"></a>
 ![SimGUI's NetworkTables menu open with Telemetry and then Field highlighted, above the Field pane showing the field's outline with the robot drawn after a short drive](images/11-simgui-field-widget.png)
 
-*Figure 11.1 — Where to find the Field widget in SimGUI, and the field pane with the robot after a short drive.* <!-- claim: wpilib.simgui-field-widget -->
+*Figure 11.3 — Where to find the Field widget in SimGUI, and the field pane with the robot after a short drive.* <!-- claim: wpilib.simgui-field-widget -->
 
 ---
 

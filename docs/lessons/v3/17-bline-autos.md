@@ -959,7 +959,7 @@ moment your path file was read and the robot was set down at (3, 3). <!-- claim:
 click **Enable** (4).
 
 Then watch it the way you've watched every closed-loop lesson since Lesson 5 —
-asked-for against measured. Open AdvantageScope's **Odometry** tab, put
+asked-for against measured. Open an AdvantageScope **2D Field** tab, put
 `Localizer/Pose` (under **AdvantageKit → RealOutputs**) on the field, and look
 for the robot tracing an actual shape:
 out along X, turning up the second leg just before the corner, coming around to

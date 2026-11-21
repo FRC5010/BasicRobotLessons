@@ -430,7 +430,7 @@ mechanism and interrupts nothing. The coroutine body here has no
 the very same tick — the same one-shot shape Lesson 9's `Autos` used, just
 with nothing to sequence. <!-- claim: commandsv3.noyield-command-finishes-same-tick -->
 
-Now run it. Sim up, watch the **Field** widget in SimGUI ([Figure 11.1](11-odometry-field.md#figure-11-1)
+Now run it. Sim up, watch the **Field** widget in SimGUI ([Figure 11.3](11-odometry-field.md#figure-11-3)
 shows where it is). Drive somewhere,
 then press Start (**N** on the keyboard). The robot on the field slides toward (2, 5) — not a
 teleport, a real pull. Press it again and it slides a little further; the

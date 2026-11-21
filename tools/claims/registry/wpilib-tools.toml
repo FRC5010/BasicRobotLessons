@@ -215,3 +215,13 @@ statement = "Connected live with Default: NetworkTables to a robot running Advan
 evidence = "Figure 18.3: a screenshot the user took on 2026-11-21 in their own AdvantageScope on Windows (version not recorded), connected to the simulation of the Lesson 18 state (tools/figures/data/18-advantagescope-elevator-graph.png). The Arm folder of Lesson 20 isn't in it, but it's the same publisher. The NetworkTables (AdvantageKit) source wasn't tried. Lessons 18, 20 and 21 had said 'NetworkTables > AdvantageKit > ...'."
 measured_on = "alpha-8 (the user's AdvantageScope, version not recorded)"
 figure = "18-advantagescope-elevator-graph.png"
+
+[[claim]]
+id = "wpilib-tools.advantagescope-field-tabs"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C1"
+statement = "AdvantageScope's field tabs are 2D Field (Tabs > New Tab > 2D Field, Alt+2) and 3D Field (Alt+3); there's no tab called Odometry. A Pose2d dragged into a field tab's Poses list shows as Robot on the 2D tab (a red square with an arrow, leaving a trail) and as 2026 KitBot, a robot model, on the 3D tab; a Field drop-down at the bottom right picks the field (2026 Field, earlier FRC fields, Evergreen, Axes, and FTC fields)."
+evidence = "Figures 11.1 and 11.2: screenshots the user took on 2026-11-21 in their own AdvantageScope on Windows (version not recorded), connected to the simulation of the Lesson 11 state (tools/figures/data/11-advantagescope-new-tab.png, 11-advantagescope-2d-field.png, 11-advantagescope-3d-field.png). Lessons 11, 16, 17 and 22 had said 'Odometry tab' and Lesson 11 'the source dropdown'. Whether 2026 Field is the default isn't known."
+measured_on = "alpha-8 (the user's AdvantageScope, version not recorded)"
+figure = "11-advantagescope-2d-field.png"
