@@ -104,6 +104,25 @@ After the change:
 - Vendordeps from later lessons are deliberately left installed: an unused
   one costs nothing, and removing it could break an import.
 
+**Every update deletes the project's `ctre_sim/` (2026-11-21).** Phoenix's
+simulation saves each simulated device's settings there, one `.dat` per device
+(`Talon FX vers. C - 01 - 0 - ext.dat`), and loads them on the next run; the
+template's `.gitignore` ignores it ("CTRE Phoenix Sim device config storage").
+Code that never applies a configuration inherits whatever was saved, and the
+course's drive motors get none until Lesson 12 (steering motors from Lesson 7).
+A student rolled back from about Lesson 16 to Lesson 4 saw `PositionRotations`
+and `VelocityRotPerSec` stuck at 0 while SimGUI's Rotor Sensor climbed: their
+CAN ID 1 had been a *steering* motor in later lessons. Reproduced: Lesson 16
+booted with the front-left steer on ID 1, then the Lesson 4 code on that
+`ctre_sim` read 0.0 throughout a half-stick drive, status `OK` on all 250
+readings, with the device reporting `FeedbackSensorSource` `RemoteCANcoder` 9
+and `Fault_RemoteSensorDataInvalid` true (live and sticky). Lesson 16's own
+state (ID 1 a drive motor) made the Lesson 4 readings 6.75 times too small
+(Lesson 12's `SensorToMechanismRatio`). A fresh folder: rotor sensor, no fault,
+45 rot/s. A real Talon FX keeps its settings the same way, so changing CAN IDs
+in code that doesn't apply a full configuration does this on a robot too. Test:
+`RealUpdate.test_the_simulated_motors_start_fresh` (disabling the `rm` fails it).
+
 **From Lesson 13 on, both v3 scripts edit `build.gradle`** the way that
 lesson has the student do it, through
 [`tools/lib/patch_build_gradle.py`](tools/lib/patch_build_gradle.py)
