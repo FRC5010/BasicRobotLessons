@@ -3214,6 +3214,13 @@ a lesson as-is. (The two classic plan docs, `lesson-plan-16-22.md` and
   doc explains why a workaround wasn't taken instead of waiting. When these
   lessons are actually written, their prose goes under `docs/lessons/v3/`,
   a sibling of `docs/lessons/`'s numbered files, not mixed into them.
+- [docs/lesson-plan-v3-reference.md](docs/lesson-plan-v3-reference.md) — the
+  plan for a **Reference** section (`docs/reference/`, user request
+  2026-11-22): topic pages summarising the course's Java and FRC ideas, with
+  code examples copied from the snapshots, pop-up quizzes that remember scores
+  in the browser, claim markers, and source tags checked against the code.
+  Pages teach the final form without assuming every lesson is done. Planning
+  only; its section 9 lists the user's open questions.
 - [docs/lesson-plan-alpha7-upgrade.md](docs/lesson-plan-alpha7-upgrade.md) —
   the impact assessment and phased plan for upgrading the v3 track (only —
   the classic track targets stable 2026 and is unaffected) to WPILib 2027
