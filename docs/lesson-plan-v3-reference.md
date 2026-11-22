@@ -286,5 +286,5 @@ because it sounds right.
 |---|---|
 | Plan | done 2026-11-22 (section 9 answered) |
 | Infrastructure | done 2026-11-22: section, sidebar, preview gate, quizzes and their browser tests, quiz and source-tag checker, claims scope, pre-commit hook |
-| Pilot pages | not started (*Lambdas and coroutines*, *Commands and triggers*) |
+| Pilot pages | written 2026-11-22, waiting on the user's review: `java/04-lambdas-coroutines.md` (10 examples, 4 quizzes) and `frc-framework/03-commands-triggers.md` (9 examples, 4 quizzes); three new claims (`commandsv3.loop-without-yield-one-tick`, `builders-need-a-name`, `ontrue-starts-not-stops`) and one that was unverified (`noyield-command-finishes-same-tick`), each now with a JUnit test |
 | Remaining pages | not started |

@@ -210,9 +210,10 @@ kind = "behaviour"
 library = ["commandsv3"]
 criticality = "C3"
 statement = "A Command.noRequirements coroutine with no yield in its body runs once and finishes on the same tick, claiming no mechanism and interrupting nothing."
-evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the lesson (Lesson 14's Start-button command ran in the Batch 2 five-sighting measurement, which doesn't test the tick)"
-measured_on = "unverified"
-method = "LOOP"
+evidence = "tools/claims/java/claims/CommandsV3ApiTest.java on alpha-8 (2026-11-22): on an independent scheduler, a Command.noRequirements body with no yield runs once on the first run() and the command is no longer running after it, requiring nothing"
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/CommandsV3ApiTest.java"
 
 [[claim]]
 id = "commandsv3.coroutine-command-api"
@@ -403,3 +404,37 @@ evidence = "CLAUDE.md, 'v3 Lesson 33 rebuilt on WPILib's SysIdRoutine and re-mea
 measured_on = "alpha-8"
 method = "LOOP"
 note = "The SysId analysis tool itself was never run here."
+
+[[claim]]
+id = "commandsv3.loop-without-yield-one-tick"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C2"
+statement = "A coroutine keeps the scheduler until it pauses: a loop with no coroutine.yield() runs all its passes inside one scheduler tick with no periodic callback in between, while the same loop with yield runs one pass per tick."
+evidence = "tools/claims/java/claims/CommandsV3ApiTest.java on alpha-8 (2026-11-22): on an independent scheduler with an addPeriodic counter, a five-pass loop without yield saw one counter value and finished in one run(); with yield each pass saw a new value"
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/CommandsV3ApiTest.java"
+
+[[claim]]
+id = "commandsv3.builders-need-a-name"
+kind = "api"
+library = ["commandsv3"]
+criticality = "C2"
+statement = "Mechanism.run, Mechanism.runRepeatedly, Command.noRequirements, Command.sequence and Command.parallel return builders, not Commands; whenExited, whenCanceled and until keep the builder, and named(String) turns it into a Command."
+evidence = "tools/claims/java/claims/CommandsV3ApiTest.java on alpha-8 (2026-11-22), by reflection on the return types (NeedsNameBuilderStage, SequentialGroupBuilder, ParallelGroupBuilder); javap shows the group builders also have withAutomaticName(), which the course doesn't use"
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/CommandsV3ApiTest.java"
+
+[[claim]]
+id = "commandsv3.ontrue-starts-not-stops"
+kind = "behaviour"
+library = ["commandsv3"]
+criticality = "C2"
+statement = "Trigger.onTrue(command) schedules the command once, on the tick the trigger turns true, and doesn't restart it while the trigger stays true or cancel it when the trigger turns false."
+evidence = "tools/claims/java/claims/CommandsV3ApiTest.java on alpha-8 (2026-11-22): an independent scheduler, a Trigger on a boolean, and a parked command: not scheduled while false, started once over five true ticks, still running five ticks after the boolean went false"
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/CommandsV3ApiTest.java"
+
