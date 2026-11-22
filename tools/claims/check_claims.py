@@ -49,6 +49,16 @@ FENCE_RE = re.compile(r'^\s*(`{3,}|~{3,})')
 
 REGISTRY_DIR = os.path.join('tools', 'claims', 'registry')
 LESSONS_DIR = os.path.join('docs', 'lessons', 'v3')
+# The Concepts Study Guide (docs/study-guide/, its pages in group subfolders)
+# points at the same claims, so its markers count as uses too.
+GUIDE_DIR = os.path.join('docs', 'study-guide')
+
+
+def marked_pages(root):
+    """Every page whose claim markers are checked: the lessons, then the guide."""
+    pages = sorted(glob.glob(os.path.join(root, LESSONS_DIR, '*.md')))
+    pages += sorted(glob.glob(os.path.join(root, GUIDE_DIR, '**', '*.md'), recursive=True))
+    return pages
 
 
 @dataclass
@@ -147,13 +157,13 @@ def load_registry(root, result):
 
 
 def scan_lessons(root, result):
-    for path in sorted(glob.glob(os.path.join(root, LESSONS_DIR, '*.md'))):
-        name = os.path.basename(path)
+    for path in marked_pages(root):
+        name = os.path.relpath(path, root).replace(os.sep, '/')
         with open(path, encoding='utf-8') as f:
             lines = f.read().split('\n')
         fence = None
         for n, line in enumerate(lines, 1):
-            where = f'{LESSONS_DIR}/{name}:{n}'
+            where = f'{name}:{n}'
             m = FENCE_RE.match(line)
             if m:
                 mark = m.group(1)
