@@ -3215,12 +3215,27 @@ a lesson as-is. (The two classic plan docs, `lesson-plan-16-22.md` and
   lessons are actually written, their prose goes under `docs/lessons/v3/`,
   a sibling of `docs/lessons/`'s numbered files, not mixed into them.
 - [docs/lesson-plan-v3-reference.md](docs/lesson-plan-v3-reference.md) — the
-  plan for a **Reference** section (`docs/reference/`, user request
-  2026-11-22): topic pages summarising the course's Java and FRC ideas, with
-  code examples copied from the snapshots, pop-up quizzes that remember scores
-  in the browser, claim markers, and source tags checked against the code.
-  Pages teach the final form without assuming every lesson is done. Planning
-  only; its section 9 lists the user's open questions.
+  plan for the **Concepts Study Guide** (`docs/study-guide/`, user request
+  2026-11-22): topic pages summarising the course's Java, FRC and tools ideas,
+  in group folders, with code examples copied from the snapshots, pop-up
+  quizzes that remember scores in the browser, claim markers, and source tags
+  checked against the code. Pages teach the final form without assuming every
+  lesson is done. **The infrastructure is built; no topic pages yet** (the
+  pilot is *Lambdas and coroutines* and *Commands and triggers*). What to know
+  before touching it:
+  - **It's hidden from the published site** until `StudyGuide::PUBLISHED` in
+    `docs/_plugins/study_guide.rb` is true. Preview it with
+    `STUDY_GUIDE_PREVIEW=1` on the `jekyll serve` line.
+  - **The sidebar** is `GUIDE`/`GUIDE_GROUPS` in `lesson_nav.rb` (three levels,
+    `grand_parent`); pages are `<group>/NN-slug.md`.
+  - **Quizzes** are `<details class="quiz">` blocks (markup in the plan's
+    section 5) that `docs/assets/js/quiz.js` turns into pop-ups. Browser
+    tests: `NODE_PATH=$(npm root -g) ./tools/site-tests/run-quiz-tests.sh`
+    (33 checks on fixture pages in `tools/site-tests/fixtures/`).
+  - **`tools/check-study-guide.py`** checks every quiz's shape and every java
+    example's `<!-- source: lesson-N path -->` tag against that lesson's code
+    (or `<!-- source: wrong -->`); `check_claims.py` scans the guide's
+    markers. The pre-commit hook runs both.
 - [docs/lesson-plan-alpha7-upgrade.md](docs/lesson-plan-alpha7-upgrade.md) —
   the impact assessment and phased plan for upgrading the v3 track (only —
   the classic track targets stable 2026 and is unaffected) to WPILib 2027

@@ -120,111 +120,118 @@ snapshot (or is a deliberately-wrong version a lesson already shows) and
 carries a source tag the checker reads (section 6). A shortened example uses
 `// ...` for the parts it drops, as the lessons do.
 
-## 4. Site plumbing
+## 4. Site plumbing (built 2026-11-22)
 
-- **Folder:** `docs/reference/README.md` is the section's own page ("Reference",
-  with the page list and how to use the quizzes); topic pages beside it.
-- **Sidebar:** add `"reference/README.md" => { "title" => "Reference",
-  "nav_order" => 3 }` to `TRACKS` in `docs/_plugins/lesson_nav.rb`, and teach
-  `settings_for` that a reference page's label is its `#` heading and its order
-  comes from a front-matter-free rule (proposed: a number prefix in the file
-  name, `01-java-classes-enums-objects.md`, so Java pages come first in a
-  fixed order). "How the lessons are checked" moves to `nav_order: 4`.
-- **Java and FRC groups in the sidebar:** Just the Docs can nest pages a level
-  deeper with `grand_parent`. **Not checked yet**: build a two-group test first.
-  If nesting misbehaves, fall back to one flat list with prefixed labels
-  ("Java · Classes, enums and objects", "FRC · Commands and triggers").
-- **Layout and Liquid:** add a `defaults` entry for `path: reference` with
-  `layout: default` and `render_with_liquid: false` (the same rule as lessons;
-  without a layout, the page renders unstyled, as the checks page did).
-- **Cross-links from lessons:** optional, per section 9. If wanted, a short
-  "See also: [Reference — Commands and triggers](...)" line at the end of a
-  lesson's recap, never in the middle of a walkthrough.
+- **Folder:** `docs/study-guide/README.md` is the section's home ("Concepts
+  Study Guide", `nav_order` 3, with the page list and the quiz total). Each
+  group is a folder with its own `README.md`: `java/`, `frc-hardware/`,
+  `frc-control/`, `frc-framework/`, `frc-logging/`, `tools/`. Topic pages go in
+  their group's folder as `NN-slug.md`; the number sets the order.
+- **Sidebar:** `docs/_plugins/lesson_nav.rb` places the pages, like the
+  lessons, with no front matter: `GUIDE` and `GUIDE_GROUPS` name the section
+  and its groups, and `guide_settings` gives a group `parent` the guide and a
+  topic `parent` its group plus `grand_parent` the guide. Just the Docs 0.12
+  draws the third level correctly (checked in a local build). "How the lessons
+  are checked" moved to `nav_order: 4`.
+- **Kept off the site until approved:** `docs/_plugins/study_guide.rb` drops
+  every guide page from the build while `StudyGuide::PUBLISHED` is false,
+  unless the build runs with `STUDY_GUIDE_PREVIEW=1` (a local preview, or the
+  quiz tests). Set `PUBLISHED = true` when the pilot pages are approved.
+- **Layout and Liquid:** a `defaults` entry for `path: study-guide` gives
+  `layout: default` and `render_with_liquid: false`.
+- **Cross-links from lessons:** later (user, second round), as a "See also"
+  line at the end of a lesson's recap, never mid-walkthrough.
 
-## 5. Quizzes
+## 5. Quizzes (built 2026-11-22)
 
 ### Markup (works on GitHub and on the site)
 
-Each quiz is a `<details>` block, so on GitHub it shows as a collapsed
-"Check yourself" with the answer hidden until opened:
+Each quiz is a `<details>` block, so on GitHub, or with scripts off, it shows
+as a collapsed "Check yourself" with the answer hidden until opened:
 
-*Nothing to add — this is the proposed markup:*
+*Nothing to add — this is the markup:*
 
 ```markdown
 <details class="quiz" id="q-commands-1" markdown="1">
 <summary>Check yourself: a command's body has run out. Which hook runs?</summary>
 
-- [ ] `whenCanceled` only. *Not quite: nothing cancelled it.*
-- [x] `whenExited` only. *Right: it finished, so only the exit hook runs.*
+- [ ] `whenCanceled` only. *Nothing cancelled it.*
+- [x] `whenExited` only. *It finished, so only the exit hook runs.*
 - [ ] Both, `whenExited` first. *That's what a cancel does.*
 
 </details>
 ```
 
-- One correct answer (`[x]`), two to four wrong ones, each with a one-line
-  explanation of why it's right or wrong.
+- One right answer (`[x]`) among two to five, each ending in an *italic*
+  explanation. The pop-up adds "Right." or "Not quite." itself, so the
+  explanation doesn't start with either.
+- The blank lines after `<summary>` and before `</details>` are needed: without
+  them kramdown leaves the list as text.
+- kramdown's GFM parser does turn `- [ ]` into checkboxes inside
+  `markdown="1"`, the right one `checked` (checked in a build), which is what
+  the script reads.
 - A claim marker can sit in an explanation when the answer depends on library
-  behaviour (this example would carry the `whenExited` probe claim).
-- **To check in a build:** whether kramdown's GFM parser turns `- [ ]` into
-  checkboxes inside `markdown="1"`; if not, use a plain list with a
-  `{: .correct}` marker or a `data-correct` attribute instead.
+  behaviour.
 
 ### On the website
 
-A small script (`docs/assets/js/quiz.js`, loaded from `head_custom.html`):
+`docs/assets/js/quiz.js`, loaded on guide pages only by `head_custom.html`:
 
-- Turns each `details.quiz` into a **"Check yourself"** button in the text.
-- Opens a **pop-up** (a native `<dialog>`): the question, the options as
-  buttons, and after a choice, the explanation, with the right answer marked.
-  "Try again" and "Close"; Escape and a click outside close it.
-- **Remembers scores** in `localStorage`, key `BasicRobotLessons.quiz.<page>.<id>`
-  (the site's existing `BasicRobotLessons.` prefix, because every
-  `frc5010.github.io` site shares storage). It stores right, wrong or not
-  answered. The button shows a tick once answered right, and a page header
-  shows "4 of 6 answered". A "Reset this page's quizzes" link clears them.
-- **Fails safe:** wrap every storage call in try/catch (private windows,
-  blocked storage). With scripts off, the `<details>` fallback still works.
-- **Both colour schemes:** styles in `custom.scss`, branching on
-  `$color-scheme` like the existing status marks.
-- **Accessibility:** the dialog takes focus and returns it; options are real
-  buttons; right/wrong is said in text, not by colour alone.
-- **Tests:** Playwright, Chromium (the container has nothing else), in the
-  style of the dark-mode checks. Answer, reload and see the score kept; storage
-  blocked; scripts off; dark mode; 390 px wide; keyboard only.
+- Turns each quiz into a **"Check yourself"** button opening a `<dialog>`: the
+  question, the answers as buttons, then the explanation. "Try again" after a
+  wrong answer; Close, Escape and a click outside close it, and focus returns
+  to the button.
+- **Remembers** in `localStorage`, key `BasicRobotLessons.quiz.<id>` (ids are
+  unique across the guide, so no page part). A quiz once answered right stays
+  right. Each page shows "N of M quizzes on this page answered right" and
+  "Forget this page's answers"; the home page shows the total across pages
+  ("You've answered X of Y quizzes right, on P of N pages") from the list
+  `study_guide.rb` builds, with "Forget every answer".
+- A malformed quiz stays a plain block, and isn't counted.
+- **Fails safe:** storage calls are wrapped; with scripts off the `<details>`
+  blocks work.
+- **Tests:** `tools/site-tests/run-quiz-tests.sh` builds a preview with two
+  fixture pages and runs `quiz.test.js` (Playwright, Chromium): 33 checks,
+  covering answering, reload, the total, the base path, keyboard only, storage
+  blocked, scripts off, dark scheme and 390 px. Run it with
+  `NODE_PATH=$(npm root -g) ./tools/site-tests/run-quiz-tests.sh`.
 
-### A quiz checker
+### The checker
 
-`tools/check-reference-quizzes.py`, run by the pre-commit hook on staged
-reference pages: every quiz has a unique id, exactly one correct option, at
-least two options, an explanation on every option, and parses. Unit tests in
-`tools/tests/`, broken on purpose once.
+`tools/check-study-guide.py` checks every quiz: a unique `q-` id, `markdown="1"`,
+a "Check yourself:" summary, two to five answers with exactly one right, every
+answer explained, no "Right"/"Not quite" opener, the blank lines, and closed.
+Tests: `tools/tests/test_check_study_guide.py`.
 
-## 6. Tying the pages to the checks
+## 6. Tying the pages to the checks (built 2026-11-22)
 
 The rule from "How the lessons are checked" applies here too: nothing goes in
 because it sounds right.
 
 - **Claim markers:** every sentence (or quiz explanation) that relies on library
   behaviour or a measured number carries `<!-- claim: id -->`, using the
-  existing registry. A reference page should almost never need a *new* claim:
-  it summarises what the lessons already claim. If it does, the claim gets
-  evidence like any other.
-- **`check_claims.py` reads `docs/reference/` too.** Today it only globs
-  `docs/lessons/v3/*.md` (`LESSONS_DIR`); extend it to both folders, so a
-  reference marker counts as a use, and a removed claim breaks the reference
-  page as well as the lesson. Add a test for the second folder.
-- **Code examples are checked against the code.** Before each example, a
-  source tag: `<!-- source: lesson-33 subsystems/Elevator.java -->` (the
-  lesson whose state to read, and the file). A new mode of the lesson-code
-  checker (or a small script reusing its token matcher, `fragments` and
-  `match_in_order`) checks that the example's tokens appear in that file at
-  that lesson's state. So when a snapshot changes, the reference example fails
-  in the same pre-commit run as the lesson block. A deliberately-wrong example
-  is tagged `<!-- source: wrong -->` and skipped, with the reason in prose.
+  existing registry. A guide page should almost never need a *new* claim: it
+  summarises what the lessons already claim.
+- **`check_claims.py` reads `docs/study-guide/` too**, recursively, so a guide
+  marker counts as a use and a removed claim breaks the guide page as well as
+  the lesson (tests: `StudyGuide` in `test_check_claims.py`).
+- **Code examples are checked against the code.** Among the two non-blank
+  lines above each ```` ```java ```` fence (so above the italic lead-in is
+  fine), a source tag: `<!-- source: lesson-33 subsystems/Elevator.java -->`,
+  the path relative to `src/main/java/first/robot/` (`test/...` for Lesson 31's
+  tests), or `<!-- source: lesson-33 -->` to search every file.
+  `check-study-guide.py` rebuilds that lesson's state through the shared lib and
+  matches the example with the lesson-code checker's token rules (comments,
+  whitespace and `// ...` anchors don't matter; members may come in any order).
+  A deliberately wrong example is tagged `<!-- source: wrong -->` and skipped;
+  the prose says it's wrong. The lesson must be at or below the cut-off.
+- **The pre-commit hook** checks out `docs/study-guide` with the lessons, and
+  runs the guide checker when a guide page, the checker, `code/v3`, the
+  template or the roll-forward rules change.
 - **UI descriptions** (SimGUI, AdvantageScope) reuse the `wpilib-tools.*`
   claims the lessons already mark, including the AdvantageScope version caveat.
-- **Counts on the checks page:** add the reference pages to "How the lessons
-  are checked" when they land, and update its numbers.
+- **Counts on the checks page:** add the guide to "How the lessons are
+  checked" when it's published, and update its numbers.
 
 ## 7. How it gets built
 
@@ -263,25 +270,21 @@ because it sounds right.
 - **Unverified UI.** AdvantageScope can't run in this container. UI facts come
   only from the user's screenshots (already claims) or are left out.
 
-## 9. Open questions for the user
+## 9. Questions answered (user, 2026-11-22)
 
-1. **Groups and order:** are the four FRC subgroups (hardware and sensors,
-   control, framework, logging and tools) right? Should SimGUI and
-   AdvantageScope be their own "Tools" group?
-2. **Suggested additions:** Units and measures, Testing with JUnit, Alerts:
-   separate pages, folded into others, or left out?
-3. **Length:** proposed one screen to three screens per page (roughly 800–2,000
-   words), three to six quizzes. Too much or too little?
-4. **Links from lessons:** add a "See also" line to lesson recaps, or keep the
-   reference section separate?
-5. **Section name:** "Reference", "Study guide", or "Concepts"?
-6. **Score memory:** per page only, or also a total on the Reference home page?
+1. **Groups:** the four FRC groups plus a **Tools** group (SimGUI, AdvantageScope).
+2. **Additions:** Units and measures folded into *Methods, variables and types*;
+   Alerts into *Logging*; testing with JUnit left out for now.
+3. **Length:** "hard to judge"; the pilot pages set it.
+4. **Links from lessons:** eventually, not in the first pass.
+5. **Name:** Concepts Study Guide.
+6. **Score memory:** per page, and a total on the guide's home page.
 
 ## 10. Status
 
 | Step | State |
 |---|---|
-| Plan | drafted 2026-11-22, waiting on section 9 |
-| Infrastructure | not started |
-| Pilot pages | not started |
+| Plan | done 2026-11-22 (section 9 answered) |
+| Infrastructure | done 2026-11-22: section, sidebar, preview gate, quizzes and their browser tests, quiz and source-tag checker, claims scope, pre-commit hook |
+| Pilot pages | not started (*Lambdas and coroutines*, *Commands and triggers*) |
 | Remaining pages | not started |
