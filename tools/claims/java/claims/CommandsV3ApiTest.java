@@ -162,6 +162,21 @@ class CommandsV3ApiTest {
     assertTrue(scheduler.isRunning(held), "onTrue cancelled the command when the trigger went false");
   }
 
+  @Test
+  @DisplayName("commandsv3.coroutine-body-is-a-consumer")
+  void aCoroutineBodyIsAConsumerOfCoroutine() throws Exception {
+    for (var method : new java.lang.reflect.Method[] {
+        Mechanism.class.getMethod("run", java.util.function.Consumer.class),
+        Command.class.getMethod("noRequirements", java.util.function.Consumer.class)}) {
+      var type = (java.lang.reflect.ParameterizedType) method.getGenericParameterTypes()[0];
+      assertEquals(java.util.function.Consumer.class, type.getRawType(), method.getName());
+      assertEquals(org.wpilib.command3.Coroutine.class, type.getActualTypeArguments()[0],
+          method.getName() + " takes a " + type + ", not a Consumer<Coroutine>");
+    }
+    // And runRepeatedly takes a plain Runnable: no parameter at all.
+    Mechanism.class.getMethod("runRepeatedly", Runnable.class);
+  }
+
   /** A command that takes two ticks, logging when it starts and ends. */
   private static Command step(String name, List<String> log) {
     return Command.noRequirements(coroutine -> {

@@ -105,6 +105,15 @@ class Quizzes(unittest.TestCase):
         squashed = GOOD_QUIZ.replace('order.*\n\n</details>', 'order.*\n</details>')
         self.assertTrue(any('blank line before' in p for p in quiz_problems(squashed)))
 
+    def test_no_open_angle_bracket_in_the_question(self):
+        text = GOOD_QUIZ.replace('which hook runs on a cancel?', 'what does a `Supplier<Pose2d>` hand back?')
+        self.assertTrue(any("can't contain <" in p for p in quiz_problems(text)))
+        # A lambda's arrow is fine: the site renders it.
+        self.assertEqual(quiz_problems(GOOD_QUIZ.replace('which hook', 'in `() -> x`, which hook')), [])
+        # Inside an answer it's fine: kramdown treats the list as Markdown.
+        text = GOOD_QUIZ.replace('*Both run, in that order.*', '*A `Consumer<Coroutine>` runs.*')
+        self.assertEqual(quiz_problems(text), [])
+
     def test_unclosed(self):
         self.assertIn('never closed', quiz_problems(GOOD_QUIZ.replace('</details>', ''))[-1])
 

@@ -20,7 +20,8 @@ The rules: an id of the form q-<words> that no other guide page uses; markdown="
 starting "Check yourself:"; two to five answers, exactly one marked [x]; every answer ending in
 an *explanation*, which mustn't itself start with "Right" or "Not quite" (the script says that);
 a blank line after the summary and before </details> (without them kramdown leaves the list as
-plain text); and the block closed.
+plain text); no < in the question, which kramdown reads as a tag there (an arrow's > is fine) (a generic type such as
+Supplier<Pose2d> swallowed the rest of a page); and the block closed.
 
 **Code examples.** Nothing on these pages is invented: every ```java block is copied from the
 course's code and says where from, with a source tag among the two non-blank lines above its
@@ -99,6 +100,11 @@ def check_quizzes(rel, text, seen):
         if summary_at is None or 'Check yourself:' not in body[summary_at]:
             problems.append(f'{where}: a quiz needs <summary>Check yourself: the question</summary>')
         else:
+            question = re.sub(r'</?summary>', '', body[summary_at])
+            if '<' in question:
+                problems.append(f'{where}: a quiz question can\'t contain < (a generic type such as '
+                                f'Supplier<Pose2d>): the site reads it as an HTML tag and the rest of the '
+                                f'page breaks. Reword it, or put the type in an answer instead')
             after = body[summary_at + 1] if summary_at + 1 < len(body) else ''
             if after.strip():
                 problems.append(f'{where}: leave a blank line after the <summary> line')

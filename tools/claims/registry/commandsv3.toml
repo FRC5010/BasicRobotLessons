@@ -438,3 +438,14 @@ measured_on = "alpha-8"
 method = "TEST"
 test = "tools/claims/java/claims/CommandsV3ApiTest.java"
 
+[[claim]]
+id = "commandsv3.coroutine-body-is-a-consumer"
+kind = "api"
+library = ["commandsv3"]
+criticality = "C2"
+statement = "Mechanism.run and Command.noRequirements take a java.util.function.Consumer<Coroutine>, so a coroutine body is a lambda with one parameter, the Coroutine; runRepeatedly takes a plain Runnable, with none."
+evidence = "tools/claims/java/claims/CommandsV3ApiTest.java on alpha-8 (2026-11-22), by reflection on the generic parameter types; javap of commandsv3-java-2027.0.0-alpha-8.jar agrees"
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/CommandsV3ApiTest.java"
+

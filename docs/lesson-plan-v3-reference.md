@@ -96,18 +96,22 @@ Joystick links there); the 20 ms loop (Periodic page; Opmodes links there).
 Each page follows one shape, so a reader always knows where to look:
 
 1. **Title** (`# Classes, enums and objects`) and a one-sentence **summary**.
-2. **"Where this comes from"**: the lessons that teach it, as links ("First in
-   Lesson 1; enums arrive in Lesson 13; enums with fields in Lesson 24").
+2. **A line saying where the examples come from** (the final code, unless an example
+   says otherwise). The list of lessons that teach the topic goes near the end, as
+   "Where this comes from", just before the quick reference (user, first review).
 3. **Sections**, one idea each, each with:
    - a short explanation in the lessons' voice (CLAUDE.md's teacher's-voice
      rules apply; Lesson 0 is the calibration);
    - **an example from the course's code**, in its final form, with an italic
-     lead-in (*Example, from `Elevator.java`:*). No bold "type this" lead-ins:
+     lead-in that links to the lesson section where it's written
+     (*Example, from `Elevator.java` ([Lesson 18, section 8](...)):*);
+   - **the lesson's figure, shown on the page**, when one draws the idea: the image from
+     `../../lessons/v3/images/`, captioned "Figure N.k, from [Lesson N](...#figure-N-k)",
+     with the lesson's alt text and claim markers (user, first review); No bold "type this" lead-ins:
      nothing on these pages is an instruction;
    - when the idea is easy to get wrong, the wrong picture next to the right one
      (the lessons' move 3).
-4. **Quizzes** where they reinforce a section (section 5); about one per
-   section, usually three to six per page.
+4. **Quizzes**, two per section (user, first review), each on a different point.
 5. **Common mistakes**: the traps the lessons and their measurements found
    (the boot crash on an empty command list, the `getPose()::getRotation`
    capture, `Command.sequence` holding every requirement, ...), each linked to
@@ -200,7 +204,7 @@ as a collapsed "Check yourself" with the answer hidden until opened:
 
 `tools/check-study-guide.py` checks every quiz: a unique `q-` id, `markdown="1"`,
 a "Check yourself:" summary, two to five answers with exactly one right, every
-answer explained, no "Right"/"Not quite" opener, the blank lines, and closed.
+answer explained, no "Right"/"Not quite" opener, the blank lines, no `<` in the question (kramdown reads `Supplier<Pose2d>` there as a tag, and it swallowed the rest of a pilot page), and closed.
 Tests: `tools/tests/test_check_study_guide.py`.
 
 ## 6. Tying the pages to the checks (built 2026-11-22)
@@ -286,5 +290,5 @@ because it sounds right.
 |---|---|
 | Plan | done 2026-11-22 (section 9 answered) |
 | Infrastructure | done 2026-11-22: section, sidebar, preview gate, quizzes and their browser tests, quiz and source-tag checker, claims scope, pre-commit hook |
-| Pilot pages | written 2026-11-22, waiting on the user's review: `java/04-lambdas-coroutines.md` (10 examples, 4 quizzes) and `frc-framework/03-commands-triggers.md` (9 examples, 4 quizzes); three new claims (`commandsv3.loop-without-yield-one-tick`, `builders-need-a-name`, `ontrue-starts-not-stops`) and one that was unverified (`noyield-command-finishes-same-tick`), each now with a JUnit test |
+| Pilot pages | written 2026-11-22; revised the same day after the user's first review (lesson list moved to just before the quick reference, figures shown on the page, two quizzes per section, each example linked to the lesson section that writes it, a section on lambdas with parameters that ends at coroutines, the `::` trap moved to Common mistakes). `java/04-lambdas-coroutines.md` (12 examples, 14 quizzes, Figures 8.1 and 25.1) and `frc-framework/03-commands-triggers.md` (11 examples, 14 quizzes, Figures 0.1, 6.1, 9.2 and 25.1). Four new claims (`commandsv3.loop-without-yield-one-tick`, `builders-need-a-name`, `ontrue-starts-not-stops`, `coroutine-body-is-a-consumer`) and one that was unverified (`noyield-command-finishes-same-tick`), each with a JUnit test |
 | Remaining pages | not started |
