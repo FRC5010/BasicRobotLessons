@@ -1263,6 +1263,29 @@ Blue 1 the same push drives 1.87 m toward +X. <!-- claim: l17.red-teleop-forward
    `FollowPath/crossTrackError` in the replay's file, though, and it isn't
    there: B-Line logs through Telemetry, not AdvantageKit (section 6). <!-- claim: advantagekit.telemetry-log-not-recorded, bline.telemetry-signals --> Put
    both switches back when you're done.
+8. **Decide what "face 90°" means.** Section 11 moved the stick onto the
+   estimate's heading, but the two face buttons didn't move with it:
+   `turnToHeading` still steers by `getHeadingDegrees()`, the gyro. Before
+   you change anything, answer two questions on paper. On a real robot,
+   after the driver presses Start facing some other way than the gyro thinks,
+   which way does the bottom face button turn the robot: to 90° by the gyro,
+   or to 90° by the estimate? And when the driver stands at the red end, should
+   "face 90°" mean the field's 90°, or 90° from straight away from them, the
+   way the stick now works?
+
+   There isn't one right answer. "Turn to face the hub" is a spot on the
+   field, so it wants the field's angle from the estimate, whichever end you
+   stand at. "Turn left a quarter" is about the driver, so it wants the
+   driver's angle. A gyro angle is neither, once Start has been pressed. Pick
+   what *your* buttons are for, and write it: give `turnToHeading` a
+   `Supplier<Rotation2d>` to measure from, the way `driveFieldRelative` got
+   one. Pass it `() -> robot.localizer.getPose().getRotation()` for the
+   field's angle, or `this::headingFromDriver` for the driver's. (Not
+   `robot.localizer.getPose()::getRotation`: Java works out the part before
+   `::` once, when the reference is made, so that one would keep returning
+   the heading from the moment you built the command.) `turnToHeading` has
+   another caller, `driveTurnDrive` in `Autos`, so decide what heading it
+   gets as well.
 
 ---
 

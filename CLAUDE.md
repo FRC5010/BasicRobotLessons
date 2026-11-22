@@ -3085,9 +3085,12 @@ selection; both use `MatchState.getAlliance()` with unknown as blue.
       explained.
     - Teleop aiming points at tag 20 on blue and at its twin on red.
     - Start sets 0° or 180°.
-  - **Left alone:** `turnToHeading` (the face buttons) still steers by the
-    gyro in field degrees, so after a Start press on a real robot those
-    buttons and the estimate can disagree. Not raised with the user yet.
+  - **Left alone, on purpose:** `turnToHeading` (the face buttons) still
+    steers by the gyro in field degrees, so after a Start press on a real
+    robot those buttons and the estimate can disagree. User decision
+    2026-11-22: it's Lesson 17's Try It #8 ("Decide what 'face 90°'
+    means"), since field angles and driver angles suit different buttons;
+    the snapshots keep the gyro version.
 
 ## Rewriting lessons in a teacher's voice
 
