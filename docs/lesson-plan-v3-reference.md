@@ -1,4 +1,4 @@
-# Plan: the Reference section (study guide and quick reference)
+# Plan: the Concepts Study Guide
 
 A set of website pages that summarise the course's important ideas by topic,
 not by lesson, for studying and quick lookup. The reader writes no code; the
@@ -6,21 +6,29 @@ pages use code in examples. Pop-up quizzes run through every page.
 
 This is a contributor document, kept off the website by the
 `lesson-plan-*.md` exclude. Nothing here is pasted into a page as is.
-Status: **planning (2026-11-22). Nothing is built yet.**
+Status: **infrastructure started 2026-11-22** (section 10).
 
 ## 1. Decisions so far (user, 2026-11-22)
 
-- **Where:** a new **Reference** section, `docs/reference/`, with its own
-  sidebar entry next to the OpMode track, grouped into Java and FRC pages.
+- **Where:** a new section named **Concepts Study Guide**, in
+  `docs/study-guide/`, with its own sidebar entry next to the OpMode track,
+  grouped into Java, FRC and Tools pages (user, second round).
 - **Quizzes:** pop-ups on the website, which **remember scores** in the
   reader's browser. On GitHub's own view they fall back to click-to-reveal
-  blocks (section 5).
+  blocks (section 5). The guide's home page also shows a total across all
+  pages (second round: "Sure").
 - **Which code:** concepts are taught **in their final form**, as the course
   ends up writing them. The pages **don't assume the reader has done every
   lesson**: each page stands on its own, explains in a sentence or two any
   idea it leans on, and links to the lesson that teaches it in depth. A
   student at Lesson 8 can read the Commands page and follow it. A note marks
   anything that only appears later in the course ("from Lesson 24 on, ...").
+
+**Second round (user, 2026-11-22):** add a **Tools** group (SimGUI and
+AdvantageScope); fold **Units and measures** into *Methods, variables and
+types* and **Alerts** into *Logging*; testing with JUnit stays out for now;
+page length is "hard to judge", so the pilot pages set it; links from lesson
+recaps come "eventually", not in the first pass.
 
 ## 2. The pages
 
@@ -62,18 +70,22 @@ lists the open questions). "First met" is the lesson that introduces the idea;
 | How periodic functions run | `frc-periodic` | the 20 ms loop; `robotPeriodic`, `simulationPeriodic`, opmode `periodic`; `Scheduler.run()` order (every `addPeriodic` callback in registration order, then commands, newest-first); why a drawing can be a tick behind (Lesson 20); what happens when a loop overruns | 0 / 4, 13, 20, 24 |
 | Commands and triggers | `frc-commands-triggers` | `Mechanism` and requirements; factories (`run`, `runRepeatedly`, `Command.noRequirements`); naming; finish vs cancel, `whenExited` vs `whenCanceled`; default commands; composition (`await`, `Command.parallel`, sequences and their requirements); `Trigger` bindings (`onTrue`, `whileTrue`, `ifTrue`, `retryWhileTrue`), combinators (`.and`, `.debounce`), triggers from any `BooleanSupplier`; what disable does to commands (alpha-8) | 1 / 2, 6, 9, 21, 22, 24, 25 |
 
-### FRC: logging, replay and tools
+### FRC: logging and replay
 
 | Page | Slug | Covers | First met / also |
 |---|---|---|---|
-| Logging options and where they land | `frc-logging` | `Telemetry.log` (WPILib) under `/Telemetry/...`; AdvantageKit inputs (`processInputs`) under `/AdvantageKit/<key>` and outputs (`recordOutput`) under `/AdvantageKit/RealOutputs/<key>`; the two log files (`WPILIB_` and `akit_`) and what's in each; widgets as snapshots; alerts | 3 / 13, 19, 30, 32, 33 |
+| Logging options and where they land | `frc-logging` | `Telemetry.log` (WPILib) under `/Telemetry/...`; AdvantageKit inputs (`processInputs`) under `/AdvantageKit/<key>` and outputs (`recordOutput`) under `/AdvantageKit/RealOutputs/<key>`; the two log files (`WPILIB_` and `akit_`) and what's in each; widgets as snapshots; alerts (`Alert` levels, where they show, gated and sticky alerts), folded in | 3 / 13, 19, 30, 32, 33 |
 | IO architecture for logging and replay | `frc-io-replay` | the IO interface, `...Inputs` bundles, real/sim/replay implementations; why replay re-runs your logic on recorded inputs; what counts as an input (the battery voltage, `StartingPlacement`); how replay is started; what replay can't reproduce | 13 / 14–16, 18, 29, 32 |
+### Tools
+
+| Page | Slug | Covers | First met / also |
+|---|---|---|---|
 | SimGUI | `tools-simgui` | Robot State (mode, opmode, Enable); the DS window and alliance station (starts on Red 1); keyboard joysticks and mapping; NetworkTables menu vs NetworkTables View; Field and Mechanism windows; Other Devices and unplug switches; Addressable LEDs; Alerts | 0 / 2, 6, 11, 17, 19, 23, 30 |
 | AdvantageScope | `tools-advantagescope` | connecting to the simulator; the sidebar tree; Line Graph and discrete fields; 2D/3D Field (the field drawn with +X left in today's version); Swerve tab; opening a log file and a replay; Mechanism tab (known not to draw 2027 mechanisms in 27.0.0-alpha-6) | 3 / 7, 8, 11, 13, 16, 17, 25 |
 
-**Suggested additions** (not in the user's list; ask before building):
-*Units and measures*, perhaps folded into Methods/variables/types; *Testing with
-JUnit* (Lesson 31); *Alerts* (Lesson 30), perhaps folded into Logging.
+**Units and measures** are part of *Methods, variables and types* (`Distance`,
+`Angle`, `LinearVelocity`, `.in(...)`, `.times(...)`, comparing measures).
+**Testing with JUnit** is left out for now.
 
 **Overlaps to keep in one place:** method references (Lambdas page; Suppliers
 links there); `Optional` (Methods page); alliance flipping (Geometry page;

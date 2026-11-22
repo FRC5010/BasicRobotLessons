@@ -163,3 +163,189 @@ div.highlighter-rouge pre.highlight code {
     display: none;
   }
 }
+
+// The Concepts Study Guide's quizzes (assets/js/quiz.js). Colors branch on
+// $color-scheme like the status marks above, so the dark scheme never puts its
+// light text on a pale background. Right and wrong are also said in words, not
+// by color alone.
+$quiz-right: #2e7d32;
+$quiz-wrong: #c62828;
+
+@function quiz-tint($color, $light-tint) {
+  @if $color-scheme == dark {
+    @return color.mix($color, $body-background-color, 22%);
+  }
+
+  @return $light-tint;
+}
+
+:root {
+  --quiz-right: #{$quiz-right};
+  --quiz-right-tint: #{quiz-tint($quiz-right, #e8f5e9)};
+  --quiz-wrong: #{$quiz-wrong};
+  --quiz-wrong-tint: #{quiz-tint($quiz-wrong, #fdecea)};
+  @if $color-scheme == dark {
+    --quiz-panel: #{$grey-dk-250};
+    --quiz-text: #{$grey-lt-000};
+  } @else {
+    --quiz-panel: #{$grey-lt-000};
+    --quiz-text: #{$grey-dk-300};
+  }
+}
+
+// The plain fallback: what GitHub shows, and what the site shows with scripts
+// off. The answer stays hidden until it's opened.
+details.quiz {
+  margin: 1rem 0;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid $border-color;
+  border-radius: 4px;
+
+  summary {
+    font-weight: 600;
+    cursor: pointer;
+  }
+}
+
+.quiz-card {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  align-items: center;
+  margin: 1rem 0;
+  padding: 0.5rem 0.75rem;
+  border-left: 4px solid $border-color;
+  border-radius: 4px;
+  background-color: var(--quiz-panel);
+
+  &.is-right {
+    border-left-color: var(--quiz-right);
+  }
+}
+
+.quiz-open,
+.quiz-reset,
+.quiz-dialog-actions button {
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.quiz-open,
+.quiz-dialog-actions button {
+  padding: 0.3rem 0.8rem;
+  color: #fff;
+  background-color: $link-color;
+  border: 0;
+}
+
+.quiz-status {
+  @include fs-2;
+}
+
+.quiz-progress {
+  @include fs-2;
+}
+
+.quiz-reset {
+  padding: 0;
+  color: $link-color;
+  background: none;
+  border: 0;
+  text-decoration: underline;
+}
+
+.quiz-dialog {
+  width: min(36rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  padding: 1rem 1.25rem;
+  overflow: auto;
+  color: var(--quiz-text);
+  background-color: $body-background-color;
+  border: 1px solid $border-color;
+  border-radius: 6px;
+
+  &::backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
+  }
+}
+
+.quiz-dialog-label {
+  @include fs-2;
+  margin: 0;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.quiz-dialog-question {
+  margin: 0.25rem 0 0.75rem;
+  font-weight: 600;
+}
+
+.quiz-dialog-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.quiz-option {
+  padding: 0.5rem 0.75rem;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  background-color: var(--quiz-panel);
+  border: 1px solid $border-color;
+  border-radius: 4px;
+
+  &:disabled {
+    cursor: default;
+  }
+
+  &.is-correct {
+    background-color: var(--quiz-right-tint);
+    border-color: var(--quiz-right);
+  }
+
+  &.is-wrong {
+    background-color: var(--quiz-wrong-tint);
+    border-color: var(--quiz-wrong);
+  }
+}
+
+.quiz-dialog-feedback {
+  margin: 0.75rem 0 0;
+
+  &:empty {
+    display: none;
+  }
+
+  &.is-correct {
+    padding: 0.5rem 0.75rem;
+    border-left: 4px solid var(--quiz-right);
+    background-color: var(--quiz-right-tint);
+  }
+
+  &.is-wrong {
+    padding: 0.5rem 0.75rem;
+    border-left: 4px solid var(--quiz-wrong);
+    background-color: var(--quiz-wrong-tint);
+  }
+}
+
+.quiz-dialog-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+
+  button[hidden] {
+    display: none;
+  }
+}
+
+.quiz-total-list {
+  @include fs-3;
+}

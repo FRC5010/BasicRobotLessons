@@ -119,3 +119,13 @@
 {%- endif %}
 </style>
 {%- endif %}
+{%- comment -%}
+  Third, the Concepts Study Guide's quizzes (assets/js/quiz.js), on guide
+  pages only. The JSON lists every guide page and its quiz ids, collected by
+  _plugins/study_guide.rb, so a page can count its own and the guide's home
+  page can show a total.
+{%- endcomment -%}
+{%- if page.path contains "study-guide/" %}
+<script type="application/json" id="study-guide-quizzes" data-baseurl="{{ site.baseurl }}">{{ site.data.study_guide_quizzes | jsonify }}</script>
+<script src="{{ '/assets/js/quiz.js' | relative_url }}" defer></script>
+{%- endif %}
