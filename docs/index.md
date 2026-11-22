@@ -15,6 +15,10 @@ lesson builds on the one before it, so start at Lesson 0 and work forward.
 
 ## Everything else
 
+- **[How the lessons are checked](how-lessons-are-checked.md)**: what makes
+  sure the code compiles, the numbers were measured, and nothing in a lesson
+  is there just because it sounded right.
+
 The reference code for every lesson, the scripts that build it, and the slide
 decks live in
 [the GitHub repository](https://github.com/FRC5010/BasicRobotLessons).

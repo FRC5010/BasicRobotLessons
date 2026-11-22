@@ -3272,6 +3272,18 @@ follow Lesson 34. What that means when editing:
 - The debugger and git-branching asides live in `docs/lessons/v3/`, so they sit
   under the OpMode track after Lesson 34, like any other aside.
 
+**[docs/how-lessons-are-checked.md](docs/how-lessons-are-checked.md) tells
+readers how the lessons are checked against AI hallucination** (user request,
+2026-11-22): the compile check, the lesson-code and marker checkers, the
+claims registry and its pre-commit check, measuring numbers in simulation,
+figure generators, reading library source, what those caught, and what isn't
+checked. It's the one top-level page besides `index.md`: it has front matter
+(`title`, `nav_order: 3`) for the sidebar, and a `defaults` entry in
+`_config.yml` gives it the theme's layout (without one it renders unstyled,
+with mojibake, as seen in a local build). **It quotes counts** (621 claims,
+1,037 markers, 404 checked blocks, 58 figure scripts, as of 2026-11-22):
+update them when they drift far, or reword them as approximate.
+
 **The OpMode track's unconverted lessons are marked "under construction"**
 by [docs/_plugins/lesson_status.rb](docs/_plugins/lesson_status.rb), on the
 website only; the lesson files don't change.

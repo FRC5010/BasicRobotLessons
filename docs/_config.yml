@@ -44,6 +44,11 @@ defaults:
     values:
       layout: default
       render_with_liquid: false
+  - scope:
+      path: how-lessons-are-checked.md
+    values:
+      layout: default
+      render_with_liquid: false
 
 # Kept in the repo but off the website: contributor planning documents, the
 # slide decks (about 160 MB, linked from the home page instead), and the files
