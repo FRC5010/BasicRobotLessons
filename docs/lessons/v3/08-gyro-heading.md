@@ -23,7 +23,7 @@ An encoder tells you how far a *motor* turned. A **gyro** tells you how far the
 *whole robot* has rotated. The Pigeon 2 reports **yaw** — rotation about the
 vertical axis, i.e. heading — in degrees. `0°` is wherever the robot was pointing
 when the gyro zeroed, and positive is CCW (the convention from Lesson 7, drawn in [Figure 7.1](07-four-modules.md#figure-7-1), holding
-as promised).
+as promised). <!-- claim: phoenix6.pigeon2-yaw-ccw-from-boot -->
 
 Where should it live? Heading is a *chassis* fact — no single module knows it,
 and no single module needs it alone — so the gyro goes on `Drivetrain`, not in

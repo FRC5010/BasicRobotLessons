@@ -215,6 +215,15 @@ evidence = "No record found in CLAUDE.md or tools/figures/data; stated by the le
 measured_on = "unverified"
 
 [[claim]]
+id = "phoenix6.pigeon2-yaw-ccw-from-boot"
+kind = "behaviour"
+library = ["phoenix6"]
+criticality = "C2"
+statement = "A Pigeon 2's getYaw() reports the robot's rotation about the vertical axis in degrees, counterclockwise positive, counted from where it faced when the gyro zeroed (at power-on unless the code resets it)."
+evidence = "No record found in CLAUDE.md or tools/figures/data; stated by Lesson 8 and assumed by CLAUDE.md's 2026-11-21 alliance notes ('A real Pigeon zeroes at boot'). Hardware behaviour, not measurable in the simulation, where the course writes the yaw itself with setRawYaw"
+measured_on = "unverified"
+
+[[claim]]
 id = "phoenix6.first-signal-read-waits"
 kind = "behaviour"
 library = ["phoenix6"]

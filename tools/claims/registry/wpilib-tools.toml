@@ -32,6 +32,17 @@ measured_on = "alpha-8"
 method = "LOOP"
 
 [[claim]]
+id = "wpilib-tools.simgui-keyboard-stick-keys"
+kind = "behaviour"
+library = ["wpilib-tools"]
+criticality = "C3"
+statement = "SimGUI's default Keyboard 0 drives the left stick with W/S (Y axis, W reading -1.0, the same sign as a real stick pushed forward) and A/D (X axis), and the right stick's X axis with E/R, through its three axes Axis[0..2]."
+evidence = "Seen in SimGUI on alpha-8 under Xvfb while making the batch 2 figures, 2026-11-19 (CLAUDE.md 'SimGUI tips (b2g3)' and '(b2g4)': W holds Axis[1] at -1.0, keyboard 0 shows only Axis[0..2])."
+measured_on = "alpha-8"
+method = "LOOP"
+note = "Which of E and R turns which way was not recorded."
+
+[[claim]]
 id = "wpilib-tools.simgui-keyboard-trigger-axis"
 kind = "behaviour"
 library = ["wpilib-tools", "commandsv3"]
