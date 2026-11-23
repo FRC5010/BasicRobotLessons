@@ -5,11 +5,11 @@
 # docs/lesson-plan-v3-reference.md. This plugin does two jobs; the sidebar
 # placement is in lesson_nav.rb, with the rest of the sidebar.
 #
-# 1. Keep the section off the published site until it's ready. While
-#    PUBLISHED is false, every page under study-guide/ is dropped from the
-#    build, unless the environment says STUDY_GUIDE_PREVIEW=1, which is how a
-#    local preview or the quiz tests build it. Set PUBLISHED to true when the
-#    pilot pages are approved.
+# 1. Decide whether the section is on the site. It's published (PUBLISHED is
+#    true, since 2026-11-23, with the Java group and Commands and triggers).
+#    Set it back to false to take the whole section off the site: every page
+#    under study-guide/ is then dropped from the build, unless the environment
+#    says STUDY_GUIDE_PREVIEW=1, for a local preview or the quiz tests.
 #
 # 2. Index the quizzes. Every quiz is a <details class="quiz" id="..."> block
 #    (the markup is in the plan's section 5). This lists each guide page's
@@ -18,7 +18,7 @@
 #    answered" on a page and the total on the guide's home page.
 module StudyGuide
   DIR = "study-guide"
-  PUBLISHED = false
+  PUBLISHED = true
   QUIZ = /<details\s+class="quiz"\s+id="([^"]+)"[^>]*>(.*?)<\/details>/m
   # A quiz counts only if it marks a right answer, as quiz.js requires;
   # anything else stays a plain block on the page, so it isn't counted.

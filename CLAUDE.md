@@ -3220,12 +3220,13 @@ a lesson as-is. (The two classic plan docs, `lesson-plan-16-22.md` and
   in group folders, with code examples copied from the snapshots, pop-up
   quizzes that remember scores in the browser, claim markers, and source tags
   checked against the code. Pages teach the final form without assuming every
-  lesson is done. **The infrastructure is built; no topic pages yet** (the
-  pilot is *Lambdas and coroutines* and *Commands and triggers*). What to know
-  before touching it:
-  - **It's hidden from the published site** until `StudyGuide::PUBLISHED` in
-    `docs/_plugins/study_guide.rb` is true. Preview it with
-    `STUDY_GUIDE_PREVIEW=1` on the `jekyll serve` line.
+  lesson is done. **Published on 2026-11-23** with the whole Java group (six
+  pages) and *Commands and triggers*; the other FRC groups and Tools are empty
+  group pages saying they're being written. What to know before touching it:
+  - **`StudyGuide::PUBLISHED` in `docs/_plugins/study_guide.rb` is `true`.**
+    Setting it to `false` takes the whole section off the site (pages only
+    show with `STUDY_GUIDE_PREVIEW=1`). The quiz tests' first check fails if a
+    normal build lacks the guide or contains a fixture page.
   - **The sidebar** is `GUIDE`/`GUIDE_GROUPS` in `lesson_nav.rb` (three levels,
     `grand_parent`); pages are `<group>/NN-slug.md`.
   - **Quizzes** are `<details class="quiz">` blocks (markup in the plan's

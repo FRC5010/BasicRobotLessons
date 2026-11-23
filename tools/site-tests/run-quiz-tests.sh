@@ -2,7 +2,8 @@
 # Builds a throwaway copy of the website with the Concepts Study Guide shown
 # and the fixture pages in fixtures/ added, serves it, and runs the quiz
 # checks in quiz.test.js with Playwright (Chromium). Also checks that a normal
-# build, without STUDY_GUIDE_PREVIEW, leaves the unpublished guide out.
+# build, the one GitHub Pages makes, has the published guide (StudyGuide::PUBLISHED
+# in docs/_plugins/study_guide.rb) and none of the test fixtures.
 #
 # Usage: tools/site-tests/run-quiz-tests.sh
 # Needs: Ruby + Bundler with docs/Gemfile installed, Node with Playwright.
@@ -21,14 +22,20 @@ build() {  # destination, then extra environment
     BUNDLE_GEMFILE="$repo/docs/Gemfile" bundle exec jekyll build -q -s . -d "$dest" 2>/dev/null)
 }
 
-echo "== a normal build leaves the guide out"
+echo "== a normal build has the published guide, and no fixtures"
 build "$work/plain" STUDY_GUIDE_PREVIEW=0
-if [ -e "$work/plain/study-guide" ] || grep -q "Concepts Study Guide" "$work/plain/index.html"; then
-  echo "FAIL: the study guide is in a normal build" >&2; exit 1
+if [ ! -e "$work/plain/study-guide/index.html" ] || ! grep -q "Concepts Study Guide" "$work/plain/index.html"; then
+  echo "FAIL: the study guide is missing from a normal build" >&2; exit 1
+fi
+if grep -rlq "quiz-fixture" "$work/plain/study-guide"; then
+  echo "FAIL: a test fixture is in a normal build" >&2; exit 1
 fi
 echo "ok"
 
 echo "== preview build with the fixtures"
+# Only the fixtures' quizzes, so the checks can count them: drop the real
+# topic pages (the group README pages stay, so the sidebar still builds).
+find "$work/src/study-guide" -mindepth 2 -name '[0-9][0-9]-*.md' -delete
 cp -R "$here/fixtures/study-guide/." "$work/src/study-guide/"
 mkdir -p "$work/serve"
 build "$work/serve/BasicRobotLessons" STUDY_GUIDE_PREVIEW=1

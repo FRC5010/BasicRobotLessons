@@ -136,6 +136,21 @@ an `EventTrigger` class you build, and the real library has no such class.
 Library versions are pinned to exact files that can't change underneath the
 course.
 
+## 7. The study guide is checked the same way
+
+The [Concepts Study Guide](study-guide/README.md) summarises the lessons by idea, so it
+could drift from them. Its pages are held to the same rules:
+
+- **Every code example is the course's own code.** Each one names the lesson and file it
+  was copied from, and a checker finds it in the code after that lesson, the same way the
+  lesson blocks are checked. When the code changes, the example fails until it's updated.
+- **Library statements point at the same claims.** A sentence about how a library behaves
+  carries the same hidden marker the lessons use, so a claim that changes shows up in the
+  guide too. A few statements were tested for the guide itself: for example, that a loop
+  in a command with no `yield` runs every pass in one tick.
+- **The quizzes are checked for shape**: one right answer, every answer explained, and
+  nothing in a question that would break the page.
+
 ## What these checks caught
 
 The checks only matter if they find things. Some of what they turned up, all

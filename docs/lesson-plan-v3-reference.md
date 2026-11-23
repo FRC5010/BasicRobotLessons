@@ -137,10 +137,10 @@ carries a source tag the checker reads (section 6). A shortened example uses
   topic `parent` its group plus `grand_parent` the guide. Just the Docs 0.12
   draws the third level correctly (checked in a local build). "How the lessons
   are checked" moved to `nav_order: 4`.
-- **Kept off the site until approved:** `docs/_plugins/study_guide.rb` drops
-  every guide page from the build while `StudyGuide::PUBLISHED` is false,
-  unless the build runs with `STUDY_GUIDE_PREVIEW=1` (a local preview, or the
-  quiz tests). Set `PUBLISHED = true` when the pilot pages are approved.
+- **Published on 2026-11-23** (user: build it on the website after the PR
+  merges). `StudyGuide::PUBLISHED` in `docs/_plugins/study_guide.rb` is
+  `true`; setting it to `false` drops every guide page from the build again,
+  unless the build runs with `STUDY_GUIDE_PREVIEW=1`.
 - **Layout and Liquid:** a `defaults` entry for `path: study-guide` gives
   `layout: default` and `render_with_liquid: false`.
 - **Cross-links from lessons:** later (user, second round), as a "See also"
@@ -289,6 +289,7 @@ because it sounds right.
 | Step | State |
 |---|---|
 | Plan | done 2026-11-22 (section 9 answered) |
+| Published | 2026-11-23: the Java group and *Commands and triggers*; the empty groups say they're being written |
 | Infrastructure | done 2026-11-22: section, sidebar, preview gate, quizzes and their browser tests, quiz and source-tag checker, claims scope, pre-commit hook |
 | Pilot pages | written 2026-11-22; revised the same day after the user's first review (lesson list moved to just before the quick reference, figures shown on the page, two quizzes per section, each example linked to the lesson section that writes it, a section on lambdas with parameters that ends at coroutines, the `::` trap moved to Common mistakes). `java/04-lambdas-coroutines.md` (12 examples, 14 quizzes, Figures 8.1 and 25.1) and `frc-framework/03-commands-triggers.md` (11 examples, 14 quizzes, Figures 0.1, 6.1, 9.2 and 25.1). Four new claims (`commandsv3.loop-without-yield-one-tick`, `builders-need-a-name`, `ontrue-starts-not-stops`, `coroutine-body-is-a-consumer`) and one that was unverified (`noyield-command-finishes-same-tick`), each with a JUnit test |
 | Remaining pages | Java 01–03 written 2026-11-22 (Classes, enums and objects: 12 examples, 14 quizzes, Figure 24.1; Methods, variables and types: 11 examples, 16 quizzes, with Units as its section 8; Inheritance and interfaces: 11 examples, 14 quizzes, Figure 13.1), on the revised pilots' template. Java 05–06 written 2026-11-23 (Suppliers, consumers and functions: 11 examples, 14 quizzes; Annotations: 7 examples, 10 quizzes, with a new claim `wpilib.opmode-scan-constructor` read from `OpModeRobot`'s bytecode). **The Java group is complete.** Still to write: the FRC and Tools groups |
