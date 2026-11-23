@@ -687,3 +687,14 @@ statement = "The 2026 field (Fields.DEFAULT_FIELD) is rotationally symmetric: ev
 evidence = "CLAUDE.md, 'Alliance flipping, checked 2026-11-21': 32 of 32 tags land on a twin under rotation, 20 of 32 under a mirror; WPILib's 16.541 x 8.069 m against B-Line's 16.54 x 8.07 m, 1.3 mm worst"
 measured_on = "alpha-8"
 method = "LOOP"
+
+[[claim]]
+id = "wpilib.opmode-scan-constructor"
+kind = "api"
+library = ["wpilib"]
+criticality = "C2"
+statement = "OpModeRobot builds an annotated opmode itself: the class must be a public, non-abstract, static subclass of OpMode with a public no-argument constructor or one accepting the robot, so the scan can't hand a constructor anything else (such as a path name)."
+evidence = "javap -c -p of org.wpilib.framework.OpModeRobot in wpilibj-java-2027.0.0-alpha-8.jar (2026-11-23): its checks raise 'not a subclass of OpMode', 'is abstract', 'not public', 'is a non-static inner class' and 'missing public no-arg constructor or constructor accepting', and it builds the opmode through ConstructorMatch.newInstance"
+measured_on = "alpha-8"
+method = "BYTECODE"
+
