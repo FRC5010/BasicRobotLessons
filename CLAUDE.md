@@ -2854,7 +2854,17 @@ at least twice.
   (×1.1000, 0.48 m beyond the recording). The gap grows with distance; a
   half-stick drive gave 1.25 m. Try It's "0.66 m" is CLAUDE.md's earlier
   drive.
-- **SimGUI Field pane:** only the field's outline, no image. The default
+- **SimGUI Field pane:** only the field's outline, no image, because its
+  image was **Custom** on that launch. Right-click the field (the user) or
+  click the title bar's menu button (checked here; the right-click didn't
+  open under Xvfb), expand **Field**, and pick from **Image** (2026 FRC
+  Rebuilt Welded first); Figure 11.4 shows it. The user says the latest
+  field is usually there by default. **SimGUI orients the field by the
+  alliance** (the user): SimGUI starts on Red 1, so Figure 11.4 shows the
+  field from red's side, with the robot at (0, 0) in the bottom-left corner
+  and the red hub nearest it, though the tag poses put the blue hub 4.6 m
+  from the origin. Not checked on Blue 1 here, and Lesson 11 (before
+  alliances are taught) doesn't mention it. The default
   **Robot State** window covers the field's bottom-left corner, where the
   robot starts; Lesson 11 now says to drag it aside.
 - **Lesson 16, the grip limit** (Figure 16.3, from batch 1's full-stick-start
@@ -3016,6 +3026,72 @@ at least twice.
 - **Usage:** the window reset at 03:40 UTC on 2026-11-19. Two Sonnet agents
   used about 230k and 260k tokens for four and five figures.
 
+**Alliance flipping, checked 2026-11-21 (Lesson 33 state, LOOP probe
+`scratchpad/flip/AllianceCheck.java`, not kept; each auto on Blue 1, Red 1
+and Red 3).** B-Line's `FlippingUtil` is `kRotational` on 16.54 × 8.07 m by
+default, and the 2026 field is rotational (32/32 tags land on a twin under
+rotation, 20/32 under a mirror; WPILib's size 16.541 × 8.069, 1.3 mm worst).
+B-Line decides in `Follower.initialize` (enable), `Autos.startPose` at
+selection; both use `MatchState.getAlliance()` with unknown as blue.
+- **The path autos flip exactly.** Red ends are the blue ends rotated:
+  Two Corners (5.976, 6.016, 178.8°) → (10.563, 2.055, −1.2°), Pick Up
+  (6.000, 0.952, −90°) → (10.540, 7.119, 90°), Aim While Driving
+  (8.010, 7.025, −1.1°) → (8.526, 1.044, 178.8°); Red 3 the same as Red 1;
+  estimate and truth agree to the millimetre at every end.
+- **Drive To Pose ignores the alliance:** it drives to the blue-side
+  `kScoringPose` (5.007, 4.002, 90°) on every station. The aim tag (20)
+  and Lesson 25's aim point (8, 4) aren't flipped either, and the sim's
+  game pieces are blue-side only, so Pick Up on red catches nothing.
+- **Teleop stick-forward is always field +X** (dx +1.87 m in 1 s at half
+  stick on every station). `driveFieldRelative` converts with
+  `getHeadingDegrees()`, the raw gyro yaw. From Lesson 16 the sim gyro
+  reports the chassis's true (field) heading, so in sim a red driver's
+  controls are reversed; in Lessons 13–15 it counts from 0 at boot. A real
+  Pigeon zeroes at boot, so on a real robot "forward" is the boot facing,
+  which is already right for a red driver who boots the robot facing
+  away: a plain red flip on the gyro frame would break a real robot.
+  B-Line and Lesson 26 use the estimate (`localizer::getPose`), not the
+  gyro, so the autos are unaffected.
+- **Fixed the same day (user decision: option A, and flip the targets).**
+  - **Lesson 17 §11 "Drive from either end":** `driveFieldRelative` takes a
+    fourth `Supplier<Rotation2d> heading` (Drivetrain 17, 25, 26, 29, 30).
+    `RobotTeleop` 17–28 passes `this::headingFromDriver`: the estimate's
+    heading, minus 180° on red. That's deliberately not
+    `FlippingUtil.flipFieldRotation`, because driver stations face each
+    other on any field and a mirrored flip would give π − θ. Start
+    (`resetHeading()`, keyboard N) sets the estimate's heading to 0° on
+    blue or 180° on red and keeps its position. Lesson 27's aim drive gets
+    the same fourth argument.
+  - **`Autos.onRedAlliance()`** holds the `MatchState…orElse(BLUE) == RED`
+    test, used by `startPose` (Autos 17, 24–27), teleop and the targets.
+  - **Snapshot 16 carries a `RobotTeleop` copy**, unchanged from 15, to hold
+    Lesson 17's markers.
+  - **The targets flip with `FlippingUtil`:**
+    - Lesson 25's `kAimTarget`, in `aimOmega`.
+    - Lesson 26's `kScoringPose`, a local `target` in `driveToScoringPose`.
+    - Lesson 27's aim tag: `omegaTowardTag` maps tag 20's position to its
+      red twin. `tagPosition` still returns the tag's real place, so the
+      typo-220 lesson still reads empty.
+    - Lesson 22's `ArmIOSim` builds `piecesOnBothHalves()`, each constant
+      plus its flipped twin, so `Sim/GamePieces` now lists six pieces.
+  - **Measured** (AllianceCheck, Lesson 33 state, Blue 1 / Red 1 / Red 3):
+    - Blue ends are unchanged to the millimetre: Two Corners (5.976, 6.015),
+      Pick Up (6.000, 0.952), Aim While Driving (8.009, 7.022), Drive To Pose
+      (5.007, 4.003, 90°).
+    - Red Drive To Pose ends (11.547, 4.071, −90°).
+    - Pick Up on red catches its piece.
+    - Teleop half stick for 1 s moves −1.87 m in X on red and +1.87 m on
+      blue. The one exception, 1.62 m after Drive To Pose on Red 3, isn't
+      explained.
+    - Teleop aiming points at tag 20 on blue and at its twin on red.
+    - Start sets 0° or 180°.
+  - **Left alone, on purpose:** `turnToHeading` (the face buttons) still
+    steers by the gyro in field degrees, so after a Start press on a real
+    robot those buttons and the estimate can disagree. User decision
+    2026-11-22: it's Lesson 17's Try It #8 ("Decide what 'face 90°'
+    means"), since field angles and driver angles suit different buttons;
+    the snapshots keep the gyro version.
+
 ## Rewriting lessons in a teacher's voice
 
 The lessons started in a slightly "AI voice" — clinical, evenly-weighted, with
@@ -3138,6 +3214,29 @@ a lesson as-is. (The two classic plan docs, `lesson-plan-16-22.md` and
   doc explains why a workaround wasn't taken instead of waiting. When these
   lessons are actually written, their prose goes under `docs/lessons/v3/`,
   a sibling of `docs/lessons/`'s numbered files, not mixed into them.
+- [docs/lesson-plan-v3-reference.md](docs/lesson-plan-v3-reference.md) — the
+  plan for the **Concepts Study Guide** (`docs/study-guide/`, user request
+  2026-11-22): topic pages summarising the course's Java, FRC and tools ideas,
+  in group folders, with code examples copied from the snapshots, pop-up
+  quizzes that remember scores in the browser, claim markers, and source tags
+  checked against the code. Pages teach the final form without assuming every
+  lesson is done. **Published on 2026-11-23** with the whole Java group (six
+  pages) and *Commands and triggers*; the other FRC groups and Tools are empty
+  group pages saying they're being written. What to know before touching it:
+  - **`StudyGuide::PUBLISHED` in `docs/_plugins/study_guide.rb` is `true`.**
+    Setting it to `false` takes the whole section off the site (pages only
+    show with `STUDY_GUIDE_PREVIEW=1`). The quiz tests' first check fails if a
+    normal build lacks the guide or contains a fixture page.
+  - **The sidebar** is `GUIDE`/`GUIDE_GROUPS` in `lesson_nav.rb` (three levels,
+    `grand_parent`); pages are `<group>/NN-slug.md`.
+  - **Quizzes** are `<details class="quiz">` blocks (markup in the plan's
+    section 5) that `docs/assets/js/quiz.js` turns into pop-ups. Browser
+    tests: `NODE_PATH=$(npm root -g) ./tools/site-tests/run-quiz-tests.sh`
+    (33 checks on fixture pages in `tools/site-tests/fixtures/`).
+  - **`tools/check-study-guide.py`** checks every quiz's shape and every java
+    example's `<!-- source: lesson-N path -->` tag against that lesson's code
+    (or `<!-- source: wrong -->`); `check_claims.py` scans the guide's
+    markers. The pre-commit hook runs both.
 - [docs/lesson-plan-alpha7-upgrade.md](docs/lesson-plan-alpha7-upgrade.md) —
   the impact assessment and phased plan for upgrading the v3 track (only —
   the classic track targets stable 2026 and is unaffected) to WPILib 2027
@@ -3195,6 +3294,18 @@ follow Lesson 34. What that means when editing:
 - Search indexes each page's `#` and `##` sections.
 - The debugger and git-branching asides live in `docs/lessons/v3/`, so they sit
   under the OpMode track after Lesson 34, like any other aside.
+
+**[docs/how-lessons-are-checked.md](docs/how-lessons-are-checked.md) tells
+readers how the lessons are checked against AI hallucination** (user request,
+2026-11-22): the compile check, the lesson-code and marker checkers, the
+claims registry and its pre-commit check, measuring numbers in simulation,
+figure generators, reading library source, what those caught, and what isn't
+checked. It's the one top-level page besides `index.md`: it has front matter
+(`title`, `nav_order: 3`) for the sidebar, and a `defaults` entry in
+`_config.yml` gives it the theme's layout (without one it renders unstyled,
+with mojibake, as seen in a local build). **It quotes counts** (621 claims,
+1,037 markers, 404 checked blocks, 58 figure scripts, as of 2026-11-22):
+update them when they drift far, or reword them as approximate.
 
 **The OpMode track's unconverted lessons are marked "under construction"**
 by [docs/_plugins/lesson_status.rb](docs/_plugins/lesson_status.rb), on the

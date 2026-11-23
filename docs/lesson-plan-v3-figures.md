@@ -1141,3 +1141,5 @@ All 8 batch 3 figures are built: 10.2, 12.1, 17.1, 20.2, 25.1, 26.3, 31.2 and 33
 **README, Figure R.1 (2026-11-21):** the user's VS Code shots of **Java: Clean Java Language Server Workspace** and its **Reload and delete** confirmation, added to "Starting a lesson from the reference code" as the step after every update. Crops leave out the Explorer (workspace folder name) and the status bar. The same edit fixed that section's stale "Lesson 20 today" to 33.
 
 **Figure 17.6 (2026-11-21):** the user's red-alliance Two Corners run on a 2D Field tab, near the end (truth (10.622, 2.434), estimate (10.613, 2.396), −57.86°, still FollowPath, `Event: shoot!` in Console), placed in Try It #6. The field is drawn turned half a turn (x left, y down), read from the poses; why wasn't checked. Lesson 17 is struck from the offered list.
+
+**Figure 11.4 (2026-11-21):** SimGUI's Field window settings (user: right-click; here the title-bar menu button) with **Field → Image** opened and 2026 FRC Rebuilt Welded picked, made here under Xvfb on the Lesson 11 state. Figure 11.3's blank outline is the image left on Custom.

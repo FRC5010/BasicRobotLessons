@@ -164,7 +164,7 @@ public final class Constants {
     // Aiming while the path drives. The rotation override wants an angular
     // velocity, not a heading, so this gain turns heading error into a rate.
     public static final double kAimP = 4.0; // rad/s per radian of heading error
-    /** The point on the field to point at while the "aim" marker is in force. */
+    /** The point to point at while the "aim" marker is in force, for blue; red aims at its twin. */
     public static final Translation2d kAimTarget = new Translation2d(8.0, 4.0);
 
     /**

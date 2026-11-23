@@ -15,6 +15,7 @@ import first.robot.Constants.PathConstants;
 import first.robot.Constants.VisionConstants;
 import first.robot.subsystems.Drivetrain;
 import first.robot.subsystems.Localizer;
+import frc.robot.lib.BLine.field.FlippingUtil;
 
 /**
  * Pointing the robot at a place on the field.
@@ -94,6 +95,7 @@ public final class Aim {
     Pose2d robot = localizer.getPose();
     ChassisVelocities fieldSpeeds = drivetrain.getChassisVelocities().toFieldRelative(robot.getRotation());
     return tagPosition(tagId)
+        .map(tag -> Autos.onRedAlliance() ? FlippingUtil.flipFieldPosition(tag) : tag) // our side's twin
         .map(target -> omegaToward(robot, fieldSpeeds, target))
         .orElse(0.0);
   }

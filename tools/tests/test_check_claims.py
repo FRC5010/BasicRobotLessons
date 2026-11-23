@@ -171,6 +171,28 @@ class Markers(unittest.TestCase):
         self.assertEqual(run(lessons={'18-elevator.md': md}).errors, [])
 
 
+class StudyGuide(unittest.TestCase):
+    """docs/study-guide/ pages point at the same claims as the lessons."""
+
+    def test_a_guide_marker_counts_as_a_use(self):
+        lone = {'lesson-18.toml': GOOD_LESSON}
+        page = 'Measured. <!-- claim: l18.kv-zeroed-lag -->\n'
+        result = run(registry=lone, lessons={'01-x.md': 'No markers.\n'},
+                     files={'docs/study-guide/java/01-page.md': page}, strict=True)
+        self.assertEqual(result.errors, [])
+        self.assertEqual(len(result.markers), 1)
+
+    def test_an_unknown_id_in_the_guide_names_its_path(self):
+        page = 'Text.\n\nMore. <!-- claim: l18.no-such-claim -->\n'
+        result = run(files={'docs/study-guide/frc-control/02-page.md': page})
+        self.assertIn('docs/study-guide/frc-control/02-page.md:3', joined(result.errors))
+
+    def test_a_guide_marker_in_a_code_block_is_an_error(self):
+        page = '```java\nint x; // <!-- claim: l18.kv-zeroed-lag -->\n```\n'
+        result = run(files={'docs/study-guide/README.md': page})
+        self.assertIn('inside a code block', joined(result.errors))
+
+
 class Registry(unittest.TestCase):
     def errors_for(self, lesson_toml):
         return joined(run(registry={'commandsv3.toml': GOOD_LIBRARY,

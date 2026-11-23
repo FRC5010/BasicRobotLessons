@@ -606,7 +606,7 @@ So the trigger has to wait for a real answer before it asks the real question.
     // Aiming while the path drives. The rotation override wants an angular
     // velocity, not a heading, so this gain turns heading error into a rate.
     public static final double kAimP = 4.0; // rad/s per radian of heading error
-    /** The point on the field to point at while the "aim" marker is in force. */
+    /** The point to point at while the "aim" marker is in force, for blue; red aims at its twin. */
     public static final Translation2d kAimTarget = new Translation2d(8.0, 4.0);
 ```
 
@@ -680,7 +680,10 @@ to score in, a target you're tracking.
     Pose2d pose = localizer.getPose();
     // The direction of the arrow from the robot to the target. It's empty when
     // the arrow has no length: standing on the target, no way is "toward" it.
-    Optional<Rotation2d> desired = PathConstants.kAimTarget.minus(pose.getTranslation()).getAngle();
+    Translation2d target = onRedAlliance()
+        ? FlippingUtil.flipFieldPosition(PathConstants.kAimTarget) // drawn for blue
+        : PathConstants.kAimTarget;
+    Optional<Rotation2d> desired = target.minus(pose.getTranslation()).getAngle();
     if (desired.isEmpty()) {
       return 0.0;
     }
@@ -699,7 +702,9 @@ So the loop is yours — and you've written it before. Work out where you want t
 face, subtract where you're facing, multiply by a gain. That's Lesson 8's
 `turnToHeading` with a different consumer on the end.
 
-Two details in there. `getAngle()` hands back an `Optional`, the same box Lesson 15
+Three details in there. The target is a spot you chose on the blue half, so
+on red the method aims at its twin on the red half: `onRedAlliance` and
+`FlippingUtil` from Lesson 17, the same flip the path itself gets. <!-- claim: bline.flipping-util-api --> `getAngle()` hands back an `Optional`, the same box Lesson 15
 used for a tag that might not be in view: an arrow with no length has no direction,
 so when the robot is standing exactly on the target there is no answer to give, and
 the method says so instead of making one up. And `Rotation2d.minus` wraps the
@@ -721,6 +726,7 @@ result to ±180° for you, so there's no `MathUtil.inputModulus` here. <!-- clai
 import java.util.Optional;
 
 import org.wpilib.math.geometry.Rotation2d;
+import org.wpilib.math.geometry.Translation2d;
 
 import frc.robot.lib.BLine.commands.FollowPath.RotationOverrideBehavior;
 ```

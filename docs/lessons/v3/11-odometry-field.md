@@ -261,6 +261,20 @@ replays, and everything else.
 
 *Figure 11.3 — Where to find the Field widget in SimGUI, and the field pane with the robot after a short drive.* <!-- claim: wpilib.simgui-field-widget -->
 
+The pane in Figure 11.3 is just an outline because its field image is set to
+**Custom**, with no picture chosen. Usually the latest field is already
+there, but if you get an outline, pick one. **Right-click the field** (or
+click the menu button at the right of the window's title bar) to open its
+settings, expand **Field** (1 in Figure 11.4), and choose a field from the
+**Image** drop-down (2): this season's, or whichever year you need. The
+field appears behind the robot (3), and SimGUI keeps the choice for next
+time. <!-- claim: wpilib-tools.simgui-field-image -->
+
+<a id="figure-11-4"></a>
+![Two SimGUI panels. Top: the Field window's settings popup with Edit name, Close, Units (meters), a Field section expanded (badge 1) and its Image drop-down open on Custom (badge 2), listing Custom, 2026 FRC Rebuilt Welded, 2026 FRC Rebuilt AndyMark, 2025-2026 FTC DECODE, 2025 FRC Reefscape Welded and AndyMark, 2024-2025 FTC Into The Deep and 2024 FRC Crescendo. Bottom: the Field window now drawing the 2026 field, red hub on the left and blue on the right, with the robot's red outline and green arrow at the bottom-left corner; the popup shows Image set to 2026 FRC Rebuilt Welded (badge 3), a Reset image button, Field Width 16.541 and Field Height 8.069.](images/11-simgui-field-image.png)
+
+*Figure 11.4 — Giving SimGUI's Field window a field image: open its settings, expand Field (1), pick from Image (2), and the field is drawn (3).*
+
 ---
 
 ## 5. Reset and starting pose

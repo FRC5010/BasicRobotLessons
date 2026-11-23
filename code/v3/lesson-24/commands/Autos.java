@@ -63,11 +63,15 @@ public final class Autos {
    * auto ends.
    */
 
+  /** True on the red alliance. With no alliance yet, blue — the same rule BLine's flip follows. */
+  public static boolean onRedAlliance() {
+    return MatchState.getAlliance().orElse(Alliance.BLUE) == Alliance.RED;
+  }
+
   /** Where a path starts, on this alliance's side of the field — the same flip BLine makes. */
   public static Pose2d startPose(Path path) {
     Pose2d start = path.getAuthoredStartPose().get(); // every path here starts with a waypoint
-    boolean red = MatchState.getAlliance().orElse(Alliance.BLUE) == Alliance.RED;
-    return red ? FlippingUtil.flipFieldPose(start) : start;
+    return onRedAlliance() ? FlippingUtil.flipFieldPose(start) : start;
   }
 
   /**

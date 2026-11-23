@@ -10,6 +10,7 @@ import org.wpilib.driverstation.MatchState;
 import org.wpilib.math.controller.PIDController;
 import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.math.geometry.Rotation2d;
+import org.wpilib.math.geometry.Translation2d;
 import org.wpilib.telemetry.Telemetry;
 
 import first.robot.Constants.PathConstants;
@@ -117,11 +118,15 @@ public final class Autos {
         .named(auto.name());
   }
 
+  /** True on the red alliance. With no alliance yet, blue — the same rule BLine's flip follows. */
+  public static boolean onRedAlliance() {
+    return MatchState.getAlliance().orElse(Alliance.BLUE) == Alliance.RED;
+  }
+
   /** Where a path starts, on this alliance's side of the field — the same flip BLine makes. */
   public static Pose2d startPose(Path path) {
     Pose2d start = path.getAuthoredStartPose().get(); // every path here starts with a waypoint
-    boolean red = MatchState.getAlliance().orElse(Alliance.BLUE) == Alliance.RED;
-    return red ? FlippingUtil.flipFieldPose(start) : start;
+    return onRedAlliance() ? FlippingUtil.flipFieldPose(start) : start;
   }
 
   /**
@@ -133,7 +138,10 @@ public final class Autos {
     Pose2d pose = localizer.getPose();
     // The direction of the arrow from the robot to the target. It's empty when
     // the arrow has no length: standing on the target, no way is "toward" it.
-    Optional<Rotation2d> desired = PathConstants.kAimTarget.minus(pose.getTranslation()).getAngle();
+    Translation2d target = onRedAlliance()
+        ? FlippingUtil.flipFieldPosition(PathConstants.kAimTarget) // drawn for blue
+        : PathConstants.kAimTarget;
+    Optional<Rotation2d> desired = target.minus(pose.getTranslation()).getAngle();
     if (desired.isEmpty()) {
       return 0.0;
     }

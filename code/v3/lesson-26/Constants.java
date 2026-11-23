@@ -173,7 +173,7 @@ public final class Constants {
      * position the field layout already knows: swap this target for a tag ID,
      * and add a tolerance for "close enough to call it aimed".
      */
-    /** The point on the field to point at while the "aim" marker is in force. */
+    /** The point to point at while the "aim" marker is in force, for blue; red aims at its twin. */
     public static final Translation2d kAimTarget = new Translation2d(8.0, 4.0);
 
     // Getting somewhere on a plan, in two stages. Stage one covers ground, and
@@ -213,7 +213,7 @@ public final class Constants {
     public static final LinearVelocity kSpeedTolerance = MetersPerSecond.of(0.05);
     public static final Angle kAngleTolerance = Degrees.of(1);
 
-    /** Where the left bumper lines the robot up. */
+    /** Where the left bumper lines the robot up, on blue; red lines up on its twin. */
     public static final Pose2d kScoringPose = new Pose2d(5.0, 4.0, Rotation2d.fromDegrees(90));
   }
 

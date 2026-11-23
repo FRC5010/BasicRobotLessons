@@ -40,8 +40,12 @@ public final class Autos {
    */
   public static Command driveToScoringPose(Drivetrain drivetrain, Localizer localizer) {
     return Command.noRequirements(coroutine -> {
-          coroutine.await(drivetrain.travelToward(PathConstants.kScoringPose, localizer::getPose));
-          coroutine.await(drivetrain.approach(PathConstants.kScoringPose, localizer::getPose));
+          // The pose in Constants is drawn for blue; on red, the same spot on our side.
+          Pose2d target = onRedAlliance()
+              ? FlippingUtil.flipFieldPose(PathConstants.kScoringPose)
+              : PathConstants.kScoringPose;
+          coroutine.await(drivetrain.travelToward(target, localizer::getPose));
+          coroutine.await(drivetrain.approach(target, localizer::getPose));
         })
         .named("Drive To Scoring Pose");
   }
@@ -120,11 +124,15 @@ public final class Autos {
         .named(auto.name());
   }
 
+  /** True on the red alliance. With no alliance yet, blue — the same rule BLine's flip follows. */
+  public static boolean onRedAlliance() {
+    return MatchState.getAlliance().orElse(Alliance.BLUE) == Alliance.RED;
+  }
+
   /** Where a path starts, on this alliance's side of the field — the same flip BLine makes. */
   public static Pose2d startPose(Path path) {
     Pose2d start = path.getAuthoredStartPose().get(); // every path here starts with a waypoint
-    boolean red = MatchState.getAlliance().orElse(Alliance.BLUE) == Alliance.RED;
-    return red ? FlippingUtil.flipFieldPose(start) : start;
+    return onRedAlliance() ? FlippingUtil.flipFieldPose(start) : start;
   }
 
   /** Names a path file can fire with lib_key. BLine keeps them for the whole program. */

@@ -254,7 +254,7 @@ Figure 26.1 draws it. Start at S: the line to T is fixed, and x′ and y′ are 
     public static final LinearVelocity kSpeedTolerance = MetersPerSecond.of(0.05);
     public static final Angle kAngleTolerance = Degrees.of(1);
 
-    /** Where the left bumper lines the robot up. */
+    /** Where the left bumper lines the robot up, on blue; red lines up on its twin. */
     public static final Pose2d kScoringPose = new Pose2d(5.0, 4.0, Rotation2d.fromDegrees(90));
 ```
 
@@ -541,14 +541,24 @@ row, at the same target both times.
    */
   public static Command driveToScoringPose(Drivetrain drivetrain, Localizer localizer) {
     return Command.noRequirements(coroutine -> {
-          coroutine.await(drivetrain.travelToward(PathConstants.kScoringPose, localizer::getPose));
-          coroutine.await(drivetrain.approach(PathConstants.kScoringPose, localizer::getPose));
+          // The pose in Constants is drawn for blue; on red, the same spot on our side.
+          Pose2d target = onRedAlliance()
+              ? FlippingUtil.flipFieldPose(PathConstants.kScoringPose)
+              : PathConstants.kScoringPose;
+          coroutine.await(drivetrain.travelToward(target, localizer::getPose));
+          coroutine.await(drivetrain.approach(target, localizer::getPose));
         })
         .named("Drive To Scoring Pose");
   }
 ```
 
-`Autos` already imports `PathConstants` and `Localizer` from Lesson 17.
+`Autos` already imports `PathConstants`, `Localizer`, `Pose2d` and
+`FlippingUtil` from Lesson 17. The `target` line is Lesson 17's
+`startPose` flip, made when the command starts, so the robot lines up on
+the twin of the scoring pose on red: the same spot on the red half, facing
+the same way relative to it. <!-- claim: bline.flipping-util-api --> Working it out
+once, before the first `await`, also means both stages chase exactly the
+same target.
 
 `coroutine.await(...)` runs a command to completion before moving to the
 next line, the same tool you used for `driveTurnDrive` back in Lesson 9. <!-- claim: commandsv3.coroutine-await-yield-wait -->

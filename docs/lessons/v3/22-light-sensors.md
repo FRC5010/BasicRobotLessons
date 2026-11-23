@@ -244,6 +244,7 @@ import org.wpilib.math.geometry.Translation2d;
 import org.littletonrobotics.junction.Logger;
 
 import first.robot.Constants.DriveConstants;
+import frc.robot.lib.BLine.field.FlippingUtil;
 ```
 
 **Add to `ArmIOSim`, below the roller model — the field's pieces, and what the
@@ -253,14 +254,39 @@ intake knows:**
   // The game pieces lying on the field. Nothing in the robot's own code reads
   // this list: the only way the robot learns about a piece is the beam break,
   // and only once a piece is really inside the intake.
-  private final List<Translation2d> m_piecesOnField =
-      new ArrayList<>(List.of(ArmConstants.kSimGamePiecePositions));
+  private final List<Translation2d> m_piecesOnField = piecesOnBothHalves();
   private boolean m_holdingPiece = false;
   private double m_rollerOutput = 0.0;
 
   /** Where the robot really is: the simulated chassis, not the estimate. */
   private final Supplier<Pose2d> m_robotPose;
 ```
+
+`kSimGamePiecePositions` lists spots on the blue half. A real field has
+pieces at both ends, and the red half is the blue half turned round, so
+the list starts with each spot and its twin. That's Lesson 17's
+`FlippingUtil` again, the flip B-Line makes for a path. <!-- claim: bline.flipping-util-api, wpilib.field-rotational-symmetry -->
+
+**Add to `ArmIOSim`, above the constructor:**
+
+```java
+  /**
+   * The spots in Constants are drawn for the blue half of the field. The field
+   * is the same from either end, so the red half has the same pieces, turned
+   * round — the same flip B-Line makes for a path.
+   */
+  private static List<Translation2d> piecesOnBothHalves() {
+    List<Translation2d> pieces = new ArrayList<>();
+    for (Translation2d spot : ArmConstants.kSimGamePiecePositions) {
+      pieces.add(spot);
+      pieces.add(FlippingUtil.flipFieldPosition(spot));
+    }
+    return pieces;
+  }
+```
+
+It's `static` because it uses nothing of a particular `ArmIOSim`, only the
+constants, and a field's initializer can call it.
 
 **Replace `ArmIOSim`'s constructor, so it takes the pose and keeps it:**
 
