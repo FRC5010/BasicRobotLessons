@@ -17,6 +17,11 @@ block = "new TalonFX(1, new CANBus(CANPort.CAN_S0));"
 reason = "staged: section 9 moves the CAN ID into DriveConstants.kDriveMotorPort"
 
 [[exception]]
+lesson = 5
+block = "double output = SteerConstants.kP * error;"
+reason = "staged: 'Tune it while it runs' in section 5 replaces this line with m_steerKP.get() * error"
+
+[[exception]]
 lesson = 7
 block = "public class SwerveModule {"
 reason = "staged: 'Pay off Lesson 5's IOU' then multiplies the priming position by kSteerGearRatio"

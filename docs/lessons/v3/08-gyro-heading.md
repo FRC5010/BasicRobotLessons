@@ -152,7 +152,7 @@ Lesson 5 promised its five moves would come back — measure, subtract, multiply
 clamp, command — and here they are, pointed at the whole robot. Two things
 differ from `steerToAngle`: which sensor gets measured, and that headings
 **wrap** around a circle, so the subtract step needs the wrap trick baked in
-(`-170°` to `170°` should turn `20°`, not `340°`; [Figure 5.3](05-steering-p-control.md#figure-5-3)
+(`-170°` to `170°` should turn `20°`, not `340°`; [Figure 5.4](05-steering-p-control.md#figure-5-4)
 draws it).
 
 The wrap logic goes in its own little question-method, because the finish

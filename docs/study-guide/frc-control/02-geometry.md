@@ -106,7 +106,7 @@ subtraction doesn't know that: 0 − 350 is −350, which says "turn almost all 
 
 ![Two compass circles. On the left the wheel is at 350 degrees and the target is 0: a long orange arc sweeps 350 degrees all the way around the circle, while a short green arc nudges 10 degrees. On the right the wheel is at minus 170 and the target is 170: the orange arc sweeps 340 degrees round and the green arc turns 20 degrees across the 180 mark](../../lessons/v3/images/05-error-wrap.svg)
 
-*Figure 5.3, from [Lesson 5](../../lessons/v3/05-steering-p-control.md#figure-5-3) — The long way round (orange) and the short way (green), for 350° → 0° and for -170° → 170°.*
+*Figure 5.4, from [Lesson 5](../../lessons/v3/05-steering-p-control.md#figure-5-4) — The long way round (orange) and the short way (green), for 350° → 0° and for -170° → 170°.*
 
 So an angle error is always **wrapped** into the range −180° to 180°. Lesson 5 writes the wrap as
 two `while` loops; from Lesson 10, `MathUtil.inputModulus` does it in one call: <!-- claim: wpilib.mathutil-helpers -->

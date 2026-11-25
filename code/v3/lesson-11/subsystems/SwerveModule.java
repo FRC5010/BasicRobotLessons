@@ -21,6 +21,8 @@ import org.wpilib.math.system.Models;
 import org.wpilib.math.util.MathUtil;
 import org.wpilib.simulation.DCMotorSim;
 import org.wpilib.system.RobotController;
+import org.wpilib.tunable.TunableDouble;
+import org.wpilib.tunable.Tunables;
 
 import first.robot.Constants.DriveConstants;
 import first.robot.Constants.SteerConstants;
@@ -39,6 +41,11 @@ public class SwerveModule {
   private final CANcoder m_steerEncoder;
   private final TalonFXSimState m_driveSim;
   private final TalonFXSimState m_steerSim;
+
+  // One steering gain for all four modules. static: it belongs to the class, so it's
+  // made once, the first time the class is used, and the four modules share it.
+  private static final TunableDouble s_steerKP =
+      Tunables.addDouble("SwerveModule/SteerKP", SteerConstants.kP);
 
   /**
    * ====== NEXT LESSON: ADD CODE HERE ======
@@ -118,7 +125,7 @@ public class SwerveModule {
     // Steering: the same P control, error wrapped to ±180° in one call now.
     double error = MathUtil.inputModulus(
         state.angle.getDegrees() - getSteerAngleDegrees(), -180, 180);
-    double steerOutput = clamp(SteerConstants.kP * error, -1.0, 1.0);
+    double steerOutput = clamp(s_steerKP.get() * error, -1.0, 1.0);
     m_steerMotor.setThrottle(steerOutput);
 
     // Drive: meters per second → fraction of max, with the cosine scale.

@@ -14,6 +14,8 @@ its own, using the simplest possible feedback control: *error × a gain*.
 - Why you can't just "set the angle" directly
 - A **CANcoder** and **priming** — an absolute sensor and a one-time startup
   read that keeps the wheel's zero honest across power cycles
+- **Tunables** — a number SimGUI can change while the robot runs, so tuning
+  doesn't mean restarting
 
 ---
 
@@ -440,11 +442,92 @@ Tuning `kP` by watching the plot *is* the job, and the recipe works from
 either side: if it crawls, double it; if it rings, halve it; stop at the
 biggest gain that settles without ringing. The `0.0005` you typed in sits on
 the ringing side here, because this steering motor turns nothing but a bare
-1:1 rotor, so for this motor the first moves are halvings. Try it: halve it
-a few times and watch the swings shrink until they're gone, then put
-`0.0005` back, because Lesson 7 puts a gearbox between the motor and the
-wheel and picks the story up from there. This intuition transfers to every
-controller you'll ever write.
+1:1 rotor, so for this motor the first moves are halvings. This intuition
+transfers to every controller you'll ever write.
+
+There's one thing in the way. Every halving means editing `Constants.java`,
+stopping the simulation, building, starting it again and re-enabling, all
+to watch two seconds of a plot. Real tuning takes dozens of tries. So before
+you start halving, make `kP` a number you can change while the robot runs.
+
+### Tune it while it runs
+
+WPILib has a name for a number like that: a **tunable**. You make one with a
+starting value, and the robot publishes it where SimGUI (or any dashboard)
+can see it and change it. Your code asks it for its value every time it
+needs one, so a new number takes effect on the next tick. No restart.
+
+**Add to `DriveModule`'s imports:**
+
+```java
+import org.wpilib.tunable.TunableDouble;
+import org.wpilib.tunable.Tunables;
+```
+
+**Add to `DriveModule`, below the CANcoder field:**
+
+```java
+  // The steering gain, as a tunable: it starts at SteerConstants.kP, and SimGUI can
+  // change it while the robot runs. Read it with get() each time it's used.
+  private final TunableDouble m_steerKP =
+      Tunables.addDouble("DriveModule/SteerKP", SteerConstants.kP);
+```
+
+**In `steerToAngle`, replace the line that computes `output` with:**
+
+```java
+          double output = m_steerKP.get() * error;      // push proportional to error
+```
+
+`Tunables.addDouble` does two jobs. It makes a `TunableDouble` that starts at
+`SteerConstants.kP`, and it publishes it under `/Tunables/DriveModule/SteerKP`,
+the way `Telemetry.log` publishes under `/Telemetry`. <!-- claim: wpilib.tunables-publish-under-tunables -->
+`m_steerKP.get()` hands back whatever the number is right now. When a new
+value arrives, the robot applies it once a tick, just after `robotPeriodic()`,
+so the very next run of `steerToAngle` uses it. <!-- claim: wpilib.tunables-applied-on-update, wpilib.tunables-update-after-robot-periodic -->
+
+Two rules come with it, and both matter more than they look.
+
+- **The constant is still the truth.** A tunable starts from
+  `SteerConstants.kP` every time the robot starts, and anything you typed in
+  SimGUI is gone. When you find a number you like, copy it into
+  `Constants.java`: that's the step that keeps it.
+- **Make a tunable once, in something that's built once.** `DriveModule` is
+  built once, in `Robot`, so a field here is right. An opmode is rebuilt
+  every time you disable (Lesson 1), and a second tunable with a name that's
+  already taken doesn't replace the first: SimGUI's changes keep going to the
+  first one, and an alert says the name was taken. <!-- claim: wpilib.tunables-duplicate-name-alert -->
+
+Now tune it. Run the robot in simulation, pick **Teleoperated** and
+**MyTeleop**, and **Enable**.
+
+1. Find SimGUI's **NetworkTables** window (if it's closed, open it from the
+   **NetworkTables** menu with **NetworkTables View**). Under **Transitory
+   Values**, beside Lesson 3's **Telemetry** folder, there's a new one:
+   **Tunables**. Open **Tunables → DriveModule**, and **SteerKP** reads
+   `0.000500`.
+2. Tap the left face button and watch the plot ring, like Figure 5.2's orange
+   line.
+3. Double-click the number, type `0.00025`, and press **Enter**. Tap the top
+   face button to go back to 0°, then the left one again. <!-- claim: wpilib-tools.simgui-edits-tunables -->
+
+Figure 5.3 shows step 3: the **Tunables** folder (1) open, and the new value in
+the box (2). The `double` beside it is the number's type.
+
+<a id="figure-5-3"></a>
+![SimGUI's NetworkTables window with Transitory Values open. Beside the DriverStation, Robot and Telemetry folders is a Tunables folder, open to DriveModule, where SteerKP shows 0.000250 in an editable box marked double](images/05-simgui-tunable.png)
+
+*Figure 5.3 — The Tunables folder in SimGUI's NetworkTables window (1), and `SteerKP` changed while the robot runs (2).* <!-- claim: wpilib-tools.simgui-edits-tunables -->
+
+Keep halving: change the number, tap the two buttons, look at the plot. The
+swings shrink until they're gone. That's what tuning feels like when the loop
+is short: one change, one tap, one look, and nothing to restart.
+
+When you're done, stop the simulation. Next time it starts, `SteerKP` is back
+to `0.0005`, because `SteerConstants.kP` still says so. This time that's what
+you want: Lesson 7 puts a gearbox between the motor and the wheel and picks
+the tuning up from `0.0005`. Next time you find a number you mean to keep,
+the last step is copying it into `Constants.java`.
 
 ---
 
@@ -453,17 +536,17 @@ controller you'll ever write.
 Ask for `0°` while sitting at `350°`. Error = `0 − 350 = −350`, so it spins almost
 all the way around backwards — when it *could* have nudged +10° forward. Real
 steering code "wraps" the error to the range −180°…+180° so it always takes the
-short path. Figure 5.3 draws it: the circle is the steering's full turn, the
+short path. Figure 5.4 draws it: the circle is the steering's full turn, the
 black dot is where the wheel points now, the blue dot is where you asked it to
 point. The **orange** arc is the long way the raw error asks for, and the **green**
 arc is the short one the wrapped error takes. The right-hand circle is a
 trap you'll meet again in Lesson 8: from `-170°` to `170°` the raw error is
 `+340°`, and the wrapped one is `-20°`.
 
-<a id="figure-5-3"></a>
+<a id="figure-5-4"></a>
 ![Two compass circles. On the left the wheel is at 350 degrees and the target is 0: a long orange arc sweeps 350 degrees all the way around the circle, while a short green arc nudges 10 degrees. On the right the wheel is at minus 170 and the target is 170: the orange arc sweeps 340 degrees round and the green arc turns 20 degrees across the 180 mark](images/05-error-wrap.svg)
 
-*Figure 5.3 — The long way round (orange) and the short way (green), for 350° → 0° and for -170° → 170°.*
+*Figure 5.4 — The long way round (orange) and the short way (green), for 350° → 0° and for -170° → 170°.*
 
 Try writing that wrap in the challenge; it's a great `if` exercise.
 
@@ -483,8 +566,8 @@ Try writing that wrap in the challenge; it's a great `if` exercise.
    after `error` is computed — a value that only exists inside a command gets
    logged where it's computed, Lesson 3's refinement. Plot it and watch it
    decay toward zero. That curve is the signature of P control working.
-3. What happens with `kP = 0`? With a *negative* `kP`? Predict first, then try it,
-   and explain what you saw.
+3. What happens with `kP = 0`? With a *negative* `kP`? Predict first, then type
+   each into **SteerKP** in SimGUI, tap the button, and explain what you saw.
 
 ---
 
@@ -499,8 +582,11 @@ halve it while it rings — is a ritual you'll repeat for years. Around that cor
 up `if / else if / else` for multi-way decisions, `runRepeatedly(...)`
 paired with `.whenCanceled(...)` for a controller that recomputes every tick
 and still cleans up after itself, a lambda quietly remembering its target,
-and a new nested-class home for tuning constants in `Constants.java`. Hold
-onto the shape of `steerToAngle`: measure, subtract, multiply, clamp,
+and a new nested-class home for tuning constants in `Constants.java`. And
+you tuned without restarting: a **tunable** is a number the robot publishes
+and SimGUI can change, your code reads it with `get()` every tick, and the
+constant in `Constants.java` stays the truth you copy a good value back into.
+Hold onto the shape of `steerToAngle`: measure, subtract, multiply, clamp,
 command. The same five moves point a whole chassis at a compass heading in
 Lesson 8 — only the sensor changes. That's a sign you've learned something
 real.

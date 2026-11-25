@@ -187,7 +187,7 @@ and the whole `6.75 : 1` comes after it.
 
 **`ContinuousWrap`** tells the steering closed loop that its mechanism is a
 circle: position `0.9` rotations and position `-0.1` are one small step
-apart, not most of a revolution. That's the Lesson 5 wrap trick ([Figure 5.3](05-steering-p-control.md#figure-5-3)) — the two
+apart, not most of a revolution. That's the Lesson 5 wrap trick ([Figure 5.4](05-steering-p-control.md#figure-5-4)) — the two
 `while` loops, then `MathUtil.inputModulus` from Lesson 10 — implemented in
 silicon. <!-- claim: phoenix6.continuous-wrap --> (This part doesn't care which sensor feeds the loop — wrap-around
 is about the *mechanism*, not the sensor.)
@@ -309,7 +309,8 @@ trick stays in your code because it isn't a control loop; it's a
 *decision* about how hard to drive, and decisions are the coach's job.
 
 **Delete `SwerveModule`'s private `clamp` method and its now-unused
-`MathUtil` import.** Nothing calls `clamp` anymore — the steering
+`MathUtil` import, and the `s_steerKP` tunable with its two `org.wpilib.tunable`
+imports.** The steering gain lives in the motor's configuration now. Nothing calls `clamp` anymore — the steering
 `setDesiredState` was its only caller, and that math just moved into
 `steerConfig.ClosedLoopGeneral`/`Slot0` above. (`Drivetrain` keeps its own
 separate `clamp` — a different copy, still doing real work for

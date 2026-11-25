@@ -281,7 +281,7 @@ public void setDesiredState(double angleDegrees, double speedFraction) {
   double error = angleDegrees - getSteerAngleDegrees();
   while (error > 180)  { error -= 360; }
   while (error < -180) { error += 360; }
-  double steerOutput = clamp(SteerConstants.kP * error, -1.0, 1.0);
+  double steerOutput = clamp(s_steerKP.get() * error, -1.0, 1.0);
   m_steerMotor.setThrottle(steerOutput);
 
   // Drive only as much as the wheel is pointed the right way:

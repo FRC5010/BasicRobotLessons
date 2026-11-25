@@ -236,7 +236,68 @@ Not tunable, because they describe the robot rather than how it should behave:
 - field positions and tag IDs;
 - B-Line's path constraints, which live in the path JSON files, not in Java.
 
-## 6b. Questions left for the user
+**Answered 2026-11-25:** 6b.1 is **(c), the whole inventory**; 6b.2 is **(i), don't record,
+and explain**.
+
+## 6c. Design rules for every lesson
+
+1. **The constant stays the truth.** Each tunable starts from its `Constants.java` value. Once
+   the student finds a better number, they copy it back there. So `Constants.java` and
+   `merge_constants.py` are unchanged in kind: no constant is removed or retyped.
+2. **Make a tunable in something built once:** a mechanism, `Drivetrain`, `Robot`, or a
+   `static` field. Never in an opmode (the duplicate-name result).
+3. **One knob per value.** When several objects share a value, they share one tunable. The four
+   `SwerveModule`s' steering `kP` becomes a `static` field from Lesson 7, which is the moment the
+   one module becomes four.
+4. **Names are log-key shaped**, `<Owner>/<What>`: `DriveModule/SteerKP`, `Drivetrain/HeadingKP`,
+   `Elevator/KG`, `Elevator/Tolerance`.
+5. **Code values are read where they're used**, with `get()`, every time, never copied into a
+   field at construction.
+6. **Firmware values need re-applying.** `onTune` builds just the affected config group
+   (`Slot0Configs`, `MotionMagicConfigs`, `CurrentLimitsConfigs`) and applies it.
+7. **Measures stay measures.** A tolerance is `Tunables.addValue(name, kTolerance)`. It shows in
+   SimGUI in base units (metres, radians, metres per second), and the lesson says so.
+8. **A profile's limits** are two tunables, speed and acceleration. `onTune` rebuilds the
+   `TrapezoidProfile.Constraints` and hands them to the controller.
+9. **Lesson 18 introduces `kTuningMode`** and a small `Tuning` helper class whose methods make
+   every tunable `IMMUTABLE` unless the mode is on. Lesson 18 then switches the earlier tunables
+   still in use to the helper: heading `kP`, the Lesson 12 drive and steer gains, and B-Line's
+   three gains.
+10. **Replay (6b.2 (i)).** Lesson 18's callout explains it:
+    - a firmware value never changes a replay;
+    - a code value changes it only if it was tuned during the recording;
+    - with `kTuningMode` off in a match, nothing can be tuned, so match logs replay exactly.
+
+## 6d. Phases
+
+1. **Claims:** `wpilib.tunables-*` with JUnit tests, kept from the probe.
+2. **Lesson 5:** the full introduction.
+   - `DriveModule` reads `kP` from a tunable.
+   - §5 becomes "tune it live in SimGUI, then copy the number back", with a new figure: the
+     Tunables folder in SimGUI's NetworkTables window.
+   - New robot concept: tunables.
+   - Snapshot 4 gets markers; snapshot 6 carries the change.
+3. **Lessons 7 (static shared steering `kP`), 8, 12 and 17**, one at a time.
+4. **Lesson 18:** `kTuningMode`, the `Tuning` helper, firmware gains with `onTune`, Motion Magic
+   limits, the tolerance, and the replay callout. Lesson 17's snapshot gets markers.
+5. **Lessons 20, 26, 27, 28, 29 and 30**, one at a time, each rippling forward.
+6. **The study guide page** in the logging group, then a CLAUDE.md block.
+
+### Progress
+
+- **2026-11-25, phases 1–2 and Lesson 7 done.**
+  - **Claims:** four new wpilib claims and one wpilib-tools claim. `TunablesApiTest` holds the
+    three behaviour tests, each broken once on purpose to see it fail by its claim id.
+  - **Lesson 5:** §5's "Tune it while it runs", with Figure 5.3 (a SimGUI screenshot,
+    `tools/figures/05-simgui-tunable.py`); the wrap figure is now 5.4.
+  - **Lesson 7:** the steering gain becomes a `static` field, `SwerveModule/SteerKP`, shared by
+    the four modules (snapshots 7–11). Retuning happens in SimGUI.
+  - **Lesson 12:** deletes the field along with `clamp`.
+  - **Debugger aside:** its watch expressions use `m_steerKP.get() * error`. Figure D.1 (the
+    user's screenshot) still shows the older `SteerConstants.kP * error` line.
+- **Next:** Lesson 8's heading `kP`, Lesson 12's firmware gains, and Lesson 17's B-Line gains.
+
+## 6b. Questions left for the user (answered above)
 
 1. **Where the line falls:**
    - (a) gains only (every `kP`/`kG`/`kV`/`kA`/`kS`);

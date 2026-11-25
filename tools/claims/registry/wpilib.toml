@@ -698,3 +698,47 @@ evidence = "javap -c -p of org.wpilib.framework.OpModeRobot in wpilibj-java-2027
 measured_on = "alpha-8"
 method = "BYTECODE"
 
+
+[[claim]]
+id = "wpilib.tunables-publish-under-tunables"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "Tunables.addDouble(name, initial) (org.wpilib.tunable) makes a TunableDouble and publishes it to NetworkTables at /Tunables/<name> as a double, through the backend every RobotBase registers in its constructor; a slash in the name makes a folder."
+evidence = "Read in wpilibj's RobotBase.java at 2027.0.0-alpha-8 (registerBackend(\"\", new NetworkTablesTunableBackend(inst, \"/Tunables\"))); measured with tools/claims/java/claims/TunablesApiTest.java (2026-11-25)"
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/TunablesApiTest.java"
+
+[[claim]]
+id = "wpilib.tunables-applied-on-update"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "A dashboard's write to a tunable's topic doesn't change get() until TunableRegistry.update() runs; then get() returns the written value."
+evidence = "tools/claims/java/claims/TunablesApiTest.java (2026-11-25): a second publisher on the same NetworkTables instance wrote 25.0 over 20.0; get() read 20.0 before update() and 25.0 after"
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/TunablesApiTest.java"
+
+[[claim]]
+id = "wpilib.tunables-update-after-robot-periodic"
+kind = "behaviour"
+library = ["wpilib", "advantagekit"]
+criticality = "C2"
+statement = "The robot loop calls TunableRegistry.update() once a tick, right after robotPeriodic() and before simulationPeriodic(), in both OpModeRobot and AdvantageKit's LoggedOpModeRobot, so a dashboard change is applied at the end of one tick and the code sees it on the next."
+evidence = "javap -c of org.wpilib.framework.OpModeRobot.loopFunc (wpilibj-java-2027.0.0-alpha-8.jar) and org.littletonrobotics.junction.LoggedOpModeRobot.loopFunc (akit-java-27.0.0-alpha-7.jar), 2026-11-25: robotPeriodic(), then TunableRegistry.update(), then simulationPeriodic() when simulating"
+measured_on = "alpha-8"
+method = "BYTECODE"
+
+[[claim]]
+id = "wpilib.tunables-duplicate-name-alert"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "Making a second tunable with a name already in use doesn't throw: an alert in the Tunables group says the tunable already exists, dashboard writes keep going to the first one, and the second never hears one."
+evidence = "tools/claims/java/claims/TunablesApiTest.java (2026-11-25), and the probe that preceded it: alert text 'Tunable warning: NetworkTables tunable '/Tunables/Probe/kP' already exists'"
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/TunablesApiTest.java"
+note = "Matters because an opmode is rebuilt on every Disable: a tunable made in an opmode's constructor would be refused the second time."

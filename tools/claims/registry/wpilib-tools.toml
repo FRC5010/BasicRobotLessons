@@ -300,3 +300,13 @@ criticality = "C3"
 statement = "SimGUI's Field window has settings (a right-click on the field, or the menu button in its title bar) with Edit name, Close, Units, and a Field section whose Image drop-down lists Custom and built-in FRC and FTC fields (2026 FRC Rebuilt Welded and AndyMark first); picking one draws it behind the robot and sets Field Width and Height. With Custom and no file, only the outline is drawn. The choice is kept for the next launch."
 evidence = "Figure 11.4: screenshots taken here on 2026-11-21 under Xvfb on the Lesson 11 state (the title-bar button; a right-click didn't open it under Xvfb, and the user says right-click opens it on their machine). The fresh launch read Custom. The user says the latest field is usually there by default; why this launch had Custom wasn't checked. 'Kept for next time' is that SimGUI saves window settings in simgui.json, as it does for every window; not re-launched to check this one. The figure's field is drawn from the red alliance's side, because SimGUI orients it by the alliance and starts on Red 1 (the user, 2026-11-21; not checked on Blue 1 here)."
 measured_on = "alpha-8 (SimGUI here; the user's SimGUI for the right-click)"
+
+[[claim]]
+id = "wpilib-tools.simgui-edits-tunables"
+kind = "behaviour"
+library = ["wpilib-tools", "wpilib"]
+criticality = "C1"
+statement = "SimGUI's NetworkTables window lists tunables under Transitory Values in a Tunables folder beside Telemetry; each number is an editable box with its type (0.000500 double), and typing a value and pressing Enter sends it to the robot, whose tunable reads it on the next tick."
+evidence = "Checked under Xvfb on a Lesson 5 sandbox with a probe tunable, 2026-11-25 (alpha-8): double-click, type 0.00003, Enter; the robot printed the new value and the box kept it. glass's NetworkTables.cpp at v2027.0.0-alpha-8 draws a double with an input box that publishes the typed value unless the view is read-only."
+measured_on = "alpha-8"
+method = "LOOP"
