@@ -1,7 +1,7 @@
 # Plan: WPILib Tunables in the OpMode track
 
-Status: **plan only, awaiting the user's decisions** (section 6). Nothing in the lessons, the
-snapshots or the study guide has changed yet.
+Status: **decided 2026-11-25** (section 6a); two questions left on scope and replay
+(section 6b). Nothing in the lessons, the snapshots or the study guide has changed yet.
 
 This is a contributor document, kept off the website by `_config.yml`'s `lesson-plan-*.md`
 exclude. Nothing in it should be pasted into a lesson as it stands.
@@ -55,9 +55,18 @@ stand in for a dashboard. The probe is not kept.
 | `Tunables.addValue("Probe/Tolerance", Centimeters.of(2))` | published as **0.02**, in base units (metres), with properties `{"mutable":true,"unit":"m"}`; a write of 0.05 reads back as 5 cm |
 | A second `addDouble` with a name already in use | doesn't throw. A `Tunables` alert goes up ("NetworkTables tunable '/Tunables/Probe/kP' already exists"), dashboard writes keep going to the **first** object, and the second never hears one. |
 
+**SimGUI can edit one (checked 2026-11-25, alpha-8, under Xvfb).** A Lesson 5 sandbox published
+`Probe/kP` at 0.0005 and printed its `get()` whenever it changed. In the **NetworkTables**
+window, under **Transitory Values**, a **Tunables** folder sits beside **Telemetry**. Each
+double is an editable box with its type, here `0.000500 double`. Double-click, type `0.00003`,
+press Enter: the robot printed `kP now 3.0E-5`, and the box kept the new value. Read from
+glass's `NetworkTables.cpp` at `v2027.0.0-alpha-8`: a double is drawn with an input box that
+publishes the typed value, unless the view is flagged read-only. Screenshots are kept in the
+working files.
+
 **Not yet checked** (phase 1 below):
-- **SimGUI:** whether it can *edit* a `/Tunables` value, in its NetworkTables View, and how.
-- **AdvantageScope:** whether 27.0.0-alpha-6 can edit one.
+- **AdvantageScope:** whether 27.0.0-alpha-6 can edit one. The user has AdvantageScope; this
+  container can't run it.
 - **Replay:** what a replay does with a value that was tuned during the recording.
 - **Real robot:** how long re-applying `Slot0Configs` blocks on a real TalonFX. Phoenix's
   `apply(Slot0Configs)` and `apply(Slot0Configs, timeout)` exist (`javap`).
@@ -186,7 +195,62 @@ New claims, in `tools/claims/registry/wpilib.toml`:
 
 Each test gets broken once on purpose to see it fail by its claim id, as usual.
 
-## 6. Decisions for the user
+## 6a. Decided (user, 2026-11-25)
+
+1. **Placement:**
+   - **Lesson 18** is the main introduction for firmware gains.
+   - **Lesson 5** gets a **full usage introduction** in its walkthrough, not just a Try It. It's
+     the first time the student tunes, and its `kP` is read by the code each tick.
+2. **Tunables are the course's main way of tuning:** *any value that can be tuned* becomes a
+   tunable, in the lesson that introduces it. This supersedes option A's "four elevator gains".
+   The inventory below lists the candidates; where the line falls is question 6b.1.
+3. **Competition safety:** tunables are `IMMUTABLE` unless a `kTuningMode` constant is true,
+   **introduced in Lesson 18**. Lessons 5–17 run only in simulation, so they need no mode.
+4. **The guide page goes in the logging group**, as section 4 describes.
+
+### Inventory: values the lessons tune, by the lesson that introduces them
+
+"Firmware" means the value is applied to a motor's configuration. A replay never runs the
+motors, so tuning it doesn't change a replay. "Code" means the robot's own code reads it, so a
+tuned value changes what a replay works out (point 2 in section 2).
+
+| Lesson | Values | Where used |
+|---|---|---|
+| 5 | `SteerConstants.kP` | code (retires in 12) |
+| 8 | `HeadingConstants.kP` | code (`turnToHeading`, every lesson after) |
+| 12 | `kSteerKP`, `kDriveKV`, `kDriveKP` | firmware |
+| 17 | `kTranslationP`, `kRotationP`, `kCrossTrackP` | code (B-Line's `PIDController`s) |
+| 18 | `kElevatorKG`, `KV`, `KA`, `KP`; Motion Magic cruise and acceleration | firmware |
+| 18 | elevator `kTolerance` | code (`atGoal()`) |
+| 20 | `kArmKG`, `KV`, `KA`, `KP`; arm Motion Magic limits | firmware |
+| 20 | arm `kTolerance` | code |
+| 26 | `kAlignP`, `kAlignThetaP`, the three tolerances, `kTravelLimits`, `kApproachLimits`, `kTurnLimits`, `kHandoffDistance`, `kHandoffSpeed` | code |
+| 27 | `kAimP`, `kAimTolerance` | code |
+| 28 | `kFlywheelKS`, `KV`, `KA`, `KP` | firmware |
+| 28 | flywheel `kTolerance`, `kIdleSpeed` | code |
+| 29 | supply and stator current limits | firmware |
+| 30 | `kLowBatteryVoltage`, `kBrownoutVoltage` | code |
+
+Not tunable, because they describe the robot rather than how it should behave:
+- CAN IDs, gear ratios, wheel and drum sizes, masses, magnet offsets;
+- field positions and tag IDs;
+- B-Line's path constraints, which live in the path JSON files, not in Java.
+
+## 6b. Questions left for the user
+
+1. **Where the line falls:**
+   - (a) gains only (every `kP`/`kG`/`kV`/`kA`/`kS`);
+   - (b) gains, tolerances and motion limits: everything a lesson asks the student to adjust;
+   - (c) the whole inventory, current limits and battery thresholds included.
+2. **Replay of code values (Lessons 13 onward):**
+   - (i) **Don't record them.** With `kTuningMode` off, nothing can change them, so a match log
+     replays exactly; only a tuning session's replay would differ, and the lessons say so.
+     Simplest, and no new machinery.
+   - (ii) **Record them as inputs.** One small helper class, written once in Lesson 18, puts
+     each code-side tunable's value through `processInputs` every tick, so every replay is
+     exact. More to teach and to type.
+
+## 6. Decisions for the user (the original questions, answered in 6a)
 
 1. **Placement:**
    - A (Lesson 18 §10, plus a Lesson 5 Try It), recommended;
