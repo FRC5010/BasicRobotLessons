@@ -92,6 +92,11 @@ block = "calculateLoadedBatteryVoltage(11.0, 0.04"
 reason = "temporary: the tired battery, 'put it back after'"
 
 [[exception]]
+lesson = 29
+block = "\"Power/BrownedOut\", power.batteryVolts < PowerConstants.kBrownoutVoltage.in(Volts));"
+reason = "staged: section 8 makes the brownout line a tunable, and robotPeriodic() compares against m_brownoutVoltage.get()"
+
+[[exception]]
 lesson = 32
 block = "Centimeters.of(0.00002)"
 reason = "temporary: the planted typo the lesson then finds in the log and fixes"

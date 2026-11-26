@@ -77,6 +77,12 @@ public class Robot extends LoggedOpModeRobot {
   public final Superstructure superstructure = new Superstructure(elevator, arm);
   public final Leds leds = new Leds(superstructure::getState); // reads it; drives nothing
   public final Flywheel flywheel = new Flywheel();
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add the power budget as tunables: the winding cap every mechanism motor shares,
+   * each motor's slice of the battery, and the brownout line. A change to a limit is
+   * sent to every mechanism.
+   */
 
   /**
    * This function is run when the robot is first started up and should be used for any

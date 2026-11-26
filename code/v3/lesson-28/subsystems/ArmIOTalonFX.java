@@ -84,6 +84,12 @@ public class ArmIOTalonFX implements ArmIO {
     m_pivot.getConfigurator().apply(motionMagic);
   }
 
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Send new current limits as one config group, both limits on, the way
+   * the constructor set them.
+   */
+
   @Override
   public void updateInputs(ArmIOInputs inputs) {
     inputs.angleDegrees = m_pivot.getPosition().getValue().in(Degrees);

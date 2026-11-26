@@ -27,6 +27,9 @@ public interface ElevatorIO {
   /** Send new Motion Magic limits, in meters per second and meters per second squared. */
   public default void setMotionLimits(double cruiseMetersPerSec, double accelMetersPerSecSq) {}
 
+  /** Send new current limits, in amps: the winding (stator) cap and the battery (supply) share. */
+  public default void setCurrentLimits(double statorAmps, double supplyAmps) {}
+
   /** Open-loop drive, for homing: no goal, no profile, just a voltage. */
   public default void setVoltage(double volts) {}
 

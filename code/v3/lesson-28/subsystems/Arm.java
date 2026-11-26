@@ -121,6 +121,12 @@ public class Arm implements Mechanism {
         m_maxAcceleration.get().in(RotationsPerSecondPerSecond));
   }
 
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * A way to hand both motors new current limits, so the power budget can be
+   * changed while the robot runs.
+   */
+
   /** Keeps 'angle' inside [kMinAngle, kMaxAngle] — there's no MathUtil.clamp to reach for here. */
   private static Angle clampToTravel(Angle angle) {
     if (angle.gt(ArmConstants.kMaxAngle)) {

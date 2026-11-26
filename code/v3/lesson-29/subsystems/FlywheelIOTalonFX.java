@@ -5,6 +5,7 @@ import static org.wpilib.units.Units.RotationsPerSecond;
 import static org.wpilib.units.Units.Volts;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.NeutralOut;
@@ -54,6 +55,21 @@ public class FlywheelIOTalonFX implements FlywheelIO {
     slot0.kA = kA;
     slot0.kP = kP;
     m_motor.getConfigurator().apply(slot0);
+  }
+
+  @Override
+  public void setCurrentLimits(double statorAmps, double supplyAmps) {
+    m_motor.getConfigurator().apply(currentLimits(statorAmps, supplyAmps));
+  }
+
+  /** One motor's budget as a config group: both limits on, at these numbers. */
+  private static CurrentLimitsConfigs currentLimits(double statorAmps, double supplyAmps) {
+    CurrentLimitsConfigs limits = new CurrentLimitsConfigs();
+    limits.StatorCurrentLimitEnable = true;
+    limits.StatorCurrentLimit = statorAmps;
+    limits.SupplyCurrentLimitEnable = true;
+    limits.SupplyCurrentLimit = supplyAmps;
+    return limits;
   }
 
   @Override

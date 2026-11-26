@@ -53,6 +53,12 @@ public class FlywheelIOTalonFX implements FlywheelIO {
     m_motor.getConfigurator().apply(slot0);
   }
 
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Send new current limits as one config group, both limits on, the way
+   * the constructor set them.
+   */
+
   @Override
   public void updateInputs(FlywheelIOInputs inputs) {
     inputs.velocityRps = m_motor.getVelocity().getValue().in(RotationsPerSecond);

@@ -159,6 +159,12 @@ public class Elevator implements Mechanism {
         m_maxAcceleration.get().in(MetersPerSecondPerSecond));
   }
 
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * A way to hand the motor new current limits, so the power budget can be
+   * changed while the robot runs.
+   */
+
   /** Keeps 'target' inside [kMinHeight, kMaxHeight] — there's no MathUtil.clamp to reach for here. */
   private static Distance clampToTravel(Distance target) {
     if (target.gt(ElevatorConstants.kMaxHeight)) {

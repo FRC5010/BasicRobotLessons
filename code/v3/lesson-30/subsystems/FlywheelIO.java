@@ -27,6 +27,9 @@ public interface FlywheelIO {
   /** Send new feedforward and trim gains to the motor's Slot0. */
   public default void setGains(double kS, double kV, double kA, double kP) {}
 
+  /** Send new current limits, in amps: the winding (stator) cap and the battery (supply) share. */
+  public default void setCurrentLimits(double statorAmps, double supplyAmps) {}
+
   /** Let it coast. Not a goal of zero — a goal of nothing. */
   public default void stop() {}
 }

@@ -633,6 +633,175 @@ no-limits ones vary the most: the eight runs that collapsed peaked at
 > battery trace is the first thing to look at, and it's only there if you
 > put it there.
 
+## 8. Tune the budget while it runs
+
+The numbers in `PowerConstants` are a first guess, and the tired battery just
+showed how much rides on them. Finding better ones means changing a limit and
+running the moves again, a lot of times, so the budget becomes tunables like
+every gain since Lesson 18. The question is where they live.
+
+A supply limit belongs to one motor, but the stator cap is shared, and Phoenix
+takes a motor's limits together: a `CurrentLimitsConfigs` holds both, so
+sending one means sending the other too. <!-- claim: l29.budget-tunables-reach-motors -->
+So the whole budget lives in one place that can see every mechanism, which is
+`Robot`, the same reason the total is added up there. The tunables go under
+`Power/`, beside the readings they're about, and one `onTune` sends every
+mechanism its limits.
+
+Start at the bottom, with the IO layer.
+
+**Add to `ElevatorIO` and `FlywheelIO`, below their last `default` method:**
+
+```java
+  /** Send new current limits, in amps: the winding (stator) cap and the battery (supply) share. */
+  public default void setCurrentLimits(double statorAmps, double supplyAmps) {}
+```
+
+**Add to `ArmIO`, below `setMotionLimits`:**
+
+```java
+  /** Send new current limits, in amps: the shared winding cap and each motor's battery share. */
+  public default void setCurrentLimits(double statorAmps, double pivotSupplyAmps, double rollerSupplyAmps) {}
+```
+
+The real classes build a `CurrentLimitsConfigs` the way the constructor's
+lines did, with both limits switched on, and apply just that group.
+
+**Add to `ElevatorIOTalonFX` and `FlywheelIOTalonFX`, below `setGains`:**
+
+```java
+  @Override
+  public void setCurrentLimits(double statorAmps, double supplyAmps) {
+    m_motor.getConfigurator().apply(currentLimits(statorAmps, supplyAmps));
+  }
+
+  /** One motor's budget as a config group: both limits on, at these numbers. */
+  private static CurrentLimitsConfigs currentLimits(double statorAmps, double supplyAmps) {
+    CurrentLimitsConfigs limits = new CurrentLimitsConfigs();
+    limits.StatorCurrentLimitEnable = true;
+    limits.StatorCurrentLimit = statorAmps;
+    limits.SupplyCurrentLimitEnable = true;
+    limits.SupplyCurrentLimit = supplyAmps;
+    return limits;
+  }
+```
+
+**Add to `ArmIOTalonFX`, below `setMotionLimits`. It sends both motors their
+limits, with the same helper:**
+
+```java
+  @Override
+  public void setCurrentLimits(double statorAmps, double pivotSupplyAmps, double rollerSupplyAmps) {
+    m_pivot.getConfigurator().apply(currentLimits(statorAmps, pivotSupplyAmps));
+    m_roller.getConfigurator().apply(currentLimits(statorAmps, rollerSupplyAmps));
+  }
+
+  /** One motor's budget as a config group: both limits on, at these numbers. */
+  private static CurrentLimitsConfigs currentLimits(double statorAmps, double supplyAmps) {
+    CurrentLimitsConfigs limits = new CurrentLimitsConfigs();
+    limits.StatorCurrentLimitEnable = true;
+    limits.StatorCurrentLimit = statorAmps;
+    limits.SupplyCurrentLimitEnable = true;
+    limits.SupplyCurrentLimit = supplyAmps;
+    return limits;
+  }
+```
+
+**Add the import to all three:**
+
+```java
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+```
+
+Each mechanism passes the measures down as amps, the way its gains go down as
+plain numbers.
+
+**Add to `Elevator` and `Flywheel`, near `getSupplyCurrentAmps`:**
+
+```java
+  /** Send new current limits to the motor: the shared winding cap and this motor's battery share. */
+  public void setCurrentLimits(Current stator, Current supply) {
+    m_io.setCurrentLimits(stator.in(Amps), supply.in(Amps));
+  }
+```
+
+**Add to `Arm`:**
+
+```java
+  /** Send new current limits to both motors: the shared winding cap and each one's battery share. */
+  public void setCurrentLimits(Current stator, Current pivotSupply, Current rollerSupply) {
+    m_io.setCurrentLimits(stator.in(Amps), pivotSupply.in(Amps), rollerSupply.in(Amps));
+  }
+```
+
+**Add the imports to all three:**
+
+```java
+import static org.wpilib.units.Units.Amps;
+
+import org.wpilib.units.measure.Current;
+```
+
+Now the tunables themselves, in `Robot`, below the mechanisms they're for.
+
+**Add to `Robot`, below the `flywheel` field:**
+
+```java
+  public final Flywheel flywheel = new Flywheel();
+
+  // The power budget, as tunables (see Tuning), under Power/ beside the readings it's
+  // about: one winding cap every mechanism motor shares, each motor's slice of the
+  // battery, and the line that counts as a brownout. A change to any limit is sent to
+  // every mechanism at once, because each motor takes its two limits together.
+  private final Tunable<Current> m_statorLimit =
+      Tuning.value("Power/StatorLimit", PowerConstants.kStatorLimit, this::sendCurrentLimits);
+  private final Tunable<Current> m_elevatorSupplyLimit = Tuning.value(
+      "Power/ElevatorSupplyLimit", PowerConstants.kElevatorSupplyLimit, this::sendCurrentLimits);
+  private final Tunable<Current> m_armPivotSupplyLimit = Tuning.value(
+      "Power/ArmPivotSupplyLimit", PowerConstants.kArmPivotSupplyLimit, this::sendCurrentLimits);
+  private final Tunable<Current> m_armRollerSupplyLimit = Tuning.value(
+      "Power/ArmRollerSupplyLimit", PowerConstants.kArmRollerSupplyLimit, this::sendCurrentLimits);
+  private final Tunable<Current> m_flywheelSupplyLimit = Tuning.value(
+      "Power/FlywheelSupplyLimit", PowerConstants.kFlywheelSupplyLimit, this::sendCurrentLimits);
+  private final Tunable<Voltage> m_brownoutVoltage =
+      Tuning.value("Power/BrownoutVoltage", PowerConstants.kBrownoutVoltage);
+```
+
+**Add to `Robot`, just above `getTotalCurrentAmps`:**
+
+```java
+  /** Send every mechanism its current limits; runs whenever SimGUI changes one of them. */
+  private void sendCurrentLimits() {
+    elevator.setCurrentLimits(m_statorLimit.get(), m_elevatorSupplyLimit.get());
+    arm.setCurrentLimits(m_statorLimit.get(), m_armPivotSupplyLimit.get(), m_armRollerSupplyLimit.get());
+    flywheel.setCurrentLimits(m_statorLimit.get(), m_flywheelSupplyLimit.get());
+  }
+```
+
+**In `robotPeriodic()`, compare against the brownout tunable instead of the
+constant:**
+
+```java
+    Logger.recordOutput(
+        "Power/BrownedOut", power.batteryVolts < m_brownoutVoltage.get().in(Volts));
+```
+
+**Add the imports to `Robot`:**
+
+```java
+import org.wpilib.tunable.Tunable;
+import org.wpilib.units.measure.Current;
+import org.wpilib.units.measure.Voltage;
+```
+
+Run it, and SimGUI's **Tunables → Power** holds all six. Currents are in amps
+and voltages in volts, which are their base units, so the numbers read exactly
+like the constants. <!-- claim: wpilib.tunables-measure-base-units --> Change
+`StatorLimit` and every mechanism motor gets the new cap at once, each keeping its
+own supply limit and everything else the constructor set. <!-- claim: l29.budget-tunables-reach-motors -->
+Then put the tired battery back in `simulationPeriodic()`, and you can hunt for a
+budget that survives it without restarting between tries.
+
 ---
 
 ## Try it
@@ -642,7 +811,7 @@ no-limits ones vary the most: the eight runs that collapsed peaked at
    inputs the same way the mechanisms did, and `Drivetrain` needs to sum
    its four modules. Then re-run the brownout experiment and see how much
    less provocation it takes.
-2. **Find the elevator's real floor.** Lower `kElevatorSupplyLimit` until
+2. **Find the elevator's real floor.** Lower `ElevatorSupplyLimit` in SimGUI until
    the elevator can no longer make its Motion Magic cruise, and watch
    what that looks like on the setpoint trace from Lesson 18 §11 —
    position falling behind setpoint, a *different* signature from a badly

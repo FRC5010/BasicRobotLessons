@@ -1,5 +1,6 @@
 package first.robot.subsystems;
 
+import static org.wpilib.units.Units.Amps;
 import static org.wpilib.units.Units.Meters;
 import static org.wpilib.units.Units.MetersPerSecond;
 import static org.wpilib.units.Units.MetersPerSecondPerSecond;
@@ -10,6 +11,7 @@ import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.tunable.Tunable;
 import org.wpilib.tunable.TunableDouble;
+import org.wpilib.units.measure.Current;
 import org.wpilib.units.measure.Distance;
 import org.wpilib.units.measure.LinearAcceleration;
 import org.wpilib.units.measure.LinearVelocity;
@@ -182,6 +184,11 @@ public class Elevator implements Mechanism {
     m_io.setMotionLimits(
         m_maxVelocity.get().in(MetersPerSecond),
         m_maxAcceleration.get().in(MetersPerSecondPerSecond));
+  }
+
+  /** Send new current limits to the motor: the shared winding cap and this motor's battery share. */
+  public void setCurrentLimits(Current stator, Current supply) {
+    m_io.setCurrentLimits(stator.in(Amps), supply.in(Amps));
   }
 
   /** Keeps 'target' inside [kMinHeight, kMaxHeight] — there's no MathUtil.clamp to reach for here. */

@@ -74,6 +74,12 @@ public class ElevatorIOTalonFX implements ElevatorIO {
     m_motor.getConfigurator().apply(motionMagic);
   }
 
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Send new current limits as one config group, both limits on, the way
+   * the constructor set them.
+   */
+
   @Override
   public void updateInputs(ElevatorIOInputs inputs) {
     inputs.heightMeters = rotationsToMeters(m_motor.getPosition().getValue().in(Rotations));

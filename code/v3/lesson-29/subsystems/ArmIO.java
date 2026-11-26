@@ -31,6 +31,9 @@ public interface ArmIO {
   /** Send new Motion Magic limits for the pivot, in arm rotations per second (and per second squared). */
   public default void setMotionLimits(double cruiseRotPerSec, double accelRotPerSecSq) {}
 
+  /** Send new current limits, in amps: the shared winding cap and each motor's battery share. */
+  public default void setCurrentLimits(double statorAmps, double pivotSupplyAmps, double rollerSupplyAmps) {}
+
   /** Spin the roller at a fraction of full output. No goal, no profile. */
   public default void setRollerOutput(double output) {}
 }

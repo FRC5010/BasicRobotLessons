@@ -620,7 +620,17 @@ Lesson 29 made about the current total, so it goes where the robot lives.
     public static final Voltage kLowBatteryVoltage = Volts.of(11.5);
 ```
 
-**Add to `Robot`, below the `flywheel` field:**
+It's a line someone might want to move, so it's a tunable too, beside Lesson
+29's brownout line.
+
+**Add to `Robot`, below `m_brownoutVoltage`:**
+
+```java
+  private final Tunable<Voltage> m_lowBatteryVoltage =
+      Tuning.value("Power/LowBatteryVoltage", PowerConstants.kLowBatteryVoltage);
+```
+
+**Then the alert, below those tunables:**
 
 ```java
   /** Not an error: the robot works fine on a low battery, right up until it doesn't. */
@@ -635,7 +645,7 @@ Lesson 29 made about the current total, so it goes where the robot lives.
     // judged while disabled, because a battery under load always reads low;
     // what says it's flat is the voltage at rest.
     m_lowBattery.set(
-        RobotState.isDisabled() && power.batteryVolts < PowerConstants.kLowBatteryVoltage.in(Volts));
+        RobotState.isDisabled() && power.batteryVolts < m_lowBatteryVoltage.get().in(Volts));
 ```
 
 It reads `power.batteryVolts`, Lesson 29's recorded reading, not

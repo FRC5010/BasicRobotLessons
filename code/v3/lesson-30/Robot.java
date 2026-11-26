@@ -16,6 +16,9 @@ import org.wpilib.simulation.BatterySim;
 import org.wpilib.simulation.RoboRioSim;
 import org.wpilib.system.DataLogManager;
 import org.wpilib.system.RobotController;
+import org.wpilib.tunable.Tunable;
+import org.wpilib.units.measure.Current;
+import org.wpilib.units.measure.Voltage;
 import org.wpilib.util.Alert;
 import org.wpilib.util.Alert.Level;
 
@@ -85,6 +88,25 @@ public class Robot extends LoggedOpModeRobot {
   public final Superstructure superstructure = new Superstructure(elevator, arm);
   public final Leds leds = new Leds(superstructure::getState); // reads it; drives nothing
   public final Flywheel flywheel = new Flywheel();
+
+  // The power budget, as tunables (see Tuning), under Power/ beside the readings it's
+  // about: one winding cap every mechanism motor shares, each motor's slice of the
+  // battery, and the line that counts as a brownout. A change to any limit is sent to
+  // every mechanism at once, because each motor takes its two limits together.
+  private final Tunable<Current> m_statorLimit =
+      Tuning.value("Power/StatorLimit", PowerConstants.kStatorLimit, this::sendCurrentLimits);
+  private final Tunable<Current> m_elevatorSupplyLimit = Tuning.value(
+      "Power/ElevatorSupplyLimit", PowerConstants.kElevatorSupplyLimit, this::sendCurrentLimits);
+  private final Tunable<Current> m_armPivotSupplyLimit = Tuning.value(
+      "Power/ArmPivotSupplyLimit", PowerConstants.kArmPivotSupplyLimit, this::sendCurrentLimits);
+  private final Tunable<Current> m_armRollerSupplyLimit = Tuning.value(
+      "Power/ArmRollerSupplyLimit", PowerConstants.kArmRollerSupplyLimit, this::sendCurrentLimits);
+  private final Tunable<Current> m_flywheelSupplyLimit = Tuning.value(
+      "Power/FlywheelSupplyLimit", PowerConstants.kFlywheelSupplyLimit, this::sendCurrentLimits);
+  private final Tunable<Voltage> m_brownoutVoltage =
+      Tuning.value("Power/BrownoutVoltage", PowerConstants.kBrownoutVoltage);
+  private final Tunable<Voltage> m_lowBatteryVoltage =
+      Tuning.value("Power/LowBatteryVoltage", PowerConstants.kLowBatteryVoltage);
 
   /** Not an error: the robot works fine on a low battery, right up until it doesn't. */
   private final Alert m_lowBattery = new Alert(
@@ -204,12 +226,19 @@ public class Robot extends LoggedOpModeRobot {
     // Compared against the threshold here rather than read from a flag, so the
     // answer is the same on a robot and in simulation, and you choose the line.
     Logger.recordOutput(
-        "Power/BrownedOut", power.batteryVolts < PowerConstants.kBrownoutVoltage.in(Volts));
+        "Power/BrownedOut", power.batteryVolts < m_brownoutVoltage.get().in(Volts));
     // The robot's, not any subsystem's: nothing smaller knows about it. Only
     // judged while disabled, because a battery under load always reads low;
     // what says it's flat is the voltage at rest.
     m_lowBattery.set(
-        RobotState.isDisabled() && power.batteryVolts < PowerConstants.kLowBatteryVoltage.in(Volts));
+        RobotState.isDisabled() && power.batteryVolts < m_lowBatteryVoltage.get().in(Volts));
+  }
+
+  /** Send every mechanism its current limits; runs whenever SimGUI changes one of them. */
+  private void sendCurrentLimits() {
+    elevator.setCurrentLimits(m_statorLimit.get(), m_elevatorSupplyLimit.get());
+    arm.setCurrentLimits(m_statorLimit.get(), m_armPivotSupplyLimit.get(), m_armRollerSupplyLimit.get());
+    flywheel.setCurrentLimits(m_statorLimit.get(), m_flywheelSupplyLimit.get());
   }
 
   /**

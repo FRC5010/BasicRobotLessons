@@ -1,5 +1,6 @@
 package first.robot.subsystems;
 
+import static org.wpilib.units.Units.Amps;
 import static org.wpilib.units.Units.RotationsPerSecond;
 
 import java.util.function.Supplier;
@@ -11,6 +12,7 @@ import org.wpilib.tunable.Tunable;
 import org.wpilib.tunable.TunableDouble;
 import org.wpilib.units.measure.Angle;
 import org.wpilib.units.measure.AngularVelocity;
+import org.wpilib.units.measure.Current;
 
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.mechanism.LoggedMechanism2d;
@@ -93,6 +95,11 @@ public class Flywheel implements Mechanism {
   /** Send all four gains to the motor; runs whenever SimGUI changes one of them. */
   private void sendGains() {
     m_io.setGains(m_kS.get(), m_kV.get(), m_kA.get(), m_kP.get());
+  }
+
+  /** Send new current limits to the motor: the shared winding cap and this motor's battery share. */
+  public void setCurrentLimits(Current stator, Current supply) {
+    m_io.setCurrentLimits(stator.in(Amps), supply.in(Amps));
   }
 
   /** Point both needles and log the dial. Runs every tick: a logged drawing is a snapshot. */

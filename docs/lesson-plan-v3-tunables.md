@@ -338,7 +338,17 @@ and explain**.
   Probe: writing `IdleSpeed` moved the idling wheel from 30.4 to 20.4 rot/s. **Speeds show in
   rad/s** (idle 188.5, tolerance 9.42); the lesson says to multiply by 2π. Flagged for the user:
   a rot/s number tunable would read better but breaks rule 7.
-- **Next:** Lessons 29 and 30.
+- **Lessons 29 and 30 (2026-11-26):** the power budget lives in `Robot`, under `Power/`:
+  `StatorLimit` (shared by every mechanism motor), `ElevatorSupplyLimit`, `ArmPivotSupplyLimit`,
+  `ArmRollerSupplyLimit`, `FlywheelSupplyLimit` (one `onTune`, `sendCurrentLimits`, calls each
+  mechanism's new `setCurrentLimits`, which sends a `CurrentLimitsConfigs` through new IO
+  defaults), and `BrownoutVoltage`; Lesson 30 adds `LowBatteryVoltage`. Why `Robot`: Phoenix
+  takes a motor's stator and supply limits as one group, and the stator cap is shared. Lesson
+  29's text adds section 8, "Tune the budget while it runs", after the experiments; Lesson 28's
+  snapshots carry the markers. Probe: a `StatorLimit` write of 60 A and an
+  `ElevatorSupplyLimit` write of 25 A reached IDs 20-23 with everything else kept (claim
+  `l29.budget-tunables-reach-motors`); amps and volts are base units, so they read as typed.
+- **Next:** the study guide page and the CLAUDE.md block.
 
 ## 6b. Questions left for the user (answered above)
 

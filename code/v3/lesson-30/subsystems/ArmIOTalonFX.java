@@ -9,6 +9,7 @@ import static org.wpilib.units.Units.RotationsPerSecondPerSecond;
 import static org.wpilib.units.Units.Volts;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
@@ -94,6 +95,22 @@ public class ArmIOTalonFX implements ArmIO {
     motionMagic.MotionMagicCruiseVelocity = cruiseRotPerSec;
     motionMagic.MotionMagicAcceleration = accelRotPerSecSq;
     m_pivot.getConfigurator().apply(motionMagic);
+  }
+
+  @Override
+  public void setCurrentLimits(double statorAmps, double pivotSupplyAmps, double rollerSupplyAmps) {
+    m_pivot.getConfigurator().apply(currentLimits(statorAmps, pivotSupplyAmps));
+    m_roller.getConfigurator().apply(currentLimits(statorAmps, rollerSupplyAmps));
+  }
+
+  /** One motor's budget as a config group: both limits on, at these numbers. */
+  private static CurrentLimitsConfigs currentLimits(double statorAmps, double supplyAmps) {
+    CurrentLimitsConfigs limits = new CurrentLimitsConfigs();
+    limits.StatorCurrentLimitEnable = true;
+    limits.StatorCurrentLimit = statorAmps;
+    limits.SupplyCurrentLimitEnable = true;
+    limits.SupplyCurrentLimit = supplyAmps;
+    return limits;
   }
 
   @Override

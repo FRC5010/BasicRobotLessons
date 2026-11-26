@@ -87,6 +87,12 @@ public class Flywheel implements Mechanism {
     m_io.setGains(m_kS.get(), m_kV.get(), m_kA.get(), m_kP.get());
   }
 
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * A way to hand the motor new current limits, so the power budget can be
+   * changed while the robot runs.
+   */
+
   /** Point both needles and log the dial. Runs every tick: a logged drawing is a snapshot. */
   private void updateDial() {
     m_goalNeedle.setAngle(toDialAngle(m_goal.in(RotationsPerSecond)));

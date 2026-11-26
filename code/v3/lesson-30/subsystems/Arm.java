@@ -1,5 +1,6 @@
 package first.robot.subsystems;
 
+import static org.wpilib.units.Units.Amps;
 import static org.wpilib.units.Units.Degrees;
 import static org.wpilib.units.Units.RotationsPerSecond;
 import static org.wpilib.units.Units.RotationsPerSecondPerSecond;
@@ -15,6 +16,7 @@ import org.wpilib.tunable.TunableDouble;
 import org.wpilib.units.measure.Angle;
 import org.wpilib.units.measure.AngularAcceleration;
 import org.wpilib.units.measure.AngularVelocity;
+import org.wpilib.units.measure.Current;
 import org.wpilib.util.Alert;
 import org.wpilib.util.Alert.Level;
 
@@ -128,6 +130,11 @@ public class Arm implements Mechanism {
     m_io.setMotionLimits(
         m_maxVelocity.get().in(RotationsPerSecond),
         m_maxAcceleration.get().in(RotationsPerSecondPerSecond));
+  }
+
+  /** Send new current limits to both motors: the shared winding cap and each one's battery share. */
+  public void setCurrentLimits(Current stator, Current pivotSupply, Current rollerSupply) {
+    m_io.setCurrentLimits(stator.in(Amps), pivotSupply.in(Amps), rollerSupply.in(Amps));
   }
 
   /** Keeps 'angle' inside [kMinAngle, kMaxAngle] — there's no MathUtil.clamp to reach for here. */
