@@ -331,7 +331,14 @@ and explain**.
 - **Lesson 27 (2026-11-26):** `Aim/P` and `Aim/Tolerance`, `static` fields in the static `Aim`
   class. Probe: they're published only on the first call into `Aim`, not when `Robot` is built
   (claim `l27.aim-tunables-on-first-use`); the lesson says so. Try It 3 uses SimGUI.
-- **Next:** Lessons 28, 29 and 30.
+- **Lesson 28 (2026-11-26):** `Flywheel/KS`, `KV`, `KA`, `KP` (a `Slot0Configs` through a new
+  `FlywheelIO.setGains`), `Tolerance` and `IdleSpeed`, from the `Create` blocks. `spinUp` gained
+  a `Supplier<AngularVelocity>` overload and `idle()` passes the tunable itself (a `Tunable` is
+  a `Supplier`, claim `wpilib.tunable-is-supplier`), because the default command is built once.
+  Probe: writing `IdleSpeed` moved the idling wheel from 30.4 to 20.4 rot/s. **Speeds show in
+  rad/s** (idle 188.5, tolerance 9.42); the lesson says to multiply by 2π. Flagged for the user:
+  a rot/s number tunable would read better but breaks rule 7.
+- **Next:** Lessons 29 and 30.
 
 ## 6b. Questions left for the user (answered above)
 

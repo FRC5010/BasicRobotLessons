@@ -93,6 +93,9 @@ public interface FlywheelIO {
   /** Hand the firmware a speed to reach and then hold. */
   public default void setGoalRps(double rps) {}
 
+  /** Send new feedforward and trim gains to the motor's Slot0. */
+  public default void setGains(double kS, double kV, double kA, double kP) {}
+
   /** Let it coast. Not a goal of zero — a goal of nothing. */
   public default void stop() {}
 }
@@ -107,6 +110,9 @@ bundles: every reading gets recorded, and a replay can feed it back in.
 `stop()` earns its place. A goal of zero rot/s means "actively brake to a
 stop", which wastes energy and heat; a neutral output means "stop trying".
 Those are different requests and a shooter wants the second one. <!-- claim: phoenix6.neutral-out-vs-zero-velocity -->
+`setGains` is the elevator's and the arm's again: the wheel's four gains are
+tunables from the start, and `FlywheelIOTalonFX` sends them as one
+`Slot0Configs`. <!-- claim: phoenix6.slot0-apply-keeps-other-config -->
 
 **Create `subsystems/FlywheelIOTalonFX.java`:**
 
@@ -118,6 +124,7 @@ import static org.wpilib.units.Units.RotationsPerSecond;
 import static org.wpilib.units.Units.Volts;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.VelocityVoltage;
@@ -148,6 +155,17 @@ public class FlywheelIOTalonFX implements FlywheelIO {
     config.Slot0.kP = FlywheelConstants.kFlywheelKP;
 
     m_motor.getConfigurator().apply(config);
+  }
+
+  @Override
+  public void setGains(double kS, double kV, double kA, double kP) {
+    // Slot0 only: the gear ratio and everything else the constructor set stay as they are.
+    Slot0Configs slot0 = new Slot0Configs();
+    slot0.kS = kS;
+    slot0.kV = kV;
+    slot0.kA = kA;
+    slot0.kP = kP;
+    m_motor.getConfigurator().apply(slot0);
   }
 
   @Override
@@ -333,9 +351,13 @@ package first.robot.subsystems;
 
 import static org.wpilib.units.Units.RotationsPerSecond;
 
+import java.util.function.Supplier;
+
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
+import org.wpilib.tunable.Tunable;
+import org.wpilib.tunable.TunableDouble;
 import org.wpilib.units.measure.Angle;
 import org.wpilib.units.measure.AngularVelocity;
 
@@ -347,6 +369,7 @@ import org.littletonrobotics.junction.mechanism.LoggedMechanismRoot2d;
 import first.robot.Constants;
 import first.robot.Constants.ElevatorConstants;
 import first.robot.Constants.FlywheelConstants;
+import first.robot.Tuning;
 
 /**
  * A shooter wheel: the fourth mechanism on the same spine, and the first
@@ -360,11 +383,33 @@ public class Flywheel implements Mechanism {
   };
   private final FlywheelIOInputsAutoLogged m_inputs = new FlywheelIOInputsAutoLogged();
 
+  // The wheel's gains, its "close enough" and its idle speed, as tunables (see Tuning).
+  // The gains go straight to the motor when SimGUI changes one; the other two are read
+  // where they're used.
+  private final TunableDouble m_kS =
+      Tuning.number("Flywheel/KS", FlywheelConstants.kFlywheelKS, this::sendGains);
+  private final TunableDouble m_kV =
+      Tuning.number("Flywheel/KV", FlywheelConstants.kFlywheelKV, this::sendGains);
+  private final TunableDouble m_kA =
+      Tuning.number("Flywheel/KA", FlywheelConstants.kFlywheelKA, this::sendGains);
+  private final TunableDouble m_kP =
+      Tuning.number("Flywheel/KP", FlywheelConstants.kFlywheelKP, this::sendGains);
+  private final Tunable<AngularVelocity> m_tolerance =
+      Tuning.value("Flywheel/Tolerance", FlywheelConstants.kTolerance);
+  private final Tunable<AngularVelocity> m_idleSpeed =
+      Tuning.value("Flywheel/IdleSpeed", FlywheelConstants.kIdleSpeed);
+
   private AngularVelocity m_goal = RotationsPerSecond.of(0);
 ```
 
 Several of those imports are for the picture in section 5 — the compiler
 won't mind them sitting unused until then.
+
+The tunables are the arm's six, without the profile: four gains sent to the
+motor, plus a tolerance and an idle speed your own code reads. Both of those are
+speeds, so SimGUI shows them in radians per second, the base unit: the idle
+speed's 30 rot/s reads `188.5`, and the 1.5 rot/s tolerance reads `9.42`. To
+type a speed in rotations per second, multiply it by 2π, about 6.28. <!-- claim: wpilib.tunables-measure-base-units -->
 
 **Then `periodic`, below the fields:**
 
@@ -378,6 +423,11 @@ won't mind them sitting unused until then.
     Logger.processInputs("Flywheel", m_inputs); // every reading, under Flywheel/
     Logger.recordOutput("Flywheel/GoalRps", m_goal.in(RotationsPerSecond));
     Logger.recordOutput("Flywheel/AtSpeed", atSpeed());
+  }
+
+  /** Send all four gains to the motor; runs whenever SimGUI changes one of them. */
+  private void sendGains() {
+    m_io.setGains(m_kS.get(), m_kV.get(), m_kA.get(), m_kP.get());
   }
 ```
 
@@ -547,9 +597,14 @@ constants: orange while it's working, green once `atSpeed()`.
    * immediately slow down again.
    */
   public Command spinUp(AngularVelocity speed) {
+    return spinUp(() -> speed);
+  }
+
+  /** The same, for a speed that can change while it runs: it asks 'speed' every tick. */
+  public Command spinUp(Supplier<AngularVelocity> speed) {
     return runRepeatedly(() -> {
-          m_goal = speed;
-          m_io.setGoalRps(speed.in(RotationsPerSecond));
+          m_goal = speed.get();
+          m_io.setGoalRps(m_goal.in(RotationsPerSecond));
         })
         .named("Spin Up");
   }
@@ -561,7 +616,7 @@ constants: orange while it's working, green once `atSpeed()`.
    */
   @Override
   public Command idle() {
-    return spinUp(FlywheelConstants.kIdleSpeed);
+    return spinUp(m_idleSpeed); // a tunable is a Supplier, so a new idle speed takes effect at once
   }
 
   /**
@@ -570,7 +625,7 @@ constants: orange while it's working, green once `atSpeed()`.
    */
   public boolean atSpeed() {
     return Math.abs(m_inputs.velocityRps - m_goal.in(RotationsPerSecond))
-        < FlywheelConstants.kTolerance.in(RotationsPerSecond);
+        < m_tolerance.get().in(RotationsPerSecond);
   }
 
   public AngularVelocity getSpeed() {
@@ -578,10 +633,18 @@ constants: orange while it's working, green once `atSpeed()`.
   }
 ```
 
+`spinUp` now comes in two forms, and that's for `idle()`. The first takes a
+speed, as you'd expect. The second takes a `Supplier<AngularVelocity>` and asks
+it for the speed on every tick, and the first just hands it a lambda that always
+answers the same. A `Tunable` *is* a `Supplier`, so `idle()` can pass
+`m_idleSpeed` itself. <!-- claim: wpilib.tunable-is-supplier --> That matters because the
+default command is built once, in the constructor: had `idle()` read the tunable
+there with `get()`, a new idle speed from SimGUI would never reach it.
+
 Stop and read `idle()` again, because it's doing more than it looks like.
 Every `Mechanism` comes with a built-in do-nothing `idle()`. **Override
 it, and *your* version is what `idle()` means for this class** — so
-`setDefaultCommand(idle())` in the constructor installs `spinUp(kIdleSpeed)`,
+`setDefaultCommand(idle())` in the constructor installs `spinUp(m_idleSpeed)`,
 not a command that does nothing. The drivetrain's default command is set in
 `RobotTeleop`, because driving with the sticks belongs to teleop. Idling
 belongs to the wheel in every opmode, which is why this one lives in the
@@ -626,9 +689,10 @@ recognise. <!-- claim: wpilib.kraken-x60-model -->
 Here's the experiment Lesson 18 ran on the elevator ([Figure 18.2](18-elevator.md#figure-18-2)), on a mechanism where
 the answer is much starker.
 
-Set `kFlywheelKV` and `kFlywheelKA` to zero, leaving only `kP`, and ask for
-60 rot/s. Wait five seconds — as long as you like, really. It settles
-around **43 rot/s** and stays there. Nearly thirty percent low, forever. <!-- claim: l28.no-model-speed -->
+In SimGUI's **Tunables → Flywheel**, set `KV` and `KA` to zero, leaving only
+`KP`, and ask for 60 rot/s. Wait five seconds — as long as you like, really. It
+settles around **43 rot/s** and stays there. Nearly thirty percent low,
+forever. <!-- claim: l28.no-model-speed --> (Type `0.119` and `0.105` back when you're done.)
 
 And you can predict roughly where before running it. With only a `Slot0`
 `kP` term, the wheel stops gaining speed once the correction it's
@@ -806,10 +870,11 @@ Your `Flywheel/AppliedVolts` should have the shape of the lower panel of
 Worth doing deliberately:
 
 - **Time it yourself.** Note how long `AtSpeed` takes to go true from
-  idle, then change `kIdleSpeed` to `RotationsPerSecond.of(0)` and time it
+  idle, then set `IdleSpeed` to `0` in SimGUI, let the wheel stop, and time it
   again. The table in section 7 should reproduce. <!-- claim: l28.spinup-from-0, l28.spinup-from-15, l28.spinup-from-30, l28.spinup-from-45 -->
-- **Zero out `kFlywheelKV`** and watch the wheel settle around 43 and
-  refuse to climb further, no matter how long you wait. Put it back. <!-- claim: l28.no-model-speed -->
+- **Zero out `KV` and `KA`** and watch the wheel settle around 43 and
+  refuse to climb further, no matter how long you wait. Type `0.119` and
+  `0.105` back. <!-- claim: l28.no-model-speed -->
 - **Watch `Flywheel/SetpointRps`.** Unlike the elevator's, it snaps
   straight to the goal instead of ramping — there's no profile, because
   there's nothing to profile. <!-- claim: phoenix6.velocity-voltage-no-profile -->
