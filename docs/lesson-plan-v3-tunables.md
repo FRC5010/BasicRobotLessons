@@ -317,7 +317,18 @@ and explain**.
   `Create` blocks of sections 4, 5 and 7; Try Its 4 and 5 use SimGUI. Probe: angle measures show
   in radians (0.0349 for 2°, 3.14 for 180°/s), and a write reached the pivot with `Arm_Cosine`,
   the soft limits and the gear ratio kept.
-- **Next:** Lessons 26, 27, 28, 29 and 30.
+- **Lesson 26 (2026-11-26):** twelve tunables under `Drivetrain/ToPose/`. `AlignP` and
+  `AlignThetaP` are `Tuning.property` over the controllers' `getP`/`setP`; the three tolerances
+  are `Tuning.value`s whose `onTune` calls `setTolerance`; the six speed and acceleration limits
+  and `HandoffDistance`/`HandoffSpeed` are read as each stage starts, through two overloaded
+  `limits(speed, accel)` helpers (the heading controller now gets `setConstraints` in
+  `startStage` too). The three `TrapezoidProfile.Constraints` constants are gone from
+  `PathConstants` (26–32), since nothing would read them. `kCrossTrackP` stays a constant here
+  (its tunable is B-Line's controller), and the lesson says so. Try Its 1, 3 and 4 use SimGUI.
+  Check: `Fig26TwoStage` on the new code and on the old (a worktree of HEAD) both hand over at
+  1.80 s, first read `atGoal` at 3.32–3.34 s and end at (5.006, 4.004, 90.0°), so nothing
+  changed. (The kept `26-two-stage-speed.csv` reads 3.36 s; it predates other changes.)
+- **Next:** Lessons 27, 28, 29 and 30.
 
 ## 6b. Questions left for the user (answered above)
 

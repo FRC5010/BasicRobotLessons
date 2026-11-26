@@ -236,14 +236,6 @@ Figure 26.1 draws it. Start at S: the line to T is fixed, and x′ and y′ are 
     public static final AngularVelocity kTurnSpeed = RadiansPerSecond.of(Math.PI);
     public static final AngularAcceleration kTurnAccel = RadiansPerSecondPerSecond.of(4.0);
 
-    // The same limits in the form a profile takes them: top speed, then acceleration.
-    public static final TrapezoidProfile.Constraints kTravelLimits = new TrapezoidProfile.Constraints(
-        kTravelSpeed.in(MetersPerSecond), kTravelAccel.in(MetersPerSecondPerSecond));
-    public static final TrapezoidProfile.Constraints kApproachLimits = new TrapezoidProfile.Constraints(
-        kHandoffSpeed.in(MetersPerSecond), kApproachAccel.in(MetersPerSecondPerSecond));
-    public static final TrapezoidProfile.Constraints kTurnLimits = new TrapezoidProfile.Constraints(
-        kTurnSpeed.in(RadiansPerSecond), kTurnAccel.in(RadiansPerSecondPerSecond));
-
     // The trims: what to do about the robot drifting off its plan.
     public static final double kAlignP = 3.0;      // m/s per meter behind or ahead of the plan
     public static final double kAlignThetaP = 4.0; // rad/s per radian of heading error
@@ -263,8 +255,6 @@ Figure 26.1 draws it. Start at S: the line to T is fixed, and x′ and y′ are 
 ```java
 import static org.wpilib.units.Units.RadiansPerSecond;
 import static org.wpilib.units.Units.RadiansPerSecondPerSecond;
-
-import org.wpilib.math.trajectory.TrapezoidProfile;
 ```
 
 `Constants.java` already imports everything else those lines need.
@@ -282,8 +272,8 @@ time. <!-- claim: l26.try1-arrival-speed --> So the plan says **1.2**, and the r
 1.45, safely under the limit. <!-- claim: l26.handoff-speed-actual --> Try It #1 shows what happens when you skip
 that step.
 
-> Notice `kApproachLimits` uses `kHandoffSpeed` as its top speed. Stage two
-> never speeds up past what it was handed, and if the robot arrives a
+> Notice there's no separate top speed for stage two: section 8 uses
+> `kHandoffSpeed` for it. Stage two never speeds up past what it was handed, and if the robot arrives a
 > little faster than planned, the profile's first job is to shed the
 > excess, gently.
 
@@ -312,8 +302,8 @@ where it was:**
 ```java
   /** Along the line: P to trim the plan, and what counts as arrived — there, and stopped. */
   private static ProfiledPIDController makeAlongController() {
-    ProfiledPIDController controller =
-        new ProfiledPIDController(PathConstants.kAlignP, 0, 0, PathConstants.kTravelLimits);
+    ProfiledPIDController controller = new ProfiledPIDController(
+        PathConstants.kAlignP, 0, 0, limits(PathConstants.kTravelSpeed, PathConstants.kTravelAccel));
     controller.setTolerance(
         PathConstants.kPositionTolerance.in(Meters), PathConstants.kSpeedTolerance.in(MetersPerSecond));
     return controller;
@@ -321,8 +311,8 @@ where it was:**
 
   /** The heading: profiled too, and told that -180 and +180 are the same place. */
   private static ProfiledPIDController makeHeadingController() {
-    ProfiledPIDController controller =
-        new ProfiledPIDController(PathConstants.kAlignThetaP, 0, 0, PathConstants.kTurnLimits);
+    ProfiledPIDController controller = new ProfiledPIDController(
+        PathConstants.kAlignThetaP, 0, 0, limits(PathConstants.kTurnSpeed, PathConstants.kTurnAccel));
     controller.enableContinuousInput(-Math.PI, Math.PI);
     controller.setTolerance(PathConstants.kAngleTolerance.in(Radians));
     return controller;
@@ -342,7 +332,84 @@ idea told to a controller: the input is a circle, so go the short way.
 Ask it to turn from 179° to −179° and it plans a small turn, not a 358°
 one. <!-- claim: wpilib.profiled-pid-continuous-input -->
 
-**Next, below the builders, the line's frame from section 5:**
+**Then make every number the two stages use tunable. Add these fields right
+below the two controllers:**
+
+```java
+  // Every number the two stages use, as a tunable (see Tuning). The gains belong to the
+  // controllers, so their tunables read and set the controllers' own; the tolerances are
+  // handed to the controllers when they change; the limits are read as each stage starts.
+  private final TunableDouble m_alignP = Tuning.property(
+      "Drivetrain/ToPose/AlignP", m_alongController::getP, m_alongController::setP);
+  private final TunableDouble m_alignThetaP = Tuning.property(
+      "Drivetrain/ToPose/AlignThetaP", m_headingController::getP, m_headingController::setP);
+  private final Tunable<Distance> m_positionTolerance = Tuning.value(
+      "Drivetrain/ToPose/PositionTolerance", PathConstants.kPositionTolerance, this::sendTolerances);
+  private final Tunable<LinearVelocity> m_speedTolerance = Tuning.value(
+      "Drivetrain/ToPose/SpeedTolerance", PathConstants.kSpeedTolerance, this::sendTolerances);
+  private final Tunable<Angle> m_angleTolerance = Tuning.value(
+      "Drivetrain/ToPose/AngleTolerance", PathConstants.kAngleTolerance, this::sendTolerances);
+  private final Tunable<LinearVelocity> m_travelSpeed =
+      Tuning.value("Drivetrain/ToPose/TravelSpeed", PathConstants.kTravelSpeed);
+  private final Tunable<LinearAcceleration> m_travelAccel =
+      Tuning.value("Drivetrain/ToPose/TravelAccel", PathConstants.kTravelAccel);
+  private final Tunable<Distance> m_handoffDistance =
+      Tuning.value("Drivetrain/ToPose/HandoffDistance", PathConstants.kHandoffDistance);
+  private final Tunable<LinearVelocity> m_handoffSpeed =
+      Tuning.value("Drivetrain/ToPose/HandoffSpeed", PathConstants.kHandoffSpeed);
+  private final Tunable<LinearAcceleration> m_approachAccel =
+      Tuning.value("Drivetrain/ToPose/ApproachAccel", PathConstants.kApproachAccel);
+  private final Tunable<AngularVelocity> m_turnSpeed =
+      Tuning.value("Drivetrain/ToPose/TurnSpeed", PathConstants.kTurnSpeed);
+  private final Tunable<AngularAcceleration> m_turnAccel =
+      Tuning.value("Drivetrain/ToPose/TurnAccel", PathConstants.kTurnAccel);
+```
+
+These come in three kinds, and each is the simplest thing that works for it.
+The two gains already live in the controllers, which have `getP` and `setP`,
+so `Tuning.property` points a tunable straight at them, the way Lesson 17 did
+for B-Line's. <!-- claim: wpilib.tunables-getter-setter --> The tolerances live in the controllers too,
+but each controller takes them in one `setTolerance` call, so they're
+`Tuning.value`s with an `onTune` that hands them over. And the limits don't
+live anywhere: a stage reads them when it starts, so a change takes effect on
+the next run. They show up in SimGUI under **Tunables → Drivetrain → ToPose**,
+in base units: metres, metres per second, radians and radians per second. <!-- claim: wpilib.tunables-measure-base-units -->
+
+One number the stages use isn't here: `kCrossTrackP`, Lesson 17's. Its
+tunable is B-Line's controller (`Paths/CrossTrackP`), which these stages don't
+use, so changing it there doesn't change them. This code still reads the
+constant.
+
+**Below the builders, add the helpers those fields and builders call:**
+
+```java
+  /** A profile's limits, top speed then acceleration, in the plain numbers it takes. */
+  private static TrapezoidProfile.Constraints limits(LinearVelocity speed, LinearAcceleration accel) {
+    return new TrapezoidProfile.Constraints(
+        speed.in(MetersPerSecond), accel.in(MetersPerSecondPerSecond));
+  }
+
+  /** The same, for turning. */
+  private static TrapezoidProfile.Constraints limits(AngularVelocity speed, AngularAcceleration accel) {
+    return new TrapezoidProfile.Constraints(
+        speed.in(RadiansPerSecond), accel.in(RadiansPerSecondPerSecond));
+  }
+
+  /** Hand the three tolerances to the controllers; runs whenever SimGUI changes one. */
+  private void sendTolerances() {
+    m_alongController.setTolerance(
+        m_positionTolerance.get().in(Meters), m_speedTolerance.get().in(MetersPerSecond));
+    m_headingController.setTolerance(m_angleTolerance.get().in(Radians));
+  }
+```
+
+The two `limits` methods share a name and take different types, so Java picks
+the one that fits: hand it a `LinearVelocity` and you get the metres one, an
+`AngularVelocity` and you get the radians one. Either way, a
+`TrapezoidProfile.Constraints` wants plain numbers, top speed then
+acceleration, and this is the one place that unpacks them.
+
+**Next, below those, the line's frame from section 5:**
 
 ```java
   /** Where 'current' sits relative to a line: x is how far along it, y how far off to the left. */
@@ -363,6 +430,7 @@ one. <!-- claim: wpilib.profiled-pid-continuous-input -->
     ChassisVelocities moving = getChassisVelocities().toFieldRelative(current.getRotation());
     Translation2d velocity = new Translation2d(moving.vx, moving.vy);
     m_alongController.setConstraints(limits);
+    m_headingController.setConstraints(limits(m_turnSpeed.get(), m_turnAccel.get()));
     m_alongController.reset(0.0, velocity.rotateBy(direction.unaryMinus()).getX());
     m_headingController.reset(current.getRotation().getRadians(), moving.omega);
   }
@@ -374,7 +442,9 @@ Rotating it into the line's frame and taking x gives "how fast along the
 line". And `reset` starts the plan at the beginning of the line, already
 moving at that speed. The heading gets the same treatment with the measured
 turning rate. `setConstraints` is how one controller serves both stages:
-same controller, different limits. <!-- claim: wpilib.profiled-pid-reset-and-calculate -->
+same controller, different limits. The heading controller gets its limits
+the same way, from the two turn tunables, so a change to either reaches the
+next stage that starts. <!-- claim: wpilib.profiled-pid-reset-and-calculate -->
 
 **Then one tick of following the line:**
 
@@ -420,11 +490,11 @@ to the left gets pushed right.
           Translation2d start = current.getTranslation();
           Translation2d toTarget = target.getTranslation().minus(start);
           Rotation2d direction = toTarget.getAngle().orElse(current.getRotation()); // already there: any way will do
-          double handoff = toTarget.getNorm() - PathConstants.kHandoffDistance.in(Meters);
+          double handoff = toTarget.getNorm() - m_handoffDistance.get().in(Meters);
 
-          startStage(current, direction, PathConstants.kTravelLimits);
+          startStage(current, direction, limits(m_travelSpeed.get(), m_travelAccel.get()));
           m_alongController.setGoal(
-              new TrapezoidProfile.State(handoff, PathConstants.kHandoffSpeed.in(MetersPerSecond)));
+              new TrapezoidProfile.State(handoff, m_handoffSpeed.get().in(MetersPerSecond)));
           while (inLineFrame(start, direction, current).getX() < handoff) {
             followLine(start, direction, target, current);
             coroutine.yield();
@@ -471,7 +541,7 @@ means nothing is coming next. <!-- claim: commandsv3.when-exited-on-cancel -->
           Translation2d toTarget = target.getTranslation().minus(start);
           Rotation2d direction = toTarget.getAngle().orElse(current.getRotation());
 
-          startStage(current, direction, PathConstants.kApproachLimits);
+          startStage(current, direction, limits(m_handoffSpeed.get(), m_approachAccel.get()));
           m_alongController.setGoal(toTarget.getNorm()); // the end of the line, stopped
           do {
             followLine(start, direction, target, current);
@@ -487,7 +557,7 @@ means nothing is coming next. <!-- claim: commandsv3.when-exited-on-cancel -->
   private boolean arrived(Translation2d start, Rotation2d direction, Pose2d current) {
     double offLine = Math.abs(inLineFrame(start, direction, current).getY());
     return m_alongController.atGoal()
-        && offLine < PathConstants.kPositionTolerance.in(Meters)
+        && offLine < m_positionTolerance.get().in(Meters)
         && m_headingController.atGoal();
   }
 ```
@@ -516,10 +586,18 @@ waits for.
 
 ```java
 import static org.wpilib.units.Units.Meters;
+import static org.wpilib.units.Units.MetersPerSecondPerSecond;
 import static org.wpilib.units.Units.Radians;
+import static org.wpilib.units.Units.RadiansPerSecond;
+import static org.wpilib.units.Units.RadiansPerSecondPerSecond;
 
 import org.wpilib.math.controller.ProfiledPIDController;
 import org.wpilib.math.trajectory.TrapezoidProfile;
+import org.wpilib.tunable.Tunable;
+import org.wpilib.units.measure.Angle;
+import org.wpilib.units.measure.AngularAcceleration;
+import org.wpilib.units.measure.Distance;
+import org.wpilib.units.measure.LinearAcceleration;
 
 import first.robot.Constants.PathConstants;
 ```
@@ -758,8 +836,9 @@ Worth plotting while you watch:
 
 ## Try it
 
-1. **Hand over at the limit.** Set `kHandoffSpeed` to 1.73, the most
-   section 6's arithmetic allows, and run it again. The robot really
+1. **Hand over at the limit.** In SimGUI's **Tunables → Drivetrain → ToPose**,
+   set `HandoffSpeed` to 1.73, the most section 6's arithmetic allows, and run
+   it again. The robot really
    arrives at the handoff at about 1.95 m/s, too fast to stop in a metre at
    1.5 m/s². Measured, it overshot by **46 cm**, came back, and took
    **4.5 s** instead of 3.4. <!-- claim: l26.try1-arrival-speed, l26.two-stage-time --> A plan that ignores how the robot actually
@@ -770,13 +849,13 @@ Worth plotting while you watch:
    still. Measured, it braked at the tyres' limit, **11.8 m/s²**, and the
    trip took **3.8 s** instead of 3.4. <!-- claim: l26.grip-launch-accel, l26.try2-time --> That's the jolt this lesson exists
    to remove, and it comes from one wrong number.
-3. **Take "stopped" out of arrived.** Set `kSpeedTolerance` to something
-   enormous. Stage two now finishes while the robot is still rolling, and
+3. **Take "stopped" out of arrived.** Set `SpeedTolerance` to something
+   enormous, like `1000`. Stage two now finishes while the robot is still rolling, and
    the stop after the loop has to catch it: measured, it ended **12 mm**
-   out instead of 7. <!-- claim: l26.try3-error, l26.two-stage-final-error --> Then put it back and decide which of the three
+   out instead of 7. <!-- claim: l26.try3-error, l26.two-stage-final-error --> Then type `0.05` back and decide which of the three
    questions in `arrived()` you could do without. (None.)
-4. **Move the handover.** Hand over 2 m out instead of 1. Work out the new
-   largest safe `kHandoffSpeed` before you run it, allow for the lag, and
+4. **Move the handover.** Set `HandoffDistance` to 2 instead of 1. Work out
+   the new largest safe `HandoffSpeed` before you run it, allow for the lag, and
    measure how much time it costs or saves.
 5. **Give the drive motors an acceleration term.** Since Lesson 12 the
    drive motors have had `kV` and `kP` but no `kA`, so every change of
@@ -822,6 +901,11 @@ robot.
 **"Arrived" is a decision with three parts**: there, stopped, and facing
 the right way. Every one of them is a line in `arrived()`, and every one
 of them has a demonstration of what goes wrong without it.
+
+And every number in both stages is a tunable, of whichever kind suits where
+it lives: a gain the controller already holds, a tolerance handed to the
+controller when it changes, and limits read fresh as each stage starts. Find
+a better one in SimGUI, then copy it into `Constants.java`.
 
 If the line-frame rotations still feel slippery, that's normal: draw the
 line, draw the robot off to one side, and rotate the paper until the line
