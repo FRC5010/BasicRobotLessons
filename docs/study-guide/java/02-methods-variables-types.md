@@ -78,10 +78,10 @@ like every mechanism's `periodic()`. A method with no parameters still needs its
 brackets, both where it's written and where it's called:
 
 <!-- source: lesson-33 subsystems/Elevator.java -->
-*Example, from `Elevator.java` ([Lesson 18, section 8](../../lessons/v3/18-elevator.md#8-the-elevator-mechanism)):*
+*Example, from `Elevator.java` ([Lesson 18, section 10](../../lessons/v3/18-elevator.md#10-tune-it-while-it-runs)):*
 ```java
 public boolean atGoal() {
-  return Math.abs(m_inputs.heightMeters - m_goal.in(Meters)) < ElevatorConstants.kTolerance.in(Meters);
+  return Math.abs(m_inputs.heightMeters - m_goal.in(Meters)) < m_tolerance.get().in(Meters);
 }
 ```
 

@@ -28,6 +28,12 @@ public final class Constants {
   public static final Mode kSimMode = Mode.SIM;
   public static final Mode kCurrentMode = RobotBase.isReal() ? Mode.REAL : kSimMode;
 
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add a switch that decides whether a dashboard may change the tunables, so they
+   * can be locked before an event.
+   */
+
   // One CAN ID + one magnet offset per corner, all named, instead of
   // literals baked into the array in Drivetrain.
   public static final class DriveConstants {

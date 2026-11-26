@@ -295,7 +295,24 @@ and explain**.
   - **Lesson 12:** deletes the field along with `clamp`.
   - **Debugger aside:** its watch expressions use `m_steerKP.get() * error`. Figure D.1 (the
     user's screenshot) still shows the older `SteerConstants.kP * error` line.
-- **Next:** Lesson 8's heading `kP`, Lesson 12's firmware gains, and Lesson 17's B-Line gains.
+- **2026-11-26, Lessons 8, 12, 13, 17 and 18 done.**
+  - **Lesson 8:** `Drivetrain/HeadingKP`, read in `turnToHeading`.
+  - **Lesson 12:** the `Tuning` helper; `Drivetrain/SteerKP`, `DriveKV`, `DriveKP`, sent to all
+    four modules with a `Slot0Configs` through `onTune`. Lesson 13 moves the sending into
+    `ModuleIO` (probe: a `DriveKV` write reached the front-left drive motor).
+  - **Lesson 17:** `Tuning.property` over the three B-Line `PIDController`s (`Paths/...`).
+  - **Lesson 18:** `kTuningMode` in `Constants` (through `Tuning.config()`'s `withMutable`), the
+    generic `Tuning.value` for measures, and seven elevator tunables: `Elevator/KG`, `KV`, `KA`,
+    `KP` (one `Slot0Configs`, `GravityType` included), `MaxVelocity` and `MaxAcceleration` (a
+    `MotionMagicConfigs`), and `Tolerance` (read in `atGoal()`). The text builds the elevator
+    first (sections 5 to 9 unchanged) and makes it tunable in a new section 10, "Tune it while it
+    runs", with the replay callout; the graph section is now 11. Probes: a `KG` write reached the
+    motor with `kV`, the gravity type and the gear ratio kept, and `MaxVelocity` 0.5 set the
+    cruise to 3.13 rot/s; zeroing `KG` live sagged the hold to 1.52–1.56 mm within a second
+    (claim `l18.live-kg-zero-sag`). New claims `wpilib.tunables-immutable`,
+    `-measure-base-units` (tests) and `-no-backend-in-tests` (Lesson 31's note: a test prints a
+    warning per tunable). Lesson 32's `atGoal` illustration reads `m_tolerance.get()`.
+- **Next:** Lesson 20's arm, then 26, 27, 28, 29 and 30.
 
 ## 6b. Questions left for the user (answered above)
 

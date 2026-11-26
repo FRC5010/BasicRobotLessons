@@ -2,6 +2,8 @@ package claims;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.wpilib.units.Units.Centimeters;
+import static org.wpilib.units.Units.Meters;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -12,6 +14,7 @@ import org.wpilib.hardware.hal.HAL;
 import org.wpilib.networktables.DoublePublisher;
 import org.wpilib.networktables.NetworkTableInstance;
 import org.wpilib.simulation.AlertSim;
+import org.wpilib.units.measure.Distance;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
@@ -19,6 +22,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import org.wpilib.hardware.bus.CANPort;
 import org.wpilib.math.controller.PIDController;
+import org.wpilib.tunable.Tunable;
 import org.wpilib.tunable.TunableConfig;
 import org.wpilib.tunable.TunableDouble;
 import org.wpilib.tunable.TunableRegistry;
@@ -169,5 +173,46 @@ class TunablesApiTest {
     Thread.sleep(100);
     assertEquals(9.0, s_nt.getEntry("/Tunables/ClaimTest/ControllerP").getDouble(-1), 0.0,
         "a change made through the object wasn't published");
+  }
+
+  @Test
+  @DisplayName("wpilib.tunables-immutable")
+  void immutableIgnoresWrites() throws Exception {
+    int[] calls = {0};
+    TunableConfig locked = new TunableConfig().withMutable(false).withOnTune(() -> calls[0]++);
+    TunableDouble kG = TunableDouble.createConfig(0.17, locked);
+    Tunables.publish("ClaimTest/Locked", kG);
+    PIDController controller = new PIDController(5.0, 0, 0);
+    Tunables.publishDouble("ClaimTest/LockedP", controller::getP, controller::setP,
+        new TunableConfig().withMutable(false));
+    TunableRegistry.update();
+    assertEquals(0.17, s_nt.getEntry("/Tunables/ClaimTest/Locked").getDouble(-1), 0.0,
+        "a locked tunable wasn't published");
+    try (DoublePublisher a = dashboardWrite("/Tunables/ClaimTest/Locked", 0.5);
+        DoublePublisher b = dashboardWrite("/Tunables/ClaimTest/LockedP", 2.0)) {
+      TunableRegistry.update();
+      assertEquals(0.17, kG.get(), 0.0, "a locked tunable took a dashboard's write");
+      assertEquals(0, calls[0], "a locked tunable's onTune ran");
+      assertEquals(5.0, controller.getP(), 0.0, "a locked getter/setter tunable's setter ran");
+    }
+  }
+
+  @Test
+  @DisplayName("wpilib.tunables-measure-base-units")
+  void measureInBaseUnits() throws Exception {
+    Tunable<Distance> tolerance =
+        Tunable.createConfig(Centimeters.of(2), new TunableConfig());
+    Tunables.publish("ClaimTest/Tolerance", tolerance);
+    TunableRegistry.update();
+    var topic = s_nt.getTopic("/Tunables/ClaimTest/Tolerance");
+    assertEquals("double", topic.getTypeString());
+    assertEquals(0.02, s_nt.getEntry("/Tunables/ClaimTest/Tolerance").getDouble(-1), 1e-12,
+        "2 cm wasn't published as 0.02 (meters)");
+    System.out.println("Tolerance properties: " + topic.getProperties());
+    try (DoublePublisher pub = dashboardWrite("/Tunables/ClaimTest/Tolerance", 0.001)) {
+      TunableRegistry.update();
+      assertEquals(0.001, tolerance.get().in(Meters), 1e-12,
+          "a write of 0.001 wasn't read back as 0.001 m");
+    }
   }
 }

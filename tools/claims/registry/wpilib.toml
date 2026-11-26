@@ -764,3 +764,35 @@ evidence = "tools/claims/java/claims/TunablesApiTest.java (2026-11-26): a PIDCon
 measured_on = "alpha-8"
 method = "TEST"
 test = "tools/claims/java/claims/TunablesApiTest.java"
+
+[[claim]]
+id = "wpilib.tunables-immutable"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "A tunable made with TunableConfig().withMutable(false) is still published, but a dashboard write changes nothing: get() keeps its value, its onTune doesn't run, and a getter/setter tunable's setter isn't called. So one flag (the course's Constants.kTuningMode, passed through Tuning) locks every tunable before an event."
+evidence = "tools/claims/java/claims/TunablesApiTest.java (2026-11-26): a locked TunableDouble at 0.17 was published, kept 0.17 after a write of 0.5 and an update, and its onTune count stayed 0; a locked publishDouble on a PIDController kept P at 5.0 after a write of 2.0. TunableConfig.withMutable's javadoc: 'the Tunable's set() function will not be called'."
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/TunablesApiTest.java"
+
+[[claim]]
+id = "wpilib.tunables-measure-base-units"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "Tunable.createConfig(measure, config) makes a tunable measure, published as a plain double in the measure's base unit (a Distance in meters), and a dashboard's number is read back in that base unit."
+evidence = "tools/claims/java/claims/TunablesApiTest.java (2026-11-26): Centimeters.of(2) published as the double 0.02, and a write of 0.001 read back as 0.001 m. createConfig hands a measure to the type handler RobotBase registers (read in Tunable.java's source)."
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/TunablesApiTest.java"
+
+[[claim]]
+id = "wpilib.tunables-no-backend-in-tests"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C3"
+statement = "In a JUnit test that never builds a RobotBase, nothing has registered the /Tunables backend, so publishing a tunable prints 'Tunable warning: no backend for path ...' with a stack trace to standard error (and, for a measure, 'Unsupported tunable type'). The tunable still works in the test, holding its starting value."
+evidence = "verify-lessons-v3.sh 33 test (2026-11-26): Lesson 31's ElevatorHomingTest printed the warning for each of Elevator's seven tunables and passed, its atGoal() reading the tolerance tunable's starting value. TunableRegistry.defaultReportWarning prints the message and a stack trace with System.err (read in its source); RobotBase's constructor registers the NetworkTables backend and the measure type handler."
+measured_on = "alpha-8"
+method = "TEST"

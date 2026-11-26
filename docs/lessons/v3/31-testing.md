@@ -223,6 +223,13 @@ testing is a small sign the design is honest about its own state.
 > could read it back, not in a log file and not in NetworkTables. Ask the
 > object instead: its getters, and the inputs behind them, work exactly as
 > they do on the robot. <!-- claim: advantagekit.logger-noop-when-not-started -->
+>
+> Tunables are the same story from the other side. `Robot`'s startup is what
+> connects them to NetworkTables, so in a test each of the elevator's tunables
+> prints `Tunable warning: no backend for path '/Elevator/KG'` (and the rest),
+> with a long stack trace, if you look at the test's output. It's noise, not a
+> failure: each tunable still works, holding its constant's value, which is
+> what a test wants anyway. <!-- claim: wpilib.tunables-no-backend-in-tests -->
 
 **Create `src/test/java/first/robot/ElevatorHomingTest.java`:**
 

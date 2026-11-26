@@ -45,6 +45,12 @@ public final class Constants {
   public static final Mode kSimMode = Mode.SIM;
   public static final Mode kCurrentMode = RobotBase.isReal() ? Mode.REAL : kSimMode;
 
+  /**
+   * While true, SimGUI (or any dashboard) can change the robot's tunables. Set it false
+   * before an event: the values still show, but nothing can change them mid-match.
+   */
+  public static final boolean kTuningMode = true;
+
   // One CAN ID + one magnet offset per corner, all named, instead of
   // literals baked into the array in Drivetrain.
   public static final class DriveConstants {

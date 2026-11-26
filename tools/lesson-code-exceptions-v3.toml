@@ -67,6 +67,11 @@ block = "m_inputs.drivePositionMeters * 1.1"
 reason = "temporary: 'for this experiment only', a bug planted to replay"
 
 [[exception]]
+lesson = 18
+block = "< ElevatorConstants.kTolerance.in(Meters);"
+reason = "staged: section 10 makes the tolerance a tunable, and atGoal() reads m_tolerance.get() instead"
+
+[[exception]]
 lesson = 25
 block = "package first.robot.opmode;"
 reason = "staged: the lesson then wraps the recipe in Autos.getReadyThen"

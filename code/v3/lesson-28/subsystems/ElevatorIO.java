@@ -23,6 +23,12 @@ public interface ElevatorIO {
   /** Firmware Motion Magic position control, in meters of carriage height. */
   public default void setGoalHeightMeters(double meters) {}
 
+  /** Send new feedforward and trim gains to the motor's Slot0. */
+  public default void setGains(double kG, double kV, double kA, double kP) {}
+
+  /** Send new Motion Magic limits, in meters per second and meters per second squared. */
+  public default void setMotionLimits(double cruiseMetersPerSec, double accelMetersPerSecSq) {}
+
   /** Open-loop drive, for homing: no goal, no profile, just a voltage. */
   public default void setVoltage(double volts) {}
 

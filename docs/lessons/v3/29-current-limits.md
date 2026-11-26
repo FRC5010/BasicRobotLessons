@@ -644,7 +644,7 @@ no-limits ones vary the most: the eight runs that collapsed peaked at
    less provocation it takes.
 2. **Find the elevator's real floor.** Lower `kElevatorSupplyLimit` until
    the elevator can no longer make its Motion Magic cruise, and watch
-   what that looks like on the setpoint trace from Lesson 18 §10 —
+   what that looks like on the setpoint trace from Lesson 18 §11 —
    position falling behind setpoint, a *different* signature from a badly
    tuned gain. Then back off to the lowest number that still works.
 3. **Make the roller tell you it's jammed.** It's limited to 20 A. If
