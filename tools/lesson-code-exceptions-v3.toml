@@ -38,6 +38,11 @@ reason = "conditional: only if step 5 read -90 degrees; the reference keeps the 
 
 [[exception]]
 lesson = 8
+block = "public Command turnToHeading(double targetDegrees) {"
+reason = "staged: right after HeadingConstants, the lesson replaces HeadingConstants.kP with the m_headingKP tunable"
+
+[[exception]]
+lesson = 8
 block = "new Pigeon2(0, new CANBus(CANPort.CAN_S0));"
 reason = "try-it: the reference applies Try It #4, the gyro ID in DriveConstants.kGyroPort"
 

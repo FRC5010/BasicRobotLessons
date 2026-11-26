@@ -13,6 +13,8 @@ software P ever did.
 - **Control request objects** — created once as fields, reused every tick
 - Deleting code as progress (priming, the wrap trick, and gear math all move
   into firmware)
+- A helper class of **`static` methods**, and passing a method as a
+  `Runnable` (`this::sendSteerGains`)
 
 **New robot concepts**
 - The TalonFX is a **computer**, running its own control loop at 1 kHz
@@ -23,6 +25,7 @@ software P ever did.
 - **`PositionVoltage`** and **`VelocityVoltage`** control requests
 - **Feedforward (`kV`)** — a *model* predicts the voltage; feedback (`kP`)
   only trims the leftover error
+- A tunable's **`onTune`** — sending a gain to the motor the moment it changes
 
 ---
 
@@ -339,7 +342,154 @@ payoff, one more time, at refactor scale.
 
 ---
 
-## 6. Is the sim still honest?
+## 6. Tune the motors while they run
+
+Lessons 5 and 8 made their gains tunable, and the code read the new value on
+every tick. That worked because those loops ran in your code. These gains
+don't: they live inside the motors, put there once by the configuration in
+the constructor. A new number in your code changes nothing in a motor until
+you send it there. So a tunable for a motor's gain needs one more piece:
+something to run the moment the value changes.
+
+That's a tunable's **`onTune`**: a piece of code it runs each time a new
+value arrives from SimGUI, and only then. <!-- claim: wpilib.tunables-ontune-once-per-change -->
+`Tunables.addDouble` has no room for one, so a tunable with an `onTune` takes
+two steps: make it with a configuration, then publish it. Rather than write
+those two steps out for every gain, put them in one small class. Every
+tunable from now on is made through it, which also means that a rule about
+*all* tunables has one place to live.
+
+**Create `src/main/java/first/robot/Tuning.java`, next to `Robot.java`:**
+
+```java
+package first.robot;
+
+import org.wpilib.tunable.TunableConfig;
+import org.wpilib.tunable.TunableDouble;
+import org.wpilib.tunable.Tunables;
+
+/**
+ * Makes tunables: numbers SimGUI (or any dashboard) can change while the robot runs. Every
+ * tunable in the robot is made here, so a rule about all of them has one place to live.
+ */
+public final class Tuning {
+  private Tuning() {} // only static methods; nothing to build
+
+  /** A tunable number, published under 'name', that starts at 'initial'. */
+  public static TunableDouble number(String name, double initial) {
+    TunableDouble tunable = TunableDouble.createConfig(initial, new TunableConfig());
+    Tunables.publish(name, tunable);
+    return tunable;
+  }
+
+  /** The same, and 'onTune' runs each time a dashboard changes the number. */
+  public static TunableDouble number(String name, double initial, Runnable onTune) {
+    TunableDouble tunable =
+        TunableDouble.createConfig(initial, new TunableConfig().withOnTune(onTune));
+    Tunables.publish(name, tunable);
+    return tunable;
+  }
+}
+```
+
+`Tuning` is a class you never build: every method is `static`, so you call
+`Tuning.number(...)` the way you call `Math.abs(...)`, and the private
+constructor makes sure nobody tries. The two methods share a name and differ
+in what they take, the way Lesson 2's two `driveWithJoystick`s did. A
+**`Runnable`** is the simplest kind of lambda there is: no input, no answer,
+just something to do.
+
+Next, each module needs a way to hand a new gain to its motors. A **`Slot0Configs`**
+is the `Slot0` part of a configuration on its own, so applying it changes the
+gains and leaves everything else alone, `Inverted` included. <!-- claim: phoenix6.slot0-apply-keeps-other-config -->
+Contrast that with applying a whole fresh `TalonFXConfiguration`, which resets
+every setting it holds.
+
+**Add to `SwerveModule`'s imports:**
+
+```java
+import com.ctre.phoenix6.configs.Slot0Configs;
+```
+
+**Add to `SwerveModule`, just above `resetDrivePosition`:**
+
+```java
+  /** Sends a new steering gain to this module's steering motor, whose loop uses it. */
+  public void setSteerGains(double kP) {
+    Slot0Configs slot0 = new Slot0Configs();
+    slot0.kP = kP;
+    m_steerMotor.getConfigurator().apply(slot0);
+  }
+
+  /** Sends new drive gains to this module's drive motor, whose loop uses them. */
+  public void setDriveGains(double kV, double kP) {
+    Slot0Configs slot0 = new Slot0Configs();
+    slot0.kV = kV;
+    slot0.kP = kP;
+    m_driveMotor.getConfigurator().apply(slot0);
+  }
+```
+
+The tunables themselves go in `Drivetrain`: one knob per gain, shared by all
+four modules, the way Lesson 7 shared the steering gain. The heading gain
+moves over to `Tuning` while you're there, so every tunable in the robot is
+made in one place.
+
+**In `Drivetrain`, replace the `m_headingKP` field with:**
+
+```java
+  // The heading gain, as a tunable: it starts at HeadingConstants.kP, and SimGUI
+  // can change it while the robot runs.
+  private final TunableDouble m_headingKP =
+      Tuning.number("Drivetrain/HeadingKP", HeadingConstants.kP);
+
+  // The motors' own gains. Their loops run inside the motors, so a change has to be
+  // sent there: each tunable's onTune passes the new value to all four modules.
+  private final TunableDouble m_steerKP =
+      Tuning.number("Drivetrain/SteerKP", SteerConstants.kSteerKP, this::sendSteerGains);
+  private final TunableDouble m_driveKV =
+      Tuning.number("Drivetrain/DriveKV", DriveConstants.kDriveKV, this::sendDriveGains);
+  private final TunableDouble m_driveKP =
+      Tuning.number("Drivetrain/DriveKP", DriveConstants.kDriveKP, this::sendDriveGains);
+```
+
+**Add to `Drivetrain`, just above `headingError`:**
+
+```java
+  /** Sends the steering gain to every module's steering motor. */
+  private void sendSteerGains() {
+    for (SwerveModule module : m_modules) {
+      module.setSteerGains(m_steerKP.get());
+    }
+  }
+
+  /** Sends the drive gains to every module's drive motor. */
+  private void sendDriveGains() {
+    for (SwerveModule module : m_modules) {
+      module.setDriveGains(m_driveKV.get(), m_driveKP.get());
+    }
+  }
+```
+
+**Fix `Drivetrain`'s imports:** delete `import org.wpilib.tunable.Tunables;`
+(nothing in the file uses it now), and add:
+
+```java
+import first.robot.Constants.SteerConstants;
+import first.robot.Tuning;
+```
+
+`this::sendSteerGains` is a method reference handed over as a `Runnable`:
+"when this changes, run my `sendSteerGains`". It's written in a field
+initializer, before the modules exist, and that's fine, because nothing calls
+it until SimGUI sends a change, long after the constructor has finished.
+`DriveKV` and `DriveKP` share `sendDriveGains`, because a `Slot0Configs`
+carries both: sending one without the other would set the other to zero. <!-- claim: phoenix6.slot0-apply-keeps-other-config -->
+They show up in SimGUI under **Tunables → Drivetrain**, beside `HeadingKP`. <!-- claim: wpilib.tunables-publish-under-tunables -->
+
+---
+
+## 7. Is the sim still honest?
 
 The drive and steer gear ratios haven't moved — so do the sim conversions
 from Lessons 4–5 need to change?
@@ -406,7 +556,7 @@ needs the magnet-offset ritual real hardware does.
 
 ---
 
-## 7. Run it and feel the difference
+## 8. Run it and feel the difference
 
 Run the robot in simulation → **RobotTeleop**, Swerve tab open with both
 `Telemetry/Drivetrain/ModuleStates` and `Telemetry/Drivetrain/DesiredModuleStates` showing.
@@ -415,13 +565,14 @@ should hug the desired arrows noticeably tighter than last lesson —
 steering snaps to new angles without the soft lag of 50 Hz P control, and
 wheel speeds land on their targets instead of drifting near them.
 
-Tuning still works the way Lesson 5 taught you, just with new knobs:
-`kSteerKP` too low and steering lags; too high and it buzzes around the
-target ([Figure 5.2](05-steering-p-control.md#figure-5-2) drew both). `kDriveKV` is the interesting one — get it right and `kDriveKP`
-barely has anything to do. Which suggests a way to tune: set `kDriveKP =
-0`, adjust `kV` until measured speed roughly matches requested speed,
-*then* bring in a little `kP` for the residue. Model first, feedback
-second.
+Tuning still works the way Lesson 5 taught you, just with new knobs, under
+**Tunables → Drivetrain** in SimGUI: `SteerKP` too low and steering lags; too high and it buzzes around the
+target ([Figure 5.2](05-steering-p-control.md#figure-5-2) drew both). `DriveKV` is the interesting one — get it right and `DriveKP`
+barely has anything to do. Which suggests a way to tune: set `DriveKP`
+to 0, adjust `DriveKV` until measured speed roughly matches requested speed,
+*then* bring in a little `DriveKP` for the residue. Model first, feedback
+second. Every change reaches the four motors the moment you press Enter,
+and the numbers you settle on go back into `Constants.java`.
 
 Figure 12.3 is what the first two Try It items let you see for yourself.
 It's one step on one module: the wheel points straight ahead and sits at
@@ -478,9 +629,9 @@ identical to the figure.
    long before error could have built it up. <!-- claim: l12.voltage-reaches-model-time --> (The first tick or two read
    lower; that's the current limit from Figure 12.3's note.) <!-- claim: phoenix6.stator-limit-caps-startup-voltage --> That jump is
    feedforward; the small corrections after it are feedback.
-2. **Break the model on purpose.** Set `kDriveKV = 0.4` (half right) and
-   watch `kP` struggle to make up the difference — speed settles well
-   short of the request. <!-- claim: l12.step-half-model-speed --> Restore `0.8`. A good model makes feedback's job easy; a
+2. **Break the model on purpose.** Set **DriveKV** to `0.4` (half right) in
+   SimGUI and watch `kP` struggle to make up the difference — speed settles
+   well short of the request. <!-- claim: l12.step-half-model-speed --> Set it back to `0.8`. A good model makes feedback's job easy; a
    bad one makes it impossible.
 3. **Turn off `ContinuousWrap`** (set it `false`), ask for a steer target
    across the ±180° boundary, and watch the wheel take the long way

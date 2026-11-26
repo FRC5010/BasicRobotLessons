@@ -742,3 +742,14 @@ measured_on = "alpha-8"
 method = "TEST"
 test = "tools/claims/java/claims/TunablesApiTest.java"
 note = "Matters because an opmode is rebuilt on every Disable: a tunable made in an opmode's constructor would be refused the second time."
+
+[[claim]]
+id = "wpilib.tunables-ontune-once-per-change"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "A tunable made with TunableConfig().withOnTune(callback) runs the callback once each time a dashboard write is applied (inside TunableRegistry.update()), not when it's published and not on a tick with no write; Tunables.addDouble takes no config, so a tunable with onTune is made with TunableDouble.createConfig and published with Tunables.publish."
+evidence = "tools/claims/java/claims/TunablesApiTest.java (2026-11-26); the earlier probe also saw no call for a write of the same value. The API shape read from tunables-java-2027.0.0-alpha-8-sources.jar (Tunables has no addDouble overload with a config)."
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/TunablesApiTest.java"

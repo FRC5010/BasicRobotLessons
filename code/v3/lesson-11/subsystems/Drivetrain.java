@@ -24,6 +24,8 @@ import org.wpilib.smartdashboard.Field2d;
 import org.wpilib.telemetry.Telemetry;
 import org.wpilib.units.measure.AngularVelocity;
 import org.wpilib.units.measure.LinearVelocity;
+import org.wpilib.tunable.TunableDouble;
+import org.wpilib.tunable.Tunables;
 
 import first.robot.Constants.DriveConstants;
 import first.robot.Constants.HeadingConstants;
@@ -65,6 +67,16 @@ public class Drivetrain implements Mechanism {
   // Remembered for the sim: what rotation rate did we just command?
   private double m_lastCommandedOmega = 0.0;
   private double m_simHeadingDegrees = 0.0;
+
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * Make the heading gain through the new Tuning helper, and add tunables for the
+   * motors' own gains, each of which sends a change on to all four modules.
+   */
+  // The heading gain, as a tunable: it starts at HeadingConstants.kP, and SimGUI
+  // can change it while the robot runs.
+  private final TunableDouble m_headingKP =
+      Tunables.addDouble("Drivetrain/HeadingKP", HeadingConstants.kP);
 
   public Drivetrain() {
     Scheduler.getDefault().addPeriodic(this::logTelemetry);
@@ -111,7 +123,7 @@ public class Drivetrain implements Mechanism {
     return run(coroutine -> {
           while (Math.abs(headingError(targetDegrees)) >= 2.0) {
             double omega = clamp(
-                HeadingConstants.kP * headingError(targetDegrees),
+                m_headingKP.get() * headingError(targetDegrees),
                 -0.5, 0.5); // clamp to ±50% turn power
             commandRotation(omega);
             coroutine.yield();
@@ -167,6 +179,11 @@ public class Drivetrain implements Mechanism {
     applyChassisSpeeds(new ChassisVelocities(0, 0, omegaRevPerSec * 2 * Math.PI));
   }
 
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Add the two methods that send the motors' gains to every module, one for steering
+   * and one for driving.
+   */
   /** Signed error to 'target' in degrees, wrapped to (-180, 180]. */
   private double headingError(double targetDegrees) {
     return MathUtil.inputModulus(targetDegrees - getHeadingDegrees(), -180, 180);

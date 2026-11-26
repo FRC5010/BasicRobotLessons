@@ -22,13 +22,16 @@ import org.wpilib.math.trajectory.TrapezoidProfile;
 import org.wpilib.math.util.MathUtil;
 import org.wpilib.units.measure.AngularVelocity;
 import org.wpilib.units.measure.LinearVelocity;
+import org.wpilib.tunable.TunableDouble;
 
 import org.littletonrobotics.junction.Logger;
 
 import first.robot.Constants;
 import first.robot.Constants.DriveConstants;
 import first.robot.Constants.HeadingConstants;
+import first.robot.Constants.SteerConstants;
 import first.robot.Constants.PathConstants;
+import first.robot.Tuning;
 
 public class Drivetrain implements Mechanism, PoseProvider {
   // Corner order: FL, FR, BL, BR. Pick a convention and stick to it.
@@ -74,6 +77,20 @@ public class Drivetrain implements Mechanism, PoseProvider {
   // to read what the last tick worked out.
   private final ProfiledPIDController m_alongController = makeAlongController();
   private final ProfiledPIDController m_headingController = makeHeadingController();
+
+  // The heading gain, as a tunable: it starts at HeadingConstants.kP, and SimGUI
+  // can change it while the robot runs.
+  private final TunableDouble m_headingKP =
+      Tuning.number("Drivetrain/HeadingKP", HeadingConstants.kP);
+
+  // The motors' own gains. Their loops run inside the motors, so a change has to be
+  // sent there: each tunable's onTune passes the new value to all four modules.
+  private final TunableDouble m_steerKP =
+      Tuning.number("Drivetrain/SteerKP", SteerConstants.kSteerKP, this::sendSteerGains);
+  private final TunableDouble m_driveKV =
+      Tuning.number("Drivetrain/DriveKV", DriveConstants.kDriveKV, this::sendDriveGains);
+  private final TunableDouble m_driveKP =
+      Tuning.number("Drivetrain/DriveKP", DriveConstants.kDriveKP, this::sendDriveGains);
 
   public Drivetrain() {
     Scheduler.getDefault().addPeriodic(this::periodic);
@@ -143,7 +160,7 @@ public class Drivetrain implements Mechanism, PoseProvider {
     return run(coroutine -> {
           while (Math.abs(headingError(targetDegrees)) >= 2.0) {
             double omega = clamp(
-                HeadingConstants.kP * headingError(targetDegrees),
+                m_headingKP.get() * headingError(targetDegrees),
                 -0.5, 0.5); // clamp to ±50% turn power
             commandRotation(omega);
             coroutine.yield();
@@ -290,6 +307,20 @@ public class Drivetrain implements Mechanism, PoseProvider {
   /** One tick of pure rotation: steer every wheel tangent to the circle. */
   private void commandRotation(double omegaRevPerSec) {
     applyChassisSpeeds(new ChassisVelocities(0, 0, omegaRevPerSec * 2 * Math.PI));
+  }
+
+  /** Sends the steering gain to every module's steering motor. */
+  private void sendSteerGains() {
+    for (SwerveModule module : m_modules) {
+      module.setSteerGains(m_steerKP.get());
+    }
+  }
+
+  /** Sends the drive gains to every module's drive motor. */
+  private void sendDriveGains() {
+    for (SwerveModule module : m_modules) {
+      module.setDriveGains(m_driveKV.get(), m_driveKP.get());
+    }
   }
 
   /** Signed error to 'target' in degrees, wrapped to (-180, 180]. */

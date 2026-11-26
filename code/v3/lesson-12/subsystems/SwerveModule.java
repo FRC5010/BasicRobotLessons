@@ -6,6 +6,7 @@ import static org.wpilib.units.Units.RotationsPerSecond;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
@@ -144,6 +145,21 @@ public class SwerveModule {
    * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
    * Ask the IO to zero the drive position instead.
    */
+
+  /** Sends a new steering gain to this module's steering motor, whose loop uses it. */
+  public void setSteerGains(double kP) {
+    Slot0Configs slot0 = new Slot0Configs();
+    slot0.kP = kP;
+    m_steerMotor.getConfigurator().apply(slot0);
+  }
+
+  /** Sends new drive gains to this module's drive motor, whose loop uses them. */
+  public void setDriveGains(double kV, double kP) {
+    Slot0Configs slot0 = new Slot0Configs();
+    slot0.kV = kV;
+    slot0.kP = kP;
+    m_driveMotor.getConfigurator().apply(slot0);
+  }
 
   /** Zero the drive encoder — start measuring distance from *here*. */
   public void resetDrivePosition() {

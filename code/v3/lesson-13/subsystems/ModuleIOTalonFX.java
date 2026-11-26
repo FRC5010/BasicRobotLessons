@@ -6,6 +6,7 @@ import static org.wpilib.units.Units.RotationsPerSecond;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
@@ -73,6 +74,21 @@ public class ModuleIOTalonFX implements ModuleIO {
   public void setDriveVelocityMetersPerSec(double mps) {
     double wheelRps = mps / DriveConstants.kWheelCircumferenceMeters;
     m_driveMotor.setControl(m_driveRequest.withVelocity(RotationsPerSecond.of(wheelRps)));
+  }
+
+  @Override
+  public void setSteerGains(double kP) {
+    Slot0Configs slot0 = new Slot0Configs();
+    slot0.kP = kP;
+    m_steerMotor.getConfigurator().apply(slot0);
+  }
+
+  @Override
+  public void setDriveGains(double kV, double kP) {
+    Slot0Configs slot0 = new Slot0Configs();
+    slot0.kV = kV;
+    slot0.kP = kP;
+    m_driveMotor.getConfigurator().apply(slot0);
   }
 
   @Override

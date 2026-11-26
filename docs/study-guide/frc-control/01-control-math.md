@@ -66,14 +66,15 @@ example:
 ```java
 while (Math.abs(headingError(targetDegrees)) >= 2.0) {
   double omega = clamp(
-      HeadingConstants.kP * headingError(targetDegrees),
+      m_headingKP.get() * headingError(targetDegrees),
       -0.5, 0.5); // clamp to ±50% turn power
   commandRotation(omega);
   coroutine.yield();
 }
 ```
 
-The gain **`kP`** is how hard to push per unit of error. The clamp keeps a large error from asking
+The gain **`kP`** is how hard to push per unit of error; here it's `m_headingKP`, a tunable that
+starts at `HeadingConstants.kP` and can be changed while the robot runs. The clamp keeps a large error from asking
 for more than the robot should give. Figure 5.1 shows one move under P control: read the top panel
 for the angle chasing its setpoint, then the bottom for the output, which follows the gap.
 

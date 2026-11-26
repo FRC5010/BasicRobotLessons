@@ -245,6 +245,36 @@ public final class Constants {
 }
 ```
 
+You'll tune this gain, so make it a tunable from the start, the way Lesson 5
+made the steering gain one. `Drivetrain` is built once, in `Robot`, so it's
+the right home for it.
+
+**Add to `Drivetrain.java`'s imports:**
+
+```java
+import org.wpilib.tunable.TunableDouble;
+import org.wpilib.tunable.Tunables;
+```
+
+**Add to `Drivetrain`, just above the constructor:**
+
+```java
+  // The heading gain, as a tunable: it starts at HeadingConstants.kP, and SimGUI
+  // can change it while the robot runs.
+  private final TunableDouble m_headingKP =
+      Tunables.addDouble("Drivetrain/HeadingKP", HeadingConstants.kP);
+```
+
+**In `turnToHeading`, replace `HeadingConstants.kP` with `m_headingKP.get()`:**
+
+```java
+          double omega = clamp(
+              m_headingKP.get() * headingError(targetDegrees),
+              -0.5, 0.5); // clamp to ±50% turn power
+```
+
+It shows up in SimGUI as **Tunables → Drivetrain → HeadingKP**. <!-- claim: wpilib.tunables-publish-under-tunables -->
+
 ---
 
 ## 4. Wire it up
@@ -354,12 +384,16 @@ which way the robot thinks it's facing.
 
 *Figure 8.2 — The Swerve tab with `Heading` (1) added to its Sources list as Rotation (2). The chassis is drawn turned to whatever heading the gyro reports.* <!-- claim: wpilib-tools.advantagescope-swerve-tab -->
 
-Tune `kP` the same way as Lesson 5 — the symptoms haven't changed, only the
-thing that's oscillating:
+Tune `kP` the same way as Lesson 5, live: change **Tunables → Drivetrain →
+HeadingKP** in SimGUI's NetworkTables window and press the button again. <!-- claim: wpilib-tools.simgui-edits-tunables -->
+The symptoms haven't changed, only the thing that's oscillating:
 
 - **too small:** it crawls in and takes forever;
 - **too big:** it overshoots and oscillates;
 - **just right:** quick, smooth, settles inside the band.
+
+If you settle on a different number, copy it into `HeadingConstants.kP`: the
+tunable starts from the constant every time the robot starts.
 
 ---
 

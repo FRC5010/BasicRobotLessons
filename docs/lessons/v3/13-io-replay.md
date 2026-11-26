@@ -180,6 +180,12 @@ public interface ModuleIO {
   /** Firmware velocity control for drive (wheel meters per second). */
   public default void setDriveVelocityMetersPerSec(double mps) {}
 
+  /** Send a new steering gain to the steering motor's own loop. */
+  public default void setSteerGains(double kP) {}
+
+  /** Send new drive gains to the drive motor's own loop. */
+  public default void setDriveGains(double kV, double kP) {}
+
   /** Zero the drive encoder. */
   public default void resetDrivePosition() {}
 }
@@ -233,6 +239,7 @@ import static org.wpilib.units.Units.RotationsPerSecond;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
@@ -300,7 +307,7 @@ sensors just *have* values, and this class is the real robot.
 ```
 
 **Piece 3 — the writes.** Each one is a Lesson 12 line wearing an
-`@Override`. Now that the target arrives as a plain `double` (the contract
+`@Override`, the gain-sending methods included. Now that the target arrives as a plain `double` (the contract
 speaks degrees and meters-per-second), wrap it in the matching unit measure
 on the way into Phoenix, exactly as Lesson 12 did.
 
@@ -317,6 +324,21 @@ on the way into Phoenix, exactly as Lesson 12 did.
   public void setDriveVelocityMetersPerSec(double mps) {
     double wheelRps = mps / DriveConstants.kWheelCircumferenceMeters;
     m_driveMotor.setControl(m_driveRequest.withVelocity(RotationsPerSecond.of(wheelRps)));
+  }
+
+  @Override
+  public void setSteerGains(double kP) {
+    Slot0Configs slot0 = new Slot0Configs();
+    slot0.kP = kP;
+    m_steerMotor.getConfigurator().apply(slot0);
+  }
+
+  @Override
+  public void setDriveGains(double kV, double kP) {
+    Slot0Configs slot0 = new Slot0Configs();
+    slot0.kV = kV;
+    slot0.kP = kP;
+    m_driveMotor.getConfigurator().apply(slot0);
   }
 
   @Override
@@ -502,6 +524,16 @@ public class SwerveModule {
   public SwerveModulePosition getPosition() {
     return new SwerveModulePosition(
         m_inputs.drivePositionMeters, Rotation2d.fromDegrees(m_inputs.steerAngleDegrees));
+  }
+
+  /** Sends a new steering gain to the steering motor's own loop. */
+  public void setSteerGains(double kP) {
+    m_io.setSteerGains(kP);
+  }
+
+  /** Sends new drive gains to the drive motor's own loop. */
+  public void setDriveGains(double kV, double kP) {
+    m_io.setDriveGains(kV, kP);
   }
 
   public void resetDrivePosition() {

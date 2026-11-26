@@ -12,6 +12,13 @@ import org.wpilib.hardware.hal.HAL;
 import org.wpilib.networktables.DoublePublisher;
 import org.wpilib.networktables.NetworkTableInstance;
 import org.wpilib.simulation.AlertSim;
+import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.InvertedValue;
+import org.wpilib.hardware.bus.CANPort;
+import org.wpilib.tunable.TunableConfig;
 import org.wpilib.tunable.TunableDouble;
 import org.wpilib.tunable.TunableRegistry;
 import org.wpilib.tunable.Tunables;
@@ -88,6 +95,59 @@ class TunablesApiTest {
       TunableRegistry.update();
       assertEquals(5.0, first.get(), 0.0, "the first tunable didn't get the write");
       assertEquals(2.0, second.get(), 0.0, "the second tunable got the write");
+    }
+  }
+
+  @Test
+  @DisplayName("wpilib.tunables-ontune-once-per-change")
+  void onTuneOncePerChange() throws Exception {
+    int[] calls = {0};
+    TunableDouble kV =
+        TunableDouble.createConfig(1.42, new TunableConfig().withOnTune(() -> calls[0]++));
+    Tunables.publish("ClaimTest/OnTune", kV);
+    TunableRegistry.update();
+    assertEquals(0, calls[0], "onTune ran on publish");
+    try (DoublePublisher pub = dashboardWrite("/Tunables/ClaimTest/OnTune", 1.5)) {
+      TunableRegistry.update();
+      assertEquals(1, calls[0], "onTune didn't run once for one write");
+      assertEquals(1.5, kV.get(), 0.0);
+      TunableRegistry.update();
+      assertEquals(1, calls[0], "onTune ran on a tick with no write");
+    }
+  }
+
+  @Test
+  @DisplayName("phoenix6.slot0-apply-keeps-other-config")
+  void slot0ApplyKeepsOtherConfig() {
+    try (TalonFX motor = new TalonFX(61, new CANBus(CANPort.CAN_S0))) {
+      TalonFXConfiguration config = new TalonFXConfiguration();
+      config.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+      config.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
+      config.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 3.0;
+      config.CurrentLimits.SupplyCurrentLimitEnable = true;
+      config.CurrentLimits.SupplyCurrentLimit = 33.0;
+      config.Slot0.kP = 1.0;
+      config.Slot0.kS = 0.3;
+      assertTrue(motor.getConfigurator().apply(config).isOK());
+
+      Slot0Configs slot0 = new Slot0Configs();
+      slot0.kP = 7.0;
+      slot0.kV = 0.5;
+      assertTrue(motor.getConfigurator().apply(slot0).isOK());
+
+      TalonFXConfiguration after = new TalonFXConfiguration();
+      assertTrue(motor.getConfigurator().refresh(after).isOK());
+      assertEquals(7.0, after.Slot0.kP, 1e-9, "the new kP didn't land");
+      assertEquals(0.5, after.Slot0.kV, 1e-9, "the new kV didn't land");
+      assertEquals(0.0, after.Slot0.kS, 1e-9, "a gain the Slot0Configs left out kept its old value");
+      assertEquals(InvertedValue.Clockwise_Positive, after.MotorOutput.Inverted,
+          "applying Slot0Configs reset Inverted");
+      assertTrue(after.SoftwareLimitSwitch.ForwardSoftLimitEnable,
+          "applying Slot0Configs turned the soft limit off");
+      assertEquals(3.0, after.SoftwareLimitSwitch.ForwardSoftLimitThreshold, 1e-9);
+      assertTrue(after.CurrentLimits.SupplyCurrentLimitEnable,
+          "applying Slot0Configs turned the supply limit off");
+      assertEquals(33.0, after.CurrentLimits.SupplyCurrentLimit, 1e-9);
     }
   }
 }

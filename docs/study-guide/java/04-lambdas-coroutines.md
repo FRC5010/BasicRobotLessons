@@ -227,7 +227,7 @@ public Command turnToHeading(double targetDegrees) {
   return run(coroutine -> {
         while (Math.abs(headingError(targetDegrees)) >= 2.0) {
           double omega = clamp(
-              HeadingConstants.kP * headingError(targetDegrees),
+              m_headingKP.get() * headingError(targetDegrees),
               -0.5, 0.5); // clamp to ±50% turn power
           commandRotation(omega);
           coroutine.yield();
