@@ -8,11 +8,15 @@ import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.math.geometry.Rotation2d;
 import org.wpilib.math.geometry.Translation2d;
 import org.wpilib.math.kinematics.ChassisVelocities;
+import org.wpilib.tunable.Tunable;
+import org.wpilib.tunable.TunableDouble;
+import org.wpilib.units.measure.Angle;
 
 import org.littletonrobotics.junction.Logger;
 
 import first.robot.Constants.PathConstants;
 import first.robot.Constants.VisionConstants;
+import first.robot.Tuning;
 import first.robot.subsystems.Drivetrain;
 import first.robot.subsystems.Localizer;
 import frc.robot.lib.BLine.field.FlippingUtil;
@@ -30,6 +34,12 @@ import frc.robot.lib.BLine.field.FlippingUtil;
  */
 public final class Aim {
   private Aim() {} // utility class — never instantiated
+
+  // The aim's gain and its "close enough", as tunables (see Tuning). Static, like the
+  // methods: there's one aim for the whole robot, so there's one of each.
+  private static final TunableDouble s_aimP = Tuning.number("Aim/P", PathConstants.kAimP);
+  private static final Tunable<Angle> s_aimTolerance =
+      Tuning.value("Aim/Tolerance", PathConstants.kAimTolerance);
 
   /**
    * Where a tag sits on the field, from the layout that was loaded in Lesson 15.
@@ -82,7 +92,7 @@ public final class Aim {
     Logger.recordOutput("Aim/FeedforwardRadPerSec", feedforward);
     Logger.recordOutput("Aim/IsAimed", isAimedAt(robot, target));
 
-    return feedforward + error.getRadians() * PathConstants.kAimP;
+    return feedforward + error.getRadians() * s_aimP.get();
   }
 
   /**
@@ -102,6 +112,6 @@ public final class Aim {
 
   /** Pointing at it closely enough to act on. */
   public static boolean isAimedAt(Pose2d robot, Translation2d target) {
-    return Math.abs(error(robot, target).getRadians()) < PathConstants.kAimTolerance.in(Radians);
+    return Math.abs(error(robot, target).getRadians()) < s_aimTolerance.get().in(Radians);
   }
 }

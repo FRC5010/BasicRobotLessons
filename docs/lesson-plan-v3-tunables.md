@@ -328,7 +328,10 @@ and explain**.
   Check: `Fig26TwoStage` on the new code and on the old (a worktree of HEAD) both hand over at
   1.80 s, first read `atGoal` at 3.32–3.34 s and end at (5.006, 4.004, 90.0°), so nothing
   changed. (The kept `26-two-stage-speed.csv` reads 3.36 s; it predates other changes.)
-- **Next:** Lessons 27, 28, 29 and 30.
+- **Lesson 27 (2026-11-26):** `Aim/P` and `Aim/Tolerance`, `static` fields in the static `Aim`
+  class. Probe: they're published only on the first call into `Aim`, not when `Robot` is built
+  (claim `l27.aim-tunables-on-first-use`); the lesson says so. Try It 3 uses SimGUI.
+- **Next:** Lessons 28, 29 and 30.
 
 ## 6b. Questions left for the user (answered above)
 

@@ -61,11 +61,15 @@ import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.math.geometry.Rotation2d;
 import org.wpilib.math.geometry.Translation2d;
 import org.wpilib.math.kinematics.ChassisVelocities;
+import org.wpilib.tunable.Tunable;
+import org.wpilib.tunable.TunableDouble;
+import org.wpilib.units.measure.Angle;
 
 import org.littletonrobotics.junction.Logger;
 
 import first.robot.Constants.PathConstants;
 import first.robot.Constants.VisionConstants;
+import first.robot.Tuning;
 import first.robot.subsystems.Drivetrain;
 import first.robot.subsystems.Localizer;
 import frc.robot.lib.BLine.field.FlippingUtil;
@@ -87,6 +91,12 @@ import frc.robot.lib.BLine.field.FlippingUtil;
  */
 public final class Aim {
   private Aim() {} // utility class — never instantiated
+
+  // The aim's gain and its "close enough", as tunables (see Tuning). Static, like the
+  // methods: there's one aim for the whole robot, so there's one of each.
+  private static final TunableDouble s_aimP = Tuning.number("Aim/P", PathConstants.kAimP);
+  private static final Tunable<Angle> s_aimTolerance =
+      Tuning.value("Aim/Tolerance", PathConstants.kAimTolerance);
 
   /**
    * Where a tag sits on the field, from the layout that was loaded in Lesson 15.
@@ -149,6 +159,16 @@ look.
 `kAimTarget` from Lesson 25 is gone — that was a made-up point on the field, and
 the whole idea now is that the target is a real thing at a known place. Tag 20
 sits at (5.23, 4.03) on this season's field. <!-- claim: wpilib.field-tag-20-position -->
+
+The gain and the tolerance are tunables, the way every gain has been since
+Lesson 18, but this time in `static` fields, like Lesson 7's shared steering
+gain: `Aim` is never built, so there's no object to hold them, and there's
+only one aim anyway. That has one side effect worth knowing. **Java sets up a
+class's `static` fields the first time something uses the class**, and
+nothing uses `Aim` until the robot first aims. So **Tunables → Aim** isn't in
+SimGUI when the robot starts; it appears the first time you hold the aim
+trigger or an auto reaches its `aim` marker. <!-- claim: l27.aim-tunables-on-first-use -->
+The tolerance is an angle, so it shows in radians: 2° reads `0.0349`. <!-- claim: wpilib.tunables-measure-base-units -->
 
 > **A tag ID is not a guess.** `tagPosition` returns an `Optional` because
 > tag 47 is not on the field, and the day you mistype one you want an empty
@@ -327,7 +347,7 @@ top:**
     Logger.recordOutput("Aim/FeedforwardRadPerSec", feedforward);
     Logger.recordOutput("Aim/IsAimed", isAimedAt(robot, target));
 
-    return feedforward + error.getRadians() * PathConstants.kAimP;
+    return feedforward + error.getRadians() * s_aimP.get();
   }
 
   /**
@@ -347,7 +367,7 @@ top:**
 
   /** Pointing at it closely enough to act on. */
   public static boolean isAimedAt(Pose2d robot, Translation2d target) {
-    return Math.abs(error(robot, target).getRadians()) < PathConstants.kAimTolerance.in(Radians);
+    return Math.abs(error(robot, target).getRadians()) < s_aimTolerance.get().in(Radians);
   }
 }
 ```
@@ -533,7 +553,7 @@ from, comment out the feedforward:
 *Nothing to add — an experiment, to run and then undo:*
 
 ```java
-    return error.getRadians() * PathConstants.kAimP;
+    return error.getRadians() * s_aimP.get();
 ```
 
 Strafe again. `Aim/ErrorDegrees` will sit at a steady offset the whole time
@@ -574,8 +594,8 @@ false around it. <!-- claim: bline.telemetry-signals -->
    Combine them into a single boolean, log it, and light the LEDs from
    Lesson 23 when it's true. Then argue with yourself about whether
    "settled" should mean a low rotation rate or a stable error.
-3. **Find the gain's limit.** Raise `kAimP` until the robot oscillates, and
-   note the number. Then put the feedforward back in and see whether the
+3. **Find the gain's limit.** Raise `P` under SimGUI's **Tunables → Aim**
+   until the robot oscillates, and note the number. Then put the feedforward back in and see whether the
    oscillation point moved. Whether it did tells you something about which
    term was doing the work.
 4. **Break the pose on purpose.** In sim, call `robot.localizer.resetPose(...)`
