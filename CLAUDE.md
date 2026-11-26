@@ -363,6 +363,39 @@ that tag and measured in sim with the real `Robot`:
   newest cancels the rest in the same tick. The result is correct; it's
   recorded, not worked around.
 
+**Tunables are the v3 track's way of tuning (2026-11-25/26, user decisions: every value in the
+plan's inventory, firmware and code alike; code-side tunables not recorded, explained instead).**
+The plan, rules and per-lesson record are [docs/lesson-plan-v3-tunables.md](docs/lesson-plan-v3-tunables.md);
+the guide page is `docs/study-guide/frc-logging/03-tunables.md`. WPILib alpha-8's
+`org.wpilib.tunable`, measured (`TunablesApiTest`, claims `wpilib.tunables-*`):
+
+- Published under `/Tunables/<name>` by the backend `RobotBase` registers; SimGUI edits them in
+  **NetworkTables View → Transitory Values → Tunables** (double-click, type, Enter).
+  `TunableRegistry.update()` applies writes once a tick, after `robotPeriodic()`; `onTune` runs once
+  per applied write. A duplicate name raises a "Tunables" alert and the second tunable is dead, so
+  **tunables live only in things built once** (mechanisms, `Drivetrain`, `Robot`, `static` fields),
+  never in an opmode. A static tunable appears only when its class is first used (`Aim`, Lesson 27).
+- `withMutable(false)` ignores writes (no `onTune`, no setter). `Tunable.createConfig(measure, cfg)`
+  publishes a measure in its **base unit** (radians, rad/s, m, A, V): the arm's 2° reads 0.0349, the
+  flywheel's 30 rot/s reads 188.5 (rule kept on purpose, flagged to the user). `Tunable<T>` is a
+  `Supplier<T>`. In a test with no `RobotBase`, publishing prints "no backend" warnings with a stack
+  trace (Lesson 31 says so).
+- **Code shape:** Lessons 5–11 use `Tunables.addDouble`; from Lesson 12 everything goes through
+  `first.robot.Tuning` (`number`, `number(..., onTune)`, `property(getter, setter)`, and from
+  Lesson 18 the generic `value` for measures, all starting from `config()` =
+  `withMutable(Constants.kTuningMode)`). Constants stay the truth; code reads `get()` where it's
+  used. Firmware values go to the motor through `onTune` and an IO `default` method that applies one
+  config group (`Slot0Configs` with the gravity type, `MotionMagicConfigs`, `CurrentLimitsConfigs`),
+  since a group apply sets every field in it and leaves other groups alone (claims
+  `phoenix6.slot0-apply-keeps-other-config`, `l29.budget-tunables-reach-motors`). The power budget is
+  in `Robot` (`Power/…`) because the stator cap is shared. Lesson 26 removed the three
+  `TrapezoidProfile.Constraints` constants: the stages build limits from tunables as they start.
+  `kCrossTrackP` in Lesson 26 stays a constant (its tunable is B-Line's controller).
+- **Lesson text:** Lesson 5 introduces them (Figure 5.3); Lesson 18 builds the elevator, then makes
+  it tunable in section 10 (graph section now 11) with the replay callout; Lessons 20, 27 and 28
+  build with tunables from the start; Lessons 26 and 29 add them in place / in a new section 8.
+  Tuning-type Try Its use SimGUI instead of editing constants.
+
 **v3 Lesson 13 records with AdvantageKit and replays (user decisions,
 2026-10-28: `Logger.recordOutput` for outputs, Lesson 13 first and later
 lessons one at a time, replay taught with a PowerShell `AKIT_LOG_PATH` line

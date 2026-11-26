@@ -348,7 +348,7 @@ and explain**.
   snapshots carry the markers. Probe: a `StatorLimit` write of 60 A and an
   `ElevatorSupplyLimit` write of 25 A reached IDs 20-23 with everything else kept (claim
   `l29.budget-tunables-reach-motors`); amps and volts are base units, so they read as typed.
-- **Next:** the study guide page and the CLAUDE.md block.
+- **Study guide and CLAUDE.md (2026-11-26):** `frc-logging/03-tunables.md` (six sections, twelve quizzes, source-tagged examples) and a CLAUDE.md block. The rollout is done.
 
 ## 6b. Questions left for the user (answered above)
 
