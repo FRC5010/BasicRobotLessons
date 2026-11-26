@@ -1,6 +1,8 @@
 package first.robot.subsystems;
 
 import static org.wpilib.units.Units.Degrees;
+import static org.wpilib.units.Units.RotationsPerSecond;
+import static org.wpilib.units.Units.RotationsPerSecondPerSecond;
 
 import java.util.function.Supplier;
 
@@ -8,7 +10,11 @@ import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.math.geometry.Pose2d;
+import org.wpilib.tunable.Tunable;
+import org.wpilib.tunable.TunableDouble;
 import org.wpilib.units.measure.Angle;
+import org.wpilib.units.measure.AngularAcceleration;
+import org.wpilib.units.measure.AngularVelocity;
 
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.mechanism.LoggedMechanismLigament2d;
@@ -16,6 +22,7 @@ import org.littletonrobotics.junction.mechanism.LoggedMechanismLigament2d;
 import first.robot.Constants;
 import first.robot.Constants.ArmConstants;
 import first.robot.Constants.ElevatorConstants;
+import first.robot.Tuning;
 
 /**
  * An intake arm on the same spine as the elevator: an ArmIO chosen by the
@@ -25,6 +32,23 @@ import first.robot.Constants.ElevatorConstants;
 public class Arm implements Mechanism {
   private final ArmIO m_io;
   private final ArmIOInputsAutoLogged m_inputs = new ArmIOInputsAutoLogged();
+  // The pivot's gains and limits, as tunables (see Tuning): SimGUI can change them while
+  // the robot runs, and the gains and limits go straight to the pivot motor when it does.
+  private final TunableDouble m_kG =
+      Tuning.number("Arm/KG", ArmConstants.kArmKG, this::sendGains);
+  private final TunableDouble m_kV =
+      Tuning.number("Arm/KV", ArmConstants.kArmKV, this::sendGains);
+  private final TunableDouble m_kA =
+      Tuning.number("Arm/KA", ArmConstants.kArmKA, this::sendGains);
+  private final TunableDouble m_kP =
+      Tuning.number("Arm/KP", ArmConstants.kArmKP, this::sendGains);
+  private final Tunable<AngularVelocity> m_maxVelocity =
+      Tuning.value("Arm/MaxVelocity", ArmConstants.kMaxVelocity, this::sendMotionLimits);
+  private final Tunable<AngularAcceleration> m_maxAcceleration =
+      Tuning.value("Arm/MaxAcceleration", ArmConstants.kMaxAcceleration, this::sendMotionLimits);
+  private final Tunable<Angle> m_tolerance =
+      Tuning.value("Arm/Tolerance", ArmConstants.kTolerance);
+
   private Angle m_goal = ArmConstants.kStowed;
   /**
    * ====== NEXT LESSON: ADD CODE HERE ======
@@ -91,7 +115,19 @@ public class Arm implements Mechanism {
   }
 
   public boolean atGoal() {
-    return Math.abs(m_inputs.angleDegrees - m_goal.in(Degrees)) < ArmConstants.kTolerance.in(Degrees);
+    return Math.abs(m_inputs.angleDegrees - m_goal.in(Degrees)) < m_tolerance.get().in(Degrees);
+  }
+
+  /** Send all four pivot gains to the motor; runs whenever SimGUI changes one of them. */
+  private void sendGains() {
+    m_io.setGains(m_kG.get(), m_kV.get(), m_kA.get(), m_kP.get());
+  }
+
+  /** Send the profile's speed and acceleration limits to the pivot, in arm rotations. */
+  private void sendMotionLimits() {
+    m_io.setMotionLimits(
+        m_maxVelocity.get().in(RotationsPerSecond),
+        m_maxAcceleration.get().in(RotationsPerSecondPerSecond));
   }
 
   /** Keeps 'angle' inside [kMinAngle, kMaxAngle] — there's no MathUtil.clamp to reach for here. */

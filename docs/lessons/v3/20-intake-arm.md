@@ -273,6 +273,12 @@ public interface ArmIO {
   /** Hand the firmware an angle to profile toward and then hold. */
   public default void setGoalAngleDegrees(double angleDegrees) {}
 
+  /** Send new feedforward and trim gains to the pivot motor's Slot0. */
+  public default void setGains(double kG, double kV, double kA, double kP) {}
+
+  /** Send new Motion Magic limits for the pivot, in arm rotations per second (and per second squared). */
+  public default void setMotionLimits(double cruiseRotPerSec, double accelRotPerSecSq) {}
+
   /** Spin the roller at a fraction of full output. No goal, no profile. */
   public default void setRollerOutput(double output) {}
 }
@@ -280,7 +286,9 @@ public interface ArmIO {
 
 Nothing here should be a surprise — it's `ElevatorIO` with an angle
 instead of a height, plus one extra read and one extra write for the
-roller.
+roller. `setGains` and `setMotionLimits` are Lesson 18's, for the pivot: the
+arm's gains are tunables from the start. The limits come in arm rotations,
+because that's the unit the pivot's Motion Magic runs in.
 
 The roller's write is the interesting one. `setRollerOutput(double
 output)` takes a fraction from −1 to 1 and that's the whole story: no
@@ -308,6 +316,8 @@ import static org.wpilib.units.Units.RotationsPerSecondPerSecond;
 import static org.wpilib.units.Units.Volts;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -354,6 +364,26 @@ public class ArmIOTalonFX implements ArmIO {
 
     m_pivot.getConfigurator().apply(config);
     m_roller.getConfigurator().apply(new TalonFXConfiguration());
+  }
+
+  @Override
+  public void setGains(double kG, double kV, double kA, double kP) {
+    // Slot0 only: the soft limits and everything else the constructor set stay as they are.
+    Slot0Configs slot0 = new Slot0Configs();
+    slot0.kG = kG;
+    slot0.GravityType = GravityTypeValue.Arm_Cosine; // part of Slot0, so it's sent too
+    slot0.kV = kV;
+    slot0.kA = kA;
+    slot0.kP = kP;
+    m_pivot.getConfigurator().apply(slot0);
+  }
+
+  @Override
+  public void setMotionLimits(double cruiseRotPerSec, double accelRotPerSecSq) {
+    MotionMagicConfigs motionMagic = new MotionMagicConfigs();
+    motionMagic.MotionMagicCruiseVelocity = cruiseRotPerSec;
+    motionMagic.MotionMagicAcceleration = accelRotPerSecSq;
+    m_pivot.getConfigurator().apply(motionMagic);
   }
 
   @Override
@@ -410,6 +440,12 @@ program asked, or whether you remembered to clamp. <!-- claim: phoenix6.soft-lim
 can watch it happen: the profile's own setpoint stops at the threshold. <!-- claim: phoenix6.soft-limit-stops-motion-magic -->
 Both belong. The clamp keeps bad numbers out of your logic; the soft limit
 keeps the mechanism off its hard stops when your logic is wrong.
+
+`setGains` and `setMotionLimits` are the elevator's again, pointed at the
+pivot. The only difference is the `GravityType` line, which has to say
+`Arm_Cosine`: it's part of Slot0, so a `Slot0Configs` that left it out would
+put it back to its default. Neither one touches the soft limits. <!-- claim: phoenix6.slot0-apply-keeps-other-config -->
+The roller has no gains to tune, so it gets nothing.
 
 > Soft limits trust the encoder completely. If the arm's zero is wrong,
 > the limits are wrong by exactly the same amount and they'll happily
@@ -596,11 +632,17 @@ Now the mechanism itself.
 package first.robot.subsystems;
 
 import static org.wpilib.units.Units.Degrees;
+import static org.wpilib.units.Units.RotationsPerSecond;
+import static org.wpilib.units.Units.RotationsPerSecondPerSecond;
 
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
+import org.wpilib.tunable.Tunable;
+import org.wpilib.tunable.TunableDouble;
 import org.wpilib.units.measure.Angle;
+import org.wpilib.units.measure.AngularAcceleration;
+import org.wpilib.units.measure.AngularVelocity;
 
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.mechanism.LoggedMechanismLigament2d;
@@ -608,6 +650,7 @@ import org.littletonrobotics.junction.mechanism.LoggedMechanismLigament2d;
 import first.robot.Constants;
 import first.robot.Constants.ArmConstants;
 import first.robot.Constants.ElevatorConstants;
+import first.robot.Tuning;
 
 /**
  * An intake arm on the same spine as the elevator: an ArmIO chosen by the
@@ -621,6 +664,23 @@ public class Arm implements Mechanism {
     case REPLAY -> new ArmIO() {}; // inputs come from the log
   };
   private final ArmIOInputsAutoLogged m_inputs = new ArmIOInputsAutoLogged();
+  // The pivot's gains and limits, as tunables (see Tuning): SimGUI can change them while
+  // the robot runs, and the gains and limits go straight to the pivot motor when it does.
+  private final TunableDouble m_kG =
+      Tuning.number("Arm/KG", ArmConstants.kArmKG, this::sendGains);
+  private final TunableDouble m_kV =
+      Tuning.number("Arm/KV", ArmConstants.kArmKV, this::sendGains);
+  private final TunableDouble m_kA =
+      Tuning.number("Arm/KA", ArmConstants.kArmKA, this::sendGains);
+  private final TunableDouble m_kP =
+      Tuning.number("Arm/KP", ArmConstants.kArmKP, this::sendGains);
+  private final Tunable<AngularVelocity> m_maxVelocity =
+      Tuning.value("Arm/MaxVelocity", ArmConstants.kMaxVelocity, this::sendMotionLimits);
+  private final Tunable<AngularAcceleration> m_maxAcceleration =
+      Tuning.value("Arm/MaxAcceleration", ArmConstants.kMaxAcceleration, this::sendMotionLimits);
+  private final Tunable<Angle> m_tolerance =
+      Tuning.value("Arm/Tolerance", ArmConstants.kTolerance);
+
   private Angle m_goal = ArmConstants.kStowed;
 
   /** The arm's segment in the elevator's drawing — it hangs off the carriage. */
@@ -662,7 +722,19 @@ public class Arm implements Mechanism {
   }
 
   public boolean atGoal() {
-    return Math.abs(m_inputs.angleDegrees - m_goal.in(Degrees)) < ArmConstants.kTolerance.in(Degrees);
+    return Math.abs(m_inputs.angleDegrees - m_goal.in(Degrees)) < m_tolerance.get().in(Degrees);
+  }
+
+  /** Send all four pivot gains to the motor; runs whenever SimGUI changes one of them. */
+  private void sendGains() {
+    m_io.setGains(m_kG.get(), m_kV.get(), m_kA.get(), m_kP.get());
+  }
+
+  /** Send the profile's speed and acceleration limits to the pivot, in arm rotations. */
+  private void sendMotionLimits() {
+    m_io.setMotionLimits(
+        m_maxVelocity.get().in(RotationsPerSecond),
+        m_maxAcceleration.get().in(RotationsPerSecondPerSecond));
   }
 
   /** Keeps 'angle' inside [kMinAngle, kMaxAngle] — there's no MathUtil.clamp to reach for here. */
@@ -698,6 +770,12 @@ at 90°, so an arm that is horizontal in the world is at −90° in the
 drawing. Get that subtraction backwards and the picture will tell you
 immediately. The bottom half of [Figure 20.1](#figure-20-1) is this rule: horizontal
 in the world is −90° in the drawing, and stowed (90°) is 0°.
+
+The tunables at the top are the elevator's seven, named `Arm/...`. Three of
+them are angle measures this time, and a measure shows up in SimGUI in its
+base unit, which for an angle is **radians**: the 2° tolerance reads `0.0349`,
+and the 180°/s cruise speed reads `3.14`. <!-- claim: wpilib.tunables-measure-base-units -->
+If you'd rather think in degrees, multiply by π/180 before you type.
 
 Notice how little `Arm` says about the elevator otherwise. It asks for the
 mount point once, in the constructor, and then never mentions the
@@ -845,7 +923,8 @@ slides, and the angle trails the setpoint by a few degrees — worst during
 the acceleration ramp, two to four at its peak — rather than the eighteen
 it would take to buy that voltage out of error. <!-- claim: l20.model-lag, phoenix6.closed-loop-reference-is-profile-setpoint --> Lesson 18's
 tuning order — `kG` from the steady hold, `kV` from the flat cruise, `kA`
-from the ramps, `kP` last and small — works here unchanged. The arm just
+from the ramps, `kP` last and small — works here unchanged, in SimGUI's
+**Tunables → Arm**, one gain at a time. The arm just
 gives you a bonus: because `kG` is scaled by `cos θ`, you can check it at
 **five different angles** instead of one, and the table above is exactly
 that check. An elevator only ever offers you a single number to verify.
@@ -884,20 +963,20 @@ motor and a number.
    model has hard stops of its own; on a real arm that stop is metal, and
    the soft limit is the only thing keeping the motor off it. <!-- claim: l20.hard-stop-angle, wpilib.single-jointed-arm-sim-api --> Put both
    back.
-4. **Code — take the model away.** Set `kArmKV` to `0.0` and swing the arm
-   from intake to stow, watching `Arm/AngleDegrees` against
+4. **Tune — take the model away.** In SimGUI's **Tunables → Arm**, set `KV`
+   to `0` and swing the arm from intake to stow, watching `Arm/AngleDegrees` against
    `Arm/SetpointDegrees`. It gets there, but it now trails its own plan by
    about 20 degrees — the 18 section 3 predicted, plus a little more while
    the profile speeds up — because error is the only thing `kP` has to make
-   voltage out of. <!-- claim: l20.kv-zeroed-lag --> Put it back.
-5. **Code — break the zero.** Change `kArmKG` to a negative number and run
-   it again. That's what a 180°-wrong encoder calibration does: the
+   voltage out of. <!-- claim: l20.kv-zeroed-lag --> Type `5.94` back.
+5. **Tune — break the zero.** Set `KG` to `-0.25`, the same size the other
+   way round. That's what a 180°-wrong encoder calibration does: the
    feedforward pulls the arm down exactly when it should be holding it up.
    Watch how much harder `kP` has to work: held out horizontal, the arm now
    sits about 3° below its goal instead of a tenth of a degree, and
    mid-swing it trails its setpoint by 5° to 7° instead of 2° to 4°. <!-- claim: l20.kg-negative-sag, l20.hold-error-horizontal, l20.kg-negative-lag, phoenix6.arm-cosine-gravity --> That gap
    between `Arm/SetpointDegrees` and `Arm/AngleDegrees` is what this
-   failure looks like on a plot when you meet it for real. Put it back.
+   failure looks like on a plot when you meet it for real. Type `0.25` back.
    (On actual hardware this experiment drives the arm into its own hard
    stop under power, which is why it lives in sim.)
 6. **Both at once.** Hold a bumper while the arm is still swinging. The
@@ -938,6 +1017,9 @@ Lesson 19 built that relationship with a placeholder stub and claimed it
 would pay off here. That's what a good abstraction feels like when it
 lands: the interesting behavior shows up and there's nowhere to point at
 where it was written.
+
+Its gains and limits are tunables from the first line, the way the elevator's
+became in Lesson 18, which is how every mechanism from here on is built.
 
 One thing both mechanisms are still missing, though: they only know where
 they are because they assume they started at zero. Power the robot on

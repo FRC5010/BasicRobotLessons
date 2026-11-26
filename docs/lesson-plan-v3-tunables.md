@@ -312,7 +312,12 @@ and explain**.
     (claim `l18.live-kg-zero-sag`). New claims `wpilib.tunables-immutable`,
     `-measure-base-units` (tests) and `-no-backend-in-tests` (Lesson 31's note: a test prints a
     warning per tunable). Lesson 32's `atGoal` illustration reads `m_tolerance.get()`.
-- **Next:** Lesson 20's arm, then 26, 27, 28, 29 and 30.
+- **Lesson 20 (2026-11-26):** the arm is built with its seven tunables from the start (`Arm/KG`,
+  `KV`, `KA`, `KP` with `Arm_Cosine`, `MaxVelocity`, `MaxAcceleration`, `Tolerance`), in the
+  `Create` blocks of sections 4, 5 and 7; Try Its 4 and 5 use SimGUI. Probe: angle measures show
+  in radians (0.0349 for 2°, 3.14 for 180°/s), and a write reached the pivot with `Arm_Cosine`,
+  the soft limits and the gear ratio kept.
+- **Next:** Lessons 26, 27, 28, 29 and 30.
 
 ## 6b. Questions left for the user (answered above)
 
