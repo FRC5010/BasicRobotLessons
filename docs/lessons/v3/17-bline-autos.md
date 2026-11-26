@@ -481,6 +481,15 @@ because it's all about autonomous — so that's where the builder gets made.
 ```java
   /** Everything about following a path that doesn't depend on which path it is. */
   public static FollowPath.Builder makePathBuilder(Drivetrain drivetrain, Localizer localizer) {
+    PIDController translation = new PIDController(PathConstants.kTranslationP, 0, 0);
+    PIDController rotation = new PIDController(PathConstants.kRotationP, 0, 0);
+    PIDController crossTrack = new PIDController(PathConstants.kCrossTrackP, 0, 0);
+    // Each controller's P, tunable: SimGUI reads it with getP and changes it with setP,
+    // so a new value is in the controller on the next tick, even mid-path.
+    Tuning.property("Paths/TranslationP", translation::getP, translation::setP);
+    Tuning.property("Paths/RotationP", rotation::getP, rotation::setP);
+    Tuning.property("Paths/CrossTrackP", crossTrack::getP, crossTrack::setP);
+
     return new FollowPath.Builder(
         DriveType.SWERVE,                  // what kind of drivetrain this is
         drivetrain,                        // the mechanism the command will require
@@ -488,9 +497,9 @@ because it's all about autonomous — so that's where the builder gets made.
         localizer::resetPose,              // how to tell the estimate where we are
         drivetrain::getChassisVelocities,  // how fast we're going, robot-relative
         drivetrain::driveRobotRelative,    // how to make the robot move
-        new PIDController(PathConstants.kTranslationP, 0, 0),
-        new PIDController(PathConstants.kRotationP, 0, 0),
-        new PIDController(PathConstants.kCrossTrackP, 0, 0))
+        translation,
+        rotation,
+        crossTrack)
         .withDefaultShouldFlip()           // mirror the path for the red alliance
         .withTelemetry(Telemetry.getTable()); // log what the follower is doing
   }
@@ -503,6 +512,7 @@ import org.wpilib.math.controller.PIDController;
 import org.wpilib.telemetry.Telemetry;
 
 import first.robot.Constants.PathConstants;
+import first.robot.Tuning;
 import first.robot.subsystems.Localizer;
 import frc.robot.lib.BLine.commands.FollowPath;
 import frc.robot.lib.BLine.following.DriveType;
@@ -529,6 +539,39 @@ Then the three `PIDController`s from section 4, in the order the builder expects
 them: translation, rotation, cross-track. They have to be three separate
 objects — hand the builder the same controller twice and it throws an error
 the moment it's made. <!-- claim: bline.builder-distinct-pids -->
+
+Their gains are tunable from the start. A `PIDController` already holds its
+own `P`, with `getP()` to read it and `setP(...)` to change it, so the tunable
+doesn't need a number of its own: it can read and write the controller's.
+WPILib has exactly that kind of tunable. It publishes whatever the getter
+returns, and hands a dashboard's new value to the setter, so a change lands in
+the controller on the next tick, even halfway along a path. <!-- claim: wpilib.tunables-getter-setter -->
+They show up in SimGUI as **Tunables → Paths**.
+
+**Add to `Tuning.java`'s imports:**
+
+```java
+import java.util.function.DoubleConsumer;
+import java.util.function.DoubleSupplier;
+```
+
+**Add to `Tuning`, below the two `number` methods:**
+
+```java
+  /**
+   * A tunable for a number something else already holds: it publishes what 'getter'
+   * returns, and hands a dashboard's new value to 'setter'.
+   */
+  public static TunableDouble property(String name, DoubleSupplier getter, DoubleConsumer setter) {
+    return Tunables.publishDouble(name, getter, setter, new TunableConfig());
+  }
+```
+
+`translation::getP` is a `DoubleSupplier` (it hands back a number) and
+`translation::setP` a `DoubleConsumer` (it takes one): the same two shapes as
+`localizer::getPose` and `localizer::resetPose` above, for a number instead of a
+pose. `makePathBuilder` runs once, when `Robot` builds
+`pathBuilder`, so each tunable is made once.
 
 Two more settings are chained onto the end. `withDefaultShouldFlip()` mirrors the
 whole path to the far side of the field when the Driver Station reports you're on
@@ -907,6 +950,15 @@ public final class Autos {
 
   /** Everything about following a path that doesn't depend on which path it is. */
   public static FollowPath.Builder makePathBuilder(Drivetrain drivetrain, Localizer localizer) {
+    PIDController translation = new PIDController(PathConstants.kTranslationP, 0, 0);
+    PIDController rotation = new PIDController(PathConstants.kRotationP, 0, 0);
+    PIDController crossTrack = new PIDController(PathConstants.kCrossTrackP, 0, 0);
+    // Each controller's P, tunable: SimGUI reads it with getP and changes it with setP,
+    // so a new value is in the controller on the next tick, even mid-path.
+    Tuning.property("Paths/TranslationP", translation::getP, translation::setP);
+    Tuning.property("Paths/RotationP", rotation::getP, rotation::setP);
+    Tuning.property("Paths/CrossTrackP", crossTrack::getP, crossTrack::setP);
+
     return new FollowPath.Builder(
         DriveType.SWERVE,                  // what kind of drivetrain this is
         drivetrain,                        // the mechanism the command will require
@@ -914,9 +966,9 @@ public final class Autos {
         localizer::resetPose,              // how to tell the estimate where we are
         drivetrain::getChassisVelocities,  // how fast we're going, robot-relative
         drivetrain::driveRobotRelative,    // how to make the robot move
-        new PIDController(PathConstants.kTranslationP, 0, 0),
-        new PIDController(PathConstants.kRotationP, 0, 0),
-        new PIDController(PathConstants.kCrossTrackP, 0, 0))
+        translation,
+        rotation,
+        crossTrack)
         .withDefaultShouldFlip()           // mirror the path for the red alliance
         .withTelemetry(Telemetry.getTable()); // log what the follower is doing
   }
@@ -1214,13 +1266,13 @@ Blue 1 the same push drives 1.87 m toward +X. <!-- claim: l17.red-teleop-forward
    the robot can't stop in time from 3 m/s ([Figure 17.2](#figure-17-2) draws it); watch it sail roughly 35 cm past the
    end and come back, and about 70 cm past the first corner. <!-- claim: l17.stop-3mps-past-end, l17.stop-3mps-past-corner, bline.no-lookahead-planning --> Then change the
    acceleration so the arithmetic works again, and check that it does.
-3. **Code — mistune the cross-track gain.** Set `kCrossTrackP` to `30.0` and run the
-   path, with `FollowPath/crossTrackError` plotted. The first leg and the corner look
+3. **Mistune the cross-track gain.** Set **Tunables → Paths → CrossTrackP** to `30`
+   in SimGUI and run the path, with `FollowPath/crossTrackError` plotted. The first leg and the corner look
    much like before. Then the robot starts swinging back and forth across the
    second leg, about 40 cm each way, a full swing a little under every two
    seconds, and it never finishes: it's still swinging 40 seconds later. <!-- claim: l17.kp30-swing, l17.kp30-period, l17.kp30-never-finishes -->
    Translation and rotation are fine the whole time; one loop with too much gain
-   keeps the whole path from ending. Put it back to `2.0` when you're done.
+   keeps the whole path from ending. Set it back to `2` when you're done.
 4. **Code — compose a path with a script.** Make an auto that follows `TwoCorners` and
    *then* runs Lesson 8's `turnToHeading(0)`. A library-built command and one
    you wrote are both just `Command`s, so Lesson 9's

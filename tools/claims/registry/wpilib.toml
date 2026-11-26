@@ -753,3 +753,14 @@ evidence = "tools/claims/java/claims/TunablesApiTest.java (2026-11-26); the earl
 measured_on = "alpha-8"
 method = "TEST"
 test = "tools/claims/java/claims/TunablesApiTest.java"
+
+[[claim]]
+id = "wpilib.tunables-getter-setter"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "Tunables.publishDouble(name, getter, setter) makes a tunable backed by something else's value: it publishes what the getter returns, hands a dashboard write to the setter (so PIDController's getP/setP make its P tunable), and publishes a change made through the object itself on the next update."
+evidence = "tools/claims/java/claims/TunablesApiTest.java (2026-11-26): a PIDController's P published as 5.0, a dashboard write of 2.0 reached setP, and a setP(9.0) in code was published as 9.0 after the next update. TunableDouble.createConfig(getter, setter, config) polls the getter every loop (Polling.ALWAYS_GET), read in its source."
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/TunablesApiTest.java"

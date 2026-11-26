@@ -18,6 +18,7 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import org.wpilib.hardware.bus.CANPort;
+import org.wpilib.math.controller.PIDController;
 import org.wpilib.tunable.TunableConfig;
 import org.wpilib.tunable.TunableDouble;
 import org.wpilib.tunable.TunableRegistry;
@@ -149,5 +150,24 @@ class TunablesApiTest {
           "applying Slot0Configs turned the supply limit off");
       assertEquals(33.0, after.CurrentLimits.SupplyCurrentLimit, 1e-9);
     }
+  }
+
+  @Test
+  @DisplayName("wpilib.tunables-getter-setter")
+  void getterSetter() throws Exception {
+    PIDController controller = new PIDController(5.0, 0, 0);
+    Tunables.publishDouble("ClaimTest/ControllerP", controller::getP, controller::setP);
+    TunableRegistry.update();
+    assertEquals(5.0, s_nt.getEntry("/Tunables/ClaimTest/ControllerP").getDouble(-1), 0.0,
+        "the getter's value wasn't published");
+    try (DoublePublisher pub = dashboardWrite("/Tunables/ClaimTest/ControllerP", 2.0)) {
+      TunableRegistry.update();
+      assertEquals(2.0, controller.getP(), 0.0, "the setter didn't receive the write");
+    }
+    controller.setP(9.0); // the code changes it directly
+    TunableRegistry.update();
+    Thread.sleep(100);
+    assertEquals(9.0, s_nt.getEntry("/Tunables/ClaimTest/ControllerP").getDouble(-1), 0.0,
+        "a change made through the object wasn't published");
   }
 }

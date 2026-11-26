@@ -282,12 +282,14 @@ The path follower takes three of them, one for each job, and adds up what they a
 <!-- source: lesson-33 commands/Autos.java -->
 *Example, from `Autos.java`'s `makePathBuilder` ([Lesson 17, section 6](../../lessons/v3/17-bline-autos.md#6-meet-followpathbuilder)):*
 ```java
-new PIDController(PathConstants.kTranslationP, 0, 0),
-new PIDController(PathConstants.kRotationP, 0, 0),
-new PIDController(PathConstants.kCrossTrackP, 0, 0))
+PIDController translation = new PIDController(PathConstants.kTranslationP, 0, 0);
+PIDController rotation = new PIDController(PathConstants.kRotationP, 0, 0);
+PIDController crossTrack = new PIDController(PathConstants.kCrossTrackP, 0, 0);
 ```
 
 They have to be three separate objects: passing the same one twice throws. <!-- claim: bline.builder-distinct-pids -->
+Each one's P is also a tunable, read and set through `getP` and `setP`, so it can be tuned while a
+path runs. <!-- claim: wpilib.tunables-getter-setter -->
 Figure 17.1 draws the three loops on one tick.
 
 ![Top-down view of a robot above a dashed path that ends at a dot. A blue arrow points along the path (translation), an orange arrow points straight down onto the path (cross-track), and a green curved arrow turns the robot's nose toward the path's heading (rotation). A dashed black arrow, the sum, points down and along the path. Three boxes below give each loop's error, output and gain: kTranslationP 5.0, kRotationP 3.0, kCrossTrackP 2.0.](../../lessons/v3/images/17-three-loops.svg)
