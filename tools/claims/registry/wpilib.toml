@@ -698,3 +698,101 @@ evidence = "javap -c -p of org.wpilib.framework.OpModeRobot in wpilibj-java-2027
 measured_on = "alpha-8"
 method = "BYTECODE"
 
+
+[[claim]]
+id = "wpilib.tunables-publish-under-tunables"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "Tunables.addDouble(name, initial) (org.wpilib.tunable) makes a TunableDouble and publishes it to NetworkTables at /Tunables/<name> as a double, through the backend every RobotBase registers in its constructor; a slash in the name makes a folder."
+evidence = "Read in wpilibj's RobotBase.java at 2027.0.0-alpha-8 (registerBackend(\"\", new NetworkTablesTunableBackend(inst, \"/Tunables\"))); measured with tools/claims/java/claims/TunablesApiTest.java (2026-11-25)"
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/TunablesApiTest.java"
+
+[[claim]]
+id = "wpilib.tunables-applied-on-update"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "A dashboard's write to a tunable's topic doesn't change get() until TunableRegistry.update() runs; then get() returns the written value."
+evidence = "tools/claims/java/claims/TunablesApiTest.java (2026-11-25): a second publisher on the same NetworkTables instance wrote 25.0 over 20.0; get() read 20.0 before update() and 25.0 after"
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/TunablesApiTest.java"
+
+[[claim]]
+id = "wpilib.tunables-update-after-robot-periodic"
+kind = "behaviour"
+library = ["wpilib", "advantagekit"]
+criticality = "C2"
+statement = "The robot loop calls TunableRegistry.update() once a tick, right after robotPeriodic() and before simulationPeriodic(), in both OpModeRobot and AdvantageKit's LoggedOpModeRobot, so a dashboard change is applied at the end of one tick and the code sees it on the next."
+evidence = "javap -c of org.wpilib.framework.OpModeRobot.loopFunc (wpilibj-java-2027.0.0-alpha-8.jar) and org.littletonrobotics.junction.LoggedOpModeRobot.loopFunc (akit-java-27.0.0-alpha-7.jar), 2026-11-25: robotPeriodic(), then TunableRegistry.update(), then simulationPeriodic() when simulating"
+measured_on = "alpha-8"
+method = "BYTECODE"
+
+[[claim]]
+id = "wpilib.tunables-duplicate-name-alert"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "Making a second tunable with a name already in use doesn't throw: an alert in the Tunables group says the tunable already exists, dashboard writes keep going to the first one, and the second never hears one."
+evidence = "tools/claims/java/claims/TunablesApiTest.java (2026-11-25), and the probe that preceded it: alert text 'Tunable warning: NetworkTables tunable '/Tunables/Probe/kP' already exists'"
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/TunablesApiTest.java"
+note = "Matters because an opmode is rebuilt on every Disable: a tunable made in an opmode's constructor would be refused the second time."
+
+[[claim]]
+id = "wpilib.tunables-ontune-once-per-change"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "A tunable made with TunableConfig().withOnTune(callback) runs the callback once each time a dashboard write is applied (inside TunableRegistry.update()), not when it's published and not on a tick with no write; Tunables.addDouble takes no config, so a tunable with onTune is made with TunableDouble.createConfig and published with Tunables.publish."
+evidence = "tools/claims/java/claims/TunablesApiTest.java (2026-11-26); the earlier probe also saw no call for a write of the same value. The API shape read from tunables-java-2027.0.0-alpha-8-sources.jar (Tunables has no addDouble overload with a config)."
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/TunablesApiTest.java"
+
+[[claim]]
+id = "wpilib.tunables-getter-setter"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "Tunables.publishDouble(name, getter, setter) makes a tunable backed by something else's value: it publishes what the getter returns, hands a dashboard write to the setter (so PIDController's getP/setP make its P tunable), and publishes a change made through the object itself on the next update."
+evidence = "tools/claims/java/claims/TunablesApiTest.java (2026-11-26): a PIDController's P published as 5.0, a dashboard write of 2.0 reached setP, and a setP(9.0) in code was published as 9.0 after the next update. TunableDouble.createConfig(getter, setter, config) polls the getter every loop (Polling.ALWAYS_GET), read in its source."
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/TunablesApiTest.java"
+
+[[claim]]
+id = "wpilib.tunables-immutable"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "A tunable made with TunableConfig().withMutable(false) is still published, but a dashboard write changes nothing: get() keeps its value, its onTune doesn't run, and a getter/setter tunable's setter isn't called. So one flag (the course's Constants.kTuningMode, passed through Tuning) locks every tunable before an event."
+evidence = "tools/claims/java/claims/TunablesApiTest.java (2026-11-26): a locked TunableDouble at 0.17 was published, kept 0.17 after a write of 0.5 and an update, and its onTune count stayed 0; a locked publishDouble on a PIDController kept P at 5.0 after a write of 2.0. TunableConfig.withMutable's javadoc: 'the Tunable's set() function will not be called'."
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/TunablesApiTest.java"
+
+[[claim]]
+id = "wpilib.tunables-measure-base-units"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C1"
+statement = "Tunable.createConfig(measure, config) makes a tunable measure, published as a plain double in the measure's base unit (a Distance in meters), and a dashboard's number is read back in that base unit."
+evidence = "tools/claims/java/claims/TunablesApiTest.java (2026-11-26): Centimeters.of(2) published as the double 0.02, and a write of 0.001 read back as 0.001 m. createConfig hands a measure to the type handler RobotBase registers (read in Tunable.java's source)."
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/TunablesApiTest.java"
+
+[[claim]]
+id = "wpilib.tunables-no-backend-in-tests"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C3"
+statement = "In a JUnit test that never builds a RobotBase, nothing has registered the /Tunables backend, so publishing a tunable prints 'Tunable warning: no backend for path ...' with a stack trace to standard error. The tunable still works in the test, holding its starting value."
+evidence = "verify-lessons-v3.sh 33 test (2026-11-26): Lesson 31's ElevatorHomingTest printed the warning for each of Elevator's seven tunables and passed (2026-11-26, re-run after Tuning.value began publishing measures as plain numbers: no 'Unsupported tunable type' lines any more), its atGoal() reading the tolerance tunable's starting value. TunableRegistry.defaultReportWarning prints the message and a stack trace with System.err (read in its source); RobotBase's constructor registers the NetworkTables backend and the measure type handler."
+measured_on = "alpha-8"
+method = "TEST"

@@ -17,6 +17,11 @@ block = "new TalonFX(1, new CANBus(CANPort.CAN_S0));"
 reason = "staged: section 9 moves the CAN ID into DriveConstants.kDriveMotorPort"
 
 [[exception]]
+lesson = 5
+block = "double output = SteerConstants.kP * error;"
+reason = "staged: 'Tune it while it runs' in section 5 replaces this line with m_steerKP.get() * error"
+
+[[exception]]
 lesson = 7
 block = "public class SwerveModule {"
 reason = "staged: 'Pay off Lesson 5's IOU' then multiplies the priming position by kSteerGearRatio"
@@ -30,6 +35,11 @@ reason = "staged: the checklist later moves each module's CAN IDs into per-corne
 lesson = 7
 block = "InvertedValue.Clockwise_Positive"
 reason = "conditional: only if step 5 read -90 degrees; the reference keeps the default"
+
+[[exception]]
+lesson = 8
+block = "public Command turnToHeading(double targetDegrees) {"
+reason = "staged: right after HeadingConstants, the lesson replaces HeadingConstants.kP with the m_headingKP tunable"
 
 [[exception]]
 lesson = 8
@@ -57,6 +67,11 @@ block = "m_inputs.drivePositionMeters * 1.1"
 reason = "temporary: 'for this experiment only', a bug planted to replay"
 
 [[exception]]
+lesson = 18
+block = "< ElevatorConstants.kTolerance.in(Meters);"
+reason = "staged: section 10 makes the tolerance a tunable, and atGoal() reads m_tolerance.get() instead"
+
+[[exception]]
 lesson = 25
 block = "package first.robot.opmode;"
 reason = "staged: the lesson then wraps the recipe in Autos.getReadyThen"
@@ -75,6 +90,11 @@ reason = "staged: the aiming section then wraps it in handingRotationBack"
 lesson = 29
 block = "calculateLoadedBatteryVoltage(11.0, 0.04"
 reason = "temporary: the tired battery, 'put it back after'"
+
+[[exception]]
+lesson = 29
+block = "\"Power/BrownedOut\", power.batteryVolts < PowerConstants.kBrownoutVoltage.in(Volts));"
+reason = "staged: section 8 makes the brownout line a tunable, and robotPeriodic() compares against m_brownoutVoltage.get()"
 
 [[exception]]
 lesson = 32

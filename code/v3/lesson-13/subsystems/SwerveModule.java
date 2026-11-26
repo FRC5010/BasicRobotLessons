@@ -52,6 +52,16 @@ public class SwerveModule {
         m_inputs.drivePositionMeters, Rotation2d.fromDegrees(m_inputs.steerAngleDegrees));
   }
 
+  /** Sends a new steering gain to the steering motor's own loop. */
+  public void setSteerGains(double kP) {
+    m_io.setSteerGains(kP);
+  }
+
+  /** Sends new drive gains to the drive motor's own loop. */
+  public void setDriveGains(double kV, double kP) {
+    m_io.setDriveGains(kV, kP);
+  }
+
   public void resetDrivePosition() {
     m_io.resetDrivePosition();
   }

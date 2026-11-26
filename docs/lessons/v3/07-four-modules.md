@@ -126,6 +126,30 @@ Hardware like `m_driveMotor` stays `private`, same as always.
 import org.wpilib.math.geometry.Translation2d;
 ```
 
+One field has to change in the other direction. Four `SwerveModule`s means four
+copies of every field, which is exactly right for motors and wrong for the
+steering gain. Each module would try to publish its own `DriveModule/SteerKP`.
+Only the first would get the name, the other three would never hear a change
+from SimGUI, and an alert would say the name was taken. <!-- claim: wpilib.tunables-duplicate-name-alert -->
+One knob should steer all four wheels.
+
+**Replace the `m_steerKP` field with:**
+
+```java
+  // One steering gain for all four modules. static: it belongs to the class, so it's
+  // made once, the first time the class is used, and the four modules share it.
+  private static final TunableDouble s_steerKP =
+      Tunables.addDouble("SwerveModule/SteerKP", SteerConstants.kP);
+```
+
+You've met **`static`** before, in `Constants.java`: `SteerConstants.kP` is
+`static`, so there's exactly one of it, whatever objects exist. A `static`
+field in `SwerveModule` works the same way: it belongs to the class, not to
+any one module, so all four read the same tunable. The `s_` at the front is
+the naming habit for a static field, the way `m_` marks a field each object
+has its own copy of. The name changes to `SwerveModule/SteerKP` to match the
+class.
+
 Now the methods. Because the module no longer implements `Mechanism`, the
 command factories are literally gone — `run`, `runRepeatedly`, and friends were
 *inherited* from `Mechanism`, so `driveAtSpeed`, `driveWithJoystick`,
@@ -147,7 +171,7 @@ public void setDesiredState(double angleDegrees, double speedFraction) {
   double error = angleDegrees - getSteerAngleDegrees();
   while (error > 180)  { error -= 360; }
   while (error < -180) { error += 360; }
-  double steerOutput = clamp(SteerConstants.kP * error, -1.0, 1.0);
+  double steerOutput = clamp(s_steerKP.get() * error, -1.0, 1.0);
   m_steerMotor.setThrottle(steerOutput);
 
   // Drive: pass the commanded speed straight through.
@@ -692,12 +716,16 @@ steering carries a real `25 : 1` reduction, so it turns at a believable speed
 instead of a bare rotor's instant snap. Watch a wheel chase its target on the
 Swerve tab — with `kP` still at Lesson 5's `0.0005`, expect a slow, smooth
 crawl into position, no overshoot, just patient. **Retune it the Lesson 5
-way** now that you can see it move: nudge `kP` up and watch the arrow snap
-into place faster. Verified against this model, `kP = 0.005` — ten times
+way** now that you can see it move: in SimGUI's NetworkTables window, open
+**Tunables → SwerveModule → SteerKP**, raise it, and watch the arrows snap
+into place faster. All four wheels change at once, because they share the one
+tunable. <!-- claim: wpilib-tools.simgui-edits-tunables --> Verified against this model, `kP = 0.005` — ten times
 Lesson 5's value — gets within a degree in half a second and never overshoots
 (Figure 7.3 plots both gains). <!-- claim: l07.kp-005-within-1deg --> The gearbox adds real damping, so a bigger gain is both safe and needed here,
 the opposite of Lesson 5's ungeared case. This is the first moment you could
-actually see it and tune it.
+actually see it and tune it. There's nothing to copy back into
+`Constants.java` this time: Lesson 12 moves steering into the motor itself,
+with a gain of its own.
 
 <a id="figure-7-3"></a>
 ![Two graphs of one steering module turning from 0 to 90 degrees through the 25 to 1 gearbox. Top, ten seconds: with kP 0.0005 the angle creeps up and is within one degree of 90 at 6.3 seconds and within 0.3 degrees at 9.0 seconds; with kP 0.005 it is there in half a second. Bottom, the first 1.5 seconds enlarged: the 0.005 curve climbs steeply and levels off at 90 with no overshoot, while 0.0005 is still at 60 degrees](images/07-steering-geared-two-gains.png)

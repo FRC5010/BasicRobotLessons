@@ -130,7 +130,7 @@ whatever it was sitting at (probably `kStowed`, 0.02 m) to `0.75`
 explain happened after it, and nothing before it matters.
 
 This is the field-log version of a skill you already have from Lesson 18
-§10 — finding the tick where a goal changed so you're reading the
+§11 — finding the tick where a goal changed so you're reading the
 *response* to it, not just wandering the timeline hoping to notice
 something. A 150-second match has a lot of timeline and very little of
 it is interesting. Finding the moment first is what makes the rest of
@@ -199,9 +199,12 @@ together, tell you which layer it happened in.
 
 ```java
 public boolean atGoal() {
-  return Math.abs(m_inputs.heightMeters - m_goal.in(Meters)) < ElevatorConstants.kTolerance.in(Meters);
+  return Math.abs(m_inputs.heightMeters - m_goal.in(Meters)) < m_tolerance.get().in(Meters);
 }
 ```
+
+`m_tolerance` is the tunable Lesson 18 made from `kTolerance`, so it starts at
+whatever the constant says, typo included.
 
 You don't need to open the source to get most of the way there, either
 — you can do the arithmetic straight off the graph. Hover the plateaued

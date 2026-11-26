@@ -10,6 +10,7 @@ import org.wpilib.telemetry.Telemetry;
 import first.robot.Constants.PathConstants;
 import first.robot.subsystems.Drivetrain;
 import first.robot.subsystems.Localizer;
+import first.robot.Tuning;
 import frc.robot.lib.BLine.commands.FollowPath;
 import frc.robot.lib.BLine.field.FlippingUtil;
 import frc.robot.lib.BLine.following.DriveType;
@@ -30,6 +31,15 @@ public final class Autos {
 
   /** Everything about following a path that doesn't depend on which path it is. */
   public static FollowPath.Builder makePathBuilder(Drivetrain drivetrain, Localizer localizer) {
+    PIDController translation = new PIDController(PathConstants.kTranslationP, 0, 0);
+    PIDController rotation = new PIDController(PathConstants.kRotationP, 0, 0);
+    PIDController crossTrack = new PIDController(PathConstants.kCrossTrackP, 0, 0);
+    // Each controller's P, tunable: SimGUI reads it with getP and changes it with setP,
+    // so a new value is in the controller on the next tick, even mid-path.
+    Tuning.property("Paths/TranslationP", translation::getP, translation::setP);
+    Tuning.property("Paths/RotationP", rotation::getP, rotation::setP);
+    Tuning.property("Paths/CrossTrackP", crossTrack::getP, crossTrack::setP);
+
     return new FollowPath.Builder(
         DriveType.SWERVE,                  // what kind of drivetrain this is
         drivetrain,                        // the mechanism the command will require
@@ -37,9 +47,9 @@ public final class Autos {
         localizer::resetPose,              // how to tell the estimate where we are
         drivetrain::getChassisVelocities,  // how fast we're going, robot-relative
         drivetrain::driveRobotRelative,    // how to make the robot move
-        new PIDController(PathConstants.kTranslationP, 0, 0),
-        new PIDController(PathConstants.kRotationP, 0, 0),
-        new PIDController(PathConstants.kCrossTrackP, 0, 0))
+        translation,
+        rotation,
+        crossTrack)
         .withDefaultShouldFlip()           // mirror the path for the red alliance
         .withTelemetry(Telemetry.getTable()); // log what the follower is doing
   }

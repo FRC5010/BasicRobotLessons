@@ -236,11 +236,11 @@ while the robot is disabled, when the voltage at rest is what it says:
 *Example, from `Robot.java`'s `robotPeriodic()` ([Lesson 30, section 10](../../lessons/v3/30-alerts.md#10-the-alert-nothing-owns)):*
 ```java
 m_lowBattery.set(
-    RobotState.isDisabled() && power.batteryVolts < PowerConstants.kLowBatteryVoltage.in(Volts));
+    RobotState.isDisabled() && power.batteryVolts < m_lowBatteryVoltage.get().in(Volts));
 ```
 
 Without the `isDisabled()` gate, enabling the robot on a fresh simulated battery sags the rail
-below the alert's 11.5 V line for about 0.7 s while the flywheel spins up, a false alarm. <!-- claim: l30.enable-dip-time -->
+below the alert's 11.5 V line for about 0.7 s while the flywheel spins up, a false alarm. <!-- claim: l30.enable-dip-time --> (`m_lowBatteryVoltage` is a tunable that starts at `kLowBatteryVoltage`, 11.5 V.)
 
 And sometimes you *want* an alert to stay up: "this robot browned out at some point since it was
 switched on" is worth knowing after the voltage has recovered. That's a **sticky** alert, set

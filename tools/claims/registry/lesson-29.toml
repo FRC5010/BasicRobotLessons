@@ -850,3 +850,13 @@ range = [450.0, 550.0]
 measured = "peak 537 A in the 6-9 s window"
 figure = "29-tired-battery-brownout.png"
 note = "Range is for the 500 A top of the swing."
+
+[[claim]]
+id = "l29.budget-tunables-reach-motors"
+kind = "behaviour"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "The Power/ budget tunables reach the motors: a CurrentLimitsConfigs carries a motor's stator and supply limits together and applying it changes only that group, so a StatorLimit write gives every mechanism motor the new cap while each keeps its own supply limit, gains and gear ratio."
+evidence = "Probe PowerTuneProbe (2026-11-26, Lesson 29 state, not kept): new Robot(), then NetworkTables writes of 60 to Power/StatorLimit and 25 to Power/ElevatorSupplyLimit and one TunableRegistry.update(). A second TalonFX handle per CAN ID read: before, all four motors stator 80 A, supplies 40/30/20/40 A; after, stator 60 A on IDs 20-23, supplies 25/30/20/40 A, SupplyCurrentLowerLimit 40 A / 1.0 s unchanged, Slot0 kV and SensorToMechanismRatio unchanged. Published units: A and V."
+measured_on = "alpha-8"
+method = "TEST"

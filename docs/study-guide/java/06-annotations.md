@@ -20,7 +20,7 @@ replace, the build fails, instead of quietly adding a method nothing calls.
 ```java
 @Override
 public Command idle() {
-  return spinUp(FlywheelConstants.kIdleSpeed);
+  return spinUp(m_idleSpeed); // the idle speed's tunable
 }
 ```
 

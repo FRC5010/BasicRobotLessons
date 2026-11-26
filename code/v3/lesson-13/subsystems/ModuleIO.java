@@ -19,6 +19,12 @@ public interface ModuleIO {
   /** Firmware velocity control for drive (wheel meters per second). */
   public default void setDriveVelocityMetersPerSec(double mps) {}
 
+  /** Send a new steering gain to the steering motor's own loop. */
+  public default void setSteerGains(double kP) {}
+
+  /** Send new drive gains to the drive motor's own loop. */
+  public default void setDriveGains(double kV, double kP) {}
+
   /** Zero the drive encoder. */
   public default void resetDrivePosition() {}
 }

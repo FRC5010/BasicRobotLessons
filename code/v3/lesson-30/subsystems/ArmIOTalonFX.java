@@ -9,6 +9,9 @@ import static org.wpilib.units.Units.RotationsPerSecondPerSecond;
 import static org.wpilib.units.Units.Volts;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -72,6 +75,42 @@ public class ArmIOTalonFX implements ArmIO {
     rollerConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
     rollerConfig.CurrentLimits.SupplyCurrentLimit = PowerConstants.kArmRollerSupplyLimit.in(Amps);
     m_roller.getConfigurator().apply(rollerConfig);
+  }
+
+  @Override
+  public void setGains(double kG, double kV, double kA, double kP) {
+    // Slot0 only: the soft limits and everything else the constructor set stay as they are.
+    Slot0Configs slot0 = new Slot0Configs();
+    slot0.kG = kG;
+    slot0.GravityType = GravityTypeValue.Arm_Cosine; // part of Slot0, so it's sent too
+    slot0.kV = kV;
+    slot0.kA = kA;
+    slot0.kP = kP;
+    m_pivot.getConfigurator().apply(slot0);
+  }
+
+  @Override
+  public void setMotionLimits(double cruiseRotPerSec, double accelRotPerSecSq) {
+    MotionMagicConfigs motionMagic = new MotionMagicConfigs();
+    motionMagic.MotionMagicCruiseVelocity = cruiseRotPerSec;
+    motionMagic.MotionMagicAcceleration = accelRotPerSecSq;
+    m_pivot.getConfigurator().apply(motionMagic);
+  }
+
+  @Override
+  public void setCurrentLimits(double statorAmps, double pivotSupplyAmps, double rollerSupplyAmps) {
+    m_pivot.getConfigurator().apply(currentLimits(statorAmps, pivotSupplyAmps));
+    m_roller.getConfigurator().apply(currentLimits(statorAmps, rollerSupplyAmps));
+  }
+
+  /** One motor's budget as a config group: both limits on, at these numbers. */
+  private static CurrentLimitsConfigs currentLimits(double statorAmps, double supplyAmps) {
+    CurrentLimitsConfigs limits = new CurrentLimitsConfigs();
+    limits.StatorCurrentLimitEnable = true;
+    limits.StatorCurrentLimit = statorAmps;
+    limits.SupplyCurrentLimitEnable = true;
+    limits.SupplyCurrentLimit = supplyAmps;
+    return limits;
   }
 
   @Override

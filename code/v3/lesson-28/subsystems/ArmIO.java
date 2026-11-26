@@ -23,6 +23,18 @@ public interface ArmIO {
   /** Hand the firmware an angle to profile toward and then hold. */
   public default void setGoalAngleDegrees(double angleDegrees) {}
 
+  /** Send new feedforward and trim gains to the pivot motor's Slot0. */
+  public default void setGains(double kG, double kV, double kA, double kP) {}
+
+  /** Send new Motion Magic limits for the pivot, in arm rotations per second (and per second squared). */
+  public default void setMotionLimits(double cruiseRotPerSec, double accelRotPerSecSq) {}
+
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * One more command for the motor: new current limits, the winding cap and
+   * the battery share, in amps.
+   */
+
   /** Spin the roller at a fraction of full output. No goal, no profile. */
   public default void setRollerOutput(double output) {}
 }

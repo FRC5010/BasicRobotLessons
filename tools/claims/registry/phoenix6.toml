@@ -380,3 +380,15 @@ statement = "A reverse soft limit at kMinHeight (0) is measured from the relativ
 evidence = "CLAUDE.md, 'v3 Lesson 33 rebuilt on WPILib's SysIdRoutine and re-measured on alpha-8': 3.52 s at 9.72 cm/s without a reverse soft limit, 17.32 s at 1.96 cm/s with one (alpha-7 3.54 s; the old 3.68 s did not reproduce)"
 measured_on = "alpha-8"
 method = "RIG"
+
+[[claim]]
+id = "phoenix6.slot0-apply-keeps-other-config"
+kind = "behaviour"
+library = ["phoenix6"]
+criticality = "C1"
+statement = "Applying just a Slot0Configs to a TalonFX sets every gain in the slot, so a gain it leaves out goes to 0, and leaves every other setting alone: MotorOutput.Inverted, the soft limits and the current limits read back unchanged."
+evidence = "tools/claims/java/claims/TunablesApiTest.java (2026-11-26): a simulated TalonFX configured with Inverted Clockwise_Positive, a forward soft limit at 3 and a 33 A supply limit, with kS 0.3, then given a Slot0Configs with kP 7 and kV 0.5; refresh() read kP 7, kV 0.5, kS 0, and the rest unchanged"
+measured_on = "alpha-8"
+method = "TEST"
+test = "tools/claims/java/claims/TunablesApiTest.java"
+note = "Measured on Phoenix's simulated TalonFX; a real one wasn't checked. A full TalonFXConfiguration applied later does reset everything (phoenix6.steer-inverted-default)."

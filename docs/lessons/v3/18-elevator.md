@@ -9,6 +9,8 @@ D-pad.
 **New Java concepts**
 - **Comparing measures directly** — `Distance.gt(...)` / `.lt(...)`, used to
   hand-roll a clamp now that there's no `MathUtil.clamp` to reach for
+- **A generic method** — `Tuning.value(name, initial, unit)`, one method that
+  works for a `Distance`, a speed, or any other measure, and a **cast**
 
 **New robot concepts**
 - **Motion Magic** — firmware-generated trapezoidal motion profiles (a
@@ -20,6 +22,8 @@ D-pad.
 - Gains **computed from the motor's published numbers**, not guessed
 - Three numbers worth telling apart on any profiled mechanism: **goal**,
   **setpoint**, and **position**
+- **A tuning-mode switch**, `kTuningMode`, that locks every tunable before an
+  event, and tunable **measures**, shown in the unit you choose
 
 ---
 
@@ -80,7 +84,7 @@ request stands. <!-- claim: l18.kp-alone-hold --> It isn't drifting, and it isn'
 just enough for `kP` to make the voltage that holds the carriage up,
 so the controller has nothing left to correct. A small number, but it's
 `kG`'s whole job, missing. (The model's orange line sits a fifth of a
-millimeter low; §10 comes back to it.) <!-- claim: l18.model-hold-gap -->
+millimeter low; §11 comes back to it.) <!-- claim: l18.model-hold-gap -->
 
 Deliberate, not accidental voltage is the fix: instead of asking `kP` to
 back into the right voltage through tolerated error, you compute the
@@ -142,7 +146,7 @@ rotation/sec every second speeds the carriage up by 0.160 m/s². Pushing
 of the three by far, because it only pays for how sharply the profile
 speeds up and slows down — not for holding still or for cruising. It
 counts only the carriage's mass. On a real elevator the motor's and the
-drum's own spinning parts add a little more, which is one reason §10
+drum's own spinning parts add a little more, which is one reason §11
 still shows you how to check it against a graph.
 
 **Add to `Constants.java`:**
@@ -250,7 +254,7 @@ where you asked it to go, and where it actually is. There's a third:
 where the *profile* currently says it should be, mid-ramp. Without it,
 plotting position against the goal shows a step function next to a smooth
 curve, and you can't tell whether a gap is the profile still ramping up
-or the motor failing to keep up with a profile that's already there. §10
+or the motor failing to keep up with a profile that's already there. §11
 puts that number to work.
 
 It's an input, too, even though it sounds like something your code worked
@@ -570,7 +574,307 @@ Run the robot in simulation, open AdvantageScope (Lesson 3), expand
 
 ---
 
-## 10. Reading the gains off a graph
+## 10. Tune it while it runs
+
+The next section checks the four gains against a graph, one at a time, and
+that's a lot of small changes. Restarting the simulator for each one gets old
+fast. Lesson 12 already solved this for the drive motors: a tunable for each
+gain, and an `onTune` that sends a new value to the motor the moment SimGUI
+changes it. The elevator gets the same treatment, for its gains and for the
+profile's two limits, and its tolerance too. Two things are new: some of these
+values are measures, not plain numbers, and a robot at an event shouldn't be
+tunable at all.
+
+Start with the second one. A tunable is a number anyone with a dashboard can
+change while the robot runs. That's exactly what you want on the practice
+field, and exactly what you don't want during a match, where a stray click
+could change the elevator's gains between two shots. So the robot gets one
+switch, and `Tuning` checks it for every tunable it makes.
+
+**Add to `Constants.java`, below `kCurrentMode`:**
+
+```java
+  public static final Mode kCurrentMode = RobotBase.isReal() ? Mode.REAL : kSimMode;
+
+  /**
+   * While true, SimGUI (or any dashboard) can change the robot's tunables. Set it false
+   * before an event: the values still show, but nothing can change them mid-match.
+   */
+  public static final boolean kTuningMode = true;
+```
+
+A tunable made with **`withMutable(false)`** in its configuration is still
+published, so you can still read every value, but a dashboard's new number is
+ignored: the value doesn't change, and its `onTune` doesn't run. <!-- claim: wpilib.tunables-immutable -->
+`Tuning` already makes every tunable in the robot, so this is one change in one
+place. While you're in there, it gets two more makers, for measures.
+
+**Replace `Tuning.java` with:**
+
+```java
+package first.robot;
+
+import java.util.function.DoubleConsumer;
+import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
+
+import org.wpilib.tunable.TunableConfig;
+import org.wpilib.tunable.TunableDouble;
+import org.wpilib.tunable.Tunables;
+import org.wpilib.units.Measure;
+import org.wpilib.units.Unit;
+
+/**
+ * Makes tunables: numbers SimGUI (or any dashboard) can change while the robot runs. Every
+ * tunable in the robot is made here, so a rule about all of them has one place to live.
+ */
+public final class Tuning {
+  private Tuning() {} // only static methods; nothing to build
+
+  /**
+   * The settings every tunable starts from. A dashboard can change a tunable only while
+   * Constants.kTuningMode is true; with it false, the value still shows, but typing a new
+   * one changes nothing.
+   */
+  private static TunableConfig config() {
+    return new TunableConfig().withMutable(Constants.kTuningMode);
+  }
+
+  /** A tunable number, published under 'name', that starts at 'initial'. */
+  public static TunableDouble number(String name, double initial) {
+    TunableDouble tunable = TunableDouble.createConfig(initial, config());
+    Tunables.publish(name, tunable);
+    return tunable;
+  }
+
+  /** The same, and 'onTune' runs each time a dashboard changes the number. */
+  public static TunableDouble number(String name, double initial, Runnable onTune) {
+    TunableDouble tunable = TunableDouble.createConfig(initial, config().withOnTune(onTune));
+    Tunables.publish(name, tunable);
+    return tunable;
+  }
+
+  /**
+   * A tunable for a number something else already holds: it publishes what 'getter'
+   * returns, and hands a dashboard's new value to 'setter'.
+   */
+  public static TunableDouble property(String name, DoubleSupplier getter, DoubleConsumer setter) {
+    return Tunables.publishDouble(name, getter, setter, config());
+  }
+
+  /**
+   * A tunable measure, such as a Distance or an angle. A dashboard shows it as a plain number
+   * in 'unit' (Centimeters or Degrees, say), and your code gets it back as a measure: call
+   * get() on what this returns, each time you use it.
+   */
+  public static <U extends Unit, M extends Measure<U>> Supplier<M> value(
+      String name, M initial, U unit) {
+    TunableDouble number = number(name, initial.in(unit));
+    return () -> measureOf(number.get(), unit);
+  }
+
+  /** The same, and 'onTune' runs each time a dashboard changes the measure. */
+  public static <U extends Unit, M extends Measure<U>> Supplier<M> value(
+      String name, M initial, U unit, Runnable onTune) {
+    TunableDouble number = number(name, initial.in(unit), onTune);
+    return () -> measureOf(number.get(), unit);
+  }
+
+  /** The number 'value' in 'unit', as the same kind of measure the tunable started from. */
+  @SuppressWarnings("unchecked") // unit.of() is only declared to return "some measure"
+  private static <U extends Unit, M extends Measure<U>> M measureOf(double value, U unit) {
+    return (M) unit.of(value);
+  }
+}
+```
+
+The three methods you had now start from `config()` instead of a fresh
+`new TunableConfig()`, so they all obey the switch, B-Line's three gains from
+Lesson 17 included. Nothing that calls them has to change.
+
+The two new `value` methods make a tunable **measure**, and they take one
+more thing than `number` does: the unit to show it in. You call
+`Tuning.value("Elevator/Tolerance", ElevatorConstants.kTolerance, Centimeters)`,
+and SimGUI shows a plain `2`, in centimetres, the unit the constant is written
+in. Under the hood it's a `number` tunable holding `kTolerance.in(Centimeters)`.
+What you get back is a `Supplier` of the measure: each `get()` reads the number
+and turns it back into a `Distance`, so the rest of your code never sees the
+unit SimGUI uses. <!-- claim: l18.tuning-value-display-unit --> (WPILib can make a measure tunable
+directly, but then it shows the base unit: metres for a distance, radians for an
+angle, so a 2° tolerance would read `0.0349`. That's why `Tuning` converts.) <!-- claim: wpilib.tunables-measure-base-units -->
+
+These are your first **generic methods**. The `<U extends Unit, M extends
+Measure<U>>` in front says "this works for any kind of unit `U`, and any measure
+`M` of that unit". Hand it a `Distance` and `Centimeters`, and `M` is
+`Distance`, so you get back a `Supplier<Distance>`; hand it an `Angle` and
+`Degrees` and you get a `Supplier<Angle>`. You've been *using* types like this
+since `Supplier<LinearVelocity>`, the type of `driveFieldRelative`'s speeds; this
+is the first time you've written one. One method covers every kind of measure,
+instead of one copy per unit.
+
+One line needs a word. `unit.of(value)` is only declared to hand back "some
+measure", not the `Distance` you started with, so `measureOf` tells the compiler
+what it is: `(M)` in front of a value is a **cast**, "trust me, it's an `M`".
+It's true here, because the measure is made from the very unit it started in, and
+`@SuppressWarnings("unchecked")` says you checked. That's the one cast in the
+course, kept in the one helper that needs it.
+
+Next, the IO layer needs a way to hand new gains and limits to the motor.
+They're commands to the hardware, like `setGoalHeightMeters`, so they're
+`default` do-nothing methods: the replay IO and the sim inherit them for free.
+
+**Add to `ElevatorIO`, below `setGoalHeightMeters`:**
+
+```java
+  /** Send new feedforward and trim gains to the motor's Slot0. */
+  public default void setGains(double kG, double kV, double kA, double kP) {}
+
+  /** Send new Motion Magic limits, in meters per second and meters per second squared. */
+  public default void setMotionLimits(double cruiseMetersPerSec, double accelMetersPerSecSq) {}
+```
+
+`ElevatorIOTalonFX` does the real work, the way each `SwerveModule` did in
+Lesson 12: build just the part of the configuration that changed, and apply
+that. A `Slot0Configs` carries all of Slot0, so it sends all four gains at
+once, and `GravityType` too: it's a Slot0 setting, and leaving it out would
+reset it. <!-- claim: phoenix6.slot0-apply-keeps-other-config --> A `MotionMagicConfigs`
+does the same for the profile's limits. Neither touches the gear ratio or
+anything else the constructor set.
+
+**Add to `ElevatorIOTalonFX`'s imports:**
+
+```java
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
+```
+
+**Add to `ElevatorIOTalonFX`, just below the constructor:**
+
+```java
+  @Override
+  public void setGains(double kG, double kV, double kA, double kP) {
+    // A Slot0Configs holds only the slot: applying it leaves the rest of the config alone.
+    Slot0Configs slot0 = new Slot0Configs();
+    slot0.kG = kG;
+    slot0.GravityType = GravityTypeValue.Elevator_Static; // the slot's setting too, so send it
+    slot0.kV = kV;
+    slot0.kA = kA;
+    slot0.kP = kP;
+    m_motor.getConfigurator().apply(slot0);
+  }
+
+  @Override
+  public void setMotionLimits(double cruiseMetersPerSec, double accelMetersPerSecSq) {
+    MotionMagicConfigs motionMagic = new MotionMagicConfigs();
+    motionMagic.MotionMagicCruiseVelocity = metersToRotations(cruiseMetersPerSec);
+    motionMagic.MotionMagicAcceleration = metersToRotations(accelMetersPerSecSq);
+    m_motor.getConfigurator().apply(motionMagic);
+  }
+```
+
+`ElevatorIOSim` extends `ElevatorIOTalonFX`, so the simulated motor gets both
+methods without a line of its own.
+
+Now the tunables themselves, in `Elevator`. It's built once, when `Robot` is,
+which is what a tunable needs: a second one with the same name would be
+refused. Each starts from its constant, so `Constants.java` stays the truth.
+
+**Add to `Elevator`, just above `m_goal`:**
+
+```java
+  private final ElevatorIOInputsAutoLogged m_inputs = new ElevatorIOInputsAutoLogged();
+  // Every gain and limit below is a tunable (see Tuning): SimGUI can change it while the
+  // robot runs, and the gains and limits go straight to the motor when it does.
+  private final TunableDouble m_kG =
+      Tuning.number("Elevator/KG", ElevatorConstants.kElevatorKG, this::sendGains);
+  private final TunableDouble m_kV =
+      Tuning.number("Elevator/KV", ElevatorConstants.kElevatorKV, this::sendGains);
+  private final TunableDouble m_kA =
+      Tuning.number("Elevator/KA", ElevatorConstants.kElevatorKA, this::sendGains);
+  private final TunableDouble m_kP =
+      Tuning.number("Elevator/KP", ElevatorConstants.kElevatorKP, this::sendGains);
+  private final Supplier<LinearVelocity> m_maxVelocity = Tuning.value(
+      "Elevator/MaxVelocity", ElevatorConstants.kMaxVelocity,
+      MetersPerSecond, this::sendMotionLimits);
+  private final Supplier<LinearAcceleration> m_maxAcceleration = Tuning.value(
+      "Elevator/MaxAcceleration", ElevatorConstants.kMaxAcceleration,
+      MetersPerSecondPerSecond, this::sendMotionLimits);
+  private final Supplier<Distance> m_tolerance =
+      Tuning.value("Elevator/Tolerance", ElevatorConstants.kTolerance, Centimeters);
+
+  private Distance m_goal = ElevatorConstants.kStowed;
+```
+
+**Add to `Elevator`, just above `clampToTravel`:**
+
+```java
+  /** Send all four gains to the motor; runs whenever SimGUI changes one of them. */
+  private void sendGains() {
+    m_io.setGains(m_kG.get(), m_kV.get(), m_kA.get(), m_kP.get());
+  }
+
+  /** Send the profile's speed and acceleration limits to the motor, in meters. */
+  private void sendMotionLimits() {
+    m_io.setMotionLimits(
+        m_maxVelocity.get().in(MetersPerSecond),
+        m_maxAcceleration.get().in(MetersPerSecondPerSecond));
+  }
+```
+
+The tolerance has no `onTune`, because nothing in a motor uses it: your own
+`atGoal()` does, so it just reads the tunable each time it's asked.
+
+**In `Elevator`, change `atGoal()` to read the tunable:**
+
+```java
+  public boolean atGoal() {
+    return Math.abs(m_inputs.heightMeters - m_goal.in(Meters)) < m_tolerance.get().in(Meters);
+  }
+```
+
+**Add to `Elevator`'s imports**, each beside the ones like it:
+
+```java
+import static org.wpilib.units.Units.Centimeters;
+import static org.wpilib.units.Units.MetersPerSecond;
+import static org.wpilib.units.Units.MetersPerSecondPerSecond;
+
+import java.util.function.Supplier;
+
+import org.wpilib.tunable.TunableDouble;
+import org.wpilib.units.measure.LinearAcceleration;
+import org.wpilib.units.measure.LinearVelocity;
+
+import first.robot.Tuning;
+```
+
+Run the robot in simulation, pick **Teleoperated** and **RobotTeleop**, and
+**Enable**. In SimGUI's **NetworkTables View** window, under
+**Transitory Values → Tunables → Elevator** are all seven values, beside the
+`Drivetrain` ones from Lesson 12. <!-- claim: wpilib.tunables-publish-under-tunables -->
+Send the carriage to `kScoreMid` (**L**) and let it settle. Then double-click
+`KG`, type `0` and press Enter. <!-- claim: wpilib-tools.simgui-edits-tunables --> Within
+a second, `HeightMeters` settles about 1.5 mm below the goal: the sag from
+[Figure 18.1](#figure-18-1), with no restart. <!-- claim: l18.live-kg-zero-sag --> Type
+`0.17` back and the carriage climbs to where it was. That's the loop the next
+section uses: change one number, watch the graph, keep or undo it.
+
+When you find a number you like, **copy it into `Constants.java`.** A tunable
+only lives as long as the robot program: the next time the robot starts, every
+tunable starts from its constant again.
+
+> **Tuning and replay.** A replay reruns your code against the recorded
+> inputs, and tunables aren't recorded. For the gains and the limits that
+> doesn't matter: they live in the motor, and a replay never runs the motors,
+> so its readings come from the log whatever you typed. The tolerance is
+> different. `atGoal()` is your code, so a replay works it out again, from the
+> tolerance the replay starts with, which is the constant. If you changed it in
+> SimGUI during the recording, the replay won't know. With `kTuningMode` false
+> at a match nothing can be changed, so a match log always replays exactly.
+
+---
+
+## 11. Reading the gains off a graph
 
 Every gain here was computed, not guessed — but "computed" still means
 "worth checking against what the robot actually does." Open
@@ -620,7 +924,8 @@ of this section reads the gains off graphs like this one.
 
 The order that makes sense to tune in is the order the model was built:
 `kG` first, then `kV`, then `kA`, then `kP` last, as the smallest
-possible trim.
+possible trim. Make each change in SimGUI's **Tunables → Elevator**, one gain
+at a time, and send the carriage up and down again to see what it did.
 
 - **`kG` wrong** shows up as a *steady offset even at rest* — the
   carriage settles a fixed distance from the setpoint and stays there no
@@ -677,7 +982,7 @@ which you can add if you like. <!-- claim: wpilib-tools.advantagescope-advantage
 ## Try it
 
 > **Do these in simulation** (`kSimMode = Mode.SIM`, which is where you
-> already are). Number 2 takes `kG` away on purpose, and on a real elevator
+> already are). Section 10 took `kG` away on purpose, and on a real elevator
 > `kG` is part of what holds the carriage up: without it, the carriage drops
 > until `kP` has built up enough error to catch it. With this course's
 > numbers that's about 1.5 mm; a heavier carriage drops further. <!-- claim: l18.kg-zeroed-sag --> In sim, being
@@ -685,22 +990,25 @@ which you can add if you like. <!-- claim: wpilib-tools.advantagescope-advantage
 
 1. **Code — add a fourth preset.** Give `ElevatorConstants` a `kScoreLow`
    between `kStowed` and `kScoreMid`, and bind it to a face button.
-2. **Code — watch the sag.** Temporarily set `kElevatorKG` to `0.0`, command
-   `kScoreMid`, and let it settle. Compare the steady-state
-   `HeightMeters` against `GoalMeters` on the graph — you should see
-   almost exactly the gap in Figure 18.1's lower panel. <!-- claim: l18.kg-zeroed-sag --> Put `0.17` back
+2. **Tune — watch the lag.** In SimGUI, set `KV` to `0`, send the carriage
+   from stowed to the top (**I**), and read setpoint minus height on the
+   graph while it cruises. You should see about the 9 cm of
+   [Figure 18.2](#figure-18-2)'s green line. <!-- claim: l18.kv-zeroed-lag --> Type `1.42` back
    when you're done.
 3. **Code — ask for somewhere the elevator can't go.** Bind a spare button to
    `elevator.goToHeight(Meters.of(3.0))` — well past `kMaxHeight`. Watch
    `GoalMeters` on the graph clamp to `1.5` instead of jumping to `3.0`,
    confirming `clampToTravel` is doing its job before the request ever
    reaches the motor.
-4. **Code — halve the motion limits.** Try `kMaxVelocity = MetersPerSecond.of(0.5)`
-   and `kMaxAcceleration = MetersPerSecondPerSecond.of(1.0)`. The setpoint
+4. **Tune — halve the motion limits.** In SimGUI, set `MaxVelocity` to `0.5`
+   and `MaxAcceleration` to `1.0` (meters per second, and per second squared). The setpoint
    curve should stretch out — same shape, twice the time to get there —
    while the *steady-state* tracking (setpoint versus height, once
    moving) should barely change, since that's governed by `kV`/`kA`/`kP`,
    not by how fast you told the profile to go.
+5. **Code — lock it.** Set `kTuningMode` to `false`, restart the simulation,
+   and try changing `KG` in SimGUI. What does SimGUI show after you press
+   Enter, and does the carriage move? Put `true` back when you're done.
 
 ---
 
@@ -721,6 +1029,14 @@ generated in firmware, and that profile handed you a third number worth
 tracking alongside goal and position: the **setpoint**, read live off
 `getClosedLoopReference()`. Without it, a lagging elevator and a still-
 ramping one look identical on a graph.
+
+Every one of those numbers is now a tunable, and the elevator taught `Tuning`
+two new tricks. Measures can be tunables too, shown in the unit you choose, and a
+single `kTuningMode` decides whether anything can be changed at all, which is
+the switch to turn off before an event. A gain that lives in the motor needs
+sending there; a number your own code reads, like the tolerance, just gets
+read. And whichever kind it is, a number you mean to keep goes back into
+`Constants.java`.
 
 And once again, the IO layer from Lesson 13 paid for itself. `ElevatorIO`,
 `ElevatorIOTalonFX`, and `ElevatorIOSim` are new files, but nothing about

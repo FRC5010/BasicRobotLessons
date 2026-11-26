@@ -33,7 +33,6 @@ import org.wpilib.math.geometry.Rotation3d;
 import org.wpilib.math.geometry.Transform3d;
 import org.wpilib.math.geometry.Translation2d;
 import org.wpilib.math.geometry.Translation3d;
-import org.wpilib.math.trajectory.TrapezoidProfile;
 import org.wpilib.units.measure.Angle;
 import org.wpilib.units.measure.AngularAcceleration;
 import org.wpilib.units.measure.AngularVelocity;
@@ -54,6 +53,12 @@ public final class Constants {
   /** Change kSimMode to Mode.REPLAY to re-run a log file instead of simulating fresh. */
   public static final Mode kSimMode = Mode.SIM;
   public static final Mode kCurrentMode = RobotBase.isReal() ? Mode.REAL : kSimMode;
+
+  /**
+   * While true, SimGUI (or any dashboard) can change the robot's tunables. Set it false
+   * before an event: the values still show, but nothing can change them mid-match.
+   */
+  public static final boolean kTuningMode = true;
 
   // One CAN ID + one magnet offset per corner, all named, instead of
   // literals baked into the array in Drivetrain.
@@ -247,14 +252,6 @@ public final class Constants {
     // Turning, in both stages: half a turn a second at most.
     public static final AngularVelocity kTurnSpeed = RadiansPerSecond.of(Math.PI);
     public static final AngularAcceleration kTurnAccel = RadiansPerSecondPerSecond.of(4.0);
-
-    // The same limits in the form a profile takes them: top speed, then acceleration.
-    public static final TrapezoidProfile.Constraints kTravelLimits = new TrapezoidProfile.Constraints(
-        kTravelSpeed.in(MetersPerSecond), kTravelAccel.in(MetersPerSecondPerSecond));
-    public static final TrapezoidProfile.Constraints kApproachLimits = new TrapezoidProfile.Constraints(
-        kHandoffSpeed.in(MetersPerSecond), kApproachAccel.in(MetersPerSecondPerSecond));
-    public static final TrapezoidProfile.Constraints kTurnLimits = new TrapezoidProfile.Constraints(
-        kTurnSpeed.in(RadiansPerSecond), kTurnAccel.in(RadiansPerSecondPerSecond));
 
     // The trims: what to do about the robot drifting off its plan.
     public static final double kAlignP = 3.0;      // m/s per meter behind or ahead of the plan

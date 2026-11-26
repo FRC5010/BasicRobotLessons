@@ -5,6 +5,7 @@ import static org.wpilib.units.Units.RotationsPerSecond;
 import static org.wpilib.units.Units.Volts;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.VelocityVoltage;
@@ -40,6 +41,23 @@ public class FlywheelIOTalonFX implements FlywheelIO {
      */
     m_motor.getConfigurator().apply(config);
   }
+
+  @Override
+  public void setGains(double kS, double kV, double kA, double kP) {
+    // Slot0 only: the gear ratio and everything else the constructor set stay as they are.
+    Slot0Configs slot0 = new Slot0Configs();
+    slot0.kS = kS;
+    slot0.kV = kV;
+    slot0.kA = kA;
+    slot0.kP = kP;
+    m_motor.getConfigurator().apply(slot0);
+  }
+
+  /**
+   * ====== NEXT LESSON: ADD CODE HERE ======
+   * Send new current limits as one config group, both limits on, the way
+   * the constructor set them.
+   */
 
   @Override
   public void updateInputs(FlywheelIOInputs inputs) {

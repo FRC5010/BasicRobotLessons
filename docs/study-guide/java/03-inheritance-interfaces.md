@@ -210,7 +210,7 @@ built-in `idle()` that does nothing, and the flywheel overrides it: <!-- claim: 
 ```java
 @Override
 public Command idle() {
-  return spinUp(FlywheelConstants.kIdleSpeed);
+  return spinUp(m_idleSpeed); // the idle speed's tunable
 }
 ```
 

@@ -173,7 +173,7 @@ public void setDesiredState(SwerveModuleVelocity state) {
   // Steering: the same P control, error wrapped to ±180° in one call now.
   double error = MathUtil.inputModulus(
       state.angle.getDegrees() - getSteerAngleDegrees(), -180, 180);
-  double steerOutput = clamp(SteerConstants.kP * error, -1.0, 1.0);
+  double steerOutput = clamp(s_steerKP.get() * error, -1.0, 1.0);
   m_steerMotor.setThrottle(steerOutput);
 
   // Drive: meters per second → fraction of max, with the cosine scale.
@@ -188,7 +188,7 @@ the next section.
 
 Two of this lesson's tools show up in that little method. The two `while`
 loops you wrote in Lesson 5 to wrap the error into ±180°
-([Figure 5.3](05-steering-p-control.md#figure-5-3)) collapse into
+([Figure 5.4](05-steering-p-control.md#figure-5-4)) collapse into
 **`MathUtil.inputModulus(value, -180, 180)`** — it does exactly what the
 loops did, and you get the one-liner now that you've built the hand-rolled
 version and know what it's doing. <!-- claim: wpilib.mathutil-helpers --> (Your `clamp` two lines down doesn't get

@@ -1,12 +1,17 @@
 package first.robot.subsystems;
 
+import static org.wpilib.units.Units.Amps;
 import static org.wpilib.units.Units.RotationsPerSecond;
+
+import java.util.function.Supplier;
 
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
+import org.wpilib.tunable.TunableDouble;
 import org.wpilib.units.measure.Angle;
 import org.wpilib.units.measure.AngularVelocity;
+import org.wpilib.units.measure.Current;
 import org.wpilib.util.Alert;
 import org.wpilib.util.Alert.Level;
 
@@ -18,6 +23,7 @@ import org.littletonrobotics.junction.mechanism.LoggedMechanismRoot2d;
 import first.robot.Constants;
 import first.robot.Constants.ElevatorConstants;
 import first.robot.Constants.FlywheelConstants;
+import first.robot.Tuning;
 
 /**
  * A shooter wheel: the fourth mechanism on the same spine, and the first
@@ -30,6 +36,22 @@ public class Flywheel implements Mechanism {
     case REPLAY -> new FlywheelIO() {}; // inputs come from the log
   };
   private final FlywheelIOInputsAutoLogged m_inputs = new FlywheelIOInputsAutoLogged();
+
+  // The wheel's gains, its "close enough" and its idle speed, as tunables (see Tuning).
+  // The gains go straight to the motor when SimGUI changes one; the other two are read
+  // where they're used.
+  private final TunableDouble m_kS =
+      Tuning.number("Flywheel/KS", FlywheelConstants.kFlywheelKS, this::sendGains);
+  private final TunableDouble m_kV =
+      Tuning.number("Flywheel/KV", FlywheelConstants.kFlywheelKV, this::sendGains);
+  private final TunableDouble m_kA =
+      Tuning.number("Flywheel/KA", FlywheelConstants.kFlywheelKA, this::sendGains);
+  private final TunableDouble m_kP =
+      Tuning.number("Flywheel/KP", FlywheelConstants.kFlywheelKP, this::sendGains);
+  private final Supplier<AngularVelocity> m_tolerance =
+      Tuning.value("Flywheel/Tolerance", FlywheelConstants.kTolerance, RotationsPerSecond);
+  private final Supplier<AngularVelocity> m_idleSpeed =
+      Tuning.value("Flywheel/IdleSpeed", FlywheelConstants.kIdleSpeed, RotationsPerSecond);
 
   private AngularVelocity m_goal = RotationsPerSecond.of(0);
 
@@ -73,6 +95,16 @@ public class Flywheel implements Mechanism {
     updateDial();
   }
 
+  /** Send all four gains to the motor; runs whenever SimGUI changes one of them. */
+  private void sendGains() {
+    m_io.setGains(m_kS.get(), m_kV.get(), m_kA.get(), m_kP.get());
+  }
+
+  /** Send new current limits to the motor: the shared winding cap and this motor's battery share. */
+  public void setCurrentLimits(Current stator, Current supply) {
+    m_io.setCurrentLimits(stator.in(Amps), supply.in(Amps));
+  }
+
   /** Point both needles and log the dial. Runs every tick: a logged drawing is a snapshot. */
   private void updateDial() {
     m_goalNeedle.setAngle(toDialAngle(m_goal.in(RotationsPerSecond)));
@@ -111,9 +143,14 @@ public class Flywheel implements Mechanism {
    * immediately slow down again.
    */
   public Command spinUp(AngularVelocity speed) {
+    return spinUp(() -> speed);
+  }
+
+  /** The same, for a speed that can change while it runs: it asks 'speed' every tick. */
+  public Command spinUp(Supplier<AngularVelocity> speed) {
     return runRepeatedly(() -> {
-          m_goal = speed;
-          m_io.setGoalRps(speed.in(RotationsPerSecond));
+          m_goal = speed.get();
+          m_io.setGoalRps(m_goal.in(RotationsPerSecond));
         })
         .named("Spin Up");
   }
@@ -125,7 +162,7 @@ public class Flywheel implements Mechanism {
    */
   @Override
   public Command idle() {
-    return spinUp(FlywheelConstants.kIdleSpeed);
+    return spinUp(m_idleSpeed); // a tunable is a Supplier, so a new idle speed takes effect at once
   }
 
   /** Let it coast down. */
@@ -143,7 +180,7 @@ public class Flywheel implements Mechanism {
    */
   public boolean atSpeed() {
     return Math.abs(m_inputs.velocityRps - m_goal.in(RotationsPerSecond))
-        < FlywheelConstants.kTolerance.in(RotationsPerSecond);
+        < m_tolerance.get().in(RotationsPerSecond);
   }
 
   public AngularVelocity getSpeed() {

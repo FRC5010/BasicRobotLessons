@@ -43,7 +43,7 @@ statement = "With only kElevatorKG zeroed, the hold sags about 1.5 mm, almost ex
 evidence = "CLAUDE.md, 'v3 Lessons 7-22 re-measured on alpha-8', Lesson 18 (zeroing kElevatorKG sags the hold 1.5576 mm, the same to four digits on alpha-7)"
 measured_on = "alpha-8"
 method = "RIG"
-wording = "about 1.5 mm (Try It's callout and #2, and the kG bullet in section 10)"
+wording = "about 1.5 mm (Try It's callout, and the kG bullet in section 11)"
 unit = "mm"
 range = [1.4, 1.6]
 measured = "1.5576 mm"
@@ -127,3 +127,27 @@ range = [1.0, 3.0]
 measured = "1.94 s from leaving 0.02 m to reaching 1.5 m, with and without kV"
 test = "tools/figures/probes/Fig18HeightSetpointGoal.java"
 figure = "18-height-setpoint-goal.png"
+
+[[claim]]
+id = "l18.live-kg-zero-sag"
+kind = "number"
+library = ["phoenix6", "wpilib"]
+criticality = "C2"
+statement = "Holding at kScoreMid, changing the Elevator/KG tunable to 0 from a dashboard sags the hold to about 1.5 mm within a second (the same as zeroing the constant), and changing it back to 0.17 returns it to the model's 0.19 mm."
+evidence = "Probe ElevatorLiveKgProbe (2026-11-26, Lesson 18 state, not kept): the real Elevator through the scheduler at a fixed 20 ms, a RobotBase for the /Tunables backend, a NetworkTables publisher standing in for SimGUI. Two runs, identical: gap 0.1939 mm with the model; after writing 0 it read 1.5576 mm at 1 s and toggled 1.5186/1.5576 mm to 6 s; 0.1939 mm 5 s after writing 0.17 back."
+measured_on = "alpha-8"
+method = "RIG"
+wording = "about 1.5 mm, within a second (section 10's live kG step)"
+unit = "mm"
+range = [1.4, 1.6]
+measured = "1.5186-1.5576 mm"
+
+[[claim]]
+id = "l18.tuning-value-display-unit"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C2"
+statement = "Tuning.value(name, measure, unit) publishes the measure as a plain number in the given unit and hands code a Supplier of the measure, converting a dashboard's number back from that unit, so a tolerance written in centimetres or degrees reads and is typed in centimetres or degrees."
+evidence = "Probe UnitsProbe (2026-11-26, Lesson 28 state, not kept): Elevator/Tolerance read 2.0 (Centimeters.of(2)), Arm/Tolerance 2.0 (degrees), Arm/MaxVelocity 180.0 and MaxAcceleration 360.0 (deg/s, deg/s^2), Flywheel/Tolerance 1.5 and IdleSpeed 29.999999999999996 (rot/s, converted through the radian base unit). Writing Arm/MaxVelocity 90 set the pivot's MotionMagicCruiseVelocity to 0.2500 rot/s, and IdleSpeed 20 moved the idling wheel to 20.40 rot/s. Compiles with no unchecked note (the one cast is in Tuning.measureOf under @SuppressWarnings)."
+measured_on = "alpha-8"
+method = "TEST"

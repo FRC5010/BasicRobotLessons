@@ -14,6 +14,8 @@ import org.wpilib.hardware.bus.CANPort;
 import org.wpilib.math.geometry.Rotation2d;
 import org.wpilib.math.kinematics.SwerveModuleVelocity;
 import org.wpilib.telemetry.Telemetry;
+import org.wpilib.tunable.TunableDouble;
+import org.wpilib.tunable.Tunables;
 
 import first.robot.Constants.DriveConstants;
 import first.robot.Constants.HeadingConstants;
@@ -47,6 +49,11 @@ public class Drivetrain implements Mechanism {
   // Remembered for the sim: what rotation rate did we just command?
   private double m_lastCommandedOmega = 0.0;
   private double m_simHeadingDegrees = 0.0;
+
+  // The heading gain, as a tunable: it starts at HeadingConstants.kP, and SimGUI
+  // can change it while the robot runs.
+  private final TunableDouble m_headingKP =
+      Tunables.addDouble("Drivetrain/HeadingKP", HeadingConstants.kP);
 
   public Drivetrain() {
     Scheduler.getDefault().addPeriodic(this::logTelemetry);
@@ -87,7 +94,7 @@ public class Drivetrain implements Mechanism {
     return run(coroutine -> {
           while (Math.abs(headingError(targetDegrees)) >= 2.0) {
             double omega = clamp(
-                HeadingConstants.kP * headingError(targetDegrees),
+                m_headingKP.get() * headingError(targetDegrees),
                 -0.5, 0.5); // clamp to ±50% turn power
             commandRotation(omega);
             coroutine.yield();

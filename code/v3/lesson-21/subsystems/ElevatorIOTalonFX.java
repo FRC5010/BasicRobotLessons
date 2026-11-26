@@ -9,6 +9,8 @@ import static org.wpilib.units.Units.RotationsPerSecond;
 import static org.wpilib.units.Units.Volts;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
@@ -46,6 +48,26 @@ public class ElevatorIOTalonFX implements ElevatorIO {
         metersToRotations(ElevatorConstants.kMaxAcceleration.in(MetersPerSecondPerSecond));
 
     m_motor.getConfigurator().apply(config);
+  }
+
+  @Override
+  public void setGains(double kG, double kV, double kA, double kP) {
+    // A Slot0Configs holds only the slot: applying it leaves the rest of the config alone.
+    Slot0Configs slot0 = new Slot0Configs();
+    slot0.kG = kG;
+    slot0.GravityType = GravityTypeValue.Elevator_Static; // the slot's setting too, so send it
+    slot0.kV = kV;
+    slot0.kA = kA;
+    slot0.kP = kP;
+    m_motor.getConfigurator().apply(slot0);
+  }
+
+  @Override
+  public void setMotionLimits(double cruiseMetersPerSec, double accelMetersPerSecSq) {
+    MotionMagicConfigs motionMagic = new MotionMagicConfigs();
+    motionMagic.MotionMagicCruiseVelocity = metersToRotations(cruiseMetersPerSec);
+    motionMagic.MotionMagicAcceleration = metersToRotations(accelMetersPerSecSq);
+    m_motor.getConfigurator().apply(motionMagic);
   }
 
   @Override

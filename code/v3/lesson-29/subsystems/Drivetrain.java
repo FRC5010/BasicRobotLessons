@@ -1,8 +1,15 @@
 package first.robot.subsystems;
 
+import static org.wpilib.units.Units.Centimeters;
+import static org.wpilib.units.Units.Degrees;
+import static org.wpilib.units.Units.DegreesPerSecond;
+import static org.wpilib.units.Units.DegreesPerSecondPerSecond;
 import static org.wpilib.units.Units.Meters;
 import static org.wpilib.units.Units.MetersPerSecond;
+import static org.wpilib.units.Units.MetersPerSecondPerSecond;
 import static org.wpilib.units.Units.Radians;
+import static org.wpilib.units.Units.RadiansPerSecond;
+import static org.wpilib.units.Units.RadiansPerSecondPerSecond;
 
 import java.util.function.Supplier;
 
@@ -20,15 +27,22 @@ import org.wpilib.math.kinematics.SwerveModulePosition;
 import org.wpilib.math.kinematics.SwerveModuleVelocity;
 import org.wpilib.math.trajectory.TrapezoidProfile;
 import org.wpilib.math.util.MathUtil;
+import org.wpilib.units.measure.Angle;
+import org.wpilib.units.measure.AngularAcceleration;
 import org.wpilib.units.measure.AngularVelocity;
+import org.wpilib.units.measure.Distance;
+import org.wpilib.units.measure.LinearAcceleration;
 import org.wpilib.units.measure.LinearVelocity;
+import org.wpilib.tunable.TunableDouble;
 
 import org.littletonrobotics.junction.Logger;
 
 import first.robot.Constants;
 import first.robot.Constants.DriveConstants;
 import first.robot.Constants.HeadingConstants;
+import first.robot.Constants.SteerConstants;
 import first.robot.Constants.PathConstants;
+import first.robot.Tuning;
 
 public class Drivetrain implements Mechanism, PoseProvider {
   // Corner order: FL, FR, BL, BR. Pick a convention and stick to it.
@@ -74,6 +88,54 @@ public class Drivetrain implements Mechanism, PoseProvider {
   // to read what the last tick worked out.
   private final ProfiledPIDController m_alongController = makeAlongController();
   private final ProfiledPIDController m_headingController = makeHeadingController();
+
+  // Every number the two stages use, as a tunable (see Tuning). The gains belong to the
+  // controllers, so their tunables read and set the controllers' own; the tolerances are
+  // handed to the controllers when they change; the limits are read as each stage starts.
+  private final TunableDouble m_alignP = Tuning.property(
+      "Drivetrain/ToPose/AlignP", m_alongController::getP, m_alongController::setP);
+  private final TunableDouble m_alignThetaP = Tuning.property(
+      "Drivetrain/ToPose/AlignThetaP", m_headingController::getP, m_headingController::setP);
+  private final Supplier<Distance> m_positionTolerance = Tuning.value(
+      "Drivetrain/ToPose/PositionTolerance", PathConstants.kPositionTolerance,
+      Centimeters, this::sendTolerances);
+  private final Supplier<LinearVelocity> m_speedTolerance = Tuning.value(
+      "Drivetrain/ToPose/SpeedTolerance", PathConstants.kSpeedTolerance,
+      MetersPerSecond, this::sendTolerances);
+  private final Supplier<Angle> m_angleTolerance = Tuning.value(
+      "Drivetrain/ToPose/AngleTolerance", PathConstants.kAngleTolerance,
+      Degrees, this::sendTolerances);
+  private final Supplier<LinearVelocity> m_travelSpeed =
+      Tuning.value("Drivetrain/ToPose/TravelSpeed", PathConstants.kTravelSpeed, MetersPerSecond);
+  private final Supplier<LinearAcceleration> m_travelAccel =
+      Tuning.value("Drivetrain/ToPose/TravelAccel", PathConstants.kTravelAccel,
+          MetersPerSecondPerSecond);
+  private final Supplier<Distance> m_handoffDistance =
+      Tuning.value("Drivetrain/ToPose/HandoffDistance", PathConstants.kHandoffDistance, Meters);
+  private final Supplier<LinearVelocity> m_handoffSpeed =
+      Tuning.value("Drivetrain/ToPose/HandoffSpeed", PathConstants.kHandoffSpeed, MetersPerSecond);
+  private final Supplier<LinearAcceleration> m_approachAccel =
+      Tuning.value("Drivetrain/ToPose/ApproachAccel", PathConstants.kApproachAccel,
+          MetersPerSecondPerSecond);
+  private final Supplier<AngularVelocity> m_turnSpeed =
+      Tuning.value("Drivetrain/ToPose/TurnSpeed", PathConstants.kTurnSpeed, DegreesPerSecond);
+  private final Supplier<AngularAcceleration> m_turnAccel =
+      Tuning.value("Drivetrain/ToPose/TurnAccel", PathConstants.kTurnAccel,
+          DegreesPerSecondPerSecond);
+
+  // The heading gain, as a tunable: it starts at HeadingConstants.kP, and SimGUI
+  // can change it while the robot runs.
+  private final TunableDouble m_headingKP =
+      Tuning.number("Drivetrain/HeadingKP", HeadingConstants.kP);
+
+  // The motors' own gains. Their loops run inside the motors, so a change has to be
+  // sent there: each tunable's onTune passes the new value to all four modules.
+  private final TunableDouble m_steerKP =
+      Tuning.number("Drivetrain/SteerKP", SteerConstants.kSteerKP, this::sendSteerGains);
+  private final TunableDouble m_driveKV =
+      Tuning.number("Drivetrain/DriveKV", DriveConstants.kDriveKV, this::sendDriveGains);
+  private final TunableDouble m_driveKP =
+      Tuning.number("Drivetrain/DriveKP", DriveConstants.kDriveKP, this::sendDriveGains);
 
   public Drivetrain() {
     Scheduler.getDefault().addPeriodic(this::periodic);
@@ -143,7 +205,7 @@ public class Drivetrain implements Mechanism, PoseProvider {
     return run(coroutine -> {
           while (Math.abs(headingError(targetDegrees)) >= 2.0) {
             double omega = clamp(
-                HeadingConstants.kP * headingError(targetDegrees),
+                m_headingKP.get() * headingError(targetDegrees),
                 -0.5, 0.5); // clamp to ±50% turn power
             commandRotation(omega);
             coroutine.yield();
@@ -175,8 +237,8 @@ public class Drivetrain implements Mechanism, PoseProvider {
 
   /** Along the line: P to trim the plan, and what counts as arrived — there, and stopped. */
   private static ProfiledPIDController makeAlongController() {
-    ProfiledPIDController controller =
-        new ProfiledPIDController(PathConstants.kAlignP, 0, 0, PathConstants.kTravelLimits);
+    ProfiledPIDController controller = new ProfiledPIDController(
+        PathConstants.kAlignP, 0, 0, limits(PathConstants.kTravelSpeed, PathConstants.kTravelAccel));
     controller.setTolerance(
         PathConstants.kPositionTolerance.in(Meters), PathConstants.kSpeedTolerance.in(MetersPerSecond));
     return controller;
@@ -184,11 +246,30 @@ public class Drivetrain implements Mechanism, PoseProvider {
 
   /** The heading: profiled too, and told that -180 and +180 are the same place. */
   private static ProfiledPIDController makeHeadingController() {
-    ProfiledPIDController controller =
-        new ProfiledPIDController(PathConstants.kAlignThetaP, 0, 0, PathConstants.kTurnLimits);
+    ProfiledPIDController controller = new ProfiledPIDController(
+        PathConstants.kAlignThetaP, 0, 0, limits(PathConstants.kTurnSpeed, PathConstants.kTurnAccel));
     controller.enableContinuousInput(-Math.PI, Math.PI);
     controller.setTolerance(PathConstants.kAngleTolerance.in(Radians));
     return controller;
+  }
+
+  /** A profile's limits, top speed then acceleration, in the plain numbers it takes. */
+  private static TrapezoidProfile.Constraints limits(LinearVelocity speed, LinearAcceleration accel) {
+    return new TrapezoidProfile.Constraints(
+        speed.in(MetersPerSecond), accel.in(MetersPerSecondPerSecond));
+  }
+
+  /** The same, for turning. */
+  private static TrapezoidProfile.Constraints limits(AngularVelocity speed, AngularAcceleration accel) {
+    return new TrapezoidProfile.Constraints(
+        speed.in(RadiansPerSecond), accel.in(RadiansPerSecondPerSecond));
+  }
+
+  /** Hand the three tolerances to the controllers; runs whenever SimGUI changes one. */
+  private void sendTolerances() {
+    m_alongController.setTolerance(
+        m_positionTolerance.get().in(Meters), m_speedTolerance.get().in(MetersPerSecond));
+    m_headingController.setTolerance(m_angleTolerance.get().in(Radians));
   }
 
   /** Where 'current' sits relative to a line: x is how far along it, y how far off to the left. */
@@ -205,6 +286,7 @@ public class Drivetrain implements Mechanism, PoseProvider {
     ChassisVelocities moving = getChassisVelocities().toFieldRelative(current.getRotation());
     Translation2d velocity = new Translation2d(moving.vx, moving.vy);
     m_alongController.setConstraints(limits);
+    m_headingController.setConstraints(limits(m_turnSpeed.get(), m_turnAccel.get()));
     m_alongController.reset(0.0, velocity.rotateBy(direction.unaryMinus()).getX());
     m_headingController.reset(current.getRotation().getRadians(), moving.omega);
   }
@@ -239,11 +321,11 @@ public class Drivetrain implements Mechanism, PoseProvider {
           Translation2d start = current.getTranslation();
           Translation2d toTarget = target.getTranslation().minus(start);
           Rotation2d direction = toTarget.getAngle().orElse(current.getRotation()); // already there: any way will do
-          double handoff = toTarget.getNorm() - PathConstants.kHandoffDistance.in(Meters);
+          double handoff = toTarget.getNorm() - m_handoffDistance.get().in(Meters);
 
-          startStage(current, direction, PathConstants.kTravelLimits);
+          startStage(current, direction, limits(m_travelSpeed.get(), m_travelAccel.get()));
           m_alongController.setGoal(
-              new TrapezoidProfile.State(handoff, PathConstants.kHandoffSpeed.in(MetersPerSecond)));
+              new TrapezoidProfile.State(handoff, m_handoffSpeed.get().in(MetersPerSecond)));
           while (inLineFrame(start, direction, current).getX() < handoff) {
             followLine(start, direction, target, current);
             coroutine.yield();
@@ -267,7 +349,7 @@ public class Drivetrain implements Mechanism, PoseProvider {
           Translation2d toTarget = target.getTranslation().minus(start);
           Rotation2d direction = toTarget.getAngle().orElse(current.getRotation());
 
-          startStage(current, direction, PathConstants.kApproachLimits);
+          startStage(current, direction, limits(m_handoffSpeed.get(), m_approachAccel.get()));
           m_alongController.setGoal(toTarget.getNorm()); // the end of the line, stopped
           do {
             followLine(start, direction, target, current);
@@ -283,13 +365,27 @@ public class Drivetrain implements Mechanism, PoseProvider {
   private boolean arrived(Translation2d start, Rotation2d direction, Pose2d current) {
     double offLine = Math.abs(inLineFrame(start, direction, current).getY());
     return m_alongController.atGoal()
-        && offLine < PathConstants.kPositionTolerance.in(Meters)
+        && offLine < m_positionTolerance.get().in(Meters)
         && m_headingController.atGoal();
   }
 
   /** One tick of pure rotation: steer every wheel tangent to the circle. */
   private void commandRotation(double omegaRevPerSec) {
     applyChassisSpeeds(new ChassisVelocities(0, 0, omegaRevPerSec * 2 * Math.PI));
+  }
+
+  /** Sends the steering gain to every module's steering motor. */
+  private void sendSteerGains() {
+    for (SwerveModule module : m_modules) {
+      module.setSteerGains(m_steerKP.get());
+    }
+  }
+
+  /** Sends the drive gains to every module's drive motor. */
+  private void sendDriveGains() {
+    for (SwerveModule module : m_modules) {
+      module.setDriveGains(m_driveKV.get(), m_driveKP.get());
+    }
   }
 
   /** Signed error to 'target' in degrees, wrapped to (-180, 180]. */

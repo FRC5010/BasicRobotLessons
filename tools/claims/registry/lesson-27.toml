@@ -325,3 +325,13 @@ unit = "deg"
 range = [-0.5, 0.5]
 measured = "-1.6 deg (alpha-7 -1.1 deg)"
 note = "The path's final heading is 0, but the robot ends 1.6 deg off it. Reported as a disagreement; the wording is read as a bare 0."
+
+[[claim]]
+id = "l27.aim-tunables-on-first-use"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C3"
+statement = "Aim's tunables are static fields, so they are published only when the Aim class is first used: building Robot doesn't publish /Tunables/Aim, and the first call into Aim (the aim trigger, or an auto's aim marker) does."
+evidence = "Probe AimInitProbe (2026-11-26, Lesson 27 state, not kept): after new Robot() and TunableRegistry.update(), /Tunables/Drivetrain/HeadingKP existed and /Tunables/Aim/P didn't; after one call to Aim.isAimedAt, Aim/P read 4.0 and Aim/Tolerance 0.0349. Robot and RobotTeleop use Aim only inside lambdas (read in the snapshot). Java initializes a class's static fields on its first active use (JLS 12.4.1)."
+measured_on = "alpha-8"
+method = "TEST"

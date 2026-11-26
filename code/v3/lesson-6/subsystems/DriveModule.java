@@ -21,6 +21,8 @@ import org.wpilib.math.system.Models;
 import org.wpilib.simulation.DCMotorSim;
 import org.wpilib.telemetry.Telemetry;
 import org.wpilib.system.RobotController;
+import org.wpilib.tunable.TunableDouble;
+import org.wpilib.tunable.Tunables;
 
 import first.robot.Constants;
 import first.robot.Constants.DriveConstants;
@@ -74,6 +76,16 @@ public class DriveModule implements Mechanism {
 
   private final CANcoder m_steerEncoder =
       new CANcoder(Constants.DriveConstants.kCancoderPort, new CANBus(CANPort.CAN_S0)); // CAN ID 3 — change to yours
+
+  /**
+   * ====== NEXT LESSON: CHANGE THE CODE BELOW ======
+   * Four modules will share this one gain: make it a static field, named for the new
+   * class, so it's published once and every module reads the same knob.
+   */
+  // The steering gain, as a tunable: it starts at SteerConstants.kP, and SimGUI can
+  // change it while the robot runs. Read it with get() each time it's used.
+  private final TunableDouble m_steerKP =
+      Tunables.addDouble("DriveModule/SteerKP", SteerConstants.kP);
 
   public DriveModule() {
     /**
@@ -151,7 +163,7 @@ public class DriveModule implements Mechanism {
             error += 360;
           }
 
-          double output = SteerConstants.kP * error;    // push proportional to error
+          double output = m_steerKP.get() * error;      // push proportional to error
           output = clamp(output, -1.0, 1.0);             // never exceed full power
 
           m_steerMotor.setThrottle(output);

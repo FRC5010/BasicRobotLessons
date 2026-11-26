@@ -74,7 +74,7 @@ VSCode shows you:
 - **Variables** — every local variable and field currently in scope, with its
   value. Expand objects to drill in.
 - **Watch** — expressions you type in, evaluated every time execution pauses.
-  Try `Math.abs(error)`, `SteerConstants.kP * error`, or
+  Try `Math.abs(error)`, `m_steerKP.get() * error`, or
   `m_module.getSteerAngleDegrees()`.
 - **Call Stack** — the chain of method calls that led here. This is a *live*
   stack trace (section 4 shows the crashed-program version).
@@ -128,9 +128,9 @@ double error = targetDegrees - measurement;
    - `measurement` = something near `0.0` (the module hasn't moved yet)
    - `error` doesn't have a value yet — this is the line that will *compute* it.
 5. Press **Step Over** (`F10`). Now `error ≈ 90`. On the next line, watch
-   `output` be computed as `SteerConstants.kP * error` — with `kP = 0.0005`, that's
-   `0.045`. That's the number about to go to the motor.
-6. Add a **Watch**: `SteerConstants.kP * error`. Now every time you continue,
+   `output` be computed as `m_steerKP.get() * error` — with the tunable still at
+   its starting `0.0005`, that's `0.045`. That's the number about to go to the motor.
+6. Add a **Watch**: `m_steerKP.get() * error`. Now every time you continue,
    you'll see the number the motor is about to receive without having to
    compute it yourself.
 7. Press **Continue** (`F5`). The breakpoint fires again on the next tick —
