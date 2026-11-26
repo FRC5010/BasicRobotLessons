@@ -8,7 +8,6 @@ import java.util.function.Supplier;
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
-import org.wpilib.tunable.Tunable;
 import org.wpilib.tunable.TunableDouble;
 import org.wpilib.units.measure.Angle;
 import org.wpilib.units.measure.AngularVelocity;
@@ -47,10 +46,10 @@ public class Flywheel implements Mechanism {
       Tuning.number("Flywheel/KA", FlywheelConstants.kFlywheelKA, this::sendGains);
   private final TunableDouble m_kP =
       Tuning.number("Flywheel/KP", FlywheelConstants.kFlywheelKP, this::sendGains);
-  private final Tunable<AngularVelocity> m_tolerance =
-      Tuning.value("Flywheel/Tolerance", FlywheelConstants.kTolerance);
-  private final Tunable<AngularVelocity> m_idleSpeed =
-      Tuning.value("Flywheel/IdleSpeed", FlywheelConstants.kIdleSpeed);
+  private final Supplier<AngularVelocity> m_tolerance =
+      Tuning.value("Flywheel/Tolerance", FlywheelConstants.kTolerance, RotationsPerSecond);
+  private final Supplier<AngularVelocity> m_idleSpeed =
+      Tuning.value("Flywheel/IdleSpeed", FlywheelConstants.kIdleSpeed, RotationsPerSecond);
 
   private AngularVelocity m_goal = RotationsPerSecond.of(0);
   /**

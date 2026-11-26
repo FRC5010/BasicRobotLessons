@@ -376,9 +376,13 @@ the guide page is `docs/study-guide/frc-logging/03-tunables.md`. WPILib alpha-8'
   **tunables live only in things built once** (mechanisms, `Drivetrain`, `Robot`, `static` fields),
   never in an opmode. A static tunable appears only when its class is first used (`Aim`, Lesson 27).
 - `withMutable(false)` ignores writes (no `onTune`, no setter). `Tunable.createConfig(measure, cfg)`
-  publishes a measure in its **base unit** (radians, rad/s, m, A, V): the arm's 2° reads 0.0349, the
-  flywheel's 30 rot/s reads 188.5 (rule kept on purpose, flagged to the user). `Tunable<T>` is a
-  `Supplier<T>`. In a test with no `RobotBase`, publishing prints "no backend" warnings with a stack
+  would publish a measure in its **base unit** (radians, rad/s), so (user decision 2026-11-26:
+  "degrees would be better") **`Tuning.value(name, initial, unit)` publishes a `number` in the
+  given unit and returns a `Supplier<M>`** that converts back on each `get()`, through the
+  course's one cast (`measureOf`, `@SuppressWarnings("unchecked")`, because `Unit.of` returns
+  `Measure<?>`). Each tunable uses its constant's unit: cm for tolerances written in cm, degrees
+  and deg/s for angles (Lesson 26's turn limits too), rot/s for the flywheel, A and V (claim
+  `l18.tuning-value-display-unit`). Fields are `Supplier<Angle>` etc., not `Tunable<…>`. In a test with no `RobotBase`, publishing prints "no backend" warnings with a stack
   trace (Lesson 31 says so).
 - **Code shape:** Lessons 5–11 use `Tunables.addDouble`; from Lesson 12 everything goes through
   `first.robot.Tuning` (`number`, `number(..., onTune)`, `property(getter, setter)`, and from

@@ -1,14 +1,15 @@
 package first.robot.commands;
 
+import static org.wpilib.units.Units.Degrees;
 import static org.wpilib.units.Units.Radians;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.math.geometry.Rotation2d;
 import org.wpilib.math.geometry.Translation2d;
 import org.wpilib.math.kinematics.ChassisVelocities;
-import org.wpilib.tunable.Tunable;
 import org.wpilib.tunable.TunableDouble;
 import org.wpilib.units.measure.Angle;
 
@@ -38,8 +39,8 @@ public final class Aim {
   // The aim's gain and its "close enough", as tunables (see Tuning). Static, like the
   // methods: there's one aim for the whole robot, so there's one of each.
   private static final TunableDouble s_aimP = Tuning.number("Aim/P", PathConstants.kAimP);
-  private static final Tunable<Angle> s_aimTolerance =
-      Tuning.value("Aim/Tolerance", PathConstants.kAimTolerance);
+  private static final Supplier<Angle> s_aimTolerance =
+      Tuning.value("Aim/Tolerance", PathConstants.kAimTolerance, Degrees);
 
   /**
    * Where a tag sits on the field, from the layout that was loaded in Lesson 15.

@@ -215,12 +215,4 @@ class TunablesApiTest {
           "a write of 0.001 wasn't read back as 0.001 m");
     }
   }
-
-  @Test
-  @DisplayName("wpilib.tunable-is-supplier")
-  void tunableIsSupplier() {
-    Tunable<Distance> height = Tunable.createConfig(Centimeters.of(30), new TunableConfig());
-    java.util.function.Supplier<Distance> asSupplier = height; // compiles only if it is one
-    assertEquals(0.3, asSupplier.get().in(Meters), 1e-12, "the Supplier view didn't read the value");
-  }
 }

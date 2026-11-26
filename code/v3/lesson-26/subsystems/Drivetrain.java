@@ -1,5 +1,9 @@
 package first.robot.subsystems;
 
+import static org.wpilib.units.Units.Centimeters;
+import static org.wpilib.units.Units.Degrees;
+import static org.wpilib.units.Units.DegreesPerSecond;
+import static org.wpilib.units.Units.DegreesPerSecondPerSecond;
 import static org.wpilib.units.Units.Meters;
 import static org.wpilib.units.Units.MetersPerSecond;
 import static org.wpilib.units.Units.MetersPerSecondPerSecond;
@@ -29,7 +33,6 @@ import org.wpilib.units.measure.AngularVelocity;
 import org.wpilib.units.measure.Distance;
 import org.wpilib.units.measure.LinearAcceleration;
 import org.wpilib.units.measure.LinearVelocity;
-import org.wpilib.tunable.Tunable;
 import org.wpilib.tunable.TunableDouble;
 
 import org.littletonrobotics.junction.Logger;
@@ -89,26 +92,32 @@ public class Drivetrain implements Mechanism, PoseProvider {
       "Drivetrain/ToPose/AlignP", m_alongController::getP, m_alongController::setP);
   private final TunableDouble m_alignThetaP = Tuning.property(
       "Drivetrain/ToPose/AlignThetaP", m_headingController::getP, m_headingController::setP);
-  private final Tunable<Distance> m_positionTolerance = Tuning.value(
-      "Drivetrain/ToPose/PositionTolerance", PathConstants.kPositionTolerance, this::sendTolerances);
-  private final Tunable<LinearVelocity> m_speedTolerance = Tuning.value(
-      "Drivetrain/ToPose/SpeedTolerance", PathConstants.kSpeedTolerance, this::sendTolerances);
-  private final Tunable<Angle> m_angleTolerance = Tuning.value(
-      "Drivetrain/ToPose/AngleTolerance", PathConstants.kAngleTolerance, this::sendTolerances);
-  private final Tunable<LinearVelocity> m_travelSpeed =
-      Tuning.value("Drivetrain/ToPose/TravelSpeed", PathConstants.kTravelSpeed);
-  private final Tunable<LinearAcceleration> m_travelAccel =
-      Tuning.value("Drivetrain/ToPose/TravelAccel", PathConstants.kTravelAccel);
-  private final Tunable<Distance> m_handoffDistance =
-      Tuning.value("Drivetrain/ToPose/HandoffDistance", PathConstants.kHandoffDistance);
-  private final Tunable<LinearVelocity> m_handoffSpeed =
-      Tuning.value("Drivetrain/ToPose/HandoffSpeed", PathConstants.kHandoffSpeed);
-  private final Tunable<LinearAcceleration> m_approachAccel =
-      Tuning.value("Drivetrain/ToPose/ApproachAccel", PathConstants.kApproachAccel);
-  private final Tunable<AngularVelocity> m_turnSpeed =
-      Tuning.value("Drivetrain/ToPose/TurnSpeed", PathConstants.kTurnSpeed);
-  private final Tunable<AngularAcceleration> m_turnAccel =
-      Tuning.value("Drivetrain/ToPose/TurnAccel", PathConstants.kTurnAccel);
+  private final Supplier<Distance> m_positionTolerance = Tuning.value(
+      "Drivetrain/ToPose/PositionTolerance", PathConstants.kPositionTolerance,
+      Centimeters, this::sendTolerances);
+  private final Supplier<LinearVelocity> m_speedTolerance = Tuning.value(
+      "Drivetrain/ToPose/SpeedTolerance", PathConstants.kSpeedTolerance,
+      MetersPerSecond, this::sendTolerances);
+  private final Supplier<Angle> m_angleTolerance = Tuning.value(
+      "Drivetrain/ToPose/AngleTolerance", PathConstants.kAngleTolerance,
+      Degrees, this::sendTolerances);
+  private final Supplier<LinearVelocity> m_travelSpeed =
+      Tuning.value("Drivetrain/ToPose/TravelSpeed", PathConstants.kTravelSpeed, MetersPerSecond);
+  private final Supplier<LinearAcceleration> m_travelAccel =
+      Tuning.value("Drivetrain/ToPose/TravelAccel", PathConstants.kTravelAccel,
+          MetersPerSecondPerSecond);
+  private final Supplier<Distance> m_handoffDistance =
+      Tuning.value("Drivetrain/ToPose/HandoffDistance", PathConstants.kHandoffDistance, Meters);
+  private final Supplier<LinearVelocity> m_handoffSpeed =
+      Tuning.value("Drivetrain/ToPose/HandoffSpeed", PathConstants.kHandoffSpeed, MetersPerSecond);
+  private final Supplier<LinearAcceleration> m_approachAccel =
+      Tuning.value("Drivetrain/ToPose/ApproachAccel", PathConstants.kApproachAccel,
+          MetersPerSecondPerSecond);
+  private final Supplier<AngularVelocity> m_turnSpeed =
+      Tuning.value("Drivetrain/ToPose/TurnSpeed", PathConstants.kTurnSpeed, DegreesPerSecond);
+  private final Supplier<AngularAcceleration> m_turnAccel =
+      Tuning.value("Drivetrain/ToPose/TurnAccel", PathConstants.kTurnAccel,
+          DegreesPerSecondPerSecond);
 
   // The heading gain, as a tunable: it starts at HeadingConstants.kP, and SimGUI
   // can change it while the robot runs.

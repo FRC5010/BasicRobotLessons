@@ -141,3 +141,13 @@ wording = "about 1.5 mm, within a second (section 10's live kG step)"
 unit = "mm"
 range = [1.4, 1.6]
 measured = "1.5186-1.5576 mm"
+
+[[claim]]
+id = "l18.tuning-value-display-unit"
+kind = "behaviour"
+library = ["wpilib"]
+criticality = "C2"
+statement = "Tuning.value(name, measure, unit) publishes the measure as a plain number in the given unit and hands code a Supplier of the measure, converting a dashboard's number back from that unit, so a tolerance written in centimetres or degrees reads and is typed in centimetres or degrees."
+evidence = "Probe UnitsProbe (2026-11-26, Lesson 28 state, not kept): Elevator/Tolerance read 2.0 (Centimeters.of(2)), Arm/Tolerance 2.0 (degrees), Arm/MaxVelocity 180.0 and MaxAcceleration 360.0 (deg/s, deg/s^2), Flywheel/Tolerance 1.5 and IdleSpeed 29.999999999999996 (rot/s, converted through the radian base unit). Writing Arm/MaxVelocity 90 set the pivot's MotionMagicCruiseVelocity to 0.2500 rot/s, and IdleSpeed 20 moved the idling wheel to 20.40 rot/s. Compiles with no unchecked note (the one cast is in Tuning.measureOf under @SuppressWarnings)."
+measured_on = "alpha-8"
+method = "TEST"

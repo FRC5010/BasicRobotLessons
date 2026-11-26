@@ -4,7 +4,10 @@
 
 package first.robot;
 
+import static org.wpilib.units.Units.Amps;
 import static org.wpilib.units.Units.Volts;
+
+import java.util.function.Supplier;
 
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
@@ -16,7 +19,6 @@ import org.wpilib.simulation.BatterySim;
 import org.wpilib.simulation.RoboRioSim;
 import org.wpilib.system.DataLogManager;
 import org.wpilib.system.RobotController;
-import org.wpilib.tunable.Tunable;
 import org.wpilib.units.measure.Current;
 import org.wpilib.units.measure.Voltage;
 import org.wpilib.util.Alert;
@@ -93,20 +95,24 @@ public class Robot extends LoggedOpModeRobot {
   // about: one winding cap every mechanism motor shares, each motor's slice of the
   // battery, and the line that counts as a brownout. A change to any limit is sent to
   // every mechanism at once, because each motor takes its two limits together.
-  private final Tunable<Current> m_statorLimit =
-      Tuning.value("Power/StatorLimit", PowerConstants.kStatorLimit, this::sendCurrentLimits);
-  private final Tunable<Current> m_elevatorSupplyLimit = Tuning.value(
-      "Power/ElevatorSupplyLimit", PowerConstants.kElevatorSupplyLimit, this::sendCurrentLimits);
-  private final Tunable<Current> m_armPivotSupplyLimit = Tuning.value(
-      "Power/ArmPivotSupplyLimit", PowerConstants.kArmPivotSupplyLimit, this::sendCurrentLimits);
-  private final Tunable<Current> m_armRollerSupplyLimit = Tuning.value(
-      "Power/ArmRollerSupplyLimit", PowerConstants.kArmRollerSupplyLimit, this::sendCurrentLimits);
-  private final Tunable<Current> m_flywheelSupplyLimit = Tuning.value(
-      "Power/FlywheelSupplyLimit", PowerConstants.kFlywheelSupplyLimit, this::sendCurrentLimits);
-  private final Tunable<Voltage> m_brownoutVoltage =
-      Tuning.value("Power/BrownoutVoltage", PowerConstants.kBrownoutVoltage);
-  private final Tunable<Voltage> m_lowBatteryVoltage =
-      Tuning.value("Power/LowBatteryVoltage", PowerConstants.kLowBatteryVoltage);
+  private final Supplier<Current> m_statorLimit =
+      Tuning.value("Power/StatorLimit", PowerConstants.kStatorLimit, Amps, this::sendCurrentLimits);
+  private final Supplier<Current> m_elevatorSupplyLimit = Tuning.value(
+      "Power/ElevatorSupplyLimit", PowerConstants.kElevatorSupplyLimit,
+      Amps, this::sendCurrentLimits);
+  private final Supplier<Current> m_armPivotSupplyLimit = Tuning.value(
+      "Power/ArmPivotSupplyLimit", PowerConstants.kArmPivotSupplyLimit,
+      Amps, this::sendCurrentLimits);
+  private final Supplier<Current> m_armRollerSupplyLimit = Tuning.value(
+      "Power/ArmRollerSupplyLimit", PowerConstants.kArmRollerSupplyLimit,
+      Amps, this::sendCurrentLimits);
+  private final Supplier<Current> m_flywheelSupplyLimit = Tuning.value(
+      "Power/FlywheelSupplyLimit", PowerConstants.kFlywheelSupplyLimit,
+      Amps, this::sendCurrentLimits);
+  private final Supplier<Voltage> m_brownoutVoltage =
+      Tuning.value("Power/BrownoutVoltage", PowerConstants.kBrownoutVoltage, Volts);
+  private final Supplier<Voltage> m_lowBatteryVoltage =
+      Tuning.value("Power/LowBatteryVoltage", PowerConstants.kLowBatteryVoltage, Volts);
 
   /** Not an error: the robot works fine on a low battery, right up until it doesn't. */
   private final Alert m_lowBattery = new Alert(

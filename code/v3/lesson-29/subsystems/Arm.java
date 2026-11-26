@@ -2,6 +2,8 @@ package first.robot.subsystems;
 
 import static org.wpilib.units.Units.Amps;
 import static org.wpilib.units.Units.Degrees;
+import static org.wpilib.units.Units.DegreesPerSecond;
+import static org.wpilib.units.Units.DegreesPerSecondPerSecond;
 import static org.wpilib.units.Units.RotationsPerSecond;
 import static org.wpilib.units.Units.RotationsPerSecondPerSecond;
 
@@ -11,7 +13,6 @@ import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.math.geometry.Pose2d;
-import org.wpilib.tunable.Tunable;
 import org.wpilib.tunable.TunableDouble;
 import org.wpilib.units.measure.Angle;
 import org.wpilib.units.measure.AngularAcceleration;
@@ -44,12 +45,14 @@ public class Arm implements Mechanism {
       Tuning.number("Arm/KA", ArmConstants.kArmKA, this::sendGains);
   private final TunableDouble m_kP =
       Tuning.number("Arm/KP", ArmConstants.kArmKP, this::sendGains);
-  private final Tunable<AngularVelocity> m_maxVelocity =
-      Tuning.value("Arm/MaxVelocity", ArmConstants.kMaxVelocity, this::sendMotionLimits);
-  private final Tunable<AngularAcceleration> m_maxAcceleration =
-      Tuning.value("Arm/MaxAcceleration", ArmConstants.kMaxAcceleration, this::sendMotionLimits);
-  private final Tunable<Angle> m_tolerance =
-      Tuning.value("Arm/Tolerance", ArmConstants.kTolerance);
+  private final Supplier<AngularVelocity> m_maxVelocity =
+      Tuning.value("Arm/MaxVelocity", ArmConstants.kMaxVelocity,
+          DegreesPerSecond, this::sendMotionLimits);
+  private final Supplier<AngularAcceleration> m_maxAcceleration =
+      Tuning.value("Arm/MaxAcceleration", ArmConstants.kMaxAcceleration,
+          DegreesPerSecondPerSecond, this::sendMotionLimits);
+  private final Supplier<Angle> m_tolerance =
+      Tuning.value("Arm/Tolerance", ArmConstants.kTolerance, Degrees);
 
   private Angle m_goal = ArmConstants.kStowed;
   /**

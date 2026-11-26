@@ -753,18 +753,22 @@ Now the tunables themselves, in `Robot`, below the mechanisms they're for.
   // about: one winding cap every mechanism motor shares, each motor's slice of the
   // battery, and the line that counts as a brownout. A change to any limit is sent to
   // every mechanism at once, because each motor takes its two limits together.
-  private final Tunable<Current> m_statorLimit =
-      Tuning.value("Power/StatorLimit", PowerConstants.kStatorLimit, this::sendCurrentLimits);
-  private final Tunable<Current> m_elevatorSupplyLimit = Tuning.value(
-      "Power/ElevatorSupplyLimit", PowerConstants.kElevatorSupplyLimit, this::sendCurrentLimits);
-  private final Tunable<Current> m_armPivotSupplyLimit = Tuning.value(
-      "Power/ArmPivotSupplyLimit", PowerConstants.kArmPivotSupplyLimit, this::sendCurrentLimits);
-  private final Tunable<Current> m_armRollerSupplyLimit = Tuning.value(
-      "Power/ArmRollerSupplyLimit", PowerConstants.kArmRollerSupplyLimit, this::sendCurrentLimits);
-  private final Tunable<Current> m_flywheelSupplyLimit = Tuning.value(
-      "Power/FlywheelSupplyLimit", PowerConstants.kFlywheelSupplyLimit, this::sendCurrentLimits);
-  private final Tunable<Voltage> m_brownoutVoltage =
-      Tuning.value("Power/BrownoutVoltage", PowerConstants.kBrownoutVoltage);
+  private final Supplier<Current> m_statorLimit =
+      Tuning.value("Power/StatorLimit", PowerConstants.kStatorLimit, Amps, this::sendCurrentLimits);
+  private final Supplier<Current> m_elevatorSupplyLimit = Tuning.value(
+      "Power/ElevatorSupplyLimit", PowerConstants.kElevatorSupplyLimit,
+      Amps, this::sendCurrentLimits);
+  private final Supplier<Current> m_armPivotSupplyLimit = Tuning.value(
+      "Power/ArmPivotSupplyLimit", PowerConstants.kArmPivotSupplyLimit,
+      Amps, this::sendCurrentLimits);
+  private final Supplier<Current> m_armRollerSupplyLimit = Tuning.value(
+      "Power/ArmRollerSupplyLimit", PowerConstants.kArmRollerSupplyLimit,
+      Amps, this::sendCurrentLimits);
+  private final Supplier<Current> m_flywheelSupplyLimit = Tuning.value(
+      "Power/FlywheelSupplyLimit", PowerConstants.kFlywheelSupplyLimit,
+      Amps, this::sendCurrentLimits);
+  private final Supplier<Voltage> m_brownoutVoltage =
+      Tuning.value("Power/BrownoutVoltage", PowerConstants.kBrownoutVoltage, Volts);
 ```
 
 **Add to `Robot`, just above `getTotalCurrentAmps`:**
@@ -789,14 +793,17 @@ constant:**
 **Add the imports to `Robot`:**
 
 ```java
-import org.wpilib.tunable.Tunable;
+import static org.wpilib.units.Units.Amps;
+
+import java.util.function.Supplier;
+
 import org.wpilib.units.measure.Current;
 import org.wpilib.units.measure.Voltage;
 ```
 
-Run it, and SimGUI's **Tunables → Power** holds all six. Currents are in amps
-and voltages in volts, which are their base units, so the numbers read exactly
-like the constants. <!-- claim: wpilib.tunables-measure-base-units --> Change
+Run it, and SimGUI's **Tunables → Power** holds all six, currents in amps and
+voltages in volts, the units handed to `Tuning.value`, so the numbers read exactly
+like the constants. <!-- claim: l18.tuning-value-display-unit --> Change
 `StatorLimit` and every mechanism motor gets the new cap at once, each keeping its
 own supply limit and everything else the constructor set. <!-- claim: l29.budget-tunables-reach-motors -->
 Then put the tired battery back in `simulationPeriodic()`, and you can hunt for a

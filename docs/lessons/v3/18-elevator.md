@@ -9,8 +9,8 @@ D-pad.
 **New Java concepts**
 - **Comparing measures directly** — `Distance.gt(...)` / `.lt(...)`, used to
   hand-roll a clamp now that there's no `MathUtil.clamp` to reach for
-- **A generic method** — `<T> Tunable<T> value(String name, T initial)`, one
-  method that works for a `Distance`, a speed, or any other measure
+- **A generic method** — `Tuning.value(name, initial, unit)`, one method that
+  works for a `Distance`, a speed, or any other measure, and a **cast**
 
 **New robot concepts**
 - **Motion Magic** — firmware-generated trapezoidal motion profiles (a
@@ -23,7 +23,7 @@ D-pad.
 - Three numbers worth telling apart on any profiled mechanism: **goal**,
   **setpoint**, and **position**
 - **A tuning-mode switch**, `kTuningMode`, that locks every tunable before an
-  event, and tunable **measures**, shown in their base unit
+  event, and tunable **measures**, shown in the unit you choose
 
 ---
 
@@ -616,11 +616,13 @@ package first.robot;
 
 import java.util.function.DoubleConsumer;
 import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
-import org.wpilib.tunable.Tunable;
 import org.wpilib.tunable.TunableConfig;
 import org.wpilib.tunable.TunableDouble;
 import org.wpilib.tunable.Tunables;
+import org.wpilib.units.Measure;
+import org.wpilib.units.Unit;
 
 /**
  * Makes tunables: numbers SimGUI (or any dashboard) can change while the robot runs. Every
@@ -660,18 +662,28 @@ public final class Tuning {
     return Tunables.publishDouble(name, getter, setter, config());
   }
 
-  /** A tunable measure (a Distance, a LinearVelocity, ...), shown in its base unit. */
-  public static <T> Tunable<T> value(String name, T initial) {
-    Tunable<T> tunable = Tunable.createConfig(initial, config());
-    Tunables.publish(name, tunable);
-    return tunable;
+  /**
+   * A tunable measure, such as a Distance or an angle. A dashboard shows it as a plain number
+   * in 'unit' (Centimeters or Degrees, say), and your code gets it back as a measure: call
+   * get() on what this returns, each time you use it.
+   */
+  public static <U extends Unit, M extends Measure<U>> Supplier<M> value(
+      String name, M initial, U unit) {
+    TunableDouble number = number(name, initial.in(unit));
+    return () -> measureOf(number.get(), unit);
   }
 
   /** The same, and 'onTune' runs each time a dashboard changes the measure. */
-  public static <T> Tunable<T> value(String name, T initial, Runnable onTune) {
-    Tunable<T> tunable = Tunable.createConfig(initial, config().withOnTune(onTune));
-    Tunables.publish(name, tunable);
-    return tunable;
+  public static <U extends Unit, M extends Measure<U>> Supplier<M> value(
+      String name, M initial, U unit, Runnable onTune) {
+    TunableDouble number = number(name, initial.in(unit), onTune);
+    return () -> measureOf(number.get(), unit);
+  }
+
+  /** The number 'value' in 'unit', as the same kind of measure the tunable started from. */
+  @SuppressWarnings("unchecked") // unit.of() is only declared to return "some measure"
+  private static <U extends Unit, M extends Measure<U>> M measureOf(double value, U unit) {
+    return (M) unit.of(value);
   }
 }
 ```
@@ -680,17 +692,32 @@ The three methods you had now start from `config()` instead of a fresh
 `new TunableConfig()`, so they all obey the switch, B-Line's three gains from
 Lesson 17 included. Nothing that calls them has to change.
 
-The two new `value` methods are your first **generic methods**. The `<T>` in
-front says "this method works for any type; call it `T`". Hand it a
-`Distance` and `T` is `Distance`, so you get back a `Tunable<Distance>` whose
-`get()` returns a `Distance`. Hand it a `LinearVelocity` and you get a
-`Tunable<LinearVelocity>`. You've been *using* types like this since
-`Supplier<LinearVelocity>`, the type of `driveFieldRelative`'s speeds; this is the first time you've written one. One method
-covers every kind of measure, instead of one copy per unit.
+The two new `value` methods make a tunable **measure**, and they take one
+more thing than `number` does: the unit to show it in. You call
+`Tuning.value("Elevator/Tolerance", ElevatorConstants.kTolerance, Centimeters)`,
+and SimGUI shows a plain `2`, in centimetres, the unit the constant is written
+in. Under the hood it's a `number` tunable holding `kTolerance.in(Centimeters)`.
+What you get back is a `Supplier` of the measure: each `get()` reads the number
+and turns it back into a `Distance`, so the rest of your code never sees the
+unit SimGUI uses. <!-- claim: l18.tuning-value-display-unit --> (WPILib can make a measure tunable
+directly, but then it shows the base unit: metres for a distance, radians for an
+angle, so a 2° tolerance would read `0.0349`. That's why `Tuning` converts.) <!-- claim: wpilib.tunables-measure-base-units -->
 
-A measure shows up in SimGUI as a plain number in its **base unit**: a
-`Distance` in meters, a speed in meters per second. So the elevator's 2 cm
-tolerance reads `0.02`, and typing `0.01` there means 1 cm. <!-- claim: wpilib.tunables-measure-base-units -->
+These are your first **generic methods**. The `<U extends Unit, M extends
+Measure<U>>` in front says "this works for any kind of unit `U`, and any measure
+`M` of that unit". Hand it a `Distance` and `Centimeters`, and `M` is
+`Distance`, so you get back a `Supplier<Distance>`; hand it an `Angle` and
+`Degrees` and you get a `Supplier<Angle>`. You've been *using* types like this
+since `Supplier<LinearVelocity>`, the type of `driveFieldRelative`'s speeds; this
+is the first time you've written one. One method covers every kind of measure,
+instead of one copy per unit.
+
+One line needs a word. `unit.of(value)` is only declared to hand back "some
+measure", not the `Distance` you started with, so `measureOf` tells the compiler
+what it is: `(M)` in front of a value is a **cast**, "trust me, it's an `M`".
+It's true here, because the measure is made from the very unit it started in, and
+`@SuppressWarnings("unchecked")` says you checked. That's the one cast in the
+course, kept in the one helper that needs it.
 
 Next, the IO layer needs a way to hand new gains and limits to the motor.
 They're commands to the hardware, like `setGoalHeightMeters`, so they're
@@ -766,12 +793,14 @@ refused. Each starts from its constant, so `Constants.java` stays the truth.
       Tuning.number("Elevator/KA", ElevatorConstants.kElevatorKA, this::sendGains);
   private final TunableDouble m_kP =
       Tuning.number("Elevator/KP", ElevatorConstants.kElevatorKP, this::sendGains);
-  private final Tunable<LinearVelocity> m_maxVelocity = Tuning.value(
-      "Elevator/MaxVelocity", ElevatorConstants.kMaxVelocity, this::sendMotionLimits);
-  private final Tunable<LinearAcceleration> m_maxAcceleration = Tuning.value(
-      "Elevator/MaxAcceleration", ElevatorConstants.kMaxAcceleration, this::sendMotionLimits);
-  private final Tunable<Distance> m_tolerance =
-      Tuning.value("Elevator/Tolerance", ElevatorConstants.kTolerance);
+  private final Supplier<LinearVelocity> m_maxVelocity = Tuning.value(
+      "Elevator/MaxVelocity", ElevatorConstants.kMaxVelocity,
+      MetersPerSecond, this::sendMotionLimits);
+  private final Supplier<LinearAcceleration> m_maxAcceleration = Tuning.value(
+      "Elevator/MaxAcceleration", ElevatorConstants.kMaxAcceleration,
+      MetersPerSecondPerSecond, this::sendMotionLimits);
+  private final Supplier<Distance> m_tolerance =
+      Tuning.value("Elevator/Tolerance", ElevatorConstants.kTolerance, Centimeters);
 
   private Distance m_goal = ElevatorConstants.kStowed;
 ```
@@ -806,10 +835,12 @@ The tolerance has no `onTune`, because nothing in a motor uses it: your own
 **Add to `Elevator`'s imports**, each beside the ones like it:
 
 ```java
+import static org.wpilib.units.Units.Centimeters;
 import static org.wpilib.units.Units.MetersPerSecond;
 import static org.wpilib.units.Units.MetersPerSecondPerSecond;
 
-import org.wpilib.tunable.Tunable;
+import java.util.function.Supplier;
+
 import org.wpilib.tunable.TunableDouble;
 import org.wpilib.units.measure.LinearAcceleration;
 import org.wpilib.units.measure.LinearVelocity;
@@ -1000,7 +1031,7 @@ tracking alongside goal and position: the **setpoint**, read live off
 ramping one look identical on a graph.
 
 Every one of those numbers is now a tunable, and the elevator taught `Tuning`
-two new tricks. Measures can be tunables too, shown in their base unit, and a
+two new tricks. Measures can be tunables too, shown in the unit you choose, and a
 single `kTuningMode` decides whether anything can be changed at all, which is
 the switch to turn off before an event. A gain that lives in the motor needs
 sending there; a number your own code reads, like the tolerance, just gets

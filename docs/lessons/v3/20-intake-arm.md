@@ -632,13 +632,16 @@ Now the mechanism itself.
 package first.robot.subsystems;
 
 import static org.wpilib.units.Units.Degrees;
+import static org.wpilib.units.Units.DegreesPerSecond;
+import static org.wpilib.units.Units.DegreesPerSecondPerSecond;
 import static org.wpilib.units.Units.RotationsPerSecond;
 import static org.wpilib.units.Units.RotationsPerSecondPerSecond;
+
+import java.util.function.Supplier;
 
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
-import org.wpilib.tunable.Tunable;
 import org.wpilib.tunable.TunableDouble;
 import org.wpilib.units.measure.Angle;
 import org.wpilib.units.measure.AngularAcceleration;
@@ -674,12 +677,14 @@ public class Arm implements Mechanism {
       Tuning.number("Arm/KA", ArmConstants.kArmKA, this::sendGains);
   private final TunableDouble m_kP =
       Tuning.number("Arm/KP", ArmConstants.kArmKP, this::sendGains);
-  private final Tunable<AngularVelocity> m_maxVelocity =
-      Tuning.value("Arm/MaxVelocity", ArmConstants.kMaxVelocity, this::sendMotionLimits);
-  private final Tunable<AngularAcceleration> m_maxAcceleration =
-      Tuning.value("Arm/MaxAcceleration", ArmConstants.kMaxAcceleration, this::sendMotionLimits);
-  private final Tunable<Angle> m_tolerance =
-      Tuning.value("Arm/Tolerance", ArmConstants.kTolerance);
+  private final Supplier<AngularVelocity> m_maxVelocity =
+      Tuning.value("Arm/MaxVelocity", ArmConstants.kMaxVelocity,
+          DegreesPerSecond, this::sendMotionLimits);
+  private final Supplier<AngularAcceleration> m_maxAcceleration =
+      Tuning.value("Arm/MaxAcceleration", ArmConstants.kMaxAcceleration,
+          DegreesPerSecondPerSecond, this::sendMotionLimits);
+  private final Supplier<Angle> m_tolerance =
+      Tuning.value("Arm/Tolerance", ArmConstants.kTolerance, Degrees);
 
   private Angle m_goal = ArmConstants.kStowed;
 
@@ -772,10 +777,9 @@ immediately. The bottom half of [Figure 20.1](#figure-20-1) is this rule: horizo
 in the world is −90° in the drawing, and stowed (90°) is 0°.
 
 The tunables at the top are the elevator's seven, named `Arm/...`. Three of
-them are angle measures this time, and a measure shows up in SimGUI in its
-base unit, which for an angle is **radians**: the 2° tolerance reads `0.0349`,
-and the 180°/s cruise speed reads `3.14`. <!-- claim: wpilib.tunables-measure-base-units -->
-If you'd rather think in degrees, multiply by π/180 before you type.
+them are angle measures this time, shown in degrees because that's the unit
+you hand `Tuning.value`: the tolerance reads `2`, the cruise speed `180` and
+the acceleration `360`, the numbers in `ArmConstants`. <!-- claim: l18.tuning-value-display-unit -->
 
 Notice how little `Arm` says about the elevator otherwise. It asks for the
 mount point once, in the constructor, and then never mentions the

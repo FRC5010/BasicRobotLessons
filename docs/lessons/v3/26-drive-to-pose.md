@@ -343,26 +343,32 @@ below the two controllers:**
       "Drivetrain/ToPose/AlignP", m_alongController::getP, m_alongController::setP);
   private final TunableDouble m_alignThetaP = Tuning.property(
       "Drivetrain/ToPose/AlignThetaP", m_headingController::getP, m_headingController::setP);
-  private final Tunable<Distance> m_positionTolerance = Tuning.value(
-      "Drivetrain/ToPose/PositionTolerance", PathConstants.kPositionTolerance, this::sendTolerances);
-  private final Tunable<LinearVelocity> m_speedTolerance = Tuning.value(
-      "Drivetrain/ToPose/SpeedTolerance", PathConstants.kSpeedTolerance, this::sendTolerances);
-  private final Tunable<Angle> m_angleTolerance = Tuning.value(
-      "Drivetrain/ToPose/AngleTolerance", PathConstants.kAngleTolerance, this::sendTolerances);
-  private final Tunable<LinearVelocity> m_travelSpeed =
-      Tuning.value("Drivetrain/ToPose/TravelSpeed", PathConstants.kTravelSpeed);
-  private final Tunable<LinearAcceleration> m_travelAccel =
-      Tuning.value("Drivetrain/ToPose/TravelAccel", PathConstants.kTravelAccel);
-  private final Tunable<Distance> m_handoffDistance =
-      Tuning.value("Drivetrain/ToPose/HandoffDistance", PathConstants.kHandoffDistance);
-  private final Tunable<LinearVelocity> m_handoffSpeed =
-      Tuning.value("Drivetrain/ToPose/HandoffSpeed", PathConstants.kHandoffSpeed);
-  private final Tunable<LinearAcceleration> m_approachAccel =
-      Tuning.value("Drivetrain/ToPose/ApproachAccel", PathConstants.kApproachAccel);
-  private final Tunable<AngularVelocity> m_turnSpeed =
-      Tuning.value("Drivetrain/ToPose/TurnSpeed", PathConstants.kTurnSpeed);
-  private final Tunable<AngularAcceleration> m_turnAccel =
-      Tuning.value("Drivetrain/ToPose/TurnAccel", PathConstants.kTurnAccel);
+  private final Supplier<Distance> m_positionTolerance = Tuning.value(
+      "Drivetrain/ToPose/PositionTolerance", PathConstants.kPositionTolerance,
+      Centimeters, this::sendTolerances);
+  private final Supplier<LinearVelocity> m_speedTolerance = Tuning.value(
+      "Drivetrain/ToPose/SpeedTolerance", PathConstants.kSpeedTolerance,
+      MetersPerSecond, this::sendTolerances);
+  private final Supplier<Angle> m_angleTolerance = Tuning.value(
+      "Drivetrain/ToPose/AngleTolerance", PathConstants.kAngleTolerance,
+      Degrees, this::sendTolerances);
+  private final Supplier<LinearVelocity> m_travelSpeed =
+      Tuning.value("Drivetrain/ToPose/TravelSpeed", PathConstants.kTravelSpeed, MetersPerSecond);
+  private final Supplier<LinearAcceleration> m_travelAccel =
+      Tuning.value("Drivetrain/ToPose/TravelAccel", PathConstants.kTravelAccel,
+          MetersPerSecondPerSecond);
+  private final Supplier<Distance> m_handoffDistance =
+      Tuning.value("Drivetrain/ToPose/HandoffDistance", PathConstants.kHandoffDistance, Meters);
+  private final Supplier<LinearVelocity> m_handoffSpeed =
+      Tuning.value("Drivetrain/ToPose/HandoffSpeed", PathConstants.kHandoffSpeed, MetersPerSecond);
+  private final Supplier<LinearAcceleration> m_approachAccel =
+      Tuning.value("Drivetrain/ToPose/ApproachAccel", PathConstants.kApproachAccel,
+          MetersPerSecondPerSecond);
+  private final Supplier<AngularVelocity> m_turnSpeed =
+      Tuning.value("Drivetrain/ToPose/TurnSpeed", PathConstants.kTurnSpeed, DegreesPerSecond);
+  private final Supplier<AngularAcceleration> m_turnAccel =
+      Tuning.value("Drivetrain/ToPose/TurnAccel", PathConstants.kTurnAccel,
+          DegreesPerSecondPerSecond);
 ```
 
 These come in three kinds, and each is the simplest thing that works for it.
@@ -373,7 +379,9 @@ but each controller takes them in one `setTolerance` call, so they're
 `Tuning.value`s with an `onTune` that hands them over. And the limits don't
 live anywhere: a stage reads them when it starts, so a change takes effect on
 the next run. They show up in SimGUI under **Tunables → Drivetrain → ToPose**,
-in base units: metres, metres per second, radians and radians per second. <!-- claim: wpilib.tunables-measure-base-units -->
+each in the unit its constant is written in: the position tolerance in
+centimetres, the speeds in metres per second, and the angle tolerance and turn
+limits in degrees (so the turn speed reads `180`, not π). <!-- claim: l18.tuning-value-display-unit -->
 
 One number the stages use isn't here: `kCrossTrackP`, Lesson 17's. Its
 tunable is B-Line's controller (`Paths/CrossTrackP`), which these stages don't
@@ -585,6 +593,10 @@ waits for.
 **Add the imports `Drivetrain.java` needs:**
 
 ```java
+import static org.wpilib.units.Units.Centimeters;
+import static org.wpilib.units.Units.Degrees;
+import static org.wpilib.units.Units.DegreesPerSecond;
+import static org.wpilib.units.Units.DegreesPerSecondPerSecond;
 import static org.wpilib.units.Units.Meters;
 import static org.wpilib.units.Units.MetersPerSecondPerSecond;
 import static org.wpilib.units.Units.Radians;
@@ -593,7 +605,6 @@ import static org.wpilib.units.Units.RadiansPerSecondPerSecond;
 
 import org.wpilib.math.controller.ProfiledPIDController;
 import org.wpilib.math.trajectory.TrapezoidProfile;
-import org.wpilib.tunable.Tunable;
 import org.wpilib.units.measure.Angle;
 import org.wpilib.units.measure.AngularAcceleration;
 import org.wpilib.units.measure.Distance;

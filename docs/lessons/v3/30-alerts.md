@@ -626,8 +626,8 @@ It's a line someone might want to move, so it's a tunable too, beside Lesson
 **Add to `Robot`, below `m_brownoutVoltage`:**
 
 ```java
-  private final Tunable<Voltage> m_lowBatteryVoltage =
-      Tuning.value("Power/LowBatteryVoltage", PowerConstants.kLowBatteryVoltage);
+  private final Supplier<Voltage> m_lowBatteryVoltage =
+      Tuning.value("Power/LowBatteryVoltage", PowerConstants.kLowBatteryVoltage, Volts);
 ```
 
 **Then the alert, below those tunables:**

@@ -792,18 +792,7 @@ id = "wpilib.tunables-no-backend-in-tests"
 kind = "behaviour"
 library = ["wpilib"]
 criticality = "C3"
-statement = "In a JUnit test that never builds a RobotBase, nothing has registered the /Tunables backend, so publishing a tunable prints 'Tunable warning: no backend for path ...' with a stack trace to standard error (and, for a measure, 'Unsupported tunable type'). The tunable still works in the test, holding its starting value."
-evidence = "verify-lessons-v3.sh 33 test (2026-11-26): Lesson 31's ElevatorHomingTest printed the warning for each of Elevator's seven tunables and passed, its atGoal() reading the tolerance tunable's starting value. TunableRegistry.defaultReportWarning prints the message and a stack trace with System.err (read in its source); RobotBase's constructor registers the NetworkTables backend and the measure type handler."
+statement = "In a JUnit test that never builds a RobotBase, nothing has registered the /Tunables backend, so publishing a tunable prints 'Tunable warning: no backend for path ...' with a stack trace to standard error. The tunable still works in the test, holding its starting value."
+evidence = "verify-lessons-v3.sh 33 test (2026-11-26): Lesson 31's ElevatorHomingTest printed the warning for each of Elevator's seven tunables and passed (2026-11-26, re-run after Tuning.value began publishing measures as plain numbers: no 'Unsupported tunable type' lines any more), its atGoal() reading the tolerance tunable's starting value. TunableRegistry.defaultReportWarning prints the message and a stack trace with System.err (read in its source); RobotBase's constructor registers the NetworkTables backend and the measure type handler."
 measured_on = "alpha-8"
 method = "TEST"
-
-[[claim]]
-id = "wpilib.tunable-is-supplier"
-kind = "api"
-library = ["wpilib"]
-criticality = "C2"
-statement = "org.wpilib.tunable.Tunable<T> implements Supplier<T> (and Consumer<T>), so a tunable can be passed wherever a Supplier<T> is wanted, and the receiver reads its current value with get()."
-evidence = "Tunable.java at alpha-8: 'public abstract class Tunable<T> extends TunableBase implements Supplier<T>, Consumer<T>'. tools/claims/java/claims/TunablesApiTest.java assigns a Tunable<Distance> to a Supplier<Distance> and reads 0.3 m through it."
-measured_on = "alpha-8"
-method = "TEST"
-test = "tools/claims/java/claims/TunablesApiTest.java"

@@ -70,8 +70,8 @@ changes keep going to the first one. <!-- claim: wpilib.tunables-duplicate-name-
 *Example, from `Aim.java` ([Lesson 27, section 2](../../lessons/v3/27-aim-at-tag.md#2-a-heading-you-can-compute)):*
 ```java
 private static final TunableDouble s_aimP = Tuning.number("Aim/P", PathConstants.kAimP);
-private static final Tunable<Angle> s_aimTolerance =
-    Tuning.value("Aim/Tolerance", PathConstants.kAimTolerance);
+private static final Supplier<Angle> s_aimTolerance =
+    Tuning.value("Aim/Tolerance", PathConstants.kAimTolerance, Degrees);
 ```
 
 `Aim` is never built, so there's no object to hold them. Java sets up a class's `static` fields
@@ -211,14 +211,23 @@ Tuning.property("Paths/RotationP", rotation::getP, rotation::setP);
 Tuning.property("Paths/CrossTrackP", crossTrack::getP, crossTrack::setP);
 ```
 
-A **measure** can be a tunable too, through `Tuning.value`, which is a generic method: a `Distance`
-gives a `Tunable<Distance>`, a speed a `Tunable<LinearVelocity>`. On a dashboard it's a plain
-number in its **base unit**: metres, metres per second, radians, radians per second, amps,
-volts. <!-- claim: wpilib.tunables-measure-base-units --> So a 2° tolerance reads `0.0349`, and the
-flywheel's 30 rot/s idle speed reads `188.5`; multiply rotations per second by 2π to type one in.
+A **measure** can be a tunable too, through `Tuning.value`, a generic method that takes the unit
+to show it in. On a dashboard it's a plain number in that unit, and the code gets back a
+`Supplier` of the measure, converted from that unit on each `get()`: <!-- claim: l18.tuning-value-display-unit -->
 
-A `Tunable` is also a `Supplier`, which is how the flywheel's idle speed stays live in a command
-that's built once: <!-- claim: wpilib.tunable-is-supplier -->
+<!-- source: lesson-33 subsystems/Arm.java -->
+*Example, from `Arm.java` ([Lesson 20, section 7](../../lessons/v3/20-intake-arm.md#7-the-arm-mechanism)):*
+```java
+private final Supplier<Angle> m_tolerance =
+    Tuning.value("Arm/Tolerance", ArmConstants.kTolerance, Degrees);
+```
+
+So the arm's tolerance reads `2`, in degrees, and the flywheel's idle speed `30`, in rotations per
+second: each in the unit its constant is written in. (WPILib can make a measure tunable on its
+own, but it shows the base unit, radians for an angle, so a 2° tolerance would read `0.0349`.) <!-- claim: wpilib.tunables-measure-base-units -->
+
+Because what comes back is a `Supplier`, the flywheel's idle speed stays live in a command that's
+built once:
 
 <!-- source: lesson-33 subsystems/Flywheel.java -->
 *Example, from `Flywheel.java` ([Lesson 28, section 5](../../lessons/v3/28-flywheel.md#5-a-picture-of-a-number)):*
@@ -230,11 +239,11 @@ public Command idle() {
 ```
 
 <details class="quiz" id="q-tunables-9" markdown="1">
-<summary>Check yourself: SimGUI shows `Elevator/Tolerance` as `0.02`. You want 1 cm. What do you type?</summary>
+<summary>Check yourself: SimGUI shows `Elevator/Tolerance` as `2`. You want 1 cm. What do you type?</summary>
 
-- [ ] `1`, because the constant is in centimetres. *A measure shows in its base unit.*
-- [x] `0.01`: a `Distance` shows in metres. *1 cm is 0.01 m.*
-- [ ] `10`, for millimetres. *Millimetres aren't the base unit either.*
+- [x] `1`: it was made with `Centimeters`, so it shows and takes centimetres. *The unit is the one handed to `Tuning.value`.*
+- [ ] `0.01`, because a `Distance` is stored in metres. *That's what a plain WPILib measure tunable would show; `Tuning` converts.*
+- [ ] `10`, for millimetres. *Nothing here is in millimetres.*
 
 </details>
 
@@ -282,7 +291,7 @@ Tunables aren't recorded. Whether that matters depends on where the value lives:
   where it's used.
 - **Making a tunable in an opmode.** It's rebuilt on every Disable, and the name is already taken.
 - **Sending one gain in a config group.** The others in the group go to zero.
-- **Typing a value in the unit of the constant.** A measure shows in its base unit.
+- **Forgetting which unit a measure was made with.** It shows in the unit handed to `Tuning.value`.
 - **Leaving the best number in SimGUI.** It's gone at the next restart; copy it into `Constants`.
 - **Forgetting `kTuningMode` before an event.**
 
@@ -304,7 +313,7 @@ Tunables aren't recorded. Whether that matters depends on where the value lives:
 |---|---|
 | `Tuning.number("Owner/What", kConstant)` | a tunable number, starting at the constant |
 | `Tuning.number(name, kConstant, this::send)` | the same, and `send` runs on each change |
-| `Tuning.value(name, kMeasure)` | a tunable measure, shown in its base unit |
+| `Tuning.value(name, kMeasure, Degrees)` | a tunable measure, shown in the unit given |
 | `Tuning.property(name, obj::getP, obj::setP)` | a tunable for a value another object holds |
 | `tunable.get()` | its value now; read it where it's used |
 | `new Slot0Configs()` … `apply(slot0)` | send a motor's gains, all of the slot at once |

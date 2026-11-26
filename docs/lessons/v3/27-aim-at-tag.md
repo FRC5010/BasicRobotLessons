@@ -53,15 +53,16 @@ Start with the arithmetic, in its own small file.
 ```java
 package first.robot.commands;
 
+import static org.wpilib.units.Units.Degrees;
 import static org.wpilib.units.Units.Radians;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.math.geometry.Rotation2d;
 import org.wpilib.math.geometry.Translation2d;
 import org.wpilib.math.kinematics.ChassisVelocities;
-import org.wpilib.tunable.Tunable;
 import org.wpilib.tunable.TunableDouble;
 import org.wpilib.units.measure.Angle;
 
@@ -95,8 +96,8 @@ public final class Aim {
   // The aim's gain and its "close enough", as tunables (see Tuning). Static, like the
   // methods: there's one aim for the whole robot, so there's one of each.
   private static final TunableDouble s_aimP = Tuning.number("Aim/P", PathConstants.kAimP);
-  private static final Tunable<Angle> s_aimTolerance =
-      Tuning.value("Aim/Tolerance", PathConstants.kAimTolerance);
+  private static final Supplier<Angle> s_aimTolerance =
+      Tuning.value("Aim/Tolerance", PathConstants.kAimTolerance, Degrees);
 
   /**
    * Where a tag sits on the field, from the layout that was loaded in Lesson 15.
@@ -168,7 +169,7 @@ class's `static` fields the first time something uses the class**, and
 nothing uses `Aim` until the robot first aims. So **Tunables → Aim** isn't in
 SimGUI when the robot starts; it appears the first time you hold the aim
 trigger or an auto reaches its `aim` marker. <!-- claim: l27.aim-tunables-on-first-use -->
-The tolerance is an angle, so it shows in radians: 2° reads `0.0349`. <!-- claim: wpilib.tunables-measure-base-units -->
+The tolerance is shown in degrees, the unit handed to `Tuning.value`, so it reads `2`. <!-- claim: l18.tuning-value-display-unit -->
 
 > **A tag ID is not a guess.** `tagPosition` returns an `Optional` because
 > tag 47 is not on the field, and the day you mistype one you want an empty

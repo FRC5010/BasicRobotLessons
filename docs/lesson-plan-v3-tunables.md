@@ -255,8 +255,8 @@ and explain**.
    field at construction.
 6. **Firmware values need re-applying.** `onTune` builds just the affected config group
    (`Slot0Configs`, `MotionMagicConfigs`, `CurrentLimitsConfigs`) and applies it.
-7. **Measures stay measures.** A tolerance is `Tunables.addValue(name, kTolerance)`. It shows in
-   SimGUI in base units (metres, radians, metres per second), and the lesson says so.
+7. **Measures stay measures in code, and show in their constant's unit.** `Tuning.value(name,
+   kTolerance, Centimeters)` publishes a number in centimetres and returns a `Supplier<Distance>`.
 8. **A profile's limits** are two tunables, speed and acceleration. `onTune` rebuilds the
    `TrapezoidProfile.Constraints` and hands them to the controller.
 9. **Lesson 18 introduces `kTuningMode`** and a small `Tuning` helper class whose methods make
@@ -348,6 +348,12 @@ and explain**.
   snapshots carry the markers. Probe: a `StatorLimit` write of 60 A and an
   `ElevatorSupplyLimit` write of 25 A reached IDs 20-23 with everything else kept (claim
   `l29.budget-tunables-reach-motors`); amps and volts are base units, so they read as typed.
+- **Units (2026-11-26, user: "degrees would be better"):** rule 7 changed. `Tuning.value` takes
+  the unit to show a measure in and returns a `Supplier` of it; every measure tunable now reads in
+  its constant's unit (cm, degrees, deg/s, rot/s, m/s, A, V). Probe: Arm/Tolerance 2, Arm/MaxVelocity
+  180, Flywheel/IdleSpeed 30; a write of 90 deg/s reached the pivot as 0.25 rot/s. The
+  `wpilib.tunable-is-supplier` claim and test went (nothing relies on a `Tunable` being a
+  `Supplier` now).
 - **Study guide and CLAUDE.md (2026-11-26):** `frc-logging/03-tunables.md` (six sections, twelve quizzes, source-tagged examples) and a CLAUDE.md block. The rollout is done.
 
 ## 6b. Questions left for the user (answered above)

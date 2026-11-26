@@ -211,8 +211,8 @@ public Command idle() {
 
 `idle()` is a built-in, do-nothing command that every mechanism has; the flywheel
 overrides it to spin at its idle speed instead. <!-- claim: commandsv3.mechanism-idle-overridable --> `m_idleSpeed` is a
-tunable, and a tunable is a `Supplier`, so the command asks it for the speed every tick and
-follows a change made in SimGUI. <!-- claim: wpilib.tunable-is-supplier -->
+tunable, and `Tuning.value` hands back a `Supplier`, so the command asks it for the speed every
+tick and follows a change made in SimGUI. <!-- claim: l18.tuning-value-display-unit -->
 
 <details class="quiz" id="q-commands-7" markdown="1">
 <summary>Check yourself: the driver taps a button that runs `turnToHeading(90)`. The turn finishes. What drives the robot now?</summary>

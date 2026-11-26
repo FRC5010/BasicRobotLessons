@@ -1,14 +1,16 @@
 package first.robot.subsystems;
 
+import static org.wpilib.units.Units.Centimeters;
 import static org.wpilib.units.Units.Degrees;
 import static org.wpilib.units.Units.Meters;
 import static org.wpilib.units.Units.MetersPerSecond;
 import static org.wpilib.units.Units.MetersPerSecondPerSecond;
 
+import java.util.function.Supplier;
+
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
-import org.wpilib.tunable.Tunable;
 import org.wpilib.tunable.TunableDouble;
 import org.wpilib.units.measure.Distance;
 import org.wpilib.units.measure.LinearAcceleration;
@@ -41,12 +43,14 @@ public class Elevator implements Mechanism {
       Tuning.number("Elevator/KA", ElevatorConstants.kElevatorKA, this::sendGains);
   private final TunableDouble m_kP =
       Tuning.number("Elevator/KP", ElevatorConstants.kElevatorKP, this::sendGains);
-  private final Tunable<LinearVelocity> m_maxVelocity = Tuning.value(
-      "Elevator/MaxVelocity", ElevatorConstants.kMaxVelocity, this::sendMotionLimits);
-  private final Tunable<LinearAcceleration> m_maxAcceleration = Tuning.value(
-      "Elevator/MaxAcceleration", ElevatorConstants.kMaxAcceleration, this::sendMotionLimits);
-  private final Tunable<Distance> m_tolerance =
-      Tuning.value("Elevator/Tolerance", ElevatorConstants.kTolerance);
+  private final Supplier<LinearVelocity> m_maxVelocity = Tuning.value(
+      "Elevator/MaxVelocity", ElevatorConstants.kMaxVelocity,
+      MetersPerSecond, this::sendMotionLimits);
+  private final Supplier<LinearAcceleration> m_maxAcceleration = Tuning.value(
+      "Elevator/MaxAcceleration", ElevatorConstants.kMaxAcceleration,
+      MetersPerSecondPerSecond, this::sendMotionLimits);
+  private final Supplier<Distance> m_tolerance =
+      Tuning.value("Elevator/Tolerance", ElevatorConstants.kTolerance, Centimeters);
 
   private Distance m_goal = ElevatorConstants.kStowed;
 

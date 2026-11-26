@@ -356,7 +356,6 @@ import java.util.function.Supplier;
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
-import org.wpilib.tunable.Tunable;
 import org.wpilib.tunable.TunableDouble;
 import org.wpilib.units.measure.Angle;
 import org.wpilib.units.measure.AngularVelocity;
@@ -394,10 +393,10 @@ public class Flywheel implements Mechanism {
       Tuning.number("Flywheel/KA", FlywheelConstants.kFlywheelKA, this::sendGains);
   private final TunableDouble m_kP =
       Tuning.number("Flywheel/KP", FlywheelConstants.kFlywheelKP, this::sendGains);
-  private final Tunable<AngularVelocity> m_tolerance =
-      Tuning.value("Flywheel/Tolerance", FlywheelConstants.kTolerance);
-  private final Tunable<AngularVelocity> m_idleSpeed =
-      Tuning.value("Flywheel/IdleSpeed", FlywheelConstants.kIdleSpeed);
+  private final Supplier<AngularVelocity> m_tolerance =
+      Tuning.value("Flywheel/Tolerance", FlywheelConstants.kTolerance, RotationsPerSecond);
+  private final Supplier<AngularVelocity> m_idleSpeed =
+      Tuning.value("Flywheel/IdleSpeed", FlywheelConstants.kIdleSpeed, RotationsPerSecond);
 
   private AngularVelocity m_goal = RotationsPerSecond.of(0);
 ```
@@ -407,9 +406,8 @@ won't mind them sitting unused until then.
 
 The tunables are the arm's six, without the profile: four gains sent to the
 motor, plus a tolerance and an idle speed your own code reads. Both of those are
-speeds, so SimGUI shows them in radians per second, the base unit: the idle
-speed's 30 rot/s reads `188.5`, and the 1.5 rot/s tolerance reads `9.42`. To
-type a speed in rotations per second, multiply it by 2π, about 6.28. <!-- claim: wpilib.tunables-measure-base-units -->
+speeds, shown in rotations per second like their constants, so the idle speed
+reads `30` and the tolerance `1.5`. <!-- claim: l18.tuning-value-display-unit -->
 
 **Then `periodic`, below the fields:**
 
@@ -636,8 +634,8 @@ constants: orange while it's working, green once `atSpeed()`.
 `spinUp` now comes in two forms, and that's for `idle()`. The first takes a
 speed, as you'd expect. The second takes a `Supplier<AngularVelocity>` and asks
 it for the speed on every tick, and the first just hands it a lambda that always
-answers the same. A `Tunable` *is* a `Supplier`, so `idle()` can pass
-`m_idleSpeed` itself. <!-- claim: wpilib.tunable-is-supplier --> That matters because the
+answers the same. `Tuning.value` hands back a `Supplier`, so `idle()` can pass
+`m_idleSpeed` itself. <!-- claim: l18.tuning-value-display-unit --> That matters because the
 default command is built once, in the constructor: had `idle()` read the tunable
 there with `get()`, a new idle speed from SimGUI would never reach it.
 
